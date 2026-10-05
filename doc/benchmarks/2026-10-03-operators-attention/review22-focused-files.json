@@ -1,0 +1,12 @@
+{
+  "files": [
+    "test/test_review13_subspaces.py",
+    "test/test_review14_contracts.py"
+  ],
+  "nested_probe": "doc/benchmarks/2026-10-03-operators-attention/review22_observer_probe.py",
+  "purpose": "Both declared content-capacity ports; all prior focused files retained",
+  "prior_focused_files": [
+    "test/test_review13_subspaces.py"
+  ],
+  "dropped_files": []
+}

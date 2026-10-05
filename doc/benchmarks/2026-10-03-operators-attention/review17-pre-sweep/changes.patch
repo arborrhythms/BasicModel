@@ -1,0 +1,496 @@
+diff --git a/bin/Language.py b/bin/Language.py
+index 2b4df365f..d5d32dc08 100644
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -8280,7 +8280,7 @@ class ReconstructionStack:
+         self._choice_arities = None
+         self._choice_mask = None
+         self._choice_positions = self._choice_actions = self._choice_attempted = None
+-        self._choice_explorable = None
++        self._choice_explorable = self._choice_alternative_counts = None
+         self._unary_rule_map = None
+         self._binary_rule_map = None
+         self._forward_losses = None
+@@ -8305,7 +8305,7 @@ class ReconstructionStack:
+         self._choice_arities = None
+         self._choice_mask = None
+         self._choice_positions = self._choice_actions = self._choice_attempted = None
+-        self._choice_explorable = None
++        self._choice_explorable = self._choice_alternative_counts = None
+         self._forward_losses = None
+         self._forward_loss_mask = None
+ 
+@@ -8329,7 +8329,7 @@ class ReconstructionStack:
+         self._choice_arities = None
+         self._choice_mask = None
+         self._choice_positions = self._choice_actions = self._choice_attempted = None
+-        self._choice_explorable = None
++        self._choice_explorable = self._choice_alternative_counts = None
+         self._unary_rule_map = None
+         self._binary_rule_map = None
+         self._forward_losses = None
+@@ -8537,6 +8537,7 @@ class ReconstructionStack:
+         self._choice_actions = torch.full((batch, max_steps), -1, dtype=torch.long, device=device)
+         self._choice_attempted = torch.zeros((batch, max_steps), dtype=torch.bool, device=device)
+         self._choice_explorable = torch.zeros_like(self._choice_attempted)
++        self._choice_alternative_counts = torch.zeros_like(self._choice_actions)
+         self._choice_arities = torch.zeros(
+             batch, max_steps, dtype=torch.int8, device=device)
+         self._choice_mask = torch.zeros(
+@@ -12459,6 +12460,8 @@ class LanguageSpace(nn.Module):
+             self, "_language_layer_ref",
+             getattr(symbol_space.subspace, "languageLayer", None))
+         layer = self._language_layer_ref
++        from DecompositionChooser import DecompositionChooser
++        self.decomposition_chooser = DecompositionChooser()
+         unary_ids = tuple(
+             int(value)
+             for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+@@ -12820,7 +12823,8 @@ class LanguageSpace(nn.Module):
+             torch.where(route['valid'],
+                 torch.log_softmax(torch.where(route['valid'][:, None],
+                     route['logits'], torch.zeros_like(route['logits'])), -1)
+-                .gather(1, route['action'].clamp_min(0)[:, None]).squeeze(1), 0.))
++                .gather(1, route['action'].clamp_min(0)[:, None]).squeeze(1), 0.),
++            route['departure_eligible'].sum(-1))
+         if reference_scope is None:
+             return choice
+         return choice, route['refs'], route['relations'], route['operands']
+@@ -13459,7 +13463,8 @@ class LanguageSpace(nn.Module):
+             return self._bounded_binary_reconstruction(
+                 op, parent, ref, on_right, known, basis, basis_valid, candidate_limit,
+                 left_priming=basis_priming, right_priming=basis_priming,
+-                left_basis=left_basis, right_basis=right_basis)
++                left_basis=left_basis, right_basis=right_basis,
++                chooser=self.decomposition_chooser)
+ 
+         def oriented(remainder):
+             return (torch.where(on_right[:, None], remainder, ref),
+@@ -13492,7 +13497,8 @@ class LanguageSpace(nn.Module):
+                 if not hasattr(inner.layer, "functional_reverse"):
+                     return self._bounded_binary_reconstruction(
+                         op, parent, ref, on_right, known, basis, basis_valid,
+-                        candidate_limit, left_priming=basis_priming, right_priming=basis_priming)
++                        candidate_limit, left_priming=basis_priming, right_priming=basis_priming,
++                chooser=self.decomposition_chooser)
+                 left, right = inner.generate_functional(
+                     parent, W_inv=W_inv, reference=reference,
+                     reference_side=(on_right, known))
+@@ -13528,7 +13534,8 @@ class LanguageSpace(nn.Module):
+         if inverse == "search":
+             return self._bounded_binary_reconstruction(
+                 op, parent, ref, on_right, known, basis, basis_valid, candidate_limit,
+-                left_priming=basis_priming, right_priming=basis_priming)
++                left_priming=basis_priming, right_priming=basis_priming,
++                chooser=self.decomposition_chooser)
+         return torch.zeros_like(parent), torch.zeros_like(parent), ~yes
+ 
+     def _finish_binary_inverse(self, op, parent, reference, on_right, known,
+@@ -13543,7 +13550,8 @@ class LanguageSpace(nn.Module):
+         def search(values, side):
+             a, b, ready = self._bounded_binary_reconstruction(
+                 op, values[:, 0], values[:, 1], side[:, 0], side[:, 1],
+-                basis, basis_valid, limit, left_priming=basis_priming, right_priming=basis_priming)
++                basis, basis_valid, limit, left_priming=basis_priming, right_priming=basis_priming,
++                chooser=self.decomposition_chooser)
+             return torch.stack((a, b, ready[:, None].expand_as(a).to(a.dtype)), dim=1)
+ 
+         if torch.compiler.is_compiling():
+@@ -13561,8 +13569,9 @@ class LanguageSpace(nn.Module):
+                                        basis, basis_valid, candidate_limit, *,
+                                        left_valid=None, right_valid=None,
+                                        left_priming=None, right_priming=None,
+-                                       left_basis=None, right_basis=None):
+-        """Least-residual hard pair; no straight-through search gradient.
++                                       left_basis=None, right_basis=None,
++                                       chooser=None, return_details=False):
++        """Reconstruction-owned hard pair, initially least residual; no straight-through search gradient.
+ 
+         At most K prototypes per side and K squared pairs, K=candidate_limit.
+         Retrieval indices and any supplied reference are detached. Dictionary
+@@ -13612,14 +13621,37 @@ class LanguageSpace(nn.Module):
+         # Exact zero origins use the existing Error squared-penalty convention;
+         # no floor changes any positive parent scale.
+         residual = residual / torch.where(energy > 0, energy, torch.ones_like(energy))
+-        selected = residual.masked_fill(~allowed, torch.inf).flatten(1).argmin(-1)
++        # The shortlist and eligibility are unchanged. Context learns only
++        # through the separate teacher loss, never through candidate codes.
++        def candidate_features(candidates, indices, priming):
++            energy = candidates.square().sum(-1)
++            activation = (parent.detach()[:, None] * candidates).sum(-1) / torch.where(
++                energy > 0, energy, torch.ones_like(energy))
++            heat = (torch.ones_like(activation) if priming is None else
++                    priming.detach().gather(1, indices))
++            return activation, heat
++        la, lp = candidate_features(left_candidates, left_indices, left_priming)
++        ra, rp = candidate_features(right_candidates, right_indices, right_priming)
++        features = torch.stack((-residual.detach(), la[:, :, None].expand_as(residual),
++            ra[:, None, :].expand_as(residual), lp[:, :, None].expand_as(residual),
++            rp[:, None, :].expand_as(residual)), -1)
++        if chooser is None:
++            selected = residual.masked_fill(~allowed, torch.inf).flatten(1).argmin(-1)
++            logits = -residual.detach().masked_fill(~allowed, torch.inf).flatten(1)
++            logits = torch.where(allowed.flatten(1).any(-1)[:, None], logits, 0.)
++        else:
++            selected, _, logits = chooser(features, allowed)
+         gather = selected[:, None, None].expand(B, 1, D)
+         hard_left = older.reshape(B, K * K, D).gather(1, gather).squeeze(1)
+         hard_right = newer.reshape(B, K * K, D).gather(1, gather).squeeze(1)
+         available = left_active.any(-1) & right_active.any(-1)
+         hard_left = torch.where(available[:, None], hard_left, 0.)
+         hard_right = torch.where(available[:, None], hard_right, 0.)
+-        return hard_left.detach(), hard_right.detach(), available
++        result = (hard_left.detach(), hard_right.detach(), available)
++        if return_details:
++            return (*result, dict(logits=logits, selected=selected, allowed=allowed,
++                left_indices=left_indices, right_indices=right_indices, features=features))
++        return result
+ 
+     @staticmethod
+     def decoder_eligibility(parent, lefts, rights, available, binary_ops,
+diff --git a/bin/Models.py b/bin/Models.py
+index 1a7037648..7ee053b5d 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -13712,8 +13712,12 @@ class BasicModel(BaseModel):
+         B, T = actions.shape
+         owners, ids, _ = self._compose_round_owners(actions)
+         forced = torch.zeros_like(attempted)
++        counts = getattr(trace, '_choice_alternative_counts', attempted.long()).detach()
++        self._compose_sampling_scale = torch.zeros_like(counts)
+         for sid in range(int(ids.max().detach()) + 1):
+             eligible = attempted & (owners == sid)
++            self._compose_sampling_scale += torch.where(
++                eligible, counts * eligible.sum(-1, keepdim=True), 0)
+             # iid continuous ranks give a uniform draw over the eligible rounds.
+             ranks = torch.rand(B, T, device=actions.device).masked_fill(~eligible, -1)
+             selected = ranks.argmax(-1)
+@@ -13757,6 +13761,7 @@ class BasicModel(BaseModel):
+         # Keep the initial and later compiled entries structurally identical.
+         self._compose_exploit_actions = self._compose_forced_slots = None
+         self._compose_prefix_slots = None
++        self._compose_sampling_scale = None
+         # Perception is shared by two backward/step pairs. Saved values must
+         # remain those of its one forward even when the first update mutates
+         # parameters. The graph itself still credits the perception parameters.
+@@ -13774,6 +13779,7 @@ class BasicModel(BaseModel):
+             self._sentence_pullback = None
+             self._compose_exploit_actions = self._compose_forced_slots = None
+             self._compose_prefix_slots = None
++            self._compose_sampling_scale = None
+ 
+             self._sentence_training = False
+             self._sentence_supplied_answers = None
+@@ -18109,6 +18115,10 @@ class BasicModel(BaseModel):
+         trace._choice_actions[:, slot] = choice.action
+         trace._choice_attempted[:, slot] = choice.valid
+         trace._choice_explorable[:, slot] = (choice.valid if choice.alternatives is None else choice.alternatives)
++        if getattr(trace, '_choice_alternative_counts', None) is None:
++            trace._choice_alternative_counts = torch.zeros_like(trace._choice_actions)
++        trace._choice_alternative_counts[:, slot] = (choice.alternative_count
++            if choice.alternative_count is not None else trace._choice_explorable[:, slot].long())
+         trace._choice_left_rows, trace._choice_right_rows = self._tensor_record_operands(
+             trace._choice_left_rows, trace._choice_right_rows,
+             torch.as_tensor(slot, device=state[0].device), state,
+@@ -19629,7 +19639,7 @@ class BasicModel(BaseModel):
+ 
+         Both trials were costed at one parameter version. The uniform
+         departure draw is independent of the chooser's probability; this is
+-        the specified per-draw surrogate, without an alternative-count scale.
++        the importance correction K*R for uniform action and round draws.
+         The scorer's features are detached, so the ordinary reconstruction
+         owner can train the chooser without writing perception or operators.
+         Exact ties register no term and supply no momentum-only update.
+@@ -19640,13 +19650,17 @@ class BasicModel(BaseModel):
+                  else forced) & (path[1][18] >= 0))
+         advantage = costs[:, 1] - costs[:, 0]
+         probabilities = path[1][27].exp()
++        scale = getattr(self, "_compose_sampling_scale", None)
++        if scale is None:
++            raise RuntimeError("compose surrogate requires the sampled K*R counts")
++        scale = scale.detach().to(probabilities)
+         self._last_compose_score_function = dict(costs=costs, advantage=advantage,
+             mask=mask.detach(), actions=path[1][18].detach(),
+-            probabilities=probabilities.detach())
++            probabilities=probabilities.detach(), scale=scale)
+         trained = mask & advantage.ne(0)[:, None]
+         if not bool(trained.any()):
+             return probabilities.new_zeros(())
+-        surrogate = torch.where(trained, probabilities * advantage[:, None], 0.).sum(-1)
++        surrogate = torch.where(trained, probabilities * advantage[:, None] * scale, 0.).sum(-1)
+         self._sentence_cost_registry.add('reconstruction.compose_score_function', surrogate,
+             category='reconstruction')
+         active = self._sentence_cost_registry.row_mask
+@@ -19713,7 +19727,8 @@ class BasicModel(BaseModel):
+         trace._choice_journal_columns = getattr(self, '_sentence_journal_columns', None)
+         trace._choice_refs = lang[23]
+         trace._choice_ref_relations = lang[24]
+-        trace._choice_explorable = lang[26]
++        trace._choice_alternative_counts = lang[26]
++        trace._choice_explorable = lang[26] > 0
+         self._packed_sentence_roots = lang[9]
+         self._tensor_sentence_roots_live = lang[13]
+         self._tensor_sentence_roots_depth = lang[14]
+@@ -19804,6 +19819,58 @@ class BasicModel(BaseModel):
+         self._last_decoder_trace = select_rows(trace[:5], other[:5], wins)
+         return select_rows(greedy, explore, wins)
+ 
++    def _decomposition_teacher_loss(self, observation, record):
++        """Teacher-force actual compose operands; targets never enter free decoding.
++
++        Pair identities come from the input positions, not nearest-code labels.
++        A compound or missing symbol outside this word shortlist is counted and
++        contributes no term. Both trials' teacher graphs precede either step;
++        CE is added only in the owner step, after the byte-cost comparison.
++        """
++        from DecompositionChooser import DecompositionChooser
++        bank = record.primed
++        chooser = self.languageSpace.decomposition_chooser
++        terms = [[] for _ in observation['entries']]
++        reports = []
++        ops = self.languageSpace.language_layer.operation_layer.ops
++        for b, program in enumerate(observation['entries']):
++            if program is None or program.operation_values is None:
++                continue
++            stack = []
++            for index, (kind, op_index, word) in enumerate(program.actions.detach().cpu().tolist()):
++                if kind == 0:
++                    stack.append(int(program.word_rows[word]))
++                elif kind == 2:
++                    continue
++                elif kind == 1:
++                    right = stack.pop(); left = stack.pop(); stack.append(-1)
++                    parent = program.operation_values[index, 2].detach()[None]
++                    op = getattr(ops[op_index], 'gl', ops[op_index])
++                    if getattr(op, 'inverse_kind', None) == 'case_search':
++                        continue  # CaseSelection has its own non-word candidate algebra.
++                    valid = bank.valid[b:b+1]
++                    if not bank.codes.shape[1]:
++                        reports.append(dict(row=b, operation=op_index, present=False, picked_true=False))
++                        continue
++                    _, _, _, details = self.languageSpace._bounded_binary_reconstruction(
++                        op, parent, torch.zeros_like(parent),
++                        torch.zeros(1, dtype=torch.bool, device=parent.device),
++                        torch.zeros(1, dtype=torch.bool, device=parent.device),
++                        bank.codes[b:b+1], valid, self.reconstruction_basis_limit,
++                        left_priming=bank.weights[b:b+1], right_priming=bank.weights[b:b+1],
++                        chooser=chooser, return_details=True)
++                    target = torch.tensor([[left, right]], device=parent.device)
++                    loss, present, picked = DecompositionChooser.teacher_loss(
++                        details, bank.rows[b:b+1], bank.rows[b:b+1], target)
++                    if bool(present[0]):
++                        terms[b].append(loss[0])
++                    reports.append(dict(row=b, operation=op_index,
++                        target=[left, right], present=bool(present[0]), picked_true=bool(picked[0])))
++        zero = record.root.new_zeros(())
++        loss = torch.stack([torch.stack(row).mean() if row else zero for row in terms])
++        self._last_decomposition_teacher = reports
++        return loss
++
+     def _sentence_path_cost(self, state, sid, active):
+         """Both trials use the registry's named, relative objectives."""
+         self._publish_sentence_scratch(state)
+@@ -19824,6 +19891,8 @@ class BasicModel(BaseModel):
+                               torch.zeros(B, dtype=torch.bool, device=root.device), lang[14].to(root) * 0)
+         observation = self._sentence_observation(state, sid, active)
+         observation['record'] = record
++        observation['decomposition_loss'] = (self._decomposition_teacher_loss(observation, record)
++            if getattr(self, '_sentence_training', False) and torch.is_grad_enabled() else None)
+         if getattr(self, '_reading_lesson_enabled', False) and self.grammar_lesson_weight > 0:
+             source_rows = self._reading_lesson_sources
+             for b, program in enumerate(observation['entries']):
+@@ -20318,7 +20387,7 @@ class BasicModel(BaseModel):
+                     if self._sentence_gradient_objectives is not None:
+                         self._sentence_gradient_objectives['expectation'] = intra
+                 if self._sentence_training and torch.is_grad_enabled():
+-                    pending_steps[-1] = (*pending_steps[-1], self._sentence_cost_registry)
++                    pending_steps[-1] = (*pending_steps[-1], self._sentence_cost_registry, observation['decomposition_loss'])
+                 # Expectation and grammar lessons train their owners but are
+                 # not evidence for preferring one reading over the other.
+                 reconstruction_cost = self._sentence_cost_registry.total(objective='reconstruction')
+@@ -20332,10 +20401,13 @@ class BasicModel(BaseModel):
+             def train_trial(loss):
+                 # Both graphs now exist. Restore this trial's perception
+                 # pullback and scratch bindings before its own backward.
+-                trial, pullback, path, registry = pending_steps.pop(0)
++                trial, pullback, path, registry, decomposition_loss = pending_steps.pop(0)
+                 self._sentence_trial, self._sentence_pullback = trial, pullback
+                 self._sentence_cost_registry = registry
+                 self._restore_sentence_state(path)
++                if decomposition_loss is not None and decomposition_loss.requires_grad:
++                    registry.add('reconstruction.decomposition', decomposition_loss, category='reconstruction')
++                    loss = loss + (decomposition_loss * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
+                 if trial == 'explore':
+                     loss = loss + self._compose_score_function_loss(path, torch.stack(paired_costs, -1))
+                 self._sentence_train_step(loss)
+@@ -20669,7 +20741,7 @@ class BasicModel(BaseModel):
+             torch.full((B, record_width, 2), -1, dtype=torch.long, device=words.device),
+             torch.zeros(B, record_width, 2, dtype=torch.bool, device=words.device),
+             torch.full((B, capacity), -1, dtype=torch.long, device=words.device),
+-            torch.zeros_like(choices[2]),
++            torch.zeros_like(choices[0]),
+             words.new_zeros(B, int(choices[0].shape[1])),  # selected operation log probability
+         )
+         empty_cs_sub = (
+@@ -20987,7 +21059,8 @@ class BasicModel(BaseModel):
+                     previous_unary=unary_history)
+                 choice = proposal[0] if sentence_transactions else proposal
+                 unary_history = language.update_unary_history(unary_history, choice)
+-                eligible = choice.valid if choice.alternatives is None else choice.alternatives
++                eligible = (choice.alternative_count if choice.alternative_count is not None else
++                            (choice.valid if choice.alternatives is None else choice.alternatives).long())
+                 explorable_slab = self._tensor_record_selected_values(
+                     explorable_slab.unsqueeze(-1), slot, eligible[:, None], choice.valid).squeeze(-1)
+                 log_probability = (choice.log_probability if choice.log_probability is not None
+@@ -21069,7 +21142,8 @@ class BasicModel(BaseModel):
+                     previous_unary=unary_history)
+                 choice = proposal[0] if sentence_transactions else proposal
+                 unary_history = language.update_unary_history(unary_history, choice)
+-                eligible = choice.valid if choice.alternatives is None else choice.alternatives
++                eligible = (choice.alternative_count if choice.alternative_count is not None else
++                            (choice.valid if choice.alternatives is None else choice.alternatives).long())
+                 explorable_slab = self._tensor_record_selected_values(
+                     explorable_slab.unsqueeze(-1), slot, eligible[:, None], choice.valid).squeeze(-1)
+                 log_probability = (choice.log_probability if choice.log_probability is not None
+@@ -21333,7 +21407,8 @@ class BasicModel(BaseModel):
+             trace._choice_journal_columns = record_columns
+             trace._choice_refs = final_cs_lang[23].clone()
+             trace._choice_ref_relations = final_cs_lang[24].clone()
+-            trace._choice_explorable = final_cs_lang[26].clone()
++            trace._choice_alternative_counts = final_cs_lang[26].clone()
++            trace._choice_explorable = final_cs_lang[26] > 0
+         stm._clause_state = final_cs_lang[20].clone()
+         stm._last_unary = final_cs_lang[25].clone()
+         stm._unary_history_depth = stm._depth.clone()
+diff --git a/bin/Spaces.py b/bin/Spaces.py
+index 808c0ab78..70bccdf17 100644
+--- a/bin/Spaces.py
++++ b/bin/Spaces.py
+@@ -71,8 +71,8 @@ from space_carrier import SpaceCarrierMixin
+ 
+ 
+ LanguageOperationChoice = namedtuple(
+-    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives log_probability",
+-    defaults=(None, None))
++    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives log_probability alternative_count",
++    defaults=(None, None, None))
+ """One immutable operation/location choice; only ConceptualSpace applies it."""
+ 
+ 
+diff --git a/test/bounded_tests.py b/test/bounded_tests.py
+index 066a79d1f..1b56b110e 100644
+--- a/test/bounded_tests.py
++++ b/test/bounded_tests.py
+@@ -633,7 +633,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
+                        active_case=data.get("active"))
+         result["workers"].append(receipt)
+         result["completed"].extend(receipt["completed"])
+-        test_failure = any(report["outcome"] in ("failed", "xpassed")
++        test_failure = any(report["outcome"] == "failed"
+                            for report in receipt["reports"])
+         # pytest uses status 1 for an ordinary assertion/setup/teardown failure.
+         # It is diagnostic information, not a failed process boundary: keep
+@@ -659,7 +659,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
+         retry = []
+         for node in completed:
+             failures = [r for r in receipt["reports"] if r["nodeid"] == node
+-                        and r["outcome"] in ("failed", "xpassed")]
++                        and r["outcome"] == "failed"]
+             # Never erase a concurrent setup/teardown/assertion failure, nor
+             # retry a second failure. Raw worker JSON and logs keep attempt 1.
+             if (node not in cache_retried and failures
+@@ -681,7 +681,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
+             receipt["completed"] = [node for node in completed if node not in retry]
+             for node in retry:
+                 result["completed"].remove(node)
+-        if any(r["outcome"] in ("failed", "xpassed") for r in receipt["reports"]):
++        if any(r["outcome"] == "failed" for r in receipt["reports"]):
+             result.update(exit_code=1, reason="test_failure")
+         return True
+ 
+diff --git a/test/test_bounded_test_runner.py b/test/test_bounded_test_runner.py
+index 5fe0f40dd..22f59eb6a 100644
+--- a/test/test_bounded_test_runner.py
++++ b/test/test_bounded_test_runner.py
+@@ -337,6 +337,21 @@ def test_real_pytest_coverage_fresh_workers_and_failure_receipt(runner, tmp_path
+     assert "skipped" in report and "xfailed" in report
+ 
+ 
++@pytest.mark.parametrize('strict, expected_exit', [(False, 0), (True, 1)])
++def test_xpass_respects_pytest_strictness(runner, tmp_path, strict, expected_exit):
++    (tmp_path / 'pytest.ini').write_text('[pytest]\n')
++    (tmp_path / 'test_xpass.py').write_text(
++        'import pytest\n' + f'@pytest.mark.xfail(strict={strict!r})\n'
++        'def test_xpass(): assert True\n')
++    result = runner.run_suite(root=tmp_path, selectors=['test_xpass.py'],
++        run_dir=tmp_path / 'result', memory_bytes=512 * 1024**2,
++        timeout=60, suite_timeout=120, batch_size=1, lock_path=tmp_path / 'lock')
++    assert result['exit_code'] == expected_exit
++    assert len(result['completed']) == len(result['selected']) == 1
++    outcomes = [r['outcome'] for worker in result['workers'] for r in worker['reports']]
++    assert outcomes == ['failed' if strict else 'xpassed']
++
++
+ def test_test_failure_does_not_cancel_remaining_worker_coverage(runner, tmp_path):
+     """A diagnostic receipt records every selected test, not just the first red one."""
+     (tmp_path / "pytest.ini").write_text("[pytest]\n")
+diff --git a/test/test_grammar_word_learning.py b/test/test_grammar_word_learning.py
+index c8836b49a..e449aa54c 100644
+--- a/test/test_grammar_word_learning.py
++++ b/test/test_grammar_word_learning.py
+@@ -193,7 +193,7 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
+         monkeypatch.setattr(BasicModel, '_compose_score_function_loss', constructed_costs)
+         receipt = _ROOT / 'doc/benchmarks/2026-10-03-operators-attention'
+         monkeypatch.syspath_prepend(str(receipt))
+-        from review16_score_probe import observe_score_function
++        from review17_score_probe import observe_score_function
+         audit = {}
+         with observe_score_function(audit), capture_readings(model) as readings:
+             result, _ = model.runBatch(
+diff --git a/test/test_review14_contracts.py b/test/test_review14_contracts.py
+index e6188d7ce..e02694131 100644
+--- a/test/test_review14_contracts.py
++++ b/test/test_review14_contracts.py
+@@ -140,19 +140,19 @@ def test_zero_parent_relative_search_remains_finite():
+     assert not left.requires_grad and not right.requires_grad
+ 
+ 
+-def test_review16_measurement_wiring_on_one_ordinary_batch(tmp_path):
++def test_review17_measurement_wiring_on_one_ordinary_batch(tmp_path):
+     import json, os, sys
+     from pathlib import Path
+     from bounded_tests import run_guarded, GIB
+     root=Path(__file__).resolve().parents[1]
+     receipt=root/'doc/benchmarks/2026-10-03-operators-attention'
+     env=os.environ.copy()
+-    env.update(PYTEST_PLUGINS='review16_gate_observer', MODEL_COMPILE='none',
++    env.update(PYTEST_PLUGINS='review17_gate_observer', MODEL_COMPILE='none',
+         OWNERSHIP_OBSERVER_OUTPUT=str(tmp_path/'ownership'),
+         ITEM7_XOR_MEASUREMENTS=str(tmp_path/'observations.jsonl'), ITEM7_XOR_GATE='5',
+-        REVIEW16_REPORTS=str(tmp_path/'reports.jsonl'),
++        REVIEW17_REPORTS=str(tmp_path/'reports.jsonl'),
+         PYTHONPATH=os.pathsep.join(map(str,(receipt,root/'bin',root/'test'))))
+-    result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'review16_observer_probe.py')],
++    result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'review17_observer_probe.py')],
+         cwd=root,env=env,log_path=tmp_path/'observer.log',memory_bytes=8*GIB,timeout=1800)
+     assert result['exit_code']==0,(tmp_path/'observer.log').read_text()
+ 
+@@ -194,7 +194,8 @@ def test_compose_score_function_moves_toward_the_cheaper_departure(advantage):
+     path[1][18], path[1][27] = actions, logp
+     registry = Error(row_mask=torch.tensor([True]))
+     model = SimpleNamespace(_compose_forced_slots=torch.tensor([[True, False]]),
+-                            _sentence_cost_registry=registry)
++                            _sentence_cost_registry=registry,
++                            _compose_sampling_scale=torch.tensor([[6., 0.]]))
+     optimizer = torch.optim.SGD([logits, unrelated], lr=.1)
+     before = logits.detach().clone()
+     compared = torch.tensor([[1., 1. + advantage]], requires_grad=True)
+@@ -205,7 +206,7 @@ def test_compose_score_function_moves_toward_the_cheaper_departure(advantage):
+         probability = before.softmax(-1)
+         expected = -probability * probability[:, 1:2]
+         expected[:, 1] += probability[:, 1]
+-        torch.testing.assert_close(logits.grad, advantage * expected)
++        torch.testing.assert_close(logits.grad, 6 * advantage * expected)
+         doubled = BasicModel._compose_score_function_loss(
+             model, path, torch.tensor([[1., 1. + 2 * advantage]]))
+         twice = torch.autograd.grad(doubled, logits)[0]

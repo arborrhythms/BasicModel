@@ -26,6 +26,17 @@ def test_identical_empty_meanings_do_not_require_identical_forms():
 def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capacity):
     from test_mm_xor import _fresh_model
     model, _, _ = _fresh_model(f'data/{config}.xml')
+    admitted = []
+    stage = model._stage_reading_word_concepts
+    def observe_admission():
+        stage()
+        owner = model._concept_owner()
+        rows = model.inputSpace._ar_grammar_object_rows
+        word_rows = set(rows[rows >= 0].tolist())
+        assert len(word_rows) == 4
+        assert set(owner._concept_allocator.layer()._tensor_row_keys) == word_rows
+        admitted.append(word_rows)
+    model._stage_reading_word_concepts = observe_admission
     try:
         with torch.no_grad():
             model.forward(model.inputSpace.prepInput(
@@ -36,7 +47,14 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
         word_rows = set(rows[rows >= 0].tolist())
         assert owner.nVectors == capacity and cb.W.shape[0] == capacity
         assert len(word_rows) == 4
-        assert set(owner._concept_allocator.layer()._tensor_row_keys) == word_rows
+        assert admitted and admitted[-1] == word_rows
+        # A later grammatical part relation may symbolize an existing word
+        # object at order one. Such a row is not a concept for a letter.
+        for row in set(owner._concept_allocator.layer()._tensor_row_keys) - word_rows:
+            cid = owner.concept_id_at_row(row)
+            assert owner._concept_source_order(cid) > 0
+            assert all(isinstance(part, tuple) and part[0] == 'sym'
+                       for part in owner.concept_parts(cid))
         assert cb.mereology.context_width == 0
     finally:
         model.End()

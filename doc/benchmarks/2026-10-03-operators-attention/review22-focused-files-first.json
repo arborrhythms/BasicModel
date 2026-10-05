@@ -1,0 +1,8 @@
+{
+  "files": [
+    "test/test_review13_subspaces.py"
+  ],
+  "purpose": "Declared content capacity port only; full file, all other assertions unchanged",
+  "prior_focused_probe_in_this_round": null,
+  "dropped_files": []
+}

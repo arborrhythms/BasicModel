@@ -1,0 +1,1339 @@
+{
+  "passed": 10,
+  "total": 10,
+  "before_xor_or_mm": true,
+  "completed_processes": [
+    {
+      "kind": "sum",
+      "run": 1,
+      "name": "sum-01",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18_campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-01"
+        ],
+        "pid": 84778,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 557892976,
+        "elapsed_seconds": 116.52459912502673,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-01/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 2,
+      "name": "sum-02",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18_campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-02"
+        ],
+        "pid": 84779,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 558089560,
+        "elapsed_seconds": 117.53740841598483,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-02/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 3,
+      "name": "sum-03",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18_campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-03"
+        ],
+        "pid": 84780,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 557516144,
+        "elapsed_seconds": 118.55051187501522,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-03/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 4,
+      "name": "sum-04",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18_campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-04"
+        ],
+        "pid": 85289,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 557876592,
+        "elapsed_seconds": 116.52338954200968,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-04/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 5,
+      "name": "sum-05",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18_campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-05"
+        ],
+        "pid": 85290,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 556582232,
+        "elapsed_seconds": 117.52312204102054,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-05/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 6,
+      "name": "sum-06",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18_campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-06"
+        ],
+        "pid": 85291,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 557073800,
+        "elapsed_seconds": 118.53398424998159,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-06/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 9,
+      "name": "sum-09",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18_campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-09"
+        ],
+        "pid": 85835,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 558302552,
+        "elapsed_seconds": 116.48140483297175,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-09/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 7,
+      "name": "sum-07",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18_campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-07"
+        ],
+        "pid": 85833,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 558941528,
+        "elapsed_seconds": 118.06358262500726,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-07/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 8,
+      "name": "sum-08",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18_campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-08"
+        ],
+        "pid": 85834,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 557614424,
+        "elapsed_seconds": 119.0671547499951,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-08/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 10,
+      "name": "sum-10",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18_campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-10"
+        ],
+        "pid": 86330,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 557860160,
+        "elapsed_seconds": 101.08932350005489,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review18-measurements/sum-10/run.log"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "kind": "sum",
+      "answers": [
+        0.5000282526016235,
+        0.500026524066925,
+        0.5000300407409668,
+        0.5000283122062683
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.25,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "there loving"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": 0.0,
+      "max_deviation_from_half": 3.0040740966796875e-05,
+      "half_at_float32_precision": false,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged \u00a722 control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.5016289949417114,
+        0.5014418363571167,
+        0.5017046332359314,
+        0.5015174150466919
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.2500024735927582,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "there loving"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": -5.960464477539063e-08,
+      "max_deviation_from_half": 0.0017046332359313965,
+      "half_at_float32_precision": false,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged \u00a722 control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.49999135732650757,
+        0.49999117851257324,
+        0.49999091029167175,
+        0.4999907314777374
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.25,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": 0.0,
+      "max_deviation_from_half": 9.268522262573242e-06,
+      "half_at_float32_precision": false,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged \u00a722 control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.4999658465385437,
+        0.49996650218963623,
+        0.49996593594551086,
+        0.499966561794281
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.25,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "there hello",
+        "loving world",
+        "loving there"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": -2.9802322387695312e-08,
+      "max_deviation_from_half": 3.415346145629883e-05,
+      "half_at_float32_precision": false,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged \u00a722 control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.49999022483825684,
+        0.4999903440475464,
+        0.4999895989894867,
+        0.49998971819877625
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.25,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "world hello",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": 0.0,
+      "max_deviation_from_half": 1.0401010513305664e-05,
+      "half_at_float32_precision": false,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged \u00a722 control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.5000025629997253,
+        0.5000024437904358,
+        0.5000026226043701,
+        0.5000025033950806
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.25,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": 0.0,
+      "max_deviation_from_half": 2.6226043701171875e-06,
+      "half_at_float32_precision": true,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged \u00a722 control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.4999904930591583,
+        0.49999120831489563,
+        0.499989777803421,
+        0.4999904930591583
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.25,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "world hello",
+        "hello there",
+        "world loving",
+        "loving there"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": 0.0,
+      "max_deviation_from_half": 1.0222196578979492e-05,
+      "half_at_float32_precision": false,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged \u00a722 control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.5000078082084656,
+        0.5000078082084656,
+        0.5000085830688477,
+        0.5000085830688477
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.25,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "world hello",
+        "there hello",
+        "loving world",
+        "loving there"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": 0.0,
+      "max_deviation_from_half": 8.58306884765625e-06,
+      "half_at_float32_precision": false,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged \u00a722 control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.5000172853469849,
+        0.5000187158584595,
+        0.500018298625946,
+        0.5000197291374207
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.25,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "there hello",
+        "loving world",
+        "loving there"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": 0.0,
+      "max_deviation_from_half": 1.9729137420654297e-05,
+      "half_at_float32_precision": false,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged \u00a722 control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.5000005960464478,
+        0.500000536441803,
+        0.5000005960464478,
+        0.500000536441803
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.25,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "loving there"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": 0.0,
+      "max_deviation_from_half": 5.960464477539062e-07,
+      "half_at_float32_precision": true,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged \u00a722 control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

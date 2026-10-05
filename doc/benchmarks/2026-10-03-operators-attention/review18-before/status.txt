@@ -1,0 +1,63 @@
+ M bin/Language.py
+ M bin/Models.py
+ M bin/Spaces.py
+ M doc/GradientFlow.md
+ M doc/benchmarks/2026-10-03-operators-attention/README.md
+ M doc/plans/2026-09-27-item-6-8-one-attention.md
+ M doc/plans/2026-09-29-item-6-9-xor-grammar.md
+ M test/bounded_tests.py
+ M test/test_bounded_test_runner.py
+ M test/test_echoic_decoder.py
+ M test/test_free_reconstruction.py
+ M test/test_generation_catalog.py
+ M test/test_grammar_word_learning.py
+ M test/test_readback_operand_unaries.py
+ M test/test_review11_contracts.py
+ M test/test_review14_contracts.py
+ M todo.md
+?? bin/DecompositionChooser.py
+?? doc/benchmarks/2026-10-03-operators-attention/README-before-review17.md
+?? doc/benchmarks/2026-10-03-operators-attention/README-before-review18.md
+?? doc/benchmarks/2026-10-03-operators-attention/probes/review17-initial/
+?? doc/benchmarks/2026-10-03-operators-attention/probes/review17-ordinary/
+?? doc/benchmarks/2026-10-03-operators-attention/probes/review17-repaired/
+?? doc/benchmarks/2026-10-03-operators-attention/probes/review17-row-repaired/
+?? doc/benchmarks/2026-10-03-operators-attention/review17-before/
+?? doc/benchmarks/2026-10-03-operators-attention/review17-candidate-commit.json
+?? doc/benchmarks/2026-10-03-operators-attention/review17-contracts-final.json
+?? doc/benchmarks/2026-10-03-operators-attention/review17-contracts-pre-green.json
+?? doc/benchmarks/2026-10-03-operators-attention/review17-delivery/
+?? doc/benchmarks/2026-10-03-operators-attention/review17-external-docs.json
+?? doc/benchmarks/2026-10-03-operators-attention/review17-final-source/
+?? doc/benchmarks/2026-10-03-operators-attention/review17-final-sweep/
+?? doc/benchmarks/2026-10-03-operators-attention/review17-focused-files.txt
+?? doc/benchmarks/2026-10-03-operators-attention/review17-green-sweep/
+?? doc/benchmarks/2026-10-03-operators-attention/review17-historical-preservation.json
+?? doc/benchmarks/2026-10-03-operators-attention/review17-initial-observers/
+?? doc/benchmarks/2026-10-03-operators-attention/review17-measurements/
+?? doc/benchmarks/2026-10-03-operators-attention/review17-mechanism/
+?? doc/benchmarks/2026-10-03-operators-attention/review17-ordinary-batch.json
+?? doc/benchmarks/2026-10-03-operators-attention/review17-planned-repairs.json
+?? doc/benchmarks/2026-10-03-operators-attention/review17-pre-port-mechanism/
+?? doc/benchmarks/2026-10-03-operators-attention/review17-pre-sweep/
+?? doc/benchmarks/2026-10-03-operators-attention/review17-registry-port-proposed.json
+?? doc/benchmarks/2026-10-03-operators-attention/review17-results-validation.json
+?? doc/benchmarks/2026-10-03-operators-attention/review17-source/
+?? doc/benchmarks/2026-10-03-operators-attention/review17-sweep/
+?? doc/benchmarks/2026-10-03-operators-attention/review17-teacher-row-repair.json
+?? doc/benchmarks/2026-10-03-operators-attention/review17_campaign.py
+?? doc/benchmarks/2026-10-03-operators-attention/review17_contracts.py
+?? doc/benchmarks/2026-10-03-operators-attention/review17_decomposition_probe.py
+?? doc/benchmarks/2026-10-03-operators-attention/review17_freeze.py
+?? doc/benchmarks/2026-10-03-operators-attention/review17_gate_observer.py
+?? doc/benchmarks/2026-10-03-operators-attention/review17_observer_probe.py
+?? doc/benchmarks/2026-10-03-operators-attention/review17_ordinary_probe.py
+?? doc/benchmarks/2026-10-03-operators-attention/review17_package_delivery.py
+?? doc/benchmarks/2026-10-03-operators-attention/review17_reader_plot.py
+?? doc/benchmarks/2026-10-03-operators-attention/review17_run_audit.py
+?? doc/benchmarks/2026-10-03-operators-attention/review17_score_probe.py
+?? doc/benchmarks/2026-10-03-operators-attention/review17_summarize.py
+?? doc/benchmarks/2026-10-03-operators-attention/review17_sweep_summary.py
+?? doc/benchmarks/2026-10-03-operators-attention/review17_write_receipt.py
+?? doc/benchmarks/2026-10-03-operators-attention/review18-before/
+?? test/test_decomposition_chooser.py

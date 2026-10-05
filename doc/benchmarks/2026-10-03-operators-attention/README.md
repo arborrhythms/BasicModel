@@ -1,67 +1,157 @@
-# Decoder, operators and 6.8 — §16.3 implementation, measurement held
+# Decoder, operators and 6.8 — §22 initialization and content capacity
 
-2026-10-05. HEAD remains `802abb1acc95e1bddc8cb237b13230a336681c49`. One working tree; nothing committed. Delivered conceptual capacities are **6 (XOR_grammar) / 8 (MM_grammar)**. The [incoming §15 receipt](README-before-review16.md), older receipts and historical gate results are preserved.
+**Accepted by Alec on 2026-10-05.** Commit, push and WikiOracle submodule bump authorized. The review-hold statements below describe the frozen measurement state; its source, results and archived hashes remain unchanged. Claude's acceptance review is [6.8 plan §23](../../plans/2026-09-27-item-6-8-one-attention.md#23-review-of-the-22-measurement-acceptance-claude-2026-10-05). [Acceptance record](review22-acceptance.json).
 
-**Status:** the score-function chooser and its test ports are implemented. The final ten-worker default sweep completed **5,187 cases: 4,900 passed, 286 skipped, one non-strict XPASS, zero failed assertions** in **773.4 seconds**. Every pytest worker exited zero. The bounded supervisor treats XPASS as failure and returned one, so **the required green sweep has not been achieved and zero §16.3 gate trainings have run**. The [full report](review16-green-sweep/report.html) and [summary](review16-green-sweep/summary.json) retain this distinction.
+2026-10-05. **Review hold: all new work is uncommitted, nothing pushed.** Main remains at the local §16.3 candidate `eb1fbefb5f4a33a22cbb4a590cc0927d6a60761d`, tagged `6.8-s16.3-candidate`. The parent WikiOracle index remains `802abb1a`. One working tree.
 
-The sole remaining blocker is `test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input`. It passed its unchanged **0.8** overlap assertion while carrying an existing `xfail(strict=False)` mark. Both its body and mark are unchanged from the incoming candidate. The bounded runner and campaign guard are also unchanged. A decision is pending on accepting that named non-strict XPASS, holding for Claude, or retiring its expected-failure mark. **No random rerun, test omission or guard exception has been used.**
+The complete ten-worker sweep is green: **5,204 completed; 4,917 passed, 286 skipped, 1 non-strict XPASS, 0 XFAIL, zero failures**, in 893.1 seconds. The subsequent once-only campaign measured **sum 10/10**, **XOR class 7/10, reconstruction 9/10, joint 6/10**, and **MM_xor 10/10**. Sum was read first. No gate retries or tuning; seeds, bars, budgets, optimizers and guards unchanged.
 
-## Delivered mechanism
+## The two declared changes
 
-For each sentence with a sampled compose departure, the reconstruction owner receives `p(a_dep | shared prefix) * (C_explore - C_greedy)`, with both costs detached and the existing active-batch mean reduction. A cheaper alternative raises its probability, a dearer one lowers it, and a tie registers no term or optimizer update for the chooser. The §15 strict-win term and its separate owner registration are deleted. Both complete trials are still costed before learning; only strictly lower reconstruction keeps the explore derivation, and ties keep greedy.
+1. `RadixLayer.insert()` draws the same Gaussian row, divides by its L2 norm, then clamps to [0,1]. The normalization precedes the clamp; there is no second normalization afterward. Explicit initializers and duplicate admission retain their behavior and parameter identity. The §18 byte-fallback initializer is unchanged. [Exact initializer/RNG check and XML-value comparison](review22-change-verification.json).
+2. **Declared capacity increase:** `nDim` is 14 → 22 in InputSpace, PartSpace, ConceptualSpace and WholeSpace of both `XOR_grammar.xml` and `MM_grammar.xml`. Each processing event now has **14 content + 4 where + 4 when coordinates**, previously 6 + 4 + 4. Concept-row capacities remain **6 / 8**. The separate MM_grammar WholeSpace output-width override remains 14; all XML values other than the eight declared `nDim` values are unchanged. Fixture comments name the current content width. `MM_xor.xml` is unchanged.
 
-The departure round is drawn uniformly from eligible rounds, and its action uniformly from value-distinct eligible alternatives. The proposal is independent of chooser logits; the loss uses the chooser's original softmax probability. Duplicate values, identity-equivalent unaries, and STOP when both leaves already read back exactly are excluded. The greedy prefix is replayed with the same parameters. Greedy compose is argmax and supplies no pathwise chooser gradient. Its selected operator retains the full operand gradient. Detached scorer features keep the surrogate's gradient at chooser parameters and operation anchors.
+The kernels retain §20's activation magnitudes and code directions. Forms remain joins of positively evidenced parts at full presence. Attention credit stays detached at the sentence handoff; the attention chooser's estimator is the operators update's. The forward score-function K·R term, decomposition chooser, hard pair search, byte scorer, room rule, raw-root affine reader and §20 ports are unchanged. Perception retains the sole writer of its codes and evidence. Architecture, GradientFlow, FutureWork and the 6.8 plan are preserved byte-for-byte from the starting state.
 
-Pair search remains the §15 hard pick, with detached candidates in the relative residual and no soft blend or temperature. Byte-scoring bank codes remain detached and the recovered leaf live. The generate policy's straight-through walk is unchanged. Perception remains the sole writer of prototypes and evidence. No model dimensions, learning rate, optimizer, budget, seed, gate bar or resource guard changed in this round.
+## Verification and ports
 
-**Estimator scale:** the implemented formula is exactly the requested `p·ΔC`, without multiplying by the number of eligible alternatives. Conditional on a uniform draw among K alternatives, its expectation is `1/K` times the corresponding summed gradient over those alternatives. Uniform round sampling adds its own averaging. The measured derivative below verifies this surrogate; it is not evidence that the unscaled estimator equals a sum over every original policy action and round.
+The initializer check used no seed override, forward, backward or training. It verified the exact L2-then-clamp row, the same single Gaussian draw, unchanged other rows, parameter identity, duplicate admission and explicit initializers, at widths 6 and 14. Its first XML comparison mistakenly included indentation affected by comment edits; the [failed checker](review22-init-check-before-whitespace-fix.py) and [output](review22-init-check-first-attempt.log) are preserved. The repaired checker compares XML values, with no production repair.
 
-## Mechanism checks on the frozen source
+The initial full sweep was interrupted after **5030/5204** cases to port two old six-coordinate assertions. The failures were `test_actual_serial_code_uses_six_native_coordinates_and_no_context_bootstrap` and the nested audit-wiring probe's support-dimension assertion. Both now expect the declared fourteen-coordinate content band; the first test's name and address-band slice follow that width. The historical §17 probe remains intact; the wrapper selects a §22 copy. No regression assertion, gate bar, ownership assertion or seed changed. [Initial source](review22-source/source.zip), [initial sweep](review22-sweep/result.json), [failure classification](review22-sweep-classification.json), [complete test-file ports](review22-delivered-source/test-ports.json), [complete nested-probe port](review22-observer-port.json).
 
-The [ordinary chooser batch](review16-ordinary-frozen.json) uses the original **seed 613** and **["a b c d e", "f g h i j"]**, one real training batch, with **no cost override**. Once ineffective departures are excluded, this batch no longer ties: both selected departures are the value-distinct `non` unary, at rounds 50 and 4. The former §15 observation of exact ties is preserved as an observation of that earlier sampler.
+The final focused probe retained its first file and added the second affected file: **21/21 passed**, over [the declared file list](review22-focused-files.json). [Focused result](probes/review22-final-focused/result.json). The subsequent full sweep completed all tests on the delivered source, including all sixteen original output-gradient regression assertions. Non-strict XPASS counts as a pass; the overlap fixture retains `xfail(strict=False)` and its .8 assertion (historically about 5/8 unseeded passes, otherwise overlap .5 from small-width join collisions). [Full sweep](review22-final-sweep/summary.json), [HTML report](review22-final-sweep/report.html), [seed audit](review22-delivered-source/seed-port-audit.json), [changes from §20](review22-delivered-source/changes-from-review20.patch).
 
-| Row | Departure | C_greedy | C_explore | ΔC | p before → after |
-|---|---|---:|---:|---:|---|
-| 0 | non | 0.484053940 | 0.177577868 | -0.306476057 | 0.1664561629 → 0.1664604694 |
-| 1 | non | 0.180075958 | 0.411828935 | +0.231752977 | 0.1666011512 → 0.1666000783 |
+## Once-only gates
 
-The gradient on all chooser logits agrees with `ΔC·∇p` after the existing two-row mean reduction: maximum absolute error **1.862645149e-9**. Central finite differences on departure logit 20, epsilon **1e-4**, are **−.02126154928** and **+.01608889453**; the corresponding analytical derivatives are **−.02126155049** and **+.01608889550**. Maximum finite-difference error is **1.205640629e-9**. Observed finite logits span **[−.19550702, .09702440]**, with no NaN or positive infinity. Ownership conflicts are zero. This is a mechanism check, not a convergence run.
+Both XOR bars consume the same training in each run. Class requires four correct answers and MSE < .05; reconstruction requires all four input word-multisets recovered without unavailable decoding. Bands: at 0 means MSE < .05; at ¼ means |MSE−.25| ≤ .02; remaining errors lie between or above. Sum keeps |checkerboard contrast| ≤ 1e-4 and the class bar unmet. MM_xor keeps best MSE < .20. XOR/sum budgets remain 400 epochs; MM_xor at most 200.
 
-The authorized chooser test now has explicit equal-cost and cheaper-departure cases, retaining its original seed, batch, setup and optimizer. Those two fixtures control only the detached comparison costs passed to the surrogate; actual trials and the understanding's keep rule still execute. The natural batch above is recorded separately so the test does not claim a tie that the new sampler does not produce. Additional checks cover a dearer departure, exact ties, proportional gradient magnitude, uniform eligible sampling, duplicate-value exclusions, and full operand gradients without greedy chooser gradients. Complete old/new bodies are in the [round contracts](review16-contracts-final.json) and [frozen-source ports](review16-source/test-ports.json).
 
-The [one ordinary XOR batch](review16-mechanism/probe-context.json), collected by a passing wiring test in the final sweep, contains **four departed sentences, zero nonzero advantages**, unchanged departure probabilities, and **zero ownership conflicts**. Its [run audit](review16-mechanism/run-audit.json) records zero sentence-path gradient at perception prototypes and evidence, as well as root/code geometry, support, net-evidence ranges, room reports and one reader epoch. Finite chooser logits span **[.0000356668, .28572097]** in that epoch. The inherited metadata's label “tenth shared gate training” is explicitly corrected by `probe-context.json`: this folder is **one batch, not the tenth 400-epoch gate run**.
+| Run | MSE | Band | Answers | Read-back | Joint | Final greedy operators | Reader norm, epochs 1 → 400 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 1.715357e-05 | at 0 | 4/4 | 4/4 | yes | conjunction | 0.05780351 → 8.415808 |
+| 2 | 0.0005832326 | at 0 | 4/4 | 4/4 | yes | conjunction | 0.05838229 → 7.229935 |
+| 3 | 0.0008697595 | at 0 | 4/4 | 4/4 | yes | conjunction | 0.09013153 → 8.58875 |
+| 4 | 7.127259e-10 | at 0 | 4/4 | 4/4 | yes | conjunction | 0.06989342 → 6.019396 |
+| 5 | 0.0001592712 | at 0 | 4/4 | 4/4 | yes | conjunction | 0.06793531 → 7.553932 |
+| 6 | 3.129654e-05 | at 0 | 4/4 | 4/4 | yes | conjunction | 0.08667617 → 4.371605 |
+| 7 | 0.2454728 | at 1/4 | 2/4 | 4/4 | no | disjunction | 0.07044662 → 4.278137 |
+| 8 | 0.1843632 | between | 4/4 | 4/4 | no | disjunction | 0.084051 → 5.500618 |
+| 9 | 0.2501699 | at 1/4 | 2/4 | 4/4 | no | disjunction | 0.0484488 → 2.60461 |
+| 10 | 1.347584e-05 | at 0 | 4/4 | 3/4 | no | conjunction | 0.07611185 → 6.731491 |
 
-The one-batch room audit retains residual violations without hiding or repairing them: stage 1 starts with **20 / .04184762** (count / maximum), then **2 / .03320757** after the first room pass; its end report has **1 / 3.72529e-8** before and **0 / 0** after. These are mechanism observations, not the requested ten-run start/end reports. No room or code-derivation change was made.
+Bands: **at 0: 7**, **at 1/4: 2**, **between: 1**, **above 1/4: 0**.
 
-## Tests, ports and preservation
-
-All **sixteen original output-gradient regressions pass with their assertions unchanged**. The final sweep includes every file in the [57-file focused list](review16-focused-files.txt), which retains the prior 51 and adds six relevant files. Its extracted subset is **537 passed, 33 skipped, one XPASS**; no focused file was dropped. This subset is read from the full sweep, not another execution.
-
-The first full §16.3 sweep, saved before the final ports, completed **4,898 passed / 286 skipped / one XPASS / two failed**. Both failures encoded the superseded compose straight-through backward rule: probability-scaled operand gradients and chooser-anchor gradients directly from the chosen hard value. They are classified as **ports**, with exact failure messages in the [first-sweep summary](review16-final-sweep/summary.json). Their replacements check full selected-operator gradients and chooser credit exclusively through the score-function term. No remaining assertion failure is concealed as a port or skip.
-
-Earlier failing focused probes and their source snapshots remain under [probes](probes/), [the wider diagnostic](review16-focused-diagnostic/), [the incoming snapshot](review16-before/) and [the pre-sweep snapshot](review16-pre-sweep/). The last eight-file contract probe passed **66 tests** before the full sweep exposed the two additional backward-rule ports. Every narrow probe's request/process command records its file list. The final full sweep covers all of them.
-
-The [frozen source](review16-source/source.zip) preserves **715 files**, **179 complete old/new test ports against published HEAD**, and **zero changed seed calls**. The [round contracts](review16-contracts-final.json) additionally compare complete test bodies with the incoming §15 candidate, verify unchanged gate tests, runner guards and original output assertions, and record capacities 6/8. **2,013 previously archived evidence files** match their earlier manifests in the [preservation check](review16-historical-preservation.json).
-
-Architecture, GradientFlow, Philosophy, Spaces, the accessible-mind spec and the operator catalogue were not rewritten. The 6.8 plan and FutureWork changed externally during this work; their complete observed changes are [preserved separately](review16-external-docs.json). Those external edits include §16.4. This delivery implements the user's §16.3 instruction; it does not implement an inverse/decomposition chooser or change the generate policy on the authority of those file edits.
-
-## Measurement remains pending
-
-The [campaign](review16_campaign.py) refuses to start without the required sweep result and matching frozen source. It is prepared to run sum ×10 first, requiring **10/10**, then ten XOR trainings each consumed by both unchanged bars, then MM_xor ×10. There have been **no gate retries, no tuning and no §16.3 gate trainings**.
-
-The observers are prepared for all requested per-run bands, joint count, named operators and per-word read-back annotations; start/end pairwise word cosines and mean cos(L), root centered singular values and unit-root XOR interaction, code support, `d = relu(e_for-e_against)` ranges, room reports and reader weight trajectories. The actual tenth run would also supply per-sentence/per-step costs, advantage, action and probability before/after; nonzero-advantage count and per-epoch logit range; ownership, decoder margin/gradient and derivation stability. None of those **ten-run** results is claimed here. Reader norms are saved per parameter as well as in aggregate, so a flat aggregate cannot by itself establish a stationary affine head.
-
-The requested advance reading remains a forecast: reconstruction 10/10, MM_xor and sum 10/10, and a majority of class runs near zero, with quarter-error runs interpreted through geometry and the reader trajectory. It has not been confirmed or refuted on this frozen source.
-
-| Historical record | XOR / MM_grammar capacity | XOR class | XOR reconstruction | Joint | MM_xor | Sum |
-|---|---|---|---|---|---|---|
-| 6.9 closing | accepted source | MSE .1147481948 | 0/4 sentences | — | red through §17 | — |
+| Record | CS XOR / MM | Class | Reconstruction | Joint | MM_xor | Sum |
+| --- | --- | --- | --- | --- | --- | --- |
+| 6.9 closing | accepted source | MSE .1147481948 | 0/4 sentences | — | red through 6.9 §17 | — |
 | §12 | 6 / 8 | 0/10 | 7/10 | 0/10 | 10/10 | 10/10 |
 | §13 | 262 / 264 | 0/10 | 0/10 | 0/10 | 10/10 | 10/10 |
-| §14 before addendum | 262 / 264 | 1/10 | 8/10 | 1/10 | 10/10 | 10/10 |
-| §15 | 6 / 8 | not run | not run | not run | not run | not run |
-| §16.3 | 6 / 8 | not run | not run | not run | not run | not run |
+| §14 pre-addendum | 262 / 264 | 1/10 | 8/10 | 1/10 | 10/10 | 10/10 |
+| §15–§16.3 | 6 / 8 | not measured | not measured | not measured | not measured | not measured |
+| §17 | 6 / 8 | 1/10 | 10/10 | 1/10 | 10/10 | 10/10 |
+| §18 | 6 / 8 | 0/10 | 10/10 | 0/10 | 10/10 | 10/10 |
+| §19 | 6 / 8 | not run | not run | not run | not run | not run |
+| §20 | 6 / 8 | 2/10 | 8/10 | 2/10 | 10/10 | 10/10 |
+| §22 (content 14) | 6 / 8 | 7/10 | 9/10 | 6/10 | 10/10 | 10/10 |
 
-The accepted baseline retains zero ownership conflicts; prior class **9/10** and reconstruction **5/10** remain historical. Under the two-spaces/one-index reading, this XOR table measures perception's composition of forms, its inverse, the affine read and ownership. Order-zero meanings have identical empty contexts in these fixtures; their coincidence is correct. MM_xor's field path measures connectives where meanings exist. Forms remain the join of positively evidenced parts at full presence; wholes bound them, certainty is activation, and perception owns their parameters. Complement bootstrap remains deferred.
+The accepted closing record remains .1147481948, reconstruction 0/4 and zero ownership conflicts; prior measurements remain class 9/10 and reconstruction 5/10. This XOR table measures composition of perceptual forms, its inverse, the raw affine read and ownership. Order-zero meanings are context-only and empty here; their coincidence is correct. MM_xor measures the field path where meanings exist. Counts are unpaired measurements, not causal attributions.
 
-Only this receipt, todo 6.8 and the 6.9 §20.3 status are updated from these results. Unit-sphere codes remain retired, magnitude/certainty remains returned in cube form, the antipode row remains removed, and the distributional row is unchanged. The carried operators work, REBAR/RELAX control variates and compose/generate scorer unification remain deferred. No native benchmark or fresh BasicModel scoring ran; frozen evaluation admits nothing, and the trained NanoChat gate waits for item 4's checkpoint. **Nothing committed. Measurement is held at the XPASS decision; Claude reviews before any commit.**
+| Reconstruction failure | Saved read-backs | Exact form collisions, start → end |
+| --- | --- | --- |
+| 10 | hello world → 'world hello' (unavailable=False); hello there → 'hello hello' (unavailable=False); loving world → 'loving world' (unavailable=False); loving there → 'loving there' (unavailable=False) | [] → [] |
+
+These collision comparisons read the saved vectors exactly, without a tolerance, forward call or training. They concern perceptual forms; coinciding empty meanings remain correct. They do not establish a causal comparison with earlier random runs.
+
+Final read-back annotations: **{'code': 80}**, 80 word decisions. Maximum code displacement across XOR runs: **0**. [Complete per-word annotations, named derivations and 400 reader observations per run](review22-measurements/summary.json).
+
+Missing final read-back decisions: **0/80** word positions. Priming-decided winners and ties are retained in the annotations; the full [per-position annotation file](review22-measurements/readback-annotations.json) includes unavailable positions. The forecast of 10/10 reconstruction is not met; a majority of class runs at zero is met.
+
+![Affine reader trajectories](review22-measurements/reader-weight-trajectories.png)
+
+## Starting norms and geometry
+
+| XOR run | Form L2: hello, world, there, loving | Root L2: hw, ht, lw, lt |
+| --- | --- | --- |
+| 1 | [1.114553, 1.419222, 1.154222, 1.284848] | [0.9999999, 1, 1, 1] |
+| 2 | [1.36475, 1.398593, 1.3216, 1.4776] | [1, 1, 1, 1] |
+| 3 | [1.504376, 1.303783, 1.317549, 1.503042] | [1, 1, 1, 1] |
+| 4 | [1.4134, 1.410537, 1.234225, 1.490219] | [1, 1, 1, 1] |
+| 5 | [1.056932, 1.33531, 1.082739, 1.386518] | [1, 1, 1, 1] |
+| 6 | [1.247271, 1.322935, 1.188491, 1.549057] | [1, 1, 1, 1] |
+| 7 | [1.450182, 1.442087, 1.274592, 1.471379] | [1, 1, 1, 1] |
+| 8 | [1.138187, 1.309556, 1.09454, 1.156305] | [0.9999999, 1, 1, 1] |
+| 9 | [1.29821, 1.477198, 1.262022, 1.321047] | [1, 1, 1, 1] |
+| 10 | [1.003894, 1.178365, 0.8782687, 1.349279] | [1, 1, 1, 1] |
+
+[All start norms](review22-measurements/start-norms.json), including sum runs and unpaired §§17–18 and §20 history, are computed from saved first-trial vectors before owner updates. No extra forwards or trainings were added.
+
+| Run | Mean cos(L), start → end | Centered root singular values, start → end | Unit-root XOR interaction, start → end |
+| --- | --- | --- | --- |
+| 1 | 0.8323023 → 0.8323023 | [0.6276515, 0.310093, 0.1167502, 6.178546e-08] → [0.6276515, 0.310093, 0.1167502, 6.178546e-08] | 0.2571256 → 0.2571256 |
+| 2 | 0.8160946 → 0.8160946 | [0.369271, 0.2640556, 0.02474478, 7.342969e-08] → [0.661087, 0.434509, 0.08450774, 6.121013e-08] | 0.05333817 → 0.3263355 |
+| 3 | 0.8067139 → 0.8067139 | [0.9076831, 0.4678241, 0.1016647, 4.774244e-08] → [0.9076831, 0.4678241, 0.1016647, 4.774244e-08] | 0.2594329 → 0.2594329 |
+| 4 | 0.7960691 → 0.7960691 | [0.7016319, 0.4477988, 0.1394897, 4.075016e-08] → [0.7016319, 0.4477988, 0.1394897, 4.075016e-08] | 0.417949 → 0.417949 |
+| 5 | 0.8348439 → 0.8348439 | [0.6375207, 0.4634247, 0.1014824, 6.971118e-08] → [0.6375207, 0.4634247, 0.1014824, 6.971118e-08] | 0.3202541 → 0.3202541 |
+| 6 | 0.7962987 → 0.7962987 | [0.6277686, 0.3687156, 0.1719462, 6.111275e-08] → [0.7352916, 0.4124627, 0.1317644, 5.433536e-08] | 0.5721058 → 0.5064778 |
+| 7 | 0.9154117 → 0.9154117 | [0.3859017, 0.3062633, 0.04058994, 7.153896e-08] → [0.2350686, 0.120712, 0.01208656, 8.73159e-08] | 0.2568893 → 0.02571862 |
+| 8 | 0.8231282 → 0.8231282 | [0.6334602, 0.4112744, 0.1156702, 4.273522e-08] → [0.3485103, 0.1409531, 0.02464296, 8.385347e-08] | 0.242155 → 0.05358979 |
+| 9 | 0.8949533 → 0.8949533 | [0.5329769, 0.2196397, 0.05381908, 4.33928e-08] → [0.2137871, 0.09651984, 0.008628804, 6.742894e-08] | 0.1374339 → 0.02377051 |
+| 10 | 0.7819168 → 0.7819168 | [0.6306167, 0.4012849, 0.150804, 7.014229e-08] → [0.6306167, 0.4012849, 0.150804, 7.014229e-08] | 0.3348488 → 0.3348488 |
+
+Each run audit also retains full pairwise word/root cosines and per-word support (fraction nonzero, minimum absolute coordinate). The interaction is `‖r_hw−r_ht−r_lw+r_lt‖` on unit roots for observation only. `d=relu(e⁺−e⁻)` is net 11b evidence: positivity selects a part at full presence, not a scale. Room remains L+m≤U, m=0; only the minimal whole moves upward. Room entries below are count / maximum violation.
+
+| Run | d range, start → end | First clamp, before → after | Last clamp, before → after |
+| --- | --- | --- | --- |
+| 1 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 48 / 0.6466667 → 10 / 0.2032053 | 0 / 0 → 0 / 0 |
+| 2 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 50 / 0.6843448 → 9 / 0.309332 | 0 / 0 → 0 / 0 |
+| 3 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 49 / 0.7610624 → 10 / 0.2798901 | 0 / 0 → 0 / 0 |
+| 4 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 53 / 0.6965761 → 9 / 0.3344577 | 0 / 0 → 0 / 0 |
+| 5 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 54 / 0.6599448 → 19 / 0.2309811 | 0 / 0 → 0 / 0 |
+| 6 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 51 / 0.6340008 → 11 / 0.196436 | 0 / 0 → 0 / 0 |
+| 7 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 54 / 0.6438968 → 10 / 0.2780679 | 0 / 0 → 0 / 0 |
+| 8 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 52 / 0.5703661 → 11 / 0.1781371 | 0 / 0 → 0 / 0 |
+| 9 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 49 / 0.594929 → 5 / 0.2776086 | 0 / 0 → 0 / 0 |
+| 10 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 43 / 0.6471633 → 9 / 0.3806789 | 0 / 0 → 0 / 0 |
+
+| Run | Exact form collisions at start | Exact form collisions at end |
+| --- | --- | --- |
+| 1 | [] | [] |
+| 2 | [] | [] |
+| 3 | [] | [] |
+| 4 | [] | [] |
+| 5 | [] | [] |
+| 6 | [] | [] |
+| 7 | [] | [] |
+| 8 | [] | [] |
+| 9 | [] | [] |
+| 10 | [] | [] |
+
+## Tenth-run audits
+
+**1600 sentence/step records; 1600 departures; 80 nonzero advantages.** Logits range from -0.05221737 to 0.3608396. Maximum error against K·R·ΔC·∇p: 1.862645e-09; finite-difference error: 1.020065e-09. [Raw costs/actions/advantages/p before-after and per-epoch ranges](review22-measurements/xor-10/run-audit.json).
+
+Nonzero advantages account for 5.00% of the sentence/step records; finite logit ranges: True.
+
+| Decomposition feature | Start weight | End weight |
+| --- | --- | --- |
+| negative_relative_residual | 1 | 5.341804 |
+| left_activation | 0 | -2.315888 |
+| right_activation | 0 | 2.110353 |
+| left_priming | 0 | 1.674845 |
+| right_priming | 0 | 1.741537 |
+
+| Decomposition measure | Start | End |
+| --- | --- | --- |
+| true_pair_in_shortlist | 4/4 | 4/4 |
+| pick_equals_true | 2/4 | 3/4 |
+| absent_targets | 0/4 | 0/4 |
+
+Sentence-path prototype/evidence gradient maximum **0**, with **0** nonzero observations. Ownership conflicts **0**. [Ownership](review22-measurements/xor-10/ownership/ownership.json) and [audit summary](review22-measurements/audit-summary.json).
+
+The decoder audit has 1600 first-step records and 1200 owner steps, preserving STOP-over-undo margins and gradients, paths and derivation stability in the [events](review22-measurements/xor-10/ownership/events.jsonl). Kept-path modal fractions by compose trial: exploit [1, 1, 1, 1]; explore [1, 1, 1, 1]. Every keep decision is checked against strict improvement; ties stay greedy.
+
+## Review package
+
+[Source and hashes](review22-delivered-source/source.json), [source archive](review22-delivered-source/source.zip), [result validation](review22-results-validation.json), [historical preservation](review22-preservation.json) and [delivery manifest](review22-delivery/bridge.json). The incoming receipt is [preserved intact](README-before-review22.md). The campaign reuses the prior training observers unchanged; the separate audit-wiring probe is ported for the declared width. It measures the same frozen source that passed collection and the full sweep.
+
+The comparison is unpaired and includes a declared content-capacity change; it does not isolate the effects of initialization and width. No fresh bulk BasicModel scoring or native benchmark. Frozen evaluation admits nothing; the trained NanoChat gate waits for item 4. Complement bootstrap learning, form fold, Kleene connectives, not items, the concept-face negative image, form density, and the dense control variate remain deferred. **Stop for Claude's review before any commit. Nothing has been pushed.**

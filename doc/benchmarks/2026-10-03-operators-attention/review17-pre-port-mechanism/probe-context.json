@@ -1,0 +1,6 @@
+{
+  "kind": "mechanism, not a gate",
+  "training_batches": 1,
+  "source": "review17-green-sweep before registry port",
+  "inherited_complete_label": "The observer complete.json uses its campaign label; this was the one-batch wiring test, not the tenth gate."
+}

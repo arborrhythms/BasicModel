@@ -1,4 +1,5 @@
 """Review §11: an affine numeric answer and support-governed decoding."""
+from DecompositionChooser import DecompositionChooser
 from types import MethodType, SimpleNamespace
 
 import pytest
@@ -40,7 +41,8 @@ def decoder():
         policy.weight.zero_()
         policy.bias.copy_(torch.tensor([0., 20.]))
     language = SimpleNamespace(_generate_binary_ops=(Sum(),), _generate_unary_ops=(),
-        generate_policy=policy, _generate_policy_width=2)
+        generate_policy=policy, _generate_policy_width=2,
+        decomposition_chooser=DecompositionChooser())
     for name in ('generate_policy_logits', 'reverse_binary_step', '_reverse_of_binary_op'):
         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
     language._bounded_binary_reconstruction = LanguageSpace._bounded_binary_reconstruction

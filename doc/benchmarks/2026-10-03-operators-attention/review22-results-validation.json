@@ -1,0 +1,384 @@
+{
+  "source_matched": true,
+  "helpers_matched": true,
+  "gate_trainings": 30,
+  "retries": 0,
+  "counts": {
+    "class_pass": 7,
+    "reconstruction_pass": 9,
+    "joint": 6,
+    "mm_pass": 10,
+    "sum_pass": 10,
+    "xor_bands": {
+      "at 0": 7,
+      "at 1/4": 2,
+      "between": 1,
+      "above 1/4": 0
+    },
+    "sum_bands": {
+      "at 0": 0,
+      "at 1/4": 10,
+      "between": 0,
+      "above 1/4": 0
+    }
+  },
+  "runs": [
+    {
+      "run": 1,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8323022723197937,
+        0.8323022723197937
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 2,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8160945773124695,
+        0.8160945773124695
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 3,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.806713879108429,
+        0.806713879108429
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 4,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.7960691452026367,
+        0.7960691452026367
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 5,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8348438739776611,
+        0.8348438739776611
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 6,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.7962987422943115,
+        0.7962987422943115
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 7,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.9154117107391357,
+        0.9154117107391357
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 8,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8231282234191895,
+        0.8231282234191895
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 9,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8949533104896545,
+        0.8949533104896545
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 10,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.7819167971611023,
+        0.7819167971611023
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    }
+  ],
+  "zero_ownership_conflicts": true,
+  "finite_chooser_logits": true,
+  "kept_stability_by_compose_trial": {
+    "exploit": [
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      },
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      },
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      },
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      }
+    ],
+    "explore": [
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      },
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      },
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      },
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      }
+    ]
+  },
+  "start_norm_ranges": {
+    "xor": {
+      "forms": {
+        "n": 40,
+        "minimum": 0.8782686872708652,
+        "maximum": 1.5490574717276264,
+        "mean": 1.2996720997878952
+      },
+      "roots": {
+        "n": 40,
+        "minimum": 0.9999999227874775,
+        "maximum": 1.0000000614254343,
+        "mean": 0.9999999916269258
+      }
+    },
+    "sum": {
+      "forms": {
+        "n": 40,
+        "minimum": 1.009496678360923,
+        "maximum": 1.6049419129791045,
+        "mean": 1.3130200612959184
+      },
+      "roots": {
+        "n": 40,
+        "minimum": 1.0019863384168675,
+        "maximum": 1.4630255278846174,
+        "mean": 1.2574282249611837
+      }
+    }
+  },
+  "collection_delta": {
+    "added": [
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review22.md]",
+      "test/test_review13_subspaces.py::test_actual_serial_code_uses_fourteen_native_coordinates_and_no_context_bootstrap"
+    ],
+    "removed": [
+      "test/test_review13_subspaces.py::test_actual_serial_code_uses_six_native_coordinates_and_no_context_bootstrap"
+    ]
+  }
+}

@@ -93,18 +93,18 @@ def test_support_reports_exact_zeros_and_minimum_absolute_coordinate():
     assert report['minimum_nonzero_absolute_value'] == float(ps.W[4,1])
 
 
-def test_actual_serial_code_uses_six_native_coordinates_and_no_context_bootstrap():
+def test_actual_serial_code_uses_fourteen_native_coordinates_and_no_context_bootstrap():
     from test_mm_xor import _fresh_model
     model, _, _ = _fresh_model('data/XOR_grammar.xml')
     model.forward(model.inputSpace.prepInput(['hello world', 'hello there']))
     cb = model._concept_owner().similarity_codebook
-    assert cb.mereology.percept_width == 6
+    assert cb.mereology.percept_width == 14
     assert cb.mereology.context_width == 0
     assert not isinstance(cb.W, nn.Parameter) and list(cb.parameters()) == []
     rows = model.inputSpace._ar_grammar_object_rows
     atoms = model.inputSpace._ar_grammar_object_atoms
     torch.testing.assert_close(atoms[rows>=0], cb.lookup_rows(rows[rows>=0]))
-    assert not cb.lookup_rows(rows[rows>=0])[...,6:].any()
+    assert not cb.lookup_rows(rows[rows>=0])[...,14:].any()
     groups = model.objective_parameter_groups(model.getOptimizer(lr=.01))
     parameter = model.perceptualSpace.subspace.what.W
     assert any(p is parameter for p in groups['reconstruction'])

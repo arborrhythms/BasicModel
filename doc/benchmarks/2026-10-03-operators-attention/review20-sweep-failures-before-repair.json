@@ -1,0 +1,54 @@
+{
+  "status": "interrupted",
+  "completed": 4912,
+  "selected": 5203,
+  "failures": [
+    {
+      "nodeid": "test/test_inverse_unary_exclusion.py::test_serial_window_excludes_the_inverse_at_the_same_physical_slot",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0006494999979622662,
+      "message": "test/test_inverse_unary_exclusion.py:52: in test_serial_window_excludes_the_inverse_at_the_same_physical_slot\n    choice = LanguageSpace.choose_operation(owner, state, torch.tensor([True]), slots=2,\nbin/Language.py:12788: in choose_operation\n    magnitudes = torch.where(state[4] >= 0, state[5].abs(), buffer.norm(dim=-1))\n                             ^^^^^^^^\nE   IndexError: tuple index out of range",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[ConjunctionLayer-<lambda>]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0006092090043239295,
+      "message": "test/test_concept_binding_operators.py:16: in test_three_faces_bind_and_search_the_same_pair\n    torch.testing.assert_close(op(left, right), parent)\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 3 / 3 (100.0%)\nE   Greatest absolute difference: 0.1126599907875061 at index (0, 1) (up to 1e-05 allowed)\nE   Greatest relative difference: 0.21608076989650726 at index (0, 1) (up to 1.3e-06 allowed)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[DisjunctionLayer-<lambda>]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0005395000334829092,
+      "message": "test/test_concept_binding_operators.py:16: in test_three_faces_bind_and_search_the_same_pair\n    torch.testing.assert_close(op(left, right), parent)\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 3 / 3 (100.0%)\nE   Greatest absolute difference: 0.12189377844333649 at index (0, 2) (up to 1e-05 allowed)\nE   Greatest relative difference: 1.0586283206939697 at index (0, 2) (up to 1.3e-06 allowed)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_conjunction_same_reference_is_identity_but_equal_codes_are_distinct",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0003827079781331122,
+      "message": "test/test_concept_binding_operators.py:30: in test_conjunction_same_reference_is_identity_but_equal_codes_are_distinct\n    torch.testing.assert_close(op.compose(x,x), x)\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 3 / 3 (100.0%)\nE   Greatest absolute difference: 0.14270097017288208 at index (0, 1) (up to 1e-05 allowed)\nE   Greatest relative difference: 0.20385853946208954 at index (0, 0) (up to 1.3e-06 allowed)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_training_device.py::test_all_dispatches_explicit_device_marks_and_keeps_slow_proofs_on_cpu",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.8989554579602554,
+      "message": "test/test_training_device.py:55: in test_all_dispatches_explicit_device_marks_and_keeps_slow_proofs_on_cpu\n    assert result['exit_code'] == 0, result['reason']\nE   AssertionError: interrupted\nE   assert 143 == 0",
+      "stdout": "[collect] 3 selectors; limit 60s, 1.0 GiB\n[collect] exit 0; 0.0s; peak 0.04 GiB\n"
+    }
+  ],
+  "classification": {
+    "test/test_inverse_unary_exclusion.py::test_serial_window_excludes_the_inverse_at_the_same_physical_slot": "regression: minimal two-tensor state must remain supported",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[ConjunctionLayer-<lambda>]": "port: form-norm magnitude superseded by activation",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[DisjunctionLayer-<lambda>]": "port: form-norm magnitude superseded by activation",
+    "test/test_concept_binding_operators.py::test_conjunction_same_reference_is_identity_but_equal_codes_are_distinct": "port: form-norm magnitude superseded by activation",
+    "test/test_training_device.py::test_all_dispatches_explicit_device_marks_and_keeps_slow_proofs_on_cpu": "port: form-norm magnitude superseded by activation"
+  }
+}

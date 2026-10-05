@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_review13_subspaces.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

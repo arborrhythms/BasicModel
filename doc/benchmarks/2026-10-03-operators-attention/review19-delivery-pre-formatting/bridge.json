@@ -1,0 +1,40 @@
+{
+  "status": "\u00a719 held at failing sweep; no campaign; uncommitted and unpushed",
+  "candidate_commit": "eb1fbefb5f4a33a22cbb4a590cc0927d6a60761d",
+  "candidate_tag": "6.8-s16.3-candidate",
+  "parent_index": "160000 802abb1acc95e1bddc8cb237b13230a336681c49 0\tbasicmodel",
+  "production_change": "RadixLayer.insert default admitted-row initialization only: max-abs normalization and [0,1] clamp",
+  "source_files": 695,
+  "source_matches_full_sweep_and_norm_probe": true,
+  "new_test_ports": 0,
+  "changed_seed_calls": 0,
+  "assertions_bars_guards_xmls_unchanged": true,
+  "sweep_counts": {
+    "passed": 4907,
+    "skipped": 286,
+    "failed": 3,
+    "xfailed": 1
+  },
+  "full_sweep_green": false,
+  "gate_trainings": 0,
+  "gate_retries": 0,
+  "campaign_blocker": "The campaign requires a green complete sweep of the frozen source.",
+  "first_forward_norm_probe": {
+    "optimizer_steps": 0,
+    "training_runs": 0,
+    "form_l2_range": [
+      1.2414894104003906,
+      2.125800848007202
+    ],
+    "root_l2_range": [
+      0.5328657627105713,
+      0.9211941957473755
+    ]
+  },
+  "historical_files_unchanged": 20654,
+  "supplement_files": 185,
+  "source_zip_sha256": "3e80f357e42d484c2926955acfb038b941eeb4576a8ffcfbbcc11152f6688d05",
+  "supplement_zip_sha256": "c83cd41d9a4401310b6f4ef9955163237599ddc92b3cfa348f81856b6e357512",
+  "supplement_manifest_sha256": "04ddcc7faa0cdd30416b0632f68c609cf5aa980334a9dbbcf041460034511ba2",
+  "receipt_links_verified": 18
+}

@@ -1,0 +1,178 @@
+........EE..EE                                                           [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_normal_text_reconstruction_updates_the_grammar_chooser[tie] _
+
+request = <SubRequest 'review20_diagnostic' for <Function test_normal_text_reconstruction_updates_the_grammar_chooser[tie]>>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10d0f9850>
+
+    @pytest.fixture(autouse=True)
+    def review20_diagnostic(request,monkeypatch):
+        name=request.node.nodeid
+        if not any(x in name for x in ('test_normal_text_reconstruction_updates_the_grammar_chooser','test_small_inventory_pairs_words_without_allocating_letter_rows')):
+            yield;return
+        from Models import BaseModel
+        from Language import LanguageSpace
+        from Layers import Error,SparseLayer
+        from ObjectiveOwnership import registry_costs
+        report=dict(test=name,terms=[],decoder=[],allocations=[])
+        original=BaseModel._backward_training_loss
+        def backward(model,total_loss,*args,**kwargs):
+            sentence=bool(getattr(model,'_sentence_backward',False))
+            registry=model._sentence_cost_registry if sentence else model.errors
+            chooser=model.languageSpace._tree_layer(2).chooser
+            targets=[('compose.'+n,p) for n,p in chooser.named_parameters() if p.requires_grad]
+            targets += [('generate.'+n,p) for n,p in model.languageSpace.generate_policy.named_parameters() if p.requires_grad]
+            for term,rec in registry._terms.items():
+                one=Error(row_mask=registry.row_mask);one._terms={term:rec};one._disabled=registry._disabled
+                costs=registry_costs(one,reader_rows=getattr(model,'_sentence_reader_rows',None) if sentence else None)
+                for owner,value in costs.items():
+                    grads=(torch.autograd.grad(value,[p for _,p in targets],retain_graph=True,allow_unused=True) if value.requires_grad else [None]*len(targets))
+                    report['terms'].append(dict(sentence=sentence,trial=getattr(model,'_sentence_trial',None),term=term,owner=owner,value=serial(value),gradients={n:None if g is None else float(g.to_dense().norm()) for (n,_),g in zip(targets,grads)}))
+            return original(model,total_loss,*args,**kwargs)
+        monkeypatch.setattr(BaseModel,'_backward_training_loss',backward)
+        eligible=LanguageSpace.decoder_eligibility
+        def eligibility(parent,lefts,rights,available,*args,**kwargs):
+            value=eligible(parent,lefts,rights,available,*args,**kwargs)
+            report['decoder'].append(dict(legal=value,counts=value.sum(-1),parent_norms=parent.norm(dim=-1)))
+            return value
+        monkeypatch.setattr(LanguageSpace,'decoder_eligibility',staticmethod(eligibility))
+>       assign=SparseLayer.assign_row
+               ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'SparseLayer' has no attribute 'assign_row'
+
+doc/benchmarks/2026-10-03-operators-attention/review20_diagnose.py:43: AttributeError
+_ ERROR at setup of test_normal_text_reconstruction_updates_the_grammar_chooser[distinct] _
+
+request = <SubRequest 'review20_diagnostic' for <Function test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]>>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12e3e1190>
+
+    @pytest.fixture(autouse=True)
+    def review20_diagnostic(request,monkeypatch):
+        name=request.node.nodeid
+        if not any(x in name for x in ('test_normal_text_reconstruction_updates_the_grammar_chooser','test_small_inventory_pairs_words_without_allocating_letter_rows')):
+            yield;return
+        from Models import BaseModel
+        from Language import LanguageSpace
+        from Layers import Error,SparseLayer
+        from ObjectiveOwnership import registry_costs
+        report=dict(test=name,terms=[],decoder=[],allocations=[])
+        original=BaseModel._backward_training_loss
+        def backward(model,total_loss,*args,**kwargs):
+            sentence=bool(getattr(model,'_sentence_backward',False))
+            registry=model._sentence_cost_registry if sentence else model.errors
+            chooser=model.languageSpace._tree_layer(2).chooser
+            targets=[('compose.'+n,p) for n,p in chooser.named_parameters() if p.requires_grad]
+            targets += [('generate.'+n,p) for n,p in model.languageSpace.generate_policy.named_parameters() if p.requires_grad]
+            for term,rec in registry._terms.items():
+                one=Error(row_mask=registry.row_mask);one._terms={term:rec};one._disabled=registry._disabled
+                costs=registry_costs(one,reader_rows=getattr(model,'_sentence_reader_rows',None) if sentence else None)
+                for owner,value in costs.items():
+                    grads=(torch.autograd.grad(value,[p for _,p in targets],retain_graph=True,allow_unused=True) if value.requires_grad else [None]*len(targets))
+                    report['terms'].append(dict(sentence=sentence,trial=getattr(model,'_sentence_trial',None),term=term,owner=owner,value=serial(value),gradients={n:None if g is None else float(g.to_dense().norm()) for (n,_),g in zip(targets,grads)}))
+            return original(model,total_loss,*args,**kwargs)
+        monkeypatch.setattr(BaseModel,'_backward_training_loss',backward)
+        eligible=LanguageSpace.decoder_eligibility
+        def eligibility(parent,lefts,rights,available,*args,**kwargs):
+            value=eligible(parent,lefts,rights,available,*args,**kwargs)
+            report['decoder'].append(dict(legal=value,counts=value.sum(-1),parent_norms=parent.norm(dim=-1)))
+            return value
+        monkeypatch.setattr(LanguageSpace,'decoder_eligibility',staticmethod(eligibility))
+>       assign=SparseLayer.assign_row
+               ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'SparseLayer' has no attribute 'assign_row'
+
+doc/benchmarks/2026-10-03-operators-attention/review20_diagnose.py:43: AttributeError
+_ ERROR at setup of test_small_inventory_pairs_words_without_allocating_letter_rows[XOR_grammar-6] _
+
+request = <SubRequest 'review20_diagnostic' for <Function test_small_inventory_pairs_words_without_allocating_letter_rows[XOR_grammar-6]>>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12b2fbda0>
+
+    @pytest.fixture(autouse=True)
+    def review20_diagnostic(request,monkeypatch):
+        name=request.node.nodeid
+        if not any(x in name for x in ('test_normal_text_reconstruction_updates_the_grammar_chooser','test_small_inventory_pairs_words_without_allocating_letter_rows')):
+            yield;return
+        from Models import BaseModel
+        from Language import LanguageSpace
+        from Layers import Error,SparseLayer
+        from ObjectiveOwnership import registry_costs
+        report=dict(test=name,terms=[],decoder=[],allocations=[])
+        original=BaseModel._backward_training_loss
+        def backward(model,total_loss,*args,**kwargs):
+            sentence=bool(getattr(model,'_sentence_backward',False))
+            registry=model._sentence_cost_registry if sentence else model.errors
+            chooser=model.languageSpace._tree_layer(2).chooser
+            targets=[('compose.'+n,p) for n,p in chooser.named_parameters() if p.requires_grad]
+            targets += [('generate.'+n,p) for n,p in model.languageSpace.generate_policy.named_parameters() if p.requires_grad]
+            for term,rec in registry._terms.items():
+                one=Error(row_mask=registry.row_mask);one._terms={term:rec};one._disabled=registry._disabled
+                costs=registry_costs(one,reader_rows=getattr(model,'_sentence_reader_rows',None) if sentence else None)
+                for owner,value in costs.items():
+                    grads=(torch.autograd.grad(value,[p for _,p in targets],retain_graph=True,allow_unused=True) if value.requires_grad else [None]*len(targets))
+                    report['terms'].append(dict(sentence=sentence,trial=getattr(model,'_sentence_trial',None),term=term,owner=owner,value=serial(value),gradients={n:None if g is None else float(g.to_dense().norm()) for (n,_),g in zip(targets,grads)}))
+            return original(model,total_loss,*args,**kwargs)
+        monkeypatch.setattr(BaseModel,'_backward_training_loss',backward)
+        eligible=LanguageSpace.decoder_eligibility
+        def eligibility(parent,lefts,rights,available,*args,**kwargs):
+            value=eligible(parent,lefts,rights,available,*args,**kwargs)
+            report['decoder'].append(dict(legal=value,counts=value.sum(-1),parent_norms=parent.norm(dim=-1)))
+            return value
+        monkeypatch.setattr(LanguageSpace,'decoder_eligibility',staticmethod(eligibility))
+>       assign=SparseLayer.assign_row
+               ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'SparseLayer' has no attribute 'assign_row'
+
+doc/benchmarks/2026-10-03-operators-attention/review20_diagnose.py:43: AttributeError
+_ ERROR at setup of test_small_inventory_pairs_words_without_allocating_letter_rows[MM_grammar-8] _
+
+request = <SubRequest 'review20_diagnostic' for <Function test_small_inventory_pairs_words_without_allocating_letter_rows[MM_grammar-8]>>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12e4cd8b0>
+
+    @pytest.fixture(autouse=True)
+    def review20_diagnostic(request,monkeypatch):
+        name=request.node.nodeid
+        if not any(x in name for x in ('test_normal_text_reconstruction_updates_the_grammar_chooser','test_small_inventory_pairs_words_without_allocating_letter_rows')):
+            yield;return
+        from Models import BaseModel
+        from Language import LanguageSpace
+        from Layers import Error,SparseLayer
+        from ObjectiveOwnership import registry_costs
+        report=dict(test=name,terms=[],decoder=[],allocations=[])
+        original=BaseModel._backward_training_loss
+        def backward(model,total_loss,*args,**kwargs):
+            sentence=bool(getattr(model,'_sentence_backward',False))
+            registry=model._sentence_cost_registry if sentence else model.errors
+            chooser=model.languageSpace._tree_layer(2).chooser
+            targets=[('compose.'+n,p) for n,p in chooser.named_parameters() if p.requires_grad]
+            targets += [('generate.'+n,p) for n,p in model.languageSpace.generate_policy.named_parameters() if p.requires_grad]
+            for term,rec in registry._terms.items():
+                one=Error(row_mask=registry.row_mask);one._terms={term:rec};one._disabled=registry._disabled
+                costs=registry_costs(one,reader_rows=getattr(model,'_sentence_reader_rows',None) if sentence else None)
+                for owner,value in costs.items():
+                    grads=(torch.autograd.grad(value,[p for _,p in targets],retain_graph=True,allow_unused=True) if value.requires_grad else [None]*len(targets))
+                    report['terms'].append(dict(sentence=sentence,trial=getattr(model,'_sentence_trial',None),term=term,owner=owner,value=serial(value),gradients={n:None if g is None else float(g.to_dense().norm()) for (n,_),g in zip(targets,grads)}))
+            return original(model,total_loss,*args,**kwargs)
+        monkeypatch.setattr(BaseModel,'_backward_training_loss',backward)
+        eligible=LanguageSpace.decoder_eligibility
+        def eligibility(parent,lefts,rights,available,*args,**kwargs):
+            value=eligible(parent,lefts,rights,available,*args,**kwargs)
+            report['decoder'].append(dict(legal=value,counts=value.sum(-1),parent_norms=parent.norm(dim=-1)))
+            return value
+        monkeypatch.setattr(LanguageSpace,'decoder_eligibility',staticmethod(eligibility))
+>       assign=SparseLayer.assign_row
+               ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: type object 'SparseLayer' has no attribute 'assign_row'
+
+doc/benchmarks/2026-10-03-operators-attention/review20_diagnose.py:43: AttributeError
+=============================== warnings summary ===============================
+test/test_review14_addendum.py::test_native_part_evidence_does_not_allocate_concepts
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]
+ERROR test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]
+ERROR test/test_review14_addendum.py::test_small_inventory_pairs_words_without_allocating_letter_rows[XOR_grammar-6]
+ERROR test/test_review14_addendum.py::test_small_inventory_pairs_words_without_allocating_letter_rows[MM_grammar-8]
+10 passed, 1 warning, 4 errors in 2.35s

@@ -1822,3 +1822,311 @@ round) and `R` (eligible rounds in the sentence) so the surrogate equals the
 baseline-subtracted policy gradient exactly; a normalization, not a tuning.
 
 Then §16.4 items 9–12 as sequenced, the green sweep, the one measurement.
+
+*Mid-sweep, §16.4 (2026-10-05).* One failure:
+`test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_only_byte_cost`,
+whose set assertion (`reconstruction.*` terms == `{free_bytes}`) meets the new
+`reconstruction.decomposition` term. Rule made explicit: the trial cost used
+by the keep rule and by the forward chooser's `ΔC` is `free_bytes` only (6.9
+§22–§23); the decomposition cross-entropy is a reconstruction-owned training
+term outside the trial cost, computed after the free decode from the recorded
+composition (the journal supervises, it is not read to decode). Including it
+in `ΔC` would credit the forward chooser for the inverse chooser's confidence.
+The test is ported to assert both.
+
+## 18. Review of the §17 measurement (Claude, 2026-10-05)
+
+Receipt: `doc/benchmarks/2026-10-03-operators-attention/README.md` (review17).
+Committed candidate `eb1fbefb5` (tag `6.8-s16.3-candidate`); §17 work
+uncommitted, nothing pushed.
+
+| Gate | §14 | §17 |
+|---|---:|---:|
+| XOR class | 1/10 | 1/10 (7 at ¼, 2 between, 1 at 0) |
+| XOR reconstruction | 8/10 | **10/10** |
+| MM_xor / sum | 10/10 / 10/10 | 10/10 / 10/10 |
+| sweep | 74 failed | **4,908 passed, 0 failed** |
+
+Delivered and verified: forms with zero coordinate change in all ten runs;
+80/80 read-backs decided by code; the score-function chooser (37 nonzero
+advantages in 1,600 departures; gradient = `K·R·ΔC·∇p` to 2e-10); the
+decomposition chooser from the argmin init to learned weights (fit 2.46,
+activation ±4.3, priming 1.8), ordered pick 2/4 → 4/4; zero sentence-path
+gradient at perception; zero conflicts. Nothing lower than §14.
+
+### 18.1 Class: the knob, finally
+
+The letter codes the derivation composes are
+`perceptualSpace._percept_store.byte_fallback.byte_codebook`, a fixed table
+(no writer) with entries ±.015 (row norm .047; read from a fresh
+XOR_grammar model). After the cube clamp the forms have norm ≈ .05, a
+conjunction root ≈ .003, and the four roots differ by ≈ .002: fitting 0/1
+labels needs reader weights of order 500 (best reached: 27). Runs 1, 3, 10:
+all four answers right in sign, MSE .244–.248, outputs within .03 of ½. The
+runs that escaped did so by an operator-mix artifact (disjunction roots at
+.13 against conjunction's .003). The percept what-basis
+`perceptualSpace._owned_bases.what.W` sits at full scale (entries to 1, row
+norm 1.7) and is not what forms are built from. "Codes at full presence"
+(§15.3) was decided and not realized: `d = 1` selects, but the parts were
+seeded near nothing. My two earlier attributions (`embeddingScale`; the
+evidence weights) were wrong; this is the knob.
+
+**Fix (one initialization, no tuning):** the byte-fallback percept codes are
+initialized as presences spanning the cube by the what-basis rule (per-row
+max-abs normalization, then the cube clamp). Reconstruction is scale-free and
+unaffected; roots become O(1), differences O(.1), reader weights of order 5.
+Runs with low XOR interaction (4, 6; cos(L) ≈ .94) may still sit at ¼: the
+join's dominance in six coordinates, the operators update's.
+
+### 18.2 Disposition
+
+One more round rather than acceptance with class red: the cause is measured,
+the fix is a line, the campaign sixteen minutes. If the reader fits with
+full-presence codes, 6.8 is accepted on that receipt. Codex: the init change
+only; form and root norms at start in the receipt; green sweep; the same
+thirty trainings; stop before commit.
+
+*Code review of the §17 tree (Claude, 2026-10-05).* Surrogate: advantage
+`C_explore − C_greedy`, `p` at the departure slot, ties excluded, `K·R` from
+the alternative counts (K excludes the greedy) and eligible rounds, costs
+detached, registered after the comparison so the keep rule and ΔC stay
+byte-cost only. Decomposition chooser: init `[1,0,0,0,0]` reproduces the
+argmin; features detached; hard pick returned detached; cross-entropy toward
+the ordered true pair, absent targets counted; teacher loss replays the
+program with resolved physical rows, skips unaries/case search, enters the
+owner step after the comparison for both trials; parameters in SymbolSpace's
+explicit params. Notes: the `activation` features are projection coefficients
+(fits), not field activations (those are the bank weights = `priming`); the
+teacher loss is an eager host island (item 1); the byte-codebook init
+(randn → max-abs → clamp(0,1)) is the what-basis rule. Alec's hypothesis
+(readers confined to conceptual space) checked: no reader reads the complement
+alone; in the gates the form is the whole content (Architecture updated).
+
+## 19. Review of the §18 measurement (Claude, 2026-10-05)
+
+Receipt: `doc/benchmarks/2026-10-03-operators-attention/README.md` (review18).
+Sweep green (4,909 passed, 0 failed); reconstruction 10/10; MM_xor 10/10;
+sum 10/10; class **0/10**, all at ¼; forms still ~.06, roots .003–.14. The
+byte-fallback init was made and did not matter: the gate's forms do not read
+that table. `ensure_atomic_bytes()` admits each letter through
+`RadixLayer.insert()`, which overwrites the admitted what-basis row with
+`normal_(0, .02)`; `MereologicalCodes._native(0)` reads those admitted rows.
+Codex's static trace, corroborated by the measured norms. §18.1's attribution
+was wrong (the third wrong attribution of this cause: `embeddingScale`, the
+evidence weights, the fallback table); the admission reinitialization is the
+knob. Recommendation: one more round, admitted percept rows initialized as
+full-presence codes by the what-basis rule in place of `std=.02`, no other
+change, the same sweep and thirty trainings; then acceptance. Acceptance with
+class red is defensible under §12.1 if Alec prefers to move now. Next after
+6.8: the operators update (its list from these rounds), then 6.5, per the
+decided order, unless reordered.
+
+## 20. Review of the §19 hold (Claude, 2026-10-05)
+
+Receipt: `doc/benchmarks/2026-10-03-operators-attention/README.md` (review19,
+held at the sweep). The admission initializer (`RadixLayer.insert()`:
+`normal_(0, .02)` → Gaussian row / max-abs, clamped to [0, 1]) is in and
+verified; forms now 1.24–2.13 in norm, roots .53–.92. Sweep: 4,907 passed,
+3 failed; campaign not run (guard). The three failures are scale-latent
+behaviours, to be diagnosed before any port:
+
+1. `test_normal_text_reconstruction_updates_the_grammar_chooser[tie]`: with
+   equal costs the score-function term is zero, yet `mlp.*` and
+   `tool_embedding` move. Read the per-objective gradient at those
+   parameters. A declared reconstruction-owned local objective (item 8's
+   structural preference; the reading lesson) means the test isolates the
+   score-function term; a pathwise path from the byte loss or the walk into
+   the compose chooser contradicts §16.3 and is detached.
+2. `[distinct]`: the generate policy does not move. If every first step in
+   the fixture now has one legal action, the policy has no gradient by
+   design; the assertion holds only where a choice existed, or the fixture
+   supplies one. Confirm first.
+3. `test_small_inventory_pairs_words_without_allocating_letter_rows[MM_grammar-8]`:
+   row 4 beyond the four words. A letter row is a regression of the §14
+   addendum; a promoted chunk means chunk promotion depends on code scale and
+   becomes scale-free; the expectation stays.
+
+**A fourth, from the root norms.** `hello world` .86 ≈ 1.33 + 1.41 −
+1.33·1.41; `loving world` .53 ≈ 2.13 + 1.41 − 3.0: the disjunction's
+magnitude algebra `a + b − ab` is fed the forms' L2 norms, now > 1, where it
+is non-monotone (a denser word, a smaller root) and negative past norm 2
+(direction flipped); the conjunction's `‖x‖‖y‖` likewise leaks form length
+into magnitude. The kernels read the code's norm as certainty, the reading
+retired 2026-10-04. **Proposed:** the operands' magnitude in the kernels is
+their activation (1 for a present word), the codes entering as directions;
+roots then carry unit certainty and identity in direction. For this round if
+Alec agrees (he said "no other change" for §19); otherwise the operators
+update's, with the gate read on a magnitude algebra outside its domain noted.
+
+## 21. Diagnoses of the §19 sweep failures (Claude, 2026-10-05; probes, no edits)
+
+All three are scale-latent: paths or rules that were numerically invisible at
+`.02` and are visible at full presence. None is a port of an assertion about
+the old magnitude.
+
+### 21.1 `[tie]`: the compose chooser moves without a cost difference
+
+Verified: with the two costs forced equal, every registered cost's direct
+gradient on `mlp.*` and `tool_embedding` is zero, yet `p.grad` at the first
+owner step is ~8e-4 and the parameters move (the second step's movement is
+SGD momentum). The gradient arrives through the **perception pullback**:
+`fork_perception` detaches the per-word cache into leaves and, on backward,
+pushes the byte cost's cotangent at those leaves back through the perception
+graph. The perception cache depends on the compose chooser's parameters
+(measured: `∂cache/∂mlp.0.weight` max .53, `∂cache/∂tool_embedding` .18),
+because the input-attention walk scores its bracket actions with the **same
+chooser** (`attend`: "Field locations in this same chooser", `score_unary`
+with the bracket anchor), and the attention's value enters the leaves through
+a straight-through. So the chooser has two writers: the score-function term
+(compose) and a pathwise gradient (attention via the pullback). At `.02` the
+pathwise gradient existed but its update fell below float32 resolution, which
+is why §16.3's test passed. This contradicts §16.3's "no pathwise chooser
+gradient" and the receipts' audit, which checked prototypes and evidence, not
+the chooser.
+
+**Resolution (decision for Alec):** the attention walk already runs exploit
+and explore trials with costed comparisons (`attention.input` 1600/1600
+explorable); give it the same score-function estimator as compose (its
+departure's probability, the greedy cost as baseline, `K·R`), and remove the
+straight-through on the attention value, so every hard choice of the shared
+chooser trains by one estimator. Alternative: separate parameters for the
+attention and compose roles. Not acceptable: leaving the mixed estimators and
+porting the test.
+
+### 21.2 `[distinct]`: the generate policy does not move
+
+Verified: the policy's gradient is exactly zero at both steps, and the byte
+cost is not saturated (.98 and 1.21 of a 5.5 baseline). The reconstruction
+decoder **took no action at all** in row 0 and a single STOP in row 1
+(`_last_decoder_trace` actions all −1 otherwise). Eligibility internals at
+the root: the one-code residual `best` is .0065 (row 0) and .0074 (row 1);
+every binary operation's pair error is larger (.014–.20 and .0020–.076), so
+no pair is legal (`pair_error <= best` fails), and the parent is not singular
+(it is a compound), so STOP is illegal: **no legal action, the walk stalls**.
+`best` is small because the bank's codes are now large and a compound root
+projects well onto one of them; the pair errors are large because the pair
+search's hard pick is recomposed with `op.compose(left, right)` while the
+forward used the operator's grammar-context face, and at full presence that
+difference is no longer negligible. At `.02` both quantities were tiny and
+the comparison went the other way. The §11.6 rule compares two absolute
+residuals of different kinds; at full presence it has no legal move.
+
+**Resolution:** two things to fix, both structural. (a) The eligibility
+comparison is relative: pair error and one-code residual divided by the
+parent's mean square, as the pair search already does. (b) The recomposition
+in `decoder_eligibility` must use the same forward face the composition
+used, or the pair search's own residual (already computed against the
+parent), so that the true pair's error is zero as it is in the search. Then
+the policy's assertion is read where a choice existed (it may still be
+forced on this fixture, which is a port after (a) and (b), not before).
+
+### 21.3 MM_grammar's row 4
+
+Verified: row 4's key is `('pool', 9)`, a concept whose records are
+`part ('sym', 4)`, `part ('sym', 2)`, `part ('sym', 8)` (the symbols of
+`world`, `hello`, `loving`), reference order 1, no surface: a **pooled set
+minted from co-activating word symbols** (the sigma pool), not a letter row.
+The §14 addendum holds (no letter allocation). Whether the pool should mint
+here depends on a co-activation rule that is evidently sensitive to code
+scale (the same four sentences did not mint it at `.02`). The expectation
+"exactly the four word rows" stays; the pool's minting rule becomes
+scale-free (relative), or its minting in a two-sentence forward is examined
+as the behaviour it is. Diagnosis for Codex: find the pool's minting
+condition and state what it compared.
+
+### 21.4 The fourth item stands
+
+The kernels' magnitude from the code norm (§20): with forms at 1.2–2.1 the
+disjunction's `a + b − ab` is non-monotone and the conjunction's `‖x‖‖y‖`
+leaks form length; magnitude from the activation, codes as directions.
+
+## 22. Review of the §20 round, and §21 compared with Codex's diagnoses (Claude, 2026-10-05)
+
+Receipt: `doc/benchmarks/2026-10-03-operators-attention/README.md` (review20).
+Sweep green (4,916 passed, 0 failed); sum 10/10; MM_xor 10/10; **class 2/10
+(5 between, 3 at ¼)**, up from 0–1/10, reader norms 2.7–6.4, MSE .007 and
+5e-7 in the passes; **reconstruction 8/10**, down from 10/10. Kernels now take
+magnitude from the activation (`a·b·unit(u∘v)`, `(a+b−ab)·unit(u+v−u∘v)`);
+roots at norm 1.
+
+**§21 against Codex.** Tie: same cause (attention's straight-through credit →
+cached perception → pullback → shared chooser); Codex detached attention's
+credit at the sentence handoff and kept the assertion, which is correct and
+leaves the attention chooser untrained (moot in the gates: explore kept
+0/1600); my attention score-function estimator is the open decision. Distinct:
+**Codex right, §21.2 wrong**: every live step had one legal action (STOP in
+row 0, since the compound root read as singular, one undo in row 1), not
+none; the softmax derivative is exactly zero and the port (movement iff a live
+choice existed) is right; dividing both residuals by the same parent changes
+nothing. Row 4: Codex more precise: `ClauseTaxonomyPlan` minted `('pool', 9)`
+because the untrained grammar chose a `part` relation; no threshold; my
+"scale-sensitive minting rule" was a guess; the object (a pool over word
+symbols, not a letter) was right; the port is right.
+
+**The reconstruction regression.** Run 3's saved forms: `world` and `loving`
+identical to the coordinate, `[.617, .771, 1.0, .543, .589, 1.0]`: the
+max-abs initializer gives every letter an exact 1.0, the join saturates on the
+shared letters' coordinates, and `l`, `o` dominate all six in both words. Run
+6's wrong pairs are the same geometry short of identity (cosines .87–.94).
+§14.3's lossiness of the join, frequent at full presence in six coordinates.
+
+**Proposed last round:** admitted rows initialized by unit L2 norm then the
+cube clamp (no exact 1.0, continuous joins) in place of max-abs; the two
+grammar gates' content band widened (nDim 14 → 22, fourteen content
+coordinates), the capacity argument of 10 → 14; MM_xor unchanged; attention's
+estimator per Alec; then the sweep and the thirty trainings. Expected:
+reconstruction 10/10, class a majority at 0.
+
+*Decided (Alec, 2026-10-05; to be reviewed in full later).* The attention
+chooser's estimator waits for the operators update: attention's credit stays
+detached at the sentence handoff (Codex's §20 repair), and the attention walk
+trains nothing until the update gives it the score-function term. The two
+declared changes for the last round stand: admitted percept rows initialized
+by unit L2 norm then the cube clamp (in place of max-abs, whose exact 1.0s
+saturated the join), and the two grammar gates' content band widened, nDim 14
+→ 22 (fourteen content coordinates), MM_xor unchanged. Then the sweep and the
+thirty trainings; acceptance read on that receipt.
+
+## 23. Review of the §22 measurement: acceptance (Claude, 2026-10-05)
+
+Receipt: `doc/benchmarks/2026-10-03-operators-attention/README.md` (review22).
+
+| Gate | §20 | §22 |
+|---|---:|---:|
+| XOR class | 2/10 | 7/10 (7 at 0, 2 at ¼, 1 between) |
+| XOR reconstruction | 8/10 | 9/10 |
+| joint | 2/10 | 6/10 |
+| MM_xor / sum | 10/10 / 10/10 | 10/10 / 10/10 |
+| sweep | green | green (4,917 passed, 0 failed) |
+
+Both declared changes did their work: forms .88–1.55 in norm with no exact
+1.0s, zero form collisions in all ten runs, roots at norm 1, codes with zero
+displacement, zero sentence-path gradient at perception, zero conflicts,
+gradient checks at 1e-9; both choosers train.
+
+**Class, by §20.5.** Every run ending on the conjunction ended at 0 (7/7);
+the three others ended on the disjunction, whose XOR interaction decayed as
+the chooser moved to it (.26 → .03, .24 → .05, .14 → .02): with activations
+1 the probabilistic sum's magnitude is 1 and its only nonlinearity is the
+`−u∘v` term in the direction, small against `u + v` for dense unit codes, so
+the roots approach a parallelogram and the affine floor is ¼. Two at ¼ are
+that floor; one "between" is mid-descent. The chooser is reconstruction's,
+free to prefer the disjunction; the gate reads as §20.5 wrote.
+
+**Reconstruction 9/10.** Run 10, "hello there → hello hello": no collision;
+the decomposition chooser's context weights (±2.2 on the activation features)
+outweighed the fit for that root after cross-entropy on four sentences for 400
+epochs; the argmin would have been right (§17–§18: 10/10 without the
+chooser). Remedy for the operators update: an exactly recomposing pair is
+taken before context has a say; feature standardization for the activation
+terms.
+
+**Accepted (recommended).** No regression against the 6.9 closing record;
+sweep green; the composition mechanism gate reads as its criteria say.
+Carried to the operators update: the attention chooser's estimator; the
+decomposition chooser's exact-fit precedence and feature standardization; the
+fold composing forms; Kleene connectives; the complement's bootstrap; the
+`not` items; the negative image on the concept face; form density. To item 1:
+the 2.6× open-read cost; the teacher loss's host island. On Alec's word:
+Codex commits the §17–§22 work on `basicmodel` `main` as the accepted 6.8
+landing, pushes both commits, and the WikiOracle submodule bump follows.

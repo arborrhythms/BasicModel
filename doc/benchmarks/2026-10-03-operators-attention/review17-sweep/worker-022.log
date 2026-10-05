@@ -1,0 +1,298 @@
+.............................sssss.................................s..ss [ 59%]
+ssssssssss.........FFFFFFFF.......................                       [100%]
+=================================== FAILURES ===================================
+___ test_supported_compound_cannot_stop_even_with_a_chunk_code[False-False] ____
+test/test_review11_contracts.py:64: in test_supported_compound_cannot_stop_even_with_a_chunk_code
+    out, count, truncated, _, actions = fn(
+bin/Models.py:13037: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+bin/Models.py:380: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:12970: in body
+    left, right, missing = language.reverse_binary_step(
+bin/Language.py:13433: in reverse_binary_step
+    pair = apply(operands, sides, selected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13419: in apply
+    a, b, available = self._reverse_of_binary_op(
+bin/Language.py:13467: in _reverse_of_binary_op
+    chooser=self.decomposition_chooser)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'decomposition_chooser'
+____ test_supported_compound_cannot_stop_even_with_a_chunk_code[False-True] ____
+test/test_review11_contracts.py:64: in test_supported_compound_cannot_stop_even_with_a_chunk_code
+    out, count, truncated, _, actions = fn(
+bin/Models.py:13037: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+bin/Models.py:380: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:12970: in body
+    left, right, missing = language.reverse_binary_step(
+bin/Language.py:13433: in reverse_binary_step
+    pair = apply(operands, sides, selected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13419: in apply
+    a, b, available = self._reverse_of_binary_op(
+bin/Language.py:13467: in _reverse_of_binary_op
+    chooser=self.decomposition_chooser)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'decomposition_chooser'
+____ test_supported_compound_cannot_stop_even_with_a_chunk_code[True-False] ____
+test/test_review11_contracts.py:64: in test_supported_compound_cannot_stop_even_with_a_chunk_code
+    out, count, truncated, _, actions = fn(
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.UncapturedHigherOrderOpError: This higher order operator doesn't work unless it is captured completely with torch.compile. Got graph break/error:
+E   
+E   raised exception AttributeError("'SimpleNamespace' object has no attribute 'decomposition_chooser'")
+E     Higher Order Operator: torch.cond
+E   
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13037, in _output_generate_walk
+E       _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+E                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 378, in _reconstruction_while_loop
+E       return torch.while_loop(condition, body, values)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+E       return func(*args, **kwargs)
+E              ^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12970, in body
+E       left, right, missing = language.reverse_binary_step(
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13427, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13419, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13467, in _reverse_of_binary_op
+E       chooser=self.decomposition_chooser)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+____ test_supported_compound_cannot_stop_even_with_a_chunk_code[True-True] _____
+test/test_review11_contracts.py:64: in test_supported_compound_cannot_stop_even_with_a_chunk_code
+    out, count, truncated, _, actions = fn(
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.UncapturedHigherOrderOpError: This higher order operator doesn't work unless it is captured completely with torch.compile. Got graph break/error:
+E   
+E   raised exception AttributeError("'SimpleNamespace' object has no attribute 'decomposition_chooser'")
+E     Higher Order Operator: torch.cond
+E   
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13037, in _output_generate_walk
+E       _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+E                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 378, in _reconstruction_while_loop
+E       return torch.while_loop(condition, body, values)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+E       return func(*args, **kwargs)
+E              ^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12970, in body
+E       left, right, missing = language.reverse_binary_step(
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13427, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13419, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13467, in _reverse_of_binary_op
+E       chooser=self.decomposition_chooser)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+___________ test_single_symbol_cannot_be_split_by_a_large_undo_logit ___________
+test/test_review11_contracts.py:80: in test_single_symbol_cannot_be_split_by_a_large_undo_logit
+    out, count, truncated, _, actions = model._output_generate_walk(
+bin/Models.py:13037: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+bin/Models.py:380: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:12970: in body
+    left, right, missing = language.reverse_binary_step(
+bin/Language.py:13433: in reverse_binary_step
+    pair = apply(operands, sides, selected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13419: in apply
+    a, b, available = self._reverse_of_binary_op(
+bin/Language.py:13467: in _reverse_of_binary_op
+    chooser=self.decomposition_chooser)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'decomposition_chooser'
+________ test_no_shortlist_support_is_unavailable_not_a_pseudo_terminal ________
+test/test_review11_contracts.py:93: in test_no_shortlist_support_is_unavailable_not_a_pseudo_terminal
+    out, count, truncated, _, actions = model._output_generate_walk(
+bin/Models.py:13037: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+bin/Models.py:380: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:12970: in body
+    left, right, missing = language.reverse_binary_step(
+bin/Language.py:13433: in reverse_binary_step
+    pair = apply(operands, sides, selected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13419: in apply
+    a, b, available = self._reverse_of_binary_op(
+bin/Language.py:13467: in _reverse_of_binary_op
+    chooser=self.decomposition_chooser)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'decomposition_chooser'
+___________ test_capacity_does_not_make_stop_eligible_for_a_compound ___________
+test/test_review11_contracts.py:107: in test_capacity_does_not_make_stop_eligible_for_a_compound
+    out, count, truncated, _, actions = model._output_generate_walk(
+bin/Models.py:13037: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+bin/Models.py:380: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:12970: in body
+    left, right, missing = language.reverse_binary_step(
+bin/Language.py:13433: in reverse_binary_step
+    pair = apply(operands, sides, selected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13419: in apply
+    a, b, available = self._reverse_of_binary_op(
+bin/Language.py:13467: in _reverse_of_binary_op
+    chooser=self.decomposition_chooser)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'decomposition_chooser'
+____________ test_policy_still_learns_between_supported_operations _____________
+test/test_review11_contracts.py:131: in test_policy_still_learns_between_supported_operations
+    out, count, truncated, _, actions, alternatives = model._output_generate_walk(
+bin/Models.py:13037: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+bin/Models.py:380: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:12970: in body
+    left, right, missing = language.reverse_binary_step(
+bin/Language.py:13433: in reverse_binary_step
+    pair = apply(operands, sides, selected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13419: in apply
+    a, b, available = self._reverse_of_binary_op(
+bin/Language.py:13467: in _reverse_of_binary_op
+    chooser=self.decomposition_chooser)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'decomposition_chooser'
+=============================== warnings summary ===============================
+test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[False-False]
+FAILED test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[False-True]
+FAILED test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[True-False]
+FAILED test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[True-True]
+FAILED test/test_review11_contracts.py::test_single_symbol_cannot_be_split_by_a_large_undo_logit
+FAILED test/test_review11_contracts.py::test_no_shortlist_support_is_unavailable_not_a_pseudo_terminal
+FAILED test/test_review11_contracts.py::test_capacity_does_not_make_stop_eligible_for_a_compound
+FAILED test/test_review11_contracts.py::test_policy_still_learns_between_supported_operations
+8 failed, 96 passed, 18 skipped, 2 warnings in 177.51s (0:02:57)

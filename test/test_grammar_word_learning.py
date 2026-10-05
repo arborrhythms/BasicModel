@@ -171,6 +171,16 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
     before = {name: value.detach().clone() for name, value in chooser.named_parameters()}
     generator = model.languageSpace.generate_policy
     generate_before = [p.detach().clone() for p in generator.parameters()]
+    # A masked one-action policy has exactly zero softmax derivative. Count
+    # choices on live values only; padding rows can expose unused unaries.
+    from Language import LanguageSpace
+    eligibility = LanguageSpace.decoder_eligibility
+    live_choices = []
+    def observe_eligibility(parent, *args, **kwargs):
+        legal = eligibility(parent, *args, **kwargs)
+        live_choices.append(bool((parent.ne(0).any(-1) & legal.sum(-1).gt(1)).any()))
+        return legal
+    monkeypatch.setattr(LanguageSpace, 'decoder_eligibility', staticmethod(observe_eligibility))
     optimizer = model.getOptimizer(lr=1e-3)
     words = ["a b c d e", "f g h i j"]
     inputs = model.inputSpace.prepInput(words)
@@ -193,7 +203,7 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
         monkeypatch.setattr(BasicModel, '_compose_score_function_loss', constructed_costs)
         receipt = _ROOT / 'doc/benchmarks/2026-10-03-operators-attention'
         monkeypatch.syspath_prepend(str(receipt))
-        from review16_score_probe import observe_score_function
+        from review17_score_probe import observe_score_function
         audit = {}
         with observe_score_function(audit), capture_readings(model) as readings:
             result, _ = model.runBatch(
@@ -226,7 +236,9 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
         assert model.ownership_gradient_diagnostics(optimizer)['conflicts'] == 0
         assert any(step["operation"] == "generate:grammar"
                    for step in model._last_answer_construction.trace)
-        assert any(not torch.equal(old, new) for old, new in zip(generate_before, generator.parameters()))
+        generator_changed = any(not torch.equal(old, new)
+                                for old, new in zip(generate_before, generator.parameters()))
+        assert generator_changed == any(live_choices)
         ids={id(p) for p in model.objective_parameter_groups(optimizer)['reconstruction']}
         assert all(id(p) in ids for p in generator.parameters())
     finally:

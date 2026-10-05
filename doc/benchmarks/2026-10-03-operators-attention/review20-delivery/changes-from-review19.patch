@@ -1,0 +1,429 @@
+--- review19/bin/Language.py
++++ review20/bin/Language.py
+@@ -4148,13 +4148,13 @@
+         value = (a + b) * .5
+         return torch.cat((value, value), -1)
+ 
+-    def forward(self, left, right=None):
+-        return self._butterfly_forward(left) if self.butterfly else self.kernel(left, right)
+-
+-    def compose(self, left, right):
++    def forward(self, left, right=None, **activation):
++        return self._butterfly_forward(left) if self.butterfly else self.kernel(left, right, **activation)
++
++    def compose(self, left, right, **activation):
+         if self.butterfly:
+             return self._butterfly_forward(torch.cat((left, right), -2))
+-        return self.kernel(left, right)
++        return self.kernel(left, right, **activation)
+ 
+     def reverse(self, parent, basis=None, left_rows=None, right_rows=None,
+                 left_priming=None, right_priming=None, snap=False):
+@@ -4193,7 +4193,8 @@
+ 
+ 
+ class ConjunctionLayer(_SearchedBinaryLayer):
+-    """Product binding: ||x|| ||y|| unit(x*y); a repeated reference is itself."""
++    """Product of activations times the bound identity direction."""
++    uses_operand_activation = True
+     field_eligible = True
+     rule_name = 'conjunction'
+     predicate_identity = 'conjunction'
+@@ -4202,10 +4203,11 @@
+ 
+ 
+ class DisjunctionLayer(_SearchedBinaryLayer):
+-    """Probabilistic sum: (||x||+||y||-||x||||y||) unit(x+y-x*y).
++    """Probabilistic sum of activations, with combined unit code directions.
+ 
+     Its free inverse searches both operands through this same kernel.
+     """
++    uses_operand_activation = True
+     field_eligible = False
+     rule_name = 'disjunction'
+     predicate_identity = 'disjunction'
+@@ -7276,7 +7278,7 @@
+                 masked_action=None, cat_ctx=None, what_ctx=None, op_prior=None,
+                 grammar_context=None, replay_action=None, allowance=None,
+                 rounds_left=None, load_depth=None, reference_data=None,
+-                previous_unary=None, stop_exact=None):
++                previous_unary=None, stop_exact=None, operand_activations=None):
+         B, N, D = x.shape
+         if N < 1:
+             raise ValueError("compose needs a nonempty static slab")
+@@ -7291,7 +7293,7 @@
+                 grammar_op = getattr(op, 'gl', op)
+                 if hasattr(grammar_op, 'set_bind_context'):
+                     grammar_op.set_bind_context(slab=x)
+-        binary = self._stacked_reduced(x, grammar_context, reference_data)
++        binary = self._stacked_reduced(x, grammar_context, reference_data, operand_activations)
+         unary = self._stacked_applied(x, grammar_context, reference_data)
+         content = x[..., :self.d_model]
+         what_ctx = getattr(self, '_what_context', None) if what_ctx is None else what_ctx
+@@ -7496,7 +7498,7 @@
+             return None
+         return torch.stack(priors, dim=-1)
+ 
+-    def _stacked_reduced(self, x, grammar_context=None, reference_data=None):
++    def _stacked_reduced(self, x, grammar_context=None, reference_data=None, activations=None):
+         """Candidate operators consume their own resolved operands."""
+         if x.shape[1] < 2 or not self.r_reduce:
+             return x.new_zeros(x.shape[0], max(0, x.shape[1] - 1), self.r_reduce, x.shape[-1])
+@@ -7516,7 +7518,15 @@
+                     reference_data['case_bank'].codes,
+                     reference_data['case_weights'][:, :, i],
+                     reference_data['binary_valid'][:, :, i]))
+-            value = (op.forward_with_grammar_context(left, right, x, context=selected_context)
++            implementation = getattr(op, 'gl', op)
++            if getattr(implementation, 'uses_operand_activation', False):
++                if selected_context is not None:
++                    _structural_face_phase(implementation, (left, right), context=selected_context, phase='compose')
++                value = implementation.compose(left, right,
++                    left_activation=None if activations is None else activations[:, :-1],
++                    right_activation=None if activations is None else activations[:, 1:])
++            else:
++                value = (op.forward_with_grammar_context(left, right, x, context=selected_context)
+                           if grammar_context is not None and hasattr(op, 'forward_with_grammar_context')
+                           else op.forward_with_context(left, right, x) if hasattr(op, 'forward_with_context')
+                           else op(left, right))
+@@ -7524,7 +7534,9 @@
+                     and getattr(getattr(op, 'gl', op), 'same_reference_idempotent', False)):
+                 refs = reference_data['binary_refs'][:, :, i]
+                 same = (refs[..., 0] == refs[..., 1]) & (refs[..., 0] != -1) & (refs[..., 0] != 0)
+-                value = torch.where(same[..., None], left, value)
++                repeated = (Ops._presence(left, None if activations is None else activations[:, :-1])
++                            * Ops._code_direction(left))
++                value = torch.where(same[..., None], repeated, value)
+             result.append(value)
+         return torch.stack(result, 2)
+ 
+@@ -12770,6 +12782,13 @@
+         window_depth = depth.clamp(0, n)
+         source = (window_depth[:, None] - 1 - torch.arange(n, device=buffer.device)[None, :]).clamp_min(0)
+         window = buffer.gather(1, source[..., None].expand(B, n, D))
++        # Native leaves carry their projection coefficient separately from
++        # their full-presence form. A composed kernel result already encodes
++        # its activation as its norm, with identity in its unit direction.
++        window_activations = None
++        if len(state) >= 6:
++            magnitudes = torch.where(state[4] >= 0, state[5].abs(), buffer.norm(dim=-1))
++            window_activations = magnitudes.gather(1, source)
+         # STOP tests the whole sentence/STM depth, not the two-slot window.
+         limit = torch.as_tensor(slots, device=buffer.device)
+         stop_slots = torch.where(depth <= limit, n, 0)
+@@ -12812,6 +12831,7 @@
+             replay_action=replay_action, allowance=slots if allowance is None else allowance,
+             rounds_left=rounds_left, load_depth=depth,
+             stop_exact=stop_exact,
++            operand_activations=window_activations,
+             previous_unary=(None if previous_unary is None else previous_unary.gather(1, source)),
+             op_prior=op_prior, grammar_context=self._structural_context(
+                 phase='compose', input_stream=buffer), reference_data=references)
+@@ -13615,7 +13635,7 @@
+             same = left_indices[:, :, None] == right_indices[:, None, :]
+             # A known occurrence is not identified by an unrelated basis row.
+             same = same & ~known[:, None, None] & (older == newer).all(-1)
+-            folded = torch.where(same[..., None], older, folded)
++            folded = torch.where(same[..., None], Ops._code_direction(older), folded)
+         residual = (folded - parent[:, None, None, :]).square().mean(-1)
+         energy = parent.square().mean(-1)[:, None, None]
+         # Exact zero origins use the existing Error squared-penalty convention;
+@@ -13696,7 +13716,7 @@
+             else:
+                 folded = left if getattr(op, 'reconstructs_left', False) else op.compose(left, right)
+                 if getattr(op, 'same_reference_idempotent', False):
+-                    folded = torch.where(left.eq(right).all(-1)[:, None], left, folded)
++                    folded = torch.where(left.eq(right).all(-1)[:, None], Ops._code_direction(left), folded)
+             pair_error = (folded.detach() - value).square().mean(-1)
+             pair_masks.append(available[:, index] & left_readable & right_readable
+                               & progress & (pair_error <= best))
+--- review19/bin/Layers.py
++++ review20/bin/Layers.py
+@@ -16348,31 +16348,44 @@
+         return torch.where(any_active, vol, torch.zeros_like(vol))
+ 
+     @staticmethod
+-    def _conjunction_kernel(x, y, same_reference=None):
+-        """Bind identities by normalized product; multiply operand magnitudes.
++    def _code_direction(x):
++        """Identity direction, with an exact zero for an absent code."""
++        norm = torch.linalg.vector_norm(x, dim=-1, keepdim=True)
++        return x / torch.where(norm > 0, norm, torch.ones_like(norm))
++
++    @staticmethod
++    def _presence(x, activation):
++        """Magnitude belongs to activation; a bare nonzero code is present."""
++        present = x.ne(0).any(-1, keepdim=True)
++        if activation is None:
++            return present.to(x)
++        value = torch.as_tensor(activation, device=x.device, dtype=x.dtype)
++        if value.ndim == x.ndim - 1:
++            value = value.unsqueeze(-1)
++        return torch.where(present, value.abs(), 0.)
++
++    @staticmethod
++    def _conjunction_kernel(x, y, same_reference=None, *,
++                            left_activation=None, right_activation=None):
++        """Bind code directions; multiply the separately supplied activations.
+ 
+         Idempotence is about a shared reference, not equal numerical codes.
+         The caller supplies native-reference equality when it has addresses.
+         An aliased tensor is the same reference at the direct tensor API.
+         """
+-        product = x * y
+-        norm = torch.linalg.vector_norm(product, dim=-1, keepdim=True)
+-        unit = product / torch.where(norm > 0, norm, torch.ones_like(norm))
+-        result = (torch.linalg.vector_norm(x, dim=-1, keepdim=True)
+-                  * torch.linalg.vector_norm(y, dim=-1, keepdim=True) * unit)
++        left, right = Ops._code_direction(x), Ops._code_direction(y)
++        a, b = Ops._presence(x, left_activation), Ops._presence(y, right_activation)
++        result = a * b * Ops._code_direction(left * right)
+         if same_reference is None:
+-            return x if x is y else result
+-        return torch.where(same_reference[..., None], x, result)
++            return a * left if x is y else result
++        return torch.where(same_reference[..., None], a * left, result)
+ 
+     @staticmethod
+-    def _disjunction_kernel(x, y):
+-        """Probabilistic sum of magnitudes, with normalized combined identity."""
+-        identity = x + y - x * y
+-        norm = torch.linalg.vector_norm(identity, dim=-1, keepdim=True)
+-        unit = identity / torch.where(norm > 0, norm, torch.ones_like(norm))
+-        a = torch.linalg.vector_norm(x, dim=-1, keepdim=True)
+-        b = torch.linalg.vector_norm(y, dim=-1, keepdim=True)
+-        return (a + b - a * b) * unit
++    def _disjunction_kernel(x, y, *, left_activation=None, right_activation=None):
++        """Probabilistic sum of activations; form length carries no certainty."""
++        left, right = Ops._code_direction(x), Ops._code_direction(y)
++        a, b = Ops._presence(x, left_activation), Ops._presence(y, right_activation)
++        return (a + b - a * b) * Ops._code_direction(left + right - left * right)
+ 
+     @staticmethod
+     def intersection(x, y, monotonic=False):
+--- review19/bin/Models.py
++++ review20/bin/Models.py
+@@ -20914,7 +20914,10 @@
+                 routed_feedback, routed_valid)
+             attention=getattr(self,'_attention_words',None)
+             if attention is not None:
+-                credit=_gather_word(self._attention_credit,index).reshape(B,1,1)
++                # Attention and compose share their scorer. The sentence's
++                # byte loss must not train it through the perception cache;
++                # compose learns from its detached paired-cost surrogate.
++                credit=_gather_word(self._attention_credit.detach(),index).reshape(B,1,1)
+                 admitted=_gather_word(attention.accepted,index).reshape_as(commit)
+                 payload=(symbolic_event*credit,symbolic_orders,row,activation,
+                          object_row,object_order,object_atom*credit[:,0],row_gate,commit&admitted,
+--- review19/test/test_concept_binding_operators.py
++++ review20/test/test_concept_binding_operators.py
+@@ -5,8 +5,10 @@
+ 
+ 
+ @pytest.mark.parametrize('layer,kernel', [
+-    (ConjunctionLayer, lambda a,b: a.norm(dim=-1,keepdim=True)*b.norm(dim=-1,keepdim=True)*torch.nn.functional.normalize(a*b, dim=-1)),
+-    (DisjunctionLayer, lambda a,b: (a.norm(dim=-1,keepdim=True)+b.norm(dim=-1,keepdim=True)-a.norm(dim=-1,keepdim=True)*b.norm(dim=-1,keepdim=True))*torch.nn.functional.normalize(a+b-a*b,dim=-1)),
++    (ConjunctionLayer, lambda a,b: torch.nn.functional.normalize(a*b, dim=-1)),
++    (DisjunctionLayer, lambda a,b: torch.nn.functional.normalize(
++        torch.nn.functional.normalize(a,dim=-1) + torch.nn.functional.normalize(b,dim=-1)
++        - torch.nn.functional.normalize(a,dim=-1)*torch.nn.functional.normalize(b,dim=-1),dim=-1)),
+     (MinLayer, torch.minimum), (MaxLayer, torch.maximum)])
+ def test_three_faces_bind_and_search_the_same_pair(layer, kernel):
+     codes = torch.tensor([[.2, -.7, .4], [.8, .3, -.5], [-.6, .2, .9]], requires_grad=True)
+@@ -27,9 +29,9 @@
+ def test_conjunction_same_reference_is_identity_but_equal_codes_are_distinct():
+     x = torch.tensor([[.2, -.7, .4]])
+     op = ConjunctionLayer()
+-    torch.testing.assert_close(op.compose(x,x), x)
++    torch.testing.assert_close(op.compose(x,x), torch.nn.functional.normalize(x, dim=-1))
+     different_reference = x.clone()
+-    expected = x.norm(dim=-1,keepdim=True).square()*torch.nn.functional.normalize(x.square(), dim=-1)
++    expected = torch.nn.functional.normalize(x.square(), dim=-1)
+     torch.testing.assert_close(op.compose(x,different_reference), expected)
+     assert not torch.allclose(expected,x)
+ 
+--- review19/test/test_echoic_decoder.py
++++ review20/test/test_echoic_decoder.py
+@@ -89,7 +89,8 @@
+     policy = torch.nn.Linear(2, 3)
+     with torch.no_grad():
+         policy.weight.copy_(torch.tensor([[1., 1.], [-1., -1.], [0., 0.]]))
+-        policy.bias.copy_(torch.tensor([-6., -6., 0.]))
++        # The composed root has unit activation, independent of form norms.
++        policy.bias.copy_(torch.tensor([-1., -1., 0.]))
+     language = SimpleNamespace(_generate_binary_ops=(conjunction,), _generate_unary_ops=(NotLayer(),),
+         generate_policy=policy, _generate_policy_width=2,
+         decomposition_chooser=DecompositionChooser())
+@@ -120,8 +121,14 @@
+     # so its chooser gradient is correctly zero. Preserve the historical
+     # numerical-credit assertion on the same hard trace with a declared
+     # choice oracle. Real multi-operation credit is tested in review11.
+-    from test_output_walk import _walk_control_oracle
+-    _walk_control_oracle(monkeypatch)
++    def choice_at_compound(parent, lefts, rights, available, ops, codes, valid, **kwargs):
++        # The unit-activation parent is shorter than these form codes. Keep
++        # the same hard trace by offering alternatives at the compound, not
++        # by expecting a norm threshold to distinguish roots from words.
++        leaf = (valid & (codes == parent[:, None]).all(-1)).any(-1)
++        stop = torch.arange(available.shape[-1], device=parent.device) == available.shape[-1] - 1
++        return available & (~leaf[:, None] | stop)
++    monkeypatch.setattr(LanguageSpace, 'decoder_eligibility', staticmethod(choice_at_compound))
+     credited = fn(event, bank)[0]
+     torch.testing.assert_close(credited, out)
+     out = credited
+--- review19/test/test_grammar_word_learning.py
++++ review20/test/test_grammar_word_learning.py
+@@ -171,6 +171,16 @@
+     before = {name: value.detach().clone() for name, value in chooser.named_parameters()}
+     generator = model.languageSpace.generate_policy
+     generate_before = [p.detach().clone() for p in generator.parameters()]
++    # A masked one-action policy has exactly zero softmax derivative. Count
++    # choices on live values only; padding rows can expose unused unaries.
++    from Language import LanguageSpace
++    eligibility = LanguageSpace.decoder_eligibility
++    live_choices = []
++    def observe_eligibility(parent, *args, **kwargs):
++        legal = eligibility(parent, *args, **kwargs)
++        live_choices.append(bool((parent.ne(0).any(-1) & legal.sum(-1).gt(1)).any()))
++        return legal
++    monkeypatch.setattr(LanguageSpace, 'decoder_eligibility', staticmethod(observe_eligibility))
+     optimizer = model.getOptimizer(lr=1e-3)
+     words = ["a b c d e", "f g h i j"]
+     inputs = model.inputSpace.prepInput(words)
+@@ -226,7 +236,9 @@
+         assert model.ownership_gradient_diagnostics(optimizer)['conflicts'] == 0
+         assert any(step["operation"] == "generate:grammar"
+                    for step in model._last_answer_construction.trace)
+-        assert any(not torch.equal(old, new) for old, new in zip(generate_before, generator.parameters()))
++        generator_changed = any(not torch.equal(old, new)
++                                for old, new in zip(generate_before, generator.parameters()))
++        assert generator_changed == any(live_choices)
+         ids={id(p) for p in model.objective_parameter_groups(optimizer)['reconstruction']}
+         assert all(id(p) in ids for p in generator.parameters())
+     finally:
+--- review19/test/test_review12_contracts.py
++++ review20/test/test_review12_contracts.py
+@@ -10,12 +10,14 @@
+     from Layers import Ops
+     x = torch.tensor([[.3, .4]], requires_grad=True)
+     y = torch.tensor([[0., .6]], requires_grad=True)
+-    expected = .8 * torch.tensor([[.3, .76]]) / (.3**2 + .76**2)**.5
++    expected = .8 * torch.tensor([[.6, 1.]]) / (.6**2 + 1.)**.5
+     op = DisjunctionLayer()
+-    for value in (op(x, y), op.compose(x, y), Ops.disjunction(x, y)):
++    activation = dict(left_activation=.5, right_activation=.6)
++    for value in (op(x, y, **activation), op.compose(x, y, **activation),
++                  Ops.disjunction(x, y, **activation)):
+         torch.testing.assert_close(value, expected)
+-    torch.testing.assert_close(op.compose(y, x), expected)
+-    op.compose(x, y).square().sum().backward()
++    torch.testing.assert_close(op.compose(y, x, left_activation=.6, right_activation=.5), expected)
++    op.compose(x, y, **activation)[0, 0].backward()
+     assert torch.isfinite(x.grad).all() and x.grad.norm() > 0
+     assert torch.isfinite(y.grad).all() and y.grad.norm() > 0
+ 
+@@ -23,11 +25,11 @@
+ def test_disjunction_zero_identity_and_zero_direction_have_finite_gradients():
+     from Language import DisjunctionLayer
+     op = DisjunctionLayer()
+-    # Last pair has x+y-x*y == 0 at nonzero magnitudes; unit(0) is 0.
++    # Large form norms no longer cancel the probabilistic-sum magnitude.
+     x = torch.tensor([[.3, -.4], [0., 0.], [2., 0.]], requires_grad=True)
+     y = torch.tensor([[0., 0.], [0., 0.], [2., 0.]], requires_grad=True)
+     value = op.compose(x, y)
+-    torch.testing.assert_close(value, torch.tensor([[.3, -.4], [0., 0.], [0., 0.]]))
++    torch.testing.assert_close(value, torch.tensor([[.6, -.8], [0., 0.], [1., 0.]]))
+     value.sum().backward()
+     assert torch.isfinite(x.grad).all() and torch.isfinite(y.grad).all()
+ 
+@@ -36,7 +38,7 @@
+ def test_disjunction_free_inverse_recovers_a_pair_without_operand_witnesses(face):
+     from Language import DisjunctionLayer
+     codes = torch.tensor([[.3, .4], [0., .6], [-.4, -.3]])
+-    parent = .8 * torch.tensor([[.3, .76]]) / (.3**2 + .76**2)**.5
++    parent = torch.tensor([[.6, 1.]]) / (.6**2 + 1.)**.5
+     op = DisjunctionLayer()
+     a, b = getattr(op, face)(parent, basis=codes)
+     recovered = {tuple(a[0].tolist()), tuple(b[0].tolist())}
+@@ -88,4 +90,4 @@
+     assert rules[0].method_name == 'disjunction'
+     x, y = torch.tensor([[.3, .4]]), torch.tensor([[0., .6]])
+     value = GRAMMAR_LAYER_CLASSES[rules[0].method_name]().compose(x, y)
+-    torch.testing.assert_close(value.norm(dim=-1), torch.tensor([.8]))
++    torch.testing.assert_close(value.norm(dim=-1), torch.tensor([1.]))
+--- review19/test/test_review14_addendum.py
++++ review20/test/test_review14_addendum.py
+@@ -26,6 +26,17 @@
+ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capacity):
+     from test_mm_xor import _fresh_model
+     model, _, _ = _fresh_model(f'data/{config}.xml')
++    admitted = []
++    stage = model._stage_reading_word_concepts
++    def observe_admission():
++        stage()
++        owner = model._concept_owner()
++        rows = model.inputSpace._ar_grammar_object_rows
++        word_rows = set(rows[rows >= 0].tolist())
++        assert len(word_rows) == 4
++        assert set(owner._concept_allocator.layer()._tensor_row_keys) == word_rows
++        admitted.append(word_rows)
++    model._stage_reading_word_concepts = observe_admission
+     try:
+         with torch.no_grad():
+             model.forward(model.inputSpace.prepInput(
+@@ -36,7 +47,14 @@
+         word_rows = set(rows[rows >= 0].tolist())
+         assert owner.nVectors == capacity and cb.W.shape[0] == capacity
+         assert len(word_rows) == 4
+-        assert set(owner._concept_allocator.layer()._tensor_row_keys) == word_rows
++        assert admitted and admitted[-1] == word_rows
++        # A later grammatical part relation may symbolize an existing word
++        # object at order one. Such a row is not a concept for a letter.
++        for row in set(owner._concept_allocator.layer()._tensor_row_keys) - word_rows:
++            cid = owner.concept_id_at_row(row)
++            assert owner._concept_source_order(cid) > 0
++            assert all(isinstance(part, tuple) and part[0] == 'sym'
++                       for part in owner.concept_parts(cid))
+         assert cb.mereology.context_width == 0
+     finally:
+         model.End()
+--- review19/test/test_review20_activation.py
++++ review20/test/test_review20_activation.py
+@@ -0,0 +1,37 @@
++"""Activation supplies binding magnitude; code length supplies no certainty."""
++import pytest
++import torch
++from Language import ConjunctionLayer, DisjunctionLayer, OperationSelectionLayer
++
++
++@pytest.mark.parametrize('cls,magnitude', [(ConjunctionLayer, .3), (DisjunctionLayer, .8)])
++def test_kernel_uses_activation_and_is_invariant_to_form_length(cls, magnitude):
++    x = torch.tensor([[1., .5, .2]], dtype=torch.float64)
++    y = torch.tensor([[.2, .4, 1.]], dtype=torch.float64)
++    op = cls()
++    activation = dict(left_activation=.5, right_activation=.6)
++    value = op.compose(x, y, **activation)
++    torch.testing.assert_close(value.norm(dim=-1), torch.tensor([magnitude], dtype=x.dtype))
++    torch.testing.assert_close(op.compose(x * 12, y * .03, **activation), value)
++    torch.testing.assert_close(op.compose(x, y).norm(dim=-1), torch.ones(1, dtype=x.dtype))
++    # Presence changes magnitude and not the identity direction.
++    torch.testing.assert_close(op.compose(x, y) * magnitude, value)
++
++
++@pytest.mark.parametrize('cls', [ConjunctionLayer, DisjunctionLayer])
++def test_operation_candidates_receive_leaf_activation_and_keep_code_directions(cls):
++    x = torch.tensor([[[.8, .2, .4], [.1, .7, .3]]])
++    layer = OperationSelectionLayer(d_model=3, ops=[cls()], chooser='mlp')
++    activations = torch.tensor([[.5, .6]])
++    expected = cls().compose(x[:, 0], x[:, 1], left_activation=.5, right_activation=.6)
++    result = layer._stacked_reduced(x, activations=activations)
++    torch.testing.assert_close(result[:, 0, 0], expected)
++    # An arbitrary positive change of either form's scale cannot change it.
++    result = layer._stacked_reduced(x * torch.tensor([[[20.], [.01]]]), activations=activations)
++    torch.testing.assert_close(result[:, 0, 0], expected)
++
++
++def test_repeated_reference_preserves_its_activation_and_direction():
++    x = torch.tensor([[2., 1.]])
++    value = ConjunctionLayer().compose(x, x, left_activation=.4, right_activation=.4)
++    torch.testing.assert_close(value, .4 * x / x.norm(dim=-1, keepdim=True))

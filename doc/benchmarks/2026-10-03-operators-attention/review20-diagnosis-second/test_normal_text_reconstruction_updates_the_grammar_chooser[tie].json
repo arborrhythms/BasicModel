@@ -1,0 +1,580 @@
+{
+  "test": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]",
+  "terms": [],
+  "decoder": [],
+  "allocations": [
+    {
+      "key": [
+        "snap",
+        1
+      ],
+      "row": 0,
+      "rows": {
+        "0": [
+          "snap",
+          1
+        ]
+      },
+      "frames": [
+        {
+          "function": "_csw_concept_row",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+          "line": 15880,
+          "scalars": {
+            "order": "0",
+            "concept_id": "1",
+            "region": "'concept inventory'",
+            "cap": "64",
+            "base": "0",
+            "capacity": "32",
+            "required": "1"
+          }
+        },
+        {
+          "function": "mint_frozen_concept",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+          "line": 16278,
+          "scalars": {
+            "name": "'grammatical-vp:conceptual-codebook:quantize'",
+            "cid": "1"
+          }
+        },
+        {
+          "function": "install",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Queries.py",
+          "line": 1671,
+          "scalars": {}
+        },
+        {
+          "function": "_create_per_stage",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 16646,
+          "scalars": {
+            "nInput": "16",
+            "nPercepts": "8",
+            "nConcepts": "8",
+            "nSymbols": "8",
+            "nWords": "8",
+            "nOutput": "1",
+            "bindingDepth": "4",
+            "model_type": "'embedding'",
+            "reconstruction_scale": "1.0",
+            "what_scale": "0.7",
+            "where_scale": "0.2",
+            "when_scale": "0.1",
+            "obj_input": "8",
+            "obj_percept": "8",
+            "obj_concept": "0",
+            "obj_symbol": "8",
+            "obj_output": "0",
+            "input_event": "16",
+            "percept_event": "16",
+            "concept_event": "16",
+            "symbol_event": "16",
+            "output_event": "1",
+            "input_dim": "8",
+            "percept_dim": "8",
+            "concept_dim": "16",
+            "symbol_dim": "8",
+            "output_dim": "1",
+            "nvec_input": "256",
+            "nvec_percept": "64",
+            "nvec_concept": "64",
+            "nvec_whole_properties": "9",
+            "nvec_output": "1",
+            "_c_nOutputDim": "16",
+            "n_stages": "4",
+            "T": "4",
+            "_share_concept_dictionary": "True",
+            "_serial_meta_raw": "True",
+            "_serial_meta": "True",
+            "_serial_requested": "True",
+            "_aligned_codebook_sources": "True",
+            "t": "3",
+            "is_last": "True",
+            "n_t": "8",
+            "d_in": "16",
+            "d_out": "16",
+            "_ws_od": "16",
+            "_so_v": "4",
+            "_ser_v": "True",
+            "_sect": "'WholeSpace'",
+            "output_n": "8"
+          }
+        },
+        {
+          "function": "create",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 6622,
+          "scalars": {
+            "nInput": "16",
+            "nPercepts": "8",
+            "nConcepts": "8",
+            "nSymbols": "8",
+            "nWords": "8",
+            "nOutput": "1",
+            "bindingDepth": "4",
+            "model_type": "'embedding'",
+            "reconstruction_scale": "1.0",
+            "what_scale": "0.7",
+            "where_scale": "0.2",
+            "when_scale": "0.1"
+          }
+        },
+        {
+          "function": "create_from_config",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 1913,
+          "scalars": {
+            "config_path": "'/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2117/test_normal_text_reconstructio0/tiny_chunk_model.xml'",
+            "model_type": "'embedding'",
+            "defaults_path": "'/Users/arogers/github/WikiOracle/basicmodel/data/model.xml'",
+            "_binding": "'aligned'",
+            "_nWhere": "4",
+            "_nWhen": "4",
+            "_objectSize": "8",
+            "nInput": "16",
+            "nPercepts": "8",
+            "nConcepts": "8",
+            "nSymbols": "8",
+            "nWords": "8",
+            "nOutput": "1",
+            "_nObjects": "394"
+          }
+        },
+        {
+          "function": "create_from_config",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 6602,
+          "scalars": {
+            "config_path": "'/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2117/test_normal_text_reconstructio0/tiny_chunk_model.xml'"
+          }
+        },
+        {
+          "function": "from_config",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 1813,
+          "scalars": {
+            "config_path": "'/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2117/test_normal_text_reconstructio0/tiny_chunk_model.xml'",
+            "resolved_path": "'/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2117/test_normal_text_reconstructio0/tiny_chunk_model.xml'"
+          }
+        },
+        {
+          "function": "_tiny_canonical_model",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py",
+          "line": 409,
+          "scalars": {
+            "input_width": "16",
+            "batch_size": "2",
+            "word_buckets": "'16'",
+            "forward_grammar_weight": "0.0",
+            "concept_rows": "64",
+            "dimension": "16",
+            "part_rows": "64",
+            "path": "'./architecture'"
+          }
+        },
+        {
+          "function": "test_normal_text_reconstruction_updates_the_grammar_chooser",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/test/test_grammar_word_learning.py",
+          "line": 163,
+          "scalars": {
+            "comparison": "'tie'"
+          }
+        },
+        {
+          "function": "pytest_pyfunc_call",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/python.py",
+          "line": 167,
+          "scalars": {}
+        }
+      ]
+    },
+    {
+      "key": [
+        "snap",
+        2
+      ],
+      "row": 1,
+      "rows": {
+        "0": [
+          "snap",
+          1
+        ],
+        "1": [
+          "snap",
+          2
+        ]
+      },
+      "frames": [
+        {
+          "function": "_csw_concept_row",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+          "line": 15880,
+          "scalars": {
+            "order": "0",
+            "concept_id": "2",
+            "region": "'concept inventory'",
+            "cap": "64",
+            "base": "0",
+            "capacity": "32",
+            "required": "2"
+          }
+        },
+        {
+          "function": "mint_frozen_concept",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+          "line": 16278,
+          "scalars": {
+            "name": "'grammatical-vp:discourse-prediction:arma'",
+            "cid": "2"
+          }
+        },
+        {
+          "function": "install",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Queries.py",
+          "line": 1671,
+          "scalars": {}
+        },
+        {
+          "function": "_create_per_stage",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 16646,
+          "scalars": {
+            "nInput": "16",
+            "nPercepts": "8",
+            "nConcepts": "8",
+            "nSymbols": "8",
+            "nWords": "8",
+            "nOutput": "1",
+            "bindingDepth": "4",
+            "model_type": "'embedding'",
+            "reconstruction_scale": "1.0",
+            "what_scale": "0.7",
+            "where_scale": "0.2",
+            "when_scale": "0.1",
+            "obj_input": "8",
+            "obj_percept": "8",
+            "obj_concept": "0",
+            "obj_symbol": "8",
+            "obj_output": "0",
+            "input_event": "16",
+            "percept_event": "16",
+            "concept_event": "16",
+            "symbol_event": "16",
+            "output_event": "1",
+            "input_dim": "8",
+            "percept_dim": "8",
+            "concept_dim": "16",
+            "symbol_dim": "8",
+            "output_dim": "1",
+            "nvec_input": "256",
+            "nvec_percept": "64",
+            "nvec_concept": "64",
+            "nvec_whole_properties": "9",
+            "nvec_output": "1",
+            "_c_nOutputDim": "16",
+            "n_stages": "4",
+            "T": "4",
+            "_share_concept_dictionary": "True",
+            "_serial_meta_raw": "True",
+            "_serial_meta": "True",
+            "_serial_requested": "True",
+            "_aligned_codebook_sources": "True",
+            "t": "3",
+            "is_last": "True",
+            "n_t": "8",
+            "d_in": "16",
+            "d_out": "16",
+            "_ws_od": "16",
+            "_so_v": "4",
+            "_ser_v": "True",
+            "_sect": "'WholeSpace'",
+            "output_n": "8"
+          }
+        },
+        {
+          "function": "create",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 6622,
+          "scalars": {
+            "nInput": "16",
+            "nPercepts": "8",
+            "nConcepts": "8",
+            "nSymbols": "8",
+            "nWords": "8",
+            "nOutput": "1",
+            "bindingDepth": "4",
+            "model_type": "'embedding'",
+            "reconstruction_scale": "1.0",
+            "what_scale": "0.7",
+            "where_scale": "0.2",
+            "when_scale": "0.1"
+          }
+        },
+        {
+          "function": "create_from_config",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 1913,
+          "scalars": {
+            "config_path": "'/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2117/test_normal_text_reconstructio0/tiny_chunk_model.xml'",
+            "model_type": "'embedding'",
+            "defaults_path": "'/Users/arogers/github/WikiOracle/basicmodel/data/model.xml'",
+            "_binding": "'aligned'",
+            "_nWhere": "4",
+            "_nWhen": "4",
+            "_objectSize": "8",
+            "nInput": "16",
+            "nPercepts": "8",
+            "nConcepts": "8",
+            "nSymbols": "8",
+            "nWords": "8",
+            "nOutput": "1",
+            "_nObjects": "394"
+          }
+        },
+        {
+          "function": "create_from_config",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 6602,
+          "scalars": {
+            "config_path": "'/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2117/test_normal_text_reconstructio0/tiny_chunk_model.xml'"
+          }
+        },
+        {
+          "function": "from_config",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 1813,
+          "scalars": {
+            "config_path": "'/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2117/test_normal_text_reconstructio0/tiny_chunk_model.xml'",
+            "resolved_path": "'/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2117/test_normal_text_reconstructio0/tiny_chunk_model.xml'"
+          }
+        },
+        {
+          "function": "_tiny_canonical_model",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py",
+          "line": 409,
+          "scalars": {
+            "input_width": "16",
+            "batch_size": "2",
+            "word_buckets": "'16'",
+            "forward_grammar_weight": "0.0",
+            "concept_rows": "64",
+            "dimension": "16",
+            "part_rows": "64",
+            "path": "'./architecture'"
+          }
+        },
+        {
+          "function": "test_normal_text_reconstruction_updates_the_grammar_chooser",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/test/test_grammar_word_learning.py",
+          "line": 163,
+          "scalars": {
+            "comparison": "'tie'"
+          }
+        },
+        {
+          "function": "pytest_pyfunc_call",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/python.py",
+          "line": 167,
+          "scalars": {}
+        }
+      ]
+    },
+    {
+      "key": [
+        "snap",
+        3
+      ],
+      "row": 2,
+      "rows": {
+        "0": [
+          "snap",
+          1
+        ],
+        "1": [
+          "snap",
+          2
+        ],
+        "2": [
+          "snap",
+          3
+        ]
+      },
+      "frames": [
+        {
+          "function": "_csw_concept_row",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+          "line": 15880,
+          "scalars": {
+            "order": "0",
+            "concept_id": "3",
+            "region": "'concept inventory'",
+            "cap": "64",
+            "base": "0",
+            "capacity": "32",
+            "required": "3"
+          }
+        },
+        {
+          "function": "mint_frozen_concept",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+          "line": 16278,
+          "scalars": {
+            "name": "'grammatical-vp:conceptual-subgoal:what'",
+            "cid": "3"
+          }
+        },
+        {
+          "function": "install",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Queries.py",
+          "line": 1671,
+          "scalars": {}
+        },
+        {
+          "function": "_create_per_stage",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 16646,
+          "scalars": {
+            "nInput": "16",
+            "nPercepts": "8",
+            "nConcepts": "8",
+            "nSymbols": "8",
+            "nWords": "8",
+            "nOutput": "1",
+            "bindingDepth": "4",
+            "model_type": "'embedding'",
+            "reconstruction_scale": "1.0",
+            "what_scale": "0.7",
+            "where_scale": "0.2",
+            "when_scale": "0.1",
+            "obj_input": "8",
+            "obj_percept": "8",
+            "obj_concept": "0",
+            "obj_symbol": "8",
+            "obj_output": "0",
+            "input_event": "16",
+            "percept_event": "16",
+            "concept_event": "16",
+            "symbol_event": "16",
+            "output_event": "1",
+            "input_dim": "8",
+            "percept_dim": "8",
+            "concept_dim": "16",
+            "symbol_dim": "8",
+            "output_dim": "1",
+            "nvec_input": "256",
+            "nvec_percept": "64",
+            "nvec_concept": "64",
+            "nvec_whole_properties": "9",
+            "nvec_output": "1",
+            "_c_nOutputDim": "16",
+            "n_stages": "4",
+            "T": "4",
+            "_share_concept_dictionary": "True",
+            "_serial_meta_raw": "True",
+            "_serial_meta": "True",
+            "_serial_requested": "True",
+            "_aligned_codebook_sources": "True",
+            "t": "3",
+            "is_last": "True",
+            "n_t": "8",
+            "d_in": "16",
+            "d_out": "16",
+            "_ws_od": "16",
+            "_so_v": "4",
+            "_ser_v": "True",
+            "_sect": "'WholeSpace'",
+            "output_n": "8"
+          }
+        },
+        {
+          "function": "create",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 6622,
+          "scalars": {
+            "nInput": "16",
+            "nPercepts": "8",
+            "nConcepts": "8",
+            "nSymbols": "8",
+            "nWords": "8",
+            "nOutput": "1",
+            "bindingDepth": "4",
+            "model_type": "'embedding'",
+            "reconstruction_scale": "1.0",
+            "what_scale": "0.7",
+            "where_scale": "0.2",
+            "when_scale": "0.1"
+          }
+        },
+        {
+          "function": "create_from_config",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 1913,
+          "scalars": {
+            "config_path": "'/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2117/test_normal_text_reconstructio0/tiny_chunk_model.xml'",
+            "model_type": "'embedding'",
+            "defaults_path": "'/Users/arogers/github/WikiOracle/basicmodel/data/model.xml'",
+            "_binding": "'aligned'",
+            "_nWhere": "4",
+            "_nWhen": "4",
+            "_objectSize": "8",
+            "nInput": "16",
+            "nPercepts": "8",
+            "nConcepts": "8",
+            "nSymbols": "8",
+            "nWords": "8",
+            "nOutput": "1",
+            "_nObjects": "394"
+          }
+        },
+        {
+          "function": "create_from_config",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 6602,
+          "scalars": {
+            "config_path": "'/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2117/test_normal_text_reconstructio0/tiny_chunk_model.xml'"
+          }
+        },
+        {
+          "function": "from_config",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 1813,
+          "scalars": {
+            "config_path": "'/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2117/test_normal_text_reconstructio0/tiny_chunk_model.xml'",
+            "resolved_path": "'/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2117/test_normal_text_reconstructio0/tiny_chunk_model.xml'"
+          }
+        },
+        {
+          "function": "_tiny_canonical_model",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py",
+          "line": 409,
+          "scalars": {
+            "input_width": "16",
+            "batch_size": "2",
+            "word_buckets": "'16'",
+            "forward_grammar_weight": "0.0",
+            "concept_rows": "64",
+            "dimension": "16",
+            "part_rows": "64",
+            "path": "'./architecture'"
+          }
+        },
+        {
+          "function": "test_normal_text_reconstruction_updates_the_grammar_chooser",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/test/test_grammar_word_learning.py",
+          "line": 163,
+          "scalars": {
+            "comparison": "'tie'"
+          }
+        },
+        {
+          "function": "pytest_pyfunc_call",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/python.py",
+          "line": 167,
+          "scalars": {}
+        }
+      ]
+    }
+  ]
+}

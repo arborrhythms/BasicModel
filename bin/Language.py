@@ -4148,13 +4148,13 @@ class _SearchedBinaryLayer(GrammarLayer):
         value = (a + b) * .5
         return torch.cat((value, value), -1)
 
-    def forward(self, left, right=None):
-        return self._butterfly_forward(left) if self.butterfly else self.kernel(left, right)
+    def forward(self, left, right=None, **activation):
+        return self._butterfly_forward(left) if self.butterfly else self.kernel(left, right, **activation)
 
-    def compose(self, left, right):
+    def compose(self, left, right, **activation):
         if self.butterfly:
             return self._butterfly_forward(torch.cat((left, right), -2))
-        return self.kernel(left, right)
+        return self.kernel(left, right, **activation)
 
     def reverse(self, parent, basis=None, left_rows=None, right_rows=None,
                 left_priming=None, right_priming=None, snap=False):
@@ -4193,7 +4193,8 @@ class _SearchedBinaryLayer(GrammarLayer):
 
 
 class ConjunctionLayer(_SearchedBinaryLayer):
-    """Product binding: ||x|| ||y|| unit(x*y); a repeated reference is itself."""
+    """Product of activations times the bound identity direction."""
+    uses_operand_activation = True
     field_eligible = True
     rule_name = 'conjunction'
     predicate_identity = 'conjunction'
@@ -4202,10 +4203,11 @@ class ConjunctionLayer(_SearchedBinaryLayer):
 
 
 class DisjunctionLayer(_SearchedBinaryLayer):
-    """Probabilistic sum: (||x||+||y||-||x||||y||) unit(x+y-x*y).
+    """Probabilistic sum of activations, with combined unit code directions.
 
     Its free inverse searches both operands through this same kernel.
     """
+    uses_operand_activation = True
     field_eligible = False
     rule_name = 'disjunction'
     predicate_identity = 'disjunction'
@@ -7276,7 +7278,7 @@ class OperationSelectionLayer(nn.Module):
                 masked_action=None, cat_ctx=None, what_ctx=None, op_prior=None,
                 grammar_context=None, replay_action=None, allowance=None,
                 rounds_left=None, load_depth=None, reference_data=None,
-                previous_unary=None, stop_exact=None):
+                previous_unary=None, stop_exact=None, operand_activations=None):
         B, N, D = x.shape
         if N < 1:
             raise ValueError("compose needs a nonempty static slab")
@@ -7291,7 +7293,7 @@ class OperationSelectionLayer(nn.Module):
                 grammar_op = getattr(op, 'gl', op)
                 if hasattr(grammar_op, 'set_bind_context'):
                     grammar_op.set_bind_context(slab=x)
-        binary = self._stacked_reduced(x, grammar_context, reference_data)
+        binary = self._stacked_reduced(x, grammar_context, reference_data, operand_activations)
         unary = self._stacked_applied(x, grammar_context, reference_data)
         content = x[..., :self.d_model]
         what_ctx = getattr(self, '_what_context', None) if what_ctx is None else what_ctx
@@ -7496,7 +7498,7 @@ class OperationSelectionLayer(nn.Module):
             return None
         return torch.stack(priors, dim=-1)
 
-    def _stacked_reduced(self, x, grammar_context=None, reference_data=None):
+    def _stacked_reduced(self, x, grammar_context=None, reference_data=None, activations=None):
         """Candidate operators consume their own resolved operands."""
         if x.shape[1] < 2 or not self.r_reduce:
             return x.new_zeros(x.shape[0], max(0, x.shape[1] - 1), self.r_reduce, x.shape[-1])
@@ -7516,7 +7518,15 @@ class OperationSelectionLayer(nn.Module):
                     reference_data['case_bank'].codes,
                     reference_data['case_weights'][:, :, i],
                     reference_data['binary_valid'][:, :, i]))
-            value = (op.forward_with_grammar_context(left, right, x, context=selected_context)
+            implementation = getattr(op, 'gl', op)
+            if getattr(implementation, 'uses_operand_activation', False):
+                if selected_context is not None:
+                    _structural_face_phase(implementation, (left, right), context=selected_context, phase='compose')
+                value = implementation.compose(left, right,
+                    left_activation=None if activations is None else activations[:, :-1],
+                    right_activation=None if activations is None else activations[:, 1:])
+            else:
+                value = (op.forward_with_grammar_context(left, right, x, context=selected_context)
                           if grammar_context is not None and hasattr(op, 'forward_with_grammar_context')
                           else op.forward_with_context(left, right, x) if hasattr(op, 'forward_with_context')
                           else op(left, right))
@@ -7524,7 +7534,9 @@ class OperationSelectionLayer(nn.Module):
                     and getattr(getattr(op, 'gl', op), 'same_reference_idempotent', False)):
                 refs = reference_data['binary_refs'][:, :, i]
                 same = (refs[..., 0] == refs[..., 1]) & (refs[..., 0] != -1) & (refs[..., 0] != 0)
-                value = torch.where(same[..., None], left, value)
+                repeated = (Ops._presence(left, None if activations is None else activations[:, :-1])
+                            * Ops._code_direction(left))
+                value = torch.where(same[..., None], repeated, value)
             result.append(value)
         return torch.stack(result, 2)
 
@@ -8280,7 +8292,7 @@ class ReconstructionStack:
         self._choice_arities = None
         self._choice_mask = None
         self._choice_positions = self._choice_actions = self._choice_attempted = None
-        self._choice_explorable = None
+        self._choice_explorable = self._choice_alternative_counts = None
         self._unary_rule_map = None
         self._binary_rule_map = None
         self._forward_losses = None
@@ -8305,7 +8317,7 @@ class ReconstructionStack:
         self._choice_arities = None
         self._choice_mask = None
         self._choice_positions = self._choice_actions = self._choice_attempted = None
-        self._choice_explorable = None
+        self._choice_explorable = self._choice_alternative_counts = None
         self._forward_losses = None
         self._forward_loss_mask = None
 
@@ -8329,7 +8341,7 @@ class ReconstructionStack:
         self._choice_arities = None
         self._choice_mask = None
         self._choice_positions = self._choice_actions = self._choice_attempted = None
-        self._choice_explorable = None
+        self._choice_explorable = self._choice_alternative_counts = None
         self._unary_rule_map = None
         self._binary_rule_map = None
         self._forward_losses = None
@@ -8537,6 +8549,7 @@ class ReconstructionStack:
         self._choice_actions = torch.full((batch, max_steps), -1, dtype=torch.long, device=device)
         self._choice_attempted = torch.zeros((batch, max_steps), dtype=torch.bool, device=device)
         self._choice_explorable = torch.zeros_like(self._choice_attempted)
+        self._choice_alternative_counts = torch.zeros_like(self._choice_actions)
         self._choice_arities = torch.zeros(
             batch, max_steps, dtype=torch.int8, device=device)
         self._choice_mask = torch.zeros(
@@ -12459,6 +12472,8 @@ class LanguageSpace(nn.Module):
             self, "_language_layer_ref",
             getattr(symbol_space.subspace, "languageLayer", None))
         layer = self._language_layer_ref
+        from DecompositionChooser import DecompositionChooser
+        self.decomposition_chooser = DecompositionChooser()
         unary_ids = tuple(
             int(value)
             for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
@@ -12767,6 +12782,13 @@ class LanguageSpace(nn.Module):
         window_depth = depth.clamp(0, n)
         source = (window_depth[:, None] - 1 - torch.arange(n, device=buffer.device)[None, :]).clamp_min(0)
         window = buffer.gather(1, source[..., None].expand(B, n, D))
+        # Native leaves carry their projection coefficient separately from
+        # their full-presence form. A composed kernel result already encodes
+        # its activation as its norm, with identity in its unit direction.
+        window_activations = None
+        if len(state) >= 6:
+            magnitudes = torch.where(state[4] >= 0, state[5].abs(), buffer.norm(dim=-1))
+            window_activations = magnitudes.gather(1, source)
         # STOP tests the whole sentence/STM depth, not the two-slot window.
         limit = torch.as_tensor(slots, device=buffer.device)
         stop_slots = torch.where(depth <= limit, n, 0)
@@ -12809,6 +12831,7 @@ class LanguageSpace(nn.Module):
             replay_action=replay_action, allowance=slots if allowance is None else allowance,
             rounds_left=rounds_left, load_depth=depth,
             stop_exact=stop_exact,
+            operand_activations=window_activations,
             previous_unary=(None if previous_unary is None else previous_unary.gather(1, source)),
             op_prior=op_prior, grammar_context=self._structural_context(
                 phase='compose', input_stream=buffer), reference_data=references)
@@ -12820,7 +12843,8 @@ class LanguageSpace(nn.Module):
             torch.where(route['valid'],
                 torch.log_softmax(torch.where(route['valid'][:, None],
                     route['logits'], torch.zeros_like(route['logits'])), -1)
-                .gather(1, route['action'].clamp_min(0)[:, None]).squeeze(1), 0.))
+                .gather(1, route['action'].clamp_min(0)[:, None]).squeeze(1), 0.),
+            route['departure_eligible'].sum(-1))
         if reference_scope is None:
             return choice
         return choice, route['refs'], route['relations'], route['operands']
@@ -13459,7 +13483,8 @@ class LanguageSpace(nn.Module):
             return self._bounded_binary_reconstruction(
                 op, parent, ref, on_right, known, basis, basis_valid, candidate_limit,
                 left_priming=basis_priming, right_priming=basis_priming,
-                left_basis=left_basis, right_basis=right_basis)
+                left_basis=left_basis, right_basis=right_basis,
+                chooser=self.decomposition_chooser)
 
         def oriented(remainder):
             return (torch.where(on_right[:, None], remainder, ref),
@@ -13492,7 +13517,8 @@ class LanguageSpace(nn.Module):
                 if not hasattr(inner.layer, "functional_reverse"):
                     return self._bounded_binary_reconstruction(
                         op, parent, ref, on_right, known, basis, basis_valid,
-                        candidate_limit, left_priming=basis_priming, right_priming=basis_priming)
+                        candidate_limit, left_priming=basis_priming, right_priming=basis_priming,
+                chooser=self.decomposition_chooser)
                 left, right = inner.generate_functional(
                     parent, W_inv=W_inv, reference=reference,
                     reference_side=(on_right, known))
@@ -13528,7 +13554,8 @@ class LanguageSpace(nn.Module):
         if inverse == "search":
             return self._bounded_binary_reconstruction(
                 op, parent, ref, on_right, known, basis, basis_valid, candidate_limit,
-                left_priming=basis_priming, right_priming=basis_priming)
+                left_priming=basis_priming, right_priming=basis_priming,
+                chooser=self.decomposition_chooser)
         return torch.zeros_like(parent), torch.zeros_like(parent), ~yes
 
     def _finish_binary_inverse(self, op, parent, reference, on_right, known,
@@ -13543,7 +13570,8 @@ class LanguageSpace(nn.Module):
         def search(values, side):
             a, b, ready = self._bounded_binary_reconstruction(
                 op, values[:, 0], values[:, 1], side[:, 0], side[:, 1],
-                basis, basis_valid, limit, left_priming=basis_priming, right_priming=basis_priming)
+                basis, basis_valid, limit, left_priming=basis_priming, right_priming=basis_priming,
+                chooser=self.decomposition_chooser)
             return torch.stack((a, b, ready[:, None].expand_as(a).to(a.dtype)), dim=1)
 
         if torch.compiler.is_compiling():
@@ -13561,8 +13589,9 @@ class LanguageSpace(nn.Module):
                                        basis, basis_valid, candidate_limit, *,
                                        left_valid=None, right_valid=None,
                                        left_priming=None, right_priming=None,
-                                       left_basis=None, right_basis=None):
-        """Least-residual hard pair; no straight-through search gradient.
+                                       left_basis=None, right_basis=None,
+                                       chooser=None, return_details=False):
+        """Reconstruction-owned hard pair, initially least residual; no straight-through search gradient.
 
         At most K prototypes per side and K squared pairs, K=candidate_limit.
         Retrieval indices and any supplied reference are detached. Dictionary
@@ -13606,20 +13635,43 @@ class LanguageSpace(nn.Module):
             same = left_indices[:, :, None] == right_indices[:, None, :]
             # A known occurrence is not identified by an unrelated basis row.
             same = same & ~known[:, None, None] & (older == newer).all(-1)
-            folded = torch.where(same[..., None], older, folded)
+            folded = torch.where(same[..., None], Ops._code_direction(older), folded)
         residual = (folded - parent[:, None, None, :]).square().mean(-1)
         energy = parent.square().mean(-1)[:, None, None]
         # Exact zero origins use the existing Error squared-penalty convention;
         # no floor changes any positive parent scale.
         residual = residual / torch.where(energy > 0, energy, torch.ones_like(energy))
-        selected = residual.masked_fill(~allowed, torch.inf).flatten(1).argmin(-1)
+        # The shortlist and eligibility are unchanged. Context learns only
+        # through the separate teacher loss, never through candidate codes.
+        def candidate_features(candidates, indices, priming):
+            energy = candidates.square().sum(-1)
+            activation = (parent.detach()[:, None] * candidates).sum(-1) / torch.where(
+                energy > 0, energy, torch.ones_like(energy))
+            heat = (torch.ones_like(activation) if priming is None else
+                    priming.detach().gather(1, indices))
+            return activation, heat
+        la, lp = candidate_features(left_candidates, left_indices, left_priming)
+        ra, rp = candidate_features(right_candidates, right_indices, right_priming)
+        features = torch.stack((-residual.detach(), la[:, :, None].expand_as(residual),
+            ra[:, None, :].expand_as(residual), lp[:, :, None].expand_as(residual),
+            rp[:, None, :].expand_as(residual)), -1)
+        if chooser is None:
+            selected = residual.masked_fill(~allowed, torch.inf).flatten(1).argmin(-1)
+            logits = -residual.detach().masked_fill(~allowed, torch.inf).flatten(1)
+            logits = torch.where(allowed.flatten(1).any(-1)[:, None], logits, 0.)
+        else:
+            selected, _, logits = chooser(features, allowed)
         gather = selected[:, None, None].expand(B, 1, D)
         hard_left = older.reshape(B, K * K, D).gather(1, gather).squeeze(1)
         hard_right = newer.reshape(B, K * K, D).gather(1, gather).squeeze(1)
         available = left_active.any(-1) & right_active.any(-1)
         hard_left = torch.where(available[:, None], hard_left, 0.)
         hard_right = torch.where(available[:, None], hard_right, 0.)
-        return hard_left.detach(), hard_right.detach(), available
+        result = (hard_left.detach(), hard_right.detach(), available)
+        if return_details:
+            return (*result, dict(logits=logits, selected=selected, allowed=allowed,
+                left_indices=left_indices, right_indices=right_indices, features=features))
+        return result
 
     @staticmethod
     def decoder_eligibility(parent, lefts, rights, available, binary_ops,
@@ -13664,7 +13716,7 @@ class LanguageSpace(nn.Module):
             else:
                 folded = left if getattr(op, 'reconstructs_left', False) else op.compose(left, right)
                 if getattr(op, 'same_reference_idempotent', False):
-                    folded = torch.where(left.eq(right).all(-1)[:, None], left, folded)
+                    folded = torch.where(left.eq(right).all(-1)[:, None], Ops._code_direction(left), folded)
             pair_error = (folded.detach() - value).square().mean(-1)
             pair_masks.append(available[:, index] & left_readable & right_readable
                               & progress & (pair_error <= best))
@@ -14100,10 +14152,11 @@ class SymbolSpace(Space):
         # remain registered exactly once under SymbolSubSpace.
         self.languageSpace = LanguageSpace(self)
         # LanguageSpace is held by SymbolSpace, not listed in model.spaces.
-        # Its output chooser therefore joins this Space's explicit params
+        # Its reconstruction choosers join this Space's explicit params
         # before getOptimizer walks the owners.
         if self.languageSpace.generate_policy is not None:
             self.params.extend(self.languageSpace.generate_policy.parameters())
+        self.params.extend(self.languageSpace.decomposition_chooser.parameters())
         # SymbolSubSpace.__init__ pointed the home spaces' ``.symbolSpace``
         # back-ref at ITSELF (the coordinator); re-point them at THIS container so
         # ``perceptualSpace.symbolSpace is model.symbolSpace`` holds (the pipeline

@@ -1,0 +1,22 @@
+--- review18/bin/Layers.py
++++ review19/bin/Layers.py
+@@ -13600,7 +13600,7 @@
+         If ``chunk`` is already known, returns the existing ID without
+         modifying state. Otherwise checks the fixed capacity and
+         seeds the new row with ``init_vector`` if supplied (else with
+-        a small-stddev random vector).
++        a full-presence random code).
+         """
+         if not isinstance(chunk, (bytes, bytearray)):
+             raise TypeError(
+@@ -13626,8 +13626,8 @@
+         master = self._basis.W
+         with torch.no_grad():
+             if init_vector is None:
+-                master.data[new_id, :].normal_(
+-                    mean=0.0, std=0.02)
++                row = master.data[new_id, :].normal_(mean=0.0, std=1.0)
++                row.div_(row.abs().amax().clamp(min=1e-8)).clamp_(0.0, 1.0)
+             else:
+                 if not torch.is_tensor(init_vector):
+                     raise TypeError(

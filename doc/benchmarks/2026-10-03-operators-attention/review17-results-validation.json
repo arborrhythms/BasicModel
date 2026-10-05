@@ -1,0 +1,318 @@
+{
+  "source_matched": true,
+  "helpers_matched": true,
+  "gate_trainings": 30,
+  "retries": 0,
+  "counts": {
+    "class_pass": 1,
+    "reconstruction_pass": 10,
+    "joint": 1,
+    "mm_pass": 10,
+    "sum_pass": 10,
+    "xor_bands": {
+      "at 0": 1,
+      "at 1/4": 7,
+      "between": 2,
+      "above 1/4": 0
+    },
+    "sum_bands": {
+      "at 0": 0,
+      "at 1/4": 10,
+      "between": 0,
+      "above 1/4": 0
+    }
+  },
+  "runs": [
+    {
+      "run": 1,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8410546183586121,
+        0.8410546183586121
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 2,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8790380358695984,
+        0.8790380358695984
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 3,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8725281357765198,
+        0.8725281357765198
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 4,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.9395174384117126,
+        0.9395174384117126
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 5,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.9404149651527405,
+        0.9404149651527405
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 6,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.9486687183380127,
+        0.9486687183380127
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 7,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.7505433559417725,
+        0.7505433559417725
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 8,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.7680132389068604,
+        0.7680132389068604
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 9,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8698795437812805,
+        0.8698795437812805
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 10,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8660317063331604,
+        0.8660317063331604
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    }
+  ],
+  "zero_ownership_conflicts": true,
+  "finite_chooser_logits": true,
+  "kept_stability_by_compose_trial": {
+    "exploit": [
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      },
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      },
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      },
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      }
+    ],
+    "explore": [
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      },
+      {
+        "modal_fraction": 0.965,
+        "distinct": 2,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 386
+          },
+          {
+            "actions": [
+              2
+            ],
+            "count": 14
+          }
+        ]
+      },
+      {
+        "modal_fraction": 0.9425,
+        "distinct": 2,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 377
+          },
+          {
+            "actions": [
+              2
+            ],
+            "count": 23
+          }
+        ]
+      },
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      }
+    ]
+  },
+  "stability_note": "The existing audit-summary kept_paths pools both compose trials. These groups retain the observed compose-trial label and run no new forwards or training."
+}

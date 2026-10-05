@@ -1,0 +1,975 @@
+diff --git a/bin/Language.py b/bin/Language.py
+index 2b4df365f..6ec8bc79b 100644
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -8280,7 +8280,7 @@ class ReconstructionStack:
+         self._choice_arities = None
+         self._choice_mask = None
+         self._choice_positions = self._choice_actions = self._choice_attempted = None
+-        self._choice_explorable = None
++        self._choice_explorable = self._choice_alternative_counts = None
+         self._unary_rule_map = None
+         self._binary_rule_map = None
+         self._forward_losses = None
+@@ -8305,7 +8305,7 @@ class ReconstructionStack:
+         self._choice_arities = None
+         self._choice_mask = None
+         self._choice_positions = self._choice_actions = self._choice_attempted = None
+-        self._choice_explorable = None
++        self._choice_explorable = self._choice_alternative_counts = None
+         self._forward_losses = None
+         self._forward_loss_mask = None
+ 
+@@ -8329,7 +8329,7 @@ class ReconstructionStack:
+         self._choice_arities = None
+         self._choice_mask = None
+         self._choice_positions = self._choice_actions = self._choice_attempted = None
+-        self._choice_explorable = None
++        self._choice_explorable = self._choice_alternative_counts = None
+         self._unary_rule_map = None
+         self._binary_rule_map = None
+         self._forward_losses = None
+@@ -8537,6 +8537,7 @@ class ReconstructionStack:
+         self._choice_actions = torch.full((batch, max_steps), -1, dtype=torch.long, device=device)
+         self._choice_attempted = torch.zeros((batch, max_steps), dtype=torch.bool, device=device)
+         self._choice_explorable = torch.zeros_like(self._choice_attempted)
++        self._choice_alternative_counts = torch.zeros_like(self._choice_actions)
+         self._choice_arities = torch.zeros(
+             batch, max_steps, dtype=torch.int8, device=device)
+         self._choice_mask = torch.zeros(
+@@ -12459,6 +12460,8 @@ class LanguageSpace(nn.Module):
+             self, "_language_layer_ref",
+             getattr(symbol_space.subspace, "languageLayer", None))
+         layer = self._language_layer_ref
++        from DecompositionChooser import DecompositionChooser
++        self.decomposition_chooser = DecompositionChooser()
+         unary_ids = tuple(
+             int(value)
+             for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+@@ -12820,7 +12823,8 @@ class LanguageSpace(nn.Module):
+             torch.where(route['valid'],
+                 torch.log_softmax(torch.where(route['valid'][:, None],
+                     route['logits'], torch.zeros_like(route['logits'])), -1)
+-                .gather(1, route['action'].clamp_min(0)[:, None]).squeeze(1), 0.))
++                .gather(1, route['action'].clamp_min(0)[:, None]).squeeze(1), 0.),
++            route['departure_eligible'].sum(-1))
+         if reference_scope is None:
+             return choice
+         return choice, route['refs'], route['relations'], route['operands']
+@@ -13459,7 +13463,8 @@ class LanguageSpace(nn.Module):
+             return self._bounded_binary_reconstruction(
+                 op, parent, ref, on_right, known, basis, basis_valid, candidate_limit,
+                 left_priming=basis_priming, right_priming=basis_priming,
+-                left_basis=left_basis, right_basis=right_basis)
++                left_basis=left_basis, right_basis=right_basis,
++                chooser=self.decomposition_chooser)
+ 
+         def oriented(remainder):
+             return (torch.where(on_right[:, None], remainder, ref),
+@@ -13492,7 +13497,8 @@ class LanguageSpace(nn.Module):
+                 if not hasattr(inner.layer, "functional_reverse"):
+                     return self._bounded_binary_reconstruction(
+                         op, parent, ref, on_right, known, basis, basis_valid,
+-                        candidate_limit, left_priming=basis_priming, right_priming=basis_priming)
++                        candidate_limit, left_priming=basis_priming, right_priming=basis_priming,
++                chooser=self.decomposition_chooser)
+                 left, right = inner.generate_functional(
+                     parent, W_inv=W_inv, reference=reference,
+                     reference_side=(on_right, known))
+@@ -13528,7 +13534,8 @@ class LanguageSpace(nn.Module):
+         if inverse == "search":
+             return self._bounded_binary_reconstruction(
+                 op, parent, ref, on_right, known, basis, basis_valid, candidate_limit,
+-                left_priming=basis_priming, right_priming=basis_priming)
++                left_priming=basis_priming, right_priming=basis_priming,
++                chooser=self.decomposition_chooser)
+         return torch.zeros_like(parent), torch.zeros_like(parent), ~yes
+ 
+     def _finish_binary_inverse(self, op, parent, reference, on_right, known,
+@@ -13543,7 +13550,8 @@ class LanguageSpace(nn.Module):
+         def search(values, side):
+             a, b, ready = self._bounded_binary_reconstruction(
+                 op, values[:, 0], values[:, 1], side[:, 0], side[:, 1],
+-                basis, basis_valid, limit, left_priming=basis_priming, right_priming=basis_priming)
++                basis, basis_valid, limit, left_priming=basis_priming, right_priming=basis_priming,
++                chooser=self.decomposition_chooser)
+             return torch.stack((a, b, ready[:, None].expand_as(a).to(a.dtype)), dim=1)
+ 
+         if torch.compiler.is_compiling():
+@@ -13561,8 +13569,9 @@ class LanguageSpace(nn.Module):
+                                        basis, basis_valid, candidate_limit, *,
+                                        left_valid=None, right_valid=None,
+                                        left_priming=None, right_priming=None,
+-                                       left_basis=None, right_basis=None):
+-        """Least-residual hard pair; no straight-through search gradient.
++                                       left_basis=None, right_basis=None,
++                                       chooser=None, return_details=False):
++        """Reconstruction-owned hard pair, initially least residual; no straight-through search gradient.
+ 
+         At most K prototypes per side and K squared pairs, K=candidate_limit.
+         Retrieval indices and any supplied reference are detached. Dictionary
+@@ -13612,14 +13621,37 @@ class LanguageSpace(nn.Module):
+         # Exact zero origins use the existing Error squared-penalty convention;
+         # no floor changes any positive parent scale.
+         residual = residual / torch.where(energy > 0, energy, torch.ones_like(energy))
+-        selected = residual.masked_fill(~allowed, torch.inf).flatten(1).argmin(-1)
++        # The shortlist and eligibility are unchanged. Context learns only
++        # through the separate teacher loss, never through candidate codes.
++        def candidate_features(candidates, indices, priming):
++            energy = candidates.square().sum(-1)
++            activation = (parent.detach()[:, None] * candidates).sum(-1) / torch.where(
++                energy > 0, energy, torch.ones_like(energy))
++            heat = (torch.ones_like(activation) if priming is None else
++                    priming.detach().gather(1, indices))
++            return activation, heat
++        la, lp = candidate_features(left_candidates, left_indices, left_priming)
++        ra, rp = candidate_features(right_candidates, right_indices, right_priming)
++        features = torch.stack((-residual.detach(), la[:, :, None].expand_as(residual),
++            ra[:, None, :].expand_as(residual), lp[:, :, None].expand_as(residual),
++            rp[:, None, :].expand_as(residual)), -1)
++        if chooser is None:
++            selected = residual.masked_fill(~allowed, torch.inf).flatten(1).argmin(-1)
++            logits = -residual.detach().masked_fill(~allowed, torch.inf).flatten(1)
++            logits = torch.where(allowed.flatten(1).any(-1)[:, None], logits, 0.)
++        else:
++            selected, _, logits = chooser(features, allowed)
+         gather = selected[:, None, None].expand(B, 1, D)
+         hard_left = older.reshape(B, K * K, D).gather(1, gather).squeeze(1)
+         hard_right = newer.reshape(B, K * K, D).gather(1, gather).squeeze(1)
+         available = left_active.any(-1) & right_active.any(-1)
+         hard_left = torch.where(available[:, None], hard_left, 0.)
+         hard_right = torch.where(available[:, None], hard_right, 0.)
+-        return hard_left.detach(), hard_right.detach(), available
++        result = (hard_left.detach(), hard_right.detach(), available)
++        if return_details:
++            return (*result, dict(logits=logits, selected=selected, allowed=allowed,
++                left_indices=left_indices, right_indices=right_indices, features=features))
++        return result
+ 
+     @staticmethod
+     def decoder_eligibility(parent, lefts, rights, available, binary_ops,
+@@ -14100,10 +14132,11 @@ class SymbolSpace(Space):
+         # remain registered exactly once under SymbolSubSpace.
+         self.languageSpace = LanguageSpace(self)
+         # LanguageSpace is held by SymbolSpace, not listed in model.spaces.
+-        # Its output chooser therefore joins this Space's explicit params
++        # Its reconstruction choosers join this Space's explicit params
+         # before getOptimizer walks the owners.
+         if self.languageSpace.generate_policy is not None:
+             self.params.extend(self.languageSpace.generate_policy.parameters())
++        self.params.extend(self.languageSpace.decomposition_chooser.parameters())
+         # SymbolSubSpace.__init__ pointed the home spaces' ``.symbolSpace``
+         # back-ref at ITSELF (the coordinator); re-point them at THIS container so
+         # ``perceptualSpace.symbolSpace is model.symbolSpace`` holds (the pipeline
+diff --git a/bin/Models.py b/bin/Models.py
+index 1a7037648..c0cc247d7 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -13712,8 +13712,12 @@ class BasicModel(BaseModel):
+         B, T = actions.shape
+         owners, ids, _ = self._compose_round_owners(actions)
+         forced = torch.zeros_like(attempted)
++        counts = getattr(trace, '_choice_alternative_counts', attempted.long()).detach()
++        self._compose_sampling_scale = torch.zeros_like(counts)
+         for sid in range(int(ids.max().detach()) + 1):
+             eligible = attempted & (owners == sid)
++            self._compose_sampling_scale += torch.where(
++                eligible, counts * eligible.sum(-1, keepdim=True), 0)
+             # iid continuous ranks give a uniform draw over the eligible rounds.
+             ranks = torch.rand(B, T, device=actions.device).masked_fill(~eligible, -1)
+             selected = ranks.argmax(-1)
+@@ -13757,6 +13761,7 @@ class BasicModel(BaseModel):
+         # Keep the initial and later compiled entries structurally identical.
+         self._compose_exploit_actions = self._compose_forced_slots = None
+         self._compose_prefix_slots = None
++        self._compose_sampling_scale = None
+         # Perception is shared by two backward/step pairs. Saved values must
+         # remain those of its one forward even when the first update mutates
+         # parameters. The graph itself still credits the perception parameters.
+@@ -13774,6 +13779,7 @@ class BasicModel(BaseModel):
+             self._sentence_pullback = None
+             self._compose_exploit_actions = self._compose_forced_slots = None
+             self._compose_prefix_slots = None
++            self._compose_sampling_scale = None
+ 
+             self._sentence_training = False
+             self._sentence_supplied_answers = None
+@@ -18109,6 +18115,10 @@ class BasicModel(BaseModel):
+         trace._choice_actions[:, slot] = choice.action
+         trace._choice_attempted[:, slot] = choice.valid
+         trace._choice_explorable[:, slot] = (choice.valid if choice.alternatives is None else choice.alternatives)
++        if getattr(trace, '_choice_alternative_counts', None) is None:
++            trace._choice_alternative_counts = torch.zeros_like(trace._choice_actions)
++        trace._choice_alternative_counts[:, slot] = (choice.alternative_count
++            if choice.alternative_count is not None else trace._choice_explorable[:, slot].long())
+         trace._choice_left_rows, trace._choice_right_rows = self._tensor_record_operands(
+             trace._choice_left_rows, trace._choice_right_rows,
+             torch.as_tensor(slot, device=state[0].device), state,
+@@ -19629,7 +19639,7 @@ class BasicModel(BaseModel):
+ 
+         Both trials were costed at one parameter version. The uniform
+         departure draw is independent of the chooser's probability; this is
+-        the specified per-draw surrogate, without an alternative-count scale.
++        the importance correction K*R for uniform action and round draws.
+         The scorer's features are detached, so the ordinary reconstruction
+         owner can train the chooser without writing perception or operators.
+         Exact ties register no term and supply no momentum-only update.
+@@ -19640,13 +19650,17 @@ class BasicModel(BaseModel):
+                  else forced) & (path[1][18] >= 0))
+         advantage = costs[:, 1] - costs[:, 0]
+         probabilities = path[1][27].exp()
++        scale = getattr(self, "_compose_sampling_scale", None)
++        if scale is None:
++            raise RuntimeError("compose surrogate requires the sampled K*R counts")
++        scale = scale.detach().to(probabilities)
+         self._last_compose_score_function = dict(costs=costs, advantage=advantage,
+             mask=mask.detach(), actions=path[1][18].detach(),
+-            probabilities=probabilities.detach())
++            probabilities=probabilities.detach(), scale=scale)
+         trained = mask & advantage.ne(0)[:, None]
+         if not bool(trained.any()):
+             return probabilities.new_zeros(())
+-        surrogate = torch.where(trained, probabilities * advantage[:, None], 0.).sum(-1)
++        surrogate = torch.where(trained, probabilities * advantage[:, None] * scale, 0.).sum(-1)
+         self._sentence_cost_registry.add('reconstruction.compose_score_function', surrogate,
+             category='reconstruction')
+         active = self._sentence_cost_registry.row_mask
+@@ -19713,7 +19727,8 @@ class BasicModel(BaseModel):
+         trace._choice_journal_columns = getattr(self, '_sentence_journal_columns', None)
+         trace._choice_refs = lang[23]
+         trace._choice_ref_relations = lang[24]
+-        trace._choice_explorable = lang[26]
++        trace._choice_alternative_counts = lang[26]
++        trace._choice_explorable = lang[26] > 0
+         self._packed_sentence_roots = lang[9]
+         self._tensor_sentence_roots_live = lang[13]
+         self._tensor_sentence_roots_depth = lang[14]
+@@ -19804,6 +19819,62 @@ class BasicModel(BaseModel):
+         self._last_decoder_trace = select_rows(trace[:5], other[:5], wins)
+         return select_rows(greedy, explore, wins)
+ 
++    def _decomposition_teacher_loss(self, observation, record):
++        """Teacher-force actual compose operands; targets never enter free decoding.
++
++        Pair identities come from the input positions, not nearest-code labels.
++        A compound or missing symbol outside this word shortlist is counted and
++        contributes no term. Both trials' teacher graphs precede either step;
++        CE is added only in the owner step, after the byte-cost comparison.
++        """
++        from DecompositionChooser import DecompositionChooser
++        bank = record.primed
++        chooser = self.languageSpace.decomposition_chooser
++        terms = [[] for _ in observation['entries']]
++        reports = []
++        ops = self.languageSpace.language_layer.operation_layer.ops
++        for b, program in enumerate(observation['entries']):
++            if program is None or program.operation_values is None:
++                continue
++            stack = []
++            # The reconstruction record carries the same resolved physical
++            # symbol rows as its primed bank. The legacy WORD lane can be
++            # absent in the open perceptual read and is not this address space.
++            word_rows = record.word_rows[b][record.word_valid[b]]
++            for index, (kind, op_index, word) in enumerate(program.actions.detach().cpu().tolist()):
++                if kind == 0:
++                    stack.append(int(word_rows[word]))
++                elif kind == 2:
++                    continue
++                elif kind == 1:
++                    right = stack.pop(); left = stack.pop(); stack.append(-1)
++                    parent = program.operation_values[index, 2].detach()[None]
++                    op = getattr(ops[op_index], 'gl', ops[op_index])
++                    if getattr(op, 'inverse_kind', None) == 'case_search':
++                        continue  # CaseSelection has its own non-word candidate algebra.
++                    valid = bank.valid[b:b+1]
++                    if not bank.codes.shape[1]:
++                        reports.append(dict(row=b, operation=op_index, present=False, picked_true=False))
++                        continue
++                    _, _, _, details = self.languageSpace._bounded_binary_reconstruction(
++                        op, parent, torch.zeros_like(parent),
++                        torch.zeros(1, dtype=torch.bool, device=parent.device),
++                        torch.zeros(1, dtype=torch.bool, device=parent.device),
++                        bank.codes[b:b+1], valid, self.reconstruction_basis_limit,
++                        left_priming=bank.weights[b:b+1], right_priming=bank.weights[b:b+1],
++                        chooser=chooser, return_details=True)
++                    target = torch.tensor([[left, right]], device=parent.device)
++                    loss, present, picked = DecompositionChooser.teacher_loss(
++                        details, bank.rows[b:b+1], bank.rows[b:b+1], target)
++                    if bool(present[0]):
++                        terms[b].append(loss[0])
++                    reports.append(dict(row=b, operation=op_index,
++                        target=[left, right], present=bool(present[0]), picked_true=bool(picked[0])))
++        zero = record.root.new_zeros(())
++        loss = torch.stack([torch.stack(row).mean() if row else zero for row in terms])
++        self._last_decomposition_teacher = reports
++        return loss
++
+     def _sentence_path_cost(self, state, sid, active):
+         """Both trials use the registry's named, relative objectives."""
+         self._publish_sentence_scratch(state)
+@@ -19824,6 +19895,8 @@ class BasicModel(BaseModel):
+                               torch.zeros(B, dtype=torch.bool, device=root.device), lang[14].to(root) * 0)
+         observation = self._sentence_observation(state, sid, active)
+         observation['record'] = record
++        observation['decomposition_loss'] = (self._decomposition_teacher_loss(observation, record)
++            if getattr(self, '_sentence_training', False) and torch.is_grad_enabled() else None)
+         if getattr(self, '_reading_lesson_enabled', False) and self.grammar_lesson_weight > 0:
+             source_rows = self._reading_lesson_sources
+             for b, program in enumerate(observation['entries']):
+@@ -20318,7 +20391,7 @@ class BasicModel(BaseModel):
+                     if self._sentence_gradient_objectives is not None:
+                         self._sentence_gradient_objectives['expectation'] = intra
+                 if self._sentence_training and torch.is_grad_enabled():
+-                    pending_steps[-1] = (*pending_steps[-1], self._sentence_cost_registry)
++                    pending_steps[-1] = (*pending_steps[-1], self._sentence_cost_registry, observation['decomposition_loss'])
+                 # Expectation and grammar lessons train their owners but are
+                 # not evidence for preferring one reading over the other.
+                 reconstruction_cost = self._sentence_cost_registry.total(objective='reconstruction')
+@@ -20332,10 +20405,13 @@ class BasicModel(BaseModel):
+             def train_trial(loss):
+                 # Both graphs now exist. Restore this trial's perception
+                 # pullback and scratch bindings before its own backward.
+-                trial, pullback, path, registry = pending_steps.pop(0)
++                trial, pullback, path, registry, decomposition_loss = pending_steps.pop(0)
+                 self._sentence_trial, self._sentence_pullback = trial, pullback
+                 self._sentence_cost_registry = registry
+                 self._restore_sentence_state(path)
++                if decomposition_loss is not None and decomposition_loss.requires_grad:
++                    registry.add('reconstruction.decomposition', decomposition_loss, category='reconstruction')
++                    loss = loss + (decomposition_loss * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
+                 if trial == 'explore':
+                     loss = loss + self._compose_score_function_loss(path, torch.stack(paired_costs, -1))
+                 self._sentence_train_step(loss)
+@@ -20669,7 +20745,7 @@ class BasicModel(BaseModel):
+             torch.full((B, record_width, 2), -1, dtype=torch.long, device=words.device),
+             torch.zeros(B, record_width, 2, dtype=torch.bool, device=words.device),
+             torch.full((B, capacity), -1, dtype=torch.long, device=words.device),
+-            torch.zeros_like(choices[2]),
++            torch.zeros_like(choices[0]),
+             words.new_zeros(B, int(choices[0].shape[1])),  # selected operation log probability
+         )
+         empty_cs_sub = (
+@@ -20987,7 +21063,8 @@ class BasicModel(BaseModel):
+                     previous_unary=unary_history)
+                 choice = proposal[0] if sentence_transactions else proposal
+                 unary_history = language.update_unary_history(unary_history, choice)
+-                eligible = choice.valid if choice.alternatives is None else choice.alternatives
++                eligible = (choice.alternative_count if choice.alternative_count is not None else
++                            (choice.valid if choice.alternatives is None else choice.alternatives).long())
+                 explorable_slab = self._tensor_record_selected_values(
+                     explorable_slab.unsqueeze(-1), slot, eligible[:, None], choice.valid).squeeze(-1)
+                 log_probability = (choice.log_probability if choice.log_probability is not None
+@@ -21069,7 +21146,8 @@ class BasicModel(BaseModel):
+                     previous_unary=unary_history)
+                 choice = proposal[0] if sentence_transactions else proposal
+                 unary_history = language.update_unary_history(unary_history, choice)
+-                eligible = choice.valid if choice.alternatives is None else choice.alternatives
++                eligible = (choice.alternative_count if choice.alternative_count is not None else
++                            (choice.valid if choice.alternatives is None else choice.alternatives).long())
+                 explorable_slab = self._tensor_record_selected_values(
+                     explorable_slab.unsqueeze(-1), slot, eligible[:, None], choice.valid).squeeze(-1)
+                 log_probability = (choice.log_probability if choice.log_probability is not None
+@@ -21333,7 +21411,8 @@ class BasicModel(BaseModel):
+             trace._choice_journal_columns = record_columns
+             trace._choice_refs = final_cs_lang[23].clone()
+             trace._choice_ref_relations = final_cs_lang[24].clone()
+-            trace._choice_explorable = final_cs_lang[26].clone()
++            trace._choice_alternative_counts = final_cs_lang[26].clone()
++            trace._choice_explorable = final_cs_lang[26] > 0
+         stm._clause_state = final_cs_lang[20].clone()
+         stm._last_unary = final_cs_lang[25].clone()
+         stm._unary_history_depth = stm._depth.clone()
+diff --git a/bin/Spaces.py b/bin/Spaces.py
+index 808c0ab78..70bccdf17 100644
+--- a/bin/Spaces.py
++++ b/bin/Spaces.py
+@@ -71,8 +71,8 @@ from space_carrier import SpaceCarrierMixin
+ 
+ 
+ LanguageOperationChoice = namedtuple(
+-    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives log_probability",
+-    defaults=(None, None))
++    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives log_probability alternative_count",
++    defaults=(None, None, None))
+ """One immutable operation/location choice; only ConceptualSpace applies it."""
+ 
+ 
+diff --git a/doc/GradientFlow.md b/doc/GradientFlow.md
+index ae54011b7..fc3989bd3 100644
+--- a/doc/GradientFlow.md
++++ b/doc/GradientFlow.md
+@@ -527,12 +527,17 @@ Decided in the 6.8 §14–§15 rounds
+   exact gradient of the expected reconstruction cost with respect to them is
+   the score-function term at the sampled departure, with the greedy trial's
+   cost as the paired baseline (self-critical sequence training): surrogate
+-  `p_θ(a_dep | state) · (C_explore − C_greedy)`, costs detached, one term per
++  `K · R · p_θ(a_dep | state) · (C_explore − C_greedy)`, costs detached, one term per
+   sentence with a departure, reconstruction-owned; `∇p` rather than `∇log p`
+   because the departure is drawn uniformly over the value-distinct eligible
+   alternatives (the coverage floor) and the importance weight cancels the
+-  `1/p`. Unbiased; needs no differentiable decoder; a tie teaches nothing.
+-  (6.8 plan §16.3.)
++  `1/p`. Here K counts the value-distinct eligible alternatives at the sampled
++  round and R counts eligible rounds in that sentence. Their product cancels
++  the uniform proposal probability `1/(K·R)`, giving the sum of the
++  baseline-subtracted gradients over those alternatives and rounds, before
++  the existing active-row mean reduction. No differentiable decoder is needed;
++  a tie teaches nothing and the greedy argmax supplies no chooser gradient.
++  (6.8 plan §§16.3, 17.)
+ - **The pair search is hard.** Candidate codes detached, residual relative to
+   the parent's mean square, the straight-through blend deleted: with codes
+   perception's and operators parameterless, nothing on the compose side
+@@ -540,6 +545,18 @@ Decided in the 6.8 §14–§15 rounds
+   proxy (the true pair's margin) weighted by the decoder's uncertainty. The
+   byte scorer's bank codes are detached; the recovered leaf stays live for
+   the generate policy's own path in the walk, which is unchanged.
++- **The decomposition chooser learns the true pair (6.8 §§16.4, 17).** For
++  the selected undo, a separate reconstruction-owned scorer reads each
++  shortlisted pair's negative relative residual, both candidates' activation
++  and both candidates' priming. Its softmax has a hard argmax value; fit weight
++  1 and context weights 0 reproduce the previous residual argmin without a
++  random initialization. Teacher-forced cross-entropy targets the input's
++  resolved word identities at that composition's operand positions. A target
++  absent from the shortlist is counted and contributes no term. Candidate
++  codes and all scorer features are detached. The teacher term is added in
++  reconstruction's owner step after both trials' byte costs and the keep
++  decision; targets never enter free decoding. These parameters are separate
++  from the forward chooser, and the walk policy and §11.6 mask are unchanged.
+ - **One affine reader for both gates.** XOR_grammar's class reader and the
+   sum control read the raw root through the same output-owned affine head;
+   the root's address bands are zero. A normalization of the root is a
+diff --git a/doc/benchmarks/2026-10-03-operators-attention/README.md b/doc/benchmarks/2026-10-03-operators-attention/README.md
+index 7db3dc4c8..b4b47f277 100644
+--- a/doc/benchmarks/2026-10-03-operators-attention/README.md
++++ b/doc/benchmarks/2026-10-03-operators-attention/README.md
+@@ -1,67 +1,152 @@
+-# Decoder, operators and 6.8 — §16.3 implementation, measurement held
++# Decoder, operators and 6.8 — §17 measured candidate
+ 
+-2026-10-05. HEAD remains `802abb1acc95e1bddc8cb237b13230a336681c49`. One working tree; nothing committed. Delivered conceptual capacities are **6 (XOR_grammar) / 8 (MM_grammar)**. The [incoming §15 receipt](README-before-review16.md), older receipts and historical gate results are preserved.
++2026-10-05. The frozen §16.3 candidate was committed on `main` as **`eb1fbefb5f4a33a22cbb4a590cc0927d6a60761d`**, tagged **`6.8-s16.3-candidate`**, before any §17 change. Its 693 runtime files match the §16.3 source manifest; the requested current plan, FutureWork, other documentation and historical receipts are included. See the [commit proof](review17-candidate-commit.json) and [incoming receipt](README-before-review17.md). The parent WikiOracle index still points to `802abb1a`. **The §17 work is uncommitted; nothing was pushed. Review is required before the next commit or any push.** One working tree; conceptual capacities remain **6 / 8**.
+ 
+-**Status:** the score-function chooser and its test ports are implemented. The final ten-worker default sweep completed **5,187 cases: 4,900 passed, 286 skipped, one non-strict XPASS, zero failed assertions** in **773.4 seconds**. Every pytest worker exited zero. The bounded supervisor treats XPASS as failure and returned one, so **the required green sweep has not been achieved and zero §16.3 gate trainings have run**. The [full report](review16-green-sweep/report.html) and [summary](review16-green-sweep/summary.json) retain this distinction.
++The final ten-worker sweep is green: **5,195 completed, 4,908 passed, 286 skipped, 0 non-strict XPASS, 1 XFAIL, zero failed**, in **892.3 seconds**. The once-only campaign then measured **sum 10/10**, **XOR class 1/10, reconstruction 10/10, joint 1/10**, and **MM_xor 10/10**. Sum was read first. There were no gate retries, source changes during measurement, or tuning.
+ 
+-The sole remaining blocker is `test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input`. It passed its unchanged **0.8** overlap assertion while carrying an existing `xfail(strict=False)` mark. Both its body and mark are unchanged from the incoming candidate. The bounded runner and campaign guard are also unchanged. A decision is pending on accepting that named non-strict XPASS, holding for Claude, or retiring its expected-failure mark. **No random rerun, test omission or guard exception has been used.**
++## What changed
+ 
+-## Delivered mechanism
++The forward chooser's reconstruction-owned surrogate is `K · R · p(a_dep | shared prefix) · (C_explore − C_greedy)`, with both costs detached and the existing active-row mean reduction. K is the number of value-distinct eligible alternatives at the sampled round; R is the number of eligible rounds in that sentence. K·R cancels the uniform proposal's probability, giving the sum of baseline-subtracted gradients over those eligible alternatives and rounds. The proposal, greedy argmax, eligibility exclusions and strictly-lower-cost keep rule are unchanged. A tie adds no term.
+ 
+-For each sentence with a sampled compose departure, the reconstruction owner receives `p(a_dep | shared prefix) * (C_explore - C_greedy)`, with both costs detached and the existing active-batch mean reduction. A cheaper alternative raises its probability, a dearer one lowers it, and a tie registers no term or optimizer update for the chooser. The §15 strict-win term and its separate owner registration are deleted. Both complete trials are still costed before learning; only strictly lower reconstruction keeps the explore derivation, and ties keep greedy.
++The selected undo now has its own five-weight decomposition scorer over the existing shortlist: negative relative residual, left/right activation and left/right priming. Softmax supplies cross-entropy; hard argmax supplies the pair. Initialization `[1, 0, 0, 0, 0]` reproduces the old residual argmin and consumes no RNG. Teacher targets are the resolved input-word identities at the composition's operand positions. Codes, parent features and context features are detached; only the separate decomposition weights receive this teacher gradient. Targets absent from the shortlist, including compound operands with no word-bank identity, are counted and omitted from CE. CaseSelection retains its separate non-word candidate algebra.
+ 
+-The departure round is drawn uniformly from eligible rounds, and its action uniformly from value-distinct eligible alternatives. The proposal is independent of chooser logits; the loss uses the chooser's original softmax probability. Duplicate values, identity-equivalent unaries, and STOP when both leaves already read back exactly are excluded. The greedy prefix is replayed with the same parameters. Greedy compose is argmax and supplies no pathwise chooser gradient. Its selected operator retains the full operand gradient. Detached scorer features keep the surrogate's gradient at chooser parameters and operation anchors.
++Both trial teacher graphs are built before either update. Their CE enters reconstruction's owner step **after** the existing byte-cost comparison and keep decision, so target labels never enter free decoding or choose the understanding. The walk policy, §11.6 eligibility mask and byte scorer are unchanged. Perception owns prototypes and evidence. No capacity, seed, learning rate, optimizer, budget, gate bar or resource limit changed.
+ 
+-Pair search remains the §15 hard pick, with detached candidates in the relative residual and no soft blend or temperature. Byte-scoring bank codes remain detached and the recovered leaf live. The generate policy's straight-through walk is unchanged. Perception remains the sole writer of prototypes and evidence. No model dimensions, learning rate, optimizer, budget, seed, gate bar or resource guard changed in this round.
++The campaign guard now follows pytest: a **non-strict XPASS is a pass**; a strict XPASS still fails. The .8 overlap assertion and `xfail(strict=False)` on `test_topk_recovered_words_overlap_input` are untouched. Claude's §17 observation was **5 of 8 unseeded passes**, with the other three at overlap .5 because two of four words coincide under the join in that small content width. Those eight runs are Claude's observation; this round ran the overlap test only within its full sweeps, with no standalone reruns to reproduce that estimate. The limitation remains with the operators update.
+ 
+-**Estimator scale:** the implemented formula is exactly the requested `p·ΔC`, without multiplying by the number of eligible alternatives. Conditional on a uniform draw among K alternatives, its expectation is `1/K` times the corresponding summed gradient over those alternatives. Uniform round sampling adds its own averaging. The measured derivative below verifies this surrogate; it is not evidence that the unscaled estimator equals a sum over every original policy action and round.
++## Once-only measurements
+ 
+-## Mechanism checks on the frozen source
++Both XOR bars consume the same model from one training per run. The unchanged class bar requires all four answers correct and MSE < .05; reconstruction requires all four sentence word-multisets recovered without an unavailable decode. Bands are §20.5: “at 0” means MSE < .05; “at ¼” means |MSE−.25| ≤ .02; the remaining values are between or above ¼. The sum criterion is unchanged: |checkerboard contrast| ≤ 1e-4 and the class bar not met. MM_xor keeps best MSE < .20.
+ 
+-The [ordinary chooser batch](review16-ordinary-frozen.json) uses the original **seed 613** and **["a b c d e", "f g h i j"]**, one real training batch, with **no cost override**. Once ineffective departures are excluded, this batch no longer ties: both selected departures are the value-distinct `non` unary, at rounds 50 and 4. The former §15 observation of exact ties is preserved as an observation of that earlier sampler.
+ 
+-| Row | Departure | C_greedy | C_explore | ΔC | p before → after |
+-|---|---|---:|---:|---:|---|
+-| 0 | non | 0.484053940 | 0.177577868 | -0.306476057 | 0.1664561629 → 0.1664604694 |
+-| 1 | non | 0.180075958 | 0.411828935 | +0.231752977 | 0.1666011512 → 0.1666000783 |
++| Run | MSE | Band | Answers | Read-back | Joint | Final greedy operators | Affine reader norm, epoch 1 → 400 |
++| --- | --- | --- | --- | --- | --- | --- | --- |
++| 1 | 0.2439668 | at 1/4 | 4/4 | 4/4 | no | conjunction | 0.06918293 → 27.64082 |
++| 2 | 0.182099 | between | 4/4 | 4/4 | no | hello world: conjunction; hello there: conjunction; loving world: disjunction; loving there: disjunction | 0.06298114 → 11.24392 |
++| 3 | 0.2484093 | at 1/4 | 4/4 | 4/4 | no | conjunction | 0.05735338 → 24.6351 |
++| 4 | 0.2498911 | at 1/4 | 2/4 | 4/4 | no | disjunction | 0.01295605 → 0.8435131 |
++| 5 | 0.2541058 | at 1/4 | 2/4 | 4/4 | no | conjunction | 0.06880072 → 2.111705 |
++| 6 | 0.2510609 | at 1/4 | 2/4 | 4/4 | no | conjunction | 0.06486177 → 5.30693 |
++| 7 | 0.04165008 | at 0 | 4/4 | 4/4 | yes | hello world: conjunction; hello there: disjunction; loving world: conjunction; loving there: conjunction | 0.06897193 → 12.56373 |
++| 8 | 0.2189868 | between | 3/4 | 4/4 | no | disjunction | 0.0601538 → 9.11145 |
++| 9 | 0.244835 | at 1/4 | 2/4 | 4/4 | no | disjunction | 0.01925588 → 6.140459 |
++| 10 | 0.2470419 | at 1/4 | 4/4 | 4/4 | no | conjunction | 0.06204108 → 23.77232 |
+ 
+-The gradient on all chooser logits agrees with `ΔC·∇p` after the existing two-row mean reduction: maximum absolute error **1.862645149e-9**. Central finite differences on departure logit 20, epsilon **1e-4**, are **−.02126154928** and **+.01608889453**; the corresponding analytical derivatives are **−.02126155049** and **+.01608889550**. Maximum finite-difference error is **1.205640629e-9**. Observed finite logits span **[−.19550702, .09702440]**, with no NaN or positive infinity. Ownership conflicts are zero. This is a mechanism check, not a convergence run.
+ 
+-The authorized chooser test now has explicit equal-cost and cheaper-departure cases, retaining its original seed, batch, setup and optimizer. Those two fixtures control only the detached comparison costs passed to the surrogate; actual trials and the understanding's keep rule still execute. The natural batch above is recorded separately so the test does not claim a tie that the new sampler does not produce. Additional checks cover a dearer departure, exact ties, proportional gradient magnitude, uniform eligible sampling, duplicate-value exclusions, and full operand gradients without greedy chooser gradients. Complete old/new bodies are in the [round contracts](review16-contracts-final.json) and [frozen-source ports](review16-source/test-ports.json).
++Bands: **at 0: 1**, **at 1/4: 7**, **between: 2**, **above 1/4: 0**.
+ 
+-The [one ordinary XOR batch](review16-mechanism/probe-context.json), collected by a passing wiring test in the final sweep, contains **four departed sentences, zero nonzero advantages**, unchanged departure probabilities, and **zero ownership conflicts**. Its [run audit](review16-mechanism/run-audit.json) records zero sentence-path gradient at perception prototypes and evidence, as well as root/code geometry, support, net-evidence ranges, room reports and one reader epoch. Finite chooser logits span **[.0000356668, .28572097]** in that epoch. The inherited metadata's label “tenth shared gate training” is explicitly corrected by `probe-context.json`: this folder is **one batch, not the tenth 400-epoch gate run**.
+ 
+-The one-batch room audit retains residual violations without hiding or repairing them: stage 1 starts with **20 / .04184762** (count / maximum), then **2 / .03320757** after the first room pass; its end report has **1 / 3.72529e-8** before and **0 / 0** after. These are mechanism observations, not the requested ten-run start/end reports. No room or code-derivation change was made.
++The advance forecast of reconstruction 10/10 is met; the forecast of a majority of class runs at 0 is not met. Quarter-error runs retain their geometry and reader trajectories below; no convergence cause is inferred from a scalar weight norm alone.
+ 
+-## Tests, ports and preservation
+ 
+-All **sixteen original output-gradient regressions pass with their assertions unchanged**. The final sweep includes every file in the [57-file focused list](review16-focused-files.txt), which retains the prior 51 and adds six relevant files. Its extracted subset is **537 passed, 33 skipped, one XPASS**; no focused file was dropped. This subset is read from the full sweep, not another execution.
++All ten affine reader norms changed during training; some flattened late while others continued to grow. All **80 final word read-backs were code-decided**, with none decided by priming. The forms themselves had **zero coordinate change** in all ten runs; mean cos(L) ranged from **.7505434 to .9486687**. These are [checks of the saved observations](review17-results-validation.json), with no additional training.
+ 
+-The first full §16.3 sweep, saved before the final ports, completed **4,898 passed / 286 skipped / one XPASS / two failed**. Both failures encoded the superseded compose straight-through backward rule: probability-scaled operand gradients and chooser-anchor gradients directly from the chosen hard value. They are classified as **ports**, with exact failure messages in the [first-sweep summary](review16-final-sweep/summary.json). Their replacements check full selected-operator gradients and chooser credit exclusively through the score-function term. No remaining assertion failure is concealed as a port or skip.
+ 
+-Earlier failing focused probes and their source snapshots remain under [probes](probes/), [the wider diagnostic](review16-focused-diagnostic/), [the incoming snapshot](review16-before/) and [the pre-sweep snapshot](review16-pre-sweep/). The last eight-file contract probe passed **66 tests** before the full sweep exposed the two additional backward-rule ports. Every narrow probe's request/process command records its file list. The final full sweep covers all of them.
++[Complete per-run results](review17-measurements/summary.json) preserve all four named greedy derivations, predictions and **each word's read-back annotation** (code versus priming, winner IDs, ties and scores). Per-epoch reader norms are in each `xor-NN/run-audit.json`, including the actual affine head and the other output parameters separately. The [reader plot](review17-measurements/reader-weight-trajectories.png) shows only `answer_record_reader.weight`; a flat aggregate over all output parameters is not evidence of a stationary reader.
+ 
+-The [frozen source](review16-source/source.zip) preserves **715 files**, **179 complete old/new test ports against published HEAD**, and **zero changed seed calls**. The [round contracts](review16-contracts-final.json) additionally compare complete test bodies with the incoming §15 candidate, verify unchanged gate tests, runner guards and original output assertions, and record capacities 6/8. **2,013 previously archived evidence files** match their earlier manifests in the [preservation check](review16-historical-preservation.json).
++![Affine reader trajectories](review17-measurements/reader-weight-trajectories.png)
+ 
+-Architecture, GradientFlow, Philosophy, Spaces, the accessible-mind spec and the operator catalogue were not rewritten. The 6.8 plan and FutureWork changed externally during this work; their complete observed changes are [preserved separately](review16-external-docs.json). Those external edits include §16.4. This delivery implements the user's §16.3 instruction; it does not implement an inverse/decomposition chooser or change the generate policy on the authority of those file edits.
++Historical comparisons remain observations of their stated sources and capacities:
+ 
+-## Measurement remains pending
+ 
+-The [campaign](review16_campaign.py) refuses to start without the required sweep result and matching frozen source. It is prepared to run sum ×10 first, requiring **10/10**, then ten XOR trainings each consumed by both unchanged bars, then MM_xor ×10. There have been **no gate retries, no tuning and no §16.3 gate trainings**.
+-
+-The observers are prepared for all requested per-run bands, joint count, named operators and per-word read-back annotations; start/end pairwise word cosines and mean cos(L), root centered singular values and unit-root XOR interaction, code support, `d = relu(e_for-e_against)` ranges, room reports and reader weight trajectories. The actual tenth run would also supply per-sentence/per-step costs, advantage, action and probability before/after; nonzero-advantage count and per-epoch logit range; ownership, decoder margin/gradient and derivation stability. None of those **ten-run** results is claimed here. Reader norms are saved per parameter as well as in aggregate, so a flat aggregate cannot by itself establish a stationary affine head.
+-
+-The requested advance reading remains a forecast: reconstruction 10/10, MM_xor and sum 10/10, and a majority of class runs near zero, with quarter-error runs interpreted through geometry and the reader trajectory. It has not been confirmed or refuted on this frozen source.
+-
+-| Historical record | XOR / MM_grammar capacity | XOR class | XOR reconstruction | Joint | MM_xor | Sum |
+-|---|---|---|---|---|---|---|
+-| 6.9 closing | accepted source | MSE .1147481948 | 0/4 sentences | — | red through §17 | — |
++| Record | CS XOR / MM | Class | Reconstruction | Joint | MM_xor | Sum |
++| --- | --- | --- | --- | --- | --- | --- |
++| 6.9 closing | accepted source | MSE .1147481948 | 0/4 sentences | — | red through 6.9 §17 | — |
+ | §12 | 6 / 8 | 0/10 | 7/10 | 0/10 | 10/10 | 10/10 |
+ | §13 | 262 / 264 | 0/10 | 0/10 | 0/10 | 10/10 | 10/10 |
+ | §14 before addendum | 262 / 264 | 1/10 | 8/10 | 1/10 | 10/10 | 10/10 |
+-| §15 | 6 / 8 | not run | not run | not run | not run | not run |
+-| §16.3 | 6 / 8 | not run | not run | not run | not run | not run |
++| §15 and §16.3 | 6 / 8 | not measured | not measured | — | — | — |
++| §17 | 6 / 8 | 1/10 | 10/10 | 1/10 | 10/10 | 10/10 |
++
++
++The accepted closing record's zero ownership conflicts and prior **9/10 class / 5/10 reconstruction** are preserved. Under two spaces and one index, this XOR table measures composition of **forms**, the inverse, the raw-root affine read and ownership. The gate contexts have empty order-zero meanings; their coincidence is correct. MM_xor's field path measures the connectives where meanings exist.
++
++
++Compared with §14, no measured count is lower. These results stand without retries or tuning.
++
++
++## Geometry, evidence and room
++
++
++| Run | Mean cos(L), start → end | Centered root singular values, start → end | Unit-root XOR interaction, start → end |
++| --- | --- | --- | --- |
++| 1 | 0.8410546 → 0.8410546 | [0.002290134, 0.0009386129, 0.0002833644, 1.132633e-10] → [0.002290134, 0.0009386129, 0.0002833644, 1.132633e-10] | 0.3677247 → 0.3677247 |
++| 2 | 0.879038 → 0.879038 | [0.1262387, 0.02049044, 0.000175489, 8.348198e-10] → [0.1262387, 0.02049044, 0.000175489, 8.348198e-10] | 0.3124221 → 0.3124221 |
++| 3 | 0.8725281 → 0.8725281 | [0.002685003, 0.0006794779, 0.000109379, 1.064792e-10] → [0.002685003, 0.0006794779, 0.000109379, 1.064792e-10] | 0.08458236 → 0.08458236 |
++| 4 | 0.9395174 → 0.9395174 | [0.03013358, 0.01326888, 0.0001201405, 3.374106e-09] → [0.03013358, 0.01326888, 0.0001201405, 3.374106e-09] | 0.0214114 → 0.0214114 |
++| 5 | 0.940415 → 0.940415 | [0.002962359, 0.001011968, 0.0001173888, 8.308347e-11] → [0.002962359, 0.001011968, 0.0001173888, 8.308347e-11] | 0.1510448 → 0.1510448 |
++| 6 | 0.9486687 → 0.9486687 | [0.02481494, 0.0166476, 0.0004311482, 4.234178e-09] → [0.001108272, 0.0008489259, 0.0001026622, 3.344098e-10] | 0.01270057 → 0.07480958 |
++| 7 | 0.7505434 → 0.7505434 | [0.004231066, 0.002692193, 0.0003560868, 2.399541e-10] → [0.1225665, 0.003386146, 0.0007794028, 1.627273e-09] | 0.8844742 → 0.5779663 |
++| 8 | 0.7680132 → 0.7680132 | [0.07395276, 0.02993118, 0.007472027, 1.180462e-08] → [0.07395276, 0.02993118, 0.007472027, 1.180462e-08] | 0.1069435 → 0.1069435 |
++| 9 | 0.8698795 → 0.8698795 | [0.04767191, 0.02845468, 0.001548923, 5.031336e-09] → [0.04767191, 0.02845468, 0.001548923, 5.031336e-09] | 0.05369701 → 0.05369701 |
++| 10 | 0.8660317 → 0.8660317 | [0.001776007, 0.001173763, 0.0001753451, 2.000482e-10] → [0.001776007, 0.001173763, 0.0001753451, 2.000482e-10] | 0.1795816 → 0.1795816 |
++
++
++The interaction is `‖r_hw − r_ht − r_lw + r_lt‖` after normalizing each root for this **audit only**. The class reader remains raw and affine. Each run audit saves complete pairwise word cosine matrices, code and root values, singular values and support per word (fraction nonzero and minimum absolute coordinate), at start and end.
++
++`d = relu(e⁺ − e⁻)` is net 11b evidence for a native part or whole address. `d > 0` selects a part at full presence; it does not scale its code. The next table gives all nonempty stages' evidence ranges and room-clamp counts / largest violations. Room remains `L + m ≤ U`, m = 0: only the minimal whole moves upward, with the existing [0,1] clamp. Any remaining violation is recorded as measured.
++
++
++| Run | d range, start → end | First clamp: before → after | Last clamp: before → after |
++| --- | --- | --- | --- |
++| 1 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 23 / 0.03183153 → 5 / 0.006529354 | 0 / 0 → 0 / 0 |
++| 2 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 20 / 0.05189227 → 5 / 0.02459437 | 0 / 0 → 0 / 0 |
++| 3 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 24 / 0.04515835 → 4 / 0.01381965 | 0 / 0 → 0 / 0 |
++| 4 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 24 / 0.04710009 → 2 / 0.004290139 | 0 / 0 → 0 / 0 |
++| 5 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 20 / 0.06537586 → 5 / 1.490116e-08 | 0 / 0 → 0 / 0 |
++| 6 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 24 / 0.04794516 → 6 / 0.01340403 | 0 / 0 → 0 / 0 |
++| 7 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 18 / 0.05266413 → 3 / 0.01881174 | 0 / 0 → 0 / 0 |
++| 8 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 17 / 0.05670409 → 7 / 0.01435569 | 0 / 0 → 0 / 0 |
++| 9 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 16 / 0.04627087 → 4 / 0.02346047 | 0 / 0 → 0 / 0 |
++| 10 | parts [1, 1] (n=19); wholes [1, 1] (n=8) → parts [1, 1] (n=4); wholes [1, 1] (n=8) | 18 / 0.04332874 → 6 / 0.01501493 | 0 / 0 → 0 / 0 |
++
++## Tenth-run audits
++
++
++The tenth training supplies **1600 sentence/step records**, **1600 departures** and **37 nonzero advantages**. [Its run audit](review17-measurements/xor-10/run-audit.json) records departure/action, both costs, advantage, K, R, probability before/after and all 400 epoch logit ranges. Finite logits span **[5.465583e-05, 0.2857766]**. Maximum analytical gradient error is **2.328306e-10** and finite-difference error **2.029654e-10**.
++
++
++| Feature | Initial weight | Final weight |
++| --- | --- | --- |
++| negative_relative_residual | 1 | 2.46171 |
++| left_activation | 0 | 4.321413 |
++| right_activation | 0 | -4.185598 |
++| left_priming | 0 | 1.809795 |
++| right_priming | 0 | 1.797896 |
++
++
++| Decomposition audit | Start | End |
++| --- | --- | --- |
++| True pair in shortlist | 4/4 | 4/4 |
++| Pick equals true ordered pair | 2/4 | 4/4 |
++| Absent target count | 0 | 0 |
++
++
++The target metric uses **ordered input identities**; the unchanged reconstruction gate compares word multisets. Sentence-path gradient at prototypes and evidence is **0**, with **0 nonzero gradient observations**. Ownership conflicts: **0**. [Ownership](review17-measurements/xor-10/ownership/ownership.json), [sentence gradients](review17-measurements/xor-10/ownership/sentence-path-ownership.json) and [audit summary](review17-measurements/audit-summary.json) retain the parameter-level evidence.
++
++The same training supplies 1600 decoder first-step records and 1200 owner steps. STOP-over-undo logit margins, gradients and actual fixed-parent changes are saved by epoch and named operation; the [raw events](review17-measurements/xor-10/ownership/events.jsonl) and audit summary preserve them. Pooled across both compose trials, kept-path modal fractions by input are 0.5, 0.5, 0.5, 0.5; distinct kept paths are 2, 3, 3, 2. The [same saved records separated by compose trial](review17-results-validation.json) give modal fractions **1, 1, 1, 1** for greedy compose and **1, .965, .9425, 1** for explore compose (400 observations per input per trial). Strictly lower reconstruction is checked on every kept-path decision.
++
++## Mechanism checks and sweep repairs
++
++The [ordinary batch](review17-ordinary-batch.json) retains seed 613, batch `["a b c d e", "f g h i j"]`, its original optimizer, one training batch and **no cost override**. Its two `non` departures have K = 1, R = 31. The gradients agree with `K·R·ΔC·∇p` after the existing two-row reduction, and probabilities move in the expected directions:
++
++
++| Row | ΔC | p before → after | Max gradient error | Finite-difference error |
++| --- | --- | --- | --- | --- |
++| 0 | -0.3064761 | 0.1664562 → 0.1665899 | 1.490116e-08 | 1.502312e-08 |
++| 1 | 0.231753 | 0.1666012 → 0.1665686 | 1.490116e-08 | 2.274901e-08 |
++
++
++The [decomposition tests](../../../test/test_decomposition_chooser.py) verify exact argmin initialization without RNG, supervised recovery of the true shortlisted pair in a misleading-context fixture, no absent-target gradient, K×R counts, and use of resolved physical word IDs when the legacy WORD lane is absent. The existing controlled tie/win/dearer chooser tests retain their seed, batch and assertions. The [one-batch XOR wiring audit](review17-mechanism/probe-context.json) is a mechanism check, not a gate run.
++
++Failures were saved before repair, with complete old/new bodies:
++
++- [First full sweep](review17-sweep/summary.json): 4,893 passed, 286 skipped, one XPASS and 14 failures. **13 ports** supplied the new scorer in minimal decoder fixtures or updated the exact independent-parameter inventory. **One regression** omitted the scorer from the explicit optimizer parameter list; it was fixed in production, retaining the ownership assertion.
++- [Repaired focused probe](probes/review17-repaired/process.json): 144 passed, one skipped, one failure. The strengthened teacher-coverage audit exposed a **regression**: legacy program word rows were absent. Training now uses reconstruction's resolved physical input rows, matching its candidate bank. [Old/new repair](review17-teacher-row-repair.json); the coverage assertion stays.
++- [Same-list repaired probe](probes/review17-row-repaired/process.json): **146 passed, one skipped** across the same twelve files, including the new row-identity regression case.
++- [Next full sweep](review17-green-sweep/summary.json): **4,907 passed, 286 skipped, one XPASS, one failure**. This was a **port** of the assertion that reconstruction's registry contains only byte loss; §17 adds decomposition CE. [Complete old/new file](review17-registry-port-proposed.json). Its checks that target leaves do not change decoding or the byte cost are unchanged.
++- [Final full sweep](review17-final-sweep/summary.json) and [HTML report](review17-final-sweep/report.html): green. All sixteen original output-gradient regressions pass with assertions intact. All [59 focused files](review17-focused-files.txt), including every file in each repair probe, are included; none dropped. The separate ordinary-batch probe names only its measurement file because it checks the requested estimator identity, not repair coverage.
+ 
+-The accepted baseline retains zero ownership conflicts; prior class **9/10** and reconstruction **5/10** remain historical. Under the two-spaces/one-index reading, this XOR table measures perception's composition of forms, its inverse, the affine read and ownership. Order-zero meanings have identical empty contexts in these fixtures; their coincidence is correct. MM_xor's field path measures connectives where meanings exist. Forms remain the join of positively evidenced parts at full presence; wholes bound them, certainty is activation, and perception owns their parameters. Complement bootstrap remains deferred.
++The [frozen source](review17-final-source/source.zip), [round contracts](review17-contracts-final.json) and [delivery](review17-delivery/source.zip) preserve hashes, complete test ports and zero changed seed calls. Historical receipts are [hash-checked](review17-historical-preservation.json). Resource guards are unchanged; the sole runner semantic change is the authorized non-strict XPASS handling. Collection and every failing probe remain available. The final sweep's skips are the existing default-suite selection, not new exclusions; the 30 explicit gate trainings run separately.
+ 
+-Only this receipt, todo 6.8 and the 6.9 §20.3 status are updated from these results. Unit-sphere codes remain retired, magnitude/certainty remains returned in cube form, the antipode row remains removed, and the distributional row is unchanged. The carried operators work, REBAR/RELAX control variates and compose/generate scorer unification remain deferred. No native benchmark or fresh BasicModel scoring ran; frozen evaluation admits nothing, and the trained NanoChat gate waits for item 4's checkpoint. **Nothing committed. Measurement is held at the XPASS decision; Claude reviews before any commit.**
++Only todo 6.8, the 6.9 §20.3 status, GradientFlow's chooser descriptions and this receipt are updated here from §17. The plan's concurrent clarification that teacher CE stays outside the byte-cost comparison is [preserved separately](review17-external-docs.json); the implementation already keeps that boundary. Architecture, Philosophy, Spaces, the accessible-mind spec, the operator catalogue and FutureWork remain as committed. Unit-sphere codes stay retired; magnitude/certainty stays returned in cube form; the antipode row stays removed; the distributional row is unchanged. Carried work remains deferred: Kleene connectives, the fold composing forms, complement bootstrap, the not items, the negative image on the concept face, form-density questions and any dense control variate. No native benchmark or fresh bulk BasicModel scoring ran. Frozen evaluation admits nothing; the trained NanoChat gate waits for item 4's checkpoint. **Stop here for review: §17 uncommitted, candidate local, nothing pushed.**
+diff --git a/doc/plans/2026-09-27-item-6-8-one-attention.md b/doc/plans/2026-09-27-item-6-8-one-attention.md
+index aa533c89e..21baca667 100644
+--- a/doc/plans/2026-09-27-item-6-8-one-attention.md
++++ b/doc/plans/2026-09-27-item-6-8-one-attention.md
+@@ -1822,3 +1822,14 @@ round) and `R` (eligible rounds in the sentence) so the surrogate equals the
+ baseline-subtracted policy gradient exactly; a normalization, not a tuning.
+ 
+ Then §16.4 items 9–12 as sequenced, the green sweep, the one measurement.
++
++*Mid-sweep, §16.4 (2026-10-05).* One failure:
++`test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_only_byte_cost`,
++whose set assertion (`reconstruction.*` terms == `{free_bytes}`) meets the new
++`reconstruction.decomposition` term. Rule made explicit: the trial cost used
++by the keep rule and by the forward chooser's `ΔC` is `free_bytes` only (6.9
++§22–§23); the decomposition cross-entropy is a reconstruction-owned training
++term outside the trial cost, computed after the free decode from the recorded
++composition (the journal supervises, it is not read to decode). Including it
++in `ΔC` would credit the forward chooser for the inverse chooser's confidence.
++The test is ported to assert both.
+diff --git a/doc/plans/2026-09-29-item-6-9-xor-grammar.md b/doc/plans/2026-09-29-item-6-9-xor-grammar.md
+index fefe2f00e..ac521e039 100644
+--- a/doc/plans/2026-09-29-item-6-9-xor-grammar.md
++++ b/doc/plans/2026-09-29-item-6-9-xor-grammar.md
+@@ -1598,7 +1598,7 @@ the test of the balance between the two.
+ | **Magnitude = certainty** (returned in cube form, 6.8 §15) | Separate a symbol's identity from how certainly it is present. | The code is at full presence; evidence selects parts without scaling their codes. Certainty belongs to the leaf's signed activation, not to differences in the magnitudes of form codes. | Returned as the projection coefficient `(leaf·c)/(c·c)` onto the full-presence code `c`; the leaf is activation times that code. No unit-sphere constraint or antipode loss. |
+ | **Distributional pressure on the codes** (co-activation: the CBOW-with-negatives rotation; the SBOW gradient term) | A word2vec-like space: co-occurring concepts near, others apart. "They learn a distance metric from the gradient and their co-activation." | The pull-apart half already comes from the free read-back, whose negatives are the primed competitors (§20.1). Only the pull-together half is set aside: a second objective on the codes before the first one works, and on XOR's corpus it merges the words XOR must separate (§20.2). | The gates hold and the primed bank is live. Then, as Alec asks (2026-10-02): a slight SBOW term whose window is the spreading-activation field, co-primed symbols as positives weighted by their activation and unprimed rows as negatives, a gradient term in the Error registry with a weight well below reconstruction's, so that the audit sees it and the XOR table tests the balance. The existing SBOW spine (`conceptual_sbow_loss`) is parallel-only and windows the sentence's slab; it would take the field as its window and run on the serial path. The rotation retires (no legacy). The alternative with no second term: compose a concept's code from its constituents over the store's edges, so co-activated concepts share code structure through the fold. |
+ | **The primed bank as context and candidates** | The connections bank of symbols (§15.3): the open read primes the words that the words activate. | In the ownership round it held no activated word in 6,400 occurrences: the fixtures' concept stores have few edges. | The store's edges exist in the fixtures, measured by the audit's competitor count being nonzero. Then it is the read-back's candidate set and the distribution's context. |
+-| **Decoder exploration** (§26.3; implemented, measurement pending) | The generate walk infers operations from the root (§25.1). | Greedy argmax alone did not leave STOP when the missing-word penalty supplied no untaken-transition credit. | Implemented: greedy and a sampled one-departure explore walk are both costed before learning; only strictly lower reconstruction keeps explore. The generate straight-through path remains. The decoder STOP-versus-undo margin and its gradients are audited. The 6.8 §16.3 compose chooser separately uses the detached-cost `p(a_dep)·(C_explore−C_greedy)` surrogate with a hard pair inverse. Mechanism checks pass; the once-only gate campaign is held because the full-sweep supervisor rejects an existing non-strict XPASS. See the [receipt](../benchmarks/2026-10-03-operators-attention/README.md). |
++| **Decoder exploration** (§26.3; implemented, §17 measured candidate) | The generate walk infers operations from the root (§25.1). | Greedy argmax alone did not leave STOP when the missing-word penalty supplied no untaken-transition credit. | Greedy and sampled one-departure walks are both costed before learning; only strictly lower reconstruction keeps explore. The generate straight-through path and eligibility mask remain. The forward compose chooser uses detached-cost `K·R·p(a_dep)·(C_explore−C_greedy)`. The separate decomposition chooser learns the true shortlisted pair by cross-entropy outside that trial-cost comparison, with codes detached. The green §17 sweep precedes one campaign: XOR class 1/10, reconstruction 10/10, joint 1/10; MM_xor and sum 10/10. The tenth-run audit records zero ownership conflicts and prototype/evidence sentence gradients, 37 nonzero advantages out of 1600, and true-pair picks 2/4 → 4/4. The §16.3 candidate is committed/tagged; §17 is uncommitted and under review, nothing pushed. See the [receipt](../benchmarks/2026-10-03-operators-attention/README.md). |
+ | **The VQ EMA refresh** | k-means over quantized events. | A hidden writer; clusters word forms, not meanings; the "#13 mechanism" in the code's own comment. | Not planned to return. Recorded so that its removal is deliberate. |
+ | **The answer's reach into the understanding** (step 5a) | 8 or 9 of 10 on the class gate in §14. | It makes the understanding answer-shaped; (B) in §18. | Fallback only, if (A) fails after §20.1 with distribution and the sphere restored. |
+ 
+diff --git a/test/bounded_tests.py b/test/bounded_tests.py
+index 066a79d1f..1b56b110e 100644
+--- a/test/bounded_tests.py
++++ b/test/bounded_tests.py
+@@ -633,7 +633,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
+                        active_case=data.get("active"))
+         result["workers"].append(receipt)
+         result["completed"].extend(receipt["completed"])
+-        test_failure = any(report["outcome"] in ("failed", "xpassed")
++        test_failure = any(report["outcome"] == "failed"
+                            for report in receipt["reports"])
+         # pytest uses status 1 for an ordinary assertion/setup/teardown failure.
+         # It is diagnostic information, not a failed process boundary: keep
+@@ -659,7 +659,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
+         retry = []
+         for node in completed:
+             failures = [r for r in receipt["reports"] if r["nodeid"] == node
+-                        and r["outcome"] in ("failed", "xpassed")]
++                        and r["outcome"] == "failed"]
+             # Never erase a concurrent setup/teardown/assertion failure, nor
+             # retry a second failure. Raw worker JSON and logs keep attempt 1.
+             if (node not in cache_retried and failures
+@@ -681,7 +681,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
+             receipt["completed"] = [node for node in completed if node not in retry]
+             for node in retry:
+                 result["completed"].remove(node)
+-        if any(r["outcome"] in ("failed", "xpassed") for r in receipt["reports"]):
++        if any(r["outcome"] == "failed" for r in receipt["reports"]):
+             result.update(exit_code=1, reason="test_failure")
+         return True
+ 
+diff --git a/test/test_bounded_test_runner.py b/test/test_bounded_test_runner.py
+index 5fe0f40dd..22f59eb6a 100644
+--- a/test/test_bounded_test_runner.py
++++ b/test/test_bounded_test_runner.py
+@@ -337,6 +337,21 @@ def test_real_pytest_coverage_fresh_workers_and_failure_receipt(runner, tmp_path
+     assert "skipped" in report and "xfailed" in report
+ 
+ 
++@pytest.mark.parametrize('strict, expected_exit', [(False, 0), (True, 1)])
++def test_xpass_respects_pytest_strictness(runner, tmp_path, strict, expected_exit):
++    (tmp_path / 'pytest.ini').write_text('[pytest]\n')
++    (tmp_path / 'test_xpass.py').write_text(
++        'import pytest\n' + f'@pytest.mark.xfail(strict={strict!r})\n'
++        'def test_xpass(): assert True\n')
++    result = runner.run_suite(root=tmp_path, selectors=['test_xpass.py'],
++        run_dir=tmp_path / 'result', memory_bytes=512 * 1024**2,
++        timeout=60, suite_timeout=120, batch_size=1, lock_path=tmp_path / 'lock')
++    assert result['exit_code'] == expected_exit
++    assert len(result['completed']) == len(result['selected']) == 1
++    outcomes = [r['outcome'] for worker in result['workers'] for r in worker['reports']]
++    assert outcomes == ['failed' if strict else 'xpassed']
++
++
+ def test_test_failure_does_not_cancel_remaining_worker_coverage(runner, tmp_path):
+     """A diagnostic receipt records every selected test, not just the first red one."""
+     (tmp_path / "pytest.ini").write_text("[pytest]\n")
+diff --git a/test/test_echoic_decoder.py b/test/test_echoic_decoder.py
+index 7601766ac..db32ad46a 100644
+--- a/test/test_echoic_decoder.py
++++ b/test/test_echoic_decoder.py
+@@ -1,5 +1,6 @@
+ """The conceptual generate decoder is shared, reconstruction-owned and journal-free."""
+ from dataclasses import fields
++from DecompositionChooser import DecompositionChooser
+ from types import SimpleNamespace, MethodType
+ 
+ import torch
+@@ -90,7 +91,8 @@ def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compil
+         policy.weight.copy_(torch.tensor([[1., 1.], [-1., -1.], [0., 0.]]))
+         policy.bias.copy_(torch.tensor([-6., -6., 0.]))
+     language = SimpleNamespace(_generate_binary_ops=(conjunction,), _generate_unary_ops=(NotLayer(),),
+-        generate_policy=policy, _generate_policy_width=2)
++        generate_policy=policy, _generate_policy_width=2,
++        decomposition_chooser=DecompositionChooser())
+     for name in ('reverse_binary_step', '_reverse_of_binary_op', '_finish_binary_inverse',
+                  'generate_unary_step', 'generate_policy_logits', 'choose_generate'):
+         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
+diff --git a/test/test_free_reconstruction.py b/test/test_free_reconstruction.py
+index 2a9eaf543..eea162e5f 100644
+--- a/test/test_free_reconstruction.py
++++ b/test/test_free_reconstruction.py
+@@ -58,7 +58,7 @@ def test_free_trial_uses_no_reference_or_offsets_and_only_byte_cost(monkeypatch)
+         model.runBatch(train=True,optimizer=optimizer,batchSize=4,split='train',
+             batch_override=(model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)))
+         assert calls == ['greedy', 'explore', 'greedy', 'explore']
+-        assert {name for name in model._sentence_cost_registry._terms if name.startswith('reconstruction.')} == {'reconstruction.free_bytes'}
++        assert {name for name in model._sentence_cost_registry._terms if name.startswith('reconstruction.')} == {'reconstruction.free_bytes', 'reconstruction.decomposition'}
+         audit = model.ownership_gradient_diagnostics(optimizer)
+         assert audit['conflicts'] == 0
+         decoder = [row for row in audit['parameters'] if 'generate_policy' in row['parameter']]
+diff --git a/test/test_generation_catalog.py b/test/test_generation_catalog.py
+index 612bcb4ae..5c4730ba6 100644
+--- a/test/test_generation_catalog.py
++++ b/test/test_generation_catalog.py
+@@ -108,8 +108,8 @@ def test_alias_catalog_reordering_preserves_shared_identity_and_separate_policy(
+         assert not torch.equal(torch.get_rng_state(), before)  # the new decoder chooser initializes once
+         assert result.resolve_generation_op("CS", "sum") is source
+         assert result.resolve_generation_op("SS", "sum") is source
+-        assert {id(p) for p in result.parameters()} == {id(p) for p in result.generate_policy.parameters()}
+-        assert {name for name in result.state_dict() if not name.startswith('_generate_')} == {'generate_policy.weight','generate_policy.bias'}
++        assert {id(p) for p in result.parameters()} == {id(p) for module in (result.generate_policy, result.decomposition_chooser) for p in module.parameters()}
++        assert {name for name in result.state_dict() if not name.startswith('_generate_')} == {'generate_policy.weight','generate_policy.bias','decomposition_chooser.weight'}
+         return result
+ 
+     first = catalog(("CS", "SS"))
+diff --git a/test/test_grammar_word_learning.py b/test/test_grammar_word_learning.py
+index c8836b49a..e449aa54c 100644
+--- a/test/test_grammar_word_learning.py
++++ b/test/test_grammar_word_learning.py
+@@ -193,7 +193,7 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
+         monkeypatch.setattr(BasicModel, '_compose_score_function_loss', constructed_costs)
+         receipt = _ROOT / 'doc/benchmarks/2026-10-03-operators-attention'
+         monkeypatch.syspath_prepend(str(receipt))
+-        from review16_score_probe import observe_score_function
++        from review17_score_probe import observe_score_function
+         audit = {}
+         with observe_score_function(audit), capture_readings(model) as readings:
+             result, _ = model.runBatch(
+diff --git a/test/test_readback_operand_unaries.py b/test/test_readback_operand_unaries.py
+index 66debb0b4..b39098641 100644
+--- a/test/test_readback_operand_unaries.py
++++ b/test/test_readback_operand_unaries.py
+@@ -1,6 +1,7 @@
+ """Replay the four saved §22 roots; no training or initialization is repeated."""
+ import json
+ from pathlib import Path
++from DecompositionChooser import DecompositionChooser
+ from types import SimpleNamespace, MethodType
+ 
+ import torch
+@@ -18,7 +19,7 @@ def test_saved_roots_follow_operand_unaries(monkeypatch, compiled):
+     basis = torch.stack([torch.stack([codes[a], codes[b]]) for a,b in pairs])
+     roots = torch.tensor(json.loads((folder/'geometry-start.json').read_text())['roots']['values'])
+     conjunction, negation = ConjunctionLayer(), NotLayer()
+-    language = SimpleNamespace()
++    language = SimpleNamespace(decomposition_chooser=DecompositionChooser())
+     for name in ('reverse_binary_step', '_reverse_of_binary_op', '_finish_binary_inverse',
+                  'reverse_unary_step'):
+         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
+diff --git a/test/test_review11_contracts.py b/test/test_review11_contracts.py
+index e40dfa412..d0ac827de 100644
+--- a/test/test_review11_contracts.py
++++ b/test/test_review11_contracts.py
+@@ -1,4 +1,5 @@
+ """Review §11: an affine numeric answer and support-governed decoding."""
++from DecompositionChooser import DecompositionChooser
+ from types import MethodType, SimpleNamespace
+ 
+ import pytest
+@@ -40,7 +41,8 @@ def decoder():
+         policy.weight.zero_()
+         policy.bias.copy_(torch.tensor([0., 20.]))
+     language = SimpleNamespace(_generate_binary_ops=(Sum(),), _generate_unary_ops=(),
+-        generate_policy=policy, _generate_policy_width=2)
++        generate_policy=policy, _generate_policy_width=2,
++        decomposition_chooser=DecompositionChooser())
+     for name in ('generate_policy_logits', 'reverse_binary_step', '_reverse_of_binary_op'):
+         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
+     language._bounded_binary_reconstruction = LanguageSpace._bounded_binary_reconstruction
+diff --git a/test/test_review14_contracts.py b/test/test_review14_contracts.py
+index e6188d7ce..e02694131 100644
+--- a/test/test_review14_contracts.py
++++ b/test/test_review14_contracts.py
+@@ -140,19 +140,19 @@ def test_zero_parent_relative_search_remains_finite():
+     assert not left.requires_grad and not right.requires_grad
+ 
+ 
+-def test_review16_measurement_wiring_on_one_ordinary_batch(tmp_path):
++def test_review17_measurement_wiring_on_one_ordinary_batch(tmp_path):
+     import json, os, sys
+     from pathlib import Path
+     from bounded_tests import run_guarded, GIB
+     root=Path(__file__).resolve().parents[1]
+     receipt=root/'doc/benchmarks/2026-10-03-operators-attention'
+     env=os.environ.copy()
+-    env.update(PYTEST_PLUGINS='review16_gate_observer', MODEL_COMPILE='none',
++    env.update(PYTEST_PLUGINS='review17_gate_observer', MODEL_COMPILE='none',
+         OWNERSHIP_OBSERVER_OUTPUT=str(tmp_path/'ownership'),
+         ITEM7_XOR_MEASUREMENTS=str(tmp_path/'observations.jsonl'), ITEM7_XOR_GATE='5',
+-        REVIEW16_REPORTS=str(tmp_path/'reports.jsonl'),
++        REVIEW17_REPORTS=str(tmp_path/'reports.jsonl'),
+         PYTHONPATH=os.pathsep.join(map(str,(receipt,root/'bin',root/'test'))))
+-    result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'review16_observer_probe.py')],
++    result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'review17_observer_probe.py')],
+         cwd=root,env=env,log_path=tmp_path/'observer.log',memory_bytes=8*GIB,timeout=1800)
+     assert result['exit_code']==0,(tmp_path/'observer.log').read_text()
+ 
+@@ -194,7 +194,8 @@ def test_compose_score_function_moves_toward_the_cheaper_departure(advantage):
+     path[1][18], path[1][27] = actions, logp
+     registry = Error(row_mask=torch.tensor([True]))
+     model = SimpleNamespace(_compose_forced_slots=torch.tensor([[True, False]]),
+-                            _sentence_cost_registry=registry)
++                            _sentence_cost_registry=registry,
++                            _compose_sampling_scale=torch.tensor([[6., 0.]]))
+     optimizer = torch.optim.SGD([logits, unrelated], lr=.1)
+     before = logits.detach().clone()
+     compared = torch.tensor([[1., 1. + advantage]], requires_grad=True)
+@@ -205,7 +206,7 @@ def test_compose_score_function_moves_toward_the_cheaper_departure(advantage):
+         probability = before.softmax(-1)
+         expected = -probability * probability[:, 1:2]
+         expected[:, 1] += probability[:, 1]
+-        torch.testing.assert_close(logits.grad, advantage * expected)
++        torch.testing.assert_close(logits.grad, 6 * advantage * expected)
+         doubled = BasicModel._compose_score_function_loss(
+             model, path, torch.tensor([[1., 1. + 2 * advantage]]))
+         twice = torch.autograd.grad(doubled, logits)[0]
+diff --git a/todo.md b/todo.md
+index ac2268175..f15a2c473 100644
+--- a/todo.md
++++ b/todo.md
+@@ -193,52 +193,49 @@ generation is expected at this stage and is recorded, not tuned away.
+ - **6.8. One attention: brackets, narrowing, and expectation at every bracket**
+    ([plan](doc/plans/2026-09-27-item-6-8-one-attention.md); Alec, 2026-09-27;
+    after 7.5 and 7, before 6.5; three non-blocking questions in plan §6).
+-   **October 5 §16.3 candidate, measurement held:** the XOR table remains the
+-   **composition mechanism gate** (§12.1). The compose chooser now receives the
+-   reconstruction-owned `p(a_dep) * (C_explore-C_greedy)` surrogate with detached
+-   costs. Departure rounds and value-distinct eligible alternatives are sampled
+-   uniformly; ineffective STOP/identity/duplicate choices are excluded. Cheaper
+-   and dearer alternatives train with opposite signs; ties add no term. The
+-   strict-win update and compose straight-through credit are gone. Pair search
+-   stays hard with detached candidates and a relative residual. Generate's
+-   straight-through walk, seeds, bars, budgets and runner guards are unchanged.
+-   Forms remain the join of positive-evidence parts at full presence; wholes
+-   bound forms without shrinking parts. Both class gates use the same raw-root
+-   output-owned affine reader. Two spaces share the symbol/concept index, with
+-   CS capacities **6 / 8**. Perception owns codes and evidence; sentence-path
+-   gradients there are zero. Empty same-context meanings correctly coincide.
+-   **Verification:** final ten-worker default sweep completed **5187 cases:
+-   4900 passed, 286 skipped, one non-strict XPASS, zero failed assertions**.
+-   Every pytest worker exited zero, but the bounded supervisor rejects XPASS.
+-   The unchanged .8 overlap test unexpectedly passed; the required green-sweep
+-   condition is therefore unmet. A decision on that named XPASS is pending.
+-   No guard was relaxed, test omitted or stochastic rerun used to seek green.
+-   All sixteen original output-gradient regressions pass with assertions intact.
+-   The full sweep includes all 57 focused files, with none dropped. Complete
+-   old/new ports and failure classifications are in the one
+-   [receipt](doc/benchmarks/2026-10-03-operators-attention/README.md).
+-   The original seed-613 ordinary batch now has two nonzero advantages after
+-   ineffective departures are excluded. Its probabilities move in the expected
+-   directions; the surrogate gradient agrees with the analytical derivative to
+-   **1.87e-9**, and a one-logit finite difference to **1.21e-9**. Explicit tie and
+-   non-tie fixtures retain the seed and batch. One ordinary XOR batch has four
+-   departures, zero nonzero advantages, zero code/evidence sentence gradients
+-   and zero ownership conflicts. These are mechanism checks, not gate runs.
+-   **Zero §16.3 gate trainings.** Pending the sweep decision: sum ×10 (10/10
+-   required), ten shared XOR trainings with both bars and all requested audits,
+-   then MM_xor ×10, once on frozen source. No tuning or gate retries.
+-   Historical class/reconstruction/joint counts stand: §12 **0/7/0**, §13
+-   **0/0/0**, §14 **1/8/1** (pre-addendum CS 262/264); each had MM and sum **10/10**.
+-   Accepted MSE **.114748**, reconstruction **0/4**, zero conflicts and prior
+-   **9/10 / 5/10** remain historical. Archived evidence is unchanged.
+-   The observers cover geometry, support, d ranges, room, reader trajectories,
+-   per-word read-back, decoder margin/stability and per-step chooser advantage/
+-   probability/logit ranges. Protected architecture docs were not rewritten;
+-   concurrent external 6.8-plan/FutureWork edits are preserved separately.
+-   The 6.9 §20.3 status records the implemented decoder exploration and current
+-   measurement hold; its distributional row is unchanged. Carried work remains
+-   deferred. Frozen evaluation admits nothing; the trained NanoChat gate waits
+-   for item 4. No fresh BasicModel scoring. **Nothing committed; Claude reviews.**
++   **October 5 §17 measured candidate; review pending:** the §16.3 state was
++   committed on main as `eb1fbefb`, tagged `6.8-s16.3-candidate`, before this
++   round. The §17 work is **uncommitted; nothing pushed; no parent submodule
++   bump**. The XOR table remains the **composition mechanism gate** (§12.1).
++   The reconstruction-owned forward surrogate is now
++   `K * R * p(a_dep) * (C_explore-C_greedy)`, with detached costs, uniform
++   eligible action/round draws and ties contributing no term. The separate
++   decomposition chooser scores relative fit, activation and priming over the
++   existing shortlist, starts at the residual argmin, and learns the true
++   pair by teacher-forced cross-entropy. Absent targets are counted, not
++   trained. That CE is outside the byte-cost comparison and keep decision.
++   The walk, byte scorer and eligibility mask are unchanged. Forms remain
++   joins of positively evidenced parts at full presence; perception owns
++   codes and evidence. Two spaces share the symbol/concept index; capacities
++   remain **6 / 8**, with the same raw-root affine reader for both controls.
++   **Green full sweep:** **5195 cases: 4908 passed, 286 skipped, one XFAIL,
++   zero failed**, ten workers. Non-strict XPASS now counts as pass; strict
++   XPASS still fails. The .8 overlap assertion and non-strict mark remain.
++   All sixteen original output-gradient assertions are unchanged and pass;
++   all 59 focused files are included. Ports and the two production regressions
++   are classified, with failing sources and complete old/new bodies, in the
++   one [receipt](doc/benchmarks/2026-10-03-operators-attention/README.md).
++   **One frozen campaign:** sum **10/10**, read first; XOR class **1/10**,
++   reconstruction **10/10**, joint **1/10** from ten shared trainings; MM_xor
++   **10/10**. Bands: **1 at 0, 7 at ¼, 2 between, 0 above ¼**. Class remains
++   red. Reader norms move; the forecast of a majority near zero was not met.
++   No retries, tuning, attribution campaign or native benchmark. No count is
++   below §14; historical class/reconstruction/joint counts remain §12
++   **0/7/0**, §13 **0/0/0**, §14 **1/8/1** (pre-addendum CS 262/264), each
++   with MM and sum **10/10**. Accepted MSE **.114748**, reconstruction **0/4**,
++   zero conflicts and prior **9/10 / 5/10** remain historical.
++   **Audits:** the original seed-613 ordinary batch verifies K·R·ΔC·∇p
++   within **1.49e-8**, finite differences within **2.28e-8**. The tenth gate
++   records 1600 departures, **37 nonzero advantages**, finite logit ranges
++   every epoch, and zero prototype/evidence sentence gradients and ownership
++   conflicts. Decomposition shortlist coverage is **4/4 → 4/4** and ordered
++   true-pair picks **2/4 → 4/4**. All 80 final word read-backs are code-decided.
++   Per-run operators, geometry/support, d ranges, room, affine reader norms,
++   decoder margins and kept-path stability are saved. Empty same-context
++   meanings correctly coincide; complement bootstrap and the carried operators
++   work remain deferred. Frozen evaluation admits nothing; the trained NanoChat
++   gate waits for item 4. No fresh bulk BasicModel scoring. **Claude reviews
++   the results before any further commit; any push waits for Alec's word.**
+    **Item-7 reading residue:** every read word currently runs the complete
+    `interpret` unary under every binding. This forcing stays until reading
+    mode decides when an object is interpreted; its removal is not part of

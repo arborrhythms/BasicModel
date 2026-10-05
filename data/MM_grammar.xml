@@ -26,22 +26,25 @@
 
   </architecture>
 
+  <!-- 6.8 §22 declared capacity increase: event width 14 -> 22, hence
+       content width 6 -> 14 after the four where and four when coordinates.
+       Letter joins have more content coordinates; row capacities stay fixed. -->
   <InputSpace>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
   </InputSpace>
 
   <PartSpace>
     <nOutput>8</nOutput>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nVectors>256</nVectors>
     <invertible>true</invertible>
   </PartSpace>
 
   <ConceptualSpace>
     <nOutput>8</nOutput>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <!-- §14 addendum: symbol/concept pairs only; letters stay in PS. -->
     <nVectors>8</nVectors>
     <invertible>true</invertible>
@@ -49,10 +52,9 @@
 
   <WholeSpace>
     <nOutput>8</nOutput>
-    <nDim>14</nDim>
-    <!-- content width after the canonical where/when band (4+4): without
-         this the WS event is ALL BAND and unity evidence pools to zero
-         (dual-towers: the universe must have somewhere to land). -->
+    <nDim>22</nDim>
+    <!-- The output-width override remains separate from the processing
+         width above, which now has fourteen content coordinates. -->
     <nOutputDim>14</nOutputDim>
     <!-- WholeSpace is the upstream eight-class property inventory. Word,
          object, and META concepts are relation-only state owned downstream by

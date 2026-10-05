@@ -140,19 +140,19 @@ def test_zero_parent_relative_search_remains_finite():
     assert not left.requires_grad and not right.requires_grad
 
 
-def test_review16_measurement_wiring_on_one_ordinary_batch(tmp_path):
+def test_review17_measurement_wiring_on_one_ordinary_batch(tmp_path):
     import json, os, sys
     from pathlib import Path
     from bounded_tests import run_guarded, GIB
     root=Path(__file__).resolve().parents[1]
     receipt=root/'doc/benchmarks/2026-10-03-operators-attention'
     env=os.environ.copy()
-    env.update(PYTEST_PLUGINS='review16_gate_observer', MODEL_COMPILE='none',
+    env.update(PYTEST_PLUGINS='review17_gate_observer', MODEL_COMPILE='none',
         OWNERSHIP_OBSERVER_OUTPUT=str(tmp_path/'ownership'),
         ITEM7_XOR_MEASUREMENTS=str(tmp_path/'observations.jsonl'), ITEM7_XOR_GATE='5',
-        REVIEW16_REPORTS=str(tmp_path/'reports.jsonl'),
+        REVIEW17_REPORTS=str(tmp_path/'reports.jsonl'),
         PYTHONPATH=os.pathsep.join(map(str,(receipt,root/'bin',root/'test'))))
-    result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'review16_observer_probe.py')],
+    result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'review22_observer_probe.py')],
         cwd=root,env=env,log_path=tmp_path/'observer.log',memory_bytes=8*GIB,timeout=1800)
     assert result['exit_code']==0,(tmp_path/'observer.log').read_text()
 
@@ -194,7 +194,8 @@ def test_compose_score_function_moves_toward_the_cheaper_departure(advantage):
     path[1][18], path[1][27] = actions, logp
     registry = Error(row_mask=torch.tensor([True]))
     model = SimpleNamespace(_compose_forced_slots=torch.tensor([[True, False]]),
-                            _sentence_cost_registry=registry)
+                            _sentence_cost_registry=registry,
+                            _compose_sampling_scale=torch.tensor([[6., 0.]]))
     optimizer = torch.optim.SGD([logits, unrelated], lr=.1)
     before = logits.detach().clone()
     compared = torch.tensor([[1., 1. + advantage]], requires_grad=True)
@@ -205,7 +206,7 @@ def test_compose_score_function_moves_toward_the_cheaper_departure(advantage):
         probability = before.softmax(-1)
         expected = -probability * probability[:, 1:2]
         expected[:, 1] += probability[:, 1]
-        torch.testing.assert_close(logits.grad, advantage * expected)
+        torch.testing.assert_close(logits.grad, 6 * advantage * expected)
         doubled = BasicModel._compose_score_function_loss(
             model, path, torch.tensor([[1., 1. + 2 * advantage]]))
         twice = torch.autograd.grad(doubled, logits)[0]

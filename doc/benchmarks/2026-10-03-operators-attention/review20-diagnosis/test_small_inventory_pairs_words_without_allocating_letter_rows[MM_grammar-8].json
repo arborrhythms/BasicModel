@@ -1,0 +1,1120 @@
+{
+  "test": "test/test_review14_addendum.py::test_small_inventory_pairs_words_without_allocating_letter_rows[MM_grammar-8]",
+  "terms": [],
+  "decoder": [
+    {
+      "legal": [
+        [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          true
+        ],
+        [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          true
+        ],
+        [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          true
+        ],
+        [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          true
+        ]
+      ],
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "parent_norms": [
+        1.5029726028442383,
+        1.9697974920272827,
+        1.7997890710830688,
+        1.7997890710830688
+      ]
+    }
+  ],
+  "allocations": [
+    {
+      "key": [
+        "snap",
+        1
+      ],
+      "row": 0,
+      "rows": {
+        "0": [
+          "snap",
+          1
+        ]
+      },
+      "frames": [
+        {
+          "function": "_csw_concept_row",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+          "line": 15880,
+          "scalars": {
+            "order": "0",
+            "concept_id": "1",
+            "region": "'concept inventory'",
+            "cap": "8",
+            "base": "0",
+            "capacity": "4",
+            "required": "1"
+          }
+        },
+        {
+          "function": "_populate_concept_weights",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+          "line": 15967,
+          "scalars": {
+            "concept_id": "1",
+            "pole": "0",
+            "coactive": "False",
+            "word_reading": "True",
+            "n_raw": "7",
+            "n_poles": "0",
+            "order": "0"
+          }
+        },
+        {
+          "function": "lookup_word",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Interpret.py",
+          "line": 144,
+          "scalars": {
+            "form": "'hello'",
+            "word_reading": "True",
+            "word": "1",
+            "part": "4",
+            "whole": "8",
+            "discovering": "False"
+          }
+        },
+        {
+          "function": "_stage_reading_word_concepts",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 11107,
+          "scalars": {
+            "name": "'atoms'",
+            "data": "b'hello world'",
+            "lo": "0",
+            "hi": "5",
+            "complete": "True",
+            "form": "'hello'",
+            "b": "0"
+          }
+        },
+        {
+          "function": "_lex_embed_stem",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 13231,
+          "scalars": {
+            "_u_ok": "True"
+          }
+        },
+        {
+          "function": "_forward_per_stage",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 23179,
+          "scalars": {
+            "return_sentence_state": "False",
+            "B": "4"
+          }
+        },
+        {
+          "function": "forward",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 8313,
+          "scalars": {
+            "own_context": "True",
+            "external_start": "False"
+          }
+        },
+        {
+          "function": "masked",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 153,
+          "scalars": {
+            "depth": "0"
+          }
+        },
+        {
+          "function": "test_small_inventory_pairs_words_without_allocating_letter_rows",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/test/test_review14_addendum.py",
+          "line": 31,
+          "scalars": {
+            "config": "'MM_grammar'",
+            "capacity": "8"
+          }
+        },
+        {
+          "function": "pytest_pyfunc_call",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/python.py",
+          "line": 167,
+          "scalars": {}
+        },
+        {
+          "function": "_multicall",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py",
+          "line": 121,
+          "scalars": {
+            "hook_name": "'pytest_pyfunc_call'",
+            "firstresult": "True",
+            "__tracebackhide__": "True"
+          }
+        }
+      ]
+    },
+    {
+      "key": [
+        "snap",
+        3
+      ],
+      "row": 1,
+      "rows": {
+        "0": [
+          "snap",
+          2
+        ],
+        "1": [
+          "snap",
+          3
+        ]
+      },
+      "frames": [
+        {
+          "function": "_csw_concept_row",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+          "line": 15880,
+          "scalars": {
+            "order": "0",
+            "concept_id": "3",
+            "region": "'concept inventory'",
+            "cap": "8",
+            "base": "0",
+            "capacity": "4",
+            "required": "2"
+          }
+        },
+        {
+          "function": "_populate_concept_weights",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+          "line": 15967,
+          "scalars": {
+            "concept_id": "3",
+            "pole": "0",
+            "coactive": "False",
+            "word_reading": "True",
+            "n_raw": "7",
+            "n_poles": "0",
+            "order": "0"
+          }
+        },
+        {
+          "function": "lookup_word",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Interpret.py",
+          "line": 144,
+          "scalars": {
+            "form": "'world'",
+            "word_reading": "True",
+            "word": "3",
+            "part": "8",
+            "whole": "8",
+            "discovering": "False"
+          }
+        },
+        {
+          "function": "_stage_reading_word_concepts",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 11107,
+          "scalars": {
+            "name": "'atoms'",
+            "data": "b'hello world'",
+            "lo": "6",
+            "hi": "11",
+            "complete": "True",
+            "form": "'world'",
+            "b": "0",
+            "word": "1",
+            "object_id": "2"
+          }
+        },
+        {
+          "function": "_lex_embed_stem",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 13231,
+          "scalars": {
+            "_u_ok": "True"
+          }
+        },
+        {
+          "function": "_forward_per_stage",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 23179,
+          "scalars": {
+            "return_sentence_state": "False",
+            "B": "4"
+          }
+        },
+        {
+          "function": "forward",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 8313,
+          "scalars": {
+            "own_context": "True",
+            "external_start": "False"
+          }
+        },
+        {
+          "function": "masked",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 153,
+          "scalars": {
+            "depth": "0"
+          }
+        },
+        {
+          "function": "test_small_inventory_pairs_words_without_allocating_letter_rows",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/test/test_review14_addendum.py",
+          "line": 31,
+          "scalars": {
+            "config": "'MM_grammar'",
+            "capacity": "8"
+          }
+        },
+        {
+          "function": "pytest_pyfunc_call",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/python.py",
+          "line": 167,
+          "scalars": {}
+        },
+        {
+          "function": "_multicall",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py",
+          "line": 121,
+          "scalars": {
+            "hook_name": "'pytest_pyfunc_call'",
+            "firstresult": "True",
+            "__tracebackhide__": "True"
+          }
+        }
+      ]
+    },
+    {
+      "key": [
+        "snap",
+        5
+      ],
+      "row": 2,
+      "rows": {
+        "0": [
+          "snap",
+          2
+        ],
+        "1": [
+          "snap",
+          4
+        ],
+        "2": [
+          "snap",
+          5
+        ]
+      },
+      "frames": [
+        {
+          "function": "_csw_concept_row",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+          "line": 15880,
+          "scalars": {
+            "order": "0",
+            "concept_id": "5",
+            "region": "'concept inventory'",
+            "cap": "8",
+            "base": "0",
+            "capacity": "4",
+            "required": "3"
+          }
+        },
+        {
+          "function": "_populate_concept_weights",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+          "line": 15967,
+          "scalars": {
+            "concept_id": "5",
+            "pole": "0",
+            "coactive": "False",
+            "word_reading": "True",
+            "n_raw": "7",
+            "n_poles": "0",
+            "order": "0"
+          }
+        },
+        {
+          "function": "lookup_word",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Interpret.py",
+          "line": 144,
+          "scalars": {
+            "form": "'there'",
+            "word_reading": "True",
+            "word": "5",
+            "part": "2",
+            "whole": "8",
+            "discovering": "False"
+          }
+        },
+        {
+          "function": "_stage_reading_word_concepts",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 11107,
+          "scalars": {
+            "name": "'atoms'",
+            "data": "b'hello there'",
+            "lo": "6",
+            "hi": "11",
+            "complete": "True",
+            "form": "'there'",
+            "b": "1",
+            "word": "1",
+            "object_id": "2"
+          }
+        },
+        {
+          "function": "_lex_embed_stem",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 13231,
+          "scalars": {
+            "_u_ok": "True"
+          }
+        },
+        {
+          "function": "_forward_per_stage",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 23179,
+          "scalars": {
+            "return_sentence_state": "False",
+            "B": "4"
+          }
+        },
+        {
+          "function": "forward",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 8313,
+          "scalars": {
+            "own_context": "True",
+            "external_start": "False"
+          }
+        },
+        {
+          "function": "masked",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 153,
+          "scalars": {
+            "depth": "0"
+          }
+        },
+        {
+          "function": "test_small_inventory_pairs_words_without_allocating_letter_rows",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/test/test_review14_addendum.py",
+          "line": 31,
+          "scalars": {
+            "config": "'MM_grammar'",
+            "capacity": "8"
+          }
+        },
+        {
+          "function": "pytest_pyfunc_call",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/python.py",
+          "line": 167,
+          "scalars": {}
+        },
+        {
+          "function": "_multicall",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py",
+          "line": 121,
+          "scalars": {
+            "hook_name": "'pytest_pyfunc_call'",
+            "firstresult": "True",
+            "__tracebackhide__": "True"
+          }
+        }
+      ]
+    },
+    {
+      "key": [
+        "snap",
+        7
+      ],
+      "row": 3,
+      "rows": {
+        "0": [
+          "snap",
+          2
+        ],
+        "1": [
+          "snap",
+          4
+        ],
+        "2": [
+          "snap",
+          6
+        ],
+        "3": [
+          "snap",
+          7
+        ]
+      },
+      "frames": [
+        {
+          "function": "_csw_concept_row",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+          "line": 15880,
+          "scalars": {
+            "order": "0",
+            "concept_id": "7",
+            "region": "'concept inventory'",
+            "cap": "8",
+            "base": "0",
+            "capacity": "4",
+            "required": "4"
+          }
+        },
+        {
+          "function": "_populate_concept_weights",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+          "line": 15967,
+          "scalars": {
+            "concept_id": "7",
+            "pole": "0",
+            "coactive": "False",
+            "word_reading": "True",
+            "n_raw": "8",
+            "n_poles": "0",
+            "order": "0"
+          }
+        },
+        {
+          "function": "lookup_word",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Interpret.py",
+          "line": 144,
+          "scalars": {
+            "form": "'loving'",
+            "word_reading": "True",
+            "word": "7",
+            "part": "13",
+            "whole": "8",
+            "discovering": "False"
+          }
+        },
+        {
+          "function": "_stage_reading_word_concepts",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 11107,
+          "scalars": {
+            "name": "'atoms'",
+            "data": "b'loving world'",
+            "lo": "0",
+            "hi": "6",
+            "complete": "True",
+            "form": "'loving'",
+            "b": "2",
+            "word": "5",
+            "object_id": "6"
+          }
+        },
+        {
+          "function": "_lex_embed_stem",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 13231,
+          "scalars": {
+            "_u_ok": "True"
+          }
+        },
+        {
+          "function": "_forward_per_stage",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 23179,
+          "scalars": {
+            "return_sentence_state": "False",
+            "B": "4"
+          }
+        },
+        {
+          "function": "forward",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 8313,
+          "scalars": {
+            "own_context": "True",
+            "external_start": "False"
+          }
+        },
+        {
+          "function": "masked",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 153,
+          "scalars": {
+            "depth": "0"
+          }
+        },
+        {
+          "function": "test_small_inventory_pairs_words_without_allocating_letter_rows",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/test/test_review14_addendum.py",
+          "line": 31,
+          "scalars": {
+            "config": "'MM_grammar'",
+            "capacity": "8"
+          }
+        },
+        {
+          "function": "pytest_pyfunc_call",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/python.py",
+          "line": 167,
+          "scalars": {}
+        },
+        {
+          "function": "_multicall",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py",
+          "line": 121,
+          "scalars": {
+            "hook_name": "'pytest_pyfunc_call'",
+            "firstresult": "True",
+            "__tracebackhide__": "True"
+          }
+        }
+      ]
+    },
+    {
+      "key": [
+        "pool",
+        9
+      ],
+      "row": 4,
+      "rows": {
+        "0": [
+          "snap",
+          2
+        ],
+        "1": [
+          "snap",
+          4
+        ],
+        "2": [
+          "snap",
+          6
+        ],
+        "3": [
+          "snap",
+          8
+        ],
+        "4": [
+          "pool",
+          9
+        ]
+      },
+      "frames": [
+        {
+          "function": "validate_rows",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/ConceptIndex.py",
+          "line": 182,
+          "scalars": {
+            "_": "9",
+            "end": "10",
+            "capacity": "2",
+            "cid": "9",
+            "order": "1",
+            "base": "4",
+            "width": "14"
+          }
+        },
+        {
+          "function": "__init__",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/ConceptIndex.py",
+          "line": 146,
+          "scalars": {}
+        },
+        {
+          "function": "<lambda>",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseRow.py",
+          "line": 151,
+          "scalars": {}
+        },
+        {
+          "function": "write_clause",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseRow.py",
+          "line": 268,
+          "scalars": {
+            "trust": "1.0",
+            "stream": "0",
+            "kind": "'observation'"
+          }
+        },
+        {
+          "function": "decorate_context",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py",
+          "line": 124,
+          "scalars": {}
+        },
+        {
+          "function": "_append_observed_meaning",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 162,
+          "scalars": {
+            "trust": "1.0",
+            "stream": "0",
+            "kind": "'observation'"
+          }
+        },
+        {
+          "function": "_commit_sentence",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 20165,
+          "scalars": {
+            "sid": "0",
+            "active": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "wins": [
+              false,
+              false,
+              false,
+              false
+            ],
+            "b": "0",
+            "key": "'observed_depths'",
+            "retain": "True"
+          }
+        },
+        {
+          "function": "_run_sentence_word_bricks",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 20466,
+          "scalars": {
+            "B": "4",
+            "W": "8",
+            "slots": [
+              [
+                true
+              ],
+              [
+                true
+              ],
+              [
+                true
+              ],
+              [
+                true
+              ]
+            ],
+            "b": "3",
+            "w": "7",
+            "gate": [
+              false,
+              false,
+              false,
+              false
+            ],
+            "index": 2,
+            "costs": [
+              [
+                0.020929541438817978
+              ],
+              [
+                0.014146466739475727
+              ],
+              [
+                0.011269398964941502
+              ],
+              [
+                0.01094211358577013
+              ]
+            ],
+            "wins": [
+              false,
+              false,
+              false,
+              false
+            ],
+            "value": [
+              [
+                1.0
+              ],
+              [
+                1.0
+              ],
+              [
+                1.0
+              ],
+              [
+                1.0
+              ]
+            ],
+            "present": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "sid": "0"
+          }
+        },
+        {
+          "function": "_run_tensor_peer_word_pipeline",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 21289,
+          "scalars": {
+            "width": "8",
+            "canonical": "False",
+            "percept_dim": "14",
+            "whole_dim": "14",
+            "n_locations": "8",
+            "n_rules": "28",
+            "closing_trace_width": "16",
+            "required_trace_width": "152",
+            "trace_ready": "True",
+            "record_width": "40",
+            "prop_count": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "zero_scalar": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "B": "4",
+            "capacity": "8",
+            "capture_intra": "False",
+            "concept_dim": "14",
+            "root_slots": "1",
+            "sentence_transactions": "True",
+            "unary_map": [],
+            "whole_locations": "8"
+          }
+        },
+        {
+          "function": "_forward_body_per_word",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 21731,
+          "scalars": {
+            "return_sentence_state": "False",
+            "N_target": "8",
+            "protocol_on": "True",
+            "N_words": "8",
+            "_compiled_static_loop": "False",
+            "N_loop": "3",
+            "K_host": "3",
+            "_n_trips": "3",
+            "_peer_pipeline": "True",
+            "_chunk_replayed": "False",
+            "_tensor_peer_pipeline": "True"
+          }
+        },
+        {
+          "function": "_forward_body",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 17270,
+          "scalars": {
+            "return_sentence_state": "False"
+          }
+        }
+      ]
+    },
+    {
+      "key": [
+        "pool",
+        9
+      ],
+      "row": 4,
+      "rows": {
+        "0": [
+          "snap",
+          2
+        ],
+        "1": [
+          "snap",
+          4
+        ],
+        "2": [
+          "snap",
+          6
+        ],
+        "3": [
+          "snap",
+          8
+        ],
+        "4": [
+          "pool",
+          9
+        ]
+      },
+      "frames": [
+        {
+          "function": "_csw_concept_row",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+          "line": 15883,
+          "scalars": {
+            "order": "1",
+            "concept_id": "9",
+            "region": "'relation pool'",
+            "cap": "2"
+          }
+        },
+        {
+          "function": "_populate_concept_weights",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py",
+          "line": 15967,
+          "scalars": {
+            "concept_id": "9",
+            "pole": "0",
+            "coactive": "False",
+            "word_reading": "False",
+            "n_raw": "0",
+            "n_poles": "0",
+            "order": "1"
+          }
+        },
+        {
+          "function": "commit",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/ConceptIndex.py",
+          "line": 249,
+          "scalars": {
+            "cid": "9",
+            "source": "4",
+            "order": "1",
+            "member": "4",
+            "parent": "9",
+            "part": "2"
+          }
+        },
+        {
+          "function": "write_clause",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/ClauseRow.py",
+          "line": 363,
+          "scalars": {
+            "trust": "1.0",
+            "stream": "0",
+            "kind": "'observation'",
+            "required": "1",
+            "surprise": "-1.0"
+          }
+        },
+        {
+          "function": "decorate_context",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py",
+          "line": 124,
+          "scalars": {}
+        },
+        {
+          "function": "_append_observed_meaning",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 162,
+          "scalars": {
+            "trust": "1.0",
+            "stream": "0",
+            "kind": "'observation'"
+          }
+        },
+        {
+          "function": "_commit_sentence",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 20165,
+          "scalars": {
+            "sid": "0",
+            "active": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "wins": [
+              false,
+              false,
+              false,
+              false
+            ],
+            "b": "0",
+            "key": "'observed_depths'",
+            "retain": "True"
+          }
+        },
+        {
+          "function": "_run_sentence_word_bricks",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 20466,
+          "scalars": {
+            "B": "4",
+            "W": "8",
+            "slots": [
+              [
+                true
+              ],
+              [
+                true
+              ],
+              [
+                true
+              ],
+              [
+                true
+              ]
+            ],
+            "b": "3",
+            "w": "7",
+            "gate": [
+              false,
+              false,
+              false,
+              false
+            ],
+            "index": 2,
+            "costs": [
+              [
+                0.020929541438817978
+              ],
+              [
+                0.014146466739475727
+              ],
+              [
+                0.011269398964941502
+              ],
+              [
+                0.01094211358577013
+              ]
+            ],
+            "wins": [
+              false,
+              false,
+              false,
+              false
+            ],
+            "value": [
+              [
+                1.0
+              ],
+              [
+                1.0
+              ],
+              [
+                1.0
+              ],
+              [
+                1.0
+              ]
+            ],
+            "present": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "sid": "0"
+          }
+        },
+        {
+          "function": "_run_tensor_peer_word_pipeline",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 21289,
+          "scalars": {
+            "width": "8",
+            "canonical": "False",
+            "percept_dim": "14",
+            "whole_dim": "14",
+            "n_locations": "8",
+            "n_rules": "28",
+            "closing_trace_width": "16",
+            "required_trace_width": "152",
+            "trace_ready": "True",
+            "record_width": "40",
+            "prop_count": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "zero_scalar": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "B": "4",
+            "capacity": "8",
+            "capture_intra": "False",
+            "concept_dim": "14",
+            "root_slots": "1",
+            "sentence_transactions": "True",
+            "unary_map": [],
+            "whole_locations": "8"
+          }
+        },
+        {
+          "function": "_forward_body_per_word",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 21731,
+          "scalars": {
+            "return_sentence_state": "False",
+            "N_target": "8",
+            "protocol_on": "True",
+            "N_words": "8",
+            "_compiled_static_loop": "False",
+            "N_loop": "3",
+            "K_host": "3",
+            "_n_trips": "3",
+            "_peer_pipeline": "True",
+            "_chunk_replayed": "False",
+            "_tensor_peer_pipeline": "True"
+          }
+        },
+        {
+          "function": "_forward_body",
+          "file": "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py",
+          "line": 17270,
+          "scalars": {
+            "return_sentence_state": "False"
+          }
+        }
+      ]
+    }
+  ]
+}

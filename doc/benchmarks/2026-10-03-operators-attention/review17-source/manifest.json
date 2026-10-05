@@ -1,0 +1,14 @@
+{
+  "head": "eb1fbefb5f4a33a22cbb4a590cc0927d6a60761d",
+  "files": 700,
+  "whole_old_new_test_ports": 9,
+  "changed_seed_calls": 0,
+  "extra_source_files": [
+    "test/fixtures/item7_byte_columns.pt",
+    "test/fixtures/item7_legacy_definition.pt",
+    "test/fixtures/transitional_pos.grammar",
+    "test/fixtures/where_tiling_corpus.jsonl",
+    "test/tools/README.md"
+  ],
+  "note": "Older snapshots omit non-Python test fixtures; this archive supplements them from the actual tree, and old test contents come from published HEAD."
+}

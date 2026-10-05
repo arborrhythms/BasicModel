@@ -1,0 +1,30 @@
+{
+  "repairs": 0,
+  "source": "review19-source/source.json",
+  "failures": [
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 1.1927741249674,
+      "message": "test/test_grammar_word_learning.py:208: in test_normal_text_reconstruction_updates_the_grammar_chooser\n    assert not changed\nE   AssertionError: assert not {'mlp.0.bias', 'mlp.0.weight', 'mlp.2.weight', 'tool_embedding'}",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.8504228749661706,
+      "message": "test/test_grammar_word_learning.py:229: in test_normal_text_reconstruction_updates_the_grammar_chooser\n    assert any(not torch.equal(old, new) for old, new in zip(generate_before, generator.parameters()))\nE   assert False\nE    +  where False = any(<generator object test_normal_text_reconstruction_updates_the_grammar_chooser.<locals>.<genexpr> at 0x1220f2180>)",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_review14_addendum.py::test_small_inventory_pairs_words_without_allocating_letter_rows[MM_grammar-8]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 113.47911633300828,
+      "message": "test/test_review14_addendum.py:39: in test_small_inventory_pairs_words_without_allocating_letter_rows\n    assert set(owner._concept_allocator.layer()._tensor_row_keys) == word_rows\nE   assert {0, 1, 2, 3, 4} == {0, 1, 2, 3}\nE     \nE     Extra items in the left set:\nE     4\nE     Use -v to get more diff",
+      "stdout": ""
+    }
+  ]
+}

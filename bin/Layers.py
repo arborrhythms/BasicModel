@@ -13180,10 +13180,11 @@ class BytesFallbackEncoder(nn.Module):
             raise ValueError(
                 f"BytesFallbackEncoder: dim must be positive, got {dim}")
         self.dim: int = int(dim)
-        # Small-stddev init so the fallback contribution starts near
-        # zero and the codebook can learn whatever scale it wants.
-        self.byte_codebook = nn.Parameter(
-            torch.randn(256, self.dim) * 0.02)
+        # Full-presence percept codes: the what-basis per-row max-abs
+        # normalization, followed by the presence-cube clamp.
+        init = torch.randn(256, self.dim)
+        init = init / init.abs().amax(dim=-1, keepdim=True).clamp(min=1e-8)
+        self.byte_codebook = nn.Parameter(init.clamp(0.0, 1.0))
         # Pure-Python hit counters; persisted via vocab_extras.
         self.hit_counts: Dict[bytes, int] = {}
 
@@ -13599,7 +13600,7 @@ class RadixLayer(Layer):
         If ``chunk`` is already known, returns the existing ID without
         modifying state. Otherwise checks the fixed capacity and
         seeds the new row with ``init_vector`` if supplied (else with
-        a small-stddev random vector).
+        a full-presence random code).
         """
         if not isinstance(chunk, (bytes, bytearray)):
             raise TypeError(
@@ -13625,8 +13626,10 @@ class RadixLayer(Layer):
         master = self._basis.W
         with torch.no_grad():
             if init_vector is None:
-                master.data[new_id, :].normal_(
-                    mean=0.0, std=0.02)
+                row = master.data[new_id, :].normal_(mean=0.0, std=1.0)
+                # §22: normalize before the cube clamp so letter joins do
+                # not inherit the max-abs initializer's saturated maxima.
+                row.div_(row.norm().clamp(min=1e-8)).clamp_(0.0, 1.0)
             else:
                 if not torch.is_tensor(init_vector):
                     raise TypeError(
@@ -16347,31 +16350,44 @@ class Ops:
         return torch.where(any_active, vol, torch.zeros_like(vol))
 
     @staticmethod
-    def _conjunction_kernel(x, y, same_reference=None):
-        """Bind identities by normalized product; multiply operand magnitudes.
+    def _code_direction(x):
+        """Identity direction, with an exact zero for an absent code."""
+        norm = torch.linalg.vector_norm(x, dim=-1, keepdim=True)
+        return x / torch.where(norm > 0, norm, torch.ones_like(norm))
+
+    @staticmethod
+    def _presence(x, activation):
+        """Magnitude belongs to activation; a bare nonzero code is present."""
+        present = x.ne(0).any(-1, keepdim=True)
+        if activation is None:
+            return present.to(x)
+        value = torch.as_tensor(activation, device=x.device, dtype=x.dtype)
+        if value.ndim == x.ndim - 1:
+            value = value.unsqueeze(-1)
+        return torch.where(present, value.abs(), 0.)
+
+    @staticmethod
+    def _conjunction_kernel(x, y, same_reference=None, *,
+                            left_activation=None, right_activation=None):
+        """Bind code directions; multiply the separately supplied activations.
 
         Idempotence is about a shared reference, not equal numerical codes.
         The caller supplies native-reference equality when it has addresses.
         An aliased tensor is the same reference at the direct tensor API.
         """
-        product = x * y
-        norm = torch.linalg.vector_norm(product, dim=-1, keepdim=True)
-        unit = product / torch.where(norm > 0, norm, torch.ones_like(norm))
-        result = (torch.linalg.vector_norm(x, dim=-1, keepdim=True)
-                  * torch.linalg.vector_norm(y, dim=-1, keepdim=True) * unit)
+        left, right = Ops._code_direction(x), Ops._code_direction(y)
+        a, b = Ops._presence(x, left_activation), Ops._presence(y, right_activation)
+        result = a * b * Ops._code_direction(left * right)
         if same_reference is None:
-            return x if x is y else result
-        return torch.where(same_reference[..., None], x, result)
+            return a * left if x is y else result
+        return torch.where(same_reference[..., None], a * left, result)
 
     @staticmethod
-    def _disjunction_kernel(x, y):
-        """Probabilistic sum of magnitudes, with normalized combined identity."""
-        identity = x + y - x * y
-        norm = torch.linalg.vector_norm(identity, dim=-1, keepdim=True)
-        unit = identity / torch.where(norm > 0, norm, torch.ones_like(norm))
-        a = torch.linalg.vector_norm(x, dim=-1, keepdim=True)
-        b = torch.linalg.vector_norm(y, dim=-1, keepdim=True)
-        return (a + b - a * b) * unit
+    def _disjunction_kernel(x, y, *, left_activation=None, right_activation=None):
+        """Probabilistic sum of activations; form length carries no certainty."""
+        left, right = Ops._code_direction(x), Ops._code_direction(y)
+        a, b = Ops._presence(x, left_activation), Ops._presence(y, right_activation)
+        return (a + b - a * b) * Ops._code_direction(left + right - left * right)
 
     @staticmethod
     def intersection(x, y, monotonic=False):

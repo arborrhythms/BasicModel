@@ -1,0 +1,48 @@
+{
+  "candidate_commit": "eb1fbefb5f4a33a22cbb4a590cc0927d6a60761d",
+  "candidate_tag": "6.8-s16.3-candidate",
+  "status": "\u00a717 measured; new work uncommitted, awaiting review; nothing pushed",
+  "parent_index": "160000 802abb1acc95e1bddc8cb237b13230a336681c49 0\tbasicmodel",
+  "full_sweep_counts": {
+    "passed": 4908,
+    "skipped": 286,
+    "xfailed": 1
+  },
+  "full_sweep_green": true,
+  "gate_counts": {
+    "class_pass": 1,
+    "reconstruction_pass": 10,
+    "joint": 1,
+    "mm_pass": 10,
+    "sum_pass": 10,
+    "xor_bands": {
+      "at 0": 1,
+      "at 1/4": 7,
+      "between": 2,
+      "above 1/4": 0
+    },
+    "sum_bands": {
+      "at 0": 0,
+      "at 1/4": 10,
+      "between": 0,
+      "above 1/4": 0
+    }
+  },
+  "gate_trainings": 30,
+  "gate_retries": 0,
+  "source_matches_full_sweep_and_measurement": true,
+  "whole_old_new_test_ports": 10,
+  "changed_seed_calls": 0,
+  "gate_bars_unchanged": true,
+  "resource_guards_unchanged": true,
+  "guard_change": "Non-strict XPASS counts as pass; strict XPASS still fails.",
+  "original_output_regressions_passed": 16,
+  "historical_evidence_files_unchanged": 2442,
+  "source_files": 695,
+  "complete_files": 704,
+  "receipt_links_verified": 29,
+  "supplement_files": 1976,
+  "source_zip_sha256": "2ea836048b37c8c2593323368c15d4434fcd8e8ec2308699cea8ffff6d642dd9",
+  "supplement_zip_sha256": "44d43537c48d4680d64be93b879b30ae36d87d90db064309854adc8eb17e0a57",
+  "supplement_manifest_sha256": "b9a37b43506e3f1c8adf0106c2e70fe5a0bebc2f1ef0e79ce4b8dca7ef24770d"
+}

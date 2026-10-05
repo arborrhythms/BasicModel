@@ -1,0 +1,93 @@
+{
+  "status": "\u00a722 measured; uncommitted and unpushed; awaiting Claude review",
+  "candidate_commit": "eb1fbefb5f4a33a22cbb4a590cc0927d6a60761d",
+  "candidate_tag": "6.8-s16.3-candidate",
+  "parent_index": "160000 802abb1acc95e1bddc8cb237b13230a336681c49 0\tbasicmodel",
+  "source_files": 696,
+  "changed_runtime_files": [
+    "bin/Layers.py",
+    "data/MM_grammar.xml",
+    "data/XOR_grammar.xml",
+    "test/test_review13_subspaces.py",
+    "test/test_review14_contracts.py"
+  ],
+  "source_matches_sweep_and_campaign": true,
+  "whole_old_new_test_files": 2,
+  "changed_seed_calls": 0,
+  "bars_budgets_optimizers_guards_unchanged": true,
+  "declared_capacity_changes": [
+    {
+      "configuration": "XOR_grammar",
+      "spaces": [
+        "InputSpace",
+        "PartSpace",
+        "ConceptualSpace",
+        "WholeSpace"
+      ],
+      "old_event_width": 14,
+      "new_event_width": 22,
+      "address_coordinates": 8,
+      "old_content_width": 6,
+      "new_content_width": 14,
+      "conceptual_rows": 6,
+      "whole_output_width": null,
+      "other_xml_values_unchanged": true
+    },
+    {
+      "configuration": "MM_grammar",
+      "spaces": [
+        "InputSpace",
+        "PartSpace",
+        "ConceptualSpace",
+        "WholeSpace"
+      ],
+      "old_event_width": 14,
+      "new_event_width": 22,
+      "address_coordinates": 8,
+      "old_content_width": 6,
+      "new_content_width": 14,
+      "conceptual_rows": 8,
+      "whole_output_width": "14",
+      "other_xml_values_unchanged": true
+    }
+  ],
+  "full_sweep_green": true,
+  "sweep_counts": {
+    "passed": 4917,
+    "skipped": 286,
+    "xpassed": 1
+  },
+  "gate_counts": {
+    "class_pass": 7,
+    "reconstruction_pass": 9,
+    "joint": 6,
+    "mm_pass": 10,
+    "sum_pass": 10,
+    "xor_bands": {
+      "at 0": 7,
+      "at 1/4": 2,
+      "between": 1,
+      "above 1/4": 0
+    },
+    "sum_bands": {
+      "at 0": 0,
+      "at 1/4": 10,
+      "between": 0,
+      "above 1/4": 0
+    }
+  },
+  "gate_trainings": 30,
+  "gate_retries": 0,
+  "historical_files_unchanged": 22648,
+  "protected_design_docs_unchanged": {
+    "doc/Architecture.md": "42b9209a06d544b240cdf86cd76a56e58b4ad321c8df2ac2071d61a29465ec02",
+    "doc/GradientFlow.md": "2913d8030317ad41075e37760090951808a547685fd361f37a3a551f12738d57",
+    "doc/FutureWork.md": "4c68476b7d2b8ea93989590aa5095195d54d7900ff3f3000ddfe0d7e5ac95f10",
+    "doc/plans/2026-09-27-item-6-8-one-attention.md": "1e4261b827cd1ead574e6a1aa0f43e88f950cda3bff170c824a36c7b3a8db9b7"
+  },
+  "supplement_files": 1780,
+  "source_zip_sha256": "d17e2492b25a115b11c1832958bf06d09de8e434bc7bba5325525e2ba002377e",
+  "supplement_zip_sha256": "51516a6b2456d2ff22988be54dcef99ef2f08de9a7202032bafe87940a440b8f",
+  "supplement_manifest_sha256": "f0dc21d0a753a8148d733cdef93e6bd26025bf16ef7fb8c1b7f9c7d3236459f7",
+  "receipt_links_verified": 28
+}

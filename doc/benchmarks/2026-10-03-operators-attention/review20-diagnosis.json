@@ -1,0 +1,24 @@
+{
+  "before_any_test_port": true,
+  "tie": {
+    "classification": "regression",
+    "term": "reconstruction.free_bytes",
+    "route": "input attention straight-through credit -> cached perception -> sentence root -> byte loss -> perception pullback -> shared chooser",
+    "gradient_norm_mlp0_weight": 0.006575369276106358,
+    "score_function_gradient": 0,
+    "repair": "detach attention credit at sentence handoff; keep tie assertion"
+  },
+  "distinct": {
+    "classification": "port",
+    "cause": "Every live decoder step has one legal action; six-action rows have zero parents and are already inactive",
+    "repair": "require movement only when a live decoder choice exists"
+  },
+  "inventory": {
+    "classification": "port",
+    "cause": "Untrained grammar chooses part; ClauseTaxonomyPlan creates order-one pool concept 9 at row 4 from object 4 and part 2",
+    "not_letter": true,
+    "not_chunk": true,
+    "no_promotion_scale_threshold": true,
+    "repair": "assert exact four-row inventory after word admission; require later rows to be higher-order native concepts"
+  }
+}

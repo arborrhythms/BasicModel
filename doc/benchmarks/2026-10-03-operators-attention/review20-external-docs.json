@@ -1,0 +1,7 @@
+{
+  "doc/plans/2026-09-27-item-6-8-one-attention.md": {
+    "sha256": "27e823cc5551a496c057b2906073bedf85eb9e6fc38e860fd038841e37ed4091",
+    "diff_sha256": "0d1119e0479d1b6875186dd8627d9d3a3b0ac5ed62343b462304978cedd537b0",
+    "note": "Concurrent Claude \u00a721 diagnosis note arrived after the starting snapshot. Preserved unchanged, not treated as authorization for a separate attention score-function objective."
+  }
+}

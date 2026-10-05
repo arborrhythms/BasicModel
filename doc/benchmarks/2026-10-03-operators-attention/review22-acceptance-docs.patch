@@ -1,0 +1,116 @@
+--- review22/doc/benchmarks/2026-10-03-operators-attention/README.md
++++ accepted/doc/benchmarks/2026-10-03-operators-attention/README.md
+@@ -1,4 +1,6 @@
+ # Decoder, operators and 6.8 — §22 initialization and content capacity
++
++**Accepted by Alec on 2026-10-05.** Commit, push and WikiOracle submodule bump authorized. The review-hold statements below describe the frozen measurement state; its source, results and archived hashes remain unchanged. Claude's acceptance review is [6.8 plan §23](../../plans/2026-09-27-item-6-8-one-attention.md#23-review-of-the-22-measurement-acceptance-claude-2026-10-05). [Acceptance record](review22-acceptance.json).
+ 
+ 2026-10-05. **Review hold: all new work is uncommitted, nothing pushed.** Main remains at the local §16.3 candidate `eb1fbefb5f4a33a22cbb4a590cc0927d6a60761d`, tagged `6.8-s16.3-candidate`. The parent WikiOracle index remains `802abb1a`. One working tree.
+ 
+--- review22/todo.md
++++ accepted/todo.md
+@@ -193,9 +193,10 @@
+ - **6.8. One attention: brackets, narrowing, and expectation at every bracket**
+    ([plan](doc/plans/2026-09-27-item-6-8-one-attention.md); Alec, 2026-09-27;
+    after 7.5 and 7, before 6.5; three non-blocking questions in plan §6).
+-   **October 5 §22 measured candidate; review pending:** main remains at
+-   `eb1fbefb`, tagged `6.8-s16.3-candidate`. Subsequent work is **uncommitted;
+-   nothing pushed; no parent submodule bump**. One working tree.
++   **October 5 §22 accepted landing:** the §16.3 candidate remains at
++   `eb1fbefb`, tagged `6.8-s16.3-candidate`. Alec accepted the measured
++   §17–§22 state and authorized its commit, push and parent submodule bump.
++   One working tree.
+    **Two declared changes:** admitted percept rows use a Gaussian row,
+    unit-L2 normalization, then the [0,1] clamp. The two grammar fixtures have
+    a declared capacity increase: **nDim 14 → 22**, content **6 → 14** after
+@@ -217,7 +218,7 @@
+    class **7/10**, reconstruction **9/10**,
+    joint **6/10** from ten shared trainings; MM_xor **10/10**.
+    Bands: **7 at 0, 2 at ¼, 1 between,
+-   0 above ¼**. No retries or tuning; acceptance waits for review.
++   0 above ¼**. No retries or tuning; Alec accepted the measured round.
+    Exact form collisions occurred in **0/10** runs at start or end.
+    Historical class/reconstruction/joint counts: §12 **0/7/0**, §13 **0/0/0**,
+    §14 **1/8/1** (pre-addendum CS 262/264), §17 **1/10/1**, §18 **0/10/0**,
+@@ -238,7 +239,7 @@
+    meanings correctly coincide. Complement bootstrap and the carried operators
+    work remain deferred. Frozen evaluation admits nothing; the trained NanoChat
+    gate waits for item 4. No fresh bulk scoring or native benchmark.
+-   **Claude reviews before any further commit; any push waits for Alec's word.**
++   **Accepted by Alec on October 5; commit, push and parent submodule bump authorized.**
+    **Item-7 reading residue:** every read word currently runs the complete
+    `interpret` unary under every binding. This forcing stays until reading
+    mode decides when an object is interpreted; its removal is not part of
+--- review22/doc/plans/2026-09-29-item-6-9-xor-grammar.md
++++ accepted/doc/plans/2026-09-29-item-6-9-xor-grammar.md
+@@ -1598,7 +1598,7 @@
+ | **Magnitude = certainty** (returned in cube form, 6.8 §15) | Separate a symbol's identity from how certainly it is present. | The code is at full presence; evidence selects parts without scaling their codes. Certainty belongs to the leaf's signed activation, not to differences in the magnitudes of form codes. | Returned as the projection coefficient `(leaf·c)/(c·c)` onto the full-presence code `c`; the leaf is activation times that code. In 6.8 §20 the binding kernels take these activations separately and compose code directions: root magnitude carries the resulting activation, not form length. §22 changes admitted-row initialization and widens the two grammar fixtures from six to fourteen content coordinates (event width 14 → 22); activation ownership and the kernels stay as §20. No maintained code-norm constraint, reader normalization or antipode loss. |
+ | **Distributional pressure on the codes** (co-activation: the CBOW-with-negatives rotation; the SBOW gradient term) | A word2vec-like space: co-occurring concepts near, others apart. "They learn a distance metric from the gradient and their co-activation." | The pull-apart half already comes from the free read-back, whose negatives are the primed competitors (§20.1). Only the pull-together half is set aside: a second objective on the codes before the first one works, and on XOR's corpus it merges the words XOR must separate (§20.2). | The gates hold and the primed bank is live. Then, as Alec asks (2026-10-02): a slight SBOW term whose window is the spreading-activation field, co-primed symbols as positives weighted by their activation and unprimed rows as negatives, a gradient term in the Error registry with a weight well below reconstruction's, so that the audit sees it and the XOR table tests the balance. The existing SBOW spine (`conceptual_sbow_loss`) is parallel-only and windows the sentence's slab; it would take the field as its window and run on the serial path. The rotation retires (no legacy). The alternative with no second term: compose a concept's code from its constituents over the store's edges, so co-activated concepts share code structure through the fold. |
+ | **The primed bank as context and candidates** | The connections bank of symbols (§15.3): the open read primes the words that the words activate. | In the ownership round it held no activated word in 6,400 occurrences: the fixtures' concept stores have few edges. | The store's edges exist in the fixtures, measured by the audit's competitor count being nonzero. Then it is the read-back's candidate set and the distribution's context. |
+-| **Decoder exploration** (§26.3; implemented, §22 measured candidate) | The generate walk infers operations from the root (§25.1). | Greedy argmax alone did not leave STOP when the missing-word penalty supplied no untaken-transition credit. | Greedy and sampled one-departure walks are both costed before learning; only strictly lower reconstruction keeps explore. The generate straight-through path and eligibility mask remain. The forward compose chooser uses detached-cost `K·R·p(a_dep)·(C_explore−C_greedy)`; attention credit stays detached at the sentence handoff and its estimator is deferred to the operators update. The separate decomposition chooser learns the true shortlisted pair by cross-entropy outside that trial-cost comparison, with codes detached. The green §22 sweep precedes one campaign: XOR class 7/10, reconstruction 9/10, joint 6/10; MM_xor 10/10 and sum 10/10. The tenth-run audit records 0 ownership conflicts, sentence-path prototype/evidence gradient maximum 0, and 80 nonzero advantages out of 1600. The §16.3 candidate is committed/tagged; subsequent work is uncommitted and under review, nothing pushed. See the [receipt](../benchmarks/2026-10-03-operators-attention/README.md). |
++| **Decoder exploration** (§26.3; implemented, §22 accepted) | The generate walk infers operations from the root (§25.1). | Greedy argmax alone did not leave STOP when the missing-word penalty supplied no untaken-transition credit. | Greedy and sampled one-departure walks are both costed before learning; only strictly lower reconstruction keeps explore. The generate straight-through path and eligibility mask remain. The forward compose chooser uses detached-cost `K·R·p(a_dep)·(C_explore−C_greedy)`; attention credit stays detached at the sentence handoff and its estimator is deferred to the operators update. The separate decomposition chooser learns the true shortlisted pair by cross-entropy outside that trial-cost comparison, with codes detached. The green §22 sweep precedes one campaign: XOR class 7/10, reconstruction 9/10, joint 6/10; MM_xor 10/10 and sum 10/10. The tenth-run audit records 0 ownership conflicts, sentence-path prototype/evidence gradient maximum 0, and 80 nonzero advantages out of 1600. Alec accepted the measured §17–§22 state on 2026-10-05 and authorized the landing, both BasicModel commits to be pushed, and the WikiOracle submodule bump; the §16.3 candidate tag is retained. See the [receipt](../benchmarks/2026-10-03-operators-attention/README.md). |
+ | **The VQ EMA refresh** | k-means over quantized events. | A hidden writer; clusters word forms, not meanings; the "#13 mechanism" in the code's own comment. | Not planned to return. Recorded so that its removal is deliberate. |
+ | **The answer's reach into the understanding** (step 5a) | 8 or 9 of 10 on the class gate in §14. | It makes the understanding answer-shaped; (B) in §18. | Fallback only, if (A) fails after §20.1 with distribution and the sphere restored. |
+ 
+--- review22/doc/FutureWork.md
++++ accepted/doc/FutureWork.md
+@@ -1148,3 +1148,9 @@
+   detached at the sentence handoff, so attention trains nothing until the
+   update gives it the same score-function estimator as compose (its departure's
+   probability, the greedy cost as baseline, `K·R`), or separate parameters.
++- **The decomposition chooser's exact-fit precedence and feature
++  standardization** (operators update; 6.8 plan §23): after cross-entropy on
++  four sentences the chooser's context weights outweighed the fit for one
++  root ("hello there → hello hello", §22 run 10); an exactly recomposing pair
++  is taken before context has a say, and the activation features (projection
++  coefficients, unbounded) are standardized.
+--- review22/doc/plans/2026-09-27-item-6-8-one-attention.md
++++ accepted/doc/plans/2026-09-27-item-6-8-one-attention.md
+@@ -2086,3 +2086,47 @@
+ saturated the join), and the two grammar gates' content band widened, nDim 14
+ → 22 (fourteen content coordinates), MM_xor unchanged. Then the sweep and the
+ thirty trainings; acceptance read on that receipt.
++
++## 23. Review of the §22 measurement: acceptance (Claude, 2026-10-05)
++
++Receipt: `doc/benchmarks/2026-10-03-operators-attention/README.md` (review22).
++
++| Gate | §20 | §22 |
++|---|---:|---:|
++| XOR class | 2/10 | 7/10 (7 at 0, 2 at ¼, 1 between) |
++| XOR reconstruction | 8/10 | 9/10 |
++| joint | 2/10 | 6/10 |
++| MM_xor / sum | 10/10 / 10/10 | 10/10 / 10/10 |
++| sweep | green | green (4,917 passed, 0 failed) |
++
++Both declared changes did their work: forms .88–1.55 in norm with no exact
++1.0s, zero form collisions in all ten runs, roots at norm 1, codes with zero
++displacement, zero sentence-path gradient at perception, zero conflicts,
++gradient checks at 1e-9; both choosers train.
++
++**Class, by §20.5.** Every run ending on the conjunction ended at 0 (7/7);
++the three others ended on the disjunction, whose XOR interaction decayed as
++the chooser moved to it (.26 → .03, .24 → .05, .14 → .02): with activations
++1 the probabilistic sum's magnitude is 1 and its only nonlinearity is the
++`−u∘v` term in the direction, small against `u + v` for dense unit codes, so
++the roots approach a parallelogram and the affine floor is ¼. Two at ¼ are
++that floor; one "between" is mid-descent. The chooser is reconstruction's,
++free to prefer the disjunction; the gate reads as §20.5 wrote.
++
++**Reconstruction 9/10.** Run 10, "hello there → hello hello": no collision;
++the decomposition chooser's context weights (±2.2 on the activation features)
++outweighed the fit for that root after cross-entropy on four sentences for 400
++epochs; the argmin would have been right (§17–§18: 10/10 without the
++chooser). Remedy for the operators update: an exactly recomposing pair is
++taken before context has a say; feature standardization for the activation
++terms.
++
++**Accepted (recommended).** No regression against the 6.9 closing record;
++sweep green; the composition mechanism gate reads as its criteria say.
++Carried to the operators update: the attention chooser's estimator; the
++decomposition chooser's exact-fit precedence and feature standardization; the
++fold composing forms; Kleene connectives; the complement's bootstrap; the
++`not` items; the negative image on the concept face; form density. To item 1:
++the 2.6× open-read cost; the teacher loss's host island. On Alec's word:
++Codex commits the §17–§22 work on `basicmodel` `main` as the accepted 6.8
++landing, pushes both commits, and the WikiOracle submodule bump follows.

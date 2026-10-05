@@ -1,0 +1,14 @@
+{
+  "doc/benchmarks/2026-10-03-operators-attention/review17_gate_observer.py": "698ee35ffeb84b136a8abf22893cec1175051db27e6626c1bf94e03ee28e6332",
+  "doc/benchmarks/2026-10-03-operators-attention/review17_run_audit.py": "8ee4a9d8262bfa8720f606d8080123c14c0c7dbb3d71be3123b71da81842f8fa",
+  "doc/benchmarks/2026-10-03-operators-attention/review17_score_probe.py": "48fc9019e25d3b6d21750c275c034b948b69155d31fdaf29c3b286f01739a0cf",
+  "doc/benchmarks/2026-10-03-operators-attention/review17_decomposition_probe.py": "415a3d35e81386043a0ee56fd6f651948a511edc7978bf630f9c388c05c24dee",
+  "doc/benchmarks/2026-10-03-operators-attention/review17_ordinary_probe.py": "ee2c9bcccab5a957e83f1dde783bee770eb4af3c1698dc753d270b264c4248c7",
+  "doc/benchmarks/2026-10-03-operators-attention/review17_observer_probe.py": "0e8bfc07f65832af325e2018dd6e6fc6c7125007faa1ad9ca06bd71b192c4639",
+  "doc/benchmarks/2026-10-03-operators-attention/review15_preference_probe.py": "fa99f23a749ff1f707f59bdb8d381d1d1fcc3aae38b100aec8f31ef1604e398d",
+  "test/objective_conflicts_probe.py": "cb0c18ce3cdd70d5c059cddd1eda080ae22945e9368ad61f1ef88d950c41ee24",
+  "test/decoder_margin_probe.py": "98d360f5c623315717195a6775f7597ec4032fb907c6a365893bbc3d550e4f71",
+  "test/derivation_probe.py": "b8587086863ba2cae34df08aad06dfb1e5f0812c2def2bbe025893eeed582161",
+  "doc/benchmarks/2026-10-01-item6-9-review/separator_campaign.py": "cd002828b8cfe7eee972536a996431140fbdfa42556ae83cb3518b6caa05e3bb",
+  "doc/benchmarks/2026-10-03-operators-attention/review22_campaign.py": "fabf2dd73dddf8c5f8680554c019e1b1e698a887479ddaf750f2e5d4728c702a"
+}

@@ -1,0 +1,2634 @@
+{
+  "definition": "Euclidean (L2) norm of the saved raw form and root vectors; max-abs is also reported. No reader normalization and no extra forward.",
+  "observation": "The first reconstruction trial of the first training batch, before an owner update. Forms use content coordinates; roots use the full recorded vector.",
+  "rounds": {
+    "review17": {
+      "runs": [
+        {
+          "kind": "xor",
+          "run": 1,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.055582077409061355,
+              "max_abs": 0.03140260651707649,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.0501395360887912,
+              "max_abs": 0.025302182883024216,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.04809390819758821,
+              "max_abs": 0.03140260651707649,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.059435438742441386,
+              "max_abs": 0.0318315252661705,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.002786859392731269,
+              "max_abs": 0.001696766703389585,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.00267315934172268,
+              "max_abs": 0.002093097660690546,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.0029800653301540287,
+              "max_abs": 0.0018703467212617397,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.002858482620647099,
+              "max_abs": 0.0018662357470020652,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 2,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.06558604346517168,
+              "max_abs": 0.05189226567745209,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.0639106008676643,
+              "max_abs": 0.05189226567745209,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.050868340081321885,
+              "max_abs": 0.032279569655656815,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.07694409023270166,
+              "max_abs": 0.05189226567745209,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.004191642947217763,
+              "max_abs": 0.004054257646203041,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.0033362535054657565,
+              "max_abs": 0.0023836169857531786,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.1359371326232406,
+              "max_abs": 0.10133574157953262,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.12389841659368425,
+              "max_abs": 0.07572954148054123,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 3,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.06029377223831928,
+              "max_abs": 0.03929714113473892,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.08061356873667128,
+              "max_abs": 0.045158348977565765,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.07625512787753473,
+              "max_abs": 0.045158348977565765,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.05985909696725706,
+              "max_abs": 0.03929714113473892,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.004860495858524621,
+              "max_abs": 0.0036017014645040035,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.004597709151900373,
+              "max_abs": 0.003272812580689788,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.004825455237347818,
+              "max_abs": 0.0036259114276617765,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.004564563266868125,
+              "max_abs": 0.0032941754907369614,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 4,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.05567536326100439,
+              "max_abs": 0.02895866148173809,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.08107326724216804,
+              "max_abs": 0.047100089490413666,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.07108691088812498,
+              "max_abs": 0.047100089490413666,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.06724907154361974,
+              "max_abs": 0.03759778290987015,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.13223484700247226,
+              "max_abs": 0.07241261750459671,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.12280448404319963,
+              "max_abs": 0.07121992111206055,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.14287024438267262,
+              "max_abs": 0.08272290974855423,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.13355546800550303,
+              "max_abs": 0.0816192477941513,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 5,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.08816845086751231,
+              "max_abs": 0.06537585705518723,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.08759098905841553,
+              "max_abs": 0.06537585705518723,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.06578168953146654,
+              "max_abs": 0.03469754755496979,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.08334789245221155,
+              "max_abs": 0.06537585705518723,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.007722761785304221,
+              "max_abs": 0.007250684313476086,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.005799870038533606,
+              "max_abs": 0.00438934238627553,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.0073005253009411865,
+              "max_abs": 0.006893521640449762,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.0054827652241852985,
+              "max_abs": 0.004501094110310078,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 6,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.06789373836344953,
+              "max_abs": 0.047945160418748856,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.07511189606077713,
+              "max_abs": 0.047945160418748856,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.06516886829967475,
+              "max_abs": 0.044197894632816315,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.0673804975991936,
+              "max_abs": 0.047945160418748856,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.13790601078902703,
+              "max_abs": 0.09367790818214417,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.1286380443508573,
+              "max_abs": 0.09031212329864502,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.1374313060991431,
+              "max_abs": 0.09235652536153793,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.12815825518127066,
+              "max_abs": 0.08962380141019821,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 7,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.0643032180046134,
+              "max_abs": 0.04147174581885338,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.04954426213938332,
+              "max_abs": 0.034437395632267,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.08557254821365436,
+              "max_abs": 0.052664127200841904,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.06226145284652068,
+              "max_abs": 0.03763144463300705,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.003185855234509181,
+              "max_abs": 0.002588772913441062,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.005502590618123694,
+              "max_abs": 0.004023212473839521,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.0030846974374995713,
+              "max_abs": 0.002581602893769741,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.005327870684161149,
+              "max_abs": 0.004287458024919033,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 8,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.08674554077577432,
+              "max_abs": 0.056704092770814896,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.07984466689041927,
+              "max_abs": 0.05566980317234993,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.07069502309410489,
+              "max_abs": 0.056704092770814896,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.07807331665522245,
+              "max_abs": 0.05566980317234993,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.1596640541203159,
+              "max_abs": 0.11012369394302368,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.15130808339712276,
+              "max_abs": 0.11169201880693436,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.1516842445800464,
+              "max_abs": 0.10858762264251709,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.1432489518875492,
+              "max_abs": 0.0796656385064125,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 9,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.06304299398970273,
+              "max_abs": 0.04413105919957161,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.08550786179493929,
+              "max_abs": 0.04627087339758873,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.06808356730721946,
+              "max_abs": 0.04413105919957161,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.0802534483932904,
+              "max_abs": 0.05563879758119583,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.14316018080204956,
+              "max_abs": 0.0778529942035675,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.1268343622600933,
+              "max_abs": 0.08663787692785263,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.15889901279646826,
+              "max_abs": 0.0843682587146759,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.1428730744260341,
+              "max_abs": 0.0787290707230568,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 10,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.052951501176585175,
+              "max_abs": 0.0320880152285099,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.06329020295579295,
+              "max_abs": 0.03890453651547432,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.06778206740162747,
+              "max_abs": 0.03315838426351547,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.05478020706414722,
+              "max_abs": 0.04332874342799187,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.003351311329163514,
+              "max_abs": 0.0023054287303239107,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.003589162347459462,
+              "max_abs": 0.002336026867851615,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.003467050817639681,
+              "max_abs": 0.002844165777787566,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.003713115522367776,
+              "max_abs": 0.00273929163813591,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 1,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.05670001143131808,
+              "max_abs": 0.0384431928396225,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.06506230113842072,
+              "max_abs": 0.03890588507056236,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.051874881624079744,
+              "max_abs": 0.031101346015930176,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.06310902897083999,
+              "max_abs": 0.0384431928396225,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.057119861278672905,
+              "max_abs": 0.0384431928396225,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.05388780074471305,
+              "max_abs": 0.033639419823884964,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.06253632230526732,
+              "max_abs": 0.0384431928396225,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.05693982963028019,
+              "max_abs": 0.033639419823884964,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 2,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.04927309145523159,
+              "max_abs": 0.03142661228775978,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.04227491742600691,
+              "max_abs": 0.022194089367985725,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.047824591027671545,
+              "max_abs": 0.03142661228775978,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.04321156057811821,
+              "max_abs": 0.023166997358202934,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.043771543369700044,
+              "max_abs": 0.02475227788090706,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.04816320502685436,
+              "max_abs": 0.03142661228775978,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.04147475685723932,
+              "max_abs": 0.022028885781764984,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.04490666992663326,
+              "max_abs": 0.026897432282567024,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 3,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.07028617227870151,
+              "max_abs": 0.0482068732380867,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.06575898705914096,
+              "max_abs": 0.03955775499343872,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.07181854811053795,
+              "max_abs": 0.0482068732380867,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.06784088949237492,
+              "max_abs": 0.035346563905477524,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.06464533273832633,
+              "max_abs": 0.038291312754154205,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.07096087135139563,
+              "max_abs": 0.0482068732380867,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.06415699011536885,
+              "max_abs": 0.03280448168516159,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.06780952577734653,
+              "max_abs": 0.04079451039433479,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 4,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.08035673437242892,
+              "max_abs": 0.04209109768271446,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.06874250657716428,
+              "max_abs": 0.04027550294995308,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.06647176521558773,
+              "max_abs": 0.04209109768271446,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.07117064213667872,
+              "max_abs": 0.0418013371527195,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.07254714107710222,
+              "max_abs": 0.038550738245248795,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.0717774327879372,
+              "max_abs": 0.04209109768271446,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.0672582078132419,
+              "max_abs": 0.038550738245248795,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.0655515973276816,
+              "max_abs": 0.04194621741771698,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 5,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.06733154732759175,
+              "max_abs": 0.04291120916604996,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.06881753072490003,
+              "max_abs": 0.04291120916604996,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.04769961334216468,
+              "max_abs": 0.0323420949280262,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.07748488207414075,
+              "max_abs": 0.0439031645655632,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.06766910756589659,
+              "max_abs": 0.04291120916604996,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.05510616527838926,
+              "max_abs": 0.0323420949280262,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.07265605992269655,
+              "max_abs": 0.04291120916604996,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.060840294326709926,
+              "max_abs": 0.03616825491189957,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 6,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.07419033982660882,
+              "max_abs": 0.05112630873918533,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.06321597550372289,
+              "max_abs": 0.041033025830984116,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.06566437332179158,
+              "max_abs": 0.05112630873918533,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.07239122453270422,
+              "max_abs": 0.041033025830984116,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.06660439408609957,
+              "max_abs": 0.041033025830984116,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.0691916006965308,
+              "max_abs": 0.05112630873918533,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.06735375959393881,
+              "max_abs": 0.041033025830984116,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.06634175590223623,
+              "max_abs": 0.038084570318460464,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 7,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.041488706596125496,
+              "max_abs": 0.02418692409992218,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.06068473048039442,
+              "max_abs": 0.036660268902778625,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.05356172477786085,
+              "max_abs": 0.036660268902778625,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.06556681583931967,
+              "max_abs": 0.04033762961626053,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.04742565200130868,
+              "max_abs": 0.02357064001262188,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.04502044055464977,
+              "max_abs": 0.02418692409992218,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.06032003151543147,
+              "max_abs": 0.031750407069921494,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.057738880444595325,
+              "max_abs": 0.031750407069921494,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 8,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.052648358468954264,
+              "max_abs": 0.03998791426420212,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.036531369186132014,
+              "max_abs": 0.02416457235813141,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.05567481290071847,
+              "max_abs": 0.03998791426420212,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.07799701392064969,
+              "max_abs": 0.0505092591047287,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.040936871864277746,
+              "max_abs": 0.02566658891737461,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.05404655381849546,
+              "max_abs": 0.03998791426420212,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.05635099316087741,
+              "max_abs": 0.037336915731430054,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.06502104889078322,
+              "max_abs": 0.037336915731430054,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 9,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.04643790541804423,
+              "max_abs": 0.028890786692500114,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.06421594676800743,
+              "max_abs": 0.03986232727766037,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.047616005707720545,
+              "max_abs": 0.027251971885561943,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.05310328996458957,
+              "max_abs": 0.03324605152010918,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.05262563072316931,
+              "max_abs": 0.028890786692500114,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.04546848425227072,
+              "max_abs": 0.027251971885561943,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.055750692198430304,
+              "max_abs": 0.028890786692500114,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.04705253801362877,
+              "max_abs": 0.024238640442490578,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 10,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.05622026754876518,
+              "max_abs": 0.04073316231369972,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.07119961622002315,
+              "max_abs": 0.04629125818610191,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.05223425202152595,
+              "max_abs": 0.029549239203333855,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.07482893508285197,
+              "max_abs": 0.04761990159749985,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.06251525787462762,
+              "max_abs": 0.04073316231369972,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.04950863694379684,
+              "max_abs": 0.029549239203333855,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.06973370761045526,
+              "max_abs": 0.044176533818244934,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.06015792785514994,
+              "max_abs": 0.02923516556620598,
+              "width": 14
+            }
+          ]
+        }
+      ],
+      "aggregate": {
+        "xor": {
+          "forms": {
+            "n": 40,
+            "minimum": 0.04809390819758821,
+            "maximum": 0.08816845086751231,
+            "mean": 0.06839605286937848
+          },
+          "roots": {
+            "n": 40,
+            "minimum": 0.00267315934172268,
+            "maximum": 0.1596640541203159,
+            "mean": 0.06490771090833045
+          }
+        },
+        "sum": {
+          "forms": {
+            "n": 40,
+            "minimum": 0.036531369186132014,
+            "maximum": 0.08035673437242892,
+            "mean": 0.06071454666124024
+          },
+          "roots": {
+            "n": 40,
+            "minimum": 0.040936871864277746,
+            "maximum": 0.07265605992269655,
+            "mean": 0.05872358933055516
+          }
+        }
+      }
+    },
+    "review18": {
+      "runs": [
+        {
+          "kind": "xor",
+          "run": 1,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.0537478389495987,
+              "max_abs": 0.04064038768410683,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.04158909793950314,
+              "max_abs": 0.02700994163751602,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.047998695839493566,
+              "max_abs": 0.04064038768410683,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.05141804139807914,
+              "max_abs": 0.02700994163751602,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.09310161674451907,
+              "max_abs": 0.0636296197772026,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.09916671781999682,
+              "max_abs": 0.08012174814939499,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.0908687061726743,
+              "max_abs": 0.05422893911600113,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.09694873657412648,
+              "max_abs": 0.06835973262786865,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 2,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.04955729894198718,
+              "max_abs": 0.03260886296629906,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.06433852082947611,
+              "max_abs": 0.03625471889972687,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.059216782189431355,
+              "max_abs": 0.03625471889972687,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.043998905702214264,
+              "max_abs": 0.03260886296629906,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.1107073717618984,
+              "max_abs": 0.06555462628602982,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.10583945038113672,
+              "max_abs": 0.0615035705268383,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.105506594871257,
+              "max_abs": 0.06645338237285614,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.10061021165580128,
+              "max_abs": 0.06388228386640549,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 3,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.06938443039995298,
+              "max_abs": 0.04884291812777519,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.07142300963372994,
+              "max_abs": 0.05210517346858978,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.061088011404137756,
+              "max_abs": 0.04884291812777519,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.07308746141816397,
+              "max_abs": 0.05560922995209694,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.004955645777544799,
+              "max_abs": 0.003267439780756831,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.00423855695986409,
+              "max_abs": 0.004011292010545731,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.005220126695215571,
+              "max_abs": 0.0037078068125993013,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.004464767478149587,
+              "max_abs": 0.0042984336614608765,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 4,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.0623216919702742,
+              "max_abs": 0.043054793030023575,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.06277527985958213,
+              "max_abs": 0.043054793030023575,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.03798264635488302,
+              "max_abs": 0.024192364886403084,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.07518035835086652,
+              "max_abs": 0.04357198253273964,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.003912262047531453,
+              "max_abs": 0.0035115701612085104,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.0023671428170384183,
+              "max_abs": 0.0016668481985107064,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.004719468381559906,
+              "max_abs": 0.004109237343072891,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.002855549400500403,
+              "max_abs": 0.0024215036537498236,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 5,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.0609281143759924,
+              "max_abs": 0.04114118963479996,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.0646403795642099,
+              "max_abs": 0.04114118963479996,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.036912362032650615,
+              "max_abs": 0.023571424186229706,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.06537270875650683,
+              "max_abs": 0.04114118963479996,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.003938416468692548,
+              "max_abs": 0.0033323722891509533,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.002249000631045513,
+              "max_abs": 0.0013820409076288342,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.0042257164440929855,
+              "max_abs": 0.003491403767839074,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.002413060925550547,
+              "max_abs": 0.0012963078916072845,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 6,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.04901543964024969,
+              "max_abs": 0.0320051871240139,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.07523637987535835,
+              "max_abs": 0.03611910715699196,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.05650836442383539,
+              "max_abs": 0.038828738033771515,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.06069316004480213,
+              "max_abs": 0.03683136776089668,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.0036877443142321747,
+              "max_abs": 0.0024507176131010056,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.002769782202461147,
+              "max_abs": 0.001967934425920248,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.004566333614093185,
+              "max_abs": 0.00274865934625268,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.003429671242653564,
+              "max_abs": 0.002326655900105834,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 7,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.05615454822506352,
+              "max_abs": 0.027770178392529488,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.07649551031544158,
+              "max_abs": 0.0448010116815567,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.06755845514210976,
+              "max_abs": 0.0448010116815567,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.059477198471422535,
+              "max_abs": 0.037946127355098724,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.1283544840866549,
+              "max_abs": 0.059711556881666183,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.11991928366445427,
+              "max_abs": 0.06027621030807495,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.1314229627545655,
+              "max_abs": 0.06473906338214874,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.1230174570982276,
+              "max_abs": 0.05654456093907356,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 8,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.06727730500996498,
+              "max_abs": 0.0539223738014698,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.05256628399227191,
+              "max_abs": 0.0293259359896183,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.06522092206979,
+              "max_abs": 0.0539223738014698,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.060194165926223765,
+              "max_abs": 0.04190373048186302,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.0035365180663277478,
+              "max_abs": 0.0027270594146102667,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.004387887683954086,
+              "max_abs": 0.004243586678057909,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.0031641835782768553,
+              "max_abs": 0.0019912114366889,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.003925919120406871,
+              "max_abs": 0.002895665355026722,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 9,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.06401556164216436,
+              "max_abs": 0.04686100408434868,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.06406874689467343,
+              "max_abs": 0.04686100408434868,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.0608097954053276,
+              "max_abs": 0.04232760891318321,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.08188212240908259,
+              "max_abs": 0.04739071801304817,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.12398290235979338,
+              "max_abs": 0.09145551174879074,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.12093258440015012,
+              "max_abs": 0.0863138809800148,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.1407047719364462,
+              "max_abs": 0.09178793430328369,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.13771266348213154,
+              "max_abs": 0.08865292370319366,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "xor",
+          "run": 10,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.06732784630402058,
+              "max_abs": 0.04139178246259689,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.06797176492388886,
+              "max_abs": 0.04139178246259689,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.07736888561737824,
+              "max_abs": 0.04647801071405411,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.08623054710035467,
+              "max_abs": 0.05727364122867584,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.00457639305825747,
+              "max_abs": 0.003828266868367791,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.00520908048532089,
+              "max_abs": 0.0033891242928802967,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.005861242124951495,
+              "max_abs": 0.004507757723331451,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.006671560907073147,
+              "max_abs": 0.005565568804740906,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 1,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.05340615352918628,
+              "max_abs": 0.033427100628614426,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.08692208006571274,
+              "max_abs": 0.04923609644174576,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.06163793209025728,
+              "max_abs": 0.03876788541674614,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.07461767281586888,
+              "max_abs": 0.042286381125450134,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.06787748505030941,
+              "max_abs": 0.03609749302268028,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.056388898705771844,
+              "max_abs": 0.03609749302268028,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.07972136495745696,
+              "max_abs": 0.045761238783597946,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.06720118754103868,
+              "max_abs": 0.038047488778829575,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 2,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.03463889411353814,
+              "max_abs": 0.02348480373620987,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.06747487467859746,
+              "max_abs": 0.04304008558392525,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.036117774293968966,
+              "max_abs": 0.021369177848100662,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.047539420519358874,
+              "max_abs": 0.03354532644152641,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.046150973128264015,
+              "max_abs": 0.02393634431064129,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.03477960493242913,
+              "max_abs": 0.021369177848100662,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.052186058183314406,
+              "max_abs": 0.025682799518108368,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.040482511925879754,
+              "max_abs": 0.027457252144813538,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 3,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.05599333548461427,
+              "max_abs": 0.030981089919805527,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.08869094419350952,
+              "max_abs": 0.05429328233003616,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.09202484191530226,
+              "max_abs": 0.05429328233003616,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.06473516733869482,
+              "max_abs": 0.03308477625250816,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.06896301356206036,
+              "max_abs": 0.03635925054550171,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.07113570347461663,
+              "max_abs": 0.03635925054550171,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.07346957520686344,
+              "max_abs": 0.04042702168226242,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.07554677117556943,
+              "max_abs": 0.04042702168226242,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 4,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.06586467973842305,
+              "max_abs": 0.04061035439372063,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.06784717883983651,
+              "max_abs": 0.05278225988149643,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.06167339336349587,
+              "max_abs": 0.04061035439372063,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.05970612922777529,
+              "max_abs": 0.028848115354776382,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.06555860014658396,
+              "max_abs": 0.04669630527496338,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.06325571797849258,
+              "max_abs": 0.04061035439372063,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.06174572519693212,
+              "max_abs": 0.04047388955950737,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.05955876364693303,
+              "max_abs": 0.03438793495297432,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 5,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.07240912863852812,
+              "max_abs": 0.04961762949824333,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.0742956832048829,
+              "max_abs": 0.046042971312999725,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.0703584472802199,
+              "max_abs": 0.04961762949824333,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.08996074046116753,
+              "max_abs": 0.05553175136446953,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.0689590241746091,
+              "max_abs": 0.04108399525284767,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.07110980986483054,
+              "max_abs": 0.04961762949824333,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.07676395624424559,
+              "max_abs": 0.04108399525284767,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.07450025684920603,
+              "max_abs": 0.038577184081077576,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 6,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.06419983338773019,
+              "max_abs": 0.038052983582019806,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.08415561859852433,
+              "max_abs": 0.03979717940092087,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.06843414509238811,
+              "max_abs": 0.040636710822582245,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.0647563313659362,
+              "max_abs": 0.038052983582019806,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.07141912330975562,
+              "max_abs": 0.038052983582019806,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.06344569393544588,
+              "max_abs": 0.03674038499593735,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.07267357438488815,
+              "max_abs": 0.038052983582019806,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.0645454175875899,
+              "max_abs": 0.03674038499593735,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 7,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.06280460920786661,
+              "max_abs": 0.045409176498651505,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.09007698239391469,
+              "max_abs": 0.045409176498651505,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.05527504971865358,
+              "max_abs": 0.03931209817528725,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.08407640928725546,
+              "max_abs": 0.04722396656870842,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.07463402786089955,
+              "max_abs": 0.045409176498651505,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.056953667161408816,
+              "max_abs": 0.03332901746034622,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.0855714032170895,
+              "max_abs": 0.045409176498651505,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.06699816852675344,
+              "max_abs": 0.03332901746034622,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 8,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.04334377739613596,
+              "max_abs": 0.03282232955098152,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.05759795235153384,
+              "max_abs": 0.03296558931469917,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.0521885129477521,
+              "max_abs": 0.03282232955098152,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.08196617881837893,
+              "max_abs": 0.04017546400427818,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.045817116852673846,
+              "max_abs": 0.022704925388097763,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.04690404362654475,
+              "max_abs": 0.03282232955098152,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.06643756947555719,
+              "max_abs": 0.03388984873890877,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.06550903724435503,
+              "max_abs": 0.033697642385959625,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 9,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.06918892232720791,
+              "max_abs": 0.051460929214954376,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.0504216709578382,
+              "max_abs": 0.032990965992212296,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.07739650543268857,
+              "max_abs": 0.051460929214954376,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.0852136308573897,
+              "max_abs": 0.05021148547530174,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.05789383624053836,
+              "max_abs": 0.042225949466228485,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.07250377036303993,
+              "max_abs": 0.051460929214954376,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.06651049529193444,
+              "max_abs": 0.04160122573375702,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.0808776232151894,
+              "max_abs": 0.05083620548248291,
+              "width": 14
+            }
+          ]
+        },
+        {
+          "kind": "sum",
+          "run": 10,
+          "forms": [
+            {
+              "stage": 1,
+              "row": 0,
+              "word": "hello",
+              "l2": 0.05133536467700558,
+              "max_abs": 0.031692370772361755,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 1,
+              "word": "world",
+              "l2": 0.05149568038163957,
+              "max_abs": 0.03832901269197464,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 2,
+              "word": "there",
+              "l2": 0.05594881611908234,
+              "max_abs": 0.031692370772361755,
+              "content_width": 6
+            },
+            {
+              "stage": 1,
+              "row": 4,
+              "word": "loving",
+              "l2": 0.05360124094040176,
+              "max_abs": 0.03209760785102844,
+              "content_width": 6
+            }
+          ],
+          "roots": [
+            {
+              "sentence": "hello world",
+              "l2": 0.049986346212484406,
+              "max_abs": 0.030823692679405212,
+              "width": 14
+            },
+            {
+              "sentence": "hello there",
+              "l2": 0.05345672280311095,
+              "max_abs": 0.031692370772361755,
+              "width": 14
+            },
+            {
+              "sentence": "loving world",
+              "l2": 0.05100285125266511,
+              "max_abs": 0.030823692679405212,
+              "width": 14
+            },
+            {
+              "sentence": "loving there",
+              "l2": 0.053425573114651737,
+              "max_abs": 0.025214411318302155,
+              "width": 14
+            }
+          ]
+        }
+      ],
+      "aggregate": {
+        "xor": {
+          "forms": {
+            "n": 40,
+            "minimum": 0.036912362032650615,
+            "maximum": 0.08623054710035467,
+            "mean": 0.06172586598360394
+          },
+          "roots": {
+            "n": 40,
+            "minimum": 0.002249000631045513,
+            "maximum": 0.1407047719364462,
+            "mean": 0.0481535636547157
+          }
+        },
+        "sum": {
+          "forms": {
+            "n": 40,
+            "minimum": 0.03463889411353814,
+            "maximum": 0.09202484191530226,
+            "mean": 0.06573479260130656
+          },
+          "roots": {
+            "n": 40,
+            "minimum": 0.03477960493242913,
+            "maximum": 0.0855714032170895,
+            "mean": 0.06354802659054958
+          }
+        }
+      }
+    }
+  }
+}

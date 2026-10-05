@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review22-final-sweep/worker-021.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review22-final-sweep/worker-021.json"
+  ],
+  "pid": 2846,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1964100656,
+  "elapsed_seconds": 35.8092034580186,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/review22-final-sweep/worker-021.log"
+}

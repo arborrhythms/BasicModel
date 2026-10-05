@@ -1,0 +1,56 @@
+--- review17_campaign.py
++++ review18_campaign.py
+@@ -1,4 +1,4 @@
+-"""§17: exactly ten shared XOR gates, ten unchanged MM gates, ten sum controls."""
++"""§18: exactly ten shared XOR gates, ten unchanged MM gates, ten sum controls."""
+ import difflib
+ import hashlib
+ import importlib.util
+@@ -10,7 +10,7 @@
+ 
+ HERE = Path(__file__).resolve().parent
+ ROOT = HERE.parents[2]
+-OUT = HERE/'review17-measurements'
++OUT = HERE/'review18-measurements'
+ sys.path[:0] = [str(ROOT/'test'), str(HERE)]
+ import bounded_tests as bounded
+ 
+@@ -50,16 +50,16 @@
+ 
+ def campaign():
+     source = bounded.source_snapshot(ROOT)
+-    assert source == json.loads((HERE/'review17-final-source/source.json').read_text())
+-    helpers = json.loads((HERE/'review17-final-source/measurement-helpers.json').read_text())
++    assert source == json.loads((HERE/'review18-source/source.json').read_text())
++    helpers = json.loads((HERE/'review18-source/measurement-helpers.json').read_text())
+     def helpers_match():
+         return all(hashlib.sha256((ROOT/name).read_bytes()).hexdigest() == sha
+                    for name,sha in helpers.items())
+     assert helpers_match()
+-    sweep = json.loads((HERE/'review17-final-sweep/result.json').read_text())
++    sweep = json.loads((HERE/'review18-sweep/result.json').read_text())
+     assert sweep['exit_code'] == 0 and len(sweep['completed']) == len(sweep['selected']), 'green complete sweep before gates'
+-    assert source == json.loads((HERE/'review17-final-sweep/source-manifest.json').read_text())['validated_source']
+-    collected = json.loads((HERE/'review17-final-sweep/collect.request.json').read_text())
++    assert source == json.loads((HERE/'review18-sweep/source-manifest.json').read_text())['validated_source']
++    collected = json.loads((HERE/'review18-sweep/collect.request.json').read_text())
+     assert collected['selectors'] == ['test'] and collected['keyword'] is None and collected['marker'] is None
+     OUT.mkdir(exist_ok=False)
+     bounded.write_json(OUT/'source.json', source)
+@@ -81,6 +81,7 @@
+         comparison=dict(section12=dict(xor_class=0,xor_reconstruction=7,joint=0,sum=10,mm=10),
+             section13=dict(xor_class=0,xor_reconstruction=0,joint=0,sum=10,mm=10),
+             section14=dict(xor_class=1,xor_reconstruction=8,joint=1,sum=10,mm=10),
++            section17=dict(xor_class=1,xor_reconstruction=10,joint=1,sum=10,mm=10),
+             closing69=dict(class_mse=.1147481948,reconstructed_sentences=0,total_sentences=4,
+                            ownership_conflicts=0,prior_class=9,prior_reconstruction=5)),
+         order='Sum ten, require 10/10; XOR ten; then MM ten. Both use the same raw-root affine reader',
+@@ -91,7 +92,7 @@
+     start = time.monotonic()
+     try:
+         while jobs or active:
+-            assert source == bounded.source_snapshot(ROOT), 'source changed during §17 measurements'
++            assert source == bounded.source_snapshot(ROOT), 'source changed during §18 measurements'
+             assert helpers_match(), 'measurement helpers changed after freeze'
+             for job in list(active):
+                 result = job['process'].poll()

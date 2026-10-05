@@ -1,0 +1,18 @@
+--- review17/bin/Layers.py
++++ review18/bin/Layers.py
+@@ -13180,10 +13180,11 @@
+             raise ValueError(
+                 f"BytesFallbackEncoder: dim must be positive, got {dim}")
+         self.dim: int = int(dim)
+-        # Small-stddev init so the fallback contribution starts near
+-        # zero and the codebook can learn whatever scale it wants.
+-        self.byte_codebook = nn.Parameter(
+-            torch.randn(256, self.dim) * 0.02)
++        # Full-presence percept codes: the what-basis per-row max-abs
++        # normalization, followed by the presence-cube clamp.
++        init = torch.randn(256, self.dim)
++        init = init / init.abs().amax(dim=-1, keepdim=True).clamp(min=1e-8)
++        self.byte_codebook = nn.Parameter(init.clamp(0.0, 1.0))
+         # Pure-Python hit counters; persisted via vocab_extras.
+         self.hit_counts: Dict[bytes, int] = {}
+ 

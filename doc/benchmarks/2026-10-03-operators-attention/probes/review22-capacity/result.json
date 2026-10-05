@@ -1,0 +1,159 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_review13_subspaces.py::test_native_percept_rows_and_net_evidence_are_detached_code_sources",
+    "test/test_review13_subspaces.py::test_group_uses_native_perceptual_fold_without_letter_concept_rows",
+    "test/test_review13_subspaces.py::test_occurrence_mean_is_confined_to_detached_context_coordinates",
+    "test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate",
+    "test/test_review13_subspaces.py::test_actual_serial_code_uses_fourteen_native_coordinates_and_no_context_bootstrap",
+    "test/test_review13_subspaces.py::test_readback_uses_perceptual_cosine_without_context_or_scale"
+  ],
+  "completed": [
+    "test/test_review13_subspaces.py::test_native_percept_rows_and_net_evidence_are_detached_code_sources",
+    "test/test_review13_subspaces.py::test_group_uses_native_perceptual_fold_without_letter_concept_rows",
+    "test/test_review13_subspaces.py::test_occurrence_mean_is_confined_to_detached_context_coordinates",
+    "test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate",
+    "test/test_review13_subspaces.py::test_actual_serial_code_uses_fourteen_native_coordinates_and_no_context_bootstrap",
+    "test/test_review13_subspaces.py::test_readback_uses_perceptual_cosine_without_context_or_scale"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review22-capacity/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review22-capacity/worker-000.json"
+      ],
+      "pid": 2235,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 732366912,
+      "elapsed_seconds": 18.62191270897165,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review22-capacity/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_review13_subspaces.py::test_native_percept_rows_and_net_evidence_are_detached_code_sources",
+        "test/test_review13_subspaces.py::test_group_uses_native_perceptual_fold_without_letter_concept_rows",
+        "test/test_review13_subspaces.py::test_occurrence_mean_is_confined_to_detached_context_coordinates",
+        "test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate",
+        "test/test_review13_subspaces.py::test_actual_serial_code_uses_fourteen_native_coordinates_and_no_context_bootstrap",
+        "test/test_review13_subspaces.py::test_readback_uses_perceptual_cosine_without_context_or_scale"
+      ],
+      "completed": [
+        "test/test_review13_subspaces.py::test_native_percept_rows_and_net_evidence_are_detached_code_sources",
+        "test/test_review13_subspaces.py::test_group_uses_native_perceptual_fold_without_letter_concept_rows",
+        "test/test_review13_subspaces.py::test_occurrence_mean_is_confined_to_detached_context_coordinates",
+        "test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate",
+        "test/test_review13_subspaces.py::test_actual_serial_code_uses_fourteen_native_coordinates_and_no_context_bootstrap",
+        "test/test_review13_subspaces.py::test_readback_uses_perceptual_cosine_without_context_or_scale"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_review13_subspaces.py::test_native_percept_rows_and_net_evidence_are_detached_code_sources",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.017144582991022617,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review13_subspaces.py::test_group_uses_native_perceptual_fold_without_letter_concept_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0024777500075288117,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review13_subspaces.py::test_occurrence_mean_is_confined_to_detached_context_coordinates",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0034961249912157655,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0021863749716430902,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review13_subspaces.py::test_actual_serial_code_uses_fourteen_native_coordinates_and_no_context_bootstrap",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 14.429344333999325,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review13_subspaces.py::test_readback_uses_perceptual_cosine_without_context_or_scale",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0002767500118352473,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800.0,
+    "suite_seconds": 1800.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review22-capacity",
+  "elapsed_seconds": 20.974196708004456,
+  "requested_device": "cpu",
+  "device_policy": {
+    "default": "cpu",
+    "override": "explicit device marker"
+  },
+  "peak_aggregate_memory_bytes": 732366912,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review22-capacity/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review22-capacity/collect.json"
+    ],
+    "pid": 2219,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180552544,
+    "elapsed_seconds": 1.780457291053608,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review22-capacity/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_review13_subspaces.py::test_native_percept_rows_and_net_evidence_are_detached_code_sources",
+        "test/test_review13_subspaces.py::test_group_uses_native_perceptual_fold_without_letter_concept_rows",
+        "test/test_review13_subspaces.py::test_occurrence_mean_is_confined_to_detached_context_coordinates",
+        "test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate",
+        "test/test_review13_subspaces.py::test_actual_serial_code_uses_fourteen_native_coordinates_and_no_context_bootstrap",
+        "test/test_review13_subspaces.py::test_readback_uses_perceptual_cosine_without_context_or_scale"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

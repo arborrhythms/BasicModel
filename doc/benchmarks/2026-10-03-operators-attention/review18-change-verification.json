@@ -1,0 +1,18 @@
+{
+  "changed_runtime_files": [
+    "bin/Layers.py"
+  ],
+  "changed_function": "BytesFallbackEncoder.__init__",
+  "old": "def __init__(self, dim: int) -> None:\n        super().__init__()\n        if dim <= 0:\n            raise ValueError(\n                f\"BytesFallbackEncoder: dim must be positive, got {dim}\")\n        self.dim: int = int(dim)\n        # Small-stddev init so the fallback contribution starts near\n        # zero and the codebook can learn whatever scale it wants.\n        self.byte_codebook = nn.Parameter(\n            torch.randn(256, self.dim) * 0.02)\n        # Pure-Python hit counters; persisted via vocab_extras.\n        self.hit_counts: Dict[bytes, int] = {}",
+  "new": "def __init__(self, dim: int) -> None:\n        super().__init__()\n        if dim <= 0:\n            raise ValueError(\n                f\"BytesFallbackEncoder: dim must be positive, got {dim}\")\n        self.dim: int = int(dim)\n        # Full-presence percept codes: the what-basis per-row max-abs\n        # normalization, followed by the presence-cube clamp.\n        init = torch.randn(256, self.dim)\n        init = init / init.abs().amax(dim=-1, keepdim=True).clamp(min=1e-8)\n        self.byte_codebook = nn.Parameter(init.clamp(0.0, 1.0))\n        # Pure-Python hit counters; persisted via vocab_extras.\n        self.hit_counts: Dict[bytes, int] = {}",
+  "tests_unchanged": true,
+  "seeds_bars_guards_xmls_unchanged": true,
+  "initialization_check": {
+    "exact_rule": true,
+    "same_single_random_draw": true,
+    "parameter_registration_unchanged": true,
+    "minimum": 0.0,
+    "maximum": 1.0,
+    "finite": true
+  }
+}

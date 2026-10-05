@@ -301,9 +301,13 @@ at the existing evaluation boundary before the temporary trace is discarded.
 There is no additional forward or training run. The decoder's first-logit
 audit also gives the binary rule names beside their indices and rule IDs.
 
-Disjunction now combines magnitudes by `a+b-a*b` and identity by
-`unit(x+y-x*y)`; its free inverse searches through that same kernel. The mean
-remains `sum`, the additive control. These changes introduce no parameters,
+The binding kernels take magnitude from the operand activations, not the
+lengths of their form codes (§20). With `u=unit(x)`, `v=unit(y)` and activation
+magnitudes `a,b`, conjunction returns `a*b*unit(u*v)` and disjunction returns
+`(a+b-a*b)*unit(u+v-u*v)`. A present native word has activation one regardless
+of its form norm; a composed root carries activation in its norm. The free
+inverse searches through the same kernels. The mean remains `sum`, the additive
+control; both gates retain the raw-root affine reader. These changes introduce no parameters,
 loss, learning rate or optimizer change. The XOR table is the composition
 mechanism gate under §12.1; its class and reconstruction bars remain unchanged.
 
@@ -520,6 +524,13 @@ Decided in the 6.8 §14–§15 rounds
   onto every read-back target with uniform weights; the §14 erosion was the
   shared wholes' term of the midpoint, moved by the room clamp. Both paths
   are closed: no code moves under the sentence path.
+- **The sentence handoff detaches input attention's credit (§20).** The
+  attention and compose walks share a scorer. Byte reconstruction previously
+  reached it through the attention straight-through value, cached perception
+  and the perception pullback even when the two compose costs tied. Detaching
+  that credit closes this additional sentence-path writer; the original
+  no-movement tie assertion passes. This repair does not add the separate
+  attention score-function objective proposed in the later §21 review note.
 - **The compose chooser's gradient is the score-function estimator (Alec,
   2026-10-05: "So we are doing SCG?"; supersedes the comparison step of
   2026-10-04 and the straight-through of the same morning).** The chooser's
@@ -527,12 +538,17 @@ Decided in the 6.8 §14–§15 rounds
   exact gradient of the expected reconstruction cost with respect to them is
   the score-function term at the sampled departure, with the greedy trial's
   cost as the paired baseline (self-critical sequence training): surrogate
-  `p_θ(a_dep | state) · (C_explore − C_greedy)`, costs detached, one term per
+  `K · R · p_θ(a_dep | state) · (C_explore − C_greedy)`, costs detached, one term per
   sentence with a departure, reconstruction-owned; `∇p` rather than `∇log p`
   because the departure is drawn uniformly over the value-distinct eligible
   alternatives (the coverage floor) and the importance weight cancels the
-  `1/p`. Unbiased; needs no differentiable decoder; a tie teaches nothing.
-  (6.8 plan §16.3.)
+  `1/p`. Here K counts the value-distinct eligible alternatives at the sampled
+  round and R counts eligible rounds in that sentence. Their product cancels
+  the uniform proposal probability `1/(K·R)`, giving the sum of the
+  baseline-subtracted gradients over those alternatives and rounds, before
+  the existing active-row mean reduction. No differentiable decoder is needed;
+  a tie teaches nothing and the greedy argmax supplies no chooser gradient.
+  (6.8 plan §§16.3, 17.)
 - **The pair search is hard.** Candidate codes detached, residual relative to
   the parent's mean square, the straight-through blend deleted: with codes
   perception's and operators parameterless, nothing on the compose side
@@ -540,6 +556,18 @@ Decided in the 6.8 §14–§15 rounds
   proxy (the true pair's margin) weighted by the decoder's uncertainty. The
   byte scorer's bank codes are detached; the recovered leaf stays live for
   the generate policy's own path in the walk, which is unchanged.
+- **The decomposition chooser learns the true pair (6.8 §§16.4, 17).** For
+  the selected undo, a separate reconstruction-owned scorer reads each
+  shortlisted pair's negative relative residual, both candidates' activation
+  and both candidates' priming. Its softmax has a hard argmax value; fit weight
+  1 and context weights 0 reproduce the previous residual argmin without a
+  random initialization. Teacher-forced cross-entropy targets the input's
+  resolved word identities at that composition's operand positions. A target
+  absent from the shortlist is counted and contributes no term. Candidate
+  codes and all scorer features are detached. The teacher term is added in
+  reconstruction's owner step after both trials' byte costs and the keep
+  decision; targets never enter free decoding. These parameters are separate
+  from the forward chooser, and the walk policy and §11.6 mask are unchanged.
 - **One affine reader for both gates.** XOR_grammar's class reader and the
   sum control read the raw root through the same output-owned affine head;
   the root's address bands are zero. A normalization of the root is a
@@ -547,3 +575,25 @@ Decided in the 6.8 §14–§15 rounds
   unit-norm reader of the §14 round is withdrawn).
 - **Certainty is the activation.** Forms are at full presence; the leaf's
   activation, the projection coefficient, carries how sure the reader is.
+
+## Attention's credit detached; the kernels' magnitude from the activation (October 5)
+
+- **The input-attention walk shares the compose chooser's parameters** and its
+  straight-through credit reached them through the perception pullback (the
+  byte cost's cotangent at the forked leaves pushed back through the cached
+  perception graph), a second, pathwise writer beside the score-function term
+  that was below float32 resolution at the old code scale. Attention's credit
+  is detached at the sentence handoff; the attention walk trains nothing until
+  the operators update gives it the score-function estimator (FutureWork). The
+  compose chooser now has one writer.
+- **The binding kernels take magnitude from the activation**, codes entering
+  as directions: conjunction `a·b·unit(u∘v)`, disjunction
+  `(a + b − ab)·unit(u + v − u∘v)` with `u, v` unit codes and `a, b` the operand
+  activations (1 for a present word). Roots carry unit certainty; identity is
+  in the direction. The code's norm is no longer read as certainty (the
+  reading retired 2026-10-04); at full presence the old `a + b − ab` on norms
+  above 1 was non-monotone and the product leaked form length.
+- **Full-presence admitted rows:** `RadixLayer.insert()` initializes an
+  admitted percept row at full presence (6.8 plan §19–§22; unit L2 norm then
+  the cube clamp from the last round on). The decoder's generate policy moves
+  only where a live decoder step has more than one legal action.

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "review20_diagnose",
+    "test/test_grammar_word_learning.py",
+    "test/test_review14_addendum.py"
+  ],
+  "pid": 92349,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 832521944,
+  "elapsed_seconds": 7.960223959002178,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review20-gradient-and-step/run.log"
+}

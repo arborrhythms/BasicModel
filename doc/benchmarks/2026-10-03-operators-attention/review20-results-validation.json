@@ -1,0 +1,467 @@
+{
+  "source_matched": true,
+  "helpers_matched": true,
+  "gate_trainings": 30,
+  "retries": 0,
+  "counts": {
+    "class_pass": 2,
+    "reconstruction_pass": 8,
+    "joint": 2,
+    "mm_pass": 10,
+    "sum_pass": 10,
+    "xor_bands": {
+      "at 0": 2,
+      "at 1/4": 3,
+      "between": 5,
+      "above 1/4": 0
+    },
+    "sum_bands": {
+      "at 0": 0,
+      "at 1/4": 10,
+      "between": 0,
+      "above 1/4": 0
+    }
+  },
+  "runs": [
+    {
+      "run": 1,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.9313566088676453,
+        0.9313566088676453
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 2,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8500478863716125,
+        0.8500478863716125
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 3,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.9583984017372131,
+        0.9583984017372131
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [
+          [
+            "world",
+            "loving"
+          ]
+        ],
+        "end": [
+          [
+            "world",
+            "loving"
+          ]
+        ]
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 3
+    },
+    {
+      "run": 4,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.7645365595817566,
+        0.7645365595817566
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 5,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.7478230595588684,
+        0.7478230595588684
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 6,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8443188667297363,
+        0.8443188667297363
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 7,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.9362526535987854,
+        0.9362526535987854
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 8,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8792088031768799,
+        0.8792088031768799
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 9,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8841831088066101,
+        0.8841831088066101
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 10,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8730875849723816,
+        0.8730875849723816
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "exact_form_collisions": {
+        "start": [],
+        "end": []
+      },
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    }
+  ],
+  "zero_ownership_conflicts": true,
+  "finite_chooser_logits": true,
+  "kept_stability_by_compose_trial": {
+    "exploit": [
+      {
+        "modal_fraction": 0.8675,
+        "distinct": 2,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 347
+          },
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 53
+          }
+        ]
+      },
+      {
+        "modal_fraction": 0.83,
+        "distinct": 2,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 332
+          },
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 68
+          }
+        ]
+      },
+      {
+        "modal_fraction": 0.805,
+        "distinct": 3,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 322
+          },
+          {
+            "actions": [
+              2
+            ],
+            "count": 48
+          },
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 30
+          }
+        ]
+      },
+      {
+        "modal_fraction": 0.885,
+        "distinct": 2,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 354
+          },
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 46
+          }
+        ]
+      }
+    ],
+    "explore": [
+      {
+        "modal_fraction": 0.8675,
+        "distinct": 2,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 347
+          },
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 53
+          }
+        ]
+      },
+      {
+        "modal_fraction": 0.83,
+        "distinct": 2,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 332
+          },
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 68
+          }
+        ]
+      },
+      {
+        "modal_fraction": 0.925,
+        "distinct": 2,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 370
+          },
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 30
+          }
+        ]
+      },
+      {
+        "modal_fraction": 0.885,
+        "distinct": 2,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 354
+          },
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 46
+          }
+        ]
+      }
+    ]
+  },
+  "start_norm_ranges": {
+    "xor": {
+      "forms": {
+        "n": 40,
+        "minimum": 1.0413073057466293,
+        "maximum": 2.334515040836625,
+        "mean": 1.8347924692201725
+      },
+      "roots": {
+        "n": 40,
+        "minimum": 0.9999999176475752,
+        "maximum": 1.0000000700740228,
+        "mean": 1.0000000013053412
+      }
+    },
+    "sum": {
+      "forms": {
+        "n": 40,
+        "minimum": 1.2247233326857867,
+        "maximum": 2.2363175030871716,
+        "mean": 1.8593166427185783
+      },
+      "roots": {
+        "n": 40,
+        "minimum": 1.4929472177142808,
+        "maximum": 2.200251620481872,
+        "mean": 1.800824263376396
+      }
+    }
+  },
+  "collection_delta": {
+    "added": [
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review19.md]",
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review20.md]",
+      "test/test_review20_activation.py::test_kernel_uses_activation_and_is_invariant_to_form_length[ConjunctionLayer-0.3]",
+      "test/test_review20_activation.py::test_kernel_uses_activation_and_is_invariant_to_form_length[DisjunctionLayer-0.8]",
+      "test/test_review20_activation.py::test_operation_candidates_receive_leaf_activation_and_keep_code_directions[ConjunctionLayer]",
+      "test/test_review20_activation.py::test_operation_candidates_receive_leaf_activation_and_keep_code_directions[DisjunctionLayer]",
+      "test/test_review20_activation.py::test_repeated_reference_preserves_its_activation_and_direction"
+    ],
+    "removed": []
+  }
+}

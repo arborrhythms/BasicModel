@@ -1141,3 +1141,16 @@ Not in the 6.8 rounds; each names its home.
   variate for the score-function estimator (REBAR, Tucker et al. 2017; RELAX,
   Grathwohl et al. 2018), which keeps the estimator unbiased; a plain sum of
   the two is biased again (6.8 plan §16.3).
+- **The attention chooser's estimator** (operators update; Alec, 2026-10-05):
+  the input-attention walk scores its bracket actions with the compose
+  chooser's parameters; its straight-through credit was found reaching the
+  shared chooser through the perception pullback (6.8 plan §21.1, §22) and was
+  detached at the sentence handoff, so attention trains nothing until the
+  update gives it the same score-function estimator as compose (its departure's
+  probability, the greedy cost as baseline, `K·R`), or separate parameters.
+- **The decomposition chooser's exact-fit precedence and feature
+  standardization** (operators update; 6.8 plan §23): after cross-entropy on
+  four sentences the chooser's context weights outweighed the fit for one
+  root ("hello there → hello hello", §22 run 10); an exactly recomposing pair
+  is taken before context has a say, and the activation features (projection
+  coefficients, unbounded) are standardized.

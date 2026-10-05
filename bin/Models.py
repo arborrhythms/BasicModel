@@ -13712,8 +13712,12 @@ class BasicModel(BaseModel):
         B, T = actions.shape
         owners, ids, _ = self._compose_round_owners(actions)
         forced = torch.zeros_like(attempted)
+        counts = getattr(trace, '_choice_alternative_counts', attempted.long()).detach()
+        self._compose_sampling_scale = torch.zeros_like(counts)
         for sid in range(int(ids.max().detach()) + 1):
             eligible = attempted & (owners == sid)
+            self._compose_sampling_scale += torch.where(
+                eligible, counts * eligible.sum(-1, keepdim=True), 0)
             # iid continuous ranks give a uniform draw over the eligible rounds.
             ranks = torch.rand(B, T, device=actions.device).masked_fill(~eligible, -1)
             selected = ranks.argmax(-1)
@@ -13757,6 +13761,7 @@ class BasicModel(BaseModel):
         # Keep the initial and later compiled entries structurally identical.
         self._compose_exploit_actions = self._compose_forced_slots = None
         self._compose_prefix_slots = None
+        self._compose_sampling_scale = None
         # Perception is shared by two backward/step pairs. Saved values must
         # remain those of its one forward even when the first update mutates
         # parameters. The graph itself still credits the perception parameters.
@@ -13774,6 +13779,7 @@ class BasicModel(BaseModel):
             self._sentence_pullback = None
             self._compose_exploit_actions = self._compose_forced_slots = None
             self._compose_prefix_slots = None
+            self._compose_sampling_scale = None
 
             self._sentence_training = False
             self._sentence_supplied_answers = None
@@ -18109,6 +18115,10 @@ class BasicModel(BaseModel):
         trace._choice_actions[:, slot] = choice.action
         trace._choice_attempted[:, slot] = choice.valid
         trace._choice_explorable[:, slot] = (choice.valid if choice.alternatives is None else choice.alternatives)
+        if getattr(trace, '_choice_alternative_counts', None) is None:
+            trace._choice_alternative_counts = torch.zeros_like(trace._choice_actions)
+        trace._choice_alternative_counts[:, slot] = (choice.alternative_count
+            if choice.alternative_count is not None else trace._choice_explorable[:, slot].long())
         trace._choice_left_rows, trace._choice_right_rows = self._tensor_record_operands(
             trace._choice_left_rows, trace._choice_right_rows,
             torch.as_tensor(slot, device=state[0].device), state,
@@ -19629,7 +19639,7 @@ class BasicModel(BaseModel):
 
         Both trials were costed at one parameter version. The uniform
         departure draw is independent of the chooser's probability; this is
-        the specified per-draw surrogate, without an alternative-count scale.
+        the importance correction K*R for uniform action and round draws.
         The scorer's features are detached, so the ordinary reconstruction
         owner can train the chooser without writing perception or operators.
         Exact ties register no term and supply no momentum-only update.
@@ -19640,13 +19650,17 @@ class BasicModel(BaseModel):
                  else forced) & (path[1][18] >= 0))
         advantage = costs[:, 1] - costs[:, 0]
         probabilities = path[1][27].exp()
+        scale = getattr(self, "_compose_sampling_scale", None)
+        if scale is None:
+            raise RuntimeError("compose surrogate requires the sampled K*R counts")
+        scale = scale.detach().to(probabilities)
         self._last_compose_score_function = dict(costs=costs, advantage=advantage,
             mask=mask.detach(), actions=path[1][18].detach(),
-            probabilities=probabilities.detach())
+            probabilities=probabilities.detach(), scale=scale)
         trained = mask & advantage.ne(0)[:, None]
         if not bool(trained.any()):
             return probabilities.new_zeros(())
-        surrogate = torch.where(trained, probabilities * advantage[:, None], 0.).sum(-1)
+        surrogate = torch.where(trained, probabilities * advantage[:, None] * scale, 0.).sum(-1)
         self._sentence_cost_registry.add('reconstruction.compose_score_function', surrogate,
             category='reconstruction')
         active = self._sentence_cost_registry.row_mask
@@ -19713,7 +19727,8 @@ class BasicModel(BaseModel):
         trace._choice_journal_columns = getattr(self, '_sentence_journal_columns', None)
         trace._choice_refs = lang[23]
         trace._choice_ref_relations = lang[24]
-        trace._choice_explorable = lang[26]
+        trace._choice_alternative_counts = lang[26]
+        trace._choice_explorable = lang[26] > 0
         self._packed_sentence_roots = lang[9]
         self._tensor_sentence_roots_live = lang[13]
         self._tensor_sentence_roots_depth = lang[14]
@@ -19804,6 +19819,62 @@ class BasicModel(BaseModel):
         self._last_decoder_trace = select_rows(trace[:5], other[:5], wins)
         return select_rows(greedy, explore, wins)
 
+    def _decomposition_teacher_loss(self, observation, record):
+        """Teacher-force actual compose operands; targets never enter free decoding.
+
+        Pair identities come from the input positions, not nearest-code labels.
+        A compound or missing symbol outside this word shortlist is counted and
+        contributes no term. Both trials' teacher graphs precede either step;
+        CE is added only in the owner step, after the byte-cost comparison.
+        """
+        from DecompositionChooser import DecompositionChooser
+        bank = record.primed
+        chooser = self.languageSpace.decomposition_chooser
+        terms = [[] for _ in observation['entries']]
+        reports = []
+        ops = self.languageSpace.language_layer.operation_layer.ops
+        for b, program in enumerate(observation['entries']):
+            if program is None or program.operation_values is None:
+                continue
+            stack = []
+            # The reconstruction record carries the same resolved physical
+            # symbol rows as its primed bank. The legacy WORD lane can be
+            # absent in the open perceptual read and is not this address space.
+            word_rows = record.word_rows[b][record.word_valid[b]]
+            for index, (kind, op_index, word) in enumerate(program.actions.detach().cpu().tolist()):
+                if kind == 0:
+                    stack.append(int(word_rows[word]))
+                elif kind == 2:
+                    continue
+                elif kind == 1:
+                    right = stack.pop(); left = stack.pop(); stack.append(-1)
+                    parent = program.operation_values[index, 2].detach()[None]
+                    op = getattr(ops[op_index], 'gl', ops[op_index])
+                    if getattr(op, 'inverse_kind', None) == 'case_search':
+                        continue  # CaseSelection has its own non-word candidate algebra.
+                    valid = bank.valid[b:b+1]
+                    if not bank.codes.shape[1]:
+                        reports.append(dict(row=b, operation=op_index, present=False, picked_true=False))
+                        continue
+                    _, _, _, details = self.languageSpace._bounded_binary_reconstruction(
+                        op, parent, torch.zeros_like(parent),
+                        torch.zeros(1, dtype=torch.bool, device=parent.device),
+                        torch.zeros(1, dtype=torch.bool, device=parent.device),
+                        bank.codes[b:b+1], valid, self.reconstruction_basis_limit,
+                        left_priming=bank.weights[b:b+1], right_priming=bank.weights[b:b+1],
+                        chooser=chooser, return_details=True)
+                    target = torch.tensor([[left, right]], device=parent.device)
+                    loss, present, picked = DecompositionChooser.teacher_loss(
+                        details, bank.rows[b:b+1], bank.rows[b:b+1], target)
+                    if bool(present[0]):
+                        terms[b].append(loss[0])
+                    reports.append(dict(row=b, operation=op_index,
+                        target=[left, right], present=bool(present[0]), picked_true=bool(picked[0])))
+        zero = record.root.new_zeros(())
+        loss = torch.stack([torch.stack(row).mean() if row else zero for row in terms])
+        self._last_decomposition_teacher = reports
+        return loss
+
     def _sentence_path_cost(self, state, sid, active):
         """Both trials use the registry's named, relative objectives."""
         self._publish_sentence_scratch(state)
@@ -19824,6 +19895,8 @@ class BasicModel(BaseModel):
                               torch.zeros(B, dtype=torch.bool, device=root.device), lang[14].to(root) * 0)
         observation = self._sentence_observation(state, sid, active)
         observation['record'] = record
+        observation['decomposition_loss'] = (self._decomposition_teacher_loss(observation, record)
+            if getattr(self, '_sentence_training', False) and torch.is_grad_enabled() else None)
         if getattr(self, '_reading_lesson_enabled', False) and self.grammar_lesson_weight > 0:
             source_rows = self._reading_lesson_sources
             for b, program in enumerate(observation['entries']):
@@ -20318,7 +20391,7 @@ class BasicModel(BaseModel):
                     if self._sentence_gradient_objectives is not None:
                         self._sentence_gradient_objectives['expectation'] = intra
                 if self._sentence_training and torch.is_grad_enabled():
-                    pending_steps[-1] = (*pending_steps[-1], self._sentence_cost_registry)
+                    pending_steps[-1] = (*pending_steps[-1], self._sentence_cost_registry, observation['decomposition_loss'])
                 # Expectation and grammar lessons train their owners but are
                 # not evidence for preferring one reading over the other.
                 reconstruction_cost = self._sentence_cost_registry.total(objective='reconstruction')
@@ -20332,10 +20405,13 @@ class BasicModel(BaseModel):
             def train_trial(loss):
                 # Both graphs now exist. Restore this trial's perception
                 # pullback and scratch bindings before its own backward.
-                trial, pullback, path, registry = pending_steps.pop(0)
+                trial, pullback, path, registry, decomposition_loss = pending_steps.pop(0)
                 self._sentence_trial, self._sentence_pullback = trial, pullback
                 self._sentence_cost_registry = registry
                 self._restore_sentence_state(path)
+                if decomposition_loss is not None and decomposition_loss.requires_grad:
+                    registry.add('reconstruction.decomposition', decomposition_loss, category='reconstruction')
+                    loss = loss + (decomposition_loss * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
                 if trial == 'explore':
                     loss = loss + self._compose_score_function_loss(path, torch.stack(paired_costs, -1))
                 self._sentence_train_step(loss)
@@ -20669,7 +20745,7 @@ class BasicModel(BaseModel):
             torch.full((B, record_width, 2), -1, dtype=torch.long, device=words.device),
             torch.zeros(B, record_width, 2, dtype=torch.bool, device=words.device),
             torch.full((B, capacity), -1, dtype=torch.long, device=words.device),
-            torch.zeros_like(choices[2]),
+            torch.zeros_like(choices[0]),
             words.new_zeros(B, int(choices[0].shape[1])),  # selected operation log probability
         )
         empty_cs_sub = (
@@ -20838,7 +20914,10 @@ class BasicModel(BaseModel):
                 routed_feedback, routed_valid)
             attention=getattr(self,'_attention_words',None)
             if attention is not None:
-                credit=_gather_word(self._attention_credit,index).reshape(B,1,1)
+                # Attention and compose share their scorer. The sentence's
+                # byte loss must not train it through the perception cache;
+                # compose learns from its detached paired-cost surrogate.
+                credit=_gather_word(self._attention_credit.detach(),index).reshape(B,1,1)
                 admitted=_gather_word(attention.accepted,index).reshape_as(commit)
                 payload=(symbolic_event*credit,symbolic_orders,row,activation,
                          object_row,object_order,object_atom*credit[:,0],row_gate,commit&admitted,
@@ -20987,7 +21066,8 @@ class BasicModel(BaseModel):
                     previous_unary=unary_history)
                 choice = proposal[0] if sentence_transactions else proposal
                 unary_history = language.update_unary_history(unary_history, choice)
-                eligible = choice.valid if choice.alternatives is None else choice.alternatives
+                eligible = (choice.alternative_count if choice.alternative_count is not None else
+                            (choice.valid if choice.alternatives is None else choice.alternatives).long())
                 explorable_slab = self._tensor_record_selected_values(
                     explorable_slab.unsqueeze(-1), slot, eligible[:, None], choice.valid).squeeze(-1)
                 log_probability = (choice.log_probability if choice.log_probability is not None
@@ -21069,7 +21149,8 @@ class BasicModel(BaseModel):
                     previous_unary=unary_history)
                 choice = proposal[0] if sentence_transactions else proposal
                 unary_history = language.update_unary_history(unary_history, choice)
-                eligible = choice.valid if choice.alternatives is None else choice.alternatives
+                eligible = (choice.alternative_count if choice.alternative_count is not None else
+                            (choice.valid if choice.alternatives is None else choice.alternatives).long())
                 explorable_slab = self._tensor_record_selected_values(
                     explorable_slab.unsqueeze(-1), slot, eligible[:, None], choice.valid).squeeze(-1)
                 log_probability = (choice.log_probability if choice.log_probability is not None
@@ -21333,7 +21414,8 @@ class BasicModel(BaseModel):
             trace._choice_journal_columns = record_columns
             trace._choice_refs = final_cs_lang[23].clone()
             trace._choice_ref_relations = final_cs_lang[24].clone()
-            trace._choice_explorable = final_cs_lang[26].clone()
+            trace._choice_alternative_counts = final_cs_lang[26].clone()
+            trace._choice_explorable = final_cs_lang[26] > 0
         stm._clause_state = final_cs_lang[20].clone()
         stm._last_unary = final_cs_lang[25].clone()
         stm._unary_history_depth = stm._depth.clone()

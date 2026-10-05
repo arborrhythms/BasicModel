@@ -1,0 +1,75 @@
+{
+  "changed_runtime_files": [
+    "bin/Layers.py",
+    "data/MM_grammar.xml",
+    "data/XOR_grammar.xml"
+  ],
+  "changed_function": "RadixLayer.insert",
+  "old": "def insert(\n        self,\n        chunk: bytes,\n        *,\n        init_vector: Optional[torch.Tensor] = None,\n    ) -> int:\n        \"\"\"Insert ``chunk`` (canonical bytes) and return its percept ID.\n\n        If ``chunk`` is already known, returns the existing ID without\n        modifying state. Otherwise checks the fixed capacity and\n        seeds the new row with ``init_vector`` if supplied (else with\n        a full-presence random code).\n        \"\"\"\n        if not isinstance(chunk, (bytes, bytearray)):\n            raise TypeError(\n                f\"RadixLayer.insert: chunk must be bytes, got \"\n                f\"{type(chunk)!r}\")\n        if len(chunk) == 0:\n            raise ValueError(\n                \"RadixLayer.insert: chunk must be non-empty.\")\n        chunk_b = bytes(chunk)\n        existing = self.hash_map.get(chunk_b)\n        if existing is not None:\n            return int(existing)\n        # Allocate the next percept ID.\n        new_id = self._size\n        if new_id >= self._capacity:\n            raise self._capacity_exhausted(new_id + 1)\n        # Seed the new row. Write the MASTER parameter (self._basis.W), NOT\n        # self.codebook: under the [0,1] percept-store STE, ``self.codebook``\n        # -> ``_basis.getW()`` returns a non-leaf clamped tensor that does NOT\n        # share storage with the master, so a ``.data`` seed there is silently\n        # discarded (the row keeps its build-time prefill). Off the percept\n        # store getW() == self.W -> same storage, byte-identical.\n        master = self._basis.W\n        with torch.no_grad():\n            if init_vector is None:\n                row = master.data[new_id, :].normal_(mean=0.0, std=1.0)\n                row.div_(row.abs().amax().clamp(min=1e-8)).clamp_(0.0, 1.0)\n            else:\n                if not torch.is_tensor(init_vector):\n                    raise TypeError(\n                        \"RadixLayer.insert: init_vector must be a \"\n                        f\"Tensor, got {type(init_vector)!r}\")\n                if init_vector.shape != (self.dim,):\n                    raise ValueError(\n                        f\"RadixLayer.insert: init_vector shape \"\n                        f\"{tuple(init_vector.shape)} != ({self.dim},)\")\n                master.data[new_id, :].copy_(\n                    init_vector.detach().to(\n                        master.device, master.dtype))\n        # Update the auxiliary structures.\n        self.radix_trie.insert(chunk_b, new_id)\n        self.hash_map[chunk_b] = new_id\n        self.inverse_table.append(chunk_b)\n        self._size += 1\n        group = self._pending_part_groups.pop(chunk_b, None)\n        if group:\n            self.part_groups[new_id] = group\n            self._canonical_group_cache = None\n            self._formed_this_turn.add(new_id)\n        # Canonical fold provenance (todo \"make abstraction order\n        # canonical\"): a multi-byte percept row is PRODUCED by the sigma\n        # radix synthesis (bytes -> chunk combine) -- stamp FOLD_SIGMA at\n        # pass slot 0 on the owning percept codebook. A single-byte atom\n        # is an order-0 prototype: no fold, no stamp.\n        if len(chunk_b) > 1:\n            _rf = getattr(self._basis, \"record_fold\", None)\n            if _rf is not None:\n                _rf(new_id, 0, getattr(self._basis, \"FOLD_SIGMA\", 1))\n        return new_id",
+  "new": "def insert(\n        self,\n        chunk: bytes,\n        *,\n        init_vector: Optional[torch.Tensor] = None,\n    ) -> int:\n        \"\"\"Insert ``chunk`` (canonical bytes) and return its percept ID.\n\n        If ``chunk`` is already known, returns the existing ID without\n        modifying state. Otherwise checks the fixed capacity and\n        seeds the new row with ``init_vector`` if supplied (else with\n        a full-presence random code).\n        \"\"\"\n        if not isinstance(chunk, (bytes, bytearray)):\n            raise TypeError(\n                f\"RadixLayer.insert: chunk must be bytes, got \"\n                f\"{type(chunk)!r}\")\n        if len(chunk) == 0:\n            raise ValueError(\n                \"RadixLayer.insert: chunk must be non-empty.\")\n        chunk_b = bytes(chunk)\n        existing = self.hash_map.get(chunk_b)\n        if existing is not None:\n            return int(existing)\n        # Allocate the next percept ID.\n        new_id = self._size\n        if new_id >= self._capacity:\n            raise self._capacity_exhausted(new_id + 1)\n        # Seed the new row. Write the MASTER parameter (self._basis.W), NOT\n        # self.codebook: under the [0,1] percept-store STE, ``self.codebook``\n        # -> ``_basis.getW()`` returns a non-leaf clamped tensor that does NOT\n        # share storage with the master, so a ``.data`` seed there is silently\n        # discarded (the row keeps its build-time prefill). Off the percept\n        # store getW() == self.W -> same storage, byte-identical.\n        master = self._basis.W\n        with torch.no_grad():\n            if init_vector is None:\n                row = master.data[new_id, :].normal_(mean=0.0, std=1.0)\n                # \u00a722: normalize before the cube clamp so letter joins do\n                # not inherit the max-abs initializer's saturated maxima.\n                row.div_(row.norm().clamp(min=1e-8)).clamp_(0.0, 1.0)\n            else:\n                if not torch.is_tensor(init_vector):\n                    raise TypeError(\n                        \"RadixLayer.insert: init_vector must be a \"\n                        f\"Tensor, got {type(init_vector)!r}\")\n                if init_vector.shape != (self.dim,):\n                    raise ValueError(\n                        f\"RadixLayer.insert: init_vector shape \"\n                        f\"{tuple(init_vector.shape)} != ({self.dim},)\")\n                master.data[new_id, :].copy_(\n                    init_vector.detach().to(\n                        master.device, master.dtype))\n        # Update the auxiliary structures.\n        self.radix_trie.insert(chunk_b, new_id)\n        self.hash_map[chunk_b] = new_id\n        self.inverse_table.append(chunk_b)\n        self._size += 1\n        group = self._pending_part_groups.pop(chunk_b, None)\n        if group:\n            self.part_groups[new_id] = group\n            self._canonical_group_cache = None\n            self._formed_this_turn.add(new_id)\n        # Canonical fold provenance (todo \"make abstraction order\n        # canonical\"): a multi-byte percept row is PRODUCED by the sigma\n        # radix synthesis (bytes -> chunk combine) -- stamp FOLD_SIGMA at\n        # pass slot 0 on the owning percept codebook. A single-byte atom\n        # is an order-0 prototype: no fold, no stamp.\n        if len(chunk_b) > 1:\n            _rf = getattr(self._basis, \"record_fold\", None)\n            if _rf is not None:\n                _rf(new_id, 0, getattr(self._basis, \"FOLD_SIGMA\", 1))\n        return new_id",
+  "byte_fallback_unchanged": true,
+  "tests_unchanged": true,
+  "seeds_bars_budgets_guards_unchanged": true,
+  "training_runs": 0,
+  "seed_override": null,
+  "capacity_changes": [
+    {
+      "configuration": "XOR_grammar",
+      "spaces": [
+        "InputSpace",
+        "PartSpace",
+        "ConceptualSpace",
+        "WholeSpace"
+      ],
+      "old_event_width": 14,
+      "new_event_width": 22,
+      "address_coordinates": 8,
+      "old_content_width": 6,
+      "new_content_width": 14,
+      "conceptual_rows": 6,
+      "whole_output_width": null,
+      "other_xml_values_unchanged": true
+    },
+    {
+      "configuration": "MM_grammar",
+      "spaces": [
+        "InputSpace",
+        "PartSpace",
+        "ConceptualSpace",
+        "WholeSpace"
+      ],
+      "old_event_width": 14,
+      "new_event_width": 22,
+      "address_coordinates": 8,
+      "old_content_width": 6,
+      "new_content_width": 14,
+      "conceptual_rows": 8,
+      "whole_output_width": "14",
+      "other_xml_values_unchanged": true
+    }
+  ],
+  "checks": [
+    {
+      "width": 6,
+      "exact_l2_then_clamp": true,
+      "same_single_random_draw": true,
+      "parameter_identity_and_ownership_unchanged": true,
+      "duplicate_is_noop": true,
+      "explicit_initializer_unchanged": true,
+      "initialized_minimum": 0.0,
+      "initialized_maximum": 0.5696932673454285,
+      "initialized_l2": 0.7905564308166504
+    },
+    {
+      "width": 14,
+      "exact_l2_then_clamp": true,
+      "same_single_random_draw": true,
+      "parameter_identity_and_ownership_unchanged": true,
+      "duplicate_is_noop": true,
+      "explicit_initializer_unchanged": true,
+      "initialized_minimum": 0.0,
+      "initialized_maximum": 0.47553399205207825,
+      "initialized_l2": 0.7181330919265747
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 """Replay the four saved §22 roots; no training or initialization is repeated."""
 import json
 from pathlib import Path
+from DecompositionChooser import DecompositionChooser
 from types import SimpleNamespace, MethodType
 
 import torch
@@ -18,7 +19,7 @@ def test_saved_roots_follow_operand_unaries(monkeypatch, compiled):
     basis = torch.stack([torch.stack([codes[a], codes[b]]) for a,b in pairs])
     roots = torch.tensor(json.loads((folder/'geometry-start.json').read_text())['roots']['values'])
     conjunction, negation = ConjunctionLayer(), NotLayer()
-    language = SimpleNamespace()
+    language = SimpleNamespace(decomposition_chooser=DecompositionChooser())
     for name in ('reverse_binary_step', '_reverse_of_binary_op', '_finish_binary_inverse',
                  'reverse_unary_step'):
         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))

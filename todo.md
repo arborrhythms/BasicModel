@@ -193,52 +193,53 @@ generation is expected at this stage and is recorded, not tuned away.
 - **6.8. One attention: brackets, narrowing, and expectation at every bracket**
    ([plan](doc/plans/2026-09-27-item-6-8-one-attention.md); Alec, 2026-09-27;
    after 7.5 and 7, before 6.5; three non-blocking questions in plan §6).
-   **October 5 §16.3 candidate, measurement held:** the XOR table remains the
-   **composition mechanism gate** (§12.1). The compose chooser now receives the
-   reconstruction-owned `p(a_dep) * (C_explore-C_greedy)` surrogate with detached
-   costs. Departure rounds and value-distinct eligible alternatives are sampled
-   uniformly; ineffective STOP/identity/duplicate choices are excluded. Cheaper
-   and dearer alternatives train with opposite signs; ties add no term. The
-   strict-win update and compose straight-through credit are gone. Pair search
-   stays hard with detached candidates and a relative residual. Generate's
-   straight-through walk, seeds, bars, budgets and runner guards are unchanged.
-   Forms remain the join of positive-evidence parts at full presence; wholes
-   bound forms without shrinking parts. Both class gates use the same raw-root
-   output-owned affine reader. Two spaces share the symbol/concept index, with
-   CS capacities **6 / 8**. Perception owns codes and evidence; sentence-path
-   gradients there are zero. Empty same-context meanings correctly coincide.
-   **Verification:** final ten-worker default sweep completed **5187 cases:
-   4900 passed, 286 skipped, one non-strict XPASS, zero failed assertions**.
-   Every pytest worker exited zero, but the bounded supervisor rejects XPASS.
-   The unchanged .8 overlap test unexpectedly passed; the required green-sweep
-   condition is therefore unmet. A decision on that named XPASS is pending.
-   No guard was relaxed, test omitted or stochastic rerun used to seek green.
-   All sixteen original output-gradient regressions pass with assertions intact.
-   The full sweep includes all 57 focused files, with none dropped. Complete
-   old/new ports and failure classifications are in the one
-   [receipt](doc/benchmarks/2026-10-03-operators-attention/README.md).
-   The original seed-613 ordinary batch now has two nonzero advantages after
-   ineffective departures are excluded. Its probabilities move in the expected
-   directions; the surrogate gradient agrees with the analytical derivative to
-   **1.87e-9**, and a one-logit finite difference to **1.21e-9**. Explicit tie and
-   non-tie fixtures retain the seed and batch. One ordinary XOR batch has four
-   departures, zero nonzero advantages, zero code/evidence sentence gradients
-   and zero ownership conflicts. These are mechanism checks, not gate runs.
-   **Zero §16.3 gate trainings.** Pending the sweep decision: sum ×10 (10/10
-   required), ten shared XOR trainings with both bars and all requested audits,
-   then MM_xor ×10, once on frozen source. No tuning or gate retries.
-   Historical class/reconstruction/joint counts stand: §12 **0/7/0**, §13
-   **0/0/0**, §14 **1/8/1** (pre-addendum CS 262/264); each had MM and sum **10/10**.
-   Accepted MSE **.114748**, reconstruction **0/4**, zero conflicts and prior
-   **9/10 / 5/10** remain historical. Archived evidence is unchanged.
-   The observers cover geometry, support, d ranges, room, reader trajectories,
-   per-word read-back, decoder margin/stability and per-step chooser advantage/
-   probability/logit ranges. Protected architecture docs were not rewritten;
-   concurrent external 6.8-plan/FutureWork edits are preserved separately.
-   The 6.9 §20.3 status records the implemented decoder exploration and current
-   measurement hold; its distributional row is unchanged. Carried work remains
-   deferred. Frozen evaluation admits nothing; the trained NanoChat gate waits
-   for item 4. No fresh BasicModel scoring. **Nothing committed; Claude reviews.**
+   **October 5 §22 accepted landing:** the §16.3 candidate remains at
+   `eb1fbefb`, tagged `6.8-s16.3-candidate`. Alec accepted the measured
+   §17–§22 state and authorized its commit, push and parent submodule bump.
+   One working tree.
+   **Two declared changes:** admitted percept rows use a Gaussian row,
+   unit-L2 normalization, then the [0,1] clamp. The two grammar fixtures have
+   a declared capacity increase: **nDim 14 → 22**, content **6 → 14** after
+   the eight address coordinates, in IS/PS/CS/WS. Concept rows stay **6 / 8**;
+   MM_xor's configuration is unchanged. The byte-fallback initializer stays
+   as §18. The §20 kernels still take magnitude from activation; the reader
+   remains affine on the raw root. Attention credit stays detached at the
+   sentence handoff; its estimator is the operators update's. The forward
+   score-function K·R term, decomposition chooser, pair search and room rule
+   are unchanged.
+   **Green full sweep:** **5204 cases; 4917 passed,
+   286 skipped, 1 non-strict XPASS,
+   0 XFAIL, zero failed**, ten workers. Two assertions for
+   the old six-coordinate content width were ported, with complete old/new
+   bodies and failures saved; no runtime regression repair was needed.
+   The final focused probe retained both affected files (21/21 passed).
+   Seeds, bars, budgets, optimizers and guards are unchanged.
+   **Once-only frozen campaign:** sum **10/10**, read first; XOR
+   class **7/10**, reconstruction **9/10**,
+   joint **6/10** from ten shared trainings; MM_xor **10/10**.
+   Bands: **7 at 0, 2 at ¼, 1 between,
+   0 above ¼**. No retries or tuning; Alec accepted the measured round.
+   Exact form collisions occurred in **0/10** runs at start or end.
+   Historical class/reconstruction/joint counts: §12 **0/7/0**, §13 **0/0/0**,
+   §14 **1/8/1** (pre-addendum CS 262/264), §17 **1/10/1**, §18 **0/10/0**,
+   §20 **2/8/2**; MM and sum were **10/10**. §§15–16.3 and §19 supplied no
+   gate measurements. Accepted MSE **.114748**, reconstruction **0/4**, zero
+   conflicts and prior **9/10 / 5/10** remain historical. The declared
+   capacity difference and independent random runs preclude attributing a
+   count change to one of this round's two changes.
+   **Audits:** 1600 tenth-run sentence/step records,
+   1600 departures, 80 nonzero advantages;
+   K·R·ΔC·∇p error 1.86265e-09, finite-difference error
+   1.02006e-09. Prototype/evidence sentence gradient
+   maximum 0; ownership conflicts 0.
+   The [receipt](doc/benchmarks/2026-10-03-operators-attention/README.md) retains
+   starting form/root norms, named operators, per-word read-backs, geometry,
+   exact collisions, support, d ranges, room, reader trajectories, decomposition
+   weights/pick rates, decoder margins and kept paths. Empty same-context
+   meanings correctly coincide. Complement bootstrap and the carried operators
+   work remain deferred. Frozen evaluation admits nothing; the trained NanoChat
+   gate waits for item 4. No fresh bulk scoring or native benchmark.
+   **Accepted by Alec on October 5; commit, push and parent submodule bump authorized.**
    **Item-7 reading residue:** every read word currently runs the complete
    `interpret` unary under every binding. This forcing stays until reading
    mode decides when an object is interpreted; its removal is not part of

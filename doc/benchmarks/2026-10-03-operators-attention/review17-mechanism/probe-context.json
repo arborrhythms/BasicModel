@@ -1,0 +1,7 @@
+{
+  "kind": "mechanism, not a gate",
+  "training_batches": 1,
+  "source": "review17-final-sweep, successful wiring test",
+  "inherited_complete_label": "The observer complete.json uses its campaign label; this was one batch, not the tenth gate.",
+  "origin": "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2039/test_review17_measurement_wiri0/ownership"
+}

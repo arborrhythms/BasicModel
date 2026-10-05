@@ -633,7 +633,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
                        active_case=data.get("active"))
         result["workers"].append(receipt)
         result["completed"].extend(receipt["completed"])
-        test_failure = any(report["outcome"] in ("failed", "xpassed")
+        test_failure = any(report["outcome"] == "failed"
                            for report in receipt["reports"])
         # pytest uses status 1 for an ordinary assertion/setup/teardown failure.
         # It is diagnostic information, not a failed process boundary: keep
@@ -659,7 +659,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
         retry = []
         for node in completed:
             failures = [r for r in receipt["reports"] if r["nodeid"] == node
-                        and r["outcome"] in ("failed", "xpassed")]
+                        and r["outcome"] == "failed"]
             # Never erase a concurrent setup/teardown/assertion failure, nor
             # retry a second failure. Raw worker JSON and logs keep attempt 1.
             if (node not in cache_retried and failures
@@ -681,7 +681,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
             receipt["completed"] = [node for node in completed if node not in retry]
             for node in retry:
                 result["completed"].remove(node)
-        if any(r["outcome"] in ("failed", "xpassed") for r in receipt["reports"]):
+        if any(r["outcome"] == "failed" for r in receipt["reports"]):
             result.update(exit_code=1, reason="test_failure")
         return True
 

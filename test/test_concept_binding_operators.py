@@ -5,8 +5,10 @@ from Language import ConjunctionLayer, DisjunctionLayer, MinLayer, MaxLayer
 
 
 @pytest.mark.parametrize('layer,kernel', [
-    (ConjunctionLayer, lambda a,b: a.norm(dim=-1,keepdim=True)*b.norm(dim=-1,keepdim=True)*torch.nn.functional.normalize(a*b, dim=-1)),
-    (DisjunctionLayer, lambda a,b: (a.norm(dim=-1,keepdim=True)+b.norm(dim=-1,keepdim=True)-a.norm(dim=-1,keepdim=True)*b.norm(dim=-1,keepdim=True))*torch.nn.functional.normalize(a+b-a*b,dim=-1)),
+    (ConjunctionLayer, lambda a,b: torch.nn.functional.normalize(a*b, dim=-1)),
+    (DisjunctionLayer, lambda a,b: torch.nn.functional.normalize(
+        torch.nn.functional.normalize(a,dim=-1) + torch.nn.functional.normalize(b,dim=-1)
+        - torch.nn.functional.normalize(a,dim=-1)*torch.nn.functional.normalize(b,dim=-1),dim=-1)),
     (MinLayer, torch.minimum), (MaxLayer, torch.maximum)])
 def test_three_faces_bind_and_search_the_same_pair(layer, kernel):
     codes = torch.tensor([[.2, -.7, .4], [.8, .3, -.5], [-.6, .2, .9]], requires_grad=True)
@@ -27,9 +29,9 @@ def test_three_faces_bind_and_search_the_same_pair(layer, kernel):
 def test_conjunction_same_reference_is_identity_but_equal_codes_are_distinct():
     x = torch.tensor([[.2, -.7, .4]])
     op = ConjunctionLayer()
-    torch.testing.assert_close(op.compose(x,x), x)
+    torch.testing.assert_close(op.compose(x,x), torch.nn.functional.normalize(x, dim=-1))
     different_reference = x.clone()
-    expected = x.norm(dim=-1,keepdim=True).square()*torch.nn.functional.normalize(x.square(), dim=-1)
+    expected = torch.nn.functional.normalize(x.square(), dim=-1)
     torch.testing.assert_close(op.compose(x,different_reference), expected)
     assert not torch.allclose(expected,x)
 

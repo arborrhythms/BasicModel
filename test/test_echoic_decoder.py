@@ -1,5 +1,6 @@
 """The conceptual generate decoder is shared, reconstruction-owned and journal-free."""
 from dataclasses import fields
+from DecompositionChooser import DecompositionChooser
 from types import SimpleNamespace, MethodType
 
 import torch
@@ -88,9 +89,11 @@ def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compil
     policy = torch.nn.Linear(2, 3)
     with torch.no_grad():
         policy.weight.copy_(torch.tensor([[1., 1.], [-1., -1.], [0., 0.]]))
-        policy.bias.copy_(torch.tensor([-6., -6., 0.]))
+        # The composed root has unit activation, independent of form norms.
+        policy.bias.copy_(torch.tensor([-1., -1., 0.]))
     language = SimpleNamespace(_generate_binary_ops=(conjunction,), _generate_unary_ops=(NotLayer(),),
-        generate_policy=policy, _generate_policy_width=2)
+        generate_policy=policy, _generate_policy_width=2,
+        decomposition_chooser=DecompositionChooser())
     for name in ('reverse_binary_step', '_reverse_of_binary_op', '_finish_binary_inverse',
                  'generate_unary_step', 'generate_policy_logits', 'choose_generate'):
         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
@@ -118,8 +121,14 @@ def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compil
     # so its chooser gradient is correctly zero. Preserve the historical
     # numerical-credit assertion on the same hard trace with a declared
     # choice oracle. Real multi-operation credit is tested in review11.
-    from test_output_walk import _walk_control_oracle
-    _walk_control_oracle(monkeypatch)
+    def choice_at_compound(parent, lefts, rights, available, ops, codes, valid, **kwargs):
+        # The unit-activation parent is shorter than these form codes. Keep
+        # the same hard trace by offering alternatives at the compound, not
+        # by expecting a norm threshold to distinguish roots from words.
+        leaf = (valid & (codes == parent[:, None]).all(-1)).any(-1)
+        stop = torch.arange(available.shape[-1], device=parent.device) == available.shape[-1] - 1
+        return available & (~leaf[:, None] | stop)
+    monkeypatch.setattr(LanguageSpace, 'decoder_eligibility', staticmethod(choice_at_compound))
     credited = fn(event, bank)[0]
     torch.testing.assert_close(credited, out)
     out = credited

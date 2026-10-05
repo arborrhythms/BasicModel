@@ -10,12 +10,14 @@ def test_probabilistic_disjunction_combines_certainty_and_identity():
     from Layers import Ops
     x = torch.tensor([[.3, .4]], requires_grad=True)
     y = torch.tensor([[0., .6]], requires_grad=True)
-    expected = .8 * torch.tensor([[.3, .76]]) / (.3**2 + .76**2)**.5
+    expected = .8 * torch.tensor([[.6, 1.]]) / (.6**2 + 1.)**.5
     op = DisjunctionLayer()
-    for value in (op(x, y), op.compose(x, y), Ops.disjunction(x, y)):
+    activation = dict(left_activation=.5, right_activation=.6)
+    for value in (op(x, y, **activation), op.compose(x, y, **activation),
+                  Ops.disjunction(x, y, **activation)):
         torch.testing.assert_close(value, expected)
-    torch.testing.assert_close(op.compose(y, x), expected)
-    op.compose(x, y).square().sum().backward()
+    torch.testing.assert_close(op.compose(y, x, left_activation=.6, right_activation=.5), expected)
+    op.compose(x, y, **activation)[0, 0].backward()
     assert torch.isfinite(x.grad).all() and x.grad.norm() > 0
     assert torch.isfinite(y.grad).all() and y.grad.norm() > 0
 
@@ -23,11 +25,11 @@ def test_probabilistic_disjunction_combines_certainty_and_identity():
 def test_disjunction_zero_identity_and_zero_direction_have_finite_gradients():
     from Language import DisjunctionLayer
     op = DisjunctionLayer()
-    # Last pair has x+y-x*y == 0 at nonzero magnitudes; unit(0) is 0.
+    # Large form norms no longer cancel the probabilistic-sum magnitude.
     x = torch.tensor([[.3, -.4], [0., 0.], [2., 0.]], requires_grad=True)
     y = torch.tensor([[0., 0.], [0., 0.], [2., 0.]], requires_grad=True)
     value = op.compose(x, y)
-    torch.testing.assert_close(value, torch.tensor([[.3, -.4], [0., 0.], [0., 0.]]))
+    torch.testing.assert_close(value, torch.tensor([[.6, -.8], [0., 0.], [1., 0.]]))
     value.sum().backward()
     assert torch.isfinite(x.grad).all() and torch.isfinite(y.grad).all()
 
@@ -36,7 +38,7 @@ def test_disjunction_zero_identity_and_zero_direction_have_finite_gradients():
 def test_disjunction_free_inverse_recovers_a_pair_without_operand_witnesses(face):
     from Language import DisjunctionLayer
     codes = torch.tensor([[.3, .4], [0., .6], [-.4, -.3]])
-    parent = .8 * torch.tensor([[.3, .76]]) / (.3**2 + .76**2)**.5
+    parent = torch.tensor([[.6, 1.]]) / (.6**2 + 1.)**.5
     op = DisjunctionLayer()
     a, b = getattr(op, face)(parent, basis=codes)
     recovered = {tuple(a[0].tolist()), tuple(b[0].tolist())}
@@ -88,4 +90,4 @@ def test_fixture_rules_select_probabilistic_disjunction(filename):
     assert rules[0].method_name == 'disjunction'
     x, y = torch.tensor([[.3, .4]]), torch.tensor([[0., .6]])
     value = GRAMMAR_LAYER_CLASSES[rules[0].method_name]().compose(x, y)
-    torch.testing.assert_close(value.norm(dim=-1), torch.tensor([.8]))
+    torch.testing.assert_close(value.norm(dim=-1), torch.tensor([1.]))

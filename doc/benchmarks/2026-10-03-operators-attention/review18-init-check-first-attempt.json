@@ -1,0 +1,8 @@
+{
+  "status": "probe harness failed before checking initialization; no model or training",
+  "error": "RuntimeError: Expected a 'mps' device type for generator but found 'cpu'",
+  "location": "raw=torch.randn(256,6,generator=replay)",
+  "cause": "Layers selects the platform default device; the private replay generator was CPU.",
+  "repair": "Set BASICMODEL_DEVICE=cpu in the probe environment, as the sweep and campaign do; no production repair.",
+  "runtime_change_at_time": "Only BytesFallbackEncoder.__init__ normalization and cube clamp."
+}

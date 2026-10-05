@@ -2647,6 +2647,14 @@ configurations the concepts are empty, so the XOR table measures perception's
 composition of forms, its inverse, one affine read shared with the sum
 control, and one owner (the composition mechanism gate, 6.8 plan §12.1).
 
+**Readers and the two blocks (2026-10-05).** Identity reads stay on the form
+block (the read-back's `percept_width`), similarity reads on the complement,
+and the class reader and the pair search's residual read the full vector;
+nothing that must recover *which* words reads the complement alone. In the
+gate configurations the form is the whole content and the complement is
+empty; in production the complement holds the detached context mean, which is
+written there and read by no gate.
+
 **Footprints.** Each operator declares what it reads and writes over form
 (perceptual space), meaning (conceptual space) and the poles (the symbol's
 activation): catalogue §1 rule 10.

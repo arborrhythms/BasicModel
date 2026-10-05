@@ -1,0 +1,353 @@
+{
+  "source_matched": true,
+  "helpers_matched": true,
+  "gate_trainings": 30,
+  "retries": 0,
+  "counts": {
+    "class_pass": 0,
+    "reconstruction_pass": 10,
+    "joint": 0,
+    "mm_pass": 10,
+    "sum_pass": 10,
+    "xor_bands": {
+      "at 0": 0,
+      "at 1/4": 10,
+      "between": 0,
+      "above 1/4": 0
+    },
+    "sum_bands": {
+      "at 0": 0,
+      "at 1/4": 10,
+      "between": 0,
+      "above 1/4": 0
+    }
+  },
+  "runs": [
+    {
+      "run": 1,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8636407256126404,
+        0.8636407256126404
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 2,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8421613574028015,
+        0.8421613574028015
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 3,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.884528398513794,
+        0.884528398513794
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 4,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.7990235686302185,
+        0.7990235686302185
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 5,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8711667060852051,
+        0.8711667060852051
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 6,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.872845470905304,
+        0.872845470905304
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 7,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8759022355079651,
+        0.8759022355079651
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 8,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.7704952359199524,
+        0.7704952359199524
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 9,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.9185426831245422,
+        0.9185426831245422
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    },
+    {
+      "run": 10,
+      "code_maximum_change": 0.0,
+      "mean_form_cosines": [
+        0.8272437453269958,
+        0.8272437453269958
+      ],
+      "support_words": [
+        4,
+        4
+      ],
+      "zero_sentence_path_gradient": true,
+      "reader_epochs": 400,
+      "final_word_annotations": 8
+    }
+  ],
+  "zero_ownership_conflicts": true,
+  "finite_chooser_logits": true,
+  "kept_stability_by_compose_trial": {
+    "exploit": [
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      },
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      },
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      },
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              0,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      }
+    ],
+    "explore": [
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      },
+      {
+        "modal_fraction": 0.81,
+        "distinct": 2,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 324
+          },
+          {
+            "actions": [
+              2
+            ],
+            "count": 76
+          }
+        ]
+      },
+      {
+        "modal_fraction": 0.915,
+        "distinct": 2,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 366
+          },
+          {
+            "actions": [
+              2
+            ],
+            "count": 34
+          }
+        ]
+      },
+      {
+        "modal_fraction": 1.0,
+        "distinct": 1,
+        "observations": 400,
+        "paths": [
+          {
+            "actions": [
+              1,
+              2,
+              2
+            ],
+            "count": 400
+          }
+        ]
+      }
+    ]
+  },
+  "start_norm_ranges": {
+    "xor": {
+      "forms": {
+        "n": 40,
+        "minimum": 0.036912362032650615,
+        "maximum": 0.08623054710035467,
+        "mean": 0.06172586598360394
+      },
+      "roots": {
+        "n": 40,
+        "minimum": 0.002249000631045513,
+        "maximum": 0.1407047719364462,
+        "mean": 0.0481535636547157
+      }
+    },
+    "sum": {
+      "forms": {
+        "n": 40,
+        "minimum": 0.03463889411353814,
+        "maximum": 0.09202484191530226,
+        "mean": 0.06573479260130656
+      },
+      "roots": {
+        "n": 40,
+        "minimum": 0.03477960493242913,
+        "maximum": 0.0855714032170895,
+        "mean": 0.06354802659054958
+      }
+    }
+  },
+  "collection_delta": {
+    "added": [
+      "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-03-operators-attention/README-before-review18.md]"
+    ],
+    "removed": []
+  }
+}

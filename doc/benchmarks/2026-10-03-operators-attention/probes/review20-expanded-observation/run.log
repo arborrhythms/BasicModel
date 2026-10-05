@@ -1,0 +1,116 @@
+........FF....                                                           [100%]
+=================================== FAILURES ===================================
+_______ test_normal_text_reconstruction_updates_the_grammar_chooser[tie] _______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2117/test_normal_text_reconstructio0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14775c4d0>
+eager_reading = None, comparison = 'tie'
+
+    @pytest.mark.parametrize("comparison", ["tie", "distinct"])
+    def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkeypatch, eager_reading, comparison):
+        from test_compiled_word_chunk import _tiny_canonical_model
+    
+        torch.manual_seed(613)
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="16", input_width=16)
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model.conceptualSpace.intra_loss_weight = 0.0
+        model.inter_loss_weight = 0.0
+        assert model.output_in_loop and model.languageSpace.generate_policy is not None
+        assert model.loss.reconstruction_scale == 1.0
+        chooser = model.languageSpace._tree_layer(2).chooser
+        before = {name: value.detach().clone() for name, value in chooser.named_parameters()}
+        generator = model.languageSpace.generate_policy
+        generate_before = [p.detach().clone() for p in generator.parameters()]
+>       optimizer = model.getOptimizer(lr=1e-3)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_grammar_word_learning.py:174: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... out_features=16, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+)
+args = (), kwargs = {'lr': 0.001}
+
+    def optimizer(model,*args,**kwargs):
+        opt=getoptimizer(model,*args,**kwargs)
+        params=dict(model.languageSpace._tree_layer(2).chooser.named_parameters())
+        def pre(opt,args,kwargs):
+            report.setdefault('steps',[]).append(dict(trial=getattr(model,'_sentence_trial',None),before={n:p.detach().clone() for n,p in params.items()},gradient={n:None if p.grad is None else float(p.grad.norm()) for n,p in params.items()},stack=traceback.format_stack(limit=8)))
+        def post(opt,args,kwargs):
+            row=report['steps'][-1]
+            row['movement']={n:float((p.detach()-row['before'][n]).abs().max()) for n,p in params.items()}
+            del row['before']
+>       opt.register_step_pre_hook(pre);opt.register_step_post_hook(post)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MultiOptimizer' object has no attribute 'register_step_pre_hook'
+
+doc/benchmarks/2026-10-03-operators-attention/review20_diagnose.py:50: AttributeError
+____ test_normal_text_reconstruction_updates_the_grammar_chooser[distinct] _____
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2117/test_normal_text_reconstructio1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1475d33b0>
+eager_reading = None, comparison = 'distinct'
+
+    @pytest.mark.parametrize("comparison", ["tie", "distinct"])
+    def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkeypatch, eager_reading, comparison):
+        from test_compiled_word_chunk import _tiny_canonical_model
+    
+        torch.manual_seed(613)
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="16", input_width=16)
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model.conceptualSpace.intra_loss_weight = 0.0
+        model.inter_loss_weight = 0.0
+        assert model.output_in_loop and model.languageSpace.generate_policy is not None
+        assert model.loss.reconstruction_scale == 1.0
+        chooser = model.languageSpace._tree_layer(2).chooser
+        before = {name: value.detach().clone() for name, value in chooser.named_parameters()}
+        generator = model.languageSpace.generate_policy
+        generate_before = [p.detach().clone() for p in generator.parameters()]
+>       optimizer = model.getOptimizer(lr=1e-3)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_grammar_word_learning.py:174: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+model = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub... out_features=16, bias=True)
+      (1): ReLU()
+      (2): Linear(in_features=16, out_features=1, bias=True)
+    )
+  )
+)
+args = (), kwargs = {'lr': 0.001}
+
+    def optimizer(model,*args,**kwargs):
+        opt=getoptimizer(model,*args,**kwargs)
+        params=dict(model.languageSpace._tree_layer(2).chooser.named_parameters())
+        def pre(opt,args,kwargs):
+            report.setdefault('steps',[]).append(dict(trial=getattr(model,'_sentence_trial',None),before={n:p.detach().clone() for n,p in params.items()},gradient={n:None if p.grad is None else float(p.grad.norm()) for n,p in params.items()},stack=traceback.format_stack(limit=8)))
+        def post(opt,args,kwargs):
+            row=report['steps'][-1]
+            row['movement']={n:float((p.detach()-row['before'][n]).abs().max()) for n,p in params.items()}
+            del row['before']
+>       opt.register_step_pre_hook(pre);opt.register_step_post_hook(post)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'MultiOptimizer' object has no attribute 'register_step_pre_hook'
+
+doc/benchmarks/2026-10-03-operators-attention/review20_diagnose.py:50: AttributeError
+=========================== short test summary info ============================
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]
+2 failed, 12 passed in 2.85s

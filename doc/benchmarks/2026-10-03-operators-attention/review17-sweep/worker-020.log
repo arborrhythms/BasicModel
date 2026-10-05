@@ -1,0 +1,89 @@
+.......s.............................................................sss [ 63%]
+.................FF...............ssssssss                               [100%]
+=================================== FAILURES ===================================
+________________ test_saved_roots_follow_operand_unaries[False] ________________
+test/test_readback_operand_unaries.py:42: in test_saved_roots_follow_operand_unaries
+    recovered, _, _, unavailable, _ = inverse(roots, basis)
+                                      ^^^^^^^^^^^^^^^^^^^^^
+test/test_readback_operand_unaries.py:36: in reconstruct
+    a,b,missing=language.reverse_binary_step(parent,torch.zeros(4,dtype=torch.long),
+bin/Language.py:13433: in reverse_binary_step
+    pair = apply(operands, sides, selected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13419: in apply
+    a, b, available = self._reverse_of_binary_op(
+bin/Language.py:13467: in _reverse_of_binary_op
+    chooser=self.decomposition_chooser)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'decomposition_chooser'
+________________ test_saved_roots_follow_operand_unaries[True] _________________
+test/test_readback_operand_unaries.py:42: in test_saved_roots_follow_operand_unaries
+    recovered, _, _, unavailable, _ = inverse(roots, basis)
+                                      ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.UncapturedHigherOrderOpError: This higher order operator doesn't work unless it is captured completely with torch.compile. Got graph break/error:
+E   
+E   raised exception AttributeError("'SimpleNamespace' object has no attribute 'decomposition_chooser'")
+E     Higher Order Operator: torch.cond
+E   
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/test/test_readback_operand_unaries.py", line 36, in reconstruct
+E       a,b,missing=language.reverse_binary_step(parent,torch.zeros(4,dtype=torch.long),
+E                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13427, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+E       return func(*args, **kwargs)
+E              ^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13419, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13467, in _reverse_of_binary_op
+E       chooser=self.decomposition_chooser)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+=============================== warnings summary ===============================
+test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries[False]
+FAILED test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries[True]
+2 failed, 100 passed, 12 skipped, 1 warning in 5.92s

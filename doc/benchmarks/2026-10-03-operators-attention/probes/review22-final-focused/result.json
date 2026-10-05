@@ -1,0 +1,354 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_review13_subspaces.py::test_native_percept_rows_and_net_evidence_are_detached_code_sources",
+    "test/test_review13_subspaces.py::test_group_uses_native_perceptual_fold_without_letter_concept_rows",
+    "test/test_review13_subspaces.py::test_occurrence_mean_is_confined_to_detached_context_coordinates",
+    "test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate",
+    "test/test_review13_subspaces.py::test_actual_serial_code_uses_fourteen_native_coordinates_and_no_context_bootstrap",
+    "test/test_review13_subspaces.py::test_readback_uses_perceptual_cosine_without_context_or_scale",
+    "test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources",
+    "test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower",
+    "test/test_review14_contracts.py::test_room_projection_reports_before_after_and_moves_extremal_rows",
+    "test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling",
+    "test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live",
+    "test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient",
+    "test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient",
+    "test/test_review14_contracts.py::test_zero_parent_relative_search_remains_finite",
+    "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch",
+    "test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence",
+    "test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite",
+    "test/test_review14_contracts.py::test_room_report_includes_fixed_missing_whole_boundary",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[-0.5]",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.0]",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.5]"
+  ],
+  "completed": [
+    "test/test_review13_subspaces.py::test_native_percept_rows_and_net_evidence_are_detached_code_sources",
+    "test/test_review13_subspaces.py::test_group_uses_native_perceptual_fold_without_letter_concept_rows",
+    "test/test_review13_subspaces.py::test_occurrence_mean_is_confined_to_detached_context_coordinates",
+    "test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate",
+    "test/test_review13_subspaces.py::test_actual_serial_code_uses_fourteen_native_coordinates_and_no_context_bootstrap",
+    "test/test_review13_subspaces.py::test_readback_uses_perceptual_cosine_without_context_or_scale",
+    "test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources",
+    "test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower",
+    "test/test_review14_contracts.py::test_room_projection_reports_before_after_and_moves_extremal_rows",
+    "test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling",
+    "test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live",
+    "test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient",
+    "test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient",
+    "test/test_review14_contracts.py::test_zero_parent_relative_search_remains_finite",
+    "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch",
+    "test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence",
+    "test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite",
+    "test/test_review14_contracts.py::test_room_report_includes_fixed_missing_whole_boundary",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[-0.5]",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.0]",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.5]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review22-final-focused/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review22-final-focused/worker-000.json"
+      ],
+      "pid": 2314,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1524747816,
+      "elapsed_seconds": 60.520943209005054,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review22-final-focused/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_review13_subspaces.py::test_native_percept_rows_and_net_evidence_are_detached_code_sources",
+        "test/test_review13_subspaces.py::test_group_uses_native_perceptual_fold_without_letter_concept_rows",
+        "test/test_review13_subspaces.py::test_occurrence_mean_is_confined_to_detached_context_coordinates",
+        "test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate",
+        "test/test_review13_subspaces.py::test_actual_serial_code_uses_fourteen_native_coordinates_and_no_context_bootstrap",
+        "test/test_review13_subspaces.py::test_readback_uses_perceptual_cosine_without_context_or_scale",
+        "test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources",
+        "test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower",
+        "test/test_review14_contracts.py::test_room_projection_reports_before_after_and_moves_extremal_rows",
+        "test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling",
+        "test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live",
+        "test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient",
+        "test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient",
+        "test/test_review14_contracts.py::test_zero_parent_relative_search_remains_finite",
+        "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch",
+        "test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence",
+        "test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite",
+        "test/test_review14_contracts.py::test_room_report_includes_fixed_missing_whole_boundary",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[-0.5]",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.0]",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.5]"
+      ],
+      "completed": [
+        "test/test_review13_subspaces.py::test_native_percept_rows_and_net_evidence_are_detached_code_sources",
+        "test/test_review13_subspaces.py::test_group_uses_native_perceptual_fold_without_letter_concept_rows",
+        "test/test_review13_subspaces.py::test_occurrence_mean_is_confined_to_detached_context_coordinates",
+        "test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate",
+        "test/test_review13_subspaces.py::test_actual_serial_code_uses_fourteen_native_coordinates_and_no_context_bootstrap",
+        "test/test_review13_subspaces.py::test_readback_uses_perceptual_cosine_without_context_or_scale",
+        "test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources",
+        "test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower",
+        "test/test_review14_contracts.py::test_room_projection_reports_before_after_and_moves_extremal_rows",
+        "test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling",
+        "test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live",
+        "test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient",
+        "test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient",
+        "test/test_review14_contracts.py::test_zero_parent_relative_search_remains_finite",
+        "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch",
+        "test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence",
+        "test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite",
+        "test/test_review14_contracts.py::test_room_report_includes_fixed_missing_whole_boundary",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[-0.5]",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.0]",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.5]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_review13_subspaces.py::test_native_percept_rows_and_net_evidence_are_detached_code_sources",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.017173166968859732,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review13_subspaces.py::test_group_uses_native_perceptual_fold_without_letter_concept_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0024665840319357812,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review13_subspaces.py::test_occurrence_mean_is_confined_to_detached_context_coordinates",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.003456540987826884,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002176790963858366,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review13_subspaces.py::test_actual_serial_code_uses_fourteen_native_coordinates_and_no_context_bootstrap",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 14.266017125046346,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review13_subspaces.py::test_readback_uses_perceptual_cosine_without_context_or_scale",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00027591700199991465,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0031665830174461007,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002392167050857097,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_room_projection_reports_before_after_and_moves_extremal_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0026365829980932176,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0008125000167638063,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005401250091381371,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 36.05053412501002,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0004801669856533408,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_zero_parent_relative_search_remains_finite",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0004607079899869859,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 5.426289541996084,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.01011720800306648,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0010636670049279928,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_room_report_includes_fixed_missing_whole_boundary",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.007820457976777107,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[-0.5]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0011131249484606087,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00039487500907853246,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.5]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0007730420329608023,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800.0,
+    "suite_seconds": 1800.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review22-final-focused",
+  "elapsed_seconds": 62.880241209000815,
+  "requested_device": "cpu",
+  "device_policy": {
+    "default": "cpu",
+    "override": "explicit device marker"
+  },
+  "peak_aggregate_memory_bytes": 1524747816,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review22-final-focused/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review22-final-focused/collect.json"
+    ],
+    "pid": 2306,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 181715808,
+    "elapsed_seconds": 1.8284698330098763,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-03-operators-attention/probes/review22-final-focused/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_review13_subspaces.py::test_native_percept_rows_and_net_evidence_are_detached_code_sources",
+        "test/test_review13_subspaces.py::test_group_uses_native_perceptual_fold_without_letter_concept_rows",
+        "test/test_review13_subspaces.py::test_occurrence_mean_is_confined_to_detached_context_coordinates",
+        "test/test_review13_subspaces.py::test_support_reports_exact_zeros_and_minimum_absolute_coordinate",
+        "test/test_review13_subspaces.py::test_actual_serial_code_uses_fourteen_native_coordinates_and_no_context_bootstrap",
+        "test/test_review13_subspaces.py::test_readback_uses_perceptual_cosine_without_context_or_scale",
+        "test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources",
+        "test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower",
+        "test/test_review14_contracts.py::test_room_projection_reports_before_after_and_moves_extremal_rows",
+        "test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling",
+        "test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live",
+        "test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient",
+        "test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient",
+        "test/test_review14_contracts.py::test_zero_parent_relative_search_remains_finite",
+        "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch",
+        "test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence",
+        "test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite",
+        "test/test_review14_contracts.py::test_room_report_includes_fixed_missing_whole_boundary",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[-0.5]",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.0]",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.5]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

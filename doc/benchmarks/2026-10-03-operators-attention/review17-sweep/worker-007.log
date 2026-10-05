@@ -1,0 +1,127 @@
+........................................................................ [ 30%]
+...........................................ssssssssssssss..ssss.ssssssss [ 60%]
+.....FF................................................................. [ 91%]
+.....................                                                    [100%]
+=================================== FAILURES ===================================
+_______ test_same_walk_infers_binary_and_unary_without_a_journal[False] ________
+test/test_echoic_decoder.py:111: in test_same_walk_infers_binary_and_unary_without_a_journal
+    out, count, truncated, _, actions = fn(event, bank)
+                                        ^^^^^^^^^^^^^^^
+test/test_echoic_decoder.py:107: in walk
+    return Models.BasicModel._output_generate_walk(owner, event, 8,
+bin/Models.py:13037: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+bin/Models.py:380: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:12970: in body
+    left, right, missing = language.reverse_binary_step(
+bin/Language.py:13433: in reverse_binary_step
+    pair = apply(operands, sides, selected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13419: in apply
+    a, b, available = self._reverse_of_binary_op(
+bin/Language.py:13467: in _reverse_of_binary_op
+    chooser=self.decomposition_chooser)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'decomposition_chooser'
+________ test_same_walk_infers_binary_and_unary_without_a_journal[True] ________
+test/test_echoic_decoder.py:111: in test_same_walk_infers_binary_and_unary_without_a_journal
+    out, count, truncated, _, actions = fn(event, bank)
+                                        ^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.UncapturedHigherOrderOpError: This higher order operator doesn't work unless it is captured completely with torch.compile. Got graph break/error:
+E   
+E   raised exception AttributeError("'SimpleNamespace' object has no attribute 'decomposition_chooser'")
+E     Higher Order Operator: torch.cond
+E   
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/test/test_echoic_decoder.py", line 107, in walk
+E       return Models.BasicModel._output_generate_walk(owner, event, 8,
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 13037, in _output_generate_walk
+E       _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+E                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 378, in _reconstruction_while_loop
+E       return torch.while_loop(condition, body, values)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+E       return func(*args, **kwargs)
+E              ^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12970, in body
+E       left, right, missing = language.reverse_binary_step(
+E                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13427, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13419, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13467, in _reverse_of_binary_op
+E       chooser=self.decomposition_chooser)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+=============================== warnings summary ===============================
+test/test_ensure_microbatch_cascade.py::test_inputspace_forward_triggers_ensure_microbatch
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_existence_metadata.py::test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:2593: UserWarning: Legacy LTM rows have unknown order; decoding requires an explicit order stamp.
+    module._load_from_state_dict(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_echoic_decoder.py::test_same_walk_infers_binary_and_unary_without_a_journal[False]
+FAILED test/test_echoic_decoder.py::test_same_walk_infers_binary_and_unary_without_a_journal[True]
+2 failed, 209 passed, 26 skipped, 2 warnings in 7.18s

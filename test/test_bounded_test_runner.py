@@ -337,6 +337,21 @@ def test_real_pytest_coverage_fresh_workers_and_failure_receipt(runner, tmp_path
     assert "skipped" in report and "xfailed" in report
 
 
+@pytest.mark.parametrize('strict, expected_exit', [(False, 0), (True, 1)])
+def test_xpass_respects_pytest_strictness(runner, tmp_path, strict, expected_exit):
+    (tmp_path / 'pytest.ini').write_text('[pytest]\n')
+    (tmp_path / 'test_xpass.py').write_text(
+        'import pytest\n' + f'@pytest.mark.xfail(strict={strict!r})\n'
+        'def test_xpass(): assert True\n')
+    result = runner.run_suite(root=tmp_path, selectors=['test_xpass.py'],
+        run_dir=tmp_path / 'result', memory_bytes=512 * 1024**2,
+        timeout=60, suite_timeout=120, batch_size=1, lock_path=tmp_path / 'lock')
+    assert result['exit_code'] == expected_exit
+    assert len(result['completed']) == len(result['selected']) == 1
+    outcomes = [r['outcome'] for worker in result['workers'] for r in worker['reports']]
+    assert outcomes == ['failed' if strict else 'xpassed']
+
+
 def test_test_failure_does_not_cancel_remaining_worker_coverage(runner, tmp_path):
     """A diagnostic receipt records every selected test, not just the first red one."""
     (tmp_path / "pytest.ini").write_text("[pytest]\n")
