@@ -753,10 +753,11 @@ class Grammar:
          'clause_form', 'head_role', 'surface_name', 'predicate_identity',
          'operand_kinds', 'effect_writes', 'relation_kind', 'scope_transparent',
          'polarity_effect', 'meaning_mode', 'same_reference_idempotent',
-         'effect_reads', 'field_eligible', 'order_delta', 'case_head_role'],
+         'effect_reads', 'field_eligible', 'order_delta', 'case_head_role',
+         'footprint_reads', 'footprint_writes'],
     )
     RuleDef.__new__.__defaults__ = (0, 0, False, None, None, (), (), None, 0,
-                                  None, None, (), (), None, False, None, None, False, (), False, 0, 0)
+                                  None, None, (), (), None, False, None, None, False, (), False, 0, 0, (), ())
 
     @staticmethod
     def _declared_rule(rule):
@@ -771,7 +772,7 @@ class Grammar:
                   'polarity_effect', 'meaning_mode', 'same_reference_idempotent',
                   'predicate_identity', 'field_eligible', 'order_delta', 'case_head_role')
         from Queries import THOUGHT_EXECUTORS
-        from AccessibleMind import OperatorEffects
+        from AccessibleMind import OperatorEffects, OperatorFootprint
         descriptor = THOUGHT_EXECUTORS.get(rule.method_name)
         reads = tuple(implementation.effect_reads)
         writes = tuple(implementation.effect_writes)
@@ -781,11 +782,14 @@ class Grammar:
             reads = tuple(dict.fromkeys((*reads, *(s.name.lower() for s in descriptor.read_scope))))
             writes = tuple(dict.fromkeys((*writes, *(s.name.lower() for s in descriptor.write_scope))))
         effects = OperatorEffects(reads, writes)
+        footprint = OperatorFootprint(implementation.footprint_reads,
+            implementation.footprint_writes).check_effects(effects)
         return rule._replace(
             **{name: getattr(implementation, name, None) for name in fields},
             operand_kinds=(('field' if getattr(implementation, 'field_only', False) else 'symbol'),) * rule.arity,
             effect_reads=tuple(s.name.lower() for s in effects.reads),
-            effect_writes=tuple(s.name.lower() for s in effects.writes))
+            effect_writes=tuple(s.name.lower() for s in effects.writes),
+            footprint_reads=footprint.reads, footprint_writes=footprint.writes)
 
     @dataclass(frozen=True)
     class ThoughtOperationForm:
@@ -1627,6 +1631,17 @@ class Grammar:
                     expected = OperatorEffects(rule.effect_reads, rule.effect_writes)
                     if set(declared.writes) != set(expected.writes):
                         raise ValueError('writes must declare the complete implementation contract, with no extra effects')
+                from AccessibleMind import OperatorEffects, OperatorFootprint
+                footprint = {}
+                for name in ('reads', 'writes'):
+                    attribute = 'footprint' + name.title()
+                    expected = getattr(rule, 'footprint_' + name)
+                    values = (tuple(part.strip() for part in str(attributes[attribute]).split(',') if part.strip())
+                              if attribute in attributes else expected)
+                    if set(values) != set(expected):
+                        raise ValueError(f'footprint {name} must declare the complete implementation contract')
+                    footprint[name] = values
+                OperatorFootprint(**footprint).check_effects(OperatorEffects(rule.effect_reads, rule.effect_writes))
                 rule = rule._replace(operand_kinds=operands)
                 if clause_raw is not None:
                     if clause_raw not in ('S', 'VP', 'implies'):
@@ -2463,9 +2478,10 @@ TheGrammar = Grammar()
 # =====================================================================
 
 class NotLayer(GrammarLayer):
+    footprint_reads = footprint_writes = ('poles',)
     field_only = True
     field_action = 5
-    """Self-inverse negation of a concept code, or an explicit pole pair."""
+    """Exchange evidence poles; the paired concept code is unchanged."""
     inverse_kind = 'unary'
     scope_transparent = True
     polarity_effect = 'invert'
@@ -2486,9 +2502,9 @@ class NotLayer(GrammarLayer):
         self.representation = representation
 
     def forward(self, x):
-        """Reflect the full code, or exchange the explicit evidence poles."""
+        """Exchange explicit evidence; serial code slots retain their identity."""
         if self.representation == 'code':
-            return -x
+            return x
         self._check_bivector_shape(x)
         bivector = x[..., :2].flip(dims=(-1,))
         rest     = x[..., 2:]
@@ -2502,6 +2518,7 @@ class NotLayer(GrammarLayer):
 
 class NonLayer(GrammarLayer):
     """Non-affirming exclusion: clear the expressed pole, never complement."""
+    footprint_reads = footprint_writes = ('poles',)
     scope_transparent = True
     polarity_effect = 'exclude'
     field_eligible = True
@@ -2523,7 +2540,7 @@ class NonLayer(GrammarLayer):
     def forward(self, x):
         """Remove the expressed concept without asserting its opposite."""
         if self.representation == 'code':
-            return x * 0
+            return x
         self._check_bivector_shape(x)
         return torch.cat((x[..., :1]*0, x[..., 1:]), dim=-1)
 
@@ -2578,7 +2595,7 @@ class IntersectionLayer(GrammarLayer):
         if self.monotonic:
             m = torch.minimum(a, b)
         else:
-            m = Ops._radmin(a, b)
+            m = Ops.intersection(a, b)
         packed = torch.cat([m, m], dim=-1)
         return torch.einsum('bmi,mij->bmj', packed, W_node)
 
@@ -3335,8 +3352,10 @@ class LiftLayer(GrammarLayer):
                     int(nInput), int(nOutput), seed=0x5EED, bias=0.0)
                 with torch.no_grad():
                     self._adv_edit.weight.zero_()
+                self._adv_shift = nn.Parameter(torch.zeros_like(self._adv_edit.weight))
             else:
                 self._adv_edit = None
+                self.register_parameter('_adv_shift', None)
             self._adverb_purchase = None
 
             # VERB eig-spectrum OPERATOR (Stage 1; doc/old/2026-06-20-idea-
@@ -3360,8 +3379,10 @@ class LiftLayer(GrammarLayer):
                     int(nInput), int(nOutput), seed=0x5B17, bias=0.0)
                 with torch.no_grad():
                     self._verb_spec.weight.zero_()
+                self._verb_shift = nn.Parameter(torch.zeros_like(self._verb_spec.weight))
             else:
                 self._verb_spec = None
+                self.register_parameter('_verb_shift', None)
         else:
             # Zero-width construction (parameter-free harness probe).
             self._sigma = None
@@ -3371,6 +3392,18 @@ class LiftLayer(GrammarLayer):
             self._adverb_purchase = None
             self._verb_spectrum = False
             self._verb_spec = None
+            self.register_parameter('_adv_shift', None)
+            self.register_parameter('_verb_shift', None)
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        # Old gain-only checkpoints are the zero-translation special case.
+        for name in ('_verb_shift', '_adv_shift'):
+            value = getattr(self, name, None)
+            if value is not None and prefix + name not in state_dict:
+                state_dict[prefix + name] = torch.zeros_like(value)
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                     missing_keys, unexpected_keys, error_msgs)
 
     # -- Butterfly per-pair op delegation (Stage 5) -----------------
     def _butterfly_pair_op(self, x_pair, W_node):
@@ -3466,7 +3499,8 @@ class LiftLayer(GrammarLayer):
         if not torch.compiler.is_compiling():
             with torch.no_grad():
                 self._adverb_purchase = (vp_content != 0).to(vp_content).mean(-1)
-        return self._verb_rail_transform(vp_content, gain)
+        shift = torch.tanh(F.linear(adv_what.to(self._adv_shift), self._adv_shift))
+        return self._verb_rail_transform(vp_content, gain, shift)
 
     def _adverb_log_gain(self, adverb):
         raw = torch.tanh(self._adv_edit(adverb.to(self._adv_edit.weight.dtype)))
@@ -3476,7 +3510,9 @@ class LiftLayer(GrammarLayer):
     def unapply_adverb(self, value, adverb):
         if not getattr(self, '_adverb_eig_edit', False) or self._adv_edit is None:
             return value
-        return self._verb_rail_transform(value, -self._adverb_log_gain(adverb))
+        gain = self._adverb_log_gain(adverb)
+        shift = torch.tanh(F.linear(adverb.to(self._adv_shift), self._adv_shift))
+        return self._verb_rail_transform(value, -gain, -shift * torch.exp(-gain))
 
     def _verb_spectrum_w(self, verb_what):
         """The verb's SPARSE log-eigenvalues w_v from the verb code,
@@ -3501,7 +3537,7 @@ class LiftLayer(GrammarLayer):
         )
 
     @staticmethod
-    def _verb_rail_transform(value, log_gain):
+    def _verb_rail_transform(value, log_gain, shift=None):
         """Apply a diagonal gain in a numerically safe atanh chart.
 
         Half and bfloat16 cannot represent ``1 - epsilon`` for the module's
@@ -3516,7 +3552,10 @@ class LiftLayer(GrammarLayer):
         value_f32 = value.to(dtype=torch.float32)
         log_gain_f32 = log_gain.to(dtype=torch.float32)
         interior = _bounded_atanh(value_f32, bounded=False)
-        transformed = torch.tanh(torch.exp(log_gain_f32) * interior)
+        chart = torch.exp(log_gain_f32) * interior
+        if shift is not None:
+            chart = chart + shift.to(dtype=torch.float32)
+        transformed = torch.tanh(chart)
         return transformed.to(dtype=output_dtype)
 
     def apply_verb(self, np_what, verb_what):
@@ -3530,7 +3569,8 @@ class LiftLayer(GrammarLayer):
         if not getattr(self, '_verb_spectrum', False) or self._verb_spec is None:
             return np_what
         return self._verb_rail_transform(
-            np_what, self._verb_spectrum_w(verb_what))
+            np_what, self._verb_spectrum_w(verb_what),
+            torch.tanh(F.linear(verb_what.to(self._verb_shift), self._verb_shift)))
 
     def unapply_verb(self, vp_what, verb_what):
         """Inverse of ``apply_verb`` GIVEN the verb: NP = tanh(e^{-w_v} ⊙
@@ -3539,8 +3579,9 @@ class LiftLayer(GrammarLayer):
         reverse -- is a follow-on increment.)"""
         if not getattr(self, '_verb_spectrum', False) or self._verb_spec is None:
             return vp_what
-        return self._verb_rail_transform(
-            vp_what, -self._verb_spectrum_w(verb_what))
+        gain = self._verb_spectrum_w(verb_what)
+        shift = torch.tanh(F.linear(verb_what.to(self._verb_shift), self._verb_shift))
+        return self._verb_rail_transform(vp_what, -gain, -shift * torch.exp(-gain))
 
     def reverse(self, parent, gate=None, basis=None,
                 left_rows=None, right_rows=None,
@@ -4023,6 +4064,7 @@ class _WhenOpMixin:
 
 class TenseLayer(_WhenOpMixin, GrammarLayer):
     """Unary CS op that shifts the event ``.when`` center by tense."""
+    footprint_reads = footprint_writes = ()
     inverse_kind = 'identity'
     scope_transparent = True
     rule_name = "tense"; arity = 1
@@ -4193,13 +4235,29 @@ class _SearchedBinaryLayer(GrammarLayer):
 
 
 class ConjunctionLayer(_SearchedBinaryLayer):
-    """Product of activations times the bound identity direction."""
+    """Bind forms, or meet explicit evidence pairs in the bilattice."""
     uses_operand_activation = True
+    footprint_writes = ('form', 'meaning', 'poles')
     field_eligible = True
     rule_name = 'conjunction'
     predicate_identity = 'conjunction'
     kernel = staticmethod(Ops._conjunction_kernel)
     same_reference_idempotent = True
+
+    def __init__(self, *args, representation='code', **kwargs):
+        super().__init__(*args, **kwargs)
+        if representation not in ('code', 'poles'):
+            raise ValueError('conjunction requires code or poles representation')
+        self.representation = representation
+        if representation == 'poles':
+            self.kernel = self.poles
+
+    @staticmethod
+    def poles(left, right):
+        if left.shape[-1] != 2 or right.shape[-1] != 2:
+            raise ValueError('conjunction evidence requires an explicit pole pair')
+        return torch.stack((torch.minimum(left[..., 0], right[..., 0]),
+                            torch.maximum(left[..., 1], right[..., 1])), -1)
 
 
 class DisjunctionLayer(_SearchedBinaryLayer):
@@ -4697,6 +4755,8 @@ class BracketOperation(GrammarLayer):
     space_role = 'CS'
     effect_reads = ('percept',)
     effect_writes = ()
+    footprint_reads = ('form', 'poles')
+    footprint_writes = ()
     reverse_dispatchable = False
     bracket_action = None
 
@@ -7249,21 +7309,27 @@ class OperationSelectionLayer(nn.Module):
             representatives.append(allowed[:, first:first + 16] & ~duplicates)
         return torch.cat(representatives, -1)
 
-    def attend(self, keys, legal, space, *, prior=None, masked_action=None, replay_action=None):
+    def attend(self, keys, legal, space, *, prior=None, masked_action=None, replay_action=None,
+               return_details=False):
         """Field locations in this same chooser; symbols enter forward after gloss."""
+        keys = keys.detach()
         B,K,D=keys.shape
         candidates=keys[:,:,None].expand(B,K,legal.shape[-1],D)
         _,scores=self.chooser.score_unary(keys,candidates,self.stop_anchor,self.bracket_anchor[:legal.shape[-1]],
                                           op_offset=self.r_reduce+self.r_apply)
         scores=scores+self.space_prior[space][...,None]
-        if prior is not None:scores=scores+prior[...,None]
+        if prior is not None:scores=scores+prior.detach()[...,None]
         scores=scores.masked_fill(~legal,-torch.inf).reshape(B,-1)
         stop=torch.where(legal.reshape(B,-1).any(-1),-torch.inf,0.)
         logits=torch.cat((scores,stop[:,None]),-1)
         action,probability,valid=self.select_logits(logits,structural=(True,)*logits.shape[-1],
-                  masked_action=masked_action,replay_action=replay_action)
+                  masked_action=masked_action,replay_action=replay_action,
+                  departure_eligible=torch.isfinite(logits))
         weight=probability.gather(1,action[:,None])[:,0]
-        return action,1+(weight-weight.detach()),(torch.isfinite(logits).sum(-1)>1)
+        counts = (torch.isfinite(logits).sum(-1)-1).clamp_min(0)
+        result = (action, torch.ones_like(weight), counts > 0)
+        return (*result, dict(probability=weight, alternative_count=counts,
+                              logits=logits)) if return_details else result
 
     def reduction_pressure(self, depth, *, allowance, rounds_left):
         """Fixed load prior, using the whole stack and an inclusive deadline."""
@@ -13643,15 +13709,20 @@ class LanguageSpace(nn.Module):
         residual = residual / torch.where(energy > 0, energy, torch.ones_like(energy))
         # The shortlist and eligibility are unchanged. Context learns only
         # through the separate teacher loss, never through candidate codes.
-        def candidate_features(candidates, indices, priming):
+        def candidate_features(candidates, indices, priming, active):
             energy = candidates.square().sum(-1)
             activation = (parent.detach()[:, None] * candidates).sum(-1) / torch.where(
                 energy > 0, energy, torch.ones_like(energy))
+            count = active.sum(-1, keepdim=True).clamp_min(1)
+            mean = torch.where(active, activation, 0.).sum(-1, keepdim=True) / count
+            centered = torch.where(active, activation - mean, 0.)
+            variance = centered.square().sum(-1, keepdim=True) / count
+            activation = centered / variance.sqrt().clamp_min(torch.finfo(activation.dtype).eps)
             heat = (torch.ones_like(activation) if priming is None else
                     priming.detach().gather(1, indices))
             return activation, heat
-        la, lp = candidate_features(left_candidates, left_indices, left_priming)
-        ra, rp = candidate_features(right_candidates, right_indices, right_priming)
+        la, lp = candidate_features(left_candidates, left_indices, left_priming, left_active)
+        ra, rp = candidate_features(right_candidates, right_indices, right_priming, right_active)
         features = torch.stack((-residual.detach(), la[:, :, None].expand_as(residual),
             ra[:, None, :].expand_as(residual), lp[:, :, None].expand_as(residual),
             rp[:, None, :].expand_as(residual)), -1)
@@ -13661,6 +13732,13 @@ class LanguageSpace(nn.Module):
             logits = torch.where(allowed.flatten(1).any(-1)[:, None], logits, 0.)
         else:
             selected, _, logits = chooser(features, allowed)
+        # Float-roundoff recompositions outrank all learned context. Ties
+        # retain the residual argmin's bank order. CE still sees every legal
+        # pair, so a noisy root can learn from its true decomposition.
+        fits = residual.detach().masked_fill(~allowed, torch.inf).flatten(1)
+        best, argmin = fits.min(-1)
+        exact = best <= (8 * torch.finfo(parent.dtype).eps) ** 2
+        selected = torch.where(exact, argmin, selected)
         gather = selected[:, None, None].expand(B, 1, D)
         hard_left = older.reshape(B, K * K, D).gather(1, gather).squeeze(1)
         hard_right = newer.reshape(B, K * K, D).gather(1, gather).squeeze(1)
@@ -13670,7 +13748,8 @@ class LanguageSpace(nn.Module):
         result = (hard_left.detach(), hard_right.detach(), available)
         if return_details:
             return (*result, dict(logits=logits, selected=selected, allowed=allowed,
-                left_indices=left_indices, right_indices=right_indices, features=features))
+                left_indices=left_indices, right_indices=right_indices, features=features,
+                exact=exact, relative_residual=residual.detach()))
         return result
 
     @staticmethod

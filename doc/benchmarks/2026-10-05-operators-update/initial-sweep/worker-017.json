@@ -1,0 +1,1363 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_padded_rows_no_op.py::test_valid_mask_propagates_via_copy_context",
+    "test/test_padded_rows_no_op.py::test_valid_mask_cleared_on_subspace_reset",
+    "test/test_padded_rows_no_op.py::test_symbolic_act_masking_zeros_invalid_cells",
+    "test/test_parse_buffer.py::TestParseSentences::test_abbreviation_and_parenthetical_punctuation_stay_together",
+    "test/test_parse_buffer.py::TestParseSentences::test_byte_offsets_point_to_first_nonspace",
+    "test/test_parse_buffer.py::TestParseSentences::test_empty_buffer",
+    "test/test_parse_buffer.py::TestParseSentences::test_newlines_separate_headings_and_list_rows",
+    "test/test_parse_buffer.py::TestParseSentences::test_punctuation_only_fragments_are_not_sentences",
+    "test/test_parse_buffer.py::TestParseSentences::test_punctuation_variants",
+    "test/test_parse_buffer.py::TestParseSentences::test_single_sentence",
+    "test/test_parse_buffer.py::TestParseSentences::test_titles_dotted_acronyms_and_decimals_do_not_split",
+    "test/test_parse_buffer.py::TestParseSentences::test_trailing_fragment_kept",
+    "test/test_parse_buffer.py::TestParseSentences::test_two_sentences",
+    "test/test_parse_buffer.py::TestParseWords::test_byte_offsets_contiguous",
+    "test/test_parse_buffer.py::TestParseWords::test_word_split",
+    "test/test_parse_buffer.py::TestParseBytes::test_byte_count",
+    "test/test_parse_buffer.py::TestParseBytes::test_unknown_lex_raises",
+    "test/test_parthood_orders.py::TestMonotonePreconditions::test_monotone_sigma_preserves_order",
+    "test/test_parthood_orders.py::TestMonotonePreconditions::test_zero_preservation_is_the_terminate_invariant",
+    "test/test_parthood_orders.py::TestParthoodAlgebra::test_reflexive",
+    "test/test_parthood_orders.py::TestParthoodAlgebra::test_zero_is_universal_part",
+    "test/test_parthood_orders.py::TestParthoodAlgebra::test_contained_scores_higher_than_disjoint",
+    "test/test_parthood_orders.py::TestParthoodAlgebra::test_equal_kernel_is_mutual_parthood",
+    "test/test_parthood_orders.py::TestOrderInvarianceUnderMonotoneMap::test_part_preserved_through_one_monotone_loop",
+    "test/test_parthood_orders.py::TestMonotonicCodebookRequirement::test_rejects_monotonic_with_cs_codebook",
+    "test/test_parthood_orders.py::TestMonotonicCodebookRequirement::test_allows_monotonic_without_cs_codebook",
+    "test/test_parthood_orders.py::TestOrderConvention::test_order_zero_is_identity",
+    "test/test_parthood_orders.py::TestOrderConvention::test_order_k_is_k_loops",
+    "test/test_parthood_orders.py::TestOrderConvention::test_cross_order_parthood_via_lift",
+    "test/test_parthood_orders.py::TestTaxonomy::test_wordspace_hosts_taxonomy",
+    "test/test_parthood_orders.py::TestTaxonomy::test_taxonomy_add_and_walk_by_order",
+    "test/test_parthood_orders.py::TestTaxonomy::test_taxonomy_flat_enumeration_across_orders",
+    "test/test_participation_pos_recovery.py::test_recovers_noun_verb_classes_from_participation_alone",
+    "test/test_participation_pos_recovery.py::test_threshold_controls_grouping_granularity",
+    "test/test_participation_pos_recovery.py::test_order_variants_collapse_to_one_class",
+    "test/test_participation_pos_recovery.py::test_single_role_categories_recover_the_collapsed_op_role",
+    "test/test_participation_pos_recovery.py::test_recovers_operand_order_from_participation",
+    "test/test_participation_pos_recovery.py::test_recovered_classes_are_role_pure_d1_gate",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[0-S -> false(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[1-S -> non(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[2-S -> conjunction(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[3-S -> disjunction(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[4-S -> what(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[5-S -> where(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[6-S -> when(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[7-S -> swap(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[8-S -> equals(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[9-S -> not(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[10-S -> part(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[11-S -> intersection(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[12-S -> join(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[13-S -> lower(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[14-S -> lift(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_rule_table_roundtrip",
+    "test/test_partition_grammar_rewrite.py::test_retired_golden_rule_is_rejected[true(S)]",
+    "test/test_partition_grammar_rewrite.py::test_retired_golden_rule_is_rejected[query(S, S)]",
+    "test/test_partition_pos_codebook.py::test_pos_codebook_shape",
+    "test/test_partition_pos_codebook.py::test_pos_codebook_lookup_deterministic",
+    "test/test_partition_pos_codebook.py::test_category_stack_push_pop_roundtrip",
+    "test/test_partition_pos_codebook.py::test_category_stack_depth_matches_push_count",
+    "test/test_partition_pos_codebook.py::test_category_stack_flatten_shape",
+    "test/test_partition_reconstruction_stack.py::test_reconstruction_stack_records_rule_and_word",
+    "test/test_partition_reconstruction_stack.py::test_reconstruction_stack_roundtrip",
+    "test/test_partition_reconstruction_stack.py::test_sentence_prediction_uses_root_slot_only",
+    "test/test_partition_resolve.py::test_symbol_codebook_quantizes_activation_not_what",
+    "test/test_partition_rule_predictor.py::test_rule_predictor_output_shape",
+    "test/test_partition_rule_predictor.py::test_rule_predictor_softmax_sums_to_one",
+    "test/test_partition_rule_predictor.py::test_rule_predictor_hard_inference_argmax",
+    "test/test_partition_rule_predictor.py::test_rule_predictor_gradient_flows_through_stack",
+    "test/test_partition_rule_predictor.py::test_rule_predictor_empty_stack_zero_pads",
+    "test/test_partition_rule_predictor.py::test_rule_predictor_overflow_stack_truncates_to_recent",
+    "test/test_partspace_dynamic_capacity.py::test_deferred_promotion_does_not_mutate_the_live_parameter",
+    "test/test_partspace_dynamic_capacity.py::test_admission_preserves_existing_values_and_adam_state[False]",
+    "test/test_partspace_dynamic_capacity.py::test_admission_preserves_existing_values_and_adam_state[True]",
+    "test/test_partspace_dynamic_capacity.py::test_capacity_exhaustion_is_atomic_and_actionable[False]",
+    "test/test_partspace_dynamic_capacity.py::test_capacity_exhaustion_is_atomic_and_actionable[True]",
+    "test/test_partspace_dynamic_capacity.py::test_percept_master_prefix_is_byte_exact_not_clamped_view",
+    "test/test_partspace_dynamic_capacity.py::test_admission_cannot_adopt_an_unrelated_optimizer",
+    "test/test_partspace_dynamic_capacity.py::test_partspace_nvectors_is_the_only_physical_capacity_knob",
+    "test/test_partspace_dynamic_capacity.py::test_partspace_byte_fallback_has_one_optimizer_owner",
+    "test/test_partspace_dynamic_capacity.py::test_smaller_checkpoint_table_prefix_loads_into_configured_initial_rows",
+    "test/test_partspace_dynamic_capacity.py::test_checkpoint_restores_fixed_owner_and_optimizer_by_name",
+    "test/test_peer_pipeline.py::test_language_chooses_and_conceptual_space_alone_applies_stm_update",
+    "test/test_peer_pipeline.py::test_subspace_view_has_no_setters_and_owner_commits",
+    "test/test_peer_pipeline.py::test_peer_guard_detects_direct_or_setter_mutation",
+    "test/test_peer_pipeline.py::test_published_snapshot_is_zero_copy_read_only_and_guarded",
+    "test/test_peer_pipeline.py::test_language_plan_snapshots_routing_before_latch",
+    "test/test_peer_pipeline.py::test_cs_alone_commits_symbolic_and_language_peer_results",
+    "test/test_peer_pipeline.py::test_static_pipeline_warmup_drain_and_two_symbolic_index_latch",
+    "test/test_peer_pipeline.py::test_tensor_while_pipeline_dynamic_trip_warmup_drain_and_latch",
+    "test/test_peer_pipeline.py::test_tensor_while_pipeline_is_one_fullgraph_and_reusable",
+    "test/test_peer_pipeline.py::test_tensor_banked_pipeline_uses_one_slot_per_age_and_latches_by_two",
+    "test/test_peer_pipeline.py::test_tensor_banked_pipeline_is_one_fullgraph_and_reusable",
+    "test/test_peer_pipeline.py::test_percept_concept_pipeline_overlaps_adjacent_words_and_drains_latches",
+    "test/test_peer_pipeline.py::test_percept_concept_pipeline_is_one_fullgraph_across_runtime_lengths",
+    "test/test_peer_pipeline.py::test_cs_lane_pipeline_orders_three_stages_and_latches_feedback_by_index",
+    "test/test_peer_pipeline.py::test_cs_lane_pipeline_is_one_fullgraph_across_runtime_lengths",
+    "test/test_peer_pipeline.py::test_functional_stm_push_matches_owner_commit_and_preserves_masked_rows",
+    "test/test_peer_pipeline.py::test_functional_stm_state_is_fullgraph_while_loop_safe",
+    "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[1]",
+    "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[8]",
+    "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[15]",
+    "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[17]",
+    "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[64]",
+    "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[256]",
+    "test/test_per_batch_stack_isolation.py::test_category_stack_b2_isolation",
+    "test/test_per_batch_stack_isolation.py::test_category_stack_flatten_per_row",
+    "test/test_per_batch_stack_isolation.py::test_category_stack_grad_flows_per_row",
+    "test/test_per_batch_stack_isolation.py::test_category_stack_ensure_batch_grows_and_clears",
+    "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_b2_isolation",
+    "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_pop_returns_tuple",
+    "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_ensure_batch_grows",
+    "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_owns_detached_sentence_teacher",
+    "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_clear_row_masks_all_teacher_artifacts",
+    "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_fixed_choices_are_mapped_and_row_scoped",
+    "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_choice_write_is_fullgraph_visible",
+    "test/test_per_batch_state_isolation.py::test_last_svo_b2_isolation",
+    "test/test_per_batch_state_isolation.py::test_last_svo_clear_per_row",
+    "test/test_per_batch_state_isolation.py::test_last_svo_ensure_batch_grows_clears",
+    "test/test_per_batch_state_isolation.py::test_sentence_completed_b2_isolation",
+    "test/test_per_batch_state_isolation.py::test_stm_arm_per_row",
+    "test/test_per_batch_state_isolation.py::test_ensure_microbatch_grows_sentence_completed_to_new_B",
+    "test/test_per_batch_state_isolation.py::test_reset_clears_both",
+    "test/test_per_row_hard_reset.py::test_dispatch_per_row_reset_skips_rows_without_hard_eos",
+    "test/test_per_row_hard_reset.py::test_dispatch_per_row_reset_empty_or_all_false_is_noop",
+    "test/test_per_row_hard_reset.py::test_per_row_hard_reset_clears_only_target_row_state",
+    "test/test_per_row_hard_reset.py::test_runEpoch_dispatches_per_row_reset_per_batch",
+    "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+    "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+    "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+    "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_compiles_and_replays_under_cudagraphs",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_actually_uses_cudagraphs",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_emits_no_dtoh_under_profiler"
+  ],
+  "completed": [
+    "test/test_padded_rows_no_op.py::test_valid_mask_propagates_via_copy_context",
+    "test/test_padded_rows_no_op.py::test_valid_mask_cleared_on_subspace_reset",
+    "test/test_padded_rows_no_op.py::test_symbolic_act_masking_zeros_invalid_cells",
+    "test/test_parse_buffer.py::TestParseSentences::test_abbreviation_and_parenthetical_punctuation_stay_together",
+    "test/test_parse_buffer.py::TestParseSentences::test_byte_offsets_point_to_first_nonspace",
+    "test/test_parse_buffer.py::TestParseSentences::test_empty_buffer",
+    "test/test_parse_buffer.py::TestParseSentences::test_newlines_separate_headings_and_list_rows",
+    "test/test_parse_buffer.py::TestParseSentences::test_punctuation_only_fragments_are_not_sentences",
+    "test/test_parse_buffer.py::TestParseSentences::test_punctuation_variants",
+    "test/test_parse_buffer.py::TestParseSentences::test_single_sentence",
+    "test/test_parse_buffer.py::TestParseSentences::test_titles_dotted_acronyms_and_decimals_do_not_split",
+    "test/test_parse_buffer.py::TestParseSentences::test_trailing_fragment_kept",
+    "test/test_parse_buffer.py::TestParseSentences::test_two_sentences",
+    "test/test_parse_buffer.py::TestParseWords::test_byte_offsets_contiguous",
+    "test/test_parse_buffer.py::TestParseWords::test_word_split",
+    "test/test_parse_buffer.py::TestParseBytes::test_byte_count",
+    "test/test_parse_buffer.py::TestParseBytes::test_unknown_lex_raises",
+    "test/test_parthood_orders.py::TestMonotonePreconditions::test_monotone_sigma_preserves_order",
+    "test/test_parthood_orders.py::TestMonotonePreconditions::test_zero_preservation_is_the_terminate_invariant",
+    "test/test_parthood_orders.py::TestParthoodAlgebra::test_reflexive",
+    "test/test_parthood_orders.py::TestParthoodAlgebra::test_zero_is_universal_part",
+    "test/test_parthood_orders.py::TestParthoodAlgebra::test_contained_scores_higher_than_disjoint",
+    "test/test_parthood_orders.py::TestParthoodAlgebra::test_equal_kernel_is_mutual_parthood",
+    "test/test_parthood_orders.py::TestOrderInvarianceUnderMonotoneMap::test_part_preserved_through_one_monotone_loop",
+    "test/test_parthood_orders.py::TestMonotonicCodebookRequirement::test_rejects_monotonic_with_cs_codebook",
+    "test/test_parthood_orders.py::TestMonotonicCodebookRequirement::test_allows_monotonic_without_cs_codebook",
+    "test/test_parthood_orders.py::TestOrderConvention::test_order_zero_is_identity",
+    "test/test_parthood_orders.py::TestOrderConvention::test_order_k_is_k_loops",
+    "test/test_parthood_orders.py::TestOrderConvention::test_cross_order_parthood_via_lift",
+    "test/test_parthood_orders.py::TestTaxonomy::test_wordspace_hosts_taxonomy",
+    "test/test_parthood_orders.py::TestTaxonomy::test_taxonomy_add_and_walk_by_order",
+    "test/test_parthood_orders.py::TestTaxonomy::test_taxonomy_flat_enumeration_across_orders",
+    "test/test_participation_pos_recovery.py::test_recovers_noun_verb_classes_from_participation_alone",
+    "test/test_participation_pos_recovery.py::test_threshold_controls_grouping_granularity",
+    "test/test_participation_pos_recovery.py::test_order_variants_collapse_to_one_class",
+    "test/test_participation_pos_recovery.py::test_single_role_categories_recover_the_collapsed_op_role",
+    "test/test_participation_pos_recovery.py::test_recovers_operand_order_from_participation",
+    "test/test_participation_pos_recovery.py::test_recovered_classes_are_role_pure_d1_gate",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[0-S -> false(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[1-S -> non(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[2-S -> conjunction(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[3-S -> disjunction(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[4-S -> what(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[5-S -> where(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[6-S -> when(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[7-S -> swap(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[8-S -> equals(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[9-S -> not(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[10-S -> part(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[11-S -> intersection(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[12-S -> join(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[13-S -> lower(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[14-S -> lift(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_rule_table_roundtrip",
+    "test/test_partition_grammar_rewrite.py::test_retired_golden_rule_is_rejected[true(S)]",
+    "test/test_partition_grammar_rewrite.py::test_retired_golden_rule_is_rejected[query(S, S)]",
+    "test/test_partition_pos_codebook.py::test_pos_codebook_shape",
+    "test/test_partition_pos_codebook.py::test_pos_codebook_lookup_deterministic",
+    "test/test_partition_pos_codebook.py::test_category_stack_push_pop_roundtrip",
+    "test/test_partition_pos_codebook.py::test_category_stack_depth_matches_push_count",
+    "test/test_partition_pos_codebook.py::test_category_stack_flatten_shape",
+    "test/test_partition_reconstruction_stack.py::test_reconstruction_stack_records_rule_and_word",
+    "test/test_partition_reconstruction_stack.py::test_reconstruction_stack_roundtrip",
+    "test/test_partition_reconstruction_stack.py::test_sentence_prediction_uses_root_slot_only",
+    "test/test_partition_resolve.py::test_symbol_codebook_quantizes_activation_not_what",
+    "test/test_partition_rule_predictor.py::test_rule_predictor_output_shape",
+    "test/test_partition_rule_predictor.py::test_rule_predictor_softmax_sums_to_one",
+    "test/test_partition_rule_predictor.py::test_rule_predictor_hard_inference_argmax",
+    "test/test_partition_rule_predictor.py::test_rule_predictor_gradient_flows_through_stack",
+    "test/test_partition_rule_predictor.py::test_rule_predictor_empty_stack_zero_pads",
+    "test/test_partition_rule_predictor.py::test_rule_predictor_overflow_stack_truncates_to_recent",
+    "test/test_partspace_dynamic_capacity.py::test_deferred_promotion_does_not_mutate_the_live_parameter",
+    "test/test_partspace_dynamic_capacity.py::test_admission_preserves_existing_values_and_adam_state[False]",
+    "test/test_partspace_dynamic_capacity.py::test_admission_preserves_existing_values_and_adam_state[True]",
+    "test/test_partspace_dynamic_capacity.py::test_capacity_exhaustion_is_atomic_and_actionable[False]",
+    "test/test_partspace_dynamic_capacity.py::test_capacity_exhaustion_is_atomic_and_actionable[True]",
+    "test/test_partspace_dynamic_capacity.py::test_percept_master_prefix_is_byte_exact_not_clamped_view",
+    "test/test_partspace_dynamic_capacity.py::test_admission_cannot_adopt_an_unrelated_optimizer",
+    "test/test_partspace_dynamic_capacity.py::test_partspace_nvectors_is_the_only_physical_capacity_knob",
+    "test/test_partspace_dynamic_capacity.py::test_partspace_byte_fallback_has_one_optimizer_owner",
+    "test/test_partspace_dynamic_capacity.py::test_smaller_checkpoint_table_prefix_loads_into_configured_initial_rows",
+    "test/test_partspace_dynamic_capacity.py::test_checkpoint_restores_fixed_owner_and_optimizer_by_name",
+    "test/test_peer_pipeline.py::test_language_chooses_and_conceptual_space_alone_applies_stm_update",
+    "test/test_peer_pipeline.py::test_subspace_view_has_no_setters_and_owner_commits",
+    "test/test_peer_pipeline.py::test_peer_guard_detects_direct_or_setter_mutation",
+    "test/test_peer_pipeline.py::test_published_snapshot_is_zero_copy_read_only_and_guarded",
+    "test/test_peer_pipeline.py::test_language_plan_snapshots_routing_before_latch",
+    "test/test_peer_pipeline.py::test_cs_alone_commits_symbolic_and_language_peer_results",
+    "test/test_peer_pipeline.py::test_static_pipeline_warmup_drain_and_two_symbolic_index_latch",
+    "test/test_peer_pipeline.py::test_tensor_while_pipeline_dynamic_trip_warmup_drain_and_latch",
+    "test/test_peer_pipeline.py::test_tensor_while_pipeline_is_one_fullgraph_and_reusable",
+    "test/test_peer_pipeline.py::test_tensor_banked_pipeline_uses_one_slot_per_age_and_latches_by_two",
+    "test/test_peer_pipeline.py::test_tensor_banked_pipeline_is_one_fullgraph_and_reusable",
+    "test/test_peer_pipeline.py::test_percept_concept_pipeline_overlaps_adjacent_words_and_drains_latches",
+    "test/test_peer_pipeline.py::test_percept_concept_pipeline_is_one_fullgraph_across_runtime_lengths",
+    "test/test_peer_pipeline.py::test_cs_lane_pipeline_orders_three_stages_and_latches_feedback_by_index",
+    "test/test_peer_pipeline.py::test_cs_lane_pipeline_is_one_fullgraph_across_runtime_lengths",
+    "test/test_peer_pipeline.py::test_functional_stm_push_matches_owner_commit_and_preserves_masked_rows",
+    "test/test_peer_pipeline.py::test_functional_stm_state_is_fullgraph_while_loop_safe",
+    "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[1]",
+    "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[8]",
+    "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[15]",
+    "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[17]",
+    "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[64]",
+    "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[256]",
+    "test/test_per_batch_stack_isolation.py::test_category_stack_b2_isolation",
+    "test/test_per_batch_stack_isolation.py::test_category_stack_flatten_per_row",
+    "test/test_per_batch_stack_isolation.py::test_category_stack_grad_flows_per_row",
+    "test/test_per_batch_stack_isolation.py::test_category_stack_ensure_batch_grows_and_clears",
+    "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_b2_isolation",
+    "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_pop_returns_tuple",
+    "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_ensure_batch_grows",
+    "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_owns_detached_sentence_teacher",
+    "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_clear_row_masks_all_teacher_artifacts",
+    "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_fixed_choices_are_mapped_and_row_scoped",
+    "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_choice_write_is_fullgraph_visible",
+    "test/test_per_batch_state_isolation.py::test_last_svo_b2_isolation",
+    "test/test_per_batch_state_isolation.py::test_last_svo_clear_per_row",
+    "test/test_per_batch_state_isolation.py::test_last_svo_ensure_batch_grows_clears",
+    "test/test_per_batch_state_isolation.py::test_sentence_completed_b2_isolation",
+    "test/test_per_batch_state_isolation.py::test_stm_arm_per_row",
+    "test/test_per_batch_state_isolation.py::test_ensure_microbatch_grows_sentence_completed_to_new_B",
+    "test/test_per_batch_state_isolation.py::test_reset_clears_both",
+    "test/test_per_row_hard_reset.py::test_dispatch_per_row_reset_skips_rows_without_hard_eos",
+    "test/test_per_row_hard_reset.py::test_dispatch_per_row_reset_empty_or_all_false_is_noop",
+    "test/test_per_row_hard_reset.py::test_per_row_hard_reset_clears_only_target_row_state",
+    "test/test_per_row_hard_reset.py::test_runEpoch_dispatches_per_row_reset_per_batch",
+    "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+    "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+    "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+    "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_compiles_and_replays_under_cudagraphs",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_actually_uses_cudagraphs",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_emits_no_dtoh_under_profiler"
+  ],
+  "slow_selected": [
+    "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+    "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+    "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+    "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_compiles_and_replays_under_cudagraphs",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_actually_uses_cudagraphs",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_emits_no_dtoh_under_profiler"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_padded_rows_no_op.py::test_valid_mask_propagates_via_copy_context",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005905000143684447,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_padded_rows_no_op.py::test_valid_mask_cleared_on_subspace_reset",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002957920078188181,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_padded_rows_no_op.py::test_symbolic_act_masking_zeros_invalid_cells",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04971120896516368,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parse_buffer.py::TestParseSentences::test_abbreviation_and_parenthetical_punctuation_stay_together",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024854199727997184,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parse_buffer.py::TestParseSentences::test_byte_offsets_point_to_first_nonspace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012412498472258449,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parse_buffer.py::TestParseSentences::test_empty_buffer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001045420067384839,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parse_buffer.py::TestParseSentences::test_newlines_separate_headings_and_list_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011716695735231042,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parse_buffer.py::TestParseSentences::test_punctuation_only_fragments_are_not_sentences",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016850000247359276,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parse_buffer.py::TestParseSentences::test_punctuation_variants",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010725000174716115,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parse_buffer.py::TestParseSentences::test_single_sentence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010308402124792337,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parse_buffer.py::TestParseSentences::test_titles_dotted_acronyms_and_decimals_do_not_split",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001484589884057641,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parse_buffer.py::TestParseSentences::test_trailing_fragment_kept",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011620804434642196,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parse_buffer.py::TestParseSentences::test_two_sentences",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001056670444086194,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parse_buffer.py::TestParseWords::test_byte_offsets_contiguous",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011075002839788795,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parse_buffer.py::TestParseWords::test_word_split",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.787495946511626e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parse_buffer.py::TestParseBytes::test_byte_count",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010537501657381654,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parse_buffer.py::TestParseBytes::test_unknown_lex_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001135829952545464,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parthood_orders.py::TestMonotonePreconditions::test_monotone_sigma_preserves_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018253750167787075,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parthood_orders.py::TestMonotonePreconditions::test_zero_preservation_is_the_terminate_invariant",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00072095898212865,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parthood_orders.py::TestParthoodAlgebra::test_reflexive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009305000421591103,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parthood_orders.py::TestParthoodAlgebra::test_zero_is_universal_part",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006771250045858324,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parthood_orders.py::TestParthoodAlgebra::test_contained_scores_higher_than_disjoint",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000553749967366457,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parthood_orders.py::TestParthoodAlgebra::test_equal_kernel_is_mutual_parthood",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005482909618876874,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parthood_orders.py::TestOrderInvarianceUnderMonotoneMap::test_part_preserved_through_one_monotone_loop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000989499967545271,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parthood_orders.py::TestMonotonicCodebookRequirement::test_rejects_monotonic_with_cs_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009093750268220901,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parthood_orders.py::TestMonotonicCodebookRequirement::test_allows_monotonic_without_cs_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007335420232266188,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parthood_orders.py::TestOrderConvention::test_order_zero_is_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010477500036358833,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parthood_orders.py::TestOrderConvention::test_order_k_is_k_loops",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001346833014395088,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parthood_orders.py::TestOrderConvention::test_cross_order_parthood_via_lift",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009965839562937617,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parthood_orders.py::TestTaxonomy::test_wordspace_hosts_taxonomy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.032109249965287745,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parthood_orders.py::TestTaxonomy::test_taxonomy_add_and_walk_by_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.030834458011668175,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_parthood_orders.py::TestTaxonomy::test_taxonomy_flat_enumeration_across_orders",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03013824997469783,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_participation_pos_recovery.py::test_recovers_noun_verb_classes_from_participation_alone",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005913749919272959,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_participation_pos_recovery.py::test_threshold_controls_grouping_granularity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.962497279047966e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_participation_pos_recovery.py::test_order_variants_collapse_to_one_class",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005102750030346215,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_participation_pos_recovery.py::test_single_role_categories_recover_the_collapsed_op_role",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004532999999355525,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_participation_pos_recovery.py::test_recovers_operand_order_from_participation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004398500022944063,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_participation_pos_recovery.py::test_recovered_classes_are_role_pure_d1_gate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004569832992274314,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[0-S -> false(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010241701966151595,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[1-S -> non(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.320798562839627e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[2-S -> conjunction(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.945801528170705e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[3-S -> disjunction(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.887500734999776e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[4-S -> what(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.633302059024572e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[5-S -> where(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.104202035814524e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[6-S -> when(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.525000885128975e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[7-S -> swap(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.649996016174555e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[8-S -> equals(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.920900290831923e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[9-S -> not(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.008304914459586e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[10-S -> part(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.720799814909697e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[11-S -> intersection(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010641699191182852,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[12-S -> join(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.220803622156382e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[13-S -> lower(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.0167042799294e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[14-S -> lift(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.858404519036412e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_rule_table_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.525002678856254e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_retired_golden_rule_is_rejected[true(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020408304408192635,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_retired_golden_rule_is_rejected[query(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012954097473993897,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_pos_codebook.py::test_pos_codebook_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006709083972964436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_pos_codebook.py::test_pos_codebook_lookup_deterministic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006631166965235025,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_pos_codebook.py::test_category_stack_push_pop_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006957708043046296,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_pos_codebook.py::test_category_stack_depth_matches_push_count",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006409041990991682,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_pos_codebook.py::test_category_stack_flatten_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00648275000276044,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_reconstruction_stack.py::test_reconstruction_stack_records_rule_and_word",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0064812499913387,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_reconstruction_stack.py::test_reconstruction_stack_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006224374985322356,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_reconstruction_stack.py::test_sentence_prediction_uses_root_slot_only",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007346249767579138,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_resolve.py::test_symbol_codebook_quantizes_activation_not_what",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022339170100167394,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_rule_predictor.py::test_rule_predictor_output_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0065539589850232005,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_rule_predictor.py::test_rule_predictor_softmax_sums_to_one",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006418167031370103,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_rule_predictor.py::test_rule_predictor_hard_inference_argmax",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006945833971258253,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_rule_predictor.py::test_rule_predictor_gradient_flows_through_stack",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006412832997739315,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_rule_predictor.py::test_rule_predictor_empty_stack_zero_pads",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006894207966979593,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_rule_predictor.py::test_rule_predictor_overflow_stack_truncates_to_recent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007003209029790014,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partspace_dynamic_capacity.py::test_deferred_promotion_does_not_mutate_the_live_parameter",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008383749518543482,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partspace_dynamic_capacity.py::test_admission_preserves_existing_values_and_adam_state[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010467080282978714,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partspace_dynamic_capacity.py::test_admission_preserves_existing_values_and_adam_state[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007863749633543193,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partspace_dynamic_capacity.py::test_capacity_exhaustion_is_atomic_and_actionable[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00045429100282490253,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partspace_dynamic_capacity.py::test_capacity_exhaustion_is_atomic_and_actionable[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004028750117868185,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partspace_dynamic_capacity.py::test_percept_master_prefix_is_byte_exact_not_clamped_view",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000530333025380969,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partspace_dynamic_capacity.py::test_admission_cannot_adopt_an_unrelated_optimizer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005152090452611446,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partspace_dynamic_capacity.py::test_partspace_nvectors_is_the_only_physical_capacity_knob",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.045336625014897436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partspace_dynamic_capacity.py::test_partspace_byte_fallback_has_one_optimizer_owner",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03179129201453179,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partspace_dynamic_capacity.py::test_smaller_checkpoint_table_prefix_loads_into_configured_initial_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.031571083003655076,
+      "message": "",
+      "stdout": "[BasicModel] Expanded PartSpace checkpoint rows [4] -> 256 across 1 state key(s); learned prefix copied in place and initialized tail preserved\r\n"
+    },
+    {
+      "nodeid": "test/test_partspace_dynamic_capacity.py::test_checkpoint_restores_fixed_owner_and_optimizer_by_name",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.11691549996612594,
+      "message": "",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2283/test_checkpoint_restores_fixed0/grown.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2283/test_checkpoint_restores_fixed0/grown.ckpt\r\n[BasicModel] optimizer checkpoint remapped by parameter name: restored 1 state(s), reset 0 WholeSpace property state(s), ignored 0 removed parameter state(s)\r\n"
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_language_chooses_and_conceptual_space_alone_applies_stm_update",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0034882499603554606,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_subspace_view_has_no_setters_and_owner_commits",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003955839783884585,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_peer_guard_detects_direct_or_setter_mutation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004230839549563825,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_published_snapshot_is_zero_copy_read_only_and_guarded",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015108298975974321,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_language_plan_snapshots_routing_before_latch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022358400747179985,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_cs_alone_commits_symbolic_and_language_peer_results",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000330834009218961,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_static_pipeline_warmup_drain_and_two_symbolic_index_latch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011562497820705175,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_tensor_while_pipeline_dynamic_trip_warmup_drain_and_latch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5657706669881009,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_tensor_while_pipeline_is_one_fullgraph_and_reusable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2827167919604108,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_tensor_banked_pipeline_uses_one_slot_per_age_and_latches_by_two",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23684070800663903,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_tensor_banked_pipeline_is_one_fullgraph_and_reusable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.24845974997151643,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_percept_concept_pipeline_overlaps_adjacent_words_and_drains_latches",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.15042374999029562,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_percept_concept_pipeline_is_one_fullgraph_across_runtime_lengths",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.26867091603344306,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_cs_lane_pipeline_orders_three_stages_and_latches_feedback_by_index",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.14618216594681144,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_cs_lane_pipeline_is_one_fullgraph_across_runtime_lengths",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2693099160096608,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_functional_stm_push_matches_owner_commit_and_preserves_masked_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010737499687820673,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_functional_stm_state_is_fullgraph_while_loop_safe",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3934702079859562,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014099996769800782,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[8]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001289999927394092,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[15]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007729708042461425,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[17]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001669999910518527,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[64]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001206250162795186,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[256]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002079170080833137,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_stack_isolation.py::test_category_stack_b2_isolation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019916699966415763,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_stack_isolation.py::test_category_stack_flatten_per_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023362500360235572,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_stack_isolation.py::test_category_stack_grad_flows_per_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003660410293377936,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_stack_isolation.py::test_category_stack_ensure_batch_grows_and_clears",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001432080171070993,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_b2_isolation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00039304199162870646,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_pop_returns_tuple",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026595802046358585,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_ensure_batch_grows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020695797866210341,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_owns_detached_sentence_teacher",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000403250043746084,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_clear_row_masks_all_teacher_artifacts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005301670171320438,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_fixed_choices_are_mapped_and_row_scoped",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00042929197661578655,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_choice_write_is_fullgraph_visible",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.10009791702032089,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_state_isolation.py::test_last_svo_b2_isolation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010806459002196789,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_state_isolation.py::test_last_svo_clear_per_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009997707966249436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_state_isolation.py::test_last_svo_ensure_batch_grows_clears",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008082332962658256,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_state_isolation.py::test_sentence_completed_b2_isolation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010686292022000998,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_state_isolation.py::test_stm_arm_per_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00798983295680955,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_state_isolation.py::test_ensure_microbatch_grows_sentence_completed_to_new_B",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008478667004965246,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_state_isolation.py::test_reset_clears_both",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008167625055648386,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_row_hard_reset.py::test_dispatch_per_row_reset_skips_rows_without_hard_eos",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03280083299614489,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_row_hard_reset.py::test_dispatch_per_row_reset_empty_or_all_false_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03298441699007526,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_row_hard_reset.py::test_per_row_hard_reset_clears_only_target_row_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03226349997567013,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_row_hard_reset.py::test_runEpoch_dispatches_per_row_reset_per_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5504434159956872,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 50.00%)\r\nbatch = 2 (\u0394=0.116s, 100.00%)\r\nTraining throughput: 2 batches in 0.517s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001972499885596335,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_per_word_capture_gate.py', 129, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012741697719320655,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_per_word_capture_gate.py', 155, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00017783301882445812,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_per_word_capture_gate.py', 171, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00013654102804139256,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_per_word_capture_gate.py', 216, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate_cuda.py::test_per_word_step_compiles_and_replays_under_cudagraphs",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00014000001829117537,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_per_word_capture_gate_cuda.py', 88, 'Skipped: D8 CUDA capture-gate (metalbaby leg); skipped without CUDA')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate_cuda.py::test_per_word_step_actually_uses_cudagraphs",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012924999464303255,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_per_word_capture_gate_cuda.py', 141, 'Skipped: D8 CUDA capture-gate (metalbaby leg); skipped without CUDA')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate_cuda.py::test_per_word_step_emits_no_dtoh_under_profiler",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001260410062968731,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_per_word_capture_gate_cuda.py', 195, 'Skipped: D8 CUDA capture-gate (metalbaby leg); skipped without CUDA')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1345,3 +1345,67 @@ The complete before/after test sources, failed probes, unchanged seed audit,
 and measured baselines are retained in
 [the implementation receipt](../benchmarks/2026-10-03-operators-attention/README.md).
 This is a candidate for Claude's review, not an accepted or committed landing.
+
+
+### 12.1 Operators update, round 1 (2026-10-05; review candidate)
+
+This round starts at accepted 6.8 commit `42daf96f4`. Its receipt is
+[2026-10-05-operators-update](../benchmarks/2026-10-05-operators-update/README.md).
+The historical entries above remain the account of their rounds; the following
+changes supersede their relevant implementation claims. No commit is made.
+
+* Attention's shared chooser now receives the reconstruction-owned
+  score-function term with a greedy baseline and the uniform K·R correction.
+  Its sentence handoff remains detached. The pair chooser gives a recomposition
+  within float tolerance precedence over context, and standardizes activation
+  coefficients. The separate generate policy learns undo/unary/STOP by CE from
+  the actual compose structure, teacher-forced and detached; its free walk has
+  no straight-through gradient. [GradientFlow](../GradientFlow.md#operators-update-round-1-october-5)
+  gives the reduction, tolerance and ownership details.
+* `not` exchanges explicit evidence poles; `non` zeroes the expressed pole,
+  preserving the other. Neither changes a code's coordinates. The serial code
+  face preserves identity while the declared polarity effect carries the pole
+  action at closing. The explicit-pole `NonLayer` was already correct at the
+  landing; its code-zeroing face was removed. `ConjunctionLayer` has an explicit
+  pole representation computing `(min(c⁺,d⁺), max(c⁻,d⁻))`. Form binding retains
+  the accepted activation/product kernel and receives no negation. Attention's
+  negative pole no longer signs the glossed form or reflects its field code.
+  Saved old/new class bodies are executed on the same pole fixtures.
+  Preserving `non`'s code exposed a silent-leading-role answer regression:
+  new answer readers now initialize a folded identity over all input
+  coordinates, with unit-norm columns and no RNG use. Saved factors load
+  unchanged. Free code decoding rejects identity unary transitions.
+* Every loaded rule carries `footprint_reads` and `footprint_writes` over
+  `form`, `meaning`, `poles`, inherited from its implementation. Structural
+  code operators declare form/meaning writes; pole operators declare only
+  poles; bracket/address operations declare no coordinate writes. Optional
+  XML `footprintReads`/`footprintWrites` must match the exhaustive declaration.
+  Unknown, repeated, omitted or additional components fail at load; each
+  component must have a carrier among rule 2's declared subsystem effects
+  (meaning cannot be written through a percept-only effect). Aliases and
+  faces retain the same contract; a face can only remove subsystem writes.
+* Coded intersection uses the exact signed minimum, with either zero operand
+  leaving the other coordinate unchanged. The butterfly pair now uses that
+  same rule; no softened gradient or forward minimum remains there. Explicit
+  monotonic membership keeps zero as false. Noun/adjective intersection remains
+  symmetric and idempotent.
+* Verb and adverb can write a silent operand coordinate. Their existing chart
+  gain is extended with a learned, bounded translation: `t′=exp(g)·t+s`,
+  where `t=atanh(x)` and the result is `tanh(t′)`. The added projection starts
+  at exactly zero without consuming RNG; it can learn where `x=0`. Given the
+  modifier, the reverse uses `exp(−g)` and `−s·exp(−g)`. Existing gain-only
+  checkpoints load with zero translation. Gain sparsity and bounds are
+  unchanged; this does not implement the later sentence projection or ICA.
+
+The complement bootstrap waits for round 2 and Alec's three answers. Kleene
+connectives over meanings and the form fold remain round 3; determiners,
+relations, definitions and the remaining declaration/name migration remain
+round 4. The standing gate, training budgets and §20.5 bands are unchanged.
+
+The round's single campaign measured XOR class **8/10**, reconstruction
+**10/10**, sum **10/10**, and MM_xor **9/10**. The full sweep is green;
+code displacement, sentence-path perception gradients and ownership conflicts
+are zero. **The standing gate failed** because MM_xor must remain 10/10:
+run 5 reached best MSE 0.220072806 within 200 epochs against the unchanged
+0.20 threshold. The receipt retains that miss without a retry. This is an
+uncommitted review candidate, not an accepted landing.

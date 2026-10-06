@@ -1,0 +1,1314 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_refine_raise.py::test_contiguous_both_stays_in_the_field_after_stalled_learning",
+    "test/test_refine_raise.py::test_scattered_both_requires_completed_updates_before_a_raise",
+    "test/test_refine_raise.py::test_improvement_restarts_refinement_and_pure_reading_clears_it",
+    "test/test_refine_raise.py::test_convergence_state_roundtrips_with_definition_inventory",
+    "test/test_refine_raise.py::test_pure_or_unknown_scattered_reading_never_requests_a_raise",
+    "test/test_refine_raise.py::test_context_observer_cannot_bypass_refinement_before_assigning_a_kind",
+    "test/test_refine_raise.py::test_releasing_one_batch_row_preserves_the_other_fields",
+    "test/test_refine_raise.py::test_extent_containment_does_not_fill_gaps_between_part_witnesses[False]",
+    "test/test_refine_raise.py::test_extent_containment_does_not_fill_gaps_between_part_witnesses[True]",
+    "test/test_refine_raise.py::test_learned_particular_stays_at_one_scattered_kind_raises_to_two[0]",
+    "test/test_refine_raise.py::test_learned_particular_stays_at_one_scattered_kind_raises_to_two[1]",
+    "test/test_refine_raise.py::test_learned_particular_stays_at_one_scattered_kind_raises_to_two[2]",
+    "test/test_registration_drift.py::test_registration_loss_decreases_on_toy_corpus",
+    "test/test_registration_drift.py::test_fixed_points_non_degenerate",
+    "test/test_registration_drift.py::test_drift_flagged_and_re_registered",
+    "test/test_registration_drift.py::test_predication_pressure_sculpts_the_order",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+    "test/test_relation_closing.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+    "test/test_relation_closing.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+    "test/test_relation_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference",
+    "test/test_relation_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate",
+    "test/test_relative_error.py::test_squared_error_is_ratio_of_means_and_baseline_is_detached",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[2]",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[7]",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[256]",
+    "test/test_relative_error.py::test_binary_zero_logits_have_one_error_for_constant_targets",
+    "test/test_relative_error.py::test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive",
+    "test/test_relative_error.py::test_repeated_contributions_share_one_target_baseline",
+    "test/test_relative_error.py::test_row_costs_train_one_ratio_without_amplifying_small_target_rows",
+    "test/test_relative_error.py::test_single_row_registry_preserves_selection_axis",
+    "test/test_relative_error.py::test_nearly_solved_error_stays_small_and_regularizer_keeps_strength",
+    "test/test_relative_error.py::test_reporting_only_penalty_does_not_enter_trained_total",
+    "test/test_relative_error.py::test_row_receipt_reports_the_trained_mean_and_contextual_weight",
+    "test/test_relative_error.py::test_scalar_receipt_and_history_include_contextual_weight",
+    "test/test_relative_error.py::test_zero_weight_does_not_read_a_missing_registry",
+    "test/test_relative_rule_detection_collapsed.py::test_relative_relation_kinds_are_canonical_structural_forms",
+    "test/test_relative_rule_detection_collapsed.py::test_relative_start_categories_from_named_starts",
+    "test/test_relative_rule_detection_collapsed.py::test_equal_and_part_forward_rules_are_relative",
+    "test/test_relative_rule_detection_collapsed.py::test_part_rule_relative_by_declared_relation",
+    "test/test_relative_sentence_codebook_insertion.py::test_closing_reuses_relation_and_preserves_independent_evidence",
+    "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+    "test/test_relevance_bases.py::test_seen_bump_and_decay",
+    "test/test_relevance_bases.py::test_desire_signed_floor",
+    "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+    "test/test_relevance_bases.py::test_primed_reading_scope",
+    "test/test_relevance_bases.py::test_priority_reranks_topk_selection",
+    "test/test_relevance_bases.py::test_priority_never_distorts_activations",
+    "test/test_relevance_bases.py::test_priority_spreads_through_edge_magnitudes",
+    "test/test_relevance_bases.py::test_symbol_history_projection",
+    "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[1]",
+    "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[2]",
+    "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[3]",
+    "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[False]",
+    "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[True]",
+    "test/test_replacement_kernel_contracts.py::test_budget_exhaustion_is_bounded_unknown_with_diagnostic",
+    "test/test_replacement_kernel_contracts.py::test_concluding_without_evidence_cannot_assert_truth",
+    "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts0]",
+    "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts1]",
+    "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]",
+    "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+    "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]",
+    "test/test_replacement_kernel_contracts.py::test_untrained_chooser_exactly_reproduces_baseline_at_every_level",
+    "test/test_replacement_kernel_contracts.py::test_public_disabled_budget_never_opens_an_episode",
+    "test/test_reset_at_batch_boundary.py::test_reset_fires_every_ar_batch",
+    "test/test_reset_at_batch_boundary.py::test_per_row_state_clears_between_batches",
+    "test/test_reset_at_batch_boundary.py::test_end_of_stream_reset_to_false",
+    "test/test_restricted_candidate_inverse.py::test_default_kwargs_match_unrestricted_baseline",
+    "test/test_restricted_candidate_inverse.py::test_left_rows_restricts_x1_to_subset",
+    "test/test_restricted_candidate_inverse.py::test_right_rows_restricts_x2_to_subset",
+    "test/test_restricted_candidate_inverse.py::test_both_restricted_picks_from_respective_subsets",
+    "test/test_restricted_candidate_inverse.py::test_empty_left_rows_falls_back_to_sentinels",
+    "test/test_restricted_candidate_inverse.py::test_intersection_respects_restriction",
+    "test/test_restricted_candidate_inverse.py::test_sentinels_always_feasible",
+    "test/test_restricted_candidate_inverse.py::test_kwarg_forwarding_through_unionReverse",
+    "test/test_restricted_candidate_inverse.py::test_kwarg_forwarding_through_intersectionReverse",
+    "test/test_restricted_candidate_inverse.py::test_typed_mask_from_knowledge_view_drives_recommender",
+    "test/test_restricted_candidate_inverse.py::test_typed_mask_empty_intersection_falls_back_to_sentinels",
+    "test/test_retired_names.py::test_retired_names_remain_absent",
+    "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow",
+    "test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent",
+    "test/test_reverse_traversal.py::test_chunk_reverse_is_the_exact_residual_against_the_reference",
+    "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation",
+    "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+    "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+    "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+    "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+    "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state",
+    "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+    "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+    "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+    "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+    "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick",
+    "test/test_review10_contracts.py::test_departure_can_choose_below_second_rank_and_preserves_credit[compose]",
+    "test/test_review10_contracts.py::test_departure_can_choose_below_second_rank_and_preserves_credit[input]",
+    "test/test_review10_contracts.py::test_thought_departure_samples_remaining_actions_and_replay_wins[thought]",
+    "test/test_review10_contracts.py::test_thought_departure_samples_remaining_actions_and_replay_wins[anticipation]",
+    "test/test_review10_contracts.py::test_decoder_departure_samples_lower_rank_and_keeps_greedy_suffix",
+    "test/test_review10_contracts.py::test_frozen_interpretation_reads_known_without_learning_or_reserving",
+    "test/test_review10_contracts.py::test_margin_probe_records_only_training_gradient_and_actual_policy_motion",
+    "test/test_review10_contracts.py::test_small_frozen_evaluator_keeps_definition_rows_and_reservations",
+    "test/test_review11_contracts.py::test_numeric_head_does_not_call_learned_retrieval",
+    "test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[False-False]",
+    "test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[False-True]",
+    "test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[True-False]",
+    "test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[True-True]",
+    "test/test_review11_contracts.py::test_single_symbol_cannot_be_split_by_a_large_undo_logit",
+    "test/test_review11_contracts.py::test_no_shortlist_support_is_unavailable_not_a_pseudo_terminal",
+    "test/test_review11_contracts.py::test_capacity_does_not_make_stop_eligible_for_a_compound",
+    "test/test_review11_contracts.py::test_free_policy_has_no_pathwise_credit_between_supported_operations",
+    "test/test_review11_contracts.py::test_actual_numeric_routes_never_retrieve[XOR_grammar.xml]",
+    "test/test_review11_contracts.py::test_actual_numeric_routes_never_retrieve[MM_xor.xml]",
+    "test/test_review11_contracts.py::test_thought_retrieval_is_live_bounded_and_does_not_write_keys",
+    "test/test_review12_contracts.py::test_probabilistic_disjunction_combines_certainty_and_identity",
+    "test/test_review12_contracts.py::test_disjunction_zero_identity_and_zero_direction_have_finite_gradients",
+    "test/test_review12_contracts.py::test_disjunction_free_inverse_recovers_a_pair_without_operand_witnesses[reverse]",
+    "test/test_review12_contracts.py::test_disjunction_free_inverse_recovers_a_pair_without_operand_witnesses[generate]",
+    "test/test_review12_contracts.py::test_nonlinear_composition_has_affine_xor_rank_while_sum_is_the_control[conjunction]",
+    "test/test_review12_contracts.py::test_nonlinear_composition_has_affine_xor_rank_while_sum_is_the_control[disjunction]",
+    "test/test_review12_contracts.py::test_compose_audit_uses_held_rule_ids_and_names_with_positions",
+    "test/test_review12_contracts.py::test_fixture_rules_select_probabilistic_disjunction[complete.grammar]",
+    "test/test_review12_contracts.py::test_fixture_rules_select_probabilistic_disjunction[XOR_grammar.xml]",
+    "test/test_review12_contracts.py::test_fixture_rules_select_probabilistic_disjunction[MM_grammar.xml]"
+  ],
+  "completed": [
+    "test/test_refine_raise.py::test_contiguous_both_stays_in_the_field_after_stalled_learning",
+    "test/test_refine_raise.py::test_scattered_both_requires_completed_updates_before_a_raise",
+    "test/test_refine_raise.py::test_improvement_restarts_refinement_and_pure_reading_clears_it",
+    "test/test_refine_raise.py::test_convergence_state_roundtrips_with_definition_inventory",
+    "test/test_refine_raise.py::test_pure_or_unknown_scattered_reading_never_requests_a_raise",
+    "test/test_refine_raise.py::test_context_observer_cannot_bypass_refinement_before_assigning_a_kind",
+    "test/test_refine_raise.py::test_releasing_one_batch_row_preserves_the_other_fields",
+    "test/test_refine_raise.py::test_extent_containment_does_not_fill_gaps_between_part_witnesses[False]",
+    "test/test_refine_raise.py::test_extent_containment_does_not_fill_gaps_between_part_witnesses[True]",
+    "test/test_refine_raise.py::test_learned_particular_stays_at_one_scattered_kind_raises_to_two[0]",
+    "test/test_refine_raise.py::test_learned_particular_stays_at_one_scattered_kind_raises_to_two[1]",
+    "test/test_refine_raise.py::test_learned_particular_stays_at_one_scattered_kind_raises_to_two[2]",
+    "test/test_registration_drift.py::test_registration_loss_decreases_on_toy_corpus",
+    "test/test_registration_drift.py::test_fixed_points_non_degenerate",
+    "test/test_registration_drift.py::test_drift_flagged_and_re_registered",
+    "test/test_registration_drift.py::test_predication_pressure_sculpts_the_order",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+    "test/test_relation_closing.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+    "test/test_relation_closing.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+    "test/test_relation_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference",
+    "test/test_relation_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate",
+    "test/test_relative_error.py::test_squared_error_is_ratio_of_means_and_baseline_is_detached",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[2]",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[7]",
+    "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[256]",
+    "test/test_relative_error.py::test_binary_zero_logits_have_one_error_for_constant_targets",
+    "test/test_relative_error.py::test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive",
+    "test/test_relative_error.py::test_repeated_contributions_share_one_target_baseline",
+    "test/test_relative_error.py::test_row_costs_train_one_ratio_without_amplifying_small_target_rows",
+    "test/test_relative_error.py::test_single_row_registry_preserves_selection_axis",
+    "test/test_relative_error.py::test_nearly_solved_error_stays_small_and_regularizer_keeps_strength",
+    "test/test_relative_error.py::test_reporting_only_penalty_does_not_enter_trained_total",
+    "test/test_relative_error.py::test_row_receipt_reports_the_trained_mean_and_contextual_weight",
+    "test/test_relative_error.py::test_scalar_receipt_and_history_include_contextual_weight",
+    "test/test_relative_error.py::test_zero_weight_does_not_read_a_missing_registry",
+    "test/test_relative_rule_detection_collapsed.py::test_relative_relation_kinds_are_canonical_structural_forms",
+    "test/test_relative_rule_detection_collapsed.py::test_relative_start_categories_from_named_starts",
+    "test/test_relative_rule_detection_collapsed.py::test_equal_and_part_forward_rules_are_relative",
+    "test/test_relative_rule_detection_collapsed.py::test_part_rule_relative_by_declared_relation",
+    "test/test_relative_sentence_codebook_insertion.py::test_closing_reuses_relation_and_preserves_independent_evidence",
+    "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+    "test/test_relevance_bases.py::test_seen_bump_and_decay",
+    "test/test_relevance_bases.py::test_desire_signed_floor",
+    "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+    "test/test_relevance_bases.py::test_primed_reading_scope",
+    "test/test_relevance_bases.py::test_priority_reranks_topk_selection",
+    "test/test_relevance_bases.py::test_priority_never_distorts_activations",
+    "test/test_relevance_bases.py::test_priority_spreads_through_edge_magnitudes",
+    "test/test_relevance_bases.py::test_symbol_history_projection",
+    "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[1]",
+    "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[2]",
+    "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[3]",
+    "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[False]",
+    "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[True]",
+    "test/test_replacement_kernel_contracts.py::test_budget_exhaustion_is_bounded_unknown_with_diagnostic",
+    "test/test_replacement_kernel_contracts.py::test_concluding_without_evidence_cannot_assert_truth",
+    "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts0]",
+    "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts1]",
+    "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]",
+    "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+    "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]",
+    "test/test_replacement_kernel_contracts.py::test_untrained_chooser_exactly_reproduces_baseline_at_every_level",
+    "test/test_replacement_kernel_contracts.py::test_public_disabled_budget_never_opens_an_episode",
+    "test/test_reset_at_batch_boundary.py::test_reset_fires_every_ar_batch",
+    "test/test_reset_at_batch_boundary.py::test_per_row_state_clears_between_batches",
+    "test/test_reset_at_batch_boundary.py::test_end_of_stream_reset_to_false",
+    "test/test_restricted_candidate_inverse.py::test_default_kwargs_match_unrestricted_baseline",
+    "test/test_restricted_candidate_inverse.py::test_left_rows_restricts_x1_to_subset",
+    "test/test_restricted_candidate_inverse.py::test_right_rows_restricts_x2_to_subset",
+    "test/test_restricted_candidate_inverse.py::test_both_restricted_picks_from_respective_subsets",
+    "test/test_restricted_candidate_inverse.py::test_empty_left_rows_falls_back_to_sentinels",
+    "test/test_restricted_candidate_inverse.py::test_intersection_respects_restriction",
+    "test/test_restricted_candidate_inverse.py::test_sentinels_always_feasible",
+    "test/test_restricted_candidate_inverse.py::test_kwarg_forwarding_through_unionReverse",
+    "test/test_restricted_candidate_inverse.py::test_kwarg_forwarding_through_intersectionReverse",
+    "test/test_restricted_candidate_inverse.py::test_typed_mask_from_knowledge_view_drives_recommender",
+    "test/test_restricted_candidate_inverse.py::test_typed_mask_empty_intersection_falls_back_to_sentinels",
+    "test/test_retired_names.py::test_retired_names_remain_absent",
+    "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow",
+    "test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent",
+    "test/test_reverse_traversal.py::test_chunk_reverse_is_the_exact_residual_against_the_reference",
+    "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation",
+    "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+    "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+    "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+    "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+    "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state",
+    "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+    "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+    "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+    "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+    "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick",
+    "test/test_review10_contracts.py::test_departure_can_choose_below_second_rank_and_preserves_credit[compose]",
+    "test/test_review10_contracts.py::test_departure_can_choose_below_second_rank_and_preserves_credit[input]",
+    "test/test_review10_contracts.py::test_thought_departure_samples_remaining_actions_and_replay_wins[thought]",
+    "test/test_review10_contracts.py::test_thought_departure_samples_remaining_actions_and_replay_wins[anticipation]",
+    "test/test_review10_contracts.py::test_decoder_departure_samples_lower_rank_and_keeps_greedy_suffix",
+    "test/test_review10_contracts.py::test_frozen_interpretation_reads_known_without_learning_or_reserving",
+    "test/test_review10_contracts.py::test_margin_probe_records_only_training_gradient_and_actual_policy_motion",
+    "test/test_review10_contracts.py::test_small_frozen_evaluator_keeps_definition_rows_and_reservations",
+    "test/test_review11_contracts.py::test_numeric_head_does_not_call_learned_retrieval",
+    "test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[False-False]",
+    "test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[False-True]",
+    "test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[True-False]",
+    "test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[True-True]",
+    "test/test_review11_contracts.py::test_single_symbol_cannot_be_split_by_a_large_undo_logit",
+    "test/test_review11_contracts.py::test_no_shortlist_support_is_unavailable_not_a_pseudo_terminal",
+    "test/test_review11_contracts.py::test_capacity_does_not_make_stop_eligible_for_a_compound",
+    "test/test_review11_contracts.py::test_free_policy_has_no_pathwise_credit_between_supported_operations",
+    "test/test_review11_contracts.py::test_actual_numeric_routes_never_retrieve[XOR_grammar.xml]",
+    "test/test_review11_contracts.py::test_actual_numeric_routes_never_retrieve[MM_xor.xml]",
+    "test/test_review11_contracts.py::test_thought_retrieval_is_live_bounded_and_does_not_write_keys",
+    "test/test_review12_contracts.py::test_probabilistic_disjunction_combines_certainty_and_identity",
+    "test/test_review12_contracts.py::test_disjunction_zero_identity_and_zero_direction_have_finite_gradients",
+    "test/test_review12_contracts.py::test_disjunction_free_inverse_recovers_a_pair_without_operand_witnesses[reverse]",
+    "test/test_review12_contracts.py::test_disjunction_free_inverse_recovers_a_pair_without_operand_witnesses[generate]",
+    "test/test_review12_contracts.py::test_nonlinear_composition_has_affine_xor_rank_while_sum_is_the_control[conjunction]",
+    "test/test_review12_contracts.py::test_nonlinear_composition_has_affine_xor_rank_while_sum_is_the_control[disjunction]",
+    "test/test_review12_contracts.py::test_compose_audit_uses_held_rule_ids_and_names_with_positions",
+    "test/test_review12_contracts.py::test_fixture_rules_select_probabilistic_disjunction[complete.grammar]",
+    "test/test_review12_contracts.py::test_fixture_rules_select_probabilistic_disjunction[XOR_grammar.xml]",
+    "test/test_review12_contracts.py::test_fixture_rules_select_probabilistic_disjunction[MM_grammar.xml]"
+  ],
+  "slow_selected": [
+    "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+    "test/test_relevance_bases.py::test_seen_bump_and_decay",
+    "test/test_relevance_bases.py::test_desire_signed_floor",
+    "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+    "test/test_relevance_bases.py::test_primed_reading_scope",
+    "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow",
+    "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation",
+    "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+    "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+    "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+    "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+    "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+    "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state",
+    "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+    "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+    "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+    "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+    "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_refine_raise.py::test_contiguous_both_stays_in_the_field_after_stalled_learning",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03242187498835847,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_refine_raise.py::test_scattered_both_requires_completed_updates_before_a_raise",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.030546707974281162,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_refine_raise.py::test_improvement_restarts_refinement_and_pure_reading_clears_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02833012503106147,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_refine_raise.py::test_convergence_state_roundtrips_with_definition_inventory",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05065233301138505,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_refine_raise.py::test_pure_or_unknown_scattered_reading_never_requests_a_raise",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.045640000025741756,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_refine_raise.py::test_context_observer_cannot_bypass_refinement_before_assigning_a_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03038962499704212,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_refine_raise.py::test_releasing_one_batch_row_preserves_the_other_fields",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02266099996631965,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_refine_raise.py::test_extent_containment_does_not_fill_gaps_between_part_witnesses[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.026457457977812737,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_refine_raise.py::test_extent_containment_does_not_fill_gaps_between_part_witnesses[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.025478583003859967,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_refine_raise.py::test_learned_particular_stays_at_one_scattered_kind_raises_to_two[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.7088337499881163,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_refine_raise.py::test_learned_particular_stays_at_one_scattered_kind_raises_to_two[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.5947681660181843,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_refine_raise.py::test_learned_particular_stays_at_one_scattered_kind_raises_to_two[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.6936338749947026,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_registration_drift.py::test_registration_loss_decreases_on_toy_corpus",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02919870795449242,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_registration_drift.py::test_fixed_points_non_degenerate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02859362500021234,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_registration_drift.py::test_drift_flagged_and_re_registered",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03447783301817253,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_registration_drift.py::test_predication_pressure_sculpts_the_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02055099996505305,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012113915989175439,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009006999956909567,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011149875004775822,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010172791953664273,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010566832963377237,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011080458003561944,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relation_closing.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01000579196261242,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relation_closing.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2664624589961022,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relation_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01418275001924485,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relation_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011834167002234608,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_squared_error_is_ratio_of_means_and_baseline_is_detached",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007443750509992242,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00043704098789021373,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[7]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00039179198211058974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[256]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004385419888421893,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_binary_zero_logits_have_one_error_for_constant_targets",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032058299984782934,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007074170280247927,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_repeated_contributions_share_one_target_baseline",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029850000282749534,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_row_costs_train_one_ratio_without_amplifying_small_target_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00035245902836322784,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_single_row_registry_preserves_selection_axis",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030516699189320207,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_nearly_solved_error_stays_small_and_regularizer_keeps_strength",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003095410065725446,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_reporting_only_penalty_does_not_enter_trained_total",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028362497687339783,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_row_receipt_reports_the_trained_mean_and_contextual_weight",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030570803210139275,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_scalar_receipt_and_history_include_contextual_weight",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024500000290572643,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_error.py::test_zero_weight_does_not_read_a_missing_registry",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001134999911300838,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_rule_detection_collapsed.py::test_relative_relation_kinds_are_canonical_structural_forms",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011150003410875797,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_rule_detection_collapsed.py::test_relative_start_categories_from_named_starts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006125409854575992,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_rule_detection_collapsed.py::test_equal_and_part_forward_rules_are_relative",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005930840270593762,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_rule_detection_collapsed.py::test_part_rule_relative_by_declared_relation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005194999976083636,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relative_sentence_codebook_insertion.py::test_closing_reuses_relation_and_preserves_independent_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015519580338150263,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_surface_contract_cold_at_build",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00014949997421354055,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_relevance_bases.py', 33, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_seen_bump_and_decay",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.320798562839627e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_relevance_bases.py', 50, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_desire_signed_floor",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.73749959282577e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_relevance_bases.py', 64, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_unconditional_integration_end_to_end",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011041696416214108,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_relevance_bases.py', 78, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_primed_reading_scope",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.479199070483446e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_relevance_bases.py', 104, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_priority_reranks_topk_selection",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004342083993833512,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_priority_never_distorts_activations",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003789540962316096,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_priority_spreads_through_edge_magnitudes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003926375007722527,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_relevance_bases.py::test_symbol_history_projection",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0037948329700157046,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013174958992749453,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01857291703345254,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01763412496075034,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012174750037956983,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013020750018768013,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_budget_exhaustion_is_bounded_unknown_with_diagnostic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0094939999980852,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_concluding_without_evidence_cannot_assert_truth",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007696792017668486,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012419832986779511,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012837165966629982,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.7-BOTH]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.016336417000275105,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01743416703538969,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0-0-UNKNOWN]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013933333975728601,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_untrained_chooser_exactly_reproduces_baseline_at_every_level",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02342870901338756,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_replacement_kernel_contracts.py::test_public_disabled_budget_never_opens_an_episode",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006638750026468188,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reset_at_batch_boundary.py::test_reset_fires_every_ar_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6194835000205785,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 50.00%)\r\nbatch = 2 (\u0394=0.105s, 100.00%)\r\nTraining throughput: 2 batches in 0.576s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_reset_at_batch_boundary.py::test_per_row_state_clears_between_batches",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23403170803794637,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 50.00%)\r\nbatch = 2 (\u0394=0.107s, 100.00%)\r\nTraining throughput: 2 batches in 0.202s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_reset_at_batch_boundary.py::test_end_of_stream_reset_to_false",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23737466702004895,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 50.00%)\r\nbatch = 2 (\u0394=0.106s, 100.00%)\r\nTraining throughput: 2 batches in 0.205s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_restricted_candidate_inverse.py::test_default_kwargs_match_unrestricted_baseline",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005283749778755009,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_restricted_candidate_inverse.py::test_left_rows_restricts_x1_to_subset",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004881670465692878,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_restricted_candidate_inverse.py::test_right_rows_restricts_x2_to_subset",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003949590027332306,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_restricted_candidate_inverse.py::test_both_restricted_picks_from_respective_subsets",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005214170087128878,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_restricted_candidate_inverse.py::test_empty_left_rows_falls_back_to_sentinels",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003135839942842722,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_restricted_candidate_inverse.py::test_intersection_respects_restriction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00040850002551451325,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_restricted_candidate_inverse.py::test_sentinels_always_feasible",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032587500754743814,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_restricted_candidate_inverse.py::test_kwarg_forwarding_through_unionReverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004125830018892884,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_restricted_candidate_inverse.py::test_kwarg_forwarding_through_intersectionReverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003797910176217556,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_restricted_candidate_inverse.py::test_typed_mask_from_knowledge_view_drives_recommender",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003226833010558039,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_restricted_candidate_inverse.py::test_typed_mask_empty_intersection_falls_back_to_sentinels",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017763340147212148,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_retired_names.py::test_retired_names_remain_absent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 6.042149625020102,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_traversal_recovers_every_active_word_without_underflow",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001759580336511135,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py', 38, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_tied_binary_reverse_recomposes_the_parent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.300945374998264,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_chunk_reverse_is_the_exact_residual_against_the_reference",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3607160830288194,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_cleared_trace_reports_truncation",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00013870804104954004,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py', 100, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_byte_fidelity_is_zero_on_the_row_and_positive_off_it",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011600001016631722,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py', 115, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_packed_trace_records_pre_fold_operand_rows_at_every_binary",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00019287498435005546,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py', 221, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_packed_rows_reconstruct_each_sentence_separately",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00013879098696634173,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py', 311, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_traversal_compiles_into_the_one_sentence_graph",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00013091601431369781,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py', 354, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_tied_traversal_trains_the_fold_parameters_and_owns_none",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012495898408815265,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py', 370, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_evaluation_decode_unwinds_from_the_end_state",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011845800327137113,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py', 405, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_final_end_state_keeps_three_slots_for_a_relative_row",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011912500485777855,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py', 420, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011995900422334671,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py', 438, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012412498472258449,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py', 479, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_closing_chain_of_chunks_unwinds_to_the_words",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00018562498735263944,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py', 501, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reverse_traversal.py::test_snapshot_bytes_are_staged_on_the_first_brick",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012195802992209792,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py', 568, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review10_contracts.py::test_departure_can_choose_below_second_rank_and_preserves_credit[compose]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008714160067029297,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review10_contracts.py::test_departure_can_choose_below_second_rank_and_preserves_credit[input]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005197920254431665,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review10_contracts.py::test_thought_departure_samples_remaining_actions_and_replay_wins[thought]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005291249835863709,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review10_contracts.py::test_thought_departure_samples_remaining_actions_and_replay_wins[anticipation]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005346249672584236,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review10_contracts.py::test_decoder_departure_samples_lower_rank_and_keeps_greedy_suffix",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018190409755334258,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review10_contracts.py::test_frozen_interpretation_reads_known_without_learning_or_reserving",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004661374958232045,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review10_contracts.py::test_margin_probe_records_only_training_gradient_and_actual_policy_motion",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009321669931523502,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review10_contracts.py::test_small_frozen_evaluator_keeps_definition_rows_and_reservations",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.7623467500088736,
+      "message": "",
+      "stdout": "Scored 1/3 items\nScored 2/3 items\nScored 3/3 items\n"
+    },
+    {
+      "nodeid": "test/test_review11_contracts.py::test_numeric_head_does_not_call_learned_retrieval",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009694580221548676,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[False-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0033219169708900154,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0031102499924600124,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.018680791021325,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 3.9909657500102185,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review11_contracts.py::test_single_symbol_cannot_be_split_by_a_large_undo_logit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019080410129390657,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review11_contracts.py::test_no_shortlist_support_is_unavailable_not_a_pseudo_terminal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0035405830130912364,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review11_contracts.py::test_capacity_does_not_make_stop_eligible_for_a_compound",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004089375026524067,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review11_contracts.py::test_free_policy_has_no_pathwise_credit_between_supported_operations",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004709834000095725,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review11_contracts.py::test_actual_numeric_routes_never_retrieve[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1793032079585828,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review11_contracts.py::test_actual_numeric_routes_never_retrieve[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.10391933302162215,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review11_contracts.py::test_thought_retrieval_is_live_bounded_and_does_not_write_keys",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018022499862127006,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review12_contracts.py::test_probabilistic_disjunction_combines_certainty_and_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011383749661035836,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review12_contracts.py::test_disjunction_zero_identity_and_zero_direction_have_finite_gradients",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004349579685367644,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review12_contracts.py::test_disjunction_free_inverse_recovers_a_pair_without_operand_witnesses[reverse]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008767910185270011,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review12_contracts.py::test_disjunction_free_inverse_recovers_a_pair_without_operand_witnesses[generate]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007478329935111105,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review12_contracts.py::test_nonlinear_composition_has_affine_xor_rank_while_sum_is_the_control[conjunction]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003795420052483678,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review12_contracts.py::test_nonlinear_composition_has_affine_xor_rank_while_sum_is_the_control[disjunction]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002810420119203627,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review12_contracts.py::test_compose_audit_uses_held_rule_ids_and_names_with_positions",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00044287502532824874,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review12_contracts.py::test_fixture_rules_select_probabilistic_disjunction[complete.grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007051249849610031,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review12_contracts.py::test_fixture_rules_select_probabilistic_disjunction[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006090829847380519,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review12_contracts.py::test_fixture_rules_select_probabilistic_disjunction[MM_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005822919774800539,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

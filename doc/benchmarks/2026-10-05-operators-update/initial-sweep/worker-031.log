@@ -1,0 +1,15 @@
+..................................................................... [ 48%]
+...ss..............................................s..sss............... [ 98%]
+..                                                                       [100%]
+=============================== warnings summary ===============================
+test/test_verb_adverb_grammar_ops.py::test_verb_layer_forces_spectrum_and_inverts_given_verb
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7164: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2297/cfg2/MM_xor_synth_discourse.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+137 passed, 6 skipped, 2 warnings, 3 subtests passed in 8.23s

@@ -1,0 +1,1425 @@
+diff --git a/bin/AccessibleMind.py b/bin/AccessibleMind.py
+index 100662580..48ae2bb84 100644
+--- a/bin/AccessibleMind.py
++++ b/bin/AccessibleMind.py
+@@ -85,6 +85,37 @@ class EffectRound:
+         self.written.add(subsystem)
+ 
+ 
++@dataclass(frozen=True)
++class OperatorFootprint:
++    """Exhaustive coordinate capabilities, subordinate to subsystem effects.
++
++    Addresses, time and work meters are outside these three coordinate
++    families. A percept can carry form and poles; meaning needs a conceptual
++    carrier. A face may remove a subsystem write, never grant a coordinate.
++    """
++    reads: tuple
++    writes: tuple
++
++    def __post_init__(self):
++        for name in ('reads', 'writes'):
++            values = tuple(getattr(self, name))
++            if len(set(values)) != len(values) or not set(values) <= {'form', 'meaning', 'poles'}:
++                raise ValueError(f'footprint {name} requires distinct form, meaning or poles')
++            object.__setattr__(self, name, values)
++
++    def check_effects(self, effects):
++        carriers = {
++            'form': {S.PERCEPT, S.KNOWING, S.SYMBOLIC, S.SERIAL, S.LTM, S.EXPECTATION},
++            'meaning': {S.KNOWING, S.SYMBOLIC, S.SERIAL, S.LTM, S.EXPECTATION, S.PRIMING},
++            'poles': {S.PERCEPT, S.KNOWING, S.SYMBOLIC, S.SERIAL, S.LTM, S.EXPECTATION},
++        }
++        for name in ('reads', 'writes'):
++            for component in getattr(self, name):
++                if not carriers[component].intersection(getattr(effects, name)):
++                    raise ValueError(f'footprint {name} {component} has no declared subsystem {name}')
++        return self
++
++
+ def apply_thought_effect(model, result, *, row, work, effect_round=None):
+     """Commit parameter-free effects to the existing parallel field.
+ 
+diff --git a/bin/Attention.py b/bin/Attention.py
+index ab15f8b30..b2d05c7ce 100644
+--- a/bin/Attention.py
++++ b/bin/Attention.py
+@@ -148,6 +148,8 @@ class NarrowedWords(NamedTuple):
+     descended: torch.Tensor
+     actions: torch.Tensor
+     alternatives: torch.Tensor
++    probabilities: torch.Tensor = None
++    alternative_counts: torch.Tensor = None
+ 
+ 
+ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None):
+@@ -161,12 +163,13 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
+     if W==0:
+         table=BracketTable.open(spans.new_zeros(B),budget=K)
+         return NarrowedWords(table,keys,known,known,spans.new_full((B,K),-1),
+-                             torch.zeros(B,K,device=keys.device,dtype=torch.bool))
++            torch.zeros(B,K,device=keys.device,dtype=torch.bool),
++            keys.new_zeros(B,K),spans.new_zeros(B,K))
+     lengths=spans[...,1].amax(1)
+     table=BracketTable.open(lengths,budget=K)
+     if spent is not None:table=table._replace(spent=spent)
+     accepted=torch.zeros_like(known);descended=torch.zeros_like(known)
+-    values=torch.zeros_like(keys);actions=[];alternatives=[]
++    values=torch.zeros_like(keys);actions=[];alternatives=[];probabilities=[];counts=[]
+     reductions=torch.zeros(B,K,3,dtype=torch.bool,device=keys.device)
+     field_values=keys.new_zeros(B,K,D)
+     field_poles=keys.new_zeros(B,K,2)
+@@ -207,8 +210,8 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
+         local_prior=None if prior is None else (covered.to(keys)@prior[...,None])[...,0]/count.clamp_min(1)
+         mask=None if exploit is None else torch.where(departure==step,exploit.actions[:,step],-1)
+         replay=None if exploit is None else torch.where(step<departure,exploit.actions[:,step],-1)
+-        action,credit,alternate=chooser.attend(pooled,legal,table.space,prior=local_prior,
+-                                                masked_action=mask,replay_action=replay)
++        action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
++            masked_action=mask,replay_action=replay,return_details=True)
+         slot=(action//A).clamp_max(K-1);op=action%A
+         chosen=live[rows,slot]&(action<A*K)
+         selected=covered[rows,slot]&chosen[:,None]
+@@ -221,8 +224,7 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
+         if identities is not None:
+             witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
+         descended=descended|witness
+-        sign=torch.where(negative[rows,slot],-1.,1.)
+-        values=torch.where(picked_gloss[...,None],keys*(sign*credit)[:,None,None],values)
++        values=torch.where(picked_gloss[...,None],keys*credit[:,None,None],values)
+         # Divide at the first pole disagreement, descend at a retained part.
+         first=selected.long().argmax(-1)
+         first_positive=evidence[rows,first,0]>0
+@@ -245,7 +247,7 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
+         positive_keys=keys.clamp_min(0);negative_keys=(-keys).clamp_min(0)
+         conjunction=torch.where(covered[...,None],positive_keys[:,None],torch.inf).amin(2)-torch.where(covered[...,None],negative_keys[:,None],0.).amax(2)
+         disjunction=torch.where(covered[...,None],positive_keys[:,None],0.).amax(2)-torch.where(covered[...,None],negative_keys[:,None],torch.inf).amin(2)
+-        changed=torch.where((op==3)[:,None,None],conjunction,torch.where((op==4)[:,None,None],disjunction,-pooled))
++        changed=torch.where((op==3)[:,None,None],conjunction,torch.where((op==4)[:,None,None],disjunction,pooled))
+         # Empty padding contributes no field. In particular, never multiply
+         # its reduction sentinel (inf) by a live straight-through credit.
+         changed=torch.where((count>0)[...,None],changed,0.)
+@@ -264,7 +266,10 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
+         reset=(slots==slot[:,None])&(split|unknown|gloss)[:,None]
+         field_valid=(field_valid|where)&~reset
+         actions.append(torch.where(live.any(-1),action,-1));alternatives.append(alternate&live.any(-1))
+-    return NarrowedWords(table,values,accepted,descended,torch.stack(actions,1),torch.stack(alternatives,1))
++        probabilities.append(detail['probability'])
++        counts.append(torch.where(live.any(-1),detail['alternative_count'],0))
++    return NarrowedWords(table,values,accepted,descended,torch.stack(actions,1),
++        torch.stack(alternatives,1),torch.stack(probabilities,1),torch.stack(counts,1))
+ 
+ 
+ class BracketKeys:
+diff --git a/bin/Language.py b/bin/Language.py
+index 5589508f4..15083ba66 100644
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -753,10 +753,11 @@ class Grammar:
+          'clause_form', 'head_role', 'surface_name', 'predicate_identity',
+          'operand_kinds', 'effect_writes', 'relation_kind', 'scope_transparent',
+          'polarity_effect', 'meaning_mode', 'same_reference_idempotent',
+-         'effect_reads', 'field_eligible', 'order_delta', 'case_head_role'],
++         'effect_reads', 'field_eligible', 'order_delta', 'case_head_role',
++         'footprint_reads', 'footprint_writes'],
+     )
+     RuleDef.__new__.__defaults__ = (0, 0, False, None, None, (), (), None, 0,
+-                                  None, None, (), (), None, False, None, None, False, (), False, 0, 0)
++                                  None, None, (), (), None, False, None, None, False, (), False, 0, 0, (), ())
+ 
+     @staticmethod
+     def _declared_rule(rule):
+@@ -771,7 +772,7 @@ class Grammar:
+                   'polarity_effect', 'meaning_mode', 'same_reference_idempotent',
+                   'predicate_identity', 'field_eligible', 'order_delta', 'case_head_role')
+         from Queries import THOUGHT_EXECUTORS
+-        from AccessibleMind import OperatorEffects
++        from AccessibleMind import OperatorEffects, OperatorFootprint
+         descriptor = THOUGHT_EXECUTORS.get(rule.method_name)
+         reads = tuple(implementation.effect_reads)
+         writes = tuple(implementation.effect_writes)
+@@ -781,11 +782,14 @@ class Grammar:
+             reads = tuple(dict.fromkeys((*reads, *(s.name.lower() for s in descriptor.read_scope))))
+             writes = tuple(dict.fromkeys((*writes, *(s.name.lower() for s in descriptor.write_scope))))
+         effects = OperatorEffects(reads, writes)
++        footprint = OperatorFootprint(implementation.footprint_reads,
++            implementation.footprint_writes).check_effects(effects)
+         return rule._replace(
+             **{name: getattr(implementation, name, None) for name in fields},
+             operand_kinds=(('field' if getattr(implementation, 'field_only', False) else 'symbol'),) * rule.arity,
+             effect_reads=tuple(s.name.lower() for s in effects.reads),
+-            effect_writes=tuple(s.name.lower() for s in effects.writes))
++            effect_writes=tuple(s.name.lower() for s in effects.writes),
++            footprint_reads=footprint.reads, footprint_writes=footprint.writes)
+ 
+     @dataclass(frozen=True)
+     class ThoughtOperationForm:
+@@ -1627,6 +1631,17 @@ class Grammar:
+                     expected = OperatorEffects(rule.effect_reads, rule.effect_writes)
+                     if set(declared.writes) != set(expected.writes):
+                         raise ValueError('writes must declare the complete implementation contract, with no extra effects')
++                from AccessibleMind import OperatorEffects, OperatorFootprint
++                footprint = {}
++                for name in ('reads', 'writes'):
++                    attribute = 'footprint' + name.title()
++                    expected = getattr(rule, 'footprint_' + name)
++                    values = (tuple(part.strip() for part in str(attributes[attribute]).split(',') if part.strip())
++                              if attribute in attributes else expected)
++                    if set(values) != set(expected):
++                        raise ValueError(f'footprint {name} must declare the complete implementation contract')
++                    footprint[name] = values
++                OperatorFootprint(**footprint).check_effects(OperatorEffects(rule.effect_reads, rule.effect_writes))
+                 rule = rule._replace(operand_kinds=operands)
+                 if clause_raw is not None:
+                     if clause_raw not in ('S', 'VP', 'implies'):
+@@ -2463,9 +2478,10 @@ TheGrammar = Grammar()
+ # =====================================================================
+ 
+ class NotLayer(GrammarLayer):
++    footprint_reads = footprint_writes = ('poles',)
+     field_only = True
+     field_action = 5
+-    """Self-inverse negation of a concept code, or an explicit pole pair."""
++    """Exchange evidence poles; the paired concept code is unchanged."""
+     inverse_kind = 'unary'
+     scope_transparent = True
+     polarity_effect = 'invert'
+@@ -2486,9 +2502,9 @@ class NotLayer(GrammarLayer):
+         self.representation = representation
+ 
+     def forward(self, x):
+-        """Reflect the full code, or exchange the explicit evidence poles."""
++        """Exchange explicit evidence; serial code slots retain their identity."""
+         if self.representation == 'code':
+-            return -x
++            return x
+         self._check_bivector_shape(x)
+         bivector = x[..., :2].flip(dims=(-1,))
+         rest     = x[..., 2:]
+@@ -2502,6 +2518,7 @@ class NotLayer(GrammarLayer):
+ 
+ class NonLayer(GrammarLayer):
+     """Non-affirming exclusion: clear the expressed pole, never complement."""
++    footprint_reads = footprint_writes = ('poles',)
+     scope_transparent = True
+     polarity_effect = 'exclude'
+     field_eligible = True
+@@ -2523,7 +2540,7 @@ class NonLayer(GrammarLayer):
+     def forward(self, x):
+         """Remove the expressed concept without asserting its opposite."""
+         if self.representation == 'code':
+-            return x * 0
++            return x
+         self._check_bivector_shape(x)
+         return torch.cat((x[..., :1]*0, x[..., 1:]), dim=-1)
+ 
+@@ -2578,7 +2595,7 @@ class IntersectionLayer(GrammarLayer):
+         if self.monotonic:
+             m = torch.minimum(a, b)
+         else:
+-            m = Ops._radmin(a, b)
++            m = Ops.intersection(a, b)
+         packed = torch.cat([m, m], dim=-1)
+         return torch.einsum('bmi,mij->bmj', packed, W_node)
+ 
+@@ -3335,8 +3352,10 @@ class LiftLayer(GrammarLayer):
+                     int(nInput), int(nOutput), seed=0x5EED, bias=0.0)
+                 with torch.no_grad():
+                     self._adv_edit.weight.zero_()
++                self._adv_shift = nn.Parameter(torch.zeros_like(self._adv_edit.weight))
+             else:
+                 self._adv_edit = None
++                self.register_parameter('_adv_shift', None)
+             self._adverb_purchase = None
+ 
+             # VERB eig-spectrum OPERATOR (Stage 1; doc/old/2026-06-20-idea-
+@@ -3360,8 +3379,10 @@ class LiftLayer(GrammarLayer):
+                     int(nInput), int(nOutput), seed=0x5B17, bias=0.0)
+                 with torch.no_grad():
+                     self._verb_spec.weight.zero_()
++                self._verb_shift = nn.Parameter(torch.zeros_like(self._verb_spec.weight))
+             else:
+                 self._verb_spec = None
++                self.register_parameter('_verb_shift', None)
+         else:
+             # Zero-width construction (parameter-free harness probe).
+             self._sigma = None
+@@ -3371,6 +3392,18 @@ class LiftLayer(GrammarLayer):
+             self._adverb_purchase = None
+             self._verb_spectrum = False
+             self._verb_spec = None
++            self.register_parameter('_adv_shift', None)
++            self.register_parameter('_verb_shift', None)
++
++    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
++                              missing_keys, unexpected_keys, error_msgs):
++        # Old gain-only checkpoints are the zero-translation special case.
++        for name in ('_verb_shift', '_adv_shift'):
++            value = getattr(self, name, None)
++            if value is not None and prefix + name not in state_dict:
++                state_dict[prefix + name] = torch.zeros_like(value)
++        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
++                                     missing_keys, unexpected_keys, error_msgs)
+ 
+     # -- Butterfly per-pair op delegation (Stage 5) -----------------
+     def _butterfly_pair_op(self, x_pair, W_node):
+@@ -3466,7 +3499,8 @@ class LiftLayer(GrammarLayer):
+         if not torch.compiler.is_compiling():
+             with torch.no_grad():
+                 self._adverb_purchase = (vp_content != 0).to(vp_content).mean(-1)
+-        return self._verb_rail_transform(vp_content, gain)
++        shift = torch.tanh(F.linear(adv_what.to(self._adv_shift), self._adv_shift))
++        return self._verb_rail_transform(vp_content, gain, shift)
+ 
+     def _adverb_log_gain(self, adverb):
+         raw = torch.tanh(self._adv_edit(adverb.to(self._adv_edit.weight.dtype)))
+@@ -3476,7 +3510,9 @@ class LiftLayer(GrammarLayer):
+     def unapply_adverb(self, value, adverb):
+         if not getattr(self, '_adverb_eig_edit', False) or self._adv_edit is None:
+             return value
+-        return self._verb_rail_transform(value, -self._adverb_log_gain(adverb))
++        gain = self._adverb_log_gain(adverb)
++        shift = torch.tanh(F.linear(adverb.to(self._adv_shift), self._adv_shift))
++        return self._verb_rail_transform(value, -gain, -shift * torch.exp(-gain))
+ 
+     def _verb_spectrum_w(self, verb_what):
+         """The verb's SPARSE log-eigenvalues w_v from the verb code,
+@@ -3501,7 +3537,7 @@ class LiftLayer(GrammarLayer):
+         )
+ 
+     @staticmethod
+-    def _verb_rail_transform(value, log_gain):
++    def _verb_rail_transform(value, log_gain, shift=None):
+         """Apply a diagonal gain in a numerically safe atanh chart.
+ 
+         Half and bfloat16 cannot represent ``1 - epsilon`` for the module's
+@@ -3516,7 +3552,10 @@ class LiftLayer(GrammarLayer):
+         value_f32 = value.to(dtype=torch.float32)
+         log_gain_f32 = log_gain.to(dtype=torch.float32)
+         interior = _bounded_atanh(value_f32, bounded=False)
+-        transformed = torch.tanh(torch.exp(log_gain_f32) * interior)
++        chart = torch.exp(log_gain_f32) * interior
++        if shift is not None:
++            chart = chart + shift.to(dtype=torch.float32)
++        transformed = torch.tanh(chart)
+         return transformed.to(dtype=output_dtype)
+ 
+     def apply_verb(self, np_what, verb_what):
+@@ -3530,7 +3569,8 @@ class LiftLayer(GrammarLayer):
+         if not getattr(self, '_verb_spectrum', False) or self._verb_spec is None:
+             return np_what
+         return self._verb_rail_transform(
+-            np_what, self._verb_spectrum_w(verb_what))
++            np_what, self._verb_spectrum_w(verb_what),
++            torch.tanh(F.linear(verb_what.to(self._verb_shift), self._verb_shift)))
+ 
+     def unapply_verb(self, vp_what, verb_what):
+         """Inverse of ``apply_verb`` GIVEN the verb: NP = tanh(e^{-w_v} ⊙
+@@ -3539,8 +3579,9 @@ class LiftLayer(GrammarLayer):
+         reverse -- is a follow-on increment.)"""
+         if not getattr(self, '_verb_spectrum', False) or self._verb_spec is None:
+             return vp_what
+-        return self._verb_rail_transform(
+-            vp_what, -self._verb_spectrum_w(verb_what))
++        gain = self._verb_spectrum_w(verb_what)
++        shift = torch.tanh(F.linear(verb_what.to(self._verb_shift), self._verb_shift))
++        return self._verb_rail_transform(vp_what, -gain, -shift * torch.exp(-gain))
+ 
+     def reverse(self, parent, gate=None, basis=None,
+                 left_rows=None, right_rows=None,
+@@ -4023,6 +4064,7 @@ class _WhenOpMixin:
+ 
+ class TenseLayer(_WhenOpMixin, GrammarLayer):
+     """Unary CS op that shifts the event ``.when`` center by tense."""
++    footprint_reads = footprint_writes = ()
+     inverse_kind = 'identity'
+     scope_transparent = True
+     rule_name = "tense"; arity = 1
+@@ -4193,14 +4235,30 @@ class _SearchedBinaryLayer(GrammarLayer):
+ 
+ 
+ class ConjunctionLayer(_SearchedBinaryLayer):
+-    """Product of activations times the bound identity direction."""
++    """Bind forms, or meet explicit evidence pairs in the bilattice."""
+     uses_operand_activation = True
++    footprint_writes = ('form', 'meaning', 'poles')
+     field_eligible = True
+     rule_name = 'conjunction'
+     predicate_identity = 'conjunction'
+     kernel = staticmethod(Ops._conjunction_kernel)
+     same_reference_idempotent = True
+ 
++    def __init__(self, *args, representation='code', **kwargs):
++        super().__init__(*args, **kwargs)
++        if representation not in ('code', 'poles'):
++            raise ValueError('conjunction requires code or poles representation')
++        self.representation = representation
++        if representation == 'poles':
++            self.kernel = self.poles
++
++    @staticmethod
++    def poles(left, right):
++        if left.shape[-1] != 2 or right.shape[-1] != 2:
++            raise ValueError('conjunction evidence requires an explicit pole pair')
++        return torch.stack((torch.minimum(left[..., 0], right[..., 0]),
++                            torch.maximum(left[..., 1], right[..., 1])), -1)
++
+ 
+ class DisjunctionLayer(_SearchedBinaryLayer):
+     """Probabilistic sum of activations, with combined unit code directions.
+@@ -4697,6 +4755,8 @@ class BracketOperation(GrammarLayer):
+     space_role = 'CS'
+     effect_reads = ('percept',)
+     effect_writes = ()
++    footprint_reads = ('form', 'poles')
++    footprint_writes = ()
+     reverse_dispatchable = False
+     bracket_action = None
+ 
+@@ -7249,21 +7309,27 @@ class OperationSelectionLayer(nn.Module):
+             representatives.append(allowed[:, first:first + 16] & ~duplicates)
+         return torch.cat(representatives, -1)
+ 
+-    def attend(self, keys, legal, space, *, prior=None, masked_action=None, replay_action=None):
++    def attend(self, keys, legal, space, *, prior=None, masked_action=None, replay_action=None,
++               return_details=False):
+         """Field locations in this same chooser; symbols enter forward after gloss."""
++        keys = keys.detach()
+         B,K,D=keys.shape
+         candidates=keys[:,:,None].expand(B,K,legal.shape[-1],D)
+         _,scores=self.chooser.score_unary(keys,candidates,self.stop_anchor,self.bracket_anchor[:legal.shape[-1]],
+                                           op_offset=self.r_reduce+self.r_apply)
+         scores=scores+self.space_prior[space][...,None]
+-        if prior is not None:scores=scores+prior[...,None]
++        if prior is not None:scores=scores+prior.detach()[...,None]
+         scores=scores.masked_fill(~legal,-torch.inf).reshape(B,-1)
+         stop=torch.where(legal.reshape(B,-1).any(-1),-torch.inf,0.)
+         logits=torch.cat((scores,stop[:,None]),-1)
+         action,probability,valid=self.select_logits(logits,structural=(True,)*logits.shape[-1],
+-                  masked_action=masked_action,replay_action=replay_action)
++                  masked_action=masked_action,replay_action=replay_action,
++                  departure_eligible=torch.isfinite(logits))
+         weight=probability.gather(1,action[:,None])[:,0]
+-        return action,1+(weight-weight.detach()),(torch.isfinite(logits).sum(-1)>1)
++        counts = (torch.isfinite(logits).sum(-1)-1).clamp_min(0)
++        result = (action, torch.ones_like(weight), counts > 0)
++        return (*result, dict(probability=weight, alternative_count=counts,
++                              logits=logits)) if return_details else result
+ 
+     def reduction_pressure(self, depth, *, allowance, rounds_left):
+         """Fixed load prior, using the whole stack and an inclusive deadline."""
+@@ -13643,15 +13709,20 @@ class LanguageSpace(nn.Module):
+         residual = residual / torch.where(energy > 0, energy, torch.ones_like(energy))
+         # The shortlist and eligibility are unchanged. Context learns only
+         # through the separate teacher loss, never through candidate codes.
+-        def candidate_features(candidates, indices, priming):
++        def candidate_features(candidates, indices, priming, active):
+             energy = candidates.square().sum(-1)
+             activation = (parent.detach()[:, None] * candidates).sum(-1) / torch.where(
+                 energy > 0, energy, torch.ones_like(energy))
++            count = active.sum(-1, keepdim=True).clamp_min(1)
++            mean = torch.where(active, activation, 0.).sum(-1, keepdim=True) / count
++            centered = torch.where(active, activation - mean, 0.)
++            variance = centered.square().sum(-1, keepdim=True) / count
++            activation = centered / variance.sqrt().clamp_min(torch.finfo(activation.dtype).eps)
+             heat = (torch.ones_like(activation) if priming is None else
+                     priming.detach().gather(1, indices))
+             return activation, heat
+-        la, lp = candidate_features(left_candidates, left_indices, left_priming)
+-        ra, rp = candidate_features(right_candidates, right_indices, right_priming)
++        la, lp = candidate_features(left_candidates, left_indices, left_priming, left_active)
++        ra, rp = candidate_features(right_candidates, right_indices, right_priming, right_active)
+         features = torch.stack((-residual.detach(), la[:, :, None].expand_as(residual),
+             ra[:, None, :].expand_as(residual), lp[:, :, None].expand_as(residual),
+             rp[:, None, :].expand_as(residual)), -1)
+@@ -13661,6 +13732,13 @@ class LanguageSpace(nn.Module):
+             logits = torch.where(allowed.flatten(1).any(-1)[:, None], logits, 0.)
+         else:
+             selected, _, logits = chooser(features, allowed)
++        # Float-roundoff recompositions outrank all learned context. Ties
++        # retain the residual argmin's bank order. CE still sees every legal
++        # pair, so a noisy root can learn from its true decomposition.
++        fits = residual.detach().masked_fill(~allowed, torch.inf).flatten(1)
++        best, argmin = fits.min(-1)
++        exact = best <= (8 * torch.finfo(parent.dtype).eps) ** 2
++        selected = torch.where(exact, argmin, selected)
+         gather = selected[:, None, None].expand(B, 1, D)
+         hard_left = older.reshape(B, K * K, D).gather(1, gather).squeeze(1)
+         hard_right = newer.reshape(B, K * K, D).gather(1, gather).squeeze(1)
+@@ -13670,7 +13748,8 @@ class LanguageSpace(nn.Module):
+         result = (hard_left.detach(), hard_right.detach(), available)
+         if return_details:
+             return (*result, dict(logits=logits, selected=selected, allowed=allowed,
+-                left_indices=left_indices, right_indices=right_indices, features=features))
++                left_indices=left_indices, right_indices=right_indices, features=features,
++                exact=exact, relative_residual=residual.detach()))
+         return result
+ 
+     @staticmethod
+diff --git a/bin/Layers.py b/bin/Layers.py
+index 6045faf9c..1582c84e8 100644
+--- a/bin/Layers.py
++++ b/bin/Layers.py
+@@ -1636,6 +1636,19 @@ class LDUReadout(ErgodicLayer):
+         self.raw_L = nn.Parameter(torch.zeros(nInput, self.rank))
+         self.d = nn.Parameter(torch.ones(self.rank))
+         self.raw_U = nn.Parameter(torch.zeros(self.rank, nOutput))
++        # A pole-only exclusion can leave an occupied, silent leading role.
++        # A truncated identity would then hide every later role until training.
++        # Fold the remaining input coordinates into the initial readout, with
++        # unit-norm columns and no RNG consumption. Saved factors still load
++        # verbatim; this only initializes a new answer reader.
++        if self.rank and nInput > self.rank:
++            rows = torch.arange(self.rank, nInput, device=self.raw_L.device)
++            columns = rows.remainder(self.rank)
++            with torch.no_grad():
++                self.raw_L[rows, columns] = 1.
++                counts = (nInput + self.rank - 1 - torch.arange(
++                    self.rank, device=self.d.device)) // self.rank
++                self.d.copy_(counts.to(self.d).rsqrt())
+         if hasBias:
+             self.biasWeight = nn.Parameter(torch.zeros(1, nOutput))
+         self.register_buffer("_readout_format", torch.tensor(1, dtype=torch.int64))
+@@ -2414,6 +2427,8 @@ class GrammarLayer(Layer):
+     # one declaration, narrowed by the face, never extra effects at runtime.
+     effect_reads = ('percept', 'knowing', 'symbolic', 'serial', 'priming', 'budget')
+     effect_writes = ('serial', 'percept', 'budget')
++    footprint_reads = ('form', 'meaning', 'poles')
++    footprint_writes = ('form', 'meaning')
+     field_eligible = False
+     case_head_role = 0
+     order_delta = 0
+diff --git a/bin/ModelAttention.py b/bin/ModelAttention.py
+index b747418d5..e92ba3657 100644
+--- a/bin/ModelAttention.py
++++ b/bin/ModelAttention.py
+@@ -138,6 +138,8 @@ def stage_input(model):
+     slab=getattr(isp,'_ar_embedded_N',None)
+     active=getattr(isp,'_word_active_mask',None)
+     model._attention_words=None
++    model._attention_score_term=None
++    model._last_attention_score_function=None
+     model._word_expectation=None
+     model._word_expectation_input=None
+     from QueryWork import QueryWorkBudget
+@@ -227,17 +229,18 @@ def stage_input(model):
+             descended=F.pad(result.descended,(0,W-live_width)))
+     model._last_attention_comparison = None
+     if model.training and torch.is_grad_enabled():
+-        from WalkTrials import narrowing_pair, observe_comparison
++        from WalkTrials import narrowing_pair, observe_comparison, attention_score_function
+         reading, audit = narrowing_pair(read,
+             percept_reconstruction_score(model, keys, forms, ids, live))
+         model._last_attention_comparison = audit
++        model._attention_score_term, model._last_attention_score_function = attention_score_function(audit)
+         model._attention_forms=(forms,ids,keys,live)
+         observe_comparison(model, 'attention.input', audit, active=live.any(-1))
+     else:
+         reading=read()
+     model._attention_words=reading
+-    # Forward values stay native codes. The selected projection carries the
+-    # shared chooser's straight-through credit into cached word perception.
++    # Native forward values only. The paired-cost term is the chooser's sole
++    # attention credit, consumed once by reconstruction at the owner step.
+     score=(reading.values*keys).sum(-1)/keys.square().sum(-1).clamp_min(1e-12)
+     model._attention_credit=score
+     model._attention_spans=spans
+diff --git a/bin/Models.py b/bin/Models.py
+index 29185ecf2..9f470c185 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -12928,10 +12928,9 @@ class BasicModel(BaseModel):
+                               initial_depth=None, require_symbols=True):
+         """The shared conceptual decoder. No compose actions enter this walk.
+ 
+-        Hard generate choices determine the stack topology. Its numerical
+-        transition uses the usual straight-through softmax over candidate
+-        transitions, so reconstruction teaches the chooser as well as the
+-        inverse search. Output's restricted backward trains only its reader.
++        Hard generate choices determine the stack topology. Reconstruction
++        teaches the policy separately from the compose derivation's structure;
++        this free walk supplies no straight-through policy gradient.
+         """
+         del targets, stamped_events
+         language = self.languageSpace
+@@ -12959,8 +12958,7 @@ class BasicModel(BaseModel):
+             parent = stack[ar, pos]
+             live = depth > 0
+             logits = language.generate_policy_logits(parent)
+-            # One candidate numerical transition per generate face. The hard
+-            # branch remains exact; soft probabilities supply its derivative.
++            # Only the chosen numerical inverse supplies a pathwise gradient.
+             lefts, rights, unavailable = [], [], []
+             for i in range(R2):
+                 index = torch.full_like(depth, i)
+@@ -12976,6 +12974,10 @@ class BasicModel(BaseModel):
+             for i in range(R1):
+                 value, missing = language.generate_unary_step(
+                     parent, torch.full_like(depth, i), live, return_status=True)
++                # Pole-only operations preserve the code. Such an identity
++                # cannot advance this code walk and must not consume its
++                # entire allowance before STOP can emit the operand.
++                missing = missing | ~value.detach().ne(parent.detach()).any(-1)
+                 lefts.append(value); rights.append(parent); unavailable.append(missing)
+             lefts.append(parent); rights.append(parent); unavailable.append(torch.zeros_like(live))
+             from Language import LanguageSpace
+@@ -13007,11 +13009,9 @@ class BasicModel(BaseModel):
+                 choice = torch.where((t < departure) & (prior >= 0), prior, choice)
+             options = torch.stack(lefts, 1)
+             others = torch.stack(rights, 1)
+-            probability = logits.softmax(-1)
+             selected = F.one_hot(choice, stop + 1).to(parent)
+-            mixture = selected + (probability - probability.detach())
+-            left = (options * mixture[..., None]).sum(1)
+-            right = (others * mixture[..., None]).sum(1)
++            left = (options * selected[..., None]).sum(1)
++            right = (others * selected[..., None]).sum(1)
+             missing = ~legal.gather(1, choice[:, None]).reshape(B)
+             binary = live & (choice < R2) & (depth < N) & ~missing
+             unary = live & (choice >= R2) & (choice < stop) & ~missing
+@@ -13023,8 +13023,7 @@ class BasicModel(BaseModel):
+             stack1[ar, above] = torch.where(binary[:, None], right, stack1[ar, above])
+             slot = (T - 1 - count).clamp(0, T - 1)
+             emitted1 = emitted.clone()
+-            # At STOP, left is exactly the parent, with the chooser's
+-            # alternative numerical transitions retained for backward.
++            # At STOP, left is exactly the parent.
+             emitted1[ar, slot] = torch.where(pop[:, None], left, emitted1[ar, slot])
+             actions1 = actions.scatter(1, t.reshape(1, 1).expand(B, 1),
+                                        torch.where(live & ready, choice, -1)[:, None])
+@@ -14715,6 +14714,14 @@ class BasicModel(BaseModel):
+                 # signal-router rule load-balancing; no consumer yet.
+ 
+             if train:
++                # Field-only training has no sentence owner step. Consume
++                # the same pending attention term at its batch boundary.
++                attention = getattr(self, '_attention_score_term', None)
++                if attention is not None:
++                    self._attention_score_term = None
++                    if attention.requires_grad:
++                        self.errors.add('reconstruction.attention_score_function', attention,
++                                        category='reconstruction')
+                 batch_objective = self.errors.total()
+                 readout_l1 = self._configure_concept_readout_l1(optimizer,
+                     stage=batch_objective is not None and batch_objective.requires_grad)
+@@ -19875,6 +19882,49 @@ class BasicModel(BaseModel):
+         self._last_decomposition_teacher = reports
+         return loss
+ 
++    def _decomposition_walk_teacher_loss(self, observation, record):
++        """Teach undo/unary/STOP on the actual compose tree's detached states.
++
++        Each leaf teaches STOP; each recorded parent teaches its declared
++        generate face. Replaying these states is teacher forcing, independent
++        of the free decoder's decisions, legal mask and numerical inverses.
++        No target or compose trace enters inference.
++        """
++        language = self.languageSpace
++        stop = len(language._generate_binary_ops) + len(language._generate_unary_ops)
++        keys = language._generate_rule_keys.detach().cpu().tolist() if language.generate_policy is not None else []
++        mappings = {}
++        for kind, arity, rules in ((1, 2, language._compose_binary_rules),
++                                    (2, 1, language._compose_unary_rules)):
++            for index, rule in enumerate(rules):
++                key = language._generate_rule_key(rule, arity)
++                mappings[kind, index] = keys.index(key) if key in keys else -1
++        terms, reports = [], []
++        for b, program in enumerate(observation['entries']):
++            states, targets = [], []
++            if program is not None and program.operation_values is not None:
++                for index, (kind, operation, word) in enumerate(program.actions.detach().cpu().tolist()):
++                    if kind == 0:
++                        value, target = program.leaves[word], stop
++                    elif kind in (1, 2):
++                        value = program.operation_values[index, 2]
++                        target = mappings.get((kind, operation), -1)
++                    else:
++                        continue
++                    reports.append(dict(row=b, kind=kind, operation=operation, target=target,
++                                        present=target >= 0))
++                    if target >= 0:
++                        states.append(value.detach())
++                        targets.append(target)
++            if states and language.generate_policy is not None:
++                logits = language.generate_policy_logits(torch.stack(states))
++                target = torch.tensor(targets, device=logits.device)
++                terms.append(F.cross_entropy(logits, target))
++            else:
++                terms.append(record.root.new_zeros(()))
++        self._last_decomposition_walk_teacher = reports
++        return torch.stack(terms)
++
+     def _sentence_path_cost(self, state, sid, active):
+         """Both trials use the registry's named, relative objectives."""
+         self._publish_sentence_scratch(state)
+@@ -19897,6 +19947,8 @@ class BasicModel(BaseModel):
+         observation['record'] = record
+         observation['decomposition_loss'] = (self._decomposition_teacher_loss(observation, record)
+             if getattr(self, '_sentence_training', False) and torch.is_grad_enabled() else None)
++        observation['walk_loss'] = (self._decomposition_walk_teacher_loss(observation, record)
++            if getattr(self, '_sentence_training', False) and torch.is_grad_enabled() else None)
+         if getattr(self, '_reading_lesson_enabled', False) and self.grammar_lesson_weight > 0:
+             source_rows = self._reading_lesson_sources
+             for b, program in enumerate(observation['entries']):
+@@ -20391,7 +20443,8 @@ class BasicModel(BaseModel):
+                     if self._sentence_gradient_objectives is not None:
+                         self._sentence_gradient_objectives['expectation'] = intra
+                 if self._sentence_training and torch.is_grad_enabled():
+-                    pending_steps[-1] = (*pending_steps[-1], self._sentence_cost_registry, observation['decomposition_loss'])
++                    pending_steps[-1] = (*pending_steps[-1], self._sentence_cost_registry,
++                        observation['decomposition_loss'], observation['walk_loss'])
+                 # Expectation and grammar lessons train their owners but are
+                 # not evidence for preferring one reading over the other.
+                 reconstruction_cost = self._sentence_cost_registry.total(objective='reconstruction')
+@@ -20405,13 +20458,24 @@ class BasicModel(BaseModel):
+             def train_trial(loss):
+                 # Both graphs now exist. Restore this trial's perception
+                 # pullback and scratch bindings before its own backward.
+-                trial, pullback, path, registry, decomposition_loss = pending_steps.pop(0)
++                trial, pullback, path, registry, decomposition_loss, walk_loss = pending_steps.pop(0)
+                 self._sentence_trial, self._sentence_pullback = trial, pullback
+                 self._sentence_cost_registry = registry
+                 self._restore_sentence_state(path)
++                attention = getattr(self, '_attention_score_term', None)
++                if attention is not None:
++                    self._attention_score_term = None
++                    if attention.requires_grad:
++                        registry.add('reconstruction.attention_score_function', attention,
++                                     category='reconstruction')
++                        live = self.inputSpace._word_active_mask.any(-1)
++                        loss = loss + (attention * live).sum() / live.sum().clamp_min(1)
+                 if decomposition_loss is not None and decomposition_loss.requires_grad:
+                     registry.add('reconstruction.decomposition', decomposition_loss, category='reconstruction')
+                     loss = loss + (decomposition_loss * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
++                if walk_loss is not None and walk_loss.requires_grad:
++                    registry.add('reconstruction.walk_policy', walk_loss, category='reconstruction')
++                    loss = loss + (walk_loss * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
+                 if trial == 'explore':
+                     loss = loss + self._compose_score_function_loss(path, torch.stack(paired_costs, -1))
+                 self._sentence_train_step(loss)
+diff --git a/bin/WalkTrials.py b/bin/WalkTrials.py
+index 7f5a66b1b..27c147927 100644
+--- a/bin/WalkTrials.py
++++ b/bin/WalkTrials.py
+@@ -60,7 +60,23 @@ def narrowing_pair(read, score):
+     table = type(greedy.table)(*select_rows(greedy.table, explore.table, wins))
+     kept = type(greedy)(table, *select_rows(greedy[1:], explore[1:], wins))
+     return kept, dict(costs=costs, wins=wins, departure=departure,
+-        greedy=greedy.actions.detach(), explore=explore.actions.detach())
++        greedy=greedy.actions.detach(), explore=explore.actions.detach(),
++        probabilities=explore.probabilities,
++        scale=(greedy.alternative_counts * greedy.alternatives.sum(-1, keepdim=True)).detach())
++
++
++def attention_score_function(audit):
++    """Uniform departure's K*R correction with the greedy walk as baseline."""
++    probability = audit['probabilities']
++    advantage = (audit['costs'][:, 1] - audit['costs'][:, 0]).detach()
++    rounds = torch.arange(probability.shape[1], device=probability.device)
++    mask = rounds[None] == audit['departure'][:, None]
++    trained = mask & advantage.ne(0)[:, None]
++    # Exact ties do not attach a zero gradient to a momentum-owned chooser.
++    term = (torch.where(trained, probability * audit['scale'] * advantage[:, None], 0.).sum(-1)
++            if bool(trained.any()) else probability.new_zeros(probability.shape[0]))
++    return term, dict(costs=audit['costs'], advantage=advantage, mask=mask,
++        actions=audit['explore'], probabilities=probability.detach(), scale=audit['scale'])
+ 
+ 
+ def _copy_containers(value):
+diff --git a/doc/FutureWork.md b/doc/FutureWork.md
+index 1f5d9f32e..f140591e4 100644
+--- a/doc/FutureWork.md
++++ b/doc/FutureWork.md
+@@ -1086,7 +1086,7 @@ conceptual space and the remaining catalogue. Item 6.8 owns the open read and
+ MM_xor's word-level XOR proof. Surface markers own operand-order recovery.
+ The standing XOR rule is no regression against the [closing record](benchmarks/2026-10-03-item6-9-closing/README.md),
+ including its explicit red gates; this is not a claim that every gate is green.
+-Next: the operators update, then 6.8 (no conference freeze; Alec, 2026-10-03).
++Next: the [operators update](plans/2026-10-05-operators-update.md), then 6.5 (6.8 accepted; no conference freeze; Alec, 2026-10-05).
+ 
+ ## Carried from the 6.8 §13–§15 rounds (2026-10-04)
+ 
+diff --git a/doc/GradientFlow.md b/doc/GradientFlow.md
+index 2b20683dc..181a7f1bc 100644
+--- a/doc/GradientFlow.md
++++ b/doc/GradientFlow.md
+@@ -215,12 +215,12 @@ deltas, and records the eligibility mask. A positive raw STOP margin no longer
+ implies STOP was eligible; a masked STOP logit receives zero choice gradient.
+ The gate spells the leaves of this same walk with the same scoring as output.
+ 
+-The decoder's hard choice determines stack topology. Its numerical transition
+-uses a straight-through softmax over candidate generate transitions at the
+-existing unit softmax scale: the forward value is the chosen transition, and
+-its derivative includes the chooser. It adds no policy reward or extra cost.
+-The byte reconstruction term trains that graph; the answer's restricted backward
+-can train its conditioner through it but cannot update decoder parameters.
++The decoder's hard choice determines stack topology. As of the operators
++update round 1, its numerical transition has no straight-through policy path.
++Reconstruction teaches undo, unary and STOP by cross-entropy on detached
++states from the compose derivation. The free byte walk and the answer's
++restricted backward cannot train the policy; selected numerical inverses
++retain their ordinary parameter/operand gradients.
+ Compose-only grammars implicitly expose their operators' generate faces, so
+ numeric-answer configurations also learn a decoder without a configuration edit.
+ 
+@@ -529,8 +529,8 @@ Decided in the 6.8 §14–§15 rounds
+   reached it through the attention straight-through value, cached perception
+   and the perception pullback even when the two compose costs tied. Detaching
+   that credit closes this additional sentence-path writer; the original
+-  no-movement tie assertion passes. This repair does not add the separate
+-  attention score-function objective proposed in the later §21 review note.
++  no-movement tie assertion passes. Round 1 adds attention's own paired-cost
++  score-function objective; the sentence handoff remains detached.
+ - **The compose chooser's gradient is the score-function estimator (Alec,
+   2026-10-05: "So we are doing SCG?"; supersedes the comparison step of
+   2026-10-04 and the straight-through of the same morning).** The chooser's
+@@ -554,8 +554,8 @@ Decided in the 6.8 §14–§15 rounds
+   perception's and operators parameterless, nothing on the compose side
+   needs a gradient through the inverse, and the blend's gradient was a biased
+   proxy (the true pair's margin) weighted by the decoder's uncertainty. The
+-  byte scorer's bank codes are detached; the recovered leaf stays live for
+-  the generate policy's own path in the walk, which is unchanged.
++  byte scorer's bank codes are detached. Selected numerical inverses retain
++  operand gradients, but the free walk supplies no policy gradient.
+ - **The decomposition chooser learns the true pair (6.8 §§16.4, 17).** For
+   the selected undo, a separate reconstruction-owned scorer reads each
+   shortlisted pair's negative relative residual, both candidates' activation
+@@ -567,7 +567,8 @@ Decided in the 6.8 §14–§15 rounds
+   codes and all scorer features are detached. The teacher term is added in
+   reconstruction's owner step after both trials' byte costs and the keep
+   decision; targets never enter free decoding. These parameters are separate
+-  from the forward chooser, and the walk policy and §11.6 mask are unchanged.
++  from the forward chooser. Round 1 extends supervision to the walk policy
++  and retains the §11.6 mask at free inference.
+ - **One affine reader for both gates.** XOR_grammar's class reader and the
+   sum control read the raw root through the same output-owned affine head;
+   the root's address bands are zero. A normalization of the root is a
+@@ -583,9 +584,9 @@ Decided in the 6.8 §14–§15 rounds
+   byte cost's cotangent at the forked leaves pushed back through the cached
+   perception graph), a second, pathwise writer beside the score-function term
+   that was below float32 resolution at the old code scale. Attention's credit
+-  is detached at the sentence handoff; the attention walk trains nothing until
+-  the operators update gives it the score-function estimator (FutureWork). The
+-  compose chooser now has one writer.
++  remains detached at the sentence handoff. Round 1 trains the attention
++  choices by the score-function estimator below. Reconstruction remains
++  the shared chooser's sole gradient owner.
+ - **The binding kernels take magnitude from the activation**, codes entering
+   as directions: conjunction `a·b·unit(u∘v)`, disjunction
+   `(a + b − ab)·unit(u + v − u∘v)` with `u, v` unit codes and `a, b` the operand
+@@ -595,5 +596,43 @@ Decided in the 6.8 §14–§15 rounds
+   above 1 was non-monotone and the product leaked form length.
+ - **Full-presence admitted rows:** `RadixLayer.insert()` initializes an
+   admitted percept row at full presence (6.8 plan §19–§22; unit L2 norm then
+-  the cube clamp from the last round on). The decoder's generate policy moves
+-  only where a live decoder step has more than one legal action.
++  the cube clamp from the last round on). The decoder's policy now learns
++  from the compose teacher even where its free walk has one legal action.
++
++
++## Operators update round 1 (October 5)
++
++**Attention uses the same estimator as compose.** The input walk samples one
++eligible round uniformly and one non-greedy legal action uniformly. With K
++alternatives and R eligible rounds, its surrogate is
++`K·R·p(a_departure)·detach(C_explore−C_greedy)`. Both native-percept byte costs
++are measured before any owner step, with the greedy cost as baseline. Features,
++keys and priming are detached; hard attention values have no straight-through
++credit. The term is consumed once at reconstruction's first sentence owner
++step (or the batch owner step for a field-only path). Exact ties attach no
++gradient or momentum-only update. Compose retains
++its own sentence comparison; both terms have the same reconstruction owner.
++The tenth-run audit records costs, actions, K and R, advantages, probabilities
++before/after the actual update, analytic gradients and finite differences.
++
++**Exact pair recomposition precedes learned context.** The bounded shortlist
++and candidate limits are unchanged. A squared relative residual at most
++`(8·finfo(dtype).eps)²` is float-roundoff exact; if one exists, the residual
++argmin wins independently of all context weights. Equal residuals retain bank
++order. The pair scorer's CE still sees every eligible pair. Each operand's
++projection coefficients are centered and divided by their population standard
++deviation over its valid shortlist; constant features become zero and invalid
++slots contribute neither mean nor variance. Codes and these features are
++detached. Missing targets are still counted without a CE term.
++
++**The walk policy is teacher-forced.** Each actual compose parent teaches its
++declared undo or unary generate face; each input leaf teaches STOP. The states
++are detached saved values. Cross-entropy averages nodes within a sentence and
++then active rows; it is added as `reconstruction.walk_policy` after the paired
++byte-cost comparison, alongside `reconstruction.decomposition`. No imitation
++loss enters the forward chooser or trial selection. At inference the policy
++chooses freely under the existing eligibility mask, with no compose journal.
++Its straight-through transition blend is removed. The receipt audits the new
++CE logits and confirms that the free decoder logits receive no gradients.
++
++[Round-1 source, tests, measurements and review receipt](benchmarks/2026-10-05-operators-update/README.md).
+diff --git a/doc/specs/2026-09-29-operator-catalogue.md b/doc/specs/2026-09-29-operator-catalogue.md
+index 4f128b5ac..952c1b011 100644
+--- a/doc/specs/2026-09-29-operator-catalogue.md
++++ b/doc/specs/2026-09-29-operator-catalogue.md
+@@ -1345,3 +1345,59 @@ The complete before/after test sources, failed probes, unchanged seed audit,
+ and measured baselines are retained in
+ [the implementation receipt](../benchmarks/2026-10-03-operators-attention/README.md).
+ This is a candidate for Claude's review, not an accepted or committed landing.
++
++
++### 12.1 Operators update, round 1 (2026-10-05; review candidate)
++
++This round starts at accepted 6.8 commit `42daf96f4`. Its receipt is
++[2026-10-05-operators-update](../benchmarks/2026-10-05-operators-update/README.md).
++The historical entries above remain the account of their rounds; the following
++changes supersede their relevant implementation claims. No commit is made.
++
++* Attention's shared chooser now receives the reconstruction-owned
++  score-function term with a greedy baseline and the uniform K·R correction.
++  Its sentence handoff remains detached. The pair chooser gives a recomposition
++  within float tolerance precedence over context, and standardizes activation
++  coefficients. The separate generate policy learns undo/unary/STOP by CE from
++  the actual compose structure, teacher-forced and detached; its free walk has
++  no straight-through gradient. [GradientFlow](../GradientFlow.md#operators-update-round-1-october-5)
++  gives the reduction, tolerance and ownership details.
++* `not` exchanges explicit evidence poles; `non` zeroes the expressed pole,
++  preserving the other. Neither changes a code's coordinates. The serial code
++  face preserves identity while the declared polarity effect carries the pole
++  action at closing. The explicit-pole `NonLayer` was already correct at the
++  landing; its code-zeroing face was removed. `ConjunctionLayer` has an explicit
++  pole representation computing `(min(c⁺,d⁺), max(c⁻,d⁻))`. Form binding retains
++  the accepted activation/product kernel and receives no negation. Attention's
++  negative pole no longer signs the glossed form or reflects its field code.
++  Saved old/new class bodies are executed on the same pole fixtures.
++  Preserving `non`'s code exposed a silent-leading-role answer regression:
++  new answer readers now initialize a folded identity over all input
++  coordinates, with unit-norm columns and no RNG use. Saved factors load
++  unchanged. Free code decoding rejects identity unary transitions.
++* Every loaded rule carries `footprint_reads` and `footprint_writes` over
++  `form`, `meaning`, `poles`, inherited from its implementation. Structural
++  code operators declare form/meaning writes; pole operators declare only
++  poles; bracket/address operations declare no coordinate writes. Optional
++  XML `footprintReads`/`footprintWrites` must match the exhaustive declaration.
++  Unknown, repeated, omitted or additional components fail at load; each
++  component must have a carrier among rule 2's declared subsystem effects
++  (meaning cannot be written through a percept-only effect). Aliases and
++  faces retain the same contract; a face can only remove subsystem writes.
++* Coded intersection uses the exact signed minimum, with either zero operand
++  leaving the other coordinate unchanged. The butterfly pair now uses that
++  same rule; no softened gradient or forward minimum remains there. Explicit
++  monotonic membership keeps zero as false. Noun/adjective intersection remains
++  symmetric and idempotent.
++* Verb and adverb can write a silent operand coordinate. Their existing chart
++  gain is extended with a learned, bounded translation: `t′=exp(g)·t+s`,
++  where `t=atanh(x)` and the result is `tanh(t′)`. The added projection starts
++  at exactly zero without consuming RNG; it can learn where `x=0`. Given the
++  modifier, the reverse uses `exp(−g)` and `−s·exp(−g)`. Existing gain-only
++  checkpoints load with zero translation. Gain sparsity and bounds are
++  unchanged; this does not implement the later sentence projection or ICA.
++
++The complement bootstrap waits for round 2 and Alec's three answers. Kleene
++connectives over meanings and the form fold remain round 3; determiners,
++relations, definitions and the remaining declaration/name migration remain
++round 4. The standing gate, training budgets and §20.5 bands are unchanged.
+diff --git a/test/test_concept_not.py b/test/test_concept_not.py
+index a3c546e43..2a7e22af8 100644
+--- a/test/test_concept_not.py
++++ b/test/test_concept_not.py
+@@ -1,16 +1,16 @@
+-"""Concept-code negation is reflection; explicit evidence still exchanges poles."""
++"""Negation exchanges poles without changing the concept code."""
+ import torch
+ 
+ 
+-def test_not_reflects_a_full_concept_code():
++def test_not_preserves_a_full_concept_code():
+     from Language import NotLayer
+     code = torch.tensor([[.1, -.2, .3, .4, -.5, .6, -.7, .8, -.9, 1.]], requires_grad=True)
+     layer = NotLayer()
+     reflected = layer(code)
+-    torch.testing.assert_close(reflected, -code, rtol=0, atol=0)
++    torch.testing.assert_close(reflected, code, rtol=0, atol=0)
+     torch.testing.assert_close(layer.reverse(reflected), code, rtol=0, atol=0)
+     reflected.sum().backward()
+-    torch.testing.assert_close(code.grad, -torch.ones_like(code), rtol=0, atol=0)
++    torch.testing.assert_close(code.grad, torch.ones_like(code), rtol=0, atol=0)
+ 
+ 
+ def test_not_keeps_the_explicit_pole_exchange():
+diff --git a/test/test_decoder_exploration.py b/test/test_decoder_exploration.py
+index a0a3f74ab..6da5f6018 100644
+--- a/test/test_decoder_exploration.py
++++ b/test/test_decoder_exploration.py
+@@ -59,7 +59,7 @@ def test_single_departure_replays_prefix_and_is_greedy_after_it(monkeypatch, com
+     assert greedy[5][:, :2].all()
+     assert not greedy[5][:, 2:].any()
+     explore[0].square().sum().backward()
+-    assert policy.bias.grad.norm() > 0
++    assert policy.bias.grad is None or not policy.bias.grad.any()  # compiled AD may materialize zero
+     assert event.grad.norm() > 0
+ 
+ 
+diff --git a/test/test_decomposition_chooser.py b/test/test_decomposition_chooser.py
+index 2a2adfbb3..6864b2684 100644
+--- a/test/test_decomposition_chooser.py
++++ b/test/test_decomposition_chooser.py
+@@ -33,8 +33,8 @@ def test_initial_choice_is_exactly_the_residual_argmin_without_rng():
+ 
+ def test_teacher_recovers_true_shortlisted_pair_despite_misleading_priming():
+     bank = torch.tensor([[[.2, .8], [.7, .3], [.8, .4]]], requires_grad=True)
+-    # A lossy/noisy root fits the heavily primed distractor exactly.
+-    parent = torch.tensor([[.16, .32]], requires_grad=True)
++    # A lossy/noisy root is near the heavily primed distractor, but not exact.
++    parent = torch.tensor([[.161, .321]], requires_grad=True)
+     chooser = DecompositionChooser()
+     optimizer = torch.optim.SGD(chooser.parameters(), lr=.1)
+     rows = torch.tensor([[10, 11, 12]])
+diff --git a/test/test_echoic_decoder.py b/test/test_echoic_decoder.py
+index 5142169cd..86c4da178 100644
+--- a/test/test_echoic_decoder.py
++++ b/test/test_echoic_decoder.py
+@@ -83,7 +83,12 @@ def test_output_spelling_uses_the_echoic_shortlist():
+ @pytest.mark.parametrize('compiled', [False, True])
+ def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compiled):
+     import Models, util
+-    from Language import LanguageSpace, ConjunctionLayer, NotLayer
++    from Language import LanguageSpace, ConjunctionLayer, GrammarLayer
++    class Reflection(GrammarLayer):
++        inverse_kind = "unary"
++        invertible = True
++        def forward(self, x): return -x
++        def reverse(self, x): return -x
+     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+     conjunction = ConjunctionLayer()
+     policy = torch.nn.Linear(2, 3)
+@@ -91,7 +96,7 @@ def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compil
+         policy.weight.copy_(torch.tensor([[1., 1.], [-1., -1.], [0., 0.]]))
+         # The composed root has unit activation, independent of form norms.
+         policy.bias.copy_(torch.tensor([-1., -1., 0.]))
+-    language = SimpleNamespace(_generate_binary_ops=(conjunction,), _generate_unary_ops=(NotLayer(),),
++    language = SimpleNamespace(_generate_binary_ops=(conjunction,), _generate_unary_ops=(Reflection(0, 0),),
+         generate_policy=policy, _generate_policy_width=2,
+         decomposition_chooser=DecompositionChooser())
+     for name in ('reverse_binary_step', '_reverse_of_binary_op', '_finish_binary_inverse',
+@@ -117,10 +122,8 @@ def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compil
+     torch.testing.assert_close(out[:, :2], bank)
+     assert actions[0, :3].tolist() == [0, 2, 2]
+     assert actions[1, :4].tolist() == [1, 0, 2, 2]
+-    # The production eligibility above has one legal action at each step,
+-    # so its chooser gradient is correctly zero. Preserve the historical
+-    # numerical-credit assertion on the same hard trace with a declared
+-    # choice oracle. Real multi-operation credit is tested in review11.
++    # Even with multiple eligible actions, the free walk supplies no policy
++    # gradient. The policy learns the compose structure in its teacher loss.
+     def choice_at_compound(parent, lefts, rights, available, ops, codes, valid, **kwargs):
+         # The unit-activation parent is shorter than these form codes. Keep
+         # the same hard trace by offering alternatives at the compound, not
+@@ -133,5 +136,5 @@ def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compil
+     torch.testing.assert_close(credited, out)
+     out = credited
+     out.square().sum().backward()
+-    assert policy.weight.grad is not None and policy.weight.grad.norm() > 0
+-    assert bank.grad is not None and bank.grad.norm() > 0
++    assert policy.weight.grad is None or not policy.weight.grad.any()
++    assert bank.grad is None or not bank.grad.any()  # searched symbols remain detached
+diff --git a/test/test_free_reconstruction.py b/test/test_free_reconstruction.py
+index eea162e5f..1d5a13781 100644
+--- a/test/test_free_reconstruction.py
++++ b/test/test_free_reconstruction.py
+@@ -58,7 +58,7 @@ def test_free_trial_uses_no_reference_or_offsets_and_only_byte_cost(monkeypatch)
+         model.runBatch(train=True,optimizer=optimizer,batchSize=4,split='train',
+             batch_override=(model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)))
+         assert calls == ['greedy', 'explore', 'greedy', 'explore']
+-        assert {name for name in model._sentence_cost_registry._terms if name.startswith('reconstruction.')} == {'reconstruction.free_bytes', 'reconstruction.decomposition'}
++        assert {name for name in model._sentence_cost_registry._terms if name.startswith('reconstruction.')} == {'reconstruction.free_bytes', 'reconstruction.decomposition', 'reconstruction.walk_policy'}
+         audit = model.ownership_gradient_diagnostics(optimizer)
+         assert audit['conflicts'] == 0
+         decoder = [row for row in audit['parameters'] if 'generate_policy' in row['parameter']]
+diff --git a/test/test_inverse_unary_exclusion.py b/test/test_inverse_unary_exclusion.py
+index 5792316c2..456adb867 100644
+--- a/test/test_inverse_unary_exclusion.py
++++ b/test/test_inverse_unary_exclusion.py
+@@ -7,7 +7,7 @@ import pytest
+ def _prefer_unary(monkeypatch, both=False):
+     from Language import OperationSelectionLayer, NotLayer, NonLayer, SumLayer
+     layer = OperationSelectionLayer(d_model=2, ops=[SumLayer()],
+-        unary_ops=[NotLayer(), NonLayer()] if both else [NotLayer()], chooser='mlp')
++        unary_ops=[NotLayer(representation='poles'), NonLayer(representation='poles')] if both else [NotLayer(representation='poles')], chooser='mlp')
+     def binary(content, candidates, *args, **kwargs):
+         B, N, _ = content.shape
+         return content.new_zeros(B, N, 1), content.new_zeros(B, N-1, 1)
+@@ -25,7 +25,7 @@ def test_closing_does_not_spend_rounds_repeating_not_at_one_slot(monkeypatch):
+     result = layer.derive(value, rounds=6, slots=1, greedy=True)
+     assert result['used'].tolist() == [2]  # not, then STOP
+     assert [int(route['kind'][0]) for route in result['traces'][:2]] == [2, 0]
+-    torch.testing.assert_close(result['value'], -value)
++    torch.testing.assert_close(result['value'], value.flip(-1))
+ 
+ 
+ @pytest.mark.parametrize('compiled', [False, True])
+diff --git a/test/test_one_attention.py b/test/test_one_attention.py
+index 176e94caa..5d5a666ca 100644
+--- a/test/test_one_attention.py
++++ b/test/test_one_attention.py
+@@ -89,8 +89,9 @@ def test_narrowing_uses_the_shared_operation_chooser_and_compiles():
+     assert value.descended.tolist()==[[False,True]]
+     assert value.table.spent.tolist()==[4]
+     assert value.table.remaining.tolist()==[4]
+-    value.values.sum().backward()
+-    assert chooser.bracket_anchor.grad is not None
++    assert not value.values.requires_grad
++    assert value.probabilities.requires_grad
++    assert chooser.bracket_anchor.grad is None
+ 
+ 
+ @pytest.mark.parametrize('name',['subsymbolicOrder','symbolicOrder','subsymbolicLoop','serial','modeSchedule','readingAttention','globalAttention','globalAttentionConsume','selectedThoughtBudget'])
+@@ -174,7 +175,7 @@ def test_optional_field_choices_cannot_exhaust_the_word_completion_deadline():
+     def field_first(keys,legal,space,**kwargs):
+         priority=torch.arange(legal.shape[-1],device=keys.device).expand_as(legal)
+         logits=priority.to(keys).masked_fill(~legal,-torch.inf).flatten(1)
+-        return logits.argmax(-1),keys.new_ones(len(keys)),legal.flatten(1).sum(-1)>1
++        return logits.argmax(-1),keys.new_ones(len(keys)),legal.flatten(1).sum(-1)>1, dict(probability=keys.new_ones(len(keys)), alternative_count=(legal.flatten(1).sum(-1)-1).clamp_min(0))
+     chooser=SimpleNamespace(attention_operations=tuple(range(6)),attend=field_first)
+     starts=torch.arange(8)*2
+     spans=torch.stack((starts,starts+1),-1)[None]
+@@ -376,14 +377,14 @@ def test_field_operation_changes_the_next_mask_and_children_read_native_poles():
+     def choose(keys,legal,space,**kwargs):
+         masks.append(legal.clone())
+         index = torch.tensor([4]) if len(masks)==1 else legal.flatten(1).long().argmax(-1)
+-        return index, keys.new_ones(1), legal.flatten(1).sum(-1)>1
++        return index, keys.new_ones(1), legal.flatten(1).sum(-1)>1, dict(probability=keys.new_ones(1), alternative_count=(legal.flatten(1).sum(-1)-1).clamp_min(0))
+     chooser=SimpleNamespace(attention_operations=tuple(range(6)),attend=choose)
+     result=narrow_words(chooser,torch.eye(2)[None],torch.tensor([[[0,1],[2,3]]]),
+         torch.ones(1,2,dtype=torch.bool),poles=torch.tensor([[[1.,0.],[0.,1.]]]),budget=6)
+     assert masks[0][0,0,0]  # native both permits divide
+     assert not masks[1][0,0,0]  # or leaves a pure parent
+     assert result.accepted.all()
+-    torch.testing.assert_close(result.values,torch.tensor([[[1.,0.],[0.,-1.]]]))
++    torch.testing.assert_close(result.values,torch.tensor([[[1.,0.],[0.,1.]]]))
+ 
+ 
+ def test_narrowing_reconstruction_cannot_erase_an_omitted_word_target():
+diff --git a/test/test_operator_catalogue.py b/test/test_operator_catalogue.py
+index 8e5a55390..c39094b90 100644
+--- a/test/test_operator_catalogue.py
++++ b/test/test_operator_catalogue.py
+@@ -31,7 +31,7 @@ def test_non_excludes_without_affirming_or_claiming_an_inverse():
+     with pytest.raises((RuntimeError, NotImplementedError)):
+         op.reverse(poles)
+     code = NonLayer()
+-    torch.testing.assert_close(code(torch.tensor([[.5, -.4]])), torch.zeros(1, 2))
++    torch.testing.assert_close(code(torch.tensor([[.5, -.4]])), torch.tensor([[.5, -.4]]))
+ 
+ 
+ def test_sum_is_a_mean_and_witness_inverse_is_exact():
+diff --git a/test/test_output_walk.py b/test/test_output_walk.py
+index 44e398f2a..bbc749d07 100644
+--- a/test/test_output_walk.py
++++ b/test/test_output_walk.py
+@@ -182,8 +182,8 @@ def test_walk_is_invariant_to_reconstruction_only_state():
+     assert torch.equal(again[1], base[1]) and torch.equal(again[2], base[2])
+ 
+ 
+-def test_generate_policy_has_numerical_credit_without_imitation(monkeypatch):
+-    """The decoder's owner supplies the loss; no sampled imitation term."""
++def test_free_generate_policy_has_no_numerical_credit(monkeypatch):
++    """Free inference has no policy gradient; the compose teacher owns CE."""
+     _walk_control_oracle(monkeypatch)
+     m=_model()
+     try:
+@@ -198,8 +198,7 @@ def test_generate_policy_has_numerical_credit_without_imitation(monkeypatch):
+         assert cost.shape==(1,) and float(cost.detach())==0.
+         assert bool(torch.isfinite(cost))
+         out.square().sum().backward()
+-        assert language.generate_policy.weight.grad is not None
+-        assert float(language.generate_policy.weight.grad.abs().sum())>0
++        assert language.generate_policy.weight.grad is None or not language.generate_policy.weight.grad.any()
+     finally:
+         m.End();m.symbolSpace.soft_reset()
+ 
+diff --git a/test/test_reading_attention.py b/test/test_reading_attention.py
+index cc3f9cadc..85270d7b8 100644
+--- a/test/test_reading_attention.py
++++ b/test/test_reading_attention.py
+@@ -93,7 +93,9 @@ def test_codebook_path_preserves_gradient_boundary():
+     W=torch.randn(32,16,requires_grad=True)
+     prior=BracketKeys._codebook_retrieval_prior(keys,W,cq.requires_grad_(),None)
+     assert not prior.requires_grad
+-    out=_reading(spans,percept,prior);out.values.sum().backward()
++    out=_reading(spans,percept,prior)
++    assert not out.values.requires_grad
++    out.probabilities.sum().backward()
+     assert W.grad is None and cq.grad is None and percept.grad is None
+ 
+ 
+diff --git a/test/test_review11_contracts.py b/test/test_review11_contracts.py
+index d0ac827de..4383aaf4b 100644
+--- a/test/test_review11_contracts.py
++++ b/test/test_review11_contracts.py
+@@ -113,7 +113,7 @@ def test_capacity_does_not_make_stop_eligible_for_a_compound(monkeypatch):
+     assert torch.isfinite(out).all()
+ 
+ 
+-def test_policy_still_learns_between_supported_operations(monkeypatch):
++def test_free_policy_has_no_pathwise_credit_between_supported_operations(monkeypatch):
+     import util
+     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+     model, _ = decoder()
+@@ -136,8 +136,7 @@ def test_policy_still_learns_between_supported_operations(monkeypatch):
+     assert count.tolist() == [2] and not truncated.any()
+     out[:, 0].sum().backward()
+     gradient = language.generate_policy.bias.grad
+-    assert gradient[:2].abs().sum() > 0
+-    assert gradient[2] == 0  # an ineligible STOP receives no surrogate credit
++    assert gradient is None or not gradient.any()  # CE is supplied only by the teacher
+ 
+ 
+ @pytest.mark.parametrize('configuration', ['XOR_grammar.xml', 'MM_xor.xml'])
+diff --git a/test/test_review14_contracts.py b/test/test_review14_contracts.py
+index 2a2faf5e5..ef9308515 100644
+--- a/test/test_review14_contracts.py
++++ b/test/test_review14_contracts.py
+@@ -145,14 +145,15 @@ def test_review17_measurement_wiring_on_one_ordinary_batch(tmp_path):
+     from pathlib import Path
+     from bounded_tests import run_guarded, GIB
+     root=Path(__file__).resolve().parents[1]
+-    receipt=root/'doc/benchmarks/2026-10-03-operators-attention'
++    receipt=root/'doc/benchmarks/2026-10-05-operators-update'
++    prior=root/'doc/benchmarks/2026-10-03-operators-attention'
+     env=os.environ.copy()
+-    env.update(PYTEST_PLUGINS='review17_gate_observer', MODEL_COMPILE='none',
++    env.update(PYTEST_PLUGINS='operators_gate_observer', MODEL_COMPILE='none',
+         OWNERSHIP_OBSERVER_OUTPUT=str(tmp_path/'ownership'),
+         ITEM7_XOR_MEASUREMENTS=str(tmp_path/'observations.jsonl'), ITEM7_XOR_GATE='5',
+         REVIEW17_REPORTS=str(tmp_path/'reports.jsonl'),
+-        PYTHONPATH=os.pathsep.join(map(str,(receipt,root/'bin',root/'test'))))
+-    result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'review22_observer_probe.py')],
++        PYTHONPATH=os.pathsep.join(map(str,(receipt,prior,root/'bin',root/'test'))))
++    result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'observer_probe.py')],
+         cwd=root,env=env,log_path=tmp_path/'observer.log',memory_bytes=8*GIB,timeout=1800)
+     assert result['exit_code']==0,(tmp_path/'observer.log').read_text()
+ 
+diff --git a/test/test_subspace_what_stm_contract.py b/test/test_subspace_what_stm_contract.py
+index d949b12e3..3f6e216db 100644
+--- a/test/test_subspace_what_stm_contract.py
++++ b/test/test_subspace_what_stm_contract.py
+@@ -299,7 +299,7 @@ def test_execute_arity1_dispatches_to_layer_forward():
+         x = torch.tensor([[[0.7, 0.2, 0.0, 0.0]]])  # [B=1, V=1, D=4]
+         y = layer.execute(rule_id=0, left=x)
+         assert y.shape == x.shape
+-        assert torch.allclose(y, -x)
++        assert torch.allclose(y, x)  # negation exchanges poles, never the opaque code
+     finally:
+         TheGrammar.rules = saved_rules
+         TheGrammar._configured = saved_configured
+diff --git a/todo.md b/todo.md
+index 4e51e372c..a0c6d6c4e 100644
+--- a/todo.md
++++ b/todo.md
+@@ -17,11 +17,12 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
+ Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
+ lines below keep the numbers their items had when they landed.
+ 
+-**Current sequence (6.9 closed as the October 3 §25 baseline; Alec,
+-2026-10-03: "no conference freeze. We push through to item zero"):**
+-the grammatical operators update → 6.8 → 6.5 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0.
+-The word-level evaluator once pulled forward for the conference returns to
+-its place in items 4 and 6.8. Items 9 and 8 are implemented and
++**Next:** the [grammatical operators update](doc/plans/2026-10-05-operators-update.md), then **6.5**.
++
++**Current sequence (6.8 accepted on October 5; no conference freeze):**
++the grammatical operators update → 6.5 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0.
++The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
++acceptance does not authorize fresh-model bulk scoring. Items 9 and 8 are implemented and
+ reviewed; what remains of them is empirical and waits for the
+ million-sentence checkpoint that item 0's run provides, so they are not
+ in the implementation queue.
+@@ -71,8 +72,8 @@ generation is expected at this stage and is recorded, not tuned away.
+    causal result, and fused AMP conservatively undercounts exposure. Preserve the
+    tiny-run nulls, incomplete reverse programs and 5/56 wording failures as
+    development diagnostics ([original receipt](doc/benchmarks/2026-09-26-item9/README.md));
+-   old context-free and assertion-thought scores are invalid controls. Item 6.9 is
+-   the next implementation task while this empirical gate waits for training.
++   old context-free and assertion-thought scores are invalid controls. The grammatical operators
++   update is next while this empirical gate waits for training.
+ - **8. Evidence: learned utility and structural preference.** Prefer
+    understandable structural operators when they carry the meaning; any opaque
+    operator must be an ordinary grammar-MLP choice, with the structural face
+@@ -123,10 +124,10 @@ generation is expected at this stage and is recorded, not tuned away.
+    Alec, 2026-09-30: "equal comparison").
+    The unchanged depth-three campaign remains red; retain its assertion and
+    the XOR/MM evidence ([accepted landing](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).
+-- **The grammatical operators update** (not yet numbered. **Decided, Alec,
+-   2026-09-29:** after item 7 is accepted and before 6.8 (the conference
+-   freeze that once stood between was dropped on 2026-10-03): "let's iron out the operators after getting 7 accepted";
+-   later the same day, after item 6.9).
++- **The grammatical operators update** (not yet numbered; next after the
++   accepted 6.8 landing, then 6.5; Alec, 2026-10-05).
++   The [operators update plan](doc/plans/2026-10-05-operators-update.md) orders
++   the remaining catalogue and the work carried from the 6.8 rounds.
+    It carries into code what the
+    operator pass of 2026-09-27 to 09-29 decided in documents: `not` and `non`
+    over evidence poles, the conjunction's reading of poles, words as
+@@ -175,12 +176,13 @@ generation is expected at this stage and is recorded, not tuned away.
+    adverb cannot write on a dimension their operand is silent on. Open
+    there, for when the pass reaches them: `bind`, `expect` in place of
+    `arma`, and what says a sentence is absolute once `exist` is retired.
+-   **Standing gate (6.9 closing decision, October 3):** no regression
+-   against the [accepted 6.9 baseline](doc/benchmarks/2026-10-03-item6-9-closing/README.md);
+-   its class and reconstruction gates remain red. First add decoder exploration
+-   under [6.9 plan §26.3](doc/plans/2026-09-29-item-6-9-xor-grammar.md#263-for-the-catalog),
+-   then implement the remaining catalogue. No configuration is given
+-   more rows (decided, spec §17.7). A sentence that states a definition is
++   **Standing gate (accepted 6.8, October 5):** no regression against the
++   [§22 receipt](doc/benchmarks/2026-10-03-operators-attention/README.md):
++   class **7/10**, reconstruction **9/10**, joint **6/10**, MM_xor and sum
++   **10/10**, full sweep **4,917 passed / 0 failed**, zero sentence-path
++   gradient at perception and zero ownership conflicts. Decoder exploration
++   is implemented; the remaining work follows the operators update plan.
++   No configuration is given more rows (decided, spec §17.7). A sentence that states a definition is
+    an `equal` (Alec, 2026-09-29: "I guess we only need equal?"; catalogue
+    §6.3).
+    **Item-7 review residue** (two truths §21 and §23): the predicate identity
+@@ -190,126 +192,18 @@ generation is expected at this stage and is recorded, not tuned away.
+    outside the accepted item-7 repair.
+    Item 5 takes up the bias of forgetting by the kind of truth that Alec
+    proposed on 2026-09-29 (forgetting spec §4).
+-- **6.8. One attention: brackets, narrowing, and expectation at every bracket**
+-   ([plan](doc/plans/2026-09-27-item-6-8-one-attention.md); Alec, 2026-09-27;
+-   after 7.5 and 7, before 6.5; three non-blocking questions in plan §6).
+-   **October 5 §22 accepted landing:** the §16.3 candidate remains at
+-   `eb1fbefb`, tagged `6.8-s16.3-candidate`. Alec accepted the measured
+-   §17–§22 state and authorized its commit, push and parent submodule bump.
+-   One working tree.
+-   **Two declared changes:** admitted percept rows use a Gaussian row,
+-   unit-L2 normalization, then the [0,1] clamp. The two grammar fixtures have
+-   a declared capacity increase: **nDim 14 → 22**, content **6 → 14** after
+-   the eight address coordinates, in IS/PS/CS/WS. Concept rows stay **6 / 8**;
+-   MM_xor's configuration is unchanged. The byte-fallback initializer stays
+-   as §18. The §20 kernels still take magnitude from activation; the reader
+-   remains affine on the raw root. Attention credit stays detached at the
+-   sentence handoff; its estimator is the operators update's. The forward
+-   score-function K·R term, decomposition chooser, pair search and room rule
+-   are unchanged.
+-   **Green full sweep:** **5204 cases; 4917 passed,
+-   286 skipped, 1 non-strict XPASS,
+-   0 XFAIL, zero failed**, ten workers. Two assertions for
+-   the old six-coordinate content width were ported, with complete old/new
+-   bodies and failures saved; no runtime regression repair was needed.
+-   The final focused probe retained both affected files (21/21 passed).
+-   Seeds, bars, budgets, optimizers and guards are unchanged.
+-   **Once-only frozen campaign:** sum **10/10**, read first; XOR
+-   class **7/10**, reconstruction **9/10**,
+-   joint **6/10** from ten shared trainings; MM_xor **10/10**.
+-   Bands: **7 at 0, 2 at ¼, 1 between,
+-   0 above ¼**. No retries or tuning; Alec accepted the measured round.
+-   Exact form collisions occurred in **0/10** runs at start or end.
+-   Historical class/reconstruction/joint counts: §12 **0/7/0**, §13 **0/0/0**,
+-   §14 **1/8/1** (pre-addendum CS 262/264), §17 **1/10/1**, §18 **0/10/0**,
+-   §20 **2/8/2**; MM and sum were **10/10**. §§15–16.3 and §19 supplied no
+-   gate measurements. Accepted MSE **.114748**, reconstruction **0/4**, zero
+-   conflicts and prior **9/10 / 5/10** remain historical. The declared
+-   capacity difference and independent random runs preclude attributing a
+-   count change to one of this round's two changes.
+-   **Audits:** 1600 tenth-run sentence/step records,
+-   1600 departures, 80 nonzero advantages;
+-   K·R·ΔC·∇p error 1.86265e-09, finite-difference error
+-   1.02006e-09. Prototype/evidence sentence gradient
+-   maximum 0; ownership conflicts 0.
+-   The [receipt](doc/benchmarks/2026-10-03-operators-attention/README.md) retains
+-   starting form/root norms, named operators, per-word read-backs, geometry,
+-   exact collisions, support, d ranges, room, reader trajectories, decomposition
+-   weights/pick rates, decoder margins and kept paths. Empty same-context
+-   meanings correctly coincide. Complement bootstrap and the carried operators
+-   work remain deferred. Frozen evaluation admits nothing; the trained NanoChat
+-   gate waits for item 4. No fresh bulk scoring or native benchmark.
+-   **Accepted by Alec on October 5; commit, push and parent submodule bump authorized.**
+-   **Item-7 reading residue:** every read word currently runs the complete
+-   `interpret` unary under every binding. This forcing stays until reading
+-   mode decides when an object is interpreted; its removal is not part of
+-   item 7's accepted landing (two truths §15 and §18).
+-   **Taken up with this item (Alec, 2026-09-29):** a predefined word
+-   whole, "a cut of non-white space letters", so that a word has one whole
+-   that learning does not move and WholeSpace's cut agrees with the
+-   reader's ([plan §3a](doc/plans/2026-09-27-item-6-8-one-attention.md#3a-the-word-whole-alec-2026-09-29-taken-up-with-this-item)).
+-   "Waiting for 6.8 is fine, as long as it's written down." Its extent is a
+-   word by the common definition: "punctuation and digits also separate
+-   words". To settle there: the reader's rule, which does not separate at
+-   digits today, and what reads the runs of digits that the proofs of XOR
+-   are made of.
+-   The simplification: attention is one mechanism, a bracket over the input.
+-   Open awareness is the bracket set to the whole input, read by the field,
+-   whose only operations are the order-independent ones — and, or, not —
+-   because a pooled reading admits nothing else; that is the criterion for
+-   what belongs to the field. Everything order-dependent (lift, lower, verb,
+-   preposition) is the grammar and acts *between* brackets, over the
+-   sequence of readings that narrowing produces. Mode exclusion stops being
+-   a rule and becomes a theorem. The word loop is the narrowing schedule:
+-   the four corners give the reading policy already decided in pieces —
+-   true or false, move on; *both*, divide the bracket; *neither*, look
+-   closer, descend, mint if nothing is there — so serial reading is
+-   "narrow until each bracket's encoding is pure". A known word reads
+-   purely at its word bracket and narrowing stops; an unknown word reads
+-   neither and narrowing continues to bytes, where `interpret` mints; a
+-   known multi-word unit reads purely at the wider bracket and is glossed
+-   (speed reading that slows at novelty). Parallel-first falls out: the
+-   open read is the first bracket. **Expectation** (Alec: the mathematical
+-   sense; applied with the opposite sign so that surprise is what is
+-   processed; held for any subject of attention — past, current or future
+-   frames, a whole sentence, the next concept) becomes one mechanism at
+-   every bracket level — next byte in a word, next word in a sentence,
+-   next sentence in a document, next row in the chain — the same ARMA
+-   machinery, negative image and surprise column with the level as an
+-   argument, giving a training target at every bracket instead of one per
+-   sentence, and making the pilot's next-word gate this predictor at the
+-   word bracket rather than a separate scorer.
+-   **Landing 6.8-1 (the fast loop is kept):** the stop is pinned at
+-   words, so the compiled per-word step keeps its shape; narrowing and
+-   glossing enter as candidates in the 7.5 softmax (the same chooser and
+-   straight-through learning, no separate policy), which is why this
+-   follows 7.5; the closing's sentence-bracket row with its `.where`/`.when`
+-   is the terminal encoding, which is why it follows 7; 6.5 then adds
+-   identity binding as further candidates in the same softmax, which is
+-   why it precedes 6.5. Deletions, per the no-legacy rule: `modeSchedule`,
+-   `serial` as a mode (the bracket schedule replaces it), the
+-   subsymbolic-versus-symbolic loop distinction and the two order budgets
+-   (one narrowing budget replaces them), and the boundary-only sentence
+-   predictor as a separate object (expectation at every bracket replaces
+-   it). Exit: the XOR gate and exact-zero controls unchanged; the serial
+-   reconstruction baseline within the reviewed-9b tolerance; the
+-   word-level predictor scoring the frozen NanoChat item manifest; the
+-   both-rate and categorical-discrimination fields logged per level (item
+-   4); item 9's prediction gates re-declared at the word bracket. Costs to
+-   measure, not assume: the open pass against item 1's per-word baseline;
+-   the reliability of the field's *both* that the policy turns on.
+-   **6.8-2, after 6.8-1 (FutureWork):** the dynamic stop —
+-   glossing above the word bracket and descending below it only at
+-   novelty — decided against item 1's throughput baseline.
+-   **Conference sequencing (Alec, 2026-09-27), superseded 2026-10-03:**
+-   there is no conference freeze; 6.8 follows the operators update, and the
+-   word-level predictor is built in 6.8-1 as the first level of expectation
+-   (item 4 evaluates with it).
+-   *Architecture (Alec, 2026-09-28):* words are a formula for narrowing
+-   attention — the bracket narrows the input and the symbols on one shared
+-   budget, the words narrow the domain of discourse and keep it as Ground;
+-   two attentions, one chooser
+-   ([accessible mind §2.0.1](doc/specs/2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention)).
++   **Carried from 6.8:** the [FutureWork list](doc/FutureWork.md#carried-from-the-68-1315-rounds-2026-10-04)
++   and the [operators update plan](doc/plans/2026-10-05-operators-update.md)
++   retain the attention estimator, decomposition exact-fit precedence and
++   feature standardization, form fold, Kleene connectives, complement
++   bootstrap, `not` items, concept-face negative image and form density.
++   The [dynamic stop](doc/FutureWork.md#the-dynamic-stop-glossing-above-words-descending-at-novelty-item-68-2)
++   remains future work. Item 1 retains the open-read cost and teacher-loss
++   host island; item 4 retains the trained-checkpoint evaluator.
++   **Reading residue:** the forced `interpret` at each binding and the word
++   boundary's treatment of digits remain visible in the
++   [6.8 plan](doc/plans/2026-09-27-item-6-8-one-attention.md); reconciliation
++   belongs with the carried operators work, not a repeat of the accepted gate.
+ - **6.5. Independent components: identity as columns, verbs as change**
+    ([spec](doc/specs/2026-09-26-independent-components.md)), after item 7
+    (needs the closing writing every S as a row and §3.5's reference chain).
+@@ -534,6 +428,7 @@ Everything that is decided in direction but not on this path is in
+ 
+ ### Done (newest first)
+ 
++- `42daf96f` Item 6.8 accepted: one attention, two spaces and one index; tag `6.8-landing`; class **7/10**, reconstruction **9/10**, joint **6/10**, MM_xor **10/10**, sum **10/10**, sweep **4,917 passed / 0 failed**, zero ownership conflicts ([receipt](doc/benchmarks/2026-10-03-operators-attention/README.md)); carried work: [FutureWork](doc/FutureWork.md#carried-from-the-68-1315-rounds-2026-10-04) and the [operators update plan](doc/plans/2026-10-05-operators-update.md).
+ - `bfe6a0d7` Item 6.9: the baseline of the composition mechanism (6.8 §12.1), one reconstruction/output decoder and one writer per weight; accepted class MSE .11475 and reconstruction 0/4 remain historical, with zero ownership conflicts ([closing receipt](doc/benchmarks/2026-10-03-item6-9-closing/README.md), [round history](doc/benchmarks/2026-10-03-item6-9-closing/todo-history.md)).
+ - `9810fc7` Item 7: two truths, indexed definitions, ended clause state and shared row-free predicates; accepted under review §25 after all three fixture ports and required checks ([landing receipt](doc/benchmarks/2026-09-30-item7-review-round5/landing/README.md)).
+ - `6906727` Item 7.5: one-operation exploit/explore derivations trained at each sentence closing, reduction pressure/deadlines and closing-gradient reporting; accepted with the unchanged depth-three campaign red ([receipt](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).

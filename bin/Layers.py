@@ -1636,6 +1636,19 @@ class LDUReadout(ErgodicLayer):
         self.raw_L = nn.Parameter(torch.zeros(nInput, self.rank))
         self.d = nn.Parameter(torch.ones(self.rank))
         self.raw_U = nn.Parameter(torch.zeros(self.rank, nOutput))
+        # A pole-only exclusion can leave an occupied, silent leading role.
+        # A truncated identity would then hide every later role until training.
+        # Fold the remaining input coordinates into the initial readout, with
+        # unit-norm columns and no RNG consumption. Saved factors still load
+        # verbatim; this only initializes a new answer reader.
+        if self.rank and nInput > self.rank:
+            rows = torch.arange(self.rank, nInput, device=self.raw_L.device)
+            columns = rows.remainder(self.rank)
+            with torch.no_grad():
+                self.raw_L[rows, columns] = 1.
+                counts = (nInput + self.rank - 1 - torch.arange(
+                    self.rank, device=self.d.device)) // self.rank
+                self.d.copy_(counts.to(self.d).rsqrt())
         if hasBias:
             self.biasWeight = nn.Parameter(torch.zeros(1, nOutput))
         self.register_buffer("_readout_format", torch.tensor(1, dtype=torch.int64))
@@ -2414,6 +2427,8 @@ class GrammarLayer(Layer):
     # one declaration, narrowed by the face, never extra effects at runtime.
     effect_reads = ('percept', 'knowing', 'symbolic', 'serial', 'priming', 'budget')
     effect_writes = ('serial', 'percept', 'budget')
+    footprint_reads = ('form', 'meaning', 'poles')
+    footprint_writes = ('form', 'meaning')
     field_eligible = False
     case_head_role = 0
     order_delta = 0

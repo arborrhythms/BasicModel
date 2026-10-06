@@ -1,0 +1,50 @@
+........................................................................ [ 40%]
+........................................................................ [ 80%]
+............s......................                                      [100%]
+=============================== warnings summary ===============================
+test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_part_direct_true
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_truth_layer_record_many.py::test_record_batch_matches_record_loop_high_trust
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [4] contradicts existing truth [1] (cosine similarity -0.864)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [2] contradicts existing truth [1] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [3] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [1] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows
+test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild
+test/test_type_run_spans.py::test_meronomy_owns_properties_without_a_type_dictionary
+test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys
+test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut
+test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs
+test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut
+test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_typed_definition.py::test_typed_definition_head_modifiers_exclusions
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7164: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7164: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmppss_p2rm/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+178 passed, 1 skipped, 16 warnings in 8.29s

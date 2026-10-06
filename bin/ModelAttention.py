@@ -138,6 +138,8 @@ def stage_input(model):
     slab=getattr(isp,'_ar_embedded_N',None)
     active=getattr(isp,'_word_active_mask',None)
     model._attention_words=None
+    model._attention_score_term=None
+    model._last_attention_score_function=None
     model._word_expectation=None
     model._word_expectation_input=None
     from QueryWork import QueryWorkBudget
@@ -227,17 +229,18 @@ def stage_input(model):
             descended=F.pad(result.descended,(0,W-live_width)))
     model._last_attention_comparison = None
     if model.training and torch.is_grad_enabled():
-        from WalkTrials import narrowing_pair, observe_comparison
+        from WalkTrials import narrowing_pair, observe_comparison, attention_score_function
         reading, audit = narrowing_pair(read,
             percept_reconstruction_score(model, keys, forms, ids, live))
         model._last_attention_comparison = audit
+        model._attention_score_term, model._last_attention_score_function = attention_score_function(audit)
         model._attention_forms=(forms,ids,keys,live)
         observe_comparison(model, 'attention.input', audit, active=live.any(-1))
     else:
         reading=read()
     model._attention_words=reading
-    # Forward values stay native codes. The selected projection carries the
-    # shared chooser's straight-through credit into cached word perception.
+    # Native forward values only. The paired-cost term is the chooser's sole
+    # attention credit, consumed once by reconstruction at the owner step.
     score=(reading.values*keys).sum(-1)/keys.square().sum(-1).clamp_min(1e-12)
     model._attention_credit=score
     model._attention_spans=spans

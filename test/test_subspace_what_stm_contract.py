@@ -299,7 +299,7 @@ def test_execute_arity1_dispatches_to_layer_forward():
         x = torch.tensor([[[0.7, 0.2, 0.0, 0.0]]])  # [B=1, V=1, D=4]
         y = layer.execute(rule_id=0, left=x)
         assert y.shape == x.shape
-        assert torch.allclose(y, -x)
+        assert torch.allclose(y, x)  # negation exchanges poles, never the opaque code
     finally:
         TheGrammar.rules = saved_rules
         TheGrammar._configured = saved_configured

@@ -1,0 +1,82 @@
+.................sssFsFsssssss.s.s.s.s..............ssssssss............ [ 20%]
+........................................................................ [ 40%]
+........................................................................ [ 61%]
+........................................................................ [ 81%]
+.................................................................        [100%]
+=================================== FAILURES ===================================
+_ test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development] _
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2300/test_native_answer_uses_owned_0')
+output_loop = False, concept_width = 264, eager_reading = None
+
+    @pytest.mark.parametrize("concept_width", _NATIVE_CONCEPT_WIDTHS)
+    @pytest.mark.parametrize("output_loop", [False, True])
+    def test_native_answer_uses_owned_ideas_without_dense_symbol_state(tmp_path, output_loop, concept_width, eager_reading):
+        from dataclasses import replace
+        from test_output_walk import _capture_program_probe, _stop
+        m = _native_answer_model(tmp_path, output_loop, concept_width=concept_width)
+        m.eval()
+        if output_loop:
+            _stop(m)
+        try:
+            with torch.no_grad():
+                u = _capture_program_probe(m, ["1 plus 2", "3 plus 4"])
+                assert len(u.sentence_states) == 2 and all(p is not None for p in u.sentence_states)
+                # These dense compatibility carriers cannot own a production answer.
+                owned = replace(u, symbolic_state=None, conceptual_state=None, answer_seed=None)
+                c = m.reverseOutput(owned, m.resolveAnswer(owned, (What.supervised(0), What.supervised(1))))
+            assert c.derivation.resolved
+            assert c.concepts.shape[0] == 2 and c.concepts.shape[-1] == concept_width
+            assert not torch.equal(c.concepts[0], c.concepts[1])
+            assert bool(torch.isfinite(c.actual).all())
+>           assert not torch.equal(c.actual[0], c.actual[1])
+E           assert not True
+E            +  where True = <built-in method equal of type object at 0x10d0c13a0>(tensor([[0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.]]), tensor([[0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.]]))
+E            +    where <built-in method equal of type object at 0x10d0c13a0> = torch.equal
+
+test/test_output_path_supervised.py:195: AssertionError
+_ test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-development] _
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2300/test_native_answer_uses_owned_1')
+output_loop = True, concept_width = 264, eager_reading = None
+
+    @pytest.mark.parametrize("concept_width", _NATIVE_CONCEPT_WIDTHS)
+    @pytest.mark.parametrize("output_loop", [False, True])
+    def test_native_answer_uses_owned_ideas_without_dense_symbol_state(tmp_path, output_loop, concept_width, eager_reading):
+        from dataclasses import replace
+        from test_output_walk import _capture_program_probe, _stop
+        m = _native_answer_model(tmp_path, output_loop, concept_width=concept_width)
+        m.eval()
+        if output_loop:
+            _stop(m)
+        try:
+            with torch.no_grad():
+                u = _capture_program_probe(m, ["1 plus 2", "3 plus 4"])
+                assert len(u.sentence_states) == 2 and all(p is not None for p in u.sentence_states)
+                # These dense compatibility carriers cannot own a production answer.
+                owned = replace(u, symbolic_state=None, conceptual_state=None, answer_seed=None)
+                c = m.reverseOutput(owned, m.resolveAnswer(owned, (What.supervised(0), What.supervised(1))))
+            assert c.derivation.resolved
+            assert c.concepts.shape[0] == 2 and c.concepts.shape[-1] == concept_width
+            assert not torch.equal(c.concepts[0], c.concepts[1])
+            assert bool(torch.isfinite(c.actual).all())
+>           assert not torch.equal(c.actual[0], c.actual[1])
+E           assert not True
+E            +  where True = <built-in method equal of type object at 0x10d0c13a0>(tensor([[0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.]]), tensor([[0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.],\n        [0.]]))
+E            +    where <built-in method equal of type object at 0x10d0c13a0> = torch.equal
+
+test/test_output_path_supervised.py:195: AssertionError
+=============================== warnings summary ===============================
+test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7164: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpzy5wct8e/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development]
+FAILED test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-development]
+2 failed, 328 passed, 23 skipped, 2 warnings in 9.41s

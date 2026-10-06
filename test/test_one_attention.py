@@ -89,8 +89,9 @@ def test_narrowing_uses_the_shared_operation_chooser_and_compiles():
     assert value.descended.tolist()==[[False,True]]
     assert value.table.spent.tolist()==[4]
     assert value.table.remaining.tolist()==[4]
-    value.values.sum().backward()
-    assert chooser.bracket_anchor.grad is not None
+    assert not value.values.requires_grad
+    assert value.probabilities.requires_grad
+    assert chooser.bracket_anchor.grad is None
 
 
 @pytest.mark.parametrize('name',['subsymbolicOrder','symbolicOrder','subsymbolicLoop','serial','modeSchedule','readingAttention','globalAttention','globalAttentionConsume','selectedThoughtBudget'])
@@ -174,7 +175,7 @@ def test_optional_field_choices_cannot_exhaust_the_word_completion_deadline():
     def field_first(keys,legal,space,**kwargs):
         priority=torch.arange(legal.shape[-1],device=keys.device).expand_as(legal)
         logits=priority.to(keys).masked_fill(~legal,-torch.inf).flatten(1)
-        return logits.argmax(-1),keys.new_ones(len(keys)),legal.flatten(1).sum(-1)>1
+        return logits.argmax(-1),keys.new_ones(len(keys)),legal.flatten(1).sum(-1)>1, dict(probability=keys.new_ones(len(keys)), alternative_count=(legal.flatten(1).sum(-1)-1).clamp_min(0))
     chooser=SimpleNamespace(attention_operations=tuple(range(6)),attend=field_first)
     starts=torch.arange(8)*2
     spans=torch.stack((starts,starts+1),-1)[None]
@@ -376,14 +377,14 @@ def test_field_operation_changes_the_next_mask_and_children_read_native_poles():
     def choose(keys,legal,space,**kwargs):
         masks.append(legal.clone())
         index = torch.tensor([4]) if len(masks)==1 else legal.flatten(1).long().argmax(-1)
-        return index, keys.new_ones(1), legal.flatten(1).sum(-1)>1
+        return index, keys.new_ones(1), legal.flatten(1).sum(-1)>1, dict(probability=keys.new_ones(1), alternative_count=(legal.flatten(1).sum(-1)-1).clamp_min(0))
     chooser=SimpleNamespace(attention_operations=tuple(range(6)),attend=choose)
     result=narrow_words(chooser,torch.eye(2)[None],torch.tensor([[[0,1],[2,3]]]),
         torch.ones(1,2,dtype=torch.bool),poles=torch.tensor([[[1.,0.],[0.,1.]]]),budget=6)
     assert masks[0][0,0,0]  # native both permits divide
     assert not masks[1][0,0,0]  # or leaves a pure parent
     assert result.accepted.all()
-    torch.testing.assert_close(result.values,torch.tensor([[[1.,0.],[0.,-1.]]]))
+    torch.testing.assert_close(result.values,torch.tensor([[[1.,0.],[0.,1.]]]))
 
 
 def test_narrowing_reconstruction_cannot_erase_an_omitted_word_target():

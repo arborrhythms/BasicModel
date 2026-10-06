@@ -1,0 +1,1807 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_open_variable",
+    "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_surface_normalization",
+    "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_unknown_surface_raises",
+    "test/test_truth_grounded_reasoning.py::TestIsTrue::test_absent_idea_is_unknown",
+    "test/test_truth_grounded_reasoning.py::TestIsTrue::test_activation_without_fact_evidence_remains_unknown",
+    "test/test_truth_grounded_reasoning.py::TestIsTrue::test_negative_trust_single_idea",
+    "test/test_truth_grounded_reasoning.py::TestIsTrue::test_positive_trust_single_idea",
+    "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_equal_distinct_is_unknown",
+    "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_equal_shared_parts_and_wholes",
+    "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_part_direct_true",
+    "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_part_unknown",
+    "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_true_false",
+    "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_true_true",
+    "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_true_unknown",
+    "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_equal_isomorphic_vs_norm",
+    "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_exist_is_isTrue",
+    "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_quantize_noop_without_store",
+    "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_quantize_snaps_to_nearest_idea",
+    "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_query_idea_and_relation",
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_chain_trace_rendered",
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_direct_trace_rendered",
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_geometry_and_world_refutation_do_not_establish_taxonomic_conflict",
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_world_refutation_does_not_establish_taxonomic_falsehood",
+    "test/test_truth_grounded_reasoning.py::TestLegacyConsolidation::test_reason_open_mode_unchanged_shape",
+    "test/test_truth_grounded_reasoning.py::TestSoftRead::test_where_read_grounds_in_real_keys",
+    "test/test_truth_ideas_routing.py::TestTrustStamp::test_config_trust_stamps_cs_and_scales_incoming",
+    "test/test_truth_ideas_routing.py::TestTrustStamp::test_default_one",
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_none_when_no_trust",
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_persists_scalar_trust",
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_model_trust_scales_relative_and_absolute_rows",
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_relative_rows_get_scalar_absolute_gets_event_trust",
+    "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_identity_jaccard",
+    "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_parthood_coverage",
+    "test/test_truth_ideas_routing.py::TestReason::test_empty_store",
+    "test/test_truth_ideas_routing.py::TestReason::test_forward_chaining",
+    "test/test_truth_ideas_routing.py::TestReason::test_negative_trust_lie_not_illuminating",
+    "test/test_truth_ideas_routing.py::TestReason::test_no_fire_below_parthood_threshold",
+    "test/test_truth_ideas_routing.py::TestReason::test_single_step_modus_ponens",
+    "test/test_truth_ideas_routing.py::TestReason::test_zero_trust_relation_skipped",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_counterevidence_joins_the_negative_pole",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_no_relevant_episode_leaves_trust",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_support_joins_evidence_without_rebaking",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_zero_trust_relation_can_acquire_evidence",
+    "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_old_checkpoint_without_trust_loads_nonstrict",
+    "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_reason_over_reloaded_store_recovers_t1",
+    "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_trust_in_state_dict_roundtrip",
+    "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_verify_relation_writes_back_to_buffer",
+    "test/test_truth_layer_record_many.py::test_record_batch_matches_record_loop_high_trust",
+    "test/test_truth_layer_record_many.py::test_record_batch_low_trust_dropped_at_compact",
+    "test/test_truth_layer_record_many.py::test_record_batch_dot_scaling_negative_degree_bivector",
+    "test/test_truth_layer_record_many.py::test_record_batch_no_host_sync_in_brick",
+    "test/test_truth_luminosity_codes.py::test_empty_store_is_dark",
+    "test/test_truth_luminosity_codes.py::test_positive_store_measures_positive",
+    "test/test_truth_luminosity_codes.py::test_negative_store_measures_negative",
+    "test/test_truth_luminosity_codes.py::test_catuskoti_corners_exact",
+    "test/test_truth_luminosity_codes.py::test_full_contradiction_measures_negative",
+    "test/test_truth_luminosity_codes.py::test_duplicate_truths_do_not_inflate_coverage",
+    "test/test_truth_luminosity_codes.py::test_trust_scales_contribution",
+    "test/test_truth_luminosity_codes.py::test_larger_region_dominates_coverage",
+    "test/test_truth_luminosity_codes.py::test_order_independence",
+    "test/test_truth_luminosity_codes.py::test_no_decode_pullback",
+    "test/test_truth_luminosity_codes.py::test_previously_stubbed_path_now_computes",
+    "test/test_truth_luminosity_codes.py::test_mereology_delegator_routes_here",
+    "test/test_truth_luminosity_codes.py::test_range_clamped",
+    "test/test_truth_luminosity_codes.py::test_zero_degree_truth_is_inert",
+    "test/test_truth_luminosity_codes.py::test_paired_bivector_store_reads_as_positive_area",
+    "test/test_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
+    "test/test_truth_text.py::test_given_truth_texts_are_plain_english",
+    "test/test_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertPercept::test_word_concept_has_positive_id_and_owned_percept_inverse",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertIdea::test_completed_point_gets_a_positive_native_address_without_changing_earlier_rows",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertIdea::test_distinct_occurrences_get_distinct_addresses",
+    "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[symbolicOrder-0]",
+    "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[symbolicOrder-1]",
+    "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[symbolicOrder-2]",
+    "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[symbolicOrder--1]",
+    "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[symbolicOrder-not_an_int]",
+    "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[serial-True]",
+    "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[serial-False]",
+    "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[subsymbolicOrder-1]",
+    "test/test_two_mode_dispatch.py::test_native_carrier_contract_replaces_traversal_switch[MM_xor_loopback.xml-True]",
+    "test/test_two_mode_dispatch.py::test_native_carrier_contract_replaces_traversal_switch[MM_xor.xml-False]",
+    "test/test_two_mode_dispatch.py::test_all_shipped_configs_reject_legacy_mode_names",
+    "test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean",
+    "test/test_two_truth_stores.py::test_conflict_profile_with_candidate_is_measured_not_stored",
+    "test/test_two_truth_stores.py::test_admissibility_governs_new_beliefs",
+    "test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis",
+    "test/test_two_truth_stores.py::test_truth_of_statement_feedback",
+    "test/test_two_truth_stores.py::test_triples_stored_uncollapsed_and_separate_from_luminosity",
+    "test/test_two_truth_stores.py::test_relational_evaluation_not_coverage",
+    "test/test_two_truth_stores.py::test_consequents_drive_the_reasoning_step",
+    "test/test_two_truth_stores.py::test_structural_constraint_residuals",
+    "test/test_tying_storage_shared.py::TestUntiedWordFlow::test_insert_grows_ps_only",
+    "test/test_tying_storage_shared.py::TestUntiedWordFlow::test_inserted_row_reads_back_through_local_parameter",
+    "test/test_tying_storage_shared.py::TestUntiedWordFlow::test_key_to_index_stays_ps_local",
+    "test/test_type_run_spans.py::test_lut_type_assignments",
+    "test/test_type_run_spans.py::test_lut_high_bytes_are_letters",
+    "test/test_type_run_spans.py::test_example_words_split_on_space",
+    "test/test_type_run_spans.py::test_example_alnum_splits_by_type",
+    "test/test_type_run_spans.py::test_example_punct_run_is_one_span",
+    "test/test_type_run_spans.py::test_example_letters_punct_space_letters",
+    "test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span",
+    "test/test_type_run_spans.py::test_single_char",
+    "test/test_type_run_spans.py::test_punct_only_run",
+    "test/test_type_run_spans.py::test_all_space_row_is_zero_padded",
+    "test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries",
+    "test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding",
+    "test/test_type_run_spans.py::test_stage_none_input_returns_none",
+    "test/test_type_run_spans.py::test_stage_meronomy_type_runs",
+    "test/test_type_run_spans.py::test_stage_accepts_three_dim_unity",
+    "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
+    "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+    "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+    "test/test_type_run_spans.py::test_meronomy_owns_properties_without_a_type_dictionary",
+    "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+    "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+    "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+    "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+    "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+    "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+    "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+    "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature",
+    "test/test_typed_definition.py::test_covers_walks_sym_whole_links",
+    "test/test_typed_definition.py::test_typed_definition_head_modifiers_exclusions",
+    "test/test_typed_definition.py::test_typed_definition_verbose_not_wrong_without_relations",
+    "test/test_typed_definition.py::test_typed_definition_respects_stm_capacity_cap",
+    "test/test_typed_definition.py::test_typed_definition_minimal_whole_drops_looser_ancestor",
+    "test/test_typed_definition.py::test_typed_definition_none_without_dictionary",
+    "test/test_typed_stack.py::test_typed_stack_construct",
+    "test/test_typed_stack.py::test_typed_stack_push_single_row",
+    "test/test_typed_stack.py::test_typed_stack_push_multiple_then_top",
+    "test/test_typed_stack.py::test_typed_stack_pop_returns_metadata_and_decrements_depth",
+    "test/test_typed_stack.py::test_typed_stack_per_row_isolation",
+    "test/test_typed_stack.py::test_typed_stack_overflow_raises",
+    "test/test_typed_stack.py::test_typed_stack_underflow_raises",
+    "test/test_typed_stack.py::test_typed_stack_top_with_no_items_raises",
+    "test/test_typed_stack.py::test_reduce_admissibility_binary_picks_only_lift",
+    "test/test_typed_stack.py::test_reduce_admissibility_unary_one_item",
+    "test/test_typed_stack.py::test_reduce_admissibility_combined_with_mask_logits",
+    "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[False-1]",
+    "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[False-3]",
+    "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[True-1]",
+    "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[True-3]",
+    "test/test_understanding_readout.py::test_named_concept_head_keeps_its_identity_carrier",
+    "test/test_understanding_reconstruct.py::test_understanding_value_type_rejects_answer_carriers",
+    "test/test_understanding_reconstruct.py::test_understand_returns_one_explicit_understanding",
+    "test/test_understanding_reconstruct.py::test_second_forward_does_not_mutate_the_first_understanding",
+    "test/test_understanding_reconstruct.py::test_reconstruct_returns_input_reconstruction_and_named_cost",
+    "test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding",
+    "test/test_unified_lexicon_codebook.py::TestSSCodebookPairedInsertRetired::test_lexicon_insert_leaves_ws_codebook_untouched",
+    "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_parallel_does_not_receive_sparse_boundary_relaxation",
+    "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_word_brackets_allows_compact_ps_into_high_dim_cs",
+    "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_word_brackets_requires_predecoded_cs_input_boundary",
+    "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_passes_when_flat_slab_matches",
+    "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_raises_on_cs_mismatch",
+    "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_raises_on_is_ps_mismatch",
+    "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_5m_satisfies_flat_slab",
+    "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_grammar_satisfies_flat_slab",
+    "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_xor_loopback_satisfies_flat_slab",
+    "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_xor_satisfies_flat_slab",
+    "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]",
+    "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[think_about]",
+    "test/test_unified_thought_controller.py::test_public_answer_accepts_the_completed_meaning_without_surface_dispatch",
+    "test/test_unified_thought_controller.py::test_candidate_payloads_are_detached_from_the_hard_choice",
+    "test/test_unified_thought_controller.py::test_child_context_can_refine_before_returning_its_causal_result",
+    "test/test_unified_thought_controller.py::test_retired_controllers_cannot_be_constructed_or_restored",
+    "test/test_unified_thought_controller.py::test_policy_charges_shared_episode_work_not_the_number_of_choices",
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-0]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-1]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-6]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-12]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-24]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-0]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-1]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-6]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-12]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-24]",
+    "test/test_unified_thought_controller.py::test_policy_masks_other_rows_and_drops_failed_episode_graphs"
+  ],
+  "completed": [
+    "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_open_variable",
+    "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_surface_normalization",
+    "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_unknown_surface_raises",
+    "test/test_truth_grounded_reasoning.py::TestIsTrue::test_absent_idea_is_unknown",
+    "test/test_truth_grounded_reasoning.py::TestIsTrue::test_activation_without_fact_evidence_remains_unknown",
+    "test/test_truth_grounded_reasoning.py::TestIsTrue::test_negative_trust_single_idea",
+    "test/test_truth_grounded_reasoning.py::TestIsTrue::test_positive_trust_single_idea",
+    "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_equal_distinct_is_unknown",
+    "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_equal_shared_parts_and_wholes",
+    "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_part_direct_true",
+    "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_part_unknown",
+    "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_true_false",
+    "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_true_true",
+    "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_true_unknown",
+    "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_equal_isomorphic_vs_norm",
+    "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_exist_is_isTrue",
+    "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_quantize_noop_without_store",
+    "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_quantize_snaps_to_nearest_idea",
+    "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_query_idea_and_relation",
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_chain_trace_rendered",
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_direct_trace_rendered",
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_geometry_and_world_refutation_do_not_establish_taxonomic_conflict",
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_world_refutation_does_not_establish_taxonomic_falsehood",
+    "test/test_truth_grounded_reasoning.py::TestLegacyConsolidation::test_reason_open_mode_unchanged_shape",
+    "test/test_truth_grounded_reasoning.py::TestSoftRead::test_where_read_grounds_in_real_keys",
+    "test/test_truth_ideas_routing.py::TestTrustStamp::test_config_trust_stamps_cs_and_scales_incoming",
+    "test/test_truth_ideas_routing.py::TestTrustStamp::test_default_one",
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_none_when_no_trust",
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_persists_scalar_trust",
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_model_trust_scales_relative_and_absolute_rows",
+    "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_relative_rows_get_scalar_absolute_gets_event_trust",
+    "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_identity_jaccard",
+    "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_parthood_coverage",
+    "test/test_truth_ideas_routing.py::TestReason::test_empty_store",
+    "test/test_truth_ideas_routing.py::TestReason::test_forward_chaining",
+    "test/test_truth_ideas_routing.py::TestReason::test_negative_trust_lie_not_illuminating",
+    "test/test_truth_ideas_routing.py::TestReason::test_no_fire_below_parthood_threshold",
+    "test/test_truth_ideas_routing.py::TestReason::test_single_step_modus_ponens",
+    "test/test_truth_ideas_routing.py::TestReason::test_zero_trust_relation_skipped",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_counterevidence_joins_the_negative_pole",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_no_relevant_episode_leaves_trust",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_support_joins_evidence_without_rebaking",
+    "test/test_truth_ideas_routing.py::TestVerifyRelation::test_zero_trust_relation_can_acquire_evidence",
+    "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_old_checkpoint_without_trust_loads_nonstrict",
+    "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_reason_over_reloaded_store_recovers_t1",
+    "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_trust_in_state_dict_roundtrip",
+    "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_verify_relation_writes_back_to_buffer",
+    "test/test_truth_layer_record_many.py::test_record_batch_matches_record_loop_high_trust",
+    "test/test_truth_layer_record_many.py::test_record_batch_low_trust_dropped_at_compact",
+    "test/test_truth_layer_record_many.py::test_record_batch_dot_scaling_negative_degree_bivector",
+    "test/test_truth_layer_record_many.py::test_record_batch_no_host_sync_in_brick",
+    "test/test_truth_luminosity_codes.py::test_empty_store_is_dark",
+    "test/test_truth_luminosity_codes.py::test_positive_store_measures_positive",
+    "test/test_truth_luminosity_codes.py::test_negative_store_measures_negative",
+    "test/test_truth_luminosity_codes.py::test_catuskoti_corners_exact",
+    "test/test_truth_luminosity_codes.py::test_full_contradiction_measures_negative",
+    "test/test_truth_luminosity_codes.py::test_duplicate_truths_do_not_inflate_coverage",
+    "test/test_truth_luminosity_codes.py::test_trust_scales_contribution",
+    "test/test_truth_luminosity_codes.py::test_larger_region_dominates_coverage",
+    "test/test_truth_luminosity_codes.py::test_order_independence",
+    "test/test_truth_luminosity_codes.py::test_no_decode_pullback",
+    "test/test_truth_luminosity_codes.py::test_previously_stubbed_path_now_computes",
+    "test/test_truth_luminosity_codes.py::test_mereology_delegator_routes_here",
+    "test/test_truth_luminosity_codes.py::test_range_clamped",
+    "test/test_truth_luminosity_codes.py::test_zero_degree_truth_is_inert",
+    "test/test_truth_luminosity_codes.py::test_paired_bivector_store_reads_as_positive_area",
+    "test/test_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
+    "test/test_truth_text.py::test_given_truth_texts_are_plain_english",
+    "test/test_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertPercept::test_word_concept_has_positive_id_and_owned_percept_inverse",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertIdea::test_completed_point_gets_a_positive_native_address_without_changing_earlier_rows",
+    "test/test_two_codebook_meta_taxonomy.py::TestInsertIdea::test_distinct_occurrences_get_distinct_addresses",
+    "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[symbolicOrder-0]",
+    "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[symbolicOrder-1]",
+    "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[symbolicOrder-2]",
+    "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[symbolicOrder--1]",
+    "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[symbolicOrder-not_an_int]",
+    "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[serial-True]",
+    "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[serial-False]",
+    "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[subsymbolicOrder-1]",
+    "test/test_two_mode_dispatch.py::test_native_carrier_contract_replaces_traversal_switch[MM_xor_loopback.xml-True]",
+    "test/test_two_mode_dispatch.py::test_native_carrier_contract_replaces_traversal_switch[MM_xor.xml-False]",
+    "test/test_two_mode_dispatch.py::test_all_shipped_configs_reject_legacy_mode_names",
+    "test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean",
+    "test/test_two_truth_stores.py::test_conflict_profile_with_candidate_is_measured_not_stored",
+    "test/test_two_truth_stores.py::test_admissibility_governs_new_beliefs",
+    "test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis",
+    "test/test_two_truth_stores.py::test_truth_of_statement_feedback",
+    "test/test_two_truth_stores.py::test_triples_stored_uncollapsed_and_separate_from_luminosity",
+    "test/test_two_truth_stores.py::test_relational_evaluation_not_coverage",
+    "test/test_two_truth_stores.py::test_consequents_drive_the_reasoning_step",
+    "test/test_two_truth_stores.py::test_structural_constraint_residuals",
+    "test/test_tying_storage_shared.py::TestUntiedWordFlow::test_insert_grows_ps_only",
+    "test/test_tying_storage_shared.py::TestUntiedWordFlow::test_inserted_row_reads_back_through_local_parameter",
+    "test/test_tying_storage_shared.py::TestUntiedWordFlow::test_key_to_index_stays_ps_local",
+    "test/test_type_run_spans.py::test_lut_type_assignments",
+    "test/test_type_run_spans.py::test_lut_high_bytes_are_letters",
+    "test/test_type_run_spans.py::test_example_words_split_on_space",
+    "test/test_type_run_spans.py::test_example_alnum_splits_by_type",
+    "test/test_type_run_spans.py::test_example_punct_run_is_one_span",
+    "test/test_type_run_spans.py::test_example_letters_punct_space_letters",
+    "test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span",
+    "test/test_type_run_spans.py::test_single_char",
+    "test/test_type_run_spans.py::test_punct_only_run",
+    "test/test_type_run_spans.py::test_all_space_row_is_zero_padded",
+    "test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries",
+    "test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding",
+    "test/test_type_run_spans.py::test_stage_none_input_returns_none",
+    "test/test_type_run_spans.py::test_stage_meronomy_type_runs",
+    "test/test_type_run_spans.py::test_stage_accepts_three_dim_unity",
+    "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
+    "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+    "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+    "test/test_type_run_spans.py::test_meronomy_owns_properties_without_a_type_dictionary",
+    "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+    "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+    "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+    "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+    "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+    "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+    "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+    "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature",
+    "test/test_typed_definition.py::test_covers_walks_sym_whole_links",
+    "test/test_typed_definition.py::test_typed_definition_head_modifiers_exclusions",
+    "test/test_typed_definition.py::test_typed_definition_verbose_not_wrong_without_relations",
+    "test/test_typed_definition.py::test_typed_definition_respects_stm_capacity_cap",
+    "test/test_typed_definition.py::test_typed_definition_minimal_whole_drops_looser_ancestor",
+    "test/test_typed_definition.py::test_typed_definition_none_without_dictionary",
+    "test/test_typed_stack.py::test_typed_stack_construct",
+    "test/test_typed_stack.py::test_typed_stack_push_single_row",
+    "test/test_typed_stack.py::test_typed_stack_push_multiple_then_top",
+    "test/test_typed_stack.py::test_typed_stack_pop_returns_metadata_and_decrements_depth",
+    "test/test_typed_stack.py::test_typed_stack_per_row_isolation",
+    "test/test_typed_stack.py::test_typed_stack_overflow_raises",
+    "test/test_typed_stack.py::test_typed_stack_underflow_raises",
+    "test/test_typed_stack.py::test_typed_stack_top_with_no_items_raises",
+    "test/test_typed_stack.py::test_reduce_admissibility_binary_picks_only_lift",
+    "test/test_typed_stack.py::test_reduce_admissibility_unary_one_item",
+    "test/test_typed_stack.py::test_reduce_admissibility_combined_with_mask_logits",
+    "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[False-1]",
+    "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[False-3]",
+    "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[True-1]",
+    "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[True-3]",
+    "test/test_understanding_readout.py::test_named_concept_head_keeps_its_identity_carrier",
+    "test/test_understanding_reconstruct.py::test_understanding_value_type_rejects_answer_carriers",
+    "test/test_understanding_reconstruct.py::test_understand_returns_one_explicit_understanding",
+    "test/test_understanding_reconstruct.py::test_second_forward_does_not_mutate_the_first_understanding",
+    "test/test_understanding_reconstruct.py::test_reconstruct_returns_input_reconstruction_and_named_cost",
+    "test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding",
+    "test/test_unified_lexicon_codebook.py::TestSSCodebookPairedInsertRetired::test_lexicon_insert_leaves_ws_codebook_untouched",
+    "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_parallel_does_not_receive_sparse_boundary_relaxation",
+    "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_word_brackets_allows_compact_ps_into_high_dim_cs",
+    "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_word_brackets_requires_predecoded_cs_input_boundary",
+    "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_passes_when_flat_slab_matches",
+    "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_raises_on_cs_mismatch",
+    "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_raises_on_is_ps_mismatch",
+    "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_5m_satisfies_flat_slab",
+    "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_grammar_satisfies_flat_slab",
+    "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_xor_loopback_satisfies_flat_slab",
+    "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_xor_satisfies_flat_slab",
+    "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]",
+    "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[think_about]",
+    "test/test_unified_thought_controller.py::test_public_answer_accepts_the_completed_meaning_without_surface_dispatch",
+    "test/test_unified_thought_controller.py::test_candidate_payloads_are_detached_from_the_hard_choice",
+    "test/test_unified_thought_controller.py::test_child_context_can_refine_before_returning_its_causal_result",
+    "test/test_unified_thought_controller.py::test_retired_controllers_cannot_be_constructed_or_restored",
+    "test/test_unified_thought_controller.py::test_policy_charges_shared_episode_work_not_the_number_of_choices",
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-0]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-1]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-6]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-12]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-24]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-0]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-1]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-6]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-12]",
+    "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-24]",
+    "test/test_unified_thought_controller.py::test_policy_masks_other_rows_and_drops_failed_episode_graphs"
+  ],
+  "slow_selected": [
+    "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_5m_satisfies_flat_slab"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_open_variable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012404099106788635,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_surface_normalization",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011037505464628339,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_unknown_surface_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011149997590109706,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestIsTrue::test_absent_idea_is_unknown",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015508750220760703,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestIsTrue::test_activation_without_fact_evidence_remains_unknown",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020704203052446246,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestIsTrue::test_negative_trust_single_idea",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007694579544477165,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestIsTrue::test_positive_trust_single_idea",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007107919664122164,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_equal_distinct_is_unknown",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002853330224752426,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_equal_shared_parts_and_wholes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002846660208888352,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_part_direct_true",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003344625001773238,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_part_unknown",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000281625019852072,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_true_false",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008363340166397393,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_true_true",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007524579996243119,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_true_unknown",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003075420390814543,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_equal_isomorphic_vs_norm",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023512501502409577,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_exist_is_isTrue",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011516250087879598,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_quantize_noop_without_store",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018983398331329226,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_quantize_snaps_to_nearest_idea",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007977079949341714,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_query_idea_and_relation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011432920000515878,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_chain_trace_rendered",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0031214580521918833,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_direct_trace_rendered",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002765042008832097,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_geometry_and_world_refutation_do_not_establish_taxonomic_conflict",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005961250280961394,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_world_refutation_does_not_establish_taxonomic_falsehood",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004751670057885349,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestLegacyConsolidation::test_reason_open_mode_unchanged_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005995000246912241,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestSoftRead::test_where_read_grounds_in_real_keys",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015300829545594752,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestTrustStamp::test_config_trust_stamps_cs_and_scales_incoming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05005904100835323,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestTrustStamp::test_default_one",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04335166700184345,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_none_when_no_trust",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005915829678997397,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_persists_scalar_trust",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005886669969186187,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_model_trust_scales_relative_and_absolute_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03023954201489687,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_relative_rows_get_scalar_absolute_gets_event_trust",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.030089124978985637,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_identity_jaccard",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00035016698529943824,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestParthoodAndIdentity::test_parthood_coverage",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025474996073171496,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestReason::test_empty_store",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02847708301851526,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestReason::test_forward_chaining",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001451707968953997,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestReason::test_negative_trust_lie_not_illuminating",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009227080154232681,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestReason::test_no_fire_below_parthood_threshold",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008952089701779187,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestReason::test_single_step_modus_ponens",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007419590256176889,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestReason::test_zero_trust_relation_skipped",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005822919774800539,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestVerifyRelation::test_counterevidence_joins_the_negative_pole",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007334169931709766,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestVerifyRelation::test_no_relevant_episode_leaves_trust",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006140420446172357,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestVerifyRelation::test_support_joins_evidence_without_rebaking",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007727090269327164,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestVerifyRelation::test_zero_trust_relation_can_acquire_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008040840039029717,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_old_checkpoint_without_trust_loads_nonstrict",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010577499633654952,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_reason_over_reloaded_store_recovers_t1",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010632079793140292,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_trust_in_state_dict_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008316670428030193,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_verify_relation_writes_back_to_buffer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009166249656118453,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_layer_record_many.py::test_record_batch_matches_record_loop_high_trust",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000730415980797261,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_layer_record_many.py::test_record_batch_low_trust_dropped_at_compact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029029097640886903,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_layer_record_many.py::test_record_batch_dot_scaling_negative_degree_bivector",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00041087501449510455,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_layer_record_many.py::test_record_batch_no_host_sync_in_brick",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020608300110325217,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_luminosity_codes.py::test_empty_store_is_dark",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001917920308187604,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_luminosity_codes.py::test_positive_store_measures_positive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014558329712599516,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_luminosity_codes.py::test_negative_store_measures_negative",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000593625009059906,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_luminosity_codes.py::test_catuskoti_corners_exact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003124590148217976,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_luminosity_codes.py::test_full_contradiction_measures_negative",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009055419941432774,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_luminosity_codes.py::test_duplicate_truths_do_not_inflate_coverage",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006548749515786767,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_luminosity_codes.py::test_trust_scales_contribution",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005650829989463091,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_luminosity_codes.py::test_larger_region_dominates_coverage",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024387496523559093,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_luminosity_codes.py::test_order_independence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001365375006571412,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_luminosity_codes.py::test_no_decode_pullback",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005174170364625752,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_luminosity_codes.py::test_previously_stubbed_path_now_computes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017712503904476762,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_luminosity_codes.py::test_mereology_delegator_routes_here",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018941698363050818,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_luminosity_codes.py::test_range_clamped",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005872920155525208,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_luminosity_codes.py::test_zero_degree_truth_is_inert",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016420905012637377,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_luminosity_codes.py::test_paired_bivector_store_reads_as_positive_area",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000558916013687849,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012722665967885405,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_text.py::test_given_truth_texts_are_plain_english",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005135000101290643,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0029959999956190586,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_codebook_meta_taxonomy.py::TestInsertPercept::test_word_concept_has_positive_id_and_owned_percept_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.030576459015719593,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_codebook_meta_taxonomy.py::TestInsertIdea::test_completed_point_gets_a_positive_native_address_without_changing_earlier_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.031796041992492974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_codebook_meta_taxonomy.py::TestInsertIdea::test_distinct_occurrences_get_distinct_addresses",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.032802333997096866,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[symbolicOrder-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001877499744296074,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[symbolicOrder-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000101707992143929,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[symbolicOrder-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.499996667727828e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[symbolicOrder--1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.520899038761854e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[symbolicOrder-not_an_int]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000127042003441602,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[serial-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013000000035390258,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[serial-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.454198880121112e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[subsymbolicOrder-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010787497740238905,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::test_native_carrier_contract_replaces_traversal_switch[MM_xor_loopback.xml-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.11432629096088931,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::test_native_carrier_contract_replaces_traversal_switch[MM_xor.xml-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07970270799705759,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_mode_dispatch.py::test_all_shipped_configs_reject_legacy_mode_names",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0034157499903813004,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006677079945802689,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_conflict_profile_with_candidate_is_measured_not_stored",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002687080414034426,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_admissibility_governs_new_beliefs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026112498017027974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005499999970197678,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_truth_of_statement_feedback",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004627500311471522,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_triples_stored_uncollapsed_and_separate_from_luminosity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006949169910512865,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_relational_evaluation_not_coverage",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011266249930486083,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_consequents_drive_the_reasoning_step",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007268329500220716,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_structural_constraint_residuals",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011753750150091946,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tying_storage_shared.py::TestUntiedWordFlow::test_insert_grows_ps_only",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01741795800626278,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tying_storage_shared.py::TestUntiedWordFlow::test_inserted_row_reads_back_through_local_parameter",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.017241083027329296,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tying_storage_shared.py::TestUntiedWordFlow::test_key_to_index_stays_ps_local",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01633716595824808,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_lut_type_assignments",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014237500727176666,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_lut_high_bytes_are_letters",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000128875020891428,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_example_words_split_on_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00039408402517437935,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_example_alnum_splits_by_type",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002890409668907523,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_example_punct_run_is_one_span",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027241697534918785,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_example_letters_punct_space_letters",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003547079977579415,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_example_trailing_pad_never_in_a_span",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004296249826438725,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_single_char",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00047199998516589403,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_punct_only_run",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003595000016503036,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_all_space_row_is_zero_padded",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019445799989625812,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00035795901203528047,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_batch_mixed_lengths_and_padding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024999998277053237,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_stage_none_input_returns_none",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003767875023186207,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_stage_meronomy_type_runs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008274999971035868,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_stage_accepts_three_dim_unity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004500459006521851,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001499159843660891,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009171500045340508,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011752374994102865,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_meronomy_owns_properties_without_a_type_dictionary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005608999985270202,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005489041970577091,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005462583969347179,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010740249999798834,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012964041961822659,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006037999992258847,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007643749704584479,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012961125001311302,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03994987497571856,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_definition.py::test_covers_walks_sym_whole_links",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0027535000117495656,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_definition.py::test_typed_definition_head_modifiers_exclusions",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003145334019791335,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_definition.py::test_typed_definition_verbose_not_wrong_without_relations",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0028324159793555737,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_definition.py::test_typed_definition_respects_stm_capacity_cap",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003085416043177247,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_definition.py::test_typed_definition_minimal_whole_drops_looser_ancestor",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0027119580190628767,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_definition.py::test_typed_definition_none_without_dictionary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0029047089628875256,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_stack.py::test_typed_stack_construct",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002305000089108944,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_stack.py::test_typed_stack_push_single_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024304201360791922,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_stack.py::test_typed_stack_push_multiple_then_top",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023691699607297778,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_stack.py::test_typed_stack_pop_returns_metadata_and_decrements_depth",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027366599533706903,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_stack.py::test_typed_stack_per_row_isolation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018029200145974755,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_stack.py::test_typed_stack_overflow_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002042920095846057,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_stack.py::test_typed_stack_underflow_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014304096112027764,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_stack.py::test_typed_stack_top_with_no_items_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017283298075199127,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_stack.py::test_reduce_admissibility_binary_picks_only_lift",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002787080011330545,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_stack.py::test_reduce_admissibility_unary_one_item",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018812500638887286,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_typed_stack.py::test_reduce_admissibility_combined_with_mask_logits",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002454579807817936,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[False-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001223041967023164,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[False-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00100770901190117,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[True-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007875840528868139,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[True-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007085829856805503,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_understanding_readout.py::test_named_concept_head_keeps_its_identity_carrier",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001047079567797482,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_understanding_reconstruct.py::test_understanding_value_type_rejects_answer_carriers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001538750366307795,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_understanding_reconstruct.py::test_understand_returns_one_explicit_understanding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05304266698658466,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_understanding_reconstruct.py::test_second_forward_does_not_mutate_the_first_understanding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.11473666701931506,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_understanding_reconstruct.py::test_reconstruct_returns_input_reconstruction_and_named_cost",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.060779625026043504,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.4192224169964902,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_unified_lexicon_codebook.py::TestSSCodebookPairedInsertRetired::test_lexicon_insert_leaves_ws_codebook_untouched",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.017779165995307267,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_parallel_does_not_receive_sparse_boundary_relaxation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020004098769277334,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_word_brackets_allows_compact_ps_into_high_dim_cs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000145500001963228,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_word_brackets_requires_predecoded_cs_input_boundary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014883303083479404,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_passes_when_flat_slab_matches",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013349996879696846,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_raises_on_cs_mismatch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013950001448392868,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_raises_on_is_ps_mismatch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013558397768065333,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_5m_satisfies_flat_slab",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00013158400543034077,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_unified_lexicon_codebook.py', 909, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_grammar_satisfies_flat_slab",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01636470900848508,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_xor_loopback_satisfies_flat_slab",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008632499957457185,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_xor_satisfies_flat_slab",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007354170083999634,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015009500028099865,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[think_about]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012675666017457843,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_public_answer_accepts_the_completed_meaning_without_surface_dispatch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013188166019972414,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_candidate_payloads_are_detached_from_the_hard_choice",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0070690420106984675,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_child_context_can_refine_before_returning_its_causal_result",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013558125006966293,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_retired_controllers_cannot_be_constructed_or_restored",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005589915963355452,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_policy_charges_shared_episode_work_not_the_number_of_choices",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01261462498223409,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.354395000031218,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009518083010334522,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010995708988048136,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-6]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011078457988332957,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-12]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012637332954909652,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-24]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01601420802762732,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010760999983176589,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011631750036031008,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-6]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012153916992247105,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-12]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012364249967504293,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-24]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014256207970902324,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_policy_masks_other_rows_and_drops_failed_episode_graphs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.016424500034190714,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

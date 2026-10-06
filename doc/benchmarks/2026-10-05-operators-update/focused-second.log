@@ -1,0 +1,1154 @@
+....................................................F................... [ 58%]
+....F.................F.............................                     [100%]
+=================================== FAILURES ===================================
+______ test_single_departure_replays_prefix_and_is_greedy_after_it[True] _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x107cb38c0>
+compiled = True
+
+    @pytest.mark.parametrize('compiled', [False, True])
+    def test_single_departure_replays_prefix_and_is_greedy_after_it(monkeypatch, compiled):
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, policy = decoder(monkeypatch)
+        # This prefix/suffix test has one eligible departure. Sampling among
+        # several alternatives is covered separately by the review §10 probe.
+        model.languageSpace.generate_unary_step = lambda parent, *a, **k: (
+            -parent, torch.ones(parent.shape[0], dtype=torch.bool))
+        event = torch.tensor([[[1., 2.], [3., 4.], [0., 0.]],
+                              [[1., 2.], [3., 4.], [0., 0.]]], requires_grad=True)
+        def pair(event):
+            greedy = model._output_generate_walk(event, 8, return_trace=True,
+                basis=event, return_candidates=True)
+            explore = model._output_generate_walk(event, 8, return_trace=True,
+                basis=event, exploit_actions=greedy[4], departure=torch.tensor([0, 1]))
+            return greedy, explore
+        fn = torch.compile(pair, backend='inductor', fullgraph=True) if compiled else pair
+        greedy, explore = fn(event)
+        assert greedy[1].tolist() == [2, 2]
+        assert explore[1].tolist() == [3, 3]
+        assert greedy[4][:, :2].tolist() == [[2, 2], [2, 2]]
+        assert explore[4][:, :4].tolist() == [[0, 2, 2, 2], [2, 0, 2, 2]]
+        assert greedy[5][:, :2].all()
+        assert not greedy[5][:, 2:].any()
+        explore[0].square().sum().backward()
+>       assert policy.bias.grad is None  # policy is taught from the compose structure
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert tensor([0., 0., 0.]) is None
+E        +  where tensor([0., 0., 0.]) = Parameter containing:\ntensor([ 0., -1.,  2.], requires_grad=True).grad
+E        +    where Parameter containing:\ntensor([ 0., -1.,  2.], requires_grad=True) = Linear(in_features=2, out_features=3, bias=True).bias
+
+test/test_decoder_exploration.py:62: AssertionError
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:autograd_cache.py:1200 
+DEBUG    torch.__trace:compile_fx.py:2841 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:compile_fx.py:2872 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:graph_compile.py:1820 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:graph_compile.py:1841 
+DEBUG    torch.__trace:graph_compile.py:1891 
+DEBUG    torch.__trace:graph_compile.py:1909 
+DEBUG    torch.__trace:graph_compile.py:1913 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:compile_fx.py:1450 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:compile_fx.py:1502 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:compile_fx.py:1540 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:graph.py:3137 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:compile_fx.py:1272 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:codegen.py:200 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:compile_fx.py:1450 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:compile_fx.py:1502 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:symbolic_shapes.py:5521 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:compile_fx.py:1540 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:graph.py:3137 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:compile_fx.py:1272 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022
+___ test_optional_field_choices_cannot_exhaust_the_word_completion_deadline ____
+
+    def test_optional_field_choices_cannot_exhaust_the_word_completion_deadline():
+        from types import SimpleNamespace
+        from Attention import narrow_words
+        def field_first(keys,legal,space,**kwargs):
+            priority=torch.arange(legal.shape[-1],device=keys.device).expand_as(legal)
+            logits=priority.to(keys).masked_fill(~legal,-torch.inf).flatten(1)
+            return logits.argmax(-1),keys.new_ones(len(keys)),legal.flatten(1).sum(-1)>1
+        chooser=SimpleNamespace(attention_operations=tuple(range(6)),attend=field_first)
+        starts=torch.arange(8)*2
+        spans=torch.stack((starts,starts+1),-1)[None]
+>       result=narrow_words(chooser,torch.eye(8)[None],spans,torch.zeros(1,8,dtype=torch.bool),budget=32)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_one_attention.py:182: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+chooser = namespace(attention_operations=(0, 1, 2, 3, 4, 5), attend=<function test_optional_field_choices_cannot_exhaust_the_word_completion_deadline.<locals>.field_first at 0x13def99e0>)
+keys = tensor([[[1., 0., 0., 0., 0., 0., 0., 0.],
+         [0., 1., 0., 0., 0., 0., 0., 0.],
+         [0., 0., 1., 0., 0., 0....., 0., 0., 0., 0., 1., 0., 0.],
+         [0., 0., 0., 0., 0., 0., 1., 0.],
+         [0., 0., 0., 0., 0., 0., 0., 1.]]])
+spans = tensor([[[ 0,  1],
+         [ 2,  3],
+         [ 4,  5],
+         [ 6,  7],
+         [ 8,  9],
+         [10, 11],
+         [12, 13],
+         [14, 15]]])
+known = tensor([[False, False, False, False, False, False, False, False]])
+budget = 32, prior = None, exploit = None, departure = None, identities = None
+poles = None, spent = None
+
+    def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None):
+        """Batched pinned narrowing, with the field's observed poles as its mask.
+    
+        The six candidate meanings are declared by the grammar. Field reductions
+        alter the pooled reading used by the next choice; only pure singular word
+        brackets may project a native symbol. No row loops or allocation occur.
+        """
+        B,W,D=keys.shape;K=int(budget);A=6
+        if W==0:
+            table=BracketTable.open(spans.new_zeros(B),budget=K)
+            return NarrowedWords(table,keys,known,known,spans.new_full((B,K),-1),
+                                 torch.zeros(B,K,device=keys.device,dtype=torch.bool))
+        lengths=spans[...,1].amax(1)
+        table=BracketTable.open(lengths,budget=K)
+        if spent is not None:table=table._replace(spent=spent)
+        accepted=torch.zeros_like(known);descended=torch.zeros_like(known)
+        values=torch.zeros_like(keys);actions=[];alternatives=[];probabilities=[];counts=[]
+        reductions=torch.zeros(B,K,3,dtype=torch.bool,device=keys.device)
+        field_values=keys.new_zeros(B,K,D)
+        field_poles=keys.new_zeros(B,K,2)
+        field_valid=torch.zeros(B,K,dtype=torch.bool,device=keys.device)
+        declared=torch.tensor([i in chooser.attention_operations for i in range(A)],device=keys.device)
+        rows=torch.arange(B,device=keys.device)
+        slots=torch.arange(K,device=keys.device)[None]
+        for step in range(K):
+            lo,hi=table.intervals.unbind(-1)
+            covered=(spans[:,None,:,0]>=lo[:,:,None])&(spans[:,None,:,1]<=hi[:,:,None])&(spans[:,None,:,1]>spans[:,None,:,0])
+            count=covered.sum(-1)
+            left=torch.where(covered,spans[:,None,:,0],lengths[:,None,None]).amin(-1)
+            right=torch.where(covered,spans[:,None,:,1],0).amax(-1)
+            table=table._replace(intervals=torch.where((count>0)[...,None],torch.stack((left,right),-1),table.intervals),
+                                 level=torch.where(count==1,LEVEL_WORD,LEVEL_SENTENCE))
+            word=count==1
+            evidence=(torch.stack((known,torch.zeros_like(known)),-1).to(keys) if poles is None else poles)
+            evidence=torch.where(descended[...,None],torch.stack((torch.ones_like(known),torch.zeros_like(known)),-1).to(keys),evidence)
+            support=covered[...,None] & evidence[:,None].ne(0)
+            positive=support[...,0].any(-1);negative=support[...,1].any(-1)
+            pooled_poles=torch.where(covered[...,None],evidence[:,None],0.).amax(2)
+            pooled_poles=torch.where(field_valid[...,None],field_poles,pooled_poles)
+            positive=pooled_poles[...,0]>0;negative=pooled_poles[...,1]>0
+            both=positive&negative;pure=positive^negative;neither=~(positive|negative)
+            singular=support.any(-1).sum(-1)==1
+            live=table.valid&~table.done&(count>0)&(table.remaining>0)[:,None]
+            progress=narrowing_mask(pure,both,neither,singular=singular,word=word,
+                                    can_split=count>1,has_parts=count>0)
+            field=((both | (count>1))[:,:,None]&~reductions)
+            # As in compose, reserve the remaining progress rounds. Optional
+            # field rewrites cannot starve a word's divide/descent/gloss sequence.
+            pending=(spans[...,1]>spans[...,0])&~accepted
+            minimum=2*pending.sum(-1)-live.sum(-1)+(pending&~evidence.any(-1)&~descended).sum(-1)
+            field=field & (table.remaining>minimum)[:,None,None]
+            legal=torch.cat((progress,field),-1)&live[...,None]&declared[None,None]
+            pooled=(covered.to(keys)@keys)/count.clamp_min(1)[...,None]
+            pooled=torch.where(field_valid[...,None],field_values,pooled)
+            local_prior=None if prior is None else (covered.to(keys)@prior[...,None])[...,0]/count.clamp_min(1)
+            mask=None if exploit is None else torch.where(departure==step,exploit.actions[:,step],-1)
+            replay=None if exploit is None else torch.where(step<departure,exploit.actions[:,step],-1)
+>           action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                masked_action=mask,replay_action=replay,return_details=True)
+E           ValueError: not enough values to unpack (expected 4, got 3)
+
+bin/Attention.py:212: ValueError
+__ test_field_operation_changes_the_next_mask_and_children_read_native_poles ___
+
+    def test_field_operation_changes_the_next_mask_and_children_read_native_poles():
+        from Attention import narrow_words
+        from types import SimpleNamespace
+        masks=[]
+        def choose(keys,legal,space,**kwargs):
+            masks.append(legal.clone())
+            index = torch.tensor([4]) if len(masks)==1 else legal.flatten(1).long().argmax(-1)
+            return index, keys.new_ones(1), legal.flatten(1).sum(-1)>1
+        chooser=SimpleNamespace(attention_operations=tuple(range(6)),attend=choose)
+>       result=narrow_words(chooser,torch.eye(2)[None],torch.tensor([[[0,1],[2,3]]]),
+            torch.ones(1,2,dtype=torch.bool),poles=torch.tensor([[[1.,0.],[0.,1.]]]),budget=6)
+
+test/test_one_attention.py:382: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+chooser = namespace(attention_operations=(0, 1, 2, 3, 4, 5), attend=<function test_field_operation_changes_the_next_mask_and_children_read_native_poles.<locals>.choose at 0x140a31a80>)
+keys = tensor([[[1., 0.],
+         [0., 1.]]])
+spans = tensor([[[0, 1],
+         [2, 3]]]), known = tensor([[True, True]])
+budget = 6, prior = None, exploit = None, departure = None, identities = None
+poles = tensor([[[1., 0.],
+         [0., 1.]]]), spent = None
+
+    def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None):
+        """Batched pinned narrowing, with the field's observed poles as its mask.
+    
+        The six candidate meanings are declared by the grammar. Field reductions
+        alter the pooled reading used by the next choice; only pure singular word
+        brackets may project a native symbol. No row loops or allocation occur.
+        """
+        B,W,D=keys.shape;K=int(budget);A=6
+        if W==0:
+            table=BracketTable.open(spans.new_zeros(B),budget=K)
+            return NarrowedWords(table,keys,known,known,spans.new_full((B,K),-1),
+                                 torch.zeros(B,K,device=keys.device,dtype=torch.bool))
+        lengths=spans[...,1].amax(1)
+        table=BracketTable.open(lengths,budget=K)
+        if spent is not None:table=table._replace(spent=spent)
+        accepted=torch.zeros_like(known);descended=torch.zeros_like(known)
+        values=torch.zeros_like(keys);actions=[];alternatives=[];probabilities=[];counts=[]
+        reductions=torch.zeros(B,K,3,dtype=torch.bool,device=keys.device)
+        field_values=keys.new_zeros(B,K,D)
+        field_poles=keys.new_zeros(B,K,2)
+        field_valid=torch.zeros(B,K,dtype=torch.bool,device=keys.device)
+        declared=torch.tensor([i in chooser.attention_operations for i in range(A)],device=keys.device)
+        rows=torch.arange(B,device=keys.device)
+        slots=torch.arange(K,device=keys.device)[None]
+        for step in range(K):
+            lo,hi=table.intervals.unbind(-1)
+            covered=(spans[:,None,:,0]>=lo[:,:,None])&(spans[:,None,:,1]<=hi[:,:,None])&(spans[:,None,:,1]>spans[:,None,:,0])
+            count=covered.sum(-1)
+            left=torch.where(covered,spans[:,None,:,0],lengths[:,None,None]).amin(-1)
+            right=torch.where(covered,spans[:,None,:,1],0).amax(-1)
+            table=table._replace(intervals=torch.where((count>0)[...,None],torch.stack((left,right),-1),table.intervals),
+                                 level=torch.where(count==1,LEVEL_WORD,LEVEL_SENTENCE))
+            word=count==1
+            evidence=(torch.stack((known,torch.zeros_like(known)),-1).to(keys) if poles is None else poles)
+            evidence=torch.where(descended[...,None],torch.stack((torch.ones_like(known),torch.zeros_like(known)),-1).to(keys),evidence)
+            support=covered[...,None] & evidence[:,None].ne(0)
+            positive=support[...,0].any(-1);negative=support[...,1].any(-1)
+            pooled_poles=torch.where(covered[...,None],evidence[:,None],0.).amax(2)
+            pooled_poles=torch.where(field_valid[...,None],field_poles,pooled_poles)
+            positive=pooled_poles[...,0]>0;negative=pooled_poles[...,1]>0
+            both=positive&negative;pure=positive^negative;neither=~(positive|negative)
+            singular=support.any(-1).sum(-1)==1
+            live=table.valid&~table.done&(count>0)&(table.remaining>0)[:,None]
+            progress=narrowing_mask(pure,both,neither,singular=singular,word=word,
+                                    can_split=count>1,has_parts=count>0)
+            field=((both | (count>1))[:,:,None]&~reductions)
+            # As in compose, reserve the remaining progress rounds. Optional
+            # field rewrites cannot starve a word's divide/descent/gloss sequence.
+            pending=(spans[...,1]>spans[...,0])&~accepted
+            minimum=2*pending.sum(-1)-live.sum(-1)+(pending&~evidence.any(-1)&~descended).sum(-1)
+            field=field & (table.remaining>minimum)[:,None,None]
+            legal=torch.cat((progress,field),-1)&live[...,None]&declared[None,None]
+            pooled=(covered.to(keys)@keys)/count.clamp_min(1)[...,None]
+            pooled=torch.where(field_valid[...,None],field_values,pooled)
+            local_prior=None if prior is None else (covered.to(keys)@prior[...,None])[...,0]/count.clamp_min(1)
+            mask=None if exploit is None else torch.where(departure==step,exploit.actions[:,step],-1)
+            replay=None if exploit is None else torch.where(step<departure,exploit.actions[:,step],-1)
+>           action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                masked_action=mask,replay_action=replay,return_details=True)
+E           ValueError: not enough values to unpack (expected 4, got 3)
+
+bin/Attention.py:212: ValueError
+=============================== warnings summary ===============================
+test/test_operator_catalogue.py::test_selected_exclusion_cannot_be_recovered_as_negation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_verb_spectrum.py::test_roundtrip_exact_and_nontrivial
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_decoder_exploration.py::test_single_departure_replays_prefix_and_is_greedy_after_it[True]
+FAILED test/test_one_attention.py::test_optional_field_choices_cannot_exhaust_the_word_completion_deadline
+FAILED test/test_one_attention.py::test_field_operation_changes_the_next_mask_and_children_read_native_poles
+3 failed, 121 passed, 2 warnings in 17.58s

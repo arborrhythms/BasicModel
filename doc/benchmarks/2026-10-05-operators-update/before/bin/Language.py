@@ -1,0 +1,14519 @@
+
+
+import itertools, math, os, re, warnings
+from collections import namedtuple
+from contextlib import contextmanager, nullcontext
+import numpy as np
+import torch
+from Layers import bounded_atanh as _bounded_atanh
+import torch.nn as nn
+import torch.nn.functional as F
+from GrammarPreference import operator_is_structural, structural_argmax, require_opaque_mlp
+import random
+try:
+    from torchviz import make_dot
+except ImportError:
+    make_dot = None
+from sklearn.decomposition import PCA
+import torch.optim as optim
+from torch.profiler import profile as torch_profile, ProfilerActivity, schedule as profiler_schedule
+from functools import partial
+from datetime import datetime
+import util
+from util import TheDevice, TheMessage
+from Optimizer import Adam
+from visualize import Report, TheReport
+from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend, autocast_compute_dtype
+from embed import WordVectors, PretrainModel
+from data import Data, TheData
+from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
+from Layers import LinearLayer, InvertibleLinearLayer, AssociationLayer, MapppingLayer, ChunkLayer
+from Layers import (CertaintyWeightedCrossEntropy, LeafDecoderHead, Loss,
+                    ModelLoss, epsilon, Ops)
+from Layers import SortingLayer, TruthLayer, TernaryTruthStore, LiftingLayer, BracketExpectation, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
+from Layers import WhatInteractionMemory
+from Meaning import ConceptualMeaning
+from Queries import ConceptualSpaceCapability, StructuralGrammarContext
+from util import parse
+from collections import namedtuple as _namedtuple
+
+# Per doc/plans/2026-05-29-grammar-file-refactor.md §5: GrammarLayer
+# stays in Layers.py (PiLayer / SigmaLayer / EqualLayer / TrueLayer /
+# FalseLayer / SwapLayer / CopyLayer / AreaLayer / LuminosityLayer /
+# IsaPartLayer also derive from it and stay). The grammar rule operator
+# classes (NotLayer, NonLayer, IntersectionLayer, UnionLayer, LiftLayer,
+# LowerLayer, ConjunctionLayer, DisjunctionLayer,
+# IsEqualLayer, PartLayer) physically live in this module
+# below, after the Grammar singleton.
+from Layers import GrammarLayer
+from Interpret import InterpretLayer
+from Layers import EqualLayer
+# true/false/swap/copy/area/luminosity/isaPart were parked in bin/Legacy.py
+# in the 2026-07-17 cleanup (documented-dormant ops, not in this algebra).
+from Layers import (
+    SurfaceSchema, T1_UNARY_AFFIX, T2_BINARY_INFIX,
+    T3_BINARY_DIRECTIONAL, T4_BINARY_JUXTAPOSE, T5_BINARY_ELISION,
+)
+
+from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding, WordEncoding
+from Spaces import Basis, Tensor, Codebook, Embedding, fold_content_apply
+from Spaces import (SubSpace, SubSpaceView, Space, InputSpace, PartSpace,
+                    ModalSpace, ConceptualSpace, WholeSpace, OutputSpace,
+                    LanguageOperationChoice)
+
+import xml.etree.ElementTree as _ET
+from pathlib import Path as _Path
+
+_GRAMMAR_DIR = _Path(__file__).parent.parent / "data"
+
+
+from dataclasses import dataclass, field as _dc_field
+
+
+def _active_basis_prototypes(basis):
+    """Return the logically selectable prototype prefix for ``basis``.
+
+    Learned Codebooks may reserve substantially more physical rows than are
+    logically active.  Selection/search consumers in this module must use the
+    Codebook's active read surface; ordinary Basis objects and raw tensors keep
+    their historical full-table behaviour.
+    """
+    if basis is None:
+        return None
+    active = getattr(basis, "active_prototypes", None)
+    if callable(active):
+        return active()
+    get_w = getattr(basis, "getW", None)
+    if callable(get_w):
+        return get_w()
+    return basis if torch.is_tensor(basis) else None
+
+
+
+
+def _filter_active_candidate_rows(rows, active_count):
+    """Drop explicit candidate ids outside an active prefix.
+
+    Active Codebooks use a contiguous prefix, so retained ids are still the
+    original/global row ids and need no remapping.
+    """
+    if rows is None:
+        return None
+    candidate = rows if torch.is_tensor(rows) else torch.as_tensor(rows)
+    candidate = candidate.long().reshape(-1)
+    return candidate[(candidate >= 0) & (candidate < int(active_count))]
+
+
+@dataclass
+class RoutingState:
+    """First-class per-sentence routing decision produced by
+    ``SymbolSubSpace.compose``.
+
+    This is the ADDITIVE companion to the long-standing ``current_rules``
+    dict: many consumers depend on ``current_rules`` staying exactly
+    ``dict[space_role, list[list[int]]]`` (the per-row, per-step rule ids read
+    by ``SyntacticLayer._next_rule_name``, the SS-space_role dispatch in
+    ``Models``, and ``Spaces``' stack-route path), so ``RoutingState`` is
+    stored ALONGSIDE it (on ``SymbolSubSpace.routing_state``) and never
+    replaces it. It carries the same information in two extra forms the
+    intra-sentence predictor needs:
+
+    Fields
+    ------
+    rules_by_space_role : dict[space_role, list[list[int]]]
+        The exact ``current_rules`` dict (same object), kept here so a
+        single ``RoutingState`` is a self-contained snapshot.
+    selected_rules : list[int]
+        Flat list of the selected rule-ids for the canonical row (row 0
+        of every space_role, concatenated in sorted-space_role order). Row 0 is the
+        canonical sequence convention already used by
+        ``SyntacticLayer._next_rule_name`` (per-row dispatch is a
+        follow-on). Used to build ``rule_probs`` and for diagnostics.
+    rule_probs : torch.Tensor | None
+        Dense ``[B, n_rules]`` float distribution over the grammar's
+        rule vocabulary (``n_rules == len(TheGrammar.rule_table)``). This
+        is the rule-conditioning signal the intra-sentence predictor
+        consumes (``ConceptualSpace._intra_routing_for_predict`` ->
+        ``IntraSentenceLayer.routing``). FIRST CUT (see
+        ``SymbolSubSpace._synthesize_rule_probs``): mass is scattered onto
+        the SELECTED rule-ids and L1-normalized per row, so this encodes
+        WHICH rules fired (not yet the gradient-bearing soft marginals
+        fragmented in ``LanguageLayer._last_space_role_routings`` -- that is a
+        documented future upgrade at the ``_synthesize_rule_probs``
+        seam). ``None`` when no grammar/router has fired.
+    """
+    rules_by_space_role: dict = _dc_field(default_factory=dict)
+    selected_rules: list = _dc_field(default_factory=list)
+    rule_probs: object = None
+
+
+class MetaSymbolCategoryLearner:
+    """Pending role-evidence table for MetaSymbol category learning.
+
+    Long-term state stays compact: a learned MetaSymbol keeps only its
+    committed ``meta_pos -> category_id`` assignment on ``WholeSpace``. While
+    the assignment is still unstable, this learner holds a bounded sparse row
+    of accumulated grammatical role evidence for that MetaSymbol. Category
+    centroids live in role-participation space, not MetaSymbol embedding space.
+    """
+
+    def __init__(self, n_roles, *, max_pending=4096, min_mass=4.0,
+                 min_confidence=0.70, min_margin=0.10, stable_updates=2,
+                 evidence_decay=1.0, prototype_ema=0.10):
+        self.n_roles = int(n_roles)
+        self.max_pending = int(max_pending)
+        self.min_mass = float(min_mass)
+        self.min_confidence = float(min_confidence)
+        self.min_margin = float(min_margin)
+        self.stable_updates = int(stable_updates)
+        self.evidence_decay = float(evidence_decay)
+        self.prototype_ema = float(prototype_ema)
+        self.pending = {}
+        self.step = 0
+
+    def _role_tensor(self, role_vec):
+        if not torch.is_tensor(role_vec):
+            role_vec = torch.tensor(role_vec, dtype=torch.float32)
+        vec = role_vec.detach().float().reshape(-1).cpu()
+        if vec.numel() != self.n_roles:
+            return None
+        return vec
+
+    @staticmethod
+    def _profile(evidence):
+        mass = float(evidence.sum().item())
+        if mass <= 0.0:
+            return evidence.clone(), 0.0
+        return evidence / mass, mass
+
+    def _evict_if_needed(self):
+        if self.max_pending <= 0:
+            self.pending.clear()
+            return
+        if len(self.pending) < self.max_pending:
+            return
+        victim, _row = min(
+            self.pending.items(),
+            key=lambda kv: (float(kv[1].get("mass", 0.0)),
+                            int(kv[1].get("last", 0))))
+        self.pending.pop(victim, None)
+
+    def pending_role(self, meta_pos, *, device=None, dtype=None):
+        row = self.pending.get(int(meta_pos))
+        if row is None:
+            return None
+        profile, mass = self._profile(row["evidence"])
+        if mass <= 0.0:
+            return None
+        if dtype is None:
+            dtype = torch.float32
+        return profile.to(device=device, dtype=dtype)
+
+    def score_assignment(self, ws, profile):
+        """Return ``(best, confidence, margin)`` for a role-space profile."""
+        role_table = getattr(ws, "_category_role", None)
+        vq = getattr(ws, "_category_vq", None)
+        codebook = role_table
+        if codebook is None and vq is not None:
+            codebook = getattr(vq, "codebook", None)
+        if codebook is None or not torch.is_tensor(codebook):
+            return None, 0.0, 0.0
+        cb = codebook.detach().float().cpu()
+        if cb.dim() != 2 or cb.shape[1] != profile.numel() or cb.shape[0] == 0:
+            return None, 0.0, 0.0
+        dist = ((cb - profile.reshape(1, -1)) ** 2).sum(dim=-1)
+        best = int(torch.argmin(dist).item())
+        best_dist = float(dist[best].item())
+        confidence = 1.0 / (1.0 + best_dist)
+        if dist.numel() == 1:
+            margin = float("inf")
+        else:
+            ordered = torch.sort(dist).values
+            margin = float((ordered[1] - ordered[0]).item())
+        return best, confidence, margin
+
+    def _assign_profile(self, ws, profile):
+        idx = ws.assign_category(profile.reshape(1, -1))
+        if idx is None:
+            return None
+        cat_id = int(idx.reshape(-1)[0])
+        ws.update_category_role(
+            torch.tensor([cat_id], dtype=torch.long),
+            profile.reshape(1, -1),
+            ema=self.prototype_ema)
+        return cat_id
+
+    def _commit(self, ws, meta_pos, category_id):
+        assign = getattr(ws, "_category_assign", None)
+        if assign is None:
+            assign = {}
+            object.__setattr__(ws, "_category_assign", assign)
+        assign[int(meta_pos)] = int(category_id)
+        self.pending.pop(int(meta_pos), None)
+        return int(category_id)
+
+    def observe(self, ws, meta_pos, role_vec):
+        """Update category evidence for one MetaSymbol.
+
+        Returns the committed category id when the symbol is already learned
+        or becomes learned on this observation. Returns ``None`` while the
+        symbol remains in the pending table.
+        """
+        vec = self._role_tensor(role_vec)
+        if vec is None or vec.sum().item() <= 0.0:
+            return None
+        meta_pos = int(meta_pos)
+        self.step += 1
+
+        assign = getattr(ws, "_category_assign", None) or {}
+        committed = assign.get(meta_pos)
+        if committed is not None:
+            profile, _mass = self._profile(vec)
+            ws.update_category_role(
+                torch.tensor([int(committed)], dtype=torch.long),
+                profile.reshape(1, -1),
+                ema=self.prototype_ema)
+            return int(committed)
+
+        row = self.pending.get(meta_pos)
+        if row is None:
+            if self.max_pending <= 0:
+                return None
+            self._evict_if_needed()
+            row = {
+                # On vec's device: vec is the model-device role tensor, and the
+                # in-place ``row["evidence"].add_(vec)`` below would otherwise
+                # mismatch (default-device zeros vs vec on mps/cuda). The
+                # CPU-pinned test suite never exercised this.
+                "evidence": torch.zeros(self.n_roles, dtype=torch.float32,
+                                        device=vec.device),
+                "mass": 0.0,
+                "best": None,
+                "stable": 0,
+                "last": self.step,
+            }
+            self.pending[meta_pos] = row
+
+        if self.evidence_decay < 1.0:
+            row["evidence"].mul_(max(0.0, self.evidence_decay))
+        row["evidence"].add_(vec)
+        profile, mass = self._profile(row["evidence"])
+        row["mass"] = mass
+        row["last"] = self.step
+
+        best = self._assign_profile(ws, profile)
+        scored_best, confidence, margin = self.score_assignment(ws, profile)
+        if scored_best is not None:
+            best = scored_best
+        if best is None:
+            return None
+
+        if row["best"] == int(best):
+            row["stable"] = int(row.get("stable", 0)) + 1
+        else:
+            row["best"] = int(best)
+            row["stable"] = 1
+
+        if (mass >= self.min_mass
+                and confidence >= self.min_confidence
+                and margin >= self.min_margin
+                and int(row["stable"]) >= self.stable_updates):
+            return self._commit(ws, meta_pos, int(best))
+        return None
+
+    def vocab_extras(self):
+        """Return a JSON-safe snapshot of the pending E-step state.
+
+        Category centroids are registered tensors on ``WholeSpace`` and ride
+        in ``state_dict``.  This sidecar contains the complementary Python
+        state needed to resume the learner at the exact next observation:
+        its thresholds/EMA configuration, monotonic step, and every pending
+        evidence row with its stability and eviction metadata.
+        """
+        pending = {}
+        for meta_pos, row in self.pending.items():
+            evidence = row.get("evidence")
+            if not torch.is_tensor(evidence):
+                evidence = torch.tensor(evidence, dtype=torch.float32)
+            evidence = evidence.detach().to(
+                device="cpu", dtype=torch.float32).reshape(-1)
+            pending[int(meta_pos)] = {
+                "evidence": [float(x) for x in evidence.tolist()],
+                "mass": float(row.get("mass", evidence.sum().item())),
+                "best": (None if row.get("best") is None
+                         else int(row["best"])),
+                "stable": int(row.get("stable", 0)),
+                "last": int(row.get("last", 0)),
+            }
+        return {
+            "version": 1,
+            "n_roles": int(self.n_roles),
+            "config": {
+                "max_pending": int(self.max_pending),
+                "min_mass": float(self.min_mass),
+                "min_confidence": float(self.min_confidence),
+                "min_margin": float(self.min_margin),
+                "stable_updates": int(self.stable_updates),
+                "evidence_decay": float(self.evidence_decay),
+                "prototype_ema": float(self.prototype_ema),
+            },
+            "step": int(self.step),
+            "pending": pending,
+        }
+
+    def load_vocab_extras(self, extras):
+        """Restore a snapshot emitted by :meth:`vocab_extras`.
+
+        Evidence is deliberately rebuilt as CPU float32: ``_role_tensor``
+        canonicalizes every live observation to that representation too, so
+        restoring does not introduce a device-dependent continuation.
+        """
+        if not isinstance(extras, dict):
+            return False
+        saved_n_roles = int(extras.get("n_roles", self.n_roles))
+        if saved_n_roles != self.n_roles:
+            raise ValueError(
+                "MetaSymbolCategoryLearner role width mismatch: "
+                f"saved={saved_n_roles}, live={self.n_roles}")
+
+        config = extras.get("config") or {}
+        if not isinstance(config, dict):
+            raise ValueError("category learner config must be a mapping")
+        int_fields = ("max_pending", "stable_updates")
+        float_fields = (
+            "min_mass", "min_confidence", "min_margin",
+            "evidence_decay", "prototype_ema",
+        )
+        for name in int_fields:
+            if name in config:
+                setattr(self, name, int(config[name]))
+        for name in float_fields:
+            if name in config:
+                setattr(self, name, float(config[name]))
+
+        restored = {}
+        pending = extras.get("pending") or {}
+        if not isinstance(pending, dict):
+            raise ValueError("category learner pending state must be a mapping")
+        for raw_meta_pos, raw_row in pending.items():
+            if not isinstance(raw_row, dict):
+                raise ValueError("category learner row must be a mapping")
+            evidence = torch.tensor(
+                raw_row.get("evidence", []), dtype=torch.float32,
+                device="cpu").reshape(-1)
+            if evidence.numel() != self.n_roles:
+                raise ValueError(
+                    "MetaSymbolCategoryLearner evidence width mismatch for "
+                    f"meta {raw_meta_pos}: saved={evidence.numel()}, "
+                    f"live={self.n_roles}")
+            best = raw_row.get("best")
+            restored[int(raw_meta_pos)] = {
+                "evidence": evidence,
+                "mass": float(raw_row.get("mass", evidence.sum().item())),
+                "best": None if best is None else int(best),
+                "stable": int(raw_row.get("stable", 0)),
+                "last": int(raw_row.get("last", 0)),
+            }
+        self.pending = restored
+        self.step = int(extras.get("step", 0))
+        return True
+
+
+def load_grammar(filename):
+    """Load a ``.grammar`` XML file from ``data/`` and return a
+    ``Grammar.configure()``-compatible dict.
+
+    The .grammar format reuses the same inline rule syntax as the
+    legacy ``<grammar>...</grammar>`` block:
+
+        <?xml version="1.0"?>
+        <grammar name="default">
+          <compose>
+            <rule>S = lift(NP, VP)</rule>
+            <rule>S = intersection(S, S)</rule>
+            ...
+          </compose>
+          <generate>
+            <rule>S = not.reverse(S)</rule>
+            ...
+          </generate>
+        </grammar>
+
+    Each rule's category (head / argument labels), arity (argument
+    count), function name, and return-value count are inferred from the
+    body. Space-role, invertibility, and any other class-level metadata come
+    from the rule's ``GrammarLayer`` subclass via ``GRAMMAR_LAYER_CLASSES``
+    (set later in ``Grammar.load_from_grammar_file``).
+
+    Compact ordered-category sugar is expanded later in
+    ``load_from_grammar_file``: e.g. ``S45`` in a rule body means
+    concrete alternatives ``S4`` and ``S5`` in the loaded rule table.
+    """
+    path = _GRAMMAR_DIR / filename
+    if not path.exists():
+        raise FileNotFoundError(f"Grammar file not found: {path}")
+    root = _ET.parse(path).getroot()
+    return _grammar_xml_to_dict(root)
+
+
+_COMPACT_ORDER_SET_RE = re.compile(r'\b([A-Z][A-Z_]*)([0-9]{2,})\b')
+
+
+def _expand_compact_order_sets_in_rule(rule):
+    """Expand compact ordered-category sugar in one rule string.
+
+    In ``.grammar`` files, a multi-digit order suffix denotes a small
+    set of concrete orders: ``S45`` expands to ``S4`` and ``S5``. The
+    expansion is source-level sugar only; runtime rule signatures still
+    carry exact single orders. Repeated uses of the same suffix in one
+    rule are correlated, so ``S45 = not(NOT_S45)`` expands pairwise
+    rather than as a Cartesian product.
+    """
+    if not isinstance(rule, str):
+        return [rule]
+    matches = list(_COMPACT_ORDER_SET_RE.finditer(rule))
+    if not matches:
+        return [rule]
+
+    order_sets = []
+    seen = set()
+    for match in matches:
+        digits = match.group(2)
+        if digits not in seen:
+            seen.add(digits)
+            order_sets.append(digits)
+
+    choices = [tuple(dict.fromkeys(digits)) for digits in order_sets]
+    expanded = []
+    for combo in itertools.product(*choices):
+        selected = dict(zip(order_sets, combo))
+
+        def repl(match):
+            prefix, digits = match.groups()
+            return f"{prefix}{selected[digits]}"
+
+        expanded.append(_COMPACT_ORDER_SET_RE.sub(repl, rule))
+    return expanded
+
+
+def _expand_compact_order_sets(cfg):
+    """Expand compact order-set sugar under every ``rule`` list."""
+    if isinstance(cfg, list):
+        # Only the rule-key branch expands alternatives. Other lists contain
+        # complete query signatures/anchors, not iterables of characters.
+        return [_expand_compact_order_sets(item) for item in cfg]
+    if not isinstance(cfg, dict):
+        return cfg
+    out = {}
+    for key, value in cfg.items():
+        if key == 'rule':
+            rules = value if isinstance(value, list) else [value]
+            expanded_rules = []
+            for rule in rules:
+                if isinstance(rule, dict) and '_' in rule:
+                    for expanded in _expand_compact_order_sets_in_rule(
+                            rule.get('_')):
+                        expanded_rule = dict(rule)
+                        expanded_rule['_'] = expanded
+                        expanded_rules.append(expanded_rule)
+                else:
+                    expanded_rules.extend(
+                        _expand_compact_order_sets_in_rule(rule))
+            out[key] = expanded_rules
+        else:
+            out[key] = _expand_compact_order_sets(value)
+    return out
+
+
+def _start_item_text(item):
+    """Surface text of one ``<start>`` entry.
+
+    Tolerates the attribute-bearing ``{'_': text, 'name': ...}`` dict that
+    ``_grammar_xml_to_dict`` now emits for ``<start name=...>`` (so the
+    ``relative_truth`` / ``absolute_truth`` / ``everything`` roles survive
+    parse), as well as the bare-string legacy shape.
+    """
+    if isinstance(item, dict):
+        return str(item.get('_', '')).strip()
+    return str(item).strip()
+
+
+def _starts_by_name(start_raw):
+    """Map each start *symbol* (after compact-order expansion) to the
+    ``name`` attribute of the ``<start>`` it came from (or ``None``).
+
+    Lets the loader partition WholeSpace starts into ``relative_truth``
+    / ``absolute_truth`` role sets for relative-rule detection (R1.3).
+    """
+    if start_raw is None:
+        return {}
+    items = start_raw if isinstance(start_raw, list) else [start_raw]
+    out = {}
+    for item in items:
+        text = _start_item_text(item)
+        if not text:
+            continue
+        name = item.get('name') if isinstance(item, dict) else None
+        for expanded in _expand_compact_order_sets_in_rule(text):
+            for sym in (p.strip() for p in expanded.split() if p.strip()):
+                out.setdefault(sym, name)
+    return out
+
+
+def _start_patterns_from_raw(start_raw, default='S'):
+    """Parse one or more ``<start>`` entries into concrete patterns.
+
+    Each pattern is a tuple of category tokens. Compact order-set sugar
+    is allowed here too: ``S45`` becomes ``("S4",)`` and ``("S5",)``,
+    while ``S45 REL S45`` becomes the two correlated patterns
+    ``("S4", "REL", "S4")`` and ``("S5", "REL", "S5")``.
+    """
+    if start_raw is None:
+        raw_items = [default]
+    elif isinstance(start_raw, list):
+        raw_items = start_raw
+    else:
+        raw_items = [start_raw]
+
+    patterns = []
+    seen = set()
+    for raw in raw_items:
+        text = _start_item_text(raw)
+        if not text:
+            continue
+        for expanded in _expand_compact_order_sets_in_rule(text):
+            pattern = tuple(part.strip() for part in expanded.split()
+                            if part.strip())
+            if pattern and pattern not in seen:
+                seen.add(pattern)
+                patterns.append(pattern)
+    if not patterns:
+        patterns = [(str(default).strip() or 'S',)]
+    return tuple(patterns)
+
+
+def _primary_start_symbol(patterns, default='S'):
+    """Pick the primary atomic start symbol from parsed start patterns."""
+    for pattern in patterns:
+        if len(pattern) == 1:
+            return pattern[0]
+    if patterns and patterns[0]:
+        return patterns[0][0]
+    return default
+
+
+def _grammar_xml_to_dict(node):
+    """Convert an ``ElementTree`` grammar node into the nested-dict
+    shape that ``Grammar.configure()`` consumes.
+
+    Element nodes with children become dicts; leaf element nodes contribute
+    their stripped text. Repeated tags (most importantly ``<rule>``) merge
+    into a list under that tag, matching the shape ``TheXMLConfig`` emits
+    for the legacy inline ``<grammar>...</grammar>`` block. Attributes on
+    ``<rule>`` leaves are preserved as ``{"_": text, **attrs}``.
+    """
+    result = {}
+    for child in node:
+        tag = child.tag
+        if len(list(child)) > 0:
+            value = _grammar_xml_to_dict(child)
+        else:
+            text = (child.text or '').strip()
+            value = {'_': text, **child.attrib} if (
+                tag in ('rule', 'start') and child.attrib) else text
+        if tag in result:
+            if not isinstance(result[tag], list):
+                result[tag] = [result[tag]]
+            result[tag].append(value)
+        else:
+            result[tag] = value
+    return result
+
+
+# --------------------------------------------------------------------
+# Stage 3 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md): the
+# chart and STM shift-reduce parsers are retired in favour of the
+# signal router (``LanguageLayer``). Configs that still set retired
+# knobs must error loudly per the project's fail-loud rule -- silent
+# acceptance would let stale settings drift into the new pipeline.
+# --------------------------------------------------------------------
+_RETIRED_CHART_KNOBS = (
+    "parserBackend",
+    "routerKind",
+    "chartTau",
+    "chartTopK",
+    "chartNoiseEps",
+)
+# ``<wMax>`` (the legacy STM-capacity alias) is retired too: STM depth now
+# comes from ``<stmCapacity>`` (or the DEFAULT_CAPACITY=8 fallback), never
+# ``<wMax>``.
+_RETIRED_STM_KNOBS = ("wMax",)
+
+
+def _assert_retired_chart_knobs_absent():
+    """Raise ``ValueError`` if any retired knob lives in the loaded XML
+    config under ``<SymbolSpace>``.
+
+    Stage 3 retires ``<parserBackend>``, ``<routerKind>``, ``<chartTau>``,
+    ``<chartTopK>``, ``<chartNoiseEps>`` in favour of the signal router;
+    ``<wMax>`` is retired in favour of ``<stmCapacity>`` (STM depth). A loud
+    failure here catches legacy XML files that still set them. Called from
+    ``SymbolSubSpace.__init__`` after grammar configuration.
+    """
+    try:
+        ss_section = TheXMLConfig.get("SymbolSpace", None)
+    except (KeyError, AttributeError):
+        ss_section = None
+    if not isinstance(ss_section, dict):
+        return
+    offending = [k for k in (_RETIRED_CHART_KNOBS + _RETIRED_STM_KNOBS)
+                 if k in ss_section]
+    if offending:
+        joined = ", ".join(f"<{k}>" for k in offending)
+        raise ValueError(
+            f"SymbolSpace XML config carries retired knob(s): {joined}. "
+            f"The chart/router knobs (parserBackend, routerKind, chartTau, "
+            f"chartTopK, chartNoiseEps) were retired in favour of the signal "
+            f"router (LanguageLayer); <wMax> was retired in favour of "
+            f"<stmCapacity> (STM depth). Remove the offending element(s) "
+            f"from your config."
+        )
+
+
+def grammar_uses(rule_name):
+    """Return True iff any rule body in the configured grammar invokes
+    ``rule_name`` as a function call.
+
+    Note: previously consumed by ConceptualSpace's grammar-driven wiring
+    inference (DNF auto-wrap), which has been removed. NegationLayer is
+    no longer auto-wired — wire composite CS-space_role wrappers explicitly via
+    the ``layer`` kwarg on ConceptualSpace. This helper remains available
+    for runtime grammar inspection.
+
+    Reads the parsed XML grammar at SymbolSpace.language.grammar; scans
+    rule bodies (string leaves) for the substring ``rule_name(``.
+    Returns False on any read error or when no grammar is configured.
+    """
+    needle = f"{rule_name}("
+    try:
+        cfg = TheXMLConfig.get("SymbolSpace.language.grammar")
+    except (KeyError, AttributeError):
+        cfg = None
+
+    def _scan(node):
+        if isinstance(node, str):
+            return needle in node
+        if isinstance(node, dict):
+            return any(_scan(v) for v in node.values())
+        if isinstance(node, (list, tuple)):
+            return any(_scan(v) for v in node)
+        return False
+
+    if cfg is not None and _scan(cfg):
+        return True
+    return False
+
+
+class Grammar:
+    """Multi-space_role grammar rule catalog (subsymbolic / CS / SS).
+
+    Space-roles tag each rule with the space that dispatches it:
+      - ``subsymbolic`` (perceptual) -- PartSpace's SyntacticLayer.
+      - ``CS`` (conceptual) -- ConceptualSpace's SyntacticLayer.
+        Bivector pre-codebook activation ``[B, V, 2]``. The lattice
+        primitives ``intersection`` / ``union`` bind here (lattice
+        min/max on bivector activation).
+      - ``SS`` (symbolic)   -- WholeSpace's SyntacticLayer.
+        Post-codebook activation: a scalar ``[B, V]`` per
+        prototype. SS-space_role ops (``conjunction``, ``disjunction``,
+        ``not``, ``lift``, ``lower``, ``part``, ``equal``, ``lookup``,
+        ``quantize``, ``arma``, ``what``, ``swap``, ``non``) are
+        monotonic functions on that scalar.
+
+    Owns the rule definitions parsed from XML config. All learnable
+    parameters and rule execution live on a single unified
+    ``SyntacticLayer`` instance owned by ``SymbolSpace``.
+    """
+
+    # lhs:          nonterminal this rule reduces to ('S', 'VO', 'NP', 'VP', ...).
+    # rhs_symbols:  typed-form RHS category tuple (e.g. ('V', 'O') for VO -> V O).
+    #               None for legacy function-call / epsilon / passthrough rules.
+    # width_min, width_max: per-rule depth-band gates (Step 1 of the
+    # 2026-05-04 perf plan).  When set (defaults: 0 = no minimum,
+    # 0 = no maximum), the chart's _chart_inside skips this rule at
+    # cells whose width falls outside [width_min, width_max].  Saves
+    # per-cell rule-enumeration work for rules that are structurally
+    # impossible at most widths (e.g., S = lift(NP, VP) only fires at
+    # the root span; NP = N only at width 1).
+    RuleDef = _namedtuple(
+        'RuleDef',
+        ['space_role', 'canonical', 'arity', 'method_name', 'lhs', 'rhs_symbols',
+         'width_min', 'width_max', 'query', 'thought_family',
+         'thought_permutation', 'reference_orders', 'reference_kinds',
+         'clause_form', 'head_role', 'surface_name', 'predicate_identity',
+         'operand_kinds', 'effect_writes', 'relation_kind', 'scope_transparent',
+         'polarity_effect', 'meaning_mode', 'same_reference_idempotent',
+         'effect_reads', 'field_eligible', 'order_delta', 'case_head_role'],
+    )
+    RuleDef.__new__.__defaults__ = (0, 0, False, None, None, (), (), None, 0,
+                                  None, None, (), (), None, False, None, None, False, (), False, 0, 0)
+
+    @staticmethod
+    def _declared_rule(rule):
+        """Copy the selected implementation's declared roles into the rule.
+
+        Execution consumes these properties. Looking up an implementation is
+        the only place where its registered spelling identifies its contract.
+        """
+        implementation = globals().get('GRAMMAR_LAYER_CLASSES', {}).get(rule.method_name)
+        implementation = implementation or GrammarLayer
+        fields = ('clause_form', 'head_role', 'relation_kind', 'scope_transparent',
+                  'polarity_effect', 'meaning_mode', 'same_reference_idempotent',
+                  'predicate_identity', 'field_eligible', 'order_delta', 'case_head_role')
+        from Queries import THOUGHT_EXECUTORS
+        from AccessibleMind import OperatorEffects
+        descriptor = THOUGHT_EXECUTORS.get(rule.method_name)
+        reads = tuple(implementation.effect_reads)
+        writes = tuple(implementation.effect_writes)
+        if descriptor is not None:
+            # Canonical identity is resolved here, at load. Every subsequent
+            # face consumes this same declaration; phase permissions mask it.
+            reads = tuple(dict.fromkeys((*reads, *(s.name.lower() for s in descriptor.read_scope))))
+            writes = tuple(dict.fromkeys((*writes, *(s.name.lower() for s in descriptor.write_scope))))
+        effects = OperatorEffects(reads, writes)
+        return rule._replace(
+            **{name: getattr(implementation, name, None) for name in fields},
+            operand_kinds=(('field' if getattr(implementation, 'field_only', False) else 'symbol'),) * rule.arity,
+            effect_reads=tuple(s.name.lower() for s in effects.reads),
+            effect_writes=tuple(s.name.lower() for s in effects.writes))
+
+    @dataclass(frozen=True)
+    class ThoughtOperationForm:
+        """One grammar-spelled structural form of a canonical operation.
+
+        ``structural_id`` is the method actually called by compose/generate.
+        ``permutation`` maps canonical operand order to this form's role
+        labels: ``('I2', 'I1')`` makes ``whole(A, B)`` mean ``part(B, A)``.
+        It is grammar metadata, never a second executor alias or learned
+        numeric feature.
+        """
+        structural_id: str
+        operand_roles: tuple
+        result_role: str
+        permutation: tuple
+        forward_rule_ids: tuple
+        reverse_rule_ids: tuple
+
+        def __post_init__(self):
+            if (not isinstance(self.structural_id, str)
+                    or re.fullmatch(r'[A-Za-z_]\w*', self.structural_id,
+                                    re.ASCII) is None):
+                raise ValueError('thought operation form requires a valid structural id')
+            roles = tuple(self.operand_roles)
+            if (not roles or len(set(roles)) != len(roles)
+                    or any(re.fullmatch(r'I[1-9]\d*', role, re.ASCII) is None
+                           for role in roles)):
+                raise ValueError('thought operation form has invalid operand roles')
+            if (not isinstance(self.permutation, tuple)
+                    or len(self.permutation) != len(roles)
+                    or set(self.permutation) != set(roles)):
+                raise ValueError('thought operation form has an invalid role permutation')
+            if re.fullmatch(r'O[1-9]\d*', self.result_role, re.ASCII) is None:
+                raise ValueError('thought operation form has an invalid result role')
+            for ids in (self.forward_rule_ids, self.reverse_rule_ids):
+                if (not isinstance(ids, tuple)
+                        or any(type(rule_id) is not int or rule_id < 0
+                               for rule_id in ids)):
+                    raise ValueError('thought operation form has invalid structural rule ids')
+
+    @dataclass(frozen=True)
+    class ThoughtOperationSpec:
+        """One immutable role-labelled operation selected by `<thought>`.
+
+        This is configuration metadata only.  It deliberately carries no
+        executor, native concept, learned parameter, memory owner, or mutable
+        registry.  The boundary registry joins a checked thought descriptor by
+        ``semantic_id`` after grammar configuration. Matching structural
+        faces constrain the contract, while the explicit model `<thought>`
+        list supplies boundary membership and may stand alone.
+        """
+        semantic_id: str
+        operand_roles: tuple
+        result_role: str
+        forward_rule_ids: tuple
+        reverse_rule_ids: tuple
+        forms: tuple = ()
+
+        def __post_init__(self):
+            if (not isinstance(self.semantic_id, str)
+                    or re.fullmatch(r'[A-Za-z_]\w*', self.semantic_id,
+                                    re.ASCII) is None):
+                raise ValueError('thought operation requires a valid semantic id')
+            roles = tuple(self.operand_roles)
+            if (not roles or len(set(roles)) != len(roles)
+                    or tuple(sorted(roles, key=lambda role: int(role[1:]))) != roles
+                    or any(re.fullmatch(r'I[1-9]\d*', role, re.ASCII) is None
+                           for role in roles)):
+                raise ValueError('thought operation has invalid operand roles')
+            if re.fullmatch(r'O[1-9]\d*', self.result_role, re.ASCII) is None:
+                raise ValueError('thought operation has an invalid result role')
+            for ids in (self.forward_rule_ids, self.reverse_rule_ids):
+                if (not isinstance(ids, tuple)
+                        or any(type(rule_id) is not int or rule_id < 0
+                               for rule_id in ids)):
+                    raise ValueError('thought operation has invalid structural rule ids')
+            if not isinstance(self.forms, tuple):
+                raise TypeError('thought operation forms must be immutable')
+            forms = self.forms
+            if not forms:
+                raise ValueError('thought operation requires at least one structural form')
+            seen = set()
+            for form in forms:
+                if not isinstance(form, Grammar.ThoughtOperationForm):
+                    raise TypeError('thought operation form has an invalid type')
+                if form.structural_id in seen:
+                    raise ValueError('thought operation has duplicate structural forms')
+                seen.add(form.structural_id)
+                if (form.operand_roles != roles
+                        or form.result_role != self.result_role):
+                    raise ValueError('thought operation form disagrees with canonical contract')
+
+    # Order-typing primitives (plan:
+    # doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
+    # §Order-Typed Grammar). A category token like ``NP0`` / ``VP1`` /
+    # ``NP*`` / ``NP*+1`` / ``NP*-1`` / ``DET`` (bare = constant 0) is
+    # parsed into a ``ParsedCategory(name, order)`` where ``order`` is an
+    # ``OrderExpr(kind, delta)``:
+    #   kind='constant', delta=N   ->  literal order N
+    #   kind='variable', delta=D   ->  rule-local '*' plus delta D
+    OrderExpr = _namedtuple('OrderExpr', ['kind', 'delta'])
+    ParsedCategory = _namedtuple('ParsedCategory', ['name', 'order'])
+
+    # Per-rule order signature derived from the rule's parsed categories
+    # plus its op name. ``order_delta``: +1 for ``lift``, -1 for ``lower``,
+    # 0 for every other op (order-preserving by default).
+    RuleOrderSignature = _namedtuple(
+        'RuleOrderSignature',
+        ['lhs_category', 'lhs_order_expr',
+         'rhs_categories', 'rhs_order_exprs',
+         'op_name', 'order_delta'],
+    )
+
+    def __init__(self):
+        """Initialize an empty rule catalog; XML configuration happens lazily.
+
+        Rules are populated on first access via ``_ensure_configured``.
+        Holds space_role-tagged rule lists, the upward / downward / reverse
+        derivations, and the default start symbol ``"S"``.
+        """
+        self.rules = []
+        self.rules_upward = []
+        self.rules_downward = []
+        # The model-selected source of thought-action identity.  Structural
+        # compose/generate families supply the shared contracts, but only the
+        # explicit <thought> declarations authorize a boundary action.
+        self.thought_rules = []
+        self.thought_operations = ()
+        # PartSpace meronymic rule tables. Populated only when a
+        # grammar file carries a ``<PartSpace>`` section (Phase 8b,
+        # doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
+        # These are kept SEPARATE from the symbolic tables above: the
+        # existing symbolic parser reads ``self.rules`` (== the WS table),
+        # so adding a PS section never perturbs symbolic rule ids. PS rules
+        # carry space_role 'subsymbolic' and are consumed by the PS analyzer phases.
+        self.ps_rules_upward = []
+        self.ps_rules_downward = []
+        # Online category-collapse cache (participation.learned_collapse),
+        # keyed by direction. Computed lazily at runtime by category_collapse()
+        # when <categoryCollapse> is enabled; cleared on reload.
+        self._category_collapse_cache = {}
+        self.ps_rules = []
+        # Step 6: Layer-2.5 reverse productions, derived mechanically
+        # from rules_upward at load time.  Each entry is
+        # ``(args_tuple, reverse_op_name, (lhs,))``.
+        self.reverse_rules = []
+        self.rule_table = {}
+        self._configured = False
+        self.interpretation = 0.5
+        self.thought_free = False
+        # Phase 1 of the SubSpace.what STM refactor: V_sym is the size of
+        # the terminal symbol codebook, which WholeSpace wires in once
+        # its symbol codebook is built. Until then, the rule namespace
+        # starts at 1 (treating V_sym=0). Used only by where_id_for_rule.
+        # See doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md
+        self.symbol_vocab_size = 0
+        # Start patterns -- accepted completed derivation shapes.
+        # ``start_symbol`` remains the primary single-category start for
+        # legacy identity-rule and reset code; ``start_patterns`` can also
+        # carry unreduced accepted forms such as ("S4", "REL", "S4").
+        # Configurable via one or more <start>...</start> entries; falls
+        # back to "S" (the historical default) when unset.
+        self.start_symbol = "S"
+        self.start_patterns = (("S",),)
+        # Space-scoped starts (Phase R1.1,
+        # doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md
+        # decision 7 / §4.4). ``WholeSpace.start`` configures the
+        # symbolic parse starts; ``start_symbol`` / ``start_patterns``
+        # above are the back-compat *alias* of them (id_SS,
+        # is_start_pattern, reset and relative-rule code key off the
+        # symbolic start). ``PartSpace.start`` configures the
+        # analyzer root (``U``) -- a separate namespace the symbolic
+        # parser never reads.
+        self.ws_start_symbol = "S"
+        self.ws_start_patterns = (("S",),)
+        self.ps_start_symbol = None
+        self.ps_start_patterns = ()
+        # WS starts partitioned by ``<start name=...>``: a relative truth
+        # is a binary-predicate end-state (the equal / part / whole family),
+        # an absolute truth collapses to a single idea. Consumed by
+        # ``_relative_start_categories`` (R1.3).
+        self.ws_relative_starts = frozenset()
+        self.ws_absolute_starts = frozenset()
+        # Task 6a (doc/plans/2026-05-29-stm-serial-parallel-modes.md §7):
+        # cache of rule_ids that produce a RELATIVE truth (the
+        # ``part`` / ``equal`` predicate family). Lazily computed by
+        # ``_relative_rule_id_set`` and invalidated on every rule-table
+        # bump. ``None`` == not yet computed.
+        self._relative_rule_ids_cache = None
+
+    # -- Rule catalog --------------------------------------------------
+
+    def __len__(self):
+        """Total rule count after lazy configuration."""
+        self._ensure_configured()
+        return len(self.rules)
+
+    def __getitem__(self, idx):
+        """Return the canonical name string for rule ``idx``."""
+        self._ensure_configured()
+        return self.rules[idx].canonical
+
+    def arity(self, rule_id):
+        """Return the arity (1 or 2) of rule ``rule_id``."""
+        return self.rules[rule_id].arity
+
+    def method_name(self, rule_id):
+        """Return the Python method name implementing rule ``rule_id``."""
+        return self.rules[rule_id].method_name
+
+    def space_role(self, rule_id):
+        """Return the space_role tag ('subsymbolic' / 'CS' / 'SS') of rule ``rule_id``."""
+        return self.rules[rule_id].space_role
+
+    def category_collapse(self, direction="compose"):
+        """Runtime online category collapse (``participation.learned_collapse``).
+
+        Merges this grammar's symbols into a smaller mutually-exclusive
+        category set by participation-signature similarity, accepting a merge
+        only when it keeps every grammar rule distinguishable
+        (``collapse_conflicts == 0``) — the "ADV and VP both operate on NP,
+        so collapse them" rule, determined purely by the grammatical
+        operations. Returns ``{symbol: class_id}`` (stable integer ids).
+
+        This is the same participation-driven collapse the offline D1 gate
+        measures, now runnable inside the live model (gated by
+        ``<categoryCollapse>``). Cached per ``direction``; deterministic and
+        side-effect-free, so it is safe to call at build/enable time.
+        """
+        cache = self._category_collapse_cache
+        if direction not in cache:
+            import participation
+            cache[direction] = participation.learned_collapse(
+                self, direction=direction)
+        return cache[direction]
+
+    def binary_rules(self):
+        """Return the list of rule_ids that have arity 2."""
+        return [i for i in range(len(self.rules)) if self.rules[i].arity == 2]
+
+    # -- WholeSpace / PartSpace rule views --------------------
+    #
+    # The symbolic parser reads ``self.rules`` (and rules_upward /
+    # rules_downward). These read-only aliases name that table the
+    # WholeSpace table, mirroring ``ps_rules`` for the PartSpace
+    # meronymic table. See
+    # doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md.
+
+    @property
+    def ws_rules(self):
+        """WholeSpace rule table (alias of the canonical ``rules``)."""
+        return self.rules
+
+    # -- Phase 1 GrammarRegistry surface --------------------------------
+    #
+    # Static lookup API for the SubSpace.what STM refactor. These
+    # accessors do not run the live parser; they are pure rule-table
+    # reads + a stable .where namespace. See
+    # doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md
+    # §"Phase 1: Grammar Registry Extraction".
+
+    def num_rules(self):
+        """Total rule count (configures lazily if needed)."""
+        self._ensure_configured()
+        return len(self.rules)
+
+    def rule(self, rule_id):
+        """Return the full ``RuleDef`` for ``rule_id``."""
+        return self.rules[rule_id]
+
+    def rules_for_space_role(self, space_role, arity=None):
+        """Return rule_ids whose ``RuleDef.space_role`` matches ``space_role``.
+
+        ``arity`` optionally filters to that arity (1 or 2).
+        """
+        self._ensure_configured()
+        out = []
+        for i, r in enumerate(self.rules):
+            if r.space_role != space_role:
+                continue
+            if arity is not None and r.arity != arity:
+                continue
+            out.append(i)
+        return out
+
+    # -- Phase 1 .where namespace ---------------------------------------
+    #
+    # The stack-mode .where namespace is:
+    #     0                           empty slot
+    #     1..V_sym                    terminal symbol locations
+    #     V_sym+1..V_sym+R_rule       grammar rule locations
+    # V_sym is ``self.symbol_vocab_size``, populated by WholeSpace
+    # in Phase 3. Empty/invalid inputs collapse to 0.
+
+    def where_id_for_symbol(self, symbol_id):
+        """Stack ``.where`` location for a terminal symbol codebook row.
+
+        Returns 0 for invalid/empty inputs (matches the spec's
+        zero-is-empty namespace).
+        """
+        if symbol_id is None or symbol_id < 0:
+            return 0
+        return int(symbol_id) + 1
+
+    def where_id_for_rule(self, rule_id):
+        """Stack ``.where`` location for a grammar rule.
+
+        Returns 0 for invalid/empty inputs.
+        """
+        if rule_id is None or rule_id < 0:
+            return 0
+        return int(self.symbol_vocab_size) + 1 + int(rule_id)
+
+    def decode_where(self, where_id):
+        """Decode a stack ``.where`` location back into ``(kind, id)``.
+
+        Inverse of ``where_id_for_symbol`` / ``where_id_for_rule`` (used
+        in the Phase 7 reverse path; see
+        doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md).
+
+        Returns:
+            ``('empty', None)``    when ``where_id <= 0``
+            ``('terminal', sym_id)`` when ``1 <= where_id <= V_sym``
+            ``('rule', rule_id)``    when ``where_id > V_sym``
+
+        ``where_id`` may be a Python int, a float (the live router
+        stores the int in a float tensor), or a 0-D tensor; values are
+        coerced to int via ``int(round(...))`` so noisy lookups in a
+        float-encoded carrier still land on the right bucket.
+        """
+        if where_id is None:
+            return ('empty', None)
+        if hasattr(where_id, 'item'):
+            where_id = float(where_id.item())
+        wid = int(round(float(where_id)))
+        if wid <= 0:
+            return ('empty', None)
+        v_sym = int(self.symbol_vocab_size)
+        if wid <= v_sym:
+            return ('terminal', wid - 1)
+        return ('rule', wid - v_sym - 1)
+
+    # -- Configuration from XML ----------------------------------------
+
+    # Maps the new space_role-bucket section names to the RuleDef.space_role
+    # field. Each space space_role (PartSpace, ConceptualSpace,
+    # WholeSpace) reads its own subset by space_role when filtering for
+    # which rules are licensed in its forward path.
+    _SPACE_ROLE_SECTIONS = {
+        'percepts': 'subsymbolic',
+        'concepts': 'CS',
+        'symbols':  'SS',
+    }
+
+    def configure(self, grammar_dict):
+        """Configure rules from an XML-derived dict.
+
+        Accepts these shapes:
+          (a) flat: {'S': ['not(S)'], ...}  — legacy compose-only.
+          (b) named sections: {'compose': {...}, 'thought': {...},
+              'generate': {...}} with `op.forward(args)`,
+              `op.thought(args)`, and `op.reverse(arg)` rule bodies.
+          (c) space_role-scoped sections: {'compose': {'symbols': {...},
+                                                 'concepts': {...},
+                                                 'percepts': {...}},
+                                     'generate': {...same shape...}}
+              Each space_role's rules carry space_role='SS' / 'CS' /
+              'subsymbolic' on the
+              RuleDef, so each space can filter to the rules licensed
+              for it. A space "can conduct any/all of the operations"
+              -- runtime gating is independent of space_role tagging; the
+              tags are an inductive-bias hint, not a hard restriction.
+        """
+        # The legacy <Queries> spelling remains a second, retired catalogue.
+        # The lower-case <thought> section is the explicit model-owned
+        # allow-list; XML may nest it under <Symbolic>, so rejection must walk
+        # the entire mapping before changing grammar state.
+        if self._contains_retired_queries_block(grammar_dict):
+            raise ValueError(
+                'Queries is retired; declare boundary operators in <thought>')
+        self.rules_upward = []
+        self.rules_downward = []
+        self.ps_rules_upward = []
+        self.ps_rules_downward = []
+        self.thought_rules = []
+        self.thought_operations = ()
+        self._configured = True
+
+        # PS / Symbolic-sectioned form (Phase 8b,
+        # doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md):
+        # a grammar nests <Synthesize>/<Analyze> under <PartSpace> and
+        # <compose>/<generate> under <Symbolic>. PartSpace rules go to the
+        # separate ps_* tables tagged space_role 'subsymbolic'; Symbolic rules
+        # go to the canonical symbolic tables (so symbolic rule ids are
+        # unperturbed by the presence of a PS section). A file with neither
+        # wrapper is the legacy form and loads as the symbolic table.
+        #
+        # Section vocabulary: <PartSpace> nests <Synthesize> (parts -> whole)
+        # and <Analyze> (whole -> parts) -- the mereological framing; <Symbolic>
+        # nests <compose> / <generate> (the symbolic rules); role-labelled
+        # faces in those sections derive the one thought-operation catalogue.
+        ps_block = grammar_dict.get('PartSpace')
+        ws_block = grammar_dict.get('Symbolic')
+        self.generate_declared = 'generate' in (ws_block if isinstance(ws_block, dict) else grammar_dict)
+        if ps_block is not None or ws_block is not None:
+            if isinstance(ps_block, dict):
+                self._fill_section(self.ps_rules_upward,
+                                   ps_block.get('Synthesize') or {},
+                                   default_space_role='subsymbolic')
+                self._fill_section(self.ps_rules_downward,
+                                   ps_block.get('Analyze') or {},
+                                   default_space_role='subsymbolic')
+            if isinstance(ws_block, dict):
+                self._fill_section(self.rules_upward,
+                                   ws_block.get('compose') or {})
+                self._fill_thought_section(ws_block.get('thought') or {})
+                self._fill_section(self.rules_downward,
+                                   ws_block.get('generate') or {})
+        # Parse the top-level <Anchors> section (Alec 2026-07-13): the
+        # CLOSED-CLASS surfaces of the relation operators — NP-R-NP is a
+        # grammatical form (the "is of definition", not reducible to the
+        # "is of predication"), so its R-words anchor SYNTACTICALLY:
+        # ``surface_anchors[surface.casefold()] -> operator name``. An
+        # anchored word's slot resolves to the operator's role directly
+        # (no learned centroid needed).
+        self.surface_anchors = {}
+        a_block = grammar_dict.get('Anchors')
+        if isinstance(a_block, dict):
+            for _op, _surf in a_block.items():
+                _surfs = (_surf if isinstance(_surf, list) else [_surf])
+                for _entry in _surfs:
+                    for _s in str(_entry).split(','):
+                        _s = _s.strip()
+                        if _s:
+                            self.surface_anchors[_s.casefold()] = \
+                                str(_op).strip()
+        if ps_block is None and ws_block is None:
+            has_named = any(k in grammar_dict
+                            for k in ('compose', 'thought', 'generate'))
+            if has_named:
+                up = grammar_dict.get('compose') or {}
+                thought = grammar_dict.get('thought') or {}
+                dn = grammar_dict.get('generate') or {}
+                self._fill_section(self.rules_upward, up)
+                self._fill_thought_section(thought)
+                self._fill_section(self.rules_downward, dn)
+            else:
+                # Legacy flat form — treat as parse.
+                self._fill_section(self.rules_upward, grammar_dict)
+
+        # Canonical union so callers reading `g.rules` see upward first,
+        # then downward. Upward rule IDs stay stable for existing code.
+        self.rules = list(self.rules_upward) + list(self.rules_downward)
+        self.ps_rules = list(self.ps_rules_upward) + list(self.ps_rules_downward)
+        self.thought_operations = self._derive_thought_operations()
+        self.rule_table = {idx: rule.canonical
+                           for idx, rule in enumerate(self.rules)}
+        # Step 6 parity: derive Layer-2.5 reverse rules from upward
+        # productions even on the legacy XML path so consumers of
+        # ``self.reverse_rules`` work uniformly across load paths.
+        self.reverse_rules = self._derive_reverse_rules(self.rules_upward)
+        self.id_SS = self._find_identity_rule_id(self.start_symbol)
+        self._bump_rule_table_version()
+
+    @staticmethod
+    def _contains_retired_queries_block(value):
+        """Whether a grammar mapping contains a retired ``<Queries>`` block.
+
+        This deliberately walks only container structure; grammar text is not
+        interpreted here.  It keeps rejection atomic for both top-level and
+        ``<Symbolic>``-sectioned XML without making a second parser or a
+        compatibility path for the retired catalogue.
+        """
+        if isinstance(value, dict):
+            return ('Queries' in value or any(
+                Grammar._contains_retired_queries_block(item)
+                for item in value.values()))
+        if isinstance(value, (list, tuple)):
+            return any(Grammar._contains_retired_queries_block(item)
+                       for item in value)
+        return False
+
+    @staticmethod
+    def _thought_role_tokens(method, tokens, kind):
+        """Return canonical role labels from one structural face side.
+
+        A normal category rule is not a thought operation merely because it
+        has a method name.  Role-labelled operation faces use exactly
+        ``<method>_I1 … <method>_In`` and ``<method>_O1``.  Seeing any
+        same-method suffix therefore makes a malformed role spelling a load
+        error rather than silently omitting a boundary action.
+        """
+        prefix = str(method) + '_'
+        values = tuple(str(token).strip() for token in tokens if str(token).strip())
+        role_like = tuple(token for token in values if token.startswith(prefix))
+        if not role_like:
+            return None
+        pattern = re.compile(re.escape(str(method)) + r'_' + kind + r'([1-9]\d*)$')
+        labels = []
+        for token in values:
+            match = pattern.fullmatch(token)
+            if match is None:
+                raise ValueError(
+                    f'thought operation {method!r} has malformed {kind}-role {token!r}')
+            labels.append(kind + match.group(1))
+        if not labels or len(set(labels)) != len(labels):
+            raise ValueError(f'thought operation {method!r} has ambiguous {kind}-roles')
+        ordered = tuple(sorted(labels, key=lambda role: int(role[1:])))
+        if tuple(labels) != ordered:
+            raise ValueError(
+                f'thought operation {method!r} must declare {kind}-roles in canonical order')
+        return ordered
+
+    def _thought_contract_from_rule(self, rule, direction):
+        """Derive a role contract from one compose or generate declaration."""
+        method = getattr(rule, 'method_name', None)
+        if not isinstance(method, str) or not method:
+            return None
+        lhs = tuple(part.strip() for part in str(rule.lhs).split(',') if part.strip())
+        rhs = tuple(rule.rhs_symbols or ())
+        spelling = rule.surface_name or method
+        if direction in ('forward', 'thought'):
+            inputs = self._thought_role_tokens(spelling, rhs, 'I')
+            outputs = self._thought_role_tokens(spelling, lhs, 'O')
+        elif direction == 'reverse':
+            inputs = self._thought_role_tokens(spelling, lhs, 'I')
+            outputs = self._thought_role_tokens(spelling, rhs, 'O')
+        else:
+            raise ValueError(f'unknown structural direction {direction!r}')
+        if inputs is None and outputs is None:
+            return None
+        if inputs is None or outputs is None:
+            raise ValueError(
+                f'thought operation {method!r} has an incomplete {direction} role contract')
+        if len(outputs) != 1:
+            raise ValueError(
+                f'thought operation {method!r} requires exactly one result role')
+        expected = tuple('I' + str(index) for index in range(1, len(inputs) + 1))
+        if inputs != expected:
+            raise ValueError(
+                f'thought operation {method!r} has non-contiguous operand roles')
+        if outputs != ('O1',):
+            raise ValueError(
+                f'thought operation {method!r} requires canonical result role O1')
+        return method, inputs, outputs[0]
+
+    def _derive_thought_operations(self):
+        """Join explicit thought declarations to role-labelled structural faces.
+
+        Compose/generate declarations and explicit thought declarations share
+        exact contracts where a face appears in more than one section. The
+        model's <thought> list orders the forms a boundary controller may use;
+        it may also contain a thought-only face. A structural family is never
+        an implicit thought action.
+        """
+        def identity(rule, structural_id, operand_roles):
+            declared_family = getattr(rule, 'thought_family', None)
+            declared_permutation = getattr(rule, 'thought_permutation', None)
+            if declared_family is None:
+                if declared_permutation is not None:
+                    raise ValueError(
+                        f'thought operation {structural_id!r} declares a permutation '
+                        'without a canonical family')
+                return structural_id, operand_roles
+            permutation = tuple(declared_permutation or ())
+            if (len(permutation) != len(operand_roles)
+                    or set(permutation) != set(operand_roles)):
+                raise ValueError(
+                    f'thought operation {structural_id!r} has an invalid '
+                    'canonical role permutation')
+            return declared_family, permutation
+
+        families = {}
+        faces = (
+            ('forward', self.rules_upward, 0),
+            ('reverse', self.rules_downward, len(self.rules_upward)),
+        )
+        for direction, rules, offset in faces:
+            for local_id, rule in enumerate(rules):
+                contract = self._thought_contract_from_rule(rule, direction)
+                if contract is None:
+                    if (getattr(rule, 'thought_family', None) is not None
+                            or getattr(rule, 'thought_permutation', None) is not None):
+                        raise ValueError(
+                            'thought family metadata requires a role-labelled structural face')
+                    continue
+                structural_id, operand_roles, result_role = contract
+                semantic_id, permutation = identity(
+                    rule, structural_id, operand_roles)
+                family = families.get(semantic_id)
+                if family is None:
+                    family = {
+                        'operand_roles': operand_roles,
+                        'result_role': result_role,
+                        'forms': {},
+                    }
+                    families[semantic_id] = family
+                elif (family['operand_roles'] != operand_roles
+                      or family['result_role'] != result_role):
+                    raise ValueError(
+                        f'thought operation {semantic_id!r} has conflicting role contracts')
+                form = family['forms'].get(structural_id)
+                if form is None:
+                    form = {
+                        'operand_roles': operand_roles,
+                        'result_role': result_role,
+                        'permutation': permutation,
+                        'forward_rule_ids': [],
+                        'reverse_rule_ids': [],
+                    }
+                    family['forms'][structural_id] = form
+                elif (form['operand_roles'] != operand_roles
+                      or form['result_role'] != result_role
+                      or form['permutation'] != permutation):
+                    raise ValueError(
+                        f'thought operation form {structural_id!r} has conflicting '
+                        'family or role-permutation declarations')
+                form[direction + '_rule_ids'].append(offset + local_id)
+
+        selected, selected_order = {}, []
+        for thought_rule in self.thought_rules:
+            contract = self._thought_contract_from_rule(thought_rule, 'thought')
+            if contract is None:
+                raise ValueError(
+                    '<thought> requires a role-labelled op.thought declaration')
+            structural_id, operand_roles, result_role = contract
+            semantic_id, permutation = identity(
+                thought_rule, structural_id, operand_roles)
+            family = families.get(semantic_id)
+            if family is None:
+                family = {
+                    'operand_roles': operand_roles,
+                    'result_role': result_role,
+                    'forms': {},
+                }
+                families[semantic_id] = family
+            elif (family['operand_roles'] != operand_roles
+                    or family['result_role'] != result_role):
+                raise ValueError(
+                    f'thought operation {semantic_id!r} disagrees with its '
+                    'structural role contract')
+            form = family['forms'].get(structural_id)
+            if form is None:
+                form = {
+                    'operand_roles': operand_roles,
+                    'result_role': result_role,
+                    'permutation': permutation,
+                    'forward_rule_ids': [],
+                    'reverse_rule_ids': [],
+                }
+                family['forms'][structural_id] = form
+            elif (form['operand_roles'] != operand_roles
+                    or form['result_role'] != result_role
+                    or form['permutation'] != permutation):
+                raise ValueError(
+                    f'thought operation form {structural_id!r} disagrees with '
+                    'its structural role contract')
+            selection = selected.get(semantic_id)
+            if selection is None:
+                selection = {'forms': [], 'seen': set()}
+                selected[semantic_id] = selection
+                selected_order.append(semantic_id)
+            if structural_id in selection['seen']:
+                raise ValueError(
+                    f'thought operation form {structural_id!r} is declared twice')
+            selection['seen'].add(structural_id)
+            selection['forms'].append((structural_id, form))
+
+        operations = []
+        for semantic_id in selected_order:
+            family = families[semantic_id]
+            forms = tuple(
+                self.ThoughtOperationForm(
+                    structural_id=structural_id,
+                    operand_roles=form['operand_roles'],
+                    result_role=form['result_role'],
+                    permutation=form['permutation'],
+                    forward_rule_ids=tuple(form['forward_rule_ids']),
+                    reverse_rule_ids=tuple(form['reverse_rule_ids']))
+                for structural_id, form in selected[semantic_id]['forms'])
+            operations.append(self.ThoughtOperationSpec(
+                semantic_id=semantic_id,
+                operand_roles=family['operand_roles'],
+                result_role=family['result_role'],
+                forward_rule_ids=tuple(
+                    rule_id for form in forms for rule_id in form.forward_rule_ids),
+                reverse_rule_ids=tuple(
+                    rule_id for form in forms for rule_id in form.reverse_rule_ids),
+                forms=forms))
+        return tuple(operations)
+
+    def _find_identity_rule_id(self, symbol):
+        # Identity rule: LHS == RHS, arity 1, method_name None.
+        # Used as the no-op grammatical transition at padding columns of
+        # the static per-word loop (doc/plans/2026-05-20-static-per-word-loop-impl.md).
+        for idx, rule in enumerate(self.rules_upward):
+            if (rule.lhs == symbol
+                    and rule.method_name is None
+                    and rule.arity == 1
+                    and rule.rhs_symbols == (symbol,)):
+                return idx
+        return None
+
+    def is_start_pattern(self, categories):
+        """Return True iff ``categories`` is an accepted start pattern."""
+        self._ensure_configured()
+        pattern = tuple(str(c).strip() for c in categories if str(c).strip())
+        return pattern in set(self.start_patterns)
+
+    def _fill_section(self, target, section_dict, default_space_role='SS'):
+        """Read a parse / generate section, dispatching to per-space_role
+        rule lists when `<symbols>` / `<concepts>` / `<percepts>`
+        sub-sections are present, or to the cross-space_role reader otherwise.
+
+        Space-role-bucket detection is non-destructive: a section with both a
+        `<rule>` directly and space_role sub-sections will read both, with the
+        direct rules tagged ``default_space_role`` ('SS' for a WholeSpace /
+        legacy section, 'subsymbolic' for a PartSpace section).
+        """
+        if not isinstance(section_dict, dict):
+            return
+        # Space-role sub-sections.
+        for space_role_key, space_role_letter in self._SPACE_ROLE_SECTIONS.items():
+            space_role_block = section_dict.get(space_role_key)
+            if space_role_block:
+                self._fill_rule_list(target, space_role_block, space_role=space_role_letter)
+        # Direct rules (no space_role wrapper) -> the section's default space_role.
+        direct_keys = [k for k in section_dict.keys()
+                       if k not in self._SPACE_ROLE_SECTIONS]
+        if direct_keys:
+            direct = {k: section_dict[k] for k in direct_keys}
+            self._fill_rule_list(target, direct, space_role=default_space_role)
+
+    def _fill_thought_section(self, section_dict):
+        """Read the declarative `<thought>` allow-list without runtime rules.
+
+        Thought declarations use the ordinary role-labelled `<rule>` syntax
+        but are not inserted into either structural rule table. They have no
+        chart rule IDs and cannot fire during compose/generate; their source
+        order is the model-owned boundary action order after contract joins.
+        """
+        if not isinstance(section_dict, dict):
+            return
+        unexpected = set(section_dict).difference({'rule'})
+        if unexpected:
+            names = ', '.join(sorted(str(name) for name in unexpected))
+            raise ValueError(
+                f'<thought> accepts only role-labelled <rule> declarations, got {names}')
+        self._fill_rule_list(self.thought_rules, section_dict, face='thought')
+
+    def _fill_rule_list(self, target, rules_dict, space_role='SS', face=None):
+        """Parse ``<rule>`` entries from ``rules_dict`` and append to ``target``.
+
+        Handles both the canonical ``<rule>head = body</rule>`` form
+        (with optional ``width="MIN..MAX"`` gate) and the legacy
+        ``<S>body</S>`` form. Each parsed rule is tagged with the
+        supplied space_role letter.
+        """
+        # New syntax: <rule>head = body</rule> — head may be a comma-
+        # separated tuple of categories (for multi-output downward rules
+        # like `S,S = intersection_inv(VO)`). Body is a function call
+        # (`f(A, B)`), bare-symbol sequence (`A B`), or a single category
+        # (`C` / `A`). Rules in this form arrive under the 'rule' key
+        # because that's the XML element name used.
+        # Optional attribute: width="MIN..MAX" gates the rule to cells
+        # whose width falls in [MIN, MAX]. MIN/MAX may be 0 (no bound),
+        # plain integers, or 'N' (means: equals chart's full input N --
+        # signals "root span only" when both ends are 'N'). When the
+        # XML element has attributes the parser delivers it as a dict
+        # with '_' holding the text; bare strings have no width set.
+        rule_entries = rules_dict.get('rule', None)
+        if rule_entries is not None:
+            if isinstance(rule_entries, str) or isinstance(rule_entries, dict):
+                rule_entries = [rule_entries]
+            for entry in rule_entries:
+                if isinstance(entry, dict):
+                    text = str(entry.get('_', '')).strip()
+                    width_raw = entry.get('width', None)
+                    query_raw = entry.get('query', None)
+                    family_raw = entry.get('family', None)
+                    permutation_raw = entry.get('permutation', None)
+                    reference_raw = entry.get('reference', None)
+                    clause_raw = entry.get('clause', None)
+                    head_raw = entry.get('head', None)
+                else:
+                    text = str(entry)
+                    width_raw = None
+                    query_raw = None
+                    family_raw = None
+                    permutation_raw = None
+                    reference_raw = None
+                    clause_raw = head_raw = None
+                if '=' not in text:
+                    raise ValueError(
+                        f"<rule> requires 'head = body' syntax, got: {text!r}")
+                lhs_raw, body = text.split('=', 1)
+                is_thought_face = bool(re.match(
+                    r'^\s*[A-Za-z_]\w*\.thought\s*\(', body, re.ASCII))
+                if face == 'thought' and not is_thought_face:
+                    raise ValueError(
+                        '<thought> rules require op.thought(op_I1, ...) syntax')
+                if face != 'thought' and is_thought_face:
+                    raise ValueError(
+                        'op.thought(...) is valid only inside <thought>')
+                lhs = ','.join(p.strip() for p in lhs_raw.split(',') if p.strip())
+                rule = self._parse_rule(lhs, body.strip(), space_role=space_role)
+                attributes = entry if isinstance(entry, dict) else {}
+                implementation = attributes.get('implementation', rule.method_name)
+                self._check_operator_availability(implementation, face=face)
+                if 'implementation' in attributes:
+                    from Queries import THOUGHT_EXECUTORS
+                    available = set(GRAMMAR_LAYER_CLASSES) | {'sigma', 'pi', 'merge', 'emit_head', 'stop', 'boundary', 'uniform'}
+                    if face == 'thought':
+                        available.update(THOUGHT_EXECUTORS)
+                    if implementation not in available:
+                        raise ValueError(f'unknown rule implementation: {implementation}')
+                rule = self._declared_rule(rule._replace(
+                    surface_name=rule.method_name, method_name=implementation))
+                if 'predicate' in attributes:
+                    rule = rule._replace(predicate_identity=attributes['predicate'])
+                if 'relation' in attributes:
+                    if attributes['relation'] not in ('part', 'whole', 'equal', 'implies', 'operator'):
+                        raise ValueError('relation requires a declared row relation')
+                    rule = rule._replace(relation_kind=attributes['relation'])
+                operands = tuple(part.strip() for part in str(attributes['operands']).split(',')) if 'operands' in attributes else rule.operand_kinds
+                if len(operands) != rule.arity or any(kind not in ('field', 'symbol') for kind in operands):
+                    raise ValueError('operands require a field or symbol kind per input')
+                if 'field' in operands and not rule.field_eligible:
+                    raise ValueError('order-dependent implementations cannot take a field operand')
+                contract = GRAMMAR_LAYER_CLASSES.get(rule.method_name)
+                if getattr(contract, 'field_only', False) and 'symbol' in operands:
+                    raise ValueError('Boolean and bracket operations require field operands')
+                if getattr(contract, 'bracket_action', None) is not None and (face == 'generate' or '.reverse(' in body):
+                    raise ValueError('bracket operations have no generate face')
+                if 'writes' in attributes:
+                    from AccessibleMind import OperatorEffects
+                    writes = tuple(part.strip() for part in str(attributes['writes']).split(',') if part.strip())
+                    declared = OperatorEffects(rule.effect_reads, writes)
+                    expected = OperatorEffects(rule.effect_reads, rule.effect_writes)
+                    if set(declared.writes) != set(expected.writes):
+                        raise ValueError('writes must declare the complete implementation contract, with no extra effects')
+                rule = rule._replace(operand_kinds=operands)
+                if clause_raw is not None:
+                    if clause_raw not in ('S', 'VP', 'implies'):
+                        raise ValueError('clause requires S, VP, or implies')
+                    if clause_raw in ('VP', 'implies') and rule.arity != 2:
+                        raise ValueError('a predicate or implication requires two inputs')
+                    rule = rule._replace(clause_form=clause_raw)
+                if head_raw is not None:
+                    if (re.fullmatch(r'I[1-9]\d*', str(head_raw)) is None
+                            or int(str(head_raw)[1:]) > rule.arity):
+                        raise ValueError('head requires one declared input role')
+                    rule = rule._replace(head_role=int(str(head_raw)[1:]))
+                # Apply width gate if specified.
+                if width_raw is not None:
+                    w_min, w_max = self._parse_width_attr(str(width_raw))
+                    rule = rule._replace(
+                        width_min=int(w_min), width_max=int(w_max))
+                if query_raw is not None:
+                    raise ValueError(
+                        'rule query attribute is retired; mode belongs to the completed idea')
+                if family_raw is not None or permutation_raw is not None:
+                    family, permutation = self._parse_thought_form_attrs(
+                        family_raw, permutation_raw)
+                    rule = rule._replace(
+                        thought_family=family, thought_permutation=permutation)
+                if reference_raw is not None:
+                    orders = {'event': 0, 'particular': 1, 'name': 1,
+                              'pronoun': 1, 'kind': 2, 'generic': 2}
+                    references, reference_kinds = [], []
+                    for item in str(reference_raw).split(','):
+                        role, separator, context = item.strip().partition(':')
+                        if (not separator or re.fullmatch(r'I[1-9]\d*', role) is None
+                                or int(role[1:]) > rule.arity):
+                            raise ValueError('reference requires a declared input role and order')
+                        order = orders.get(context)
+                        if order is None and context.isdigit():
+                            order = int(context)
+                        if order is None or any(r == role for r, _ in references):
+                            raise ValueError('reference has an unknown order or repeated role')
+                        references.append((role, order))
+                        reference_kinds.append((role, context))
+                    rule = rule._replace(reference_orders=tuple(references),
+                                         reference_kinds=tuple(reference_kinds))
+                target.append(rule)
+
+        # Legacy syntax: <S>body</S> with nonterminal as tag. Kept for
+        # backward compat with tests and older XMLs. 'S' stays implicitly
+        # first so existing rule-id ordering is stable.
+        keys = [k for k in rules_dict.keys() if k != 'rule']
+        if 'S' in keys:
+            keys = ['S'] + [k for k in keys if k != 'S']
+        for lhs in keys:
+            raw = rules_dict.get(lhs, [])
+            if isinstance(raw, str):
+                raw = [raw]
+            for rhs_text in raw:
+                rhs = rhs_text.strip()
+                rule = self._parse_rule(lhs, rhs, space_role=space_role)
+                self._check_operator_availability(rule.method_name, face=face)
+                target.append(self._declared_rule(rule))
+
+    @staticmethod
+    def _check_operator_availability(implementation, *, face):
+        """All grammar syntaxes and implementation aliases share retirement checks."""
+        if implementation in ('exist', 'true', 'lookup', 'symbolize', 'query', 'queryPart', 'queryEqual'):
+            raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
+        if implementation in ('quantize', 'arma') and face != 'thought':
+            raise ValueError(f'{implementation} is a thought-only operator')
+
+    def rule_by_id(self, rule_id):
+        """Return the canonical production string for a rule_id (0-based)."""
+        return self.rule_table[rule_id]
+
+    @staticmethod
+    def _parse_width_attr(text):
+        """Parse a ``width="MIN..MAX"`` attribute into (min, max) ints.
+
+        Accepted forms:
+          ``"3..5"``     → (3, 5)
+          ``"5"``        → (5, 5)  (single value: exact width)
+          ``"3.."``      → (3, 0)  (no upper bound; 0 means open)
+          ``"..5"``      → (0, 5)  (no lower bound)
+          ``"N..N"``     → (-1, -1) (both equal full chart N; resolved
+                                     to the actual N at runtime; sentinel
+                                     -1 means 'use the live N from data.shape')
+        Anything else falls back to (0, 0) = no gate.
+        """
+        s = str(text).strip()
+        if not s:
+            return (0, 0)
+        if '..' in s:
+            lo_s, hi_s = s.split('..', 1)
+        else:
+            lo_s = hi_s = s
+        def _one(v):
+            """Coerce one bound from the width attribute to an int sentinel.
+
+            Empty / unparseable -> 0 (no bound). ``'N'`` -> -1 sentinel
+            meaning "use the live N from data.shape". Else integer.
+            """
+            v = v.strip()
+            if not v:
+                return 0
+            if v.upper() == 'N':
+                return -1
+            try:
+                return int(v)
+            except ValueError:
+                return 0
+        return (_one(lo_s), _one(hi_s))
+
+    @staticmethod
+    def _parse_bool_attr(value):
+        """Parse loose XML boolean attribute values."""
+        if isinstance(value, bool):
+            return value
+        text = str(value).strip().lower()
+        return text in ('1', 'true', 'yes', 'y', 'on')
+
+    @staticmethod
+    def _parse_thought_form_attrs(family_raw, permutation_raw):
+        """Parse the grammar-owned canonical-family/permutation declaration.
+
+        A converse remains an ordinary structural operator in compose and
+        generate.  Its ``family`` names the one canonical boundary identity;
+        ``permutation`` lists the source role for canonical ``I1 … In``.
+        Requiring both attributes avoids a silent alias convention hidden in
+        Python or an executor table.
+        """
+        if family_raw is None or permutation_raw is None:
+            raise ValueError(
+                'thought family and permutation attributes must be declared together')
+        family = str(family_raw).strip()
+        if re.fullmatch(r'[A-Za-z_]\w*', family, re.ASCII) is None:
+            raise ValueError('thought family attribute requires a valid canonical id')
+        if isinstance(permutation_raw, (list, tuple)):
+            values = tuple(str(value).strip() for value in permutation_raw)
+        else:
+            values = tuple(
+                value.strip() for value in str(permutation_raw).split(',')
+                if value.strip())
+        if not values or any(
+                re.fullmatch(r'I[1-9]\d*', value, re.ASCII) is None
+                for value in values):
+            raise ValueError(
+                'thought permutation attribute requires comma-separated I roles')
+        return family, values
+
+    @staticmethod
+    def _parse_category(token):
+        """Parse a category token into ``(name, OrderExpr)``.
+
+        Accepts (plan:
+        doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
+        §Order-Typed Grammar):
+
+          ``DET``     -> name='DET', order=constant 0   (bare = sugar for 0)
+          ``NP3``     -> name='NP',  order=constant 3
+          ``VP1``     -> name='VP',  order=constant 1
+          ``S4``      -> name='S',   order=constant 4
+          ``NP*``     -> name='NP',  order=variable +0  (rule-local *)
+          ``NP*+1``   -> name='NP',  order=variable +1
+          ``NP*-1``   -> name='NP',  order=variable -1
+
+        2026-05-20 Kleene restoration (path-to-complete §2): the
+        polymorphic ``*`` form is restored alongside explicit constants.
+        At REDUCE time the rule-local ``*`` is bound from the operand's
+        order and propagated through the rule's other slots. Bare
+        categories (no annotation) still bind to constant 0.
+
+        Whitespace around the token is stripped. Malformed tokens
+        raise ``ValueError``.
+        """
+        s = str(token).strip()
+        if not s:
+            raise ValueError(f"Cannot parse category: {token!r}")
+        i = 0
+        while i < len(s) and (s[i].isalpha() or s[i] == '_'):
+            i += 1
+        if i == 0:
+            raise ValueError(f"Cannot parse category: {token!r}")
+        name = s[:i]
+        suffix = s[i:]
+        if not suffix:
+            return Grammar.ParsedCategory(
+                name=name,
+                order=Grammar.OrderExpr(kind='constant', delta=0))
+        # Kleene form: '*', '*+N', '*-N'.
+        if suffix.startswith('*'):
+            rest = suffix[1:]
+            if not rest:
+                delta = 0
+            else:
+                try:
+                    delta = int(rest)
+                except ValueError:
+                    raise ValueError(
+                        f"Cannot parse category: {token!r} "
+                        f"(Kleene suffix must be '*', '*+N', or '*-N')")
+            return Grammar.ParsedCategory(
+                name=name,
+                order=Grammar.OrderExpr(kind='variable', delta=delta))
+        try:
+            delta = int(suffix)
+        except ValueError:
+            raise ValueError(
+                f"Cannot parse category: {token!r} "
+                f"(suffix must be a constant integer or a Kleene '*' form)")
+        return Grammar.ParsedCategory(
+            name=name,
+            order=Grammar.OrderExpr(kind='constant', delta=delta))
+
+    def _rule_order_signature(self, rule):
+        """Compute the ``RuleOrderSignature`` for a parsed ``RuleDef``.
+
+        Parses ``rule.lhs`` and each ``rule.rhs_symbols`` token through
+        ``_parse_category`` to extract category names + ``OrderExpr``s.
+        ``order_delta`` is +1 for ``lift``, -1 for ``lower``, 0 otherwise.
+        """
+        lhs_parsed = Grammar._parse_category(rule.lhs)
+        rhs_parsed = tuple(
+            Grammar._parse_category(s) for s in (rule.rhs_symbols or ()))
+        op = rule.method_name
+        delta = rule.order_delta
+        return Grammar.RuleOrderSignature(
+            lhs_category=lhs_parsed.name,
+            lhs_order_expr=lhs_parsed.order,
+            rhs_categories=tuple(p.name for p in rhs_parsed),
+            rhs_order_exprs=tuple(p.order for p in rhs_parsed),
+            op_name=op,
+            order_delta=delta,
+        )
+
+    # No static validation of ``RuleOrderSignature`` at grammar-load time:
+    # words are mapped to the category codebook by *soft assignment* that
+    # participates in the parser's superposition state. Whether a given
+    # word fills an ``NP3`` vs ``NP4`` slot is a runtime / superposition
+    # question — not a fact the grammar can pre-empt. Order admissibility
+    # therefore lives in STM REDUCE (Phase 2), where the soft category
+    # distributions of operands are matched against the rule's order
+    # signature dynamically.
+
+    def _parse_rule(self, lhs, rhs, space_role='SS'):
+        """Parse one ``lhs = rhs`` rule string into a ``RuleDef`` namedtuple.
+
+        ``rhs`` can be a function call (``f(A, B)``), a bare-symbol
+        sequence (``A B``), or a single category. Accepts the explicit-
+        direction suffixes ``.forward`` / ``.reverse`` on the function
+        name. ``space_role`` is the per-rule routing tag.
+        """
+        # `space_role` may be 'SS' (symbols, default), 'CS' (concepts), or
+        # 'subsymbolic' (percepts). Set by `_fill_section` from <symbols> /
+        # <concepts> / <percepts> sub-sections under <parse> /
+        # <generate>. Used by space-space_role filters at runtime to gate
+        # which rules apply in each space's forward path.
+
+        # Legacy tolerance: ``<C>C = pi(C)</C>`` is the per-space_role element
+        # form where the element NAME is the LHS and the CONTENT is the
+        # RHS.  Some configs (MM_20M, LM_5M etc.) redundantly prefix the
+        # content with ``LHS = `` -- strip it so the function-call parser
+        # below sees just ``pi(C)`` and ``method_name`` ends up as
+        # ``pi`` (the natural-fold key) rather than ``C = pi`` (which
+        # silently falls through ``_default_compose_rules``'s
+        # ``_NATURAL_FOLD_METHODS`` filter and leaves the chart with no
+        # CS-space_role rule, breaking ConceptualSpace dispatch).
+        rhs_stripped = rhs.lstrip()
+        eq_prefix = f"{lhs}="
+        if (rhs_stripped.startswith(eq_prefix)
+                or rhs_stripped.startswith(f"{lhs} =")):
+            rhs = rhs_stripped[rhs_stripped.index('=') + 1:].strip()
+
+        if '(' in rhs:
+            func_name = rhs[:rhs.index('(')]
+            args_str = rhs[rhs.index('(') + 1:rhs.rindex(')')]
+            args = [a.strip() for a in args_str.split(',') if a.strip()]
+            arity = len(args)
+            # Accept the explicit-direction forms `op.forward(args)` and
+            # `op.reverse(arg)`. Strip the `.forward` / `.reverse`
+            # suffix to recover the bare op-name; direction is implicit
+            # from which section (parse / generate) the rule sits in.
+            #
+            # Sanity-check: `.forward` is expected in <parse>, `.reverse`
+            # in <generate>. The parser doesn't know the section here
+            # (it's per-rule), so we silently accept either suffix.
+            if func_name.endswith('.forward'):
+                func_name = func_name[:-len('.forward')]
+            elif func_name.endswith('.thought'):
+                func_name = func_name[:-len('.thought')]
+            elif func_name.endswith('.reverse'):
+                func_name = func_name[:-len('.reverse')]
+            # Note: `pi` / `sigma` and other layer-name forms remain
+            # as-authored in `method_name`. They resolve to the
+            # semantic op name (`intersection` / `union`) at dispatch
+            # time via SyntacticLayer's _METHOD_ALIASES lookup; that
+            # keeps `RuleDef.method_name` faithful to what the XML
+            # said while letting `_RULE_METHODS` stay keyed on the
+            # semantic names.
+            canonical = f"{lhs} -> {rhs}"
+            return self._declared_rule(self.RuleDef(
+                space_role, canonical, arity, func_name, lhs, tuple(args)))
+        if rhs == 'epsilon':
+            return self.RuleDef(space_role, f"{lhs} -> epsilon", 0, None,
+                                lhs, ())
+        if rhs == lhs:
+            return self.RuleDef(space_role, f"{lhs} -> {rhs}", 1, None,
+                                lhs, (rhs,))
+        # Bare-symbol-sequence form: '<VO>V O</VO>' or '<S>S VO</S>'.
+        # RHS is a whitespace-separated sequence of nonterminal / terminal
+        # category names. method_name='merge' signals the typed compose
+        # path (Phase B chart-like pair selection) vs. the legacy function
+        # dispatch. arity = number of RHS slots (0 is already handled by
+        # the epsilon branch; unary passthrough is handled by rhs == lhs).
+        parts = rhs.split()
+        if parts and all(p.isidentifier() for p in parts):
+            arity = len(parts)
+            # 'C' is the pseudo-terminal used in downward productions:
+            # 'S -> C' means "emit the codebook atom that best matches the
+            # current deep state." It dispatches through emit_head, not
+            # merge, because there's nothing to combine — just a lookup.
+            if len(parts) == 1 and parts[0] == 'C':
+                method = 'emit_head'
+            else:
+                method = 'merge'
+            return self.RuleDef(space_role, f"{lhs} -> {rhs}", arity, method,
+                                lhs, tuple(parts))
+        raise ValueError(f"Cannot parse grammar rule: {lhs} -> {rhs}")
+
+    @staticmethod
+    def _derive_reverse_rules(forward_rules):
+        """Mechanically derive Layer-2.5 reverse productions from
+        forward Layer-1 productions.
+
+        Pattern (parent plan §Step 6 lines 562–568):
+            forward:  LHS = op(arg1, arg2)
+            reverse:  arg1, arg2 = opReverse(LHS)
+
+        Returns a list of tuples
+        ``(args_tuple, reverse_op_name, (lhs,))``.
+
+        Self-inverse / exact-inverse ops (``not``, ``project``,
+        ``negation``) get ``opReverse`` = same op name (their forward
+        body is its own inverse).  Everything else gets the
+        ``<op>Reverse`` suffix.
+
+        PROJECT rules surface as ``projectReverse`` for symmetry with
+        the parent plan's Layer 2.5 table.  Two shapes count as
+        PROJECT:
+          * ``method_name is None`` (transition / epsilon / X -> X
+            pass-through);
+          * ``method_name == 'merge'`` with a single RHS slot — the
+            cfg form ``LHS = single_category`` (e.g. ``S = NP``,
+            ``NP = N``) which the existing ``_parse_rule`` classifies
+            as a unary merge but is semantically a typed projection.
+        """
+        reverses = []
+        for rule in forward_rules:
+            op = rule.method_name
+            args = rule.rhs_symbols or ()
+            lhs = rule.lhs
+            is_project = (op is None) or (op == 'merge' and len(args) == 1)
+            if is_project:
+                reverses.append((args, 'projectReverse', (lhs,)))
+                continue
+            if rule.polarity_effect == 'invert':
+                reverses.append((args, op, (lhs,)))
+                continue
+            reverses.append((args, op + 'Reverse', (lhs,)))
+        return reverses
+
+    _NOOP_GRAMMAR = {'S': 'not(S)'}
+
+    # ---- Rule probability gating (Pattern A, body-only) ------------
+    #
+    # In useGrammar="all", each operator rule has a learned firing
+    # probability that gates the corresponding bottom-up layer
+    # (intersection -> Pi, union -> Sigma, not -> propositional NEG).
+    # When useGrammar != "all" (or the SyntacticLayer is dormant), the
+    # probability is the Python float 1.0 — call sites use ``p is 1.0``
+    # as a structural fast path that compiles down to a direct layer
+    # call with no spurious mul-by-1 graph nodes.
+    #
+    # ``_fired_bodies`` enforces single-application per derivation:
+    # once a rule body has fired, ``rule_probability`` returns 0 for
+    # subsequent calls on the same body until ``reset_derivation`` is
+    # invoked. This prevents pathological multi-NOT or multi-OR stacks
+    # without splitting SS/CS into typed space_roles.
+
+    def rule_probability(self, body):
+        """Probability that rule with given ``body`` fires at the
+        current parse step. Returns a Python float in dormant mode so
+        call sites can skip the gate via ``p is 1.0`` or ``p is 0.0``.
+
+        ``body`` is the rule's RHS string as it appears in the XML
+        (e.g. ``"intersection(C, C)"`` or ``"not(S)"``). Bodies are
+        globally unique across the grammar so we don't need the LHS.
+
+        Dormant defaults preserve existing pipeline behavior:
+          - fold operators (intersection, union)  -> 1.0 (always fire)
+          - negation-like ops (not, non)          -> 0.0 (don't fire)
+
+        These defaults match what the bottom-up Pi/Sigma layers do
+        today (always run) and what the previously-absent NEG layer
+        did (nothing). In ``useGrammar="all"`` mode, learned predictors
+        in ``_learned_rule_probs`` override the dormant defaults.
+        """
+        fired = getattr(self, "_fired_bodies", None)
+        if fired is not None and body in fired:
+            return 0.0
+        learned = getattr(self, "_learned_rule_probs", None)
+        if learned is not None and body in learned:
+            return learned[body]
+        if body.startswith("not(") or body.startswith("non("):
+            return 0.0
+        return 1.0
+
+    def note_rule_fired(self, body):
+        """Mark a rule body as having fired in the current derivation."""
+        fired = getattr(self, "_fired_bodies", None)
+        if fired is None:
+            self._fired_bodies = set()
+            fired = self._fired_bodies
+        fired.add(body)
+
+    def reset_derivation(self):
+        """Clear the per-derivation single-application bookkeeping."""
+        self._fired_bodies = set()
+
+    def load_from_grammar_file(self, filename):
+        """Configure rules from a ``data/<filename>.grammar`` XML file.
+
+        Delegates parsing to the module-level :func:`load_grammar` (which
+        returns a ``configure()``-compatible nested-dict) and then runs
+        the standard ``configure()`` path. Once that's done, each
+        ``RuleDef``'s space_role is overwritten with the space_role declared on its
+        rule's ``GrammarLayer`` subclass -- the .grammar file lists the
+        rule body only (``<rule>S = lift(NP, VP)</rule>``); category,
+        arity, function name, and return-value count come from the body
+        and space_role / invertibility come from the layer class.
+
+        If the grammar file contains ``<start>...</start>``, it sets the
+        accepted start patterns and primary start nonterminal for this
+        grammar. An implicit identity rule for the current start symbol
+        is added when one isn't already present; it's the no-op
+        grammatical transition the static per-word loop's cursor
+        bookkeeping relies on (see ``_find_identity_rule_id``).
+        """
+        cfg = load_grammar(filename)
+        if isinstance(cfg, dict):
+            # Space-scoped starts: <start> nested under <PartSpace>
+            # configures the analyzer root; nested under <Symbolic>
+            # configures the symbolic parse. A top-level <start> (legacy /
+            # unsectioned form) configures the symbolic start unless the
+            # Symbolic section declares its own.
+            ps_block = cfg.get('PartSpace')
+            ws_block = cfg.get('Symbolic')
+            ps_start_raw = (ps_block.get('start')
+                            if isinstance(ps_block, dict) else None)
+            ws_start_raw = (ws_block.get('start')
+                            if isinstance(ws_block, dict) else None)
+            top_start_raw = cfg.pop('start', None)
+            if ws_start_raw is None:
+                ws_start_raw = top_start_raw
+            self._configure_starts(ps_start_raw, ws_start_raw)
+            # Strip the nested start keys so they can't be mistaken for
+            # rules downstream (configure() reads compose/generate only).
+            if isinstance(ps_block, dict):
+                ps_block.pop('start', None)
+            if isinstance(ws_block, dict):
+                ws_block.pop('start', None)
+        cfg = _expand_compact_order_sets(cfg)
+        cfg = self._ensure_identity_rule(cfg)
+        self.configure(cfg)
+        self._reassign_space_roles_from_layer_classes()
+
+    def _configure_starts(self, ps_start_raw, ws_start_raw):
+        """Set space-scoped starts from the raw ``<start>`` blocks.
+
+        ``ws_start_raw`` configures the WholeSpace starts and the
+        back-compat global alias (``start_symbol`` / ``start_patterns``);
+        the symbolic start is what ``id_SS`` / ``is_start_pattern`` /
+        reset and relative-rule detection key off. ``ps_start_raw``
+        configures the analyzer root (``U``) -- a separate namespace.
+        """
+        if ws_start_raw is not None:
+            self.ws_start_patterns = _start_patterns_from_raw(
+                ws_start_raw, default=self.ws_start_symbol)
+            self.ws_start_symbol = _primary_start_symbol(
+                self.ws_start_patterns, default=self.ws_start_symbol)
+            names = _starts_by_name(ws_start_raw)
+            self.ws_relative_starts = frozenset(
+                s for s, n in names.items() if n == 'relative_truth')
+            self.ws_absolute_starts = frozenset(
+                s for s, n in names.items() if n == 'absolute_truth')
+        else:
+            self.ws_start_patterns = ((self.ws_start_symbol,),)
+        # The symbolic start IS the global start (back-compat alias).
+        self.start_patterns = self.ws_start_patterns
+        self.start_symbol = self.ws_start_symbol
+        if ps_start_raw is not None:
+            self.ps_start_patterns = _start_patterns_from_raw(
+                ps_start_raw, default='U')
+            self.ps_start_symbol = _primary_start_symbol(
+                self.ps_start_patterns, default='U')
+
+    def _ensure_identity_rule(self, cfg):
+        """Return ``cfg`` with a start-symbol identity in <compose> if
+        none is present (handles bare-dict, ``{'rule': [...]}``, and
+        named-section ``{'compose': {...}}`` shapes)."""
+        identity_body = f"{self.start_symbol} = {self.start_symbol}"
+
+        def has_identity(section):
+            if not isinstance(section, dict):
+                return False
+            raw = section.get('rule')
+            if isinstance(raw, str):
+                return raw.replace(' ', '') == identity_body.replace(' ', '')
+            if isinstance(raw, list):
+                return any(
+                    (isinstance(r, str)
+                     and r.replace(' ', '') == identity_body.replace(' ', ''))
+                    for r in raw)
+            for k, v in section.items():
+                if k == 'rule':
+                    continue
+                if isinstance(v, dict) and has_identity(v):
+                    return True
+            return False
+
+        def add_identity(section):
+            raw = section.get('rule')
+            if raw is None:
+                section['rule'] = [identity_body]
+            elif isinstance(raw, str):
+                section['rule'] = [identity_body, raw]
+            elif isinstance(raw, list):
+                section['rule'] = [identity_body] + list(raw)
+            return section
+
+        if not isinstance(cfg, dict):
+            cfg = {'compose': {'rule': [identity_body]}}
+            return cfg
+        # PS/Symbolic-sectioned form: the identity rule is a symbolic no-op
+        # transition, so it belongs in the Symbolic compose section.
+        if 'PartSpace' in cfg or 'Symbolic' in cfg:
+            ws = cfg.get('Symbolic')
+            ws = dict(ws) if isinstance(ws, dict) else {}
+            cfg['Symbolic'] = ws
+            compose = ws.get('compose')
+            if compose is None:
+                ws['compose'] = {'rule': [identity_body]}
+            elif isinstance(compose, dict) and not has_identity(compose):
+                ws['compose'] = add_identity(dict(compose))
+            return cfg
+        if 'compose' in cfg or 'generate' in cfg:
+            compose = cfg.get('compose')
+            if compose is None:
+                cfg['compose'] = {'rule': [identity_body]}
+            elif isinstance(compose, dict) and not has_identity(compose):
+                cfg['compose'] = add_identity(dict(compose))
+            return cfg
+        if not has_identity(cfg):
+            cfg = add_identity(dict(cfg))
+        return cfg
+
+    def _reassign_space_roles_from_layer_classes(self):
+        """Replace each rule's ``space_role`` with the value declared on its
+        ``GrammarLayer`` subclass.
+
+        The .grammar file format leaves space_role off the rule body; per the
+        2026-05-29 refactor the layer class is the source of truth for
+        space_role (and other class-level metadata such as ``invertible``).
+        Rules whose ``method_name`` isn't registered in
+        ``GRAMMAR_LAYER_CLASSES`` keep the space_role the parser inferred from
+        the section header (default 'SS').
+        """
+        registry = GRAMMAR_LAYER_CLASSES
+
+        def fixup(rules):
+            out = []
+            for rule in rules:
+                cls = registry.get(_dispatch_method_name_for_rule(rule))
+                if cls is not None:
+                    new_space_role = getattr(cls, 'space_role', rule.space_role) or rule.space_role
+                    if new_space_role != rule.space_role:
+                        rule = rule._replace(space_role=new_space_role)
+                out.append(rule)
+            return out
+
+        self.rules_upward = fixup(self.rules_upward)
+        self.rules_downward = fixup(self.rules_downward)
+        self.rules = list(self.rules_upward) + list(self.rules_downward)
+        self.rule_table = {idx: rule.canonical
+                           for idx, rule in enumerate(self.rules)}
+        self._bump_rule_table_version()
+
+    def _ensure_configured(self):
+        """Lazily configure the grammar from XML on first use.
+
+        Resolves the start symbol, then dispatches by precedence:
+          1. ``<grammar>name.grammar</grammar>`` -- string body whose
+             text matches ``*.grammar``: loaded via
+             :py:meth:`load_from_grammar_file`.
+          2. ``<grammar>...</grammar>`` -- inline XML grammar dict
+             (legacy explicit form).
+        Subsequent calls are no-ops via the ``_configured`` guard.
+        """
+        if self._configured:
+            return
+        # <start>...</start> in SymbolSpace.language: accepted completed
+        # derivation shapes. The primary single-category start is kept
+        # in ``start_symbol`` for legacy identity/reset code.
+        try:
+            start_raw = TheXMLConfig.get("SymbolSpace.language.start")
+            self.start_patterns = _start_patterns_from_raw(
+                start_raw, default="S")
+            self.start_symbol = _primary_start_symbol(
+                self.start_patterns, default="S")
+            # The inline-XML grammar has no PS/WS sections; its start is
+            # the symbolic start (mirror into the ws_* alias). A later
+            # load_from_grammar_file (the <grammar>NAME.grammar</grammar>
+            # dispatch) overrides this with the file's space-scoped starts.
+            self.ws_start_patterns = self.start_patterns
+            self.ws_start_symbol = self.start_symbol
+            names = _starts_by_name(start_raw)
+            self.ws_relative_starts = frozenset(
+                s for s, n in names.items() if n == 'relative_truth')
+            self.ws_absolute_starts = frozenset(
+                s for s, n in names.items() if n == 'absolute_truth')
+        except (KeyError, AttributeError):
+            self.start_symbol = "S"
+            self.start_patterns = (("S",),)
+            self.ws_start_symbol = "S"
+            self.ws_start_patterns = (("S",),)
+
+        # Defensive: warn loudly if a deprecated <useGrammar> tag still
+        # sits in the XML (the knob was retired 2026-05-13 but configs
+        # that survived from before that may still carry it).
+        try:
+            legacy_use = TheXMLConfig.get("SymbolSpace.language.useGrammar")
+            if legacy_use is not None:
+                warnings.warn(
+                    "<useGrammar> is deprecated; use "
+                    "<grammar>NAME.grammar</grammar> instead. Falling "
+                    "back to default.grammar.",
+                    DeprecationWarning, stacklevel=2)
+                self.load_from_grammar_file("default.grammar")
+                try:
+                    interp = TheXMLConfig.get(
+                        "SymbolSpace.language.interpretation")
+                    self.interpretation = float(interp)
+                except (KeyError, AttributeError, TypeError, ValueError):
+                    pass
+                return
+        except (KeyError, AttributeError):
+            pass
+
+        candidate = None
+        try:
+            candidate = TheXMLConfig.get("SymbolSpace.language.grammar")
+        except (KeyError, AttributeError):
+            candidate = None
+
+        # New path: ``<grammar>NAME.grammar</grammar>`` -- string body
+        # whose text resolves to a ``.grammar`` file in ``data/``.
+        if isinstance(candidate, str):
+            name = candidate.strip()
+            if name.endswith(".grammar"):
+                self.load_from_grammar_file(name)
+                try:
+                    interp = TheXMLConfig.get(
+                        "SymbolSpace.language.interpretation")
+                    self.interpretation = float(interp)
+                except (KeyError, AttributeError, TypeError, ValueError):
+                    pass
+                return
+
+        cfg = candidate if isinstance(candidate, dict) else None
+        if cfg is None:
+            cfg = self._NOOP_GRAMMAR
+        self.configure(cfg)
+        try:
+            interp = TheXMLConfig.get("SymbolSpace.language.interpretation")
+            self.interpretation = float(interp)
+        except (KeyError, AttributeError, TypeError, ValueError):
+            pass
+
+    # -- Rule queries --------------------------------------------------
+
+    def symbolic(self):
+        """Return rule_ids whose space_role is 'SS' (symbolic-space_role rules)."""
+        self._ensure_configured()
+        return [i for i, r in enumerate(self.rules) if r.space_role == 'SS']
+
+    def symbolic_transition(self):
+        """Return rule_id of the unary space_role-SS transition rule, or None.
+
+        Used by the symbolic head to find the unary-transition rule
+        when the grammar exposes one (typically the no-op identity).
+        """
+        self._ensure_configured()
+        for i, r in enumerate(self.rules):
+            if r.space_role == 'SS' and r.method_name is None and r.arity == 1:
+                return i
+        return None
+
+    @property
+    def s_methods(self):
+        """Set of method names available on the SS (symbolic) space_role.
+
+        Excludes rules without a method_name (e.g. pure transitions).
+        """
+        return {r.method_name for r in self.rules if r.space_role == 'SS' and r.method_name}
+
+    @property
+    def categories(self):
+        """Ordered tuple of unique derivation labels across all rules.
+
+        Derived from both ``lhs`` (including comma-split multi-output
+        heads) and ``rhs_symbols``. Used to size the category codebook
+        on ``SymbolSpace``, so every label has its own learned embedding.
+        """
+        self._ensure_configured()
+        names = set()
+        for rule in self.rules:
+            for cat in str(rule.lhs).split(','):
+                cat = cat.strip()
+                if cat:
+                    names.add(cat)
+            for sym in (rule.rhs_symbols or ()):
+                if sym:
+                    names.add(sym)
+        return tuple(sorted(names))
+
+    # -- Relative-truth rule marker (Task 6a) --------------------------
+    #
+    # doc/plans/2026-05-29-stm-serial-parallel-modes.md §7. A RELATIVE
+    # truth is a binary predicate over two ideas (the ``part`` /
+    # ``isEqual`` family — the ``relative_truth`` starts of the
+    # role-collapsed grammars; ``REL_T`` in the archived transitional
+    # ``test/fixtures/transitional_pos.grammar``); its
+    # serial sentence-boundary reduce must STOP at the depth-3 end-state
+    # ``[predicate, idea1, idea2]`` rather than collapsing to a single
+    # idea (which is the correct end-state for an ABSOLUTE truth). The
+    # marker below lets the reduce site ask "is this rule_id relative?".
+
+    _RELATIVE_RELATION_KINDS = frozenset({'equal', 'part', 'whole', 'implies'})
+
+    def _relative_start_categories(self):
+        """Named relative-truth starts retained from the grammar declaration."""
+        return set(self.ws_relative_starts or ())
+
+    def _relative_rule_id_set(self):
+        """Cached set of rule_ids that produce a RELATIVE truth.
+
+        A rule is relative iff EITHER
+          * its ``lhs`` is a relative start category (primary,
+            grammar-driven -- see ``_relative_start_categories``), OR
+          * its declared relation kind is relative.
+        Computed once per rule-table version; invalidated by
+        ``_bump_rule_table_version``.
+        """
+        self._ensure_configured()
+        cache = self._relative_rule_ids_cache
+        if cache is not None:
+            return cache
+        rel_starts = self._relative_start_categories()
+        ids = set()
+        for i, r in enumerate(self.rules):
+            lhs = getattr(r, 'lhs', None)
+            relation = getattr(r, 'relation_kind', None)
+            if (lhs in rel_starts) or (relation in self._RELATIVE_RELATION_KINDS):
+                ids.add(i)
+        self._relative_rule_ids_cache = ids
+        return ids
+
+    def is_relative_rule(self, rule_id):
+        """Return True iff ``rule_id`` produces a RELATIVE truth.
+
+        See :meth:`_relative_rule_id_set`. Out-of-range ids and ids that
+        cannot be coerced to int return False (conservative: an unknown
+        rule is not relative).
+        """
+        try:
+            rid = int(rule_id)
+        except (TypeError, ValueError):
+            return False
+        return rid in self._relative_rule_id_set()
+
+    # All compositional rules live on the unified SyntacticLayer class
+    # as *Forward / *Reverse method pairs.  See _RULE_METHODS dispatch.
+
+    # ---- Soft-superposition chart: packed-rule-table machinery -----
+    #
+    # `softChartCompose=true` on SymbolSpace activates a CKY-style inside
+    # pass in `SyntacticLayer._compose_chart_cky`. That path needs the
+    # rule catalog as flat tensors rather than a Python list of RuleDef
+    # so per-(span, rule) candidates can be enumerated as one bmm-shape
+    # op. `build_rule_table_packed` rebuilds those tensors from
+    # `self.rules`, applying the marker-compilation step described in
+    # the floating-blossom spec: sugar rules (e.g. `absorb`) are NOT
+    # given their own row -- they are folded into per-operand
+    # `marker_mask` flags on the productive rules they license.
+    #
+    # `_rule_table_version` is bumped whenever the catalog changes
+    # (configure / future add/remove). Consumers (e.g.
+    # SyntacticLayer.rule_embed / rule_bias / marker_bias parameters)
+    # cache by version and rebuild on mismatch.
+
+    SUGAR_METHODS = frozenset({'absorb'})
+
+    @property
+    def rule_table_version(self):
+        """Counter bumped on every catalog change. Chart layers read this
+        to decide whether to rebuild rule_embed / rule_bias rows."""
+        return getattr(self, '_rule_table_version_counter', 0)
+
+    def _bump_rule_table_version(self):
+        self._rule_table_version_counter = self.rule_table_version + 1
+        # Drop the packed cache so the next read rebuilds.
+        self._rule_table_packed_cache = None
+        # Task 6a: the relative-rule set is derived from ``self.rules``
+        # + ``start_patterns``; both can change on a rule-table bump
+        # (configure / space_role-reassign / legacy load), so invalidate.
+        self._relative_rule_ids_cache = None
+
+TheGrammar = Grammar()
+
+# =====================================================================
+# Grammar rule operator classes -- moved from Layers.py per
+# doc/plans/2026-05-29-grammar-file-refactor.md §5. All derive from
+# the GrammarLayer base class which stays in Layers.py (alongside
+# PiLayer / SigmaLayer and the unmoved subsymbolic-computation
+# grammar layers).
+# =====================================================================
+
+class NotLayer(GrammarLayer):
+    field_only = True
+    field_action = 5
+    """Self-inverse negation of a concept code, or an explicit pole pair."""
+    inverse_kind = 'unary'
+    scope_transparent = True
+    polarity_effect = 'invert'
+    field_eligible = True
+    rule_name  = "not"
+    predicate_identity = 'not'
+    operation_identity = 'negation'
+    inverse_identity = 'negation'
+    arity      = 1
+    invertible = True
+    space_role       = 'CS'
+
+    def __init__(self, *, representation='code'):
+        """Concept slots carry full codes; evidence poles are explicit."""
+        super().__init__(0, 0)
+        if representation not in ('code', 'poles'):
+            raise ValueError('not requires code or poles representation')
+        self.representation = representation
+
+    def forward(self, x):
+        """Reflect the full code, or exchange the explicit evidence poles."""
+        if self.representation == 'code':
+            return -x
+        self._check_bivector_shape(x)
+        bivector = x[..., :2].flip(dims=(-1,))
+        rest     = x[..., 2:]
+        if rest.shape[-1] == 0:
+            return bivector
+        return torch.cat([bivector, rest], dim=-1)
+
+    def reverse(self, y):
+        """Both representations are their own inverse."""
+        return self.forward(y)
+
+class NonLayer(GrammarLayer):
+    """Non-affirming exclusion: clear the expressed pole, never complement."""
+    scope_transparent = True
+    polarity_effect = 'exclude'
+    field_eligible = True
+    rule_name  = "non"
+    predicate_identity = 'non'
+    arity      = 1
+    invertible = False
+    lossy = True
+    reverse_dispatchable = False
+    space_role       = 'CS'
+
+    def __init__(self, *, representation='code'):
+        """Initialize the parameter-free operator."""
+        super().__init__(0, 0)
+        if representation not in ('code', 'poles'):
+            raise ValueError('non requires code or poles representation')
+        self.representation = representation
+
+    def forward(self, x):
+        """Remove the expressed concept without asserting its opposite."""
+        if self.representation == 'code':
+            return x * 0
+        self._check_bivector_shape(x)
+        return torch.cat((x[..., :1]*0, x[..., 1:]), dim=-1)
+
+    def reverse(self, y):
+        self.raise_no_inverse('non discards the expressed evidence')
+
+    def generate(self, parent):
+        return self.reverse(parent)
+
+class IntersectionLayer(GrammarLayer):
+    """Lossy ``intersection(C, C)`` over bivectors via ``Ops.intersection``."""
+    inverse_kind = 'search'
+    field_eligible = True
+    rule_name        = "intersection"
+    predicate_identity = 'intersection'
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    space_role             = 'CS'
+    reads_activation = True
+
+    def __init__(self, monotonic=False, nInput=0, nOutput=0,
+                 butterfly=False, N=None):
+        """Initialize IntersectionLayer; allocate state for the class contract.
+
+        See class docstring for invariants.
+
+        ``butterfly`` / ``N`` (Stage 6): when ``butterfly=True``, the
+        layer becomes a cross-STM cascade aggregator. ``N`` is the
+        per-position slot count (power of two); ``nInput == nOutput``
+        defines D, the per-slot feature width.
+        """
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        self.monotonic = bool(monotonic)
+
+    # -- Butterfly per-pair op (Stage 6) ------------------------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Intersection per-pair op for the butterfly cascade.
+
+        Split ``x_pair: [B, M, 2D]`` into the two halves ``a, b``
+        (each ``[B, M, D]``), apply the intersection kernel element-
+        wise (RadMin radial / lattice min monotonic), broadcast the
+        result into the ``2D`` packed form, and weight by
+        ``W_node: [M, 2D, 2D]``.
+
+        At identity init (``W_node = I``) the output is
+        ``cat([min(a,b), min(a,b)])`` -- idempotent on constant input.
+        """
+        D = self._butterfly_D
+        a = x_pair[..., :D]
+        b = x_pair[..., D:]
+        if self.monotonic:
+            m = torch.minimum(a, b)
+        else:
+            m = Ops._radmin(a, b)
+        packed = torch.cat([m, m], dim=-1)
+        return torch.einsum('bmi,mij->bmj', packed, W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; approximate (lossy).
+
+        The forward broadcasts the per-pair fold into both halves
+        and applies the per-node weight. The reverse un-weights with
+        ``W_inv_node`` then averages the two halves and re-broadcasts
+        -- the natural ``(parent, parent)`` pseudo-inverse adapted to
+        the cascade's packed-pair form.
+        """
+        unweighted = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        D = self._butterfly_D
+        a_rec = unweighted[..., :D]
+        b_rec = unweighted[..., D:]
+        avg = 0.5 * (a_rec + b_rec)
+        return torch.cat([avg, avg], dim=-1)
+
+    def forward(self, left, right=None):
+        """Forward pass.
+
+        Non-butterfly mode (default): binary ``forward(left, right)``
+        applies the intersection kernel directly on the operand pair.
+
+        Butterfly mode (``self.butterfly``): unary ``forward(x)``
+        runs the cascade over the per-position axis of ``x: [B, N, D]``;
+        ``right`` is ignored.
+
+        See class docstring for the operation this layer applies.
+        """
+        if self.butterfly:
+            return self._butterfly_forward(left)
+        return Ops.intersection(left, right, monotonic=self.monotonic)
+
+    def reverse(self, parent, basis=None,
+                left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None, snap=False):
+        """Reverse pass; inverse of ``forward``.
+
+        Non-butterfly mode:
+          * ``basis is None`` (default) -- lossy ``(parent, parent)``
+            pseudo-inverse (kept for callers that don't have a
+            codebook handy).
+          * ``basis`` supplied (a Codebook / Basis with ``getW()``) --
+            mereology-guided recommender via
+            :py:meth:`Ops.intersectionReverse`: walks ``W = basis.getW()``
+            for an operand pair ``(x1, x2)`` such that
+            ``intersection(x1, x2) ≈ parent``. ``snap=True`` selects the
+            op-respecting MEET snap over ``left_rows`` (Alec 2026-07-14).
+
+        Butterfly mode: cross-STM cascade reverse via the per-pair
+        pseudo-inverse (broadcast averaged form); ``basis`` is ignored.
+
+        Callers (signal-router dispatch, chart reverse) are expected
+        to pass the relevant Basis (typically ``WholeSpace.
+        subspace.what``) at the call site -- no back-ref is stored on
+        the layer. See class docstring for the inversion contract.
+
+        ``left_rows`` / ``right_rows`` (optional ``LongTensor``):
+            typed/heat candidate restriction for x1 / x2 selection;
+            forwarded to :py:meth:`Ops.intersectionReverse`.
+            Default ``None`` = current behavior (all rows eligible).
+
+        ``left_priming`` / ``right_priming`` (optional ``FloatTensor``):
+            soft boost-above-unity priming for the inverse recommender;
+            forwarded to :py:meth:`Ops.intersectionReverse`.
+            Default ``None`` = identity (byte-identical to prior behavior).
+        """
+        if self.butterfly:
+            return self._butterfly_reverse(parent)
+        if basis is not None:
+            # Mereology recommender; falls back internally to
+            # (parent, parent) when W is empty.
+            W = _active_basis_prototypes(basis)
+            if W is not None and torch.is_tensor(W) and W.dim() == 2:
+                active_count = int(W.shape[0])
+                left_rows = _filter_active_candidate_rows(
+                    left_rows, active_count)
+                right_rows = _filter_active_candidate_rows(
+                    right_rows, active_count)
+                # The pair-snap requires at least one real candidate.  When an
+                # explicit set contained only reserved rows, fall through to
+                # the sentinel-bearing recommender instead.
+                snap = bool(snap and left_rows is not None
+                            and left_rows.numel() > 0)
+                return Ops.intersectionReverse(
+                    parent, parent, W, monotonic=self.monotonic,
+                    left_rows=left_rows, right_rows=right_rows,
+                    left_priming=left_priming, right_priming=right_priming,
+                    snap=snap)
+        # 2026-07-04 serial plan Task 1: the (parent, parent) pseudo-inverse
+        # is revoked -- the min-fold is many-to-one with no residual.
+        self.raise_no_inverse("AND-fold is many-to-one; supply a basis for "
+                              "the recommender")
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        if self.butterfly:
+            # In butterfly mode the binary op is the cross-STM cascade
+            # on a single packed tensor; compose still expects the
+            # binary signature for chart parsing, so we concatenate
+            # ``left`` and ``right`` along the position axis and run
+            # the cascade. Caller responsibility: shapes must match
+            # the configured N (typically left and right are halves).
+            x = torch.cat([left, right], dim=-2)
+            return self._butterfly_forward(x)
+        return Ops.intersection(left, right, monotonic=self.monotonic)
+
+    def generate(self, parent, basis=None,
+                 left_rows=None, right_rows=None,
+                 left_priming=None, right_priming=None):
+        """Drive the reverse / generation pass.
+
+        ``basis`` (optional Codebook/Basis) forwarded to ``reverse``;
+        see its docstring for the recommender vs lossy-fallback
+        semantics.
+
+        ``left_rows`` / ``right_rows`` / ``left_priming`` /
+        ``right_priming``: forwarded verbatim to ``reverse``; see that
+        method's docstring for semantics. Default ``None`` = no
+        restriction / identity priming (byte-identical to prior behavior).
+        """
+        return self.reverse(parent, basis=basis,
+                            left_rows=left_rows, right_rows=right_rows,
+                            left_priming=left_priming, right_priming=right_priming)
+
+class UnionLayer(GrammarLayer):
+    """Lossy lattice UNION ``union(C, C)`` (RadMax radial / lattice max) via
+    ``Ops.union`` — the saturating OR-fold, DUAL to ``intersection`` (RadMin /
+    lattice min). RENAMED from ``join`` (2026-07-05, Alec): the additive
+    ``left + right`` op that briefly held the ``union`` name moved to
+    ``<PartSpace>`` as ``chunk``, so ``union`` / ``intersection`` are the
+    lattice pair again (cf. ``Mereology.join_from_bottom``)."""
+    inverse_kind = 'search'
+    rule_name        = "union"
+    predicate_identity = 'union'
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    space_role             = 'CS'
+    reads_activation = True
+
+    def __init__(self, monotonic=False, nInput=0, nOutput=0,
+                 butterfly=False, N=None):
+        """Initialize the union kernel and optional butterfly cascade."""
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        self.monotonic = bool(monotonic)
+
+    # -- Butterfly per-pair op (Stage 6) ------------------------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Union per-pair op for the butterfly cascade.
+
+        Split ``x_pair: [B, M, 2D]`` into the two halves ``a, b``,
+        apply the union kernel element-wise (RadMax radial / lattice
+        max monotonic), broadcast into ``2D``, weight by ``W_node``.
+        """
+        D = self._butterfly_D
+        a = x_pair[..., :D]
+        b = x_pair[..., D:]
+        if self.monotonic:
+            m = torch.maximum(a, b)
+        else:
+            m = Ops._radmax(a, b)
+        packed = torch.cat([m, m], dim=-1)
+        return torch.einsum('bmi,mij->bmj', packed, W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; lossy ``(parent, parent)``
+        analogue adapted to the packed-pair form."""
+        unweighted = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        D = self._butterfly_D
+        a_rec = unweighted[..., :D]
+        b_rec = unweighted[..., D:]
+        avg = 0.5 * (a_rec + b_rec)
+        return torch.cat([avg, avg], dim=-1)
+
+    def forward(self, left, right=None):
+        """Forward pass.
+
+        Non-butterfly: binary ``forward(left, right)`` -> ``Ops.union``.
+        Butterfly: unary ``forward(x)`` -> cross-STM cascade; ``right``
+        ignored.
+
+        See class docstring for the operation this layer applies.
+        """
+        if self.butterfly:
+            return self._butterfly_forward(left)
+        return Ops.union(left, right, monotonic=self.monotonic)
+
+    def reverse(self, parent, basis=None,
+                left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None, snap=False):
+        """Reverse pass; inverse of ``forward``.
+
+        Non-butterfly mode:
+          * ``basis is None`` (default) -- lossy ``(parent, parent)``
+            pseudo-inverse.
+          * ``basis`` supplied (a Codebook / Basis with ``getW()``) --
+            mereology-guided recommender via
+            :py:meth:`Ops.unionReverse`: walks ``W = basis.getW()``
+            for an operand pair ``(x1, x2)`` such that
+            ``union(x1, x2) ≈ parent``. ``snap=True`` selects the
+            op-respecting JOIN snap over ``left_rows`` (Alec 2026-07-14).
+
+        Butterfly mode: cross-STM cascade reverse; ``basis`` is ignored.
+
+        Callers pass the relevant Basis (typically ``WholeSpace.
+        subspace.what``) at the call site -- no back-ref is stored on
+        the layer. See class docstring for the inversion contract.
+
+        ``left_rows`` / ``right_rows`` (optional ``LongTensor``):
+            typed/heat candidate restriction for x1 / x2 selection;
+            forwarded to :py:meth:`Ops.unionReverse`.
+            Default ``None`` = current behavior (all rows eligible).
+
+        ``left_priming`` / ``right_priming`` (optional ``FloatTensor``):
+            soft boost-above-unity priming for the inverse recommender;
+            forwarded to :py:meth:`Ops.unionReverse`.
+            Default ``None`` = identity (byte-identical to prior behavior).
+        """
+        if self.butterfly:
+            return self._butterfly_reverse(parent)
+        if basis is not None:
+            W = _active_basis_prototypes(basis)
+            if W is not None and torch.is_tensor(W) and W.dim() == 2:
+                active_count = int(W.shape[0])
+                left_rows = _filter_active_candidate_rows(
+                    left_rows, active_count)
+                right_rows = _filter_active_candidate_rows(
+                    right_rows, active_count)
+                snap = bool(snap and left_rows is not None
+                            and left_rows.numel() > 0)
+                return Ops.unionReverse(
+                    parent, parent, W, monotonic=self.monotonic,
+                    left_rows=left_rows, right_rows=right_rows,
+                    left_priming=left_priming, right_priming=right_priming,
+                    snap=snap)
+        # 2026-07-04 serial plan Task 1: the (parent, parent) pseudo-inverse
+        # is revoked -- the max-fold is many-to-one with no residual.
+        self.raise_no_inverse("OR-fold is many-to-one; supply a basis for "
+                              "the recommender")
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        if self.butterfly:
+            x = torch.cat([left, right], dim=-2)
+            return self._butterfly_forward(x)
+        return Ops.union(left, right, monotonic=self.monotonic)
+
+    def generate(self, parent, basis=None,
+                 left_rows=None, right_rows=None,
+                 left_priming=None, right_priming=None):
+        """Drive the reverse / generation pass.
+
+        ``basis`` (optional Codebook/Basis) forwarded to ``reverse``.
+
+        ``left_rows`` / ``right_rows`` / ``left_priming`` /
+        ``right_priming``: forwarded verbatim to ``reverse``; see that
+        method's docstring for semantics. Default ``None`` = no
+        restriction / identity priming (byte-identical to prior behavior).
+        """
+        return self.reverse(parent, basis=basis,
+                            left_rows=left_rows, right_rows=right_rows,
+                            left_priming=left_priming, right_priming=right_priming)
+
+
+# Read-time support / peel-stop threshold (snap contract sec 2.1, 2026-07-06):
+# a residual match with |cos| <= PEEL_SUPPORT_EPS is a don't-care (outside the
+# dead-zone around 0), so the signed matching pursuit stops. A small fixed
+# constant; per-space / learned tuning is a later, minor knob.
+PEEL_SUPPORT_EPS = 1e-2
+
+
+class ChunkLayer(GrammarLayer):
+    """``chunk(C, C) = left + right`` — the additive mereological sum.
+
+    RENAMED from ``union`` (2026-07-05, Alec): there is no such GRAMMATICAL
+    operation, so ``chunk`` is a STRUCTURAL op that lives in ``<PartSpace>``
+    (it may someday replace the radix trie's token chunking). The saturating
+    lattice max took the ``union`` name (dual to ``intersection``); the
+    element-wise arithmetic sum is now the CS-concept op ``sum``.
+
+    RESIDUAL-BEARING: no tanh / clamp / normalize, so the additive residual
+    ``ChunkLayer.difference(chunk(a, b), a) == b`` to float rounding
+    (bit-exact on integer-valued content).
+
+    ``invertible=True`` means forward∘reverse == id EXACTLY: the bare
+    ``reverse(parent)`` is the ∅-decomposition ``(parent, 0)``
+    (``w = w ⊔ ∅`` — honest, recomposes exactly, and 0 is the NULL-word's
+    compose identity), NOT a partition-blind halving. Constituent recovery
+    takes ``reverse(parent, basis=W)`` (the PEEL step: best store row,
+    exact remainder) or :meth:`peel` (greedy matching pursuit)."""
+    inverse_kind = 'residual'
+    residual_scale = 1
+    rule_name        = "chunk"
+    predicate_identity = 'chunk'
+    arity            = 2
+    invertible       = True
+    lossy            = False
+    space_role       = 'CS'
+    reads_activation = False
+
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        """Plain additive binary op; optional butterfly cascade parity."""
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+
+    # -- Butterfly per-pair op (structural parity with the siblings) ---
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Additive per-pair op: broadcast ``a + b`` into the packed form."""
+        D = self._butterfly_D
+        m = x_pair[..., :D] + x_pair[..., D:]
+        return torch.einsum('bmi,mij->bmj', torch.cat([m, m], dim=-1),
+                            W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """∅-decomposition in packed form: (recovered sum, zeros)."""
+        unweighted = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        D = self._butterfly_D
+        m = 0.5 * (unweighted[..., :D] + unweighted[..., D:])
+        return torch.cat([m, torch.zeros_like(m)], dim=-1)
+
+    def forward(self, left, right=None):
+        """Binary ``left + right``; butterfly mode runs the cascade."""
+        if self.butterfly:
+            return self._butterfly_forward(left)
+        return left + right
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        if self.butterfly:
+            return self._butterfly_forward(
+                torch.cat([left, right], dim=-2))
+        return left + right
+
+    @staticmethod
+    def difference(whole, part):
+        """The exact residual: ``whole - part`` (recovers the other
+        operand of ``union`` to float rounding)."""
+        return whole - part
+
+    def reverse(self, parent, basis=None,
+                left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None):
+        """∅-decomposition ``(parent, 0)`` by default; with ``basis`` the
+        PEEL step: pick the best-matching store row ``x1`` (max cosine),
+        return ``(x1, parent - x1)`` — exact recomposition by
+        construction. ``left_rows`` restricts the candidate rows;
+        the priming kwargs are accepted for sibling-signature parity."""
+        if self.butterfly:
+            return self._butterfly_reverse(parent)
+        if basis is not None:
+            W = _active_basis_prototypes(basis)
+            if W is not None and torch.is_tensor(W) and W.numel() > 0:
+                left_rows = _filter_active_candidate_rows(
+                    left_rows, int(W.shape[0]))
+                rows = W if left_rows is None else W[left_rows]
+                if rows.numel() == 0:
+                    return parent, torch.zeros_like(parent)
+                flat = parent.detach().reshape(-1).to(W.dtype)
+                if flat.shape[0] == rows.shape[-1]:
+                    sims = torch.nn.functional.normalize(rows, dim=-1) @ \
+                        torch.nn.functional.normalize(flat, dim=0)
+                    best = rows[int(sims.argmax())].reshape(parent.shape)
+                    return best, parent - best
+        return parent, torch.zeros_like(parent)
+
+    @classmethod
+    def peel(cls, whole, basis, max_parts=8, eps=PEEL_SUPPORT_EPS,
+             prototypes=None, tol=1e-4):
+        """SIGNED matching pursuit (snap contract sec 2.2, 2026-07-06):
+        repeatedly select the store row of largest ABSOLUTE cosine alignment
+        with the residual, subtract its signed projection, and emit
+        ``(row, coeff)``. Stops when the support falls below ``eps``
+        (``|cos| <= eps`` -- a don't-care), the residual is ~0, or
+        ``max_parts``.
+
+        Returns ``(parts, residual)`` where ``parts`` is a list of
+        ``(row_index, coeff)`` pairs. ``coeff`` is the SIGNED projection
+        magnitude ``<residual, w> / <w, w>`` -- an EXCLUSION reads as a
+        NEGATIVE coeff, and a plain sum of near-orthogonal rows reads back at
+        coeff ~ 1.0. (Un-discards the sign the old peel clamped away: the
+        ``<= 0`` break and the fixed unit subtraction are gone; selection is
+        the ``_snap_content`` abs-argmax + signed idiom, generalized from
+        +/-1 to the real magnitude.) Exact for near-orthogonal signed parts;
+        the [0,1] cone is where it degrades -- the contrast case.
+
+        ``prototypes`` (T5 hook, optional): a matrix (same row count + width as
+        the basis) of UNFOLDED order-k prototypes; when given, the whole peel
+        (ranking AND the OMP refit) runs in this space instead of the raw basis
+        rows, so a discontiguous order-k region is matched by its reconstituted
+        form rather than its folded order-0 shadow. ``support`` still indexes
+        the codebook rows. ``None`` peels against the basis rows directly.
+        """
+        W = _active_basis_prototypes(basis)
+        # Unfolded prototypes are index-aligned with the physical codebook.
+        # Slice the same active prefix so support ids remain global prefix ids.
+        ref = W if prototypes is None else prototypes[:W.shape[0]]
+        target = whole.detach().reshape(-1).to(W.dtype)
+        residual = target.clone()
+        floor = tol * (1.0 + float(target.norm()))
+        Wn = torch.nn.functional.normalize(ref, dim=-1)
+        support = []            # distinct selected rows, in selection order
+        coeffs = target.new_zeros(0)
+        for _ in range(int(max_parts)):
+            if float(residual.norm()) < floor:
+                break
+            sims = Wn @ torch.nn.functional.normalize(residual, dim=0)
+            if support:         # ORTHOGONAL MP: never re-pick a selected row
+                sims = sims.clone()
+                sims[torch.tensor(support, device=sims.device)] = 0.0
+            best = int(sims.abs().argmax())
+            if float(sims[best].abs()) <= eps:
+                break
+            support.append(best)
+            # Refit ALL selected coeffs by least squares (the OMP step): solve
+            # ``ref[support]^T @ c ~= whole`` so the residual is orthogonal to
+            # the chosen rows -- exact for a linearly-independent signed
+            # support, unlike single-row subtraction which over/undershoots on
+            # non-orthogonal rows. Ranking AND refit use ``ref`` (= the basis
+            # rows, or the T5 unfolded order-k prototypes) so the whole peel
+            # lives in one space; ``support`` still indexes the codebook rows.
+            Rs = ref[support]                                   # [k, D]
+            coeffs = torch.linalg.lstsq(Rs.t(), target).solution
+            residual = target - Rs.t() @ coeffs
+        parts = [(r, float(c)) for r, c in zip(support, coeffs.tolist())]
+        return parts, residual.reshape(whole.shape)
+
+    def generate(self, parent, basis=None,
+                 left_rows=None, right_rows=None,
+                 left_priming=None, right_priming=None):
+        """Generation dual: forwarded to ``reverse`` (same contract)."""
+        return self.reverse(parent, basis=basis,
+                            left_rows=left_rows, right_rows=right_rows,
+                            left_priming=left_priming,
+                            right_priming=right_priming)
+
+
+class SumLayer(GrammarLayer):
+    """Arithmetic mean of two concepts; a known operand gives an exact inverse.
+
+    Free decoding searches the candidate bank for both children. The direct
+    balanced split recomposes the parent without claiming operand recovery.
+    Structural chunk remains an additive fold.
+    """
+    inverse_kind = 'residual'
+    residual_scale = 2
+    rule_name        = "sum"
+    predicate_identity = 'sum'
+    arity            = 2
+    invertible       = True
+    lossy            = False
+    space_role       = 'CS'
+    reads_activation = False
+
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        """Plain additive binary op."""
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+
+    def forward(self, left, right=None):
+        """Binary arithmetic mean."""
+        return (left + right) * .5
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        return self.forward(left, right)
+
+    def reverse(self, parent, basis=None,
+                left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None):
+        """Balanced decomposition; kwargs follow the sibling signature."""
+        return parent, parent
+
+    def generate(self, parent, basis=None,
+                 left_rows=None, right_rows=None,
+                 left_priming=None, right_priming=None):
+        """Generation dual: forwarded to ``reverse`` (same contract)."""
+        return self.reverse(parent)
+
+
+class ProductLayer(GrammarLayer):
+    """``product(C, C) = left * right`` — the element-wise arithmetic PRODUCT
+    over two concepts (CS-space_role), the multiplicative dual of ``sum``
+    (added 2026-07-05, Alec; semantic validity over concepts is exploratory).
+
+    Lossy: the Hadamard product is many-to-one (a zero coordinate in either
+    operand annihilates its partner), so ``reverse`` is fail-loud unless a
+    caller supplies a basis recommender."""
+    inverse_kind = 'product'
+    rule_name        = "product"
+    predicate_identity = 'product'
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    space_role       = 'CS'
+    reads_activation = False
+
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        """Plain multiplicative binary op."""
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+
+    def forward(self, left, right=None):
+        """Binary ``left * right`` (Hadamard)."""
+        return left * right
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        return left * right
+
+    def reverse(self, parent, basis=None,
+                left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None):
+        """The Hadamard product is many-to-one (zeros annihilate); no faithful
+        inverse. Fail-loud (2026-07-04 serial plan Task 1 contract)."""
+        self.raise_no_inverse("element-wise product is not invertible "
+                              "(a zero coordinate annihilates its partner)")
+
+    def generate(self, parent, basis=None,
+                 left_rows=None, right_rows=None,
+                 left_priming=None, right_priming=None):
+        """Generation dual: forwarded to ``reverse`` (same contract)."""
+        return self.reverse(parent)
+
+
+# ===========================================================================
+# Grammar-op GrammarLayer subclasses (Surface 3 facade, 2026-05-01).
+#
+# Each class below names one grammar operation (`rule_name`) and exposes
+# the canonical GrammarLayer interface (forward / reverse / compose /
+# decompose, plus `gated_run` from the base class). The math kernel
+# delegates to the corresponding `SyntacticLayer.*Forward` /
+# `*Reverse` method so semantics are byte-identical to the existing
+# `_RULE_METHODS` dispatch path. The benefit is uniform surface:
+# `isinstance(x, GrammarLayer)` and `x.rule_name` work for every op,
+# the chart's per-rule per-cell dispatch can route through these
+# subclasses without a separate `_RULE_METHODS` table, and
+# `_chart_authority`'s gating applies uniformly via `gated_run`.
+#
+# The subclasses are stateless wrappers that look up the method by
+# name on a SyntacticLayer instance passed in at call time -- they
+# don't own a SyntacticLayer reference (which would be a circular
+# ownership: SyntacticLayer constructs them via the chart's eager
+# build, and they'd point back at SyntacticLayer). Pattern:
+#
+#     out = LiftLayer().forward(left, right, layer=syntactic_layer,
+#                               subspace=subspace)
+#
+# Existing `_RULE_METHODS` dispatch in SyntacticLayer.project still
+# works -- this is an addition, not a replacement. A follow-up can
+# migrate the chart to dispatch through these classes.
+
+# =====================================================================
+# Grammar-op GrammarLayer subclasses (Step 8 of the 2026-05-01 syntactic-
+# layer refactor). Each class is a self-contained GrammarLayer with
+# direct Ops-based math. Replaces the prior `_GrammarOpFacade` /
+# SyntacticLayer-dispatch pattern.
+#
+# `_GrammarOpFacade._registry` is retired: the chart now consults
+# `wordSpace.host_layer(space_role, rule_name)` first (Step 7) and falls
+# back to a hardcoded class lookup `GRAMMAR_LAYER_CLASSES` declared
+# at module scope below.
+# =====================================================================
+
+# --- Event modality helpers (modality re-architecture, Phase 3) ----------
+# The symbolic layer's events are muxed [what | where | when] (symbols are
+# percepts: they keep coordinates); these helpers split / reassemble such an
+# event around ``execute`` and shift the .when onset.  Conceptual events
+# have no band (architecture.canonical_shape("ConceptualSpace") == (0, 0))
+# and are never split: the CS grammar ops take the whole code.
+_EVENT_WHEN_WIDTH = 4
+
+
+def _split_event(x, content_width, when_width=_EVENT_WHEN_WIDTH):
+    """Split a muxed event into (what, where, when) given the .what width."""
+    what = x[..., :content_width]
+    rest = x[..., content_width:]
+    when = rest[..., -when_width:]
+    where = rest[..., :-when_width]
+    return what, where, when
+
+
+def _event_when_encoding(when_width=_EVENT_WHEN_WIDTH):
+    # The ONE .when construction seam (config <whenPeriod>/<whenRungRatio>)
+    # so tense rotation and the Space stamps share one omega pair.
+    from Spaces import event_when_encoding
+    return event_when_encoding(when_width)
+
+
+# _when_extent RETIRED (2026-07-04 encoding pass): duration left the band
+# (write-only in v1 -- zero callers); exact extents belong to the record
+# store when aspect is built.
+
+
+def _lift_when(when, when_width=_EVENT_WHEN_WIDTH):
+    """Advance the event one tense step toward the FUTURE (the
+    verb-advances-future rule of spec Section 5). Tense is the onset position
+    relative to now: LIFT shifts the onset by +_WHEN_TENSE_STEP ticks
+    (``shift_time`` rotates BOTH ladder pairs coherently)."""
+    from Spaces import _WHEN_TENSE_STEP
+    enc = _event_when_encoding(when_width)
+    return enc.shift_time(when, +_WHEN_TENSE_STEP)
+
+
+def _lower_when(when, when_width=_EVENT_WHEN_WIDTH):
+    """Inverse of _lift_when: retreat the event one tense step toward the PAST
+    (-_WHEN_TENSE_STEP ticks)."""
+    from Spaces import _WHEN_TENSE_STEP
+    enc = _event_when_encoding(when_width)
+    return enc.shift_time(when, -_WHEN_TENSE_STEP)
+
+
+def _make_lex_gate(n_in, rank, seed, bias=1.4722):
+    """Build the §2 lexical-mask projection (word code -> gate rank
+    space) WITHOUT touching the global RNG (GrammarOpsPass §2).
+
+    ``nn.Linear``'s constructor draws its kaiming init from the global
+    generator; grammar operators are built inside seeded fixtures, so
+    that draw would shift every later seeded tensor. ``skip_init``
+    materializes the module without an init draw; the deterministic
+    init (small weight, bias at atanh(0.9): near-identity gates that
+    already differ per word) comes from a LOCAL generator.
+
+    ``bias`` (default ``atanh(0.9)``): the constant bias fill. The adverb
+    eigenvalue edit (``LiftLayer._adv_edit``) passes ``bias=0.0`` so an
+    untrained edit is ``tanh(0) ~= 0`` -- the residual barely perturbs the
+    sigma fold until training shapes it.
+    """
+    lex = torch.nn.utils.skip_init(nn.Linear, int(n_in), int(rank))
+    # Seeded draw on CPU (device-agnostic bytes); .copy_ moves it to lex.weight's device.
+    gen = torch.Generator(device="cpu")
+    gen.manual_seed(int(seed))
+    with torch.no_grad():
+        lex.weight.copy_(
+            torch.randn(lex.weight.shape, generator=gen, device="cpu") * 0.05)
+        lex.bias.fill_(float(bias))
+    return lex
+
+
+
+
+class LiftLayer(GrammarLayer):
+    """Binary CS grammar op backed by an internal invertible ``SigmaLayer``.
+
+    ``gate`` optionally selects a lexical low-rank slice; grammar theory lives
+    in ``doc/Language.md``.
+    """
+    order_delta = 1
+    inverse_kind = 'fold'
+    rule_name  = "lift"
+    predicate_identity = 'lift'
+    arity      = 2
+    invertible = True
+    space_role       = 'CS'
+    event_aware = True          # operates on the muxed event (extends .when)
+    # The verb projection emits LOG eigenvalues.  Leaving those logits
+    # unbounded lets ``exp(w)`` overflow while the outer tanh still returns a
+    # perfectly finite +/-1.  Backward then encounters the indeterminate
+    # product ``0 * inf`` (including for an unselected eager router candidate)
+    # and poisons the complete input adjoint.  +/-8 keeps each positive gain
+    # in [exp(-8), exp(8)] and the diagonal condition ratio at most exp(16),
+    # while leaving the ordinary sparse-spectrum range bit-for-bit unchanged.
+    _VERB_LOG_GAIN_LIMIT = 8.0
+
+    def __init__(self, nInput=None, nOutput=None, *,
+                 wholeSpace=None, perceptualSpace=None,
+                 conceptualSpace=None,
+                 invertible=True, nonlinear=True,
+                 butterfly=False, N=None,
+                 force_verb_spectrum=False,
+                 force_adverb_eig_edit=False):
+        """Initialize LiftLayer.
+
+        ``nInput`` / ``nOutput`` size the internal SigmaLayer; both
+        default to the symbol codebook width when ``wholeSpace`` is
+        supplied (back-compat with the per-space syntactic-layer
+        construction path).  ``invertible`` / ``nonlinear`` are passed
+        through to the internal SigmaLayer.
+
+        ``butterfly`` / ``N`` (Stage 5): when True, allocate a butterfly
+        cascade on the GrammarLayer base alongside the inner sigma. The
+        binary ``forward(left, right)`` retains its existing semantics;
+        the new ``forward_butterfly(x)`` form (or the GrammarLayer
+        ``_butterfly_forward`` directly) runs the cascade over a
+        ``[B, N, D]`` per-position tensor. The cascade's per-pair op
+        delegates to the internal SigmaLayer's ``_butterfly_pair_op``.
+
+        Back-references via ``object.__setattr__`` bypass nn.Module
+        submodule tracking so the Space refs don't create module-tree
+        cycles (the Spaces are registered under the top-level Model).
+        """
+        # Resolve operand width: prefer explicit ``nInput`` / ``nOutput``;
+        # else fall back to the symbol codebook width for the legacy
+        # ``LiftLayer(wholeSpace=ws)`` call shape.
+        if nInput is None:
+            if wholeSpace is not None:
+                nInput = int(wholeSpace.subspace.what.nDim)
+            else:
+                nInput = 0
+        if nOutput is None:
+            nOutput = nInput
+        super().__init__(int(nInput), int(nOutput),
+                         butterfly=butterfly, N=N)
+        # .what content width -- splits a muxed CS-space_role event operand
+        # ([what | where | when]) from a content-only operand.
+        object.__setattr__(self, '_content_width', int(nInput))
+        # Back-references kept for back-compat with the
+        # ``LiftLayer(wholeSpace=...)`` legacy construction path.
+        # They are NOT consulted by ``forward`` / ``reverse`` -- the
+        # binary fold runs entirely through ``self._sigma``.
+        object.__setattr__(self, 'wholeSpace', wholeSpace)
+        object.__setattr__(self, 'perceptualSpace', perceptualSpace)
+        object.__setattr__(self, 'conceptualSpace', conceptualSpace)
+        # Internal SigmaLayer -- additive log-domain pairwise fold.
+        # LDU-invertible so ``reverse`` is exact at the spatial level.
+        # The inner sigma is used both for the binary forward(left, right)
+        # path and (via its ``_butterfly_pair_op`` method) for the
+        # butterfly per-pair op when the cascade is enabled.
+        if int(nInput) > 0:
+            self._sigma = SigmaLayer(
+                nInput=int(nInput), nOutput=int(nOutput),
+                invertible=invertible, nonlinear=nonlinear)
+            self._sigma._bounded_backward = True   # nested grammar fold
+            self.layers.append(self._sigma)
+            # Lexical-mask projection (GrammarOpsPass §2): the word's
+            # code -> the inner LDU's gate rank space. One projection
+            # per operator, shared across the vocabulary; the per-verb
+            # difference rides entirely in this embedding->gate map.
+            # Init near-identity (small weight, bias at atanh(0.9)) so
+            # untrained gates barely perturb the shared matrix while
+            # already differing per word. Initialized GLOBAL-RNG-NEUTRAL
+            # (skip_init + local generator): constructing the operator
+            # must not shift the seeded draws of fixtures built after it.
+            self._lex_gate = _make_lex_gate(
+                int(nInput), min(int(nInput), int(nOutput)), seed=0x11F7)
+            # Eigen mechanisms (both eig-based, confirmed 2026-06-20): the VERB is
+            # the eig-spectrum OPERATOR (<verbSpectrum>, below); the ADVERB is the
+            # eigenmodifier (<adverbEigEdit>). What was removed is the verbEigEdit
+            # RESIDUAL (a sparse edit on top of the symmetric sigma fold) -- it is
+            # now the adverb.
+            #
+            # ADVERB sparse eigenvalue edit. When <adverbEigEdit> is on, or
+            # AdverbLayer forces this helper, an adverb modifies a composed VP
+            # through a sparse eigenvalue edit of the verb, masked by the VP's
+            # OWN eigen-signature (no learned mask). The only per-adverb
+            # parameter is the edit projection δ_adv(ADV_code). Plain LiftLayer
+            # still builds it ONLY when flagged so flag-off is byte-identical.
+            # Zero-init -> edit ~0.
+            self._adverb_eig_edit = (
+                bool(force_adverb_eig_edit)
+                or bool(TheXMLConfig.get(
+                    "architecture.adverbEigEdit", default=False)))
+            if self._adverb_eig_edit:
+                self._adv_edit = _make_lex_gate(
+                    int(nInput), int(nOutput), seed=0x5EED, bias=0.0)
+                with torch.no_grad():
+                    self._adv_edit.weight.zero_()
+            else:
+                self._adv_edit = None
+            self._adverb_purchase = None
+
+            # VERB eig-spectrum OPERATOR (Stage 1; doc/old/2026-06-20-idea-
+            # decoder.md "VP parameterization"). When <verbSpectrum> is on, the
+            # verb acts on the NP as Q·diag(e^w)·Qᵀ -- here the first increment is
+            # the exp-diagonal (Q = I) in atanh-space: VP(NP) = tanh(e^{w_v} ⊙
+            # atanh(NP)), with w_v the verb's SPARSE log-eigenvalues from the verb
+            # code (soft-thresholded, zero-init). INVERTIBLE by construction
+            # (e^w>0): unapply applies e^{-w_v}. Sparse -> most eigs are identity
+            # (w=0 -> e^0=1), so the verb is a non-destructive spectral reshaping.
+            # (Follow-ons: NP-conditional Q via Householder-from-NP; verb
+            # identification on reverse.) Built ONLY when flagged, or when
+            # VerbLayer forces this helper, so plain LiftLayer stays flag-off
+            # byte-identical.
+            self._verb_spectrum = (
+                bool(force_verb_spectrum)
+                or bool(TheXMLConfig.get(
+                    "architecture.verbSpectrum", default=False)))
+            if self._verb_spectrum:
+                self._verb_spec = _make_lex_gate(
+                    int(nInput), int(nOutput), seed=0x5B17, bias=0.0)
+                with torch.no_grad():
+                    self._verb_spec.weight.zero_()
+            else:
+                self._verb_spec = None
+        else:
+            # Zero-width construction (parameter-free harness probe).
+            self._sigma = None
+            self._lex_gate = None
+            self._adverb_eig_edit = False
+            self._adv_edit = None
+            self._adverb_purchase = None
+            self._verb_spectrum = False
+            self._verb_spec = None
+
+    # -- Butterfly per-pair op delegation (Stage 5) -----------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Delegate per-pair op to the internal SigmaLayer.
+
+        The cascade weight ``W_node`` is supplied by the LiftLayer's
+        own ``butterfly_W`` (inherited from GrammarLayer); the inner
+        sigma contributes only the atanh / tanh nonlinearity around
+        the einsum. This keeps LiftLayer's invertibility contract on
+        the cascade while reusing sigma's per-pair kernel.
+        """
+        if self._sigma is None:
+            raise RuntimeError(
+                "LiftLayer._butterfly_pair_op: no internal sigma "
+                "(zero-width construction).")
+        return self._sigma._butterfly_pair_op(x_pair, W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; delegate to inner sigma."""
+        if self._sigma is None:
+            raise RuntimeError(
+                "LiftLayer._butterfly_pair_op_reverse: no internal sigma.")
+        return self._sigma._butterfly_pair_op_reverse(y_pair, W_inv_node)
+
+    def forward_butterfly(self, x):
+        """Run the butterfly cascade forward over a ``[B, N, D]`` tensor.
+
+        Distinct entry point from the binary ``forward(left, right)``
+        so the existing binary-fold callers (chart / signal-router
+        pair dispatch) are not surprised by the cascade semantics.
+        """
+        if not self.butterfly:
+            raise RuntimeError(
+                "LiftLayer.forward_butterfly: butterfly mode not enabled "
+                "at construction.")
+        return self._butterfly_forward(x)
+
+    def reverse_butterfly(self, y):
+        """Inverse of ``forward_butterfly``."""
+        if not self.butterfly:
+            raise RuntimeError(
+                "LiftLayer.reverse_butterfly: butterfly mode not enabled.")
+        return self._butterfly_reverse(y)
+
+    def lexical_gate(self, code):
+        """Per-word gate over the shared operator matrix (GrammarOpsPass
+        §2: one matrix, many verbs).
+
+        ``code``: the word's lexical embedding (its codebook row),
+        ``[D]`` or ``[..., D]`` -- leading dims are flattened and
+        averaged (a graded blend when several words prime one call);
+        a wider row (muxed event) is sliced to the content width.
+        Returns a tanh-bounded ``[rank]`` gate for ``forward`` /
+        ``reverse`` ``gate=``. ``None`` code (or a zero-width layer)
+        returns ``None``, so callers can pass the result through
+        unconditionally.
+        """
+        if code is None or getattr(self, '_lex_gate', None) is None:
+            return None
+        cw = self._content_width
+        v = code.reshape(-1, code.shape[-1])
+        if cw and v.shape[-1] > cw:
+            v = v[..., :cw]
+        v = v.to(self._lex_gate.weight.dtype).mean(dim=0)
+        return torch.tanh(self._lex_gate(v))
+
+    def forward(self, left, right, gate=None):
+        """Sigma-style binary fold over the STM pair ``(left, right)``.
+
+        Delegates to ``SigmaLayer.compose`` which packs the operands
+        in atanh-domain (``a + b``), applies the inner linear
+        transform, and returns ``tanh(W @ (atanh(a) + atanh(b)) + b)``.
+
+        ``gate`` (optional ``[rank]``, see ``lexical_gate``): lexical
+        slice of the shared operator; ``None`` is byte-identical to
+        the un-gated baseline.
+        """
+        if self._sigma is None:
+            raise RuntimeError(
+                "LiftLayer was constructed without operand-width "
+                "information; cannot run forward. Pass nInput / "
+                "nOutput, or supply a wholeSpace whose subspace "
+                "carries a non-empty codebook.")
+        # The event is opaque here: concepts are full-width codes
+        # (Alec, 2026-09-13); no split, no .when shift.
+        return self._sigma.compose(left, right, gate=gate)
+
+    def apply_adverb(self, vp_content, adv_what):
+        """Multiply the verb's chart coordinates by the adverb's gain."""
+        if not getattr(self, '_adverb_eig_edit', False) or self._adv_edit is None:
+            return vp_content
+        gain = self._adverb_log_gain(adv_what)
+        if not torch.compiler.is_compiling():
+            with torch.no_grad():
+                self._adverb_purchase = (vp_content != 0).to(vp_content).mean(-1)
+        return self._verb_rail_transform(vp_content, gain)
+
+    def _adverb_log_gain(self, adverb):
+        raw = torch.tanh(self._adv_edit(adverb.to(self._adv_edit.weight.dtype)))
+        sparse = torch.sign(raw) * (raw.abs() - .1).clamp_min(0)
+        return raw + (sparse - raw).detach()
+
+    def unapply_adverb(self, value, adverb):
+        if not getattr(self, '_adverb_eig_edit', False) or self._adv_edit is None:
+            return value
+        return self._verb_rail_transform(value, -self._adverb_log_gain(adverb))
+
+    def _verb_spectrum_w(self, verb_what):
+        """The verb's SPARSE log-eigenvalues w_v from the verb code,
+        soft-thresholded so most eigs are 0 (-> e^0 = 1 -> identity), then
+        constrained to a finite-condition spectrum.  The symmetric clamp is
+        also shared by ``apply_verb`` and ``unapply_verb``, so they retain the
+        same inverse pair; values already in range are exactly unchanged."""
+        w = self._verb_spec(verb_what.to(self._verb_spec.weight.dtype))
+        tau = 0.1
+        sparse_w = torch.sign(w) * torch.clamp(w.abs() - tau, min=0.0)
+        # Straight-through the soft threshold (2026-09-09): the readout is
+        # ZERO-initialised, and inside the dead zone |w| < tau the threshold's
+        # derivative is zero, so no gradient ever reached the readout and no
+        # verb could start learning by gradient (the successor VP included --
+        # test_verb_successor).  The FORWARD is unchanged (sparse, most eigs
+        # identity); the gradient is that of the raw readout, so a verb can
+        # leave the dead zone when its loss asks for it.
+        sparse_w = w + (sparse_w - w).detach()
+        return sparse_w.clamp(
+            min=-self._VERB_LOG_GAIN_LIMIT,
+            max=self._VERB_LOG_GAIN_LIMIT,
+        )
+
+    @staticmethod
+    def _verb_rail_transform(value, log_gain):
+        """Apply a diagonal gain in a numerically safe atanh chart.
+
+        Half and bfloat16 cannot represent ``1 - epsilon`` for the module's
+        small epsilon, so clamping in the input dtype can leave an exact rail
+        value for ``atanh`` and produce an infinite interior.  Keep the full
+        chart calculation in float32, including the gain exponential, and
+        cast only the bounded result back to the public input dtype.  Using
+        this same helper with opposite log gains keeps the forward and inverse
+        paths symmetric up to the unavoidable quantization of their outputs.
+        """
+        output_dtype = value.dtype
+        value_f32 = value.to(dtype=torch.float32)
+        log_gain_f32 = log_gain.to(dtype=torch.float32)
+        interior = _bounded_atanh(value_f32, bounded=False)
+        transformed = torch.tanh(torch.exp(log_gain_f32) * interior)
+        return transformed.to(dtype=output_dtype)
+
+    def apply_verb(self, np_what, verb_what):
+        """VERB eig-spectrum OPERATOR (Stage 1): act on the NP as the verb's
+        diagonal spectrum in atanh-space -- VP(NP) = tanh(e^{w_v} ⊙ atanh(NP)),
+        with w_v the verb's SPARSE log-eigenvalues (first increment: Q = I).
+        INVERTIBLE by construction (e^w > 0; see ``unapply_verb``). Most eigs are
+        identity (w=0 -> e^0=1), so the verb is a non-destructive spectral
+        reshaping along the few eigs it touches. No-op unless ``<verbSpectrum>``
+        or ``VerbLayer`` built the projection."""
+        if not getattr(self, '_verb_spectrum', False) or self._verb_spec is None:
+            return np_what
+        return self._verb_rail_transform(
+            np_what, self._verb_spectrum_w(verb_what))
+
+    def unapply_verb(self, vp_what, verb_what):
+        """Inverse of ``apply_verb`` GIVEN the verb: NP = tanh(e^{-w_v} ⊙
+        atanh(VP)). Exact round-trip with ``apply_verb`` for the same verb code.
+        (Recovering the verb from the result alone -- the operator-identification
+        reverse -- is a follow-on increment.)"""
+        if not getattr(self, '_verb_spectrum', False) or self._verb_spec is None:
+            return vp_what
+        return self._verb_rail_transform(
+            vp_what, -self._verb_spectrum_w(verb_what))
+
+    def reverse(self, parent, gate=None, basis=None,
+                left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None):
+        """Split ``parent`` back into a ``(left, right)`` pair.
+
+        The ``.what`` content is recovered by the mereology-guided NEAREST-
+        PROTOTYPE recommender (``Ops.liftReverseAll`` -> ``unionReverse``
+        -> ``_binary_op_recommend``) when a ``basis`` codebook ``W`` is present:
+        it returns REAL stored constituents drawn from the codebook, so two
+        distinct operands are recovered by recognition (non-destructive prototype
+        match, storing no partition). With no basis it falls back to
+        ``SigmaLayer.generate`` -- the partition-blind balanced split
+        ``tanh(s/2), tanh(s/2)`` -- which stays the inverse for default-only /
+        XOR grammars that carry no codebook. ``.where`` is copied to both
+        children and ``.when`` retracted (exact). ``gate``: the forward gate; the
+        LDU inverse uses ``1/(d * gate)`` automatically.
+        """
+        if self._sigma is None:
+            raise RuntimeError(
+                "LiftLayer was constructed without operand-width "
+                "information; cannot run reverse.")
+        W = _active_basis_prototypes(basis)
+        if W is not None and torch.is_tensor(W) and W.dim() == 2:
+            active_count = int(W.shape[0])
+            left_rows = _filter_active_candidate_rows(
+                left_rows, active_count)
+            right_rows = _filter_active_candidate_rows(
+                right_rows, active_count)
+
+        def _split_what(p_what):
+            if W is not None and hasattr(W, 'shape') and int(W.shape[0]) > 0:
+                return Ops.liftReverseAll(
+                    p_what, W=W, left_rows=left_rows, right_rows=right_rows,
+                    left_priming=left_priming, right_priming=right_priming)
+            return self._sigma.generate(p_what, gate=gate)
+
+        # The event is opaque here: concepts are full-width codes
+        # (Alec, 2026-09-13); no split, no .when shift.
+        return _split_what(parent)
+
+    def compose(self, left, right, gate=None):
+        """Binary GrammarLayer compose entry -- routes to ``forward``."""
+        return self.forward(left, right, gate=gate)
+
+    def generate(self, parent, gate=None):
+        """Binary GrammarLayer generate entry -- routes to ``reverse``."""
+        return self.reverse(parent, gate=gate)
+
+
+class CompoundLayer(GrammarLayer):
+    """Select the right head's native sigma cases with the left modifier."""
+    rule_name = 'compound'
+    predicate_identity = 'compound'
+    arity = 2
+    head_role = 2
+    case_head_role = 2
+    space_role = 'CS'
+    inverse_kind = 'case_search'
+    invertible = False
+    lossy = True
+
+    def compose(self, modifier, head, *, selected_cases=None):
+        if selected_cases is None:
+            raise ValueError('compound requires the owner-staged native cases')
+        from CaseSelection import fold_cases
+        return fold_cases(selected_cases)
+
+    def compose_from_grammar_context(self, operands, *, context):
+        return self.compose(*operands, selected_cases=context.selected_cases)
+
+    def reverse(self, parent, *, case_bank=None):
+        if case_bank is None:
+            self.raise_no_inverse('supply the primed native case bank')
+        from CaseSelection import search_cases
+        left, right, available = search_cases(case_bank, parent)
+        torch._assert_async(available.all(), 'compound has no admissible primed inverse pair')
+        return left, right
+
+    def generate(self, parent, *, case_bank=None):
+        return self.reverse(parent, case_bank=case_bank)
+
+
+class VerbLayer(LiftLayer):
+    """Subtype a verb (I1) by its object (I2), using the object's learned gain.
+
+    The first operand is the verb head; its object is retained by reference
+    when the phrase closes. This is the catalogue §5.6 gain implementation.
+    The numerical helper also serves NP transformation experiments; that
+    use does not reverse the grammatical head and object roles.
+    """
+    head_role = 1
+    order_delta = 0
+    inverse_kind = 'gain'
+    witness_inverse = 'unapply_verb'
+    clause_form = 'VP'
+    rule_name = "verb"
+    predicate_identity = 'verb'
+    arity = 2
+    invertible = True
+    space_role = 'CS'
+    event_aware = True
+    # The unreduce dispatcher must supply the verb operand to invert
+    # apply_verb; without it there is no faithful inverse, so it skips this
+    # op's reverse rather than fabricating a split (see reverse()).
+    reverse_required_kwargs = ('verb_what',)
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("force_verb_spectrum", True)
+        super().__init__(*args, **kwargs)
+
+    def forward(self, left, right, gate=None):
+        if self._sigma is None:
+            raise RuntimeError(
+                "VerbLayer was constructed without operand-width "
+                "information; cannot run forward.")
+        # The event is opaque here: concepts are full-width codes
+        # (Alec, 2026-09-13); no split, no .when shift.
+        return self.apply_verb(left, right)
+
+    def reverse(self, parent, verb_what=None, basis=None, gate=None, **kwargs):
+        """Exact inverse of :meth:`forward` -- REQUIRES the verb operand.
+
+        ``unapply_verb`` strips the verb's log-eigenvalue spectrum from the
+        parent to recover the NP. Without ``verb_what`` there is no faithful
+        reconstruction, so this RAISES rather than fabricating a split (the
+        old ``(left, left)`` pseudo-split was a placeholder). Callers that
+        cannot supply the operand must not invoke reverse -- the unreduce
+        dispatcher gates on ``reverse_required_kwargs``.
+        """
+        if self._sigma is None:
+            raise RuntimeError(
+                "VerbLayer was constructed without operand-width "
+                "information; cannot run reverse.")
+        if verb_what is None:
+            raise RuntimeError(
+                "VerbLayer.reverse requires the verb operand (verb_what) to "
+                "invert apply_verb; refusing to fabricate a split.")
+        return self.unapply_verb(parent, verb_what), verb_what
+
+
+class AdverbLayer(LiftLayer):
+    """Multiplicative modifier, exactly invertible given its adverb operand."""
+    order_delta = 0
+    inverse_kind = 'gain'
+    witness_inverse = 'unapply_adverb'
+    clause_form = None
+    rule_name = "adverb"
+    predicate_identity = 'adverb'
+    arity = 2
+    invertible = True
+    lossy = False
+    space_role = 'CS'
+    event_aware = True
+    reverse_required_kwargs = ('adverb_what',)
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("force_adverb_eig_edit", True)
+        super().__init__(*args, **kwargs)
+
+    def forward(self, left, right, gate=None):
+        if self._sigma is None:
+            raise RuntimeError(
+                "AdverbLayer was constructed without operand-width "
+                "information; cannot run forward.")
+        # The event is opaque here: concepts are full-width codes
+        # (Alec, 2026-09-13); no split, no .when shift.
+        return self.apply_adverb(left, right)
+
+    def reverse(self, parent, adverb_what=None, basis=None, gate=None, **kwargs):
+        if adverb_what is None:
+            self.raise_no_inverse('adverb reverse requires its modifier operand')
+        return self.unapply_adverb(parent, adverb_what), adverb_what
+
+
+class LowerLayer(GrammarLayer):
+    """Binary CS grammar op backed by an internal invertible ``PiLayer``."""
+    order_delta = -1
+    inverse_kind = 'fold'
+    head_role = 2
+    rule_name  = "lower"
+    predicate_identity = 'lower'
+    arity      = 2
+    invertible = True
+    space_role       = 'CS'
+    event_aware = True          # operates on the muxed event (retracts .when)
+
+    def __init__(self, nInput=None, nOutput=None, *,
+                 wholeSpace=None, perceptualSpace=None,
+                 conceptualSpace=None,
+                 invertible=True, nonlinear=True,
+                 butterfly=False, N=None):
+        """Initialize LowerLayer; symmetric to ``LiftLayer.__init__``
+        but with an internal PiLayer (multiplicative log-domain
+        fold) instead of a SigmaLayer.
+
+        ``butterfly`` / ``N`` (Stage 5): when True, allocate a
+        butterfly cascade on the GrammarLayer base. The per-pair op
+        delegates to the internal PiLayer's ``_butterfly_pair_op``.
+        """
+        if nInput is None:
+            if wholeSpace is not None:
+                nInput = int(wholeSpace.subspace.what.nDim)
+            else:
+                nInput = 0
+        if nOutput is None:
+            nOutput = nInput
+        super().__init__(int(nInput), int(nOutput),
+                         butterfly=butterfly, N=N)
+        object.__setattr__(self, '_content_width', int(nInput))
+        object.__setattr__(self, 'wholeSpace', wholeSpace)
+        object.__setattr__(self, 'perceptualSpace', perceptualSpace)
+        object.__setattr__(self, 'conceptualSpace', conceptualSpace)
+        if int(nInput) > 0:
+            self._pi = PiLayer(
+                nInput=int(nInput), nOutput=int(nOutput),
+                invertible=invertible, nonlinear=nonlinear)
+            self._pi._bounded_backward = True      # nested grammar fold
+            self.layers.append(self._pi)
+            # Lexical-mask projection (GrammarOpsPass §2); see LiftLayer.
+            self._lex_gate = _make_lex_gate(
+                int(nInput), min(int(nInput), int(nOutput)), seed=0x10E7)
+        else:
+            self._pi = None
+            self._lex_gate = None
+
+    # -- Butterfly per-pair op delegation (Stage 5) -----------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Delegate per-pair op to the internal PiLayer."""
+        if self._pi is None:
+            raise RuntimeError(
+                "LowerLayer._butterfly_pair_op: no internal pi "
+                "(zero-width construction).")
+        return self._pi._butterfly_pair_op(x_pair, W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; delegate to inner pi."""
+        if self._pi is None:
+            raise RuntimeError(
+                "LowerLayer._butterfly_pair_op_reverse: no internal pi.")
+        return self._pi._butterfly_pair_op_reverse(y_pair, W_inv_node)
+
+    def forward_butterfly(self, x):
+        """Run the butterfly cascade forward over ``[B, N, D]``."""
+        if not self.butterfly:
+            raise RuntimeError(
+                "LowerLayer.forward_butterfly: butterfly mode not enabled.")
+        return self._butterfly_forward(x)
+
+    def reverse_butterfly(self, y):
+        """Inverse of ``forward_butterfly``."""
+        if not self.butterfly:
+            raise RuntimeError(
+                "LowerLayer.reverse_butterfly: butterfly mode not enabled.")
+        return self._butterfly_reverse(y)
+
+    # Per-word gate producer (GrammarOpsPass §2); same contract as
+    # LiftLayer.lexical_gate (one learned projection per operator).
+    lexical_gate = LiftLayer.lexical_gate
+
+    def forward(self, left, right, gate=None):
+        """Pi-style binary fold (multiplicative log-domain) over the
+        STM pair ``(left, right)``.
+
+        Delegates to ``PiLayer.compose`` which packs the operands in
+        log-mult domain (``log_mult(a) + log_mult(b)``), applies the
+        inner linear transform, and returns
+        ``tanh((W @ (log_mult(a) + log_mult(b)) + b) / 2)``.
+
+        ``gate`` (optional ``[rank]``, see ``lexical_gate``): lexical
+        slice of the shared operator; ``None`` is byte-identical to
+        the un-gated baseline.
+        """
+        if self._pi is None:
+            raise RuntimeError(
+                "LowerLayer was constructed without operand-width "
+                "information; cannot run forward. Pass nInput / "
+                "nOutput, or supply a wholeSpace whose subspace "
+                "carries a non-empty codebook.")
+        # The event is opaque here: concepts are full-width codes
+        # (Alec, 2026-09-13); no split, no .when shift.
+        return self._pi.compose(left, right, gate=gate)
+
+    def reverse(self, parent, gate=None, basis=None,
+                left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None):
+        """Split ``parent`` back into a ``(left, right)`` pair.
+
+        The ``.what`` content is recovered by the mereology-guided NEAREST-
+        PROTOTYPE recommender (``Ops.lowerReverseAll`` -> ``intersectionReverse``
+        -> ``_binary_op_recommend``) when a ``basis`` codebook ``W`` is present
+        (real stored constituents, non-destructive prototype match); with no
+        basis it falls back to the partition-blind balanced log-mult split
+        (``PiLayer.generate``). ``.where`` is copied to both children and
+        ``.when`` lifted (exact). ``gate``: the forward gate; the LDU inverse
+        uses ``1/(d * gate)`` automatically.
+        """
+        if self._pi is None:
+            raise RuntimeError(
+                "LowerLayer was constructed without operand-width "
+                "information; cannot run reverse.")
+        W = _active_basis_prototypes(basis)
+        if W is not None and torch.is_tensor(W) and W.dim() == 2:
+            active_count = int(W.shape[0])
+            left_rows = _filter_active_candidate_rows(
+                left_rows, active_count)
+            right_rows = _filter_active_candidate_rows(
+                right_rows, active_count)
+
+        def _split_what(p_what):
+            if W is not None and hasattr(W, 'shape') and int(W.shape[0]) > 0:
+                return Ops.lowerReverseAll(
+                    p_what, W=W, left_rows=left_rows, right_rows=right_rows,
+                    left_priming=left_priming, right_priming=right_priming)
+            return self._pi.generate(p_what, gate=gate)
+
+        # The event is opaque here: concepts are full-width codes
+        # (Alec, 2026-09-13); no split, no .when shift.
+        return _split_what(parent)
+
+    def compose(self, left, right, gate=None):
+        """Binary GrammarLayer compose entry -- routes to ``forward``."""
+        return self.forward(left, right, gate=gate)
+
+    def generate(self, parent, gate=None):
+        """Binary GrammarLayer generate entry -- routes to ``reverse``."""
+        return self.reverse(parent, gate=gate)
+
+class SurfaceLayer(GrammarLayer):
+    """Attach a surface marker to a complete content constituent.
+
+    The grammar chooser, never a word table, decides whether a word/span is
+    a marker. Semantically this rule projects its right operand, including
+    that operand's complete polarity, scope and nested structure. Numerically
+    both operands remain in the carrier, so the next grammar choice can use
+    the marker. A small in-operator MLP supplies an independently chosen
+    marker for generation; the residual content guarantees recomposition.
+    No text, vocabulary, thought executor or memory is available here.
+    """
+    inverse_kind = 'surface'
+    head_role = 2
+    rule_name = "surface"
+    predicate_identity = 'surface'
+    arity = 2
+    space_role = 'CS'
+    invertible = False
+    lossy = True
+    semantic_operand = 1
+
+    def __init__(self, nInput=0, nOutput=0):
+        super().__init__(nInput, nOutput)
+        width = int(nInput)
+        if width <= 0 or int(nOutput) != width:
+            raise ValueError("surface requires one positive full conceptual width")
+        self.marker_map = nn.Linear(width, width)
+        self.marker_prior = nn.Sequential(
+            nn.Linear(width, width), nn.Tanh(), nn.Linear(width, width))
+        with torch.no_grad():
+            self.marker_map.weight.copy_(torch.eye(width))
+            self.marker_map.bias.zero_()
+            self.marker_prior[-1].weight.zero_()
+            self.marker_prior[-1].bias.zero_()
+
+    def compose(self, left, right):
+        return self.marker_map(left) + right
+
+    forward = compose
+
+    def generate(self, parent):
+        marker = self.marker_prior(parent)
+        return marker, parent - self.marker_map(marker)
+
+    reverse = generate
+
+    def reconstruct(self, parent, reference, side):
+        if side == "left":
+            return reference, parent - self.marker_map(reference)
+        if side != "right":
+            raise ValueError("surface witness side must be left or right")
+        rhs = parent - reference - self.marker_map.bias
+        marker = torch.linalg.solve(self.marker_map.weight, rhs.unsqueeze(-1)).squeeze(-1)
+        return marker, reference
+
+
+class PrepositionLayer(GrammarLayer):
+    """Package a marker-headed phrase; content passes through with .where edit."""
+    inverse_kind = 'right'
+    head_role = 2
+    rule_name = "preposition"; arity = 2
+    predicate_identity = 'preposition'
+    invertible = True; lossy = False; space_role = 'CS'; reads_activation = False
+    event_aware = True          # operates on the muxed event (modifies .where)
+    semantic_operand = 1
+
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        object.__setattr__(self, '_content_width', int(nInput))
+    def forward(self, left, right):
+        # P (left) is the marker (absorbed); X (right) is the phrase. On a
+        # muxed CS-space_role event, PREPOSITION modifies X's .where (the spatial /
+        # relational extent the marker imposes), leaving .what / .when. With
+        # no content-width info it stays a pass-through (legacy contract).
+        # The event is opaque here: concepts are full-width codes
+        # (Alec, 2026-09-13); no split, no .when shift.
+        return right                       # P is the marker (absorbed), X passes through
+    def reverse(self, parent):
+        # The event is opaque here: concepts are full-width codes
+        # (Alec, 2026-09-13); no split, no .when shift.
+        return parent, parent              # (marker_placeholder, phrase); emit realizes the marker
+    def compose(self, left, right):
+        return self.forward(left, right)
+    def generate(self, parent):
+        return self.reverse(parent)
+
+class ContextualBindLayer(GrammarLayer):
+    """Resolve a contextual BIND marker to a prior participant when available."""
+    inverse_kind = 'left'
+    head_role = 2
+    reconstructs_left = True
+    rule_name = "bind"; arity = 2
+    predicate_identity = 'bind'
+    invertible = False; lossy = True; space_role = 'CS'; reads_activation = False
+
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        object.__setattr__(self, '_bind_context', None)
+    def set_bind_context(self, *, slab=None, participants=None, licensing=None):
+        object.__setattr__(self, '_bind_context',
+                           {'slab': slab, 'participants': participants, 'licensing': licensing})
+    def clear_bind_context(self):
+        object.__setattr__(self, '_bind_context', None)
+    def forward(self, left, right):
+        ctx = self._bind_context
+        if ctx and ctx.get('slab') is not None:
+            slab = ctx['slab']                              # [B, N, D] live constituents
+            # nearest-left participant for each pair p: constituent p-1;
+            # position 0 keeps itself (no left context -> passthrough).
+            prior = torch.cat([slab[:, :1, :], slab[:, :-1, :]], dim=1)  # [B, N, D]
+            return prior[:, :-1, :]                          # [B, N-1, D], aligned to pairs
+        if ctx and ctx.get('participants'):
+            from bind_resolver import resolve_bind
+            vec, _chosen = resolve_bind(ctx['participants'], licensing=ctx.get('licensing'))
+            if vec is not None:
+                return vec.expand_as(left) if vec.shape != left.shape else vec
+        return left
+    def compose_with_context(self, left, right, slab):
+        """Pure BIND using the live constituent slab as a tensor input."""
+        if slab is None or slab.dim() != 3:
+            return left
+        prior = torch.cat(
+            [slab[:, :1, :], slab[:, :-1, :]], dim=1)
+        return prior[:, :-1, :]
+    def reverse(self, parent):
+        # 2026-07-04 serial plan Task 1: stub revoked (fail loud).
+        self.raise_no_inverse("contextual binding is not recoverable")
+    def compose(self, left, right):
+        return self.forward(left, right)
+    def generate(self, parent):
+        return self.reverse(parent)
+
+class _WhenOpMixin:
+    """Shared helpers for unary ops that rewrite the .when tail of a
+    materialized muxed event [B, V, nWhat + nWhere + nWhen]. Modifies ONLY
+    the trailing nWhen (=4, the 2026-07-04 start ladder) columns; .what /
+    .where pass through. Builds the matching v2 encoding via the one
+    construction seam. Tense operates on the VP/event .when BEFORE the
+    subject LIFT (spec note: equivalent post-LIFT)."""
+    _WHEN_WIDTH = 4
+    def _when_encoding(self):
+        from Spaces import event_when_encoding
+        if getattr(self, '_shared_when_encoding', None) is not None:
+            return self._shared_when_encoding
+        return event_when_encoding(self._WHEN_WIDTH)
+    def _split_when(self, x):
+        w = self._WHEN_WIDTH
+        if x.shape[-1] < w:
+            raise ValueError(f"{type(self).__name__}: event width {x.shape[-1]} < "
+                             f".when width {w}; is nWhen enabled?")
+        return x[..., :-w], x[..., -w:]
+
+class TenseLayer(_WhenOpMixin, GrammarLayer):
+    """Unary CS op that shifts the event ``.when`` center by tense."""
+    inverse_kind = 'identity'
+    scope_transparent = True
+    rule_name = "tense"; arity = 1
+    predicate_identity = 'tense'
+    invertible = True; lossy = False; space_role = 'CS'; reads_activation = False
+    # _DELTA is the TENSE step applied to the event-time CENTER (in clock ticks):
+    # PRESENT = no shift, PAST = -step (toward past), FUTURE = +step (toward
+    # future). step == _WHEN_TENSE_STEP (1.0 tick).
+    from Spaces import _WHEN_TENSE_STEP as _STEP
+    _DELTA = {"PRESENT": 0.0, "PAST": -_STEP, "FUTURE": +_STEP}
+    del _STEP
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        object.__setattr__(self, '_op', "PRESENT")
+    def set_op(self, tense):
+        if tense not in self._DELTA: raise ValueError(f"unknown tense {tense!r}")
+        object.__setattr__(self, '_op', tense)
+    # Concept events are opaque (no .when to shift): tense at the
+    # conceptual level is carried by the concept code itself, so the op is
+    # the identity here (Alec, 2026-09-14).  The tense kind is kept for
+    # the symbolic layer's realisation, which owns the .when coordinate.
+    def forward(self, x):
+        return x
+    def reverse(self, y):
+        return y
+    def compose(self, x):     return self.forward(x)
+    def generate(self, parent): return self.reverse(parent)
+
+class AspectLayer(_WhenOpMixin, GrammarLayer):
+    """Grammar-compatible aspect op; currently identity for all aspect kinds."""
+    inverse_kind = 'identity'
+    rule_name = "aspect"; arity = 1
+    predicate_identity = 'aspect'
+    # No-op: nothing is lost (identity), so it is trivially invertible.
+    invertible = True; lossy = False; space_role = 'CS'; reads_activation = False
+    _KINDS = ("SIMPLE", "PERFECT", "PROGRESSIVE")
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        object.__setattr__(self, '_op', "SIMPLE"); object.__setattr__(self, '_eps', 0.25)
+    def set_op(self, kind, eps=0.25):
+        if kind not in self._KINDS: raise ValueError(f"unknown aspect kind {kind!r}")
+        object.__setattr__(self, '_op', kind); object.__setattr__(self, '_eps', float(eps))
+    def forward(self, x):      return x           # no-op (duration/aspect retired)
+    def reverse(self, parent): return parent      # no-op
+    def compose(self, x):      return self.forward(x)
+    def generate(self, parent): return self.reverse(parent)
+
+class MorphologyLayer(GrammarLayer):
+    """Apply surface_morphology features to the event via tense/aspect ops."""
+    inverse_kind = 'identity'
+    scope_transparent = True
+    rule_name = "morphology"; arity = 1
+    predicate_identity = 'morphology'
+    invertible = True; lossy = True; space_role = 'CS'; reads_activation = False
+    event_aware = True          # routes the analyzed tense/aspect onto .when
+
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        object.__setattr__(self, '_token', None)
+        object.__setattr__(self, '_tense', TenseLayer())
+        object.__setattr__(self, '_aspect', AspectLayer())
+
+    def set_token(self, token):
+        """Stash the surface token ``analyze()`` decomposes (out-of-band,
+        like ``TenseLayer.set_op``)."""
+        object.__setattr__(self, '_token', token)
+
+    def _analyze(self):
+        import surface_morphology
+        if not self._token:
+            return None, {}
+        return surface_morphology.analyze(self._token)
+
+    def forward(self, x):
+        _lemma, feats = self._analyze()
+        if not feats:
+            return x                        # plain / unknown token: pass through
+        out = x
+        self._tense.set_op(feats.get("tense", "PRESENT"))
+        out = self._tense.compose(out)      # delegate the .when rotation
+        for asp in feats.get("aspect", []):
+            self._aspect.set_op(asp)
+            out = self._aspect.compose(out)  # delegate the .when reshape
+        return out
+
+    def reverse(self, y):
+        _lemma, feats = self._analyze()
+        if not feats:
+            return y
+        out = y
+        for asp in reversed(feats.get("aspect", [])):
+            self._aspect.set_op(asp)
+            out = self._aspect.generate(out)
+        self._tense.set_op(feats.get("tense", "PRESENT"))
+        out = self._tense.generate(out)
+        return out
+
+    def compose(self, x):     return self.forward(x)
+    def generate(self, parent): return self.reverse(parent)
+
+
+class _SearchedBinaryLayer(GrammarLayer):
+    """Three faces of a commutative code operation with a searched inverse."""
+    inverse_kind = 'search'
+    arity = 2
+    invertible = False
+    lossy = True
+    space_role = 'SS'
+    reads_activation = True
+    same_reference_idempotent = False
+
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+
+    def _butterfly_pair_op(self, x_pair, W_node):
+        a, b = x_pair[..., :self._butterfly_D], x_pair[..., self._butterfly_D:]
+        value = self.kernel(a, b)
+        return torch.einsum('bmi,mij->bmj', torch.cat((value, value), -1), W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        unweighted = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        a, b = unweighted[..., :self._butterfly_D], unweighted[..., self._butterfly_D:]
+        value = (a + b) * .5
+        return torch.cat((value, value), -1)
+
+    def forward(self, left, right=None, **activation):
+        return self._butterfly_forward(left) if self.butterfly else self.kernel(left, right, **activation)
+
+    def compose(self, left, right, **activation):
+        if self.butterfly:
+            return self._butterfly_forward(torch.cat((left, right), -2))
+        return self.kernel(left, right, **activation)
+
+    def reverse(self, parent, basis=None, left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None, snap=False):
+        """Search the basis through this operator's own compose face."""
+        if self.butterfly:
+            return self._butterfly_reverse(parent)
+        W = None if basis is None else _active_basis_prototypes(basis)
+        if W is None or not torch.is_tensor(W) or W.ndim != 2 or not W.shape[0]:
+            self.raise_no_inverse('supply the primed concept basis for operand search')
+        shape = parent.shape
+        flat = parent.reshape(-1, shape[-1])
+        candidates = W[None].expand(flat.shape[0], -1, -1)
+        valid = torch.ones(candidates.shape[:2], dtype=torch.bool, device=parent.device)
+        def allowed(rows):
+            if rows is None:
+                return valid
+            rows = _filter_active_candidate_rows(rows, W.shape[0])
+            mask = torch.zeros(W.shape[0], dtype=torch.bool, device=W.device)
+            return mask.scatter(0, rows.to(W.device), True)[None].expand_as(valid)
+        def weights(value):
+            return None if value is None else value.reshape(1, -1).expand_as(valid)
+        limit = int(TheXMLConfig.get('training.reconstructionBasisLimit', default=16))
+        left, right, available = LanguageSpace._bounded_binary_reconstruction(
+            self, flat, torch.zeros_like(flat), torch.zeros_like(flat[:, 0], dtype=torch.bool),
+            torch.zeros_like(flat[:, 0], dtype=torch.bool), candidates, valid, limit,
+            left_valid=allowed(left_rows), right_valid=allowed(right_rows),
+            left_priming=weights(left_priming), right_priming=weights(right_priming))
+        if not bool(available.all()):
+            self.raise_no_inverse('the supplied basis has no legal operand pair')
+        return left.reshape(shape), right.reshape(shape)
+
+    def generate(self, parent, basis=None, left_rows=None, right_rows=None,
+                 left_priming=None, right_priming=None):
+        return self.reverse(parent, basis=basis, left_rows=left_rows, right_rows=right_rows,
+                            left_priming=left_priming, right_priming=right_priming)
+
+
+class ConjunctionLayer(_SearchedBinaryLayer):
+    """Product of activations times the bound identity direction."""
+    uses_operand_activation = True
+    field_eligible = True
+    rule_name = 'conjunction'
+    predicate_identity = 'conjunction'
+    kernel = staticmethod(Ops._conjunction_kernel)
+    same_reference_idempotent = True
+
+
+class DisjunctionLayer(_SearchedBinaryLayer):
+    """Probabilistic sum of activations, with combined unit code directions.
+
+    Its free inverse searches both operands through this same kernel.
+    """
+    uses_operand_activation = True
+    field_eligible = False
+    rule_name = 'disjunction'
+    predicate_identity = 'disjunction'
+    kernel = staticmethod(Ops._disjunction_kernel)
+
+
+class MinLayer(_SearchedBinaryLayer):
+    """Coordinate minimum, offered to grammars independently of conjunction."""
+    field_eligible = True
+    rule_name = 'min'
+    predicate_identity = 'min'
+    kernel = staticmethod(torch.minimum)
+
+
+class MaxLayer(_SearchedBinaryLayer):
+    """Coordinate maximum, offered to grammars independently of disjunction."""
+    field_eligible = True
+    rule_name = 'max'
+    predicate_identity = 'max'
+    kernel = staticmethod(torch.maximum)
+
+
+def _argmax_prototype(x):
+    """Per-batch top-1 prototype index from a ``[B, V, D]`` muxed
+    event tensor.
+
+    Computes the L2 norm of the ``.what`` bivector slice
+    ``[..., :2]`` only (not the full muxed event) so the ranking
+    reflects symbol identity / presence, not the nWhere / nWhen
+    positional channels. When the input has last_dim < 2 the full
+    last dim is used (degenerate, single-channel fallback).
+
+    Returns a ``[B]`` long tensor where each entry is the position
+    (codebook prototype index) with the largest ``.what`` L2 norm
+    in that batch row -- the most-active prototype for that
+    operand. Used by ``PartLayer`` / ``IsEqualLayer``
+    to map continuous activations to discrete codebook indices for
+    mereological-tree bookkeeping.
+    """
+    if not torch.is_tensor(x):
+        return torch.zeros(0, dtype=torch.long)
+    if x.dim() < 2:
+        return torch.zeros(1, dtype=torch.long, device=x.device)
+    # Slice .what bivector when available; else use whole last-dim.
+    what = x[..., :2] if x.shape[-1] >= 2 else x
+    norms = what.norm(dim=-1)            # [B, V]
+    if norms.dim() < 2:
+        norms = norms.unsqueeze(0)
+    return norms.argmax(dim=-1)          # [B]
+
+
+def _parthood_geometric(left, right):
+    """Clipped cosine parthood on per-batch dominant bivector activations.
+
+    Replaces the explicit ``MereologicalTree`` lookup for
+    ``PartLayer`` / ``IsEqualLayer`` after the
+    "codebook IS the meronymic tree" unification: parthood is
+    expressed by codebook geometry on the bivector cone (see
+    ``Architecture.md`` §"Monotonicity of the bivector chain").
+
+    For per-batch dominant slot bivectors ``a = left[b, argmax_left]``
+    and ``b = right[b, argmax_right]``, returns the clipped cosine
+    similarity
+
+        part(a, b) = max(0, a · b) / (|a| * |b|)
+
+    which is the canonical mereological projection on the
+    non-negative paired-index cone. The return is a ``[B]`` tensor
+    in ``[0, 1]`` -- 1 means "fully a part of", 0 means disjoint.
+    """
+    a_idx = _argmax_prototype(left)             # [B]
+    b_idx = _argmax_prototype(right)            # [B]
+    B = int(left.shape[0])
+    a_vec = left[torch.arange(B, device=left.device), a_idx]    # [B, K]
+    b_vec = right[torch.arange(B, device=right.device), b_idx]  # [B, K]
+    # Restrict to bivector head [pos, neg]; if last_dim < 2 use full.
+    K = min(2, a_vec.shape[-1])
+    a_biv = a_vec[..., :K]
+    b_biv = b_vec[..., :K]
+    dot = (a_biv * b_biv).sum(dim=-1)
+    na = a_biv.norm(dim=-1)
+    nb = b_biv.norm(dim=-1)
+    return (dot.clamp(min=0.0) / (na * nb + 1e-9))               # [B]
+
+class IsEqualLayer(GrammarLayer):
+    """``S -> isEqual(S, S)`` -- symbolic identity assertion.
+
+    SS-space_role identity: ``isEqual(A, B)`` asserts that A and B name the
+    same concept by producing a single parent symbol that represents
+    the wholeness of its arguments — a higher-epistemic-level
+    assertion that cannot be expressed at the subsymbolic level.
+    Compare with the CS-space_role ``equal`` which performs the geometric
+    identity check on concept bivectors directly.
+
+    Post-MereologicalTree retirement: equality is expressed purely
+    geometrically. The codebook is now the meronymic structure; an
+    asserted equality between ``A`` and ``B`` shows up as
+    bivector co-location on the cone (mutual parthood
+    ``part(A, B) ≈ 1`` AND ``part(B, A) ≈ 1``), which the codebook
+    learns through training. No explicit equivalence-class table
+    is stored.
+
+    The forward returns ``torch.maximum(left, right)`` -- the
+    lattice join under the bivector cone's max-as-disjunction
+    interpretation -- so the chart's CKY consumer sees a single
+    parent vector (semantics unchanged from the tree-backed
+    version; the difference is only the absence of the tree write).
+
+    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+    """
+    rule_name        = "isEqual"
+    predicate_identity = 'isEqual'
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    space_role             = 'SS'
+    reads_activation = False
+
+    def __init__(self, tree=None):
+        """Initialize IsEqualLayer.
+
+        ``tree`` is accepted but ignored for backward compatibility
+        with the chart's lazy-build call sites; the
+        ``MereologicalTree`` has been retired.
+        """
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        """Lattice join on the bivector cone (max element-wise)."""
+        return torch.maximum(left, right)
+
+    def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+
+        The max-fold is not bijective: no faithful inverse exists.
+        2026-07-04 serial plan Task 1: stub revoked (fail loud); the
+        Method-1 replay must recover operands from the STORED derivation,
+        not fabricate them here.
+        """
+        self.raise_no_inverse("max-fold (isEqual) is not bijective")
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        """Drive the reverse / generation pass."""
+        return self.reverse(parent)
+
+
+class IsPartLayer(GrammarLayer):
+    """``S -> isPart(S, S)`` -- symbolic parthood assertion.
+
+    The mereological analogue of :class:`IsEqualLayer`: an SS-space_role
+    *assertive* relation that states "A is part of B" as a single parent
+    symbol, a higher-epistemic-level assertion than the CS-space_role geometric
+    ``part`` test. Per decision 6 of the role-collapsed grammar spec,
+    ``isPart`` remains only for explicit historical grammars and checkpoint
+    migration.  Production grammars use the structural ``part`` / ``whole``
+    family; a selected thought action is checked separately at a completed
+    boundary and is never selected by a rule attribute.
+
+    Forward returns ``right`` -- the encompassing parent -- so the CKY
+    consumer sees a single parent vector; the parthood relationship
+    between ``left`` and ``right`` is carried by codebook geometry (the
+    codebook IS the meronymic tree, see :class:`PartLayer`). Lossy with
+    the ``(parent, parent)`` pseudo-inverse on reverse.
+    """
+    inverse_kind = 'right'
+    rule_name        = "isPart"
+    predicate_identity = 'isPart'
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    space_role             = 'SS'
+    reads_activation = False
+
+    def __init__(self, tree=None):
+        """``tree`` accepted but ignored (MereologicalTree retired)."""
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        """Pass the encompassing parent ``right`` through to the CKY
+        consumer (the parthood geometry is learned in the codebook)."""
+        return right
+
+    def reverse(self, parent):
+        """``isPart(A, B)`` does not preserve A's identity in the parent
+        vector -- no faithful inverse. 2026-07-04 serial plan Task 1:
+        stub revoked (fail loud)."""
+        self.raise_no_inverse("isPart forward returns the encompassing "
+                              "parent; A's identity is not preserved")
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        """Drive the reverse / generation pass."""
+        return self.reverse(parent)
+
+
+class PartLayer(GrammarLayer):
+    """``S -> part(S, S)`` -- mereological part-of on the bivector
+    codebook.
+
+    Post-MereologicalTree retirement: parthood is expressed
+    geometrically by codebook position on the non-negative
+    paired-index bivector cone (see ``Architecture.md``
+    §"Monotonicity of the bivector chain"). The codebook IS the
+    meronymic tree: A is part of B iff the clipped cosine
+    projection of A's prototype onto B's prototype is high. The
+    codebook learns this geometry through training on the rule
+    composition; no separate adjacency table is stored.
+
+    The forward returns ``right`` -- the encompassing parent --
+    so the chart's CKY consumer sees a single parent vector
+    (semantics unchanged from the tree-backed version; the
+    difference is only the absence of the tree write).
+
+    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+    """
+    inverse_kind = 'right'
+    relation_kind = 'part'
+    predicate_identity = 'part'
+    rule_name        = "part"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    space_role             = 'CS'
+    reads_activation = False
+
+    def __init__(self, tree=None):
+        """Initialize PartLayer.
+
+        ``tree`` is accepted but ignored for backward compatibility
+        with the chart's lazy-build call sites; the
+        ``MereologicalTree`` has been retired.
+        """
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        """Pass the encompassing parent ``right`` through to the
+        CKY consumer. The parthood relationship between ``left``
+        and ``right`` is captured by the codebook geometry that
+        learns under training -- no explicit tree write.
+        """
+        return right
+
+    def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+
+        ``part(A, B)`` does not preserve A's identity in the parent
+        vector -- no faithful inverse. 2026-07-04 serial plan Task 1:
+        stub revoked (fail loud).
+        """
+        self.raise_no_inverse("part forward returns the encompassing "
+                              "parent; A's identity is not preserved")
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        """Drive the reverse / generation pass."""
+        return self.reverse(parent)
+
+
+class AssertPartLayer(PartLayer):
+    """Assertive parthood relation; grammar-level alias for ``part``."""
+    rule_name = "assertPart"
+    predicate_identity = 'assertPart'
+
+
+class WholeLayer(PartLayer):
+    """``S -> whole(S, S)`` -- the CONVERSE of ``part``.
+
+    ``whole(A, B)`` asserts "A is the whole that has part B" -- the same
+    mereological relation as ``part(B, A)`` with the arguments swapped. It
+    reuses :class:`PartLayer`'s codebook geometry (the codebook IS the
+    meronymic tree; no independent weights), differing only in which operand
+    is the encompassing whole: ``part`` returns ``right`` (whole = arg 2),
+    ``whole`` returns ``left`` (whole = arg 1). So the chart's CKY consumer
+    sees the whole as the single parent vector either way.
+
+    Lossy with the ``(parent, parent)`` pseudo-inverse on reverse (the
+    non-whole operand's identity is not preserved), same as ``part``.
+    """
+    inverse_kind = 'left'
+    relation_kind = 'whole'
+    predicate_identity = 'part'
+    rule_name = "whole"
+
+    def forward(self, left, right):
+        """Pass the encompassing whole ``left`` through to the CKY consumer
+        (the converse of ``part``, which passes ``right``)."""
+        return left
+
+    def reverse(self, parent):
+        """``whole(A, B)`` returns the whole ``A``; ``B``'s identity is not
+        preserved -- no faithful inverse (mirrors ``part``)."""
+        self.raise_no_inverse("whole forward returns the encompassing "
+                              "whole; the part operand's identity is not "
+                              "preserved")
+
+
+def _dispatch_method_name_for_rule(rule):
+    """Return the runtime GrammarLayer op for a parsed rule.
+
+    The parser rejects retired ``query`` attributes.  Interrogative mode is
+    represented by a structural ``what`` wrapper around the completed idea;
+    a selected thought action runs later at the checked boundary.
+    """
+    return getattr(rule, 'method_name', None)
+
+
+def _legacy_dispatch_method_name_for_rule(rule):
+    """Pre-selected-meaning action name, used only for checkpoint migration."""
+    method = getattr(rule, 'method_name', None)
+    if getattr(rule, 'query', False) and method == 'isEqual':
+        return 'queryEqual'
+    if getattr(rule, 'query', False) and method == 'isPart':
+        return 'queryPart'
+    return method
+
+
+class NullLayer(GrammarLayer):
+    """The null grammatical operation (fold-ladder plan, contract 3): the
+    unary identity a unit contributes when it carries no meaning of its
+    own, e.g. a whitespace unit presented to the loop. Composing it folds
+    the unit away; reversing it restores it. Invertible, lossless."""
+    inverse_kind = 'identity'
+    rule_name        = "null"
+    predicate_identity = 'null'
+    arity            = 1
+    invertible       = True
+    lossy            = False
+    space_role       = 'CS'
+    reads_activation = False
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, x):
+        return x
+
+    def reverse(self, parent):
+        return parent
+
+    def compose(self, x):
+        return self.forward(x)
+
+    def generate(self, parent):
+        return self.reverse(parent)
+
+
+
+
+class _ThoughtUnaryNoopLayer(NullLayer):
+    """A structural carrier for a boundary-only unary thought operation.
+
+    The operation's semantic request is retained by the grammar trace and
+    later canonical meaning, while the tensor face deliberately preserves the
+    full-width concept.  Its checked executor is reachable only through the
+    thought boundary registry.
+    """
+    clause_form = None
+    space_role = 'CS'
+
+
+
+
+
+
+class WhatLayer(_ThoughtUnaryNoopLayer):
+    scope_transparent = True
+    meaning_mode = 'interrogative'
+    rule_name = 'what'
+    predicate_identity = 'what'
+
+
+
+
+class GenericLayer(NullLayer):
+    """Nominal type marker; the selected reference role supplies its order."""
+    clause_form = None
+    rule_name = 'generic'
+    predicate_identity = 'generic'
+    space_role = 'CS'
+
+
+class ImpliesLayer(SumLayer):
+    """Structural carrier over two truth operands; the clause closing retains both."""
+    relation_kind = 'implies'
+    predicate_identity = 'implies'
+    rule_name = 'implies'
+
+
+
+
+# Hardcoded module-level lookup -- replaces the retired
+# -- Conceptual introspection (2026-05-12) ----------------------------
+#
+# Per-stage introspective grammar operations that read mental content
+# and produce scalar / vector annotations the network can condition on
+# at subsequent conceptual orders. Design source:
+# doc/plans/2026-05-04-conceptual-introspection-handoff.md
+#
+# Each is implemented as a fully differentiable function of the input
+# activation (no learned parameters of its own). Plug them in by
+# registering an op-class entry in `GRAMMAR_LAYER_CLASSES` and a
+# `<rule>area(S)</rule>`-style entry in the model's grammar XML.
+
+def area_op(x, sigma=None):
+    """Normalised Gaussian region area: ``min(sigma**2, 1)``.
+
+    Args:
+        x: ``[..., D]`` activation (the proposition whose extent we
+            measure). Used only for device / dtype routing -- the area
+            depends solely on `sigma`.
+        sigma: scalar or tensor (mean reduced). When None falls back to
+            `_DEFAULT_SUBSYMBOLIC_SIGMA`.
+
+    Returns:
+        Scalar tensor on `x.device` / `x.dtype` in [0, 1].
+    """
+    if sigma is None:
+        sigma = _DEFAULT_SUBSYMBOLIC_SIGMA
+    if torch.is_tensor(sigma):
+        s = sigma.float().mean()
+    else:
+        s = float(sigma)
+        s = (x.new_tensor(s) if torch.is_tensor(x) else torch.tensor(s))
+    return torch.clamp(s.pow(2), max=1.0)
+
+
+def luminosity_op(x_a, x_b, sigma=None):
+    """Pairwise luminosity ``area − overlapArea * |t_A − t_B|`` ∈ [-1, 1].
+
+    Both inputs are bivector-tail activations ``[..., D]`` (D >= 2);
+    the first two components carry the [pos, neg] poles. Returns a
+    scalar consistent with `Mereology.Luminosity`'s pairwise term.
+    """
+    if sigma is None:
+        sigma = _DEFAULT_SUBSYMBOLIC_SIGMA
+    sigma_f = float(sigma) if not torch.is_tensor(sigma) else float(
+        sigma.float().mean().item())
+    a_flat = x_a.reshape(-1, x_a.shape[-1])
+    b_flat = x_b.reshape(-1, x_b.shape[-1])
+    overlap = _gaussian_kernel_overlap(
+        a_flat, b_flat, sigma_f, sigma_f).mean()
+    if x_a.shape[-1] >= 2 and x_b.shape[-1] >= 2:
+        dot_a = (x_a[..., 0] - x_a[..., 1]).mean()
+        dot_b = (x_b[..., 0] - x_b[..., 1]).mean()
+    else:
+        dot_a = x_a.mean()
+        dot_b = x_b.mean()
+    disagree = (dot_a - dot_b).abs()
+    area = area_op(x_a, sigma_f).to(device=overlap.device, dtype=overlap.dtype)
+    lum = area - overlap * disagree
+    return torch.clamp(lum, min=-1.0, max=1.0)
+
+
+def isa_part_op(child, parent, sigma=None):
+    """One-step kernel overlap ``K(child, parent) ∈ (0, 1]`` per the
+    plan's "is the child contained in the parent at this conceptual
+    order" semantics.
+    """
+    if sigma is None:
+        sigma = _DEFAULT_SUBSYMBOLIC_SIGMA
+    sigma_f = float(sigma) if not torch.is_tensor(sigma) else float(
+        sigma.float().mean().item())
+    c_flat = child.reshape(-1, child.shape[-1])
+    p_flat = parent.reshape(-1, parent.shape[-1])
+    overlap = _gaussian_kernel_overlap(
+        c_flat, p_flat, sigma_f, sigma_f)
+    return overlap.mean()
+
+# Method-name -> GrammarLayer subclass mapping. Moved from Layers.py
+# per the 2026-05-29 grammar refactor (§5); most concrete subclasses
+# now live above in this module, the remaining ones (Equal/True/False/
+# Swap/Copy/Area/Luminosity/IsaPart) are imported at the top from Layers.
+class BracketOperation(GrammarLayer):
+    """A declared effect on a typed field; executed by the shared chooser."""
+    field_eligible = field_only = True
+    arity = 1
+    space_role = 'CS'
+    effect_reads = ('percept',)
+    effect_writes = ()
+    reverse_dispatchable = False
+    bracket_action = None
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, field):
+        raise RuntimeError('bracket operations require the typed bracket table')
+
+    def reverse(self, field):
+        raise RuntimeError('bracket operations have no generate face')
+
+
+class DivideLayer(BracketOperation):
+    bracket_action = 0
+
+
+class DescendLayer(BracketOperation):
+    bracket_action = 1
+
+
+class GlossLayer(BracketOperation):
+    bracket_action = 2
+
+
+class FieldAndLayer(BracketOperation):
+    bracket_action = 3
+
+    def forward(self, field):
+        from Attention import field_reduce
+        return field_reduce(field, operation='and', dim=-2)
+
+
+class FieldOrLayer(BracketOperation):
+    bracket_action = 4
+
+    def forward(self, field):
+        from Attention import field_reduce
+        return field_reduce(field, operation='or', dim=-2)
+
+
+GRAMMAR_LAYER_CLASSES = {
+    'divide': DivideLayer, 'descend': DescendLayer, 'gloss': GlossLayer,
+    'and': FieldAndLayer, 'or': FieldOrLayer,
+    'interpret':    InterpretLayer,
+    'not':          NotLayer,
+    'non':          NonLayer,
+    'intersection': IntersectionLayer,
+    'union':        UnionLayer,
+    'chunk':        ChunkLayer,
+    'sum':          SumLayer,
+    'product':      ProductLayer,
+    'lift':         LiftLayer,
+    'verb':         VerbLayer,
+    'compound':     CompoundLayer,
+    'adverb':       AdverbLayer,
+    'lower':        LowerLayer,
+    'surface':      SurfaceLayer,
+    'preposition':  PrepositionLayer,
+    'bind':         ContextualBindLayer,
+    'tense':        TenseLayer,
+    'aspect':       AspectLayer,
+    'morphology':   MorphologyLayer,
+    'conjunction':  ConjunctionLayer,
+    'disjunction':  DisjunctionLayer,
+    'min':          MinLayer,
+    'max':          MaxLayer,
+    'isEqual':      IsEqualLayer,
+    'isPart':       IsPartLayer,
+    'equal':        EqualLayer,
+    'part':         PartLayer,
+    'whole':        WholeLayer,
+    'assertPart':   AssertPartLayer,
+    'what':         WhatLayer,
+    'generic':      GenericLayer,
+    'implies':      ImpliesLayer,
+    'null':         NullLayer,
+    # false/swap/copy/area/luminosity/isaPart parked in bin/Legacy.py
+    # (2026-07-17): documented-dormant, no live grammar dispatches them.
+    # Revive by moving the class back to Layers.py and re-adding it here.
+}
+
+# These shipped implementations have explicit grammatical contracts. An
+# extension must declare its own kind; merely borrowing a name is insufficient.
+for _structural_class in (*GRAMMAR_LAYER_CLASSES.values(), PiLayer, SigmaLayer):
+    _structural_class.routing_kind = 'structural'
+
+
+# ----------------------------------------------------------------------
+# Corpus-scale connective supervision (Phase R5)
+# ----------------------------------------------------------------------
+# doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-
+# grammar.md decision 8 + §5.5 + §8 R5. ``A AND B`` and ``A OR B`` are
+# surface-indiscriminable, so the role-collapsed grammar does NOT give
+# them distinct categories; they are discriminated by the slot-0
+# OPERATOR SUPERPOSITION over {conjunction, disjunction}. The three
+# helpers below supply the truth / consequence signal that makes that
+# superposition load-bearing: a differentiable operator-superposition
+# plus an MSE loss
+# against the observed consequence ``y``, so supervising on a corpus
+# of (operands, consequence) pairs drives the slot-0 distribution to
+# the connective whose truth table matches -- even when the operands
+# (the surface) are identical between the AND and OR corpora.
+def soft_connective_compose(dist, a, b, op_names, classes=None):
+    """Tensor-weighted connective supervision over ``op_names``.
+
+    ``dist`` is a 1-D weight tensor aligned with ``op_names`` (gradients
+    flow to these supervision weights). A
+    one-hot ``dist`` reduces to that operator's hard compose, preserving
+    the typed grammar as the limit.
+    """
+    if classes is None:
+        classes = GRAMMAR_LAYER_CLASSES
+    out = None
+    for k, name in enumerate(op_names):
+        y = classes[name]().compose(a, b)
+        contrib = dist[k] * y
+        out = contrib if out is None else out + contrib
+    return out
+
+
+def connective_truth_loss(logits, a, b, y, op_names, classes=None):
+    """MSE between the slot-0 operator superposition's composed
+    prediction and the observed consequence ``y``. ``logits`` are the
+    (learnable) slot-0 operator logits; ``softmax(logits)`` is the
+    superposition.
+    """
+    dist = torch.softmax(logits, dim=-1)
+    pred = soft_connective_compose(dist, a, b, op_names, classes=classes)
+    return ((pred - y) ** 2).mean()
+
+
+def learn_connective_distribution(a, b, y,
+                                  op_names=("conjunction", "disjunction"),
+                                  steps=500, lr=0.1, seed=0, classes=None):
+    """Fit the slot-0 operator superposition to a truth/consequence corpus.
+
+    Minimizes :func:`connective_truth_loss` over ``steps`` Adam updates on
+    the operator logits, then returns the learned distribution as
+    ``{op_name: weight}``. The operands ``a`` / ``b`` are the surface (the
+    same for AND and OR); ``y`` is the consequence that discriminates them.
+    """
+    torch.manual_seed(int(seed))
+    logits = torch.zeros(len(op_names), requires_grad=True)
+    opt = Adam([logits], lr=lr)
+    for _ in range(int(steps)):
+        opt.zero_grad()
+        loss = connective_truth_loss(logits, a, b, y, op_names, classes=classes)
+        loss.backward()
+        opt.step()
+    dist = torch.softmax(logits.detach(), dim=-1)
+    return {name: float(dist[k]) for k, name in enumerate(op_names)}
+
+
+# Per-operator SurfaceSchema assignment (doc/plans/2026-05-30-subsymbolic
+# -analyzer-terminal-emitter.md, "Per-operator schema" table). Operators
+# not listed keep the GrammarLayer default (T4 BINARY_JUXTAPOSE). The
+# template is a class attribute so it is shared by every instance of an
+# operator -- conjunction / disjunction / isEqual all reference the one
+# T2 singleton (they are surface-indiscriminable, discriminated by the
+# slot-0 operator vector). Assigning here (rather than per-class) keeps
+# the table in one place next to the layer registry.
+_OPERATOR_SURFACE_SCHEMAS = {
+    # Unary affixes (T1): the operator owns a learned marker.
+    'not':          T1_UNARY_AFFIX,
+    'non':          T1_UNARY_AFFIX,
+    'query':        T1_UNARY_AFFIX,
+    'queryEqual':   T1_UNARY_AFFIX,
+    'null':         T1_UNARY_AFFIX,
+    # Binary infix (T2): one INFIX/CIRCUM marker slot that may select
+    # which op fires; order free.
+    'conjunction':  T2_BINARY_INFIX,
+    'disjunction':  T2_BINARY_INFIX,
+    'min':          T2_BINARY_INFIX,
+    'max':          T2_BINARY_INFIX,
+    'isEqual':      T2_BINARY_INFIX,
+    'equal':        T2_BINARY_INFIX,
+    # The lattice pair (order-free infix): union = RadMax, intersection = RadMin.
+    'union':        T2_BINARY_INFIX,
+    'intersection': T2_BINARY_INFIX,
+    # The arithmetic concept pair (2026-07-05): sum = a+b, product = a*b, both
+    # commutative order-free infix. chunk is the structural <PartSpace> sum.
+    'sum':          T2_BINARY_INFIX,
+    'product':      T2_BINARY_INFIX,
+    'chunk':        T2_BINARY_INFIX,
+    # Binary directional (T3): (position, marker) co-varies with a
+    # recorded order bit -- the part / possessive family. ``isPart`` is
+    # the role-collapsed relation name (query-dispatched) that supersedes
+    # ``assertPart`` / ``queryPart``.
+    'isPart':       T3_BINARY_DIRECTIONAL,
+    'part':         T3_BINARY_DIRECTIONAL,
+    'whole':        T3_BINARY_DIRECTIONAL,
+    'queryPart':    T3_BINARY_DIRECTIONAL,
+    'assertPart':   T3_BINARY_DIRECTIONAL,
+    # lift / lower / verb / adverb: T3/T4 -- modifier marker or bare; the
+    # bare (T4) default is kept so they round-trip without a marker.
+    'lift':         T4_BINARY_JUXTAPOSE,
+    'verb':         T4_BINARY_JUXTAPOSE,
+    'adverb':       T4_BINARY_JUXTAPOSE,
+    'lower':        T4_BINARY_JUXTAPOSE,
+    # PREPOSITION (T3): a learned PRE marker (that / to / in / because /
+    # when) heads the phrase; the marker does NOT select the op (it is
+    # recorded, not folded into content). Directional: the marker side and
+    # the content side are distinguishable by recorded order.
+    'preposition':  T3_BINARY_DIRECTIONAL,
+    # BIND (T5): contextual missing-NP marker. The surface BIND token is
+    # elided -- it carries no content of its own; at parse time the left
+    # slot is resolved to an accessible participant (nearest-left / control
+    # licensing), so the realized phrase has no overt marker (spec
+    # "Operation 2").
+    'bind':         T5_BINARY_ELISION,
+    # tense / aspect (T1): unary .when ops; each owns a learned affix
+    # marker (the inflectional ending / auxiliary) realized over the head.
+    'tense':        T1_UNARY_AFFIX,
+    'aspect':       T1_UNARY_AFFIX,
+    'morphology':   T1_UNARY_AFFIX,
+    # copy/swap (T5 BINARY_ELISION) were parked in bin/Legacy.py
+    # (2026-07-17); their surface schema is set there.
+}
+for _op_name, _op_schema in _OPERATOR_SURFACE_SCHEMAS.items():
+    _op_cls = GRAMMAR_LAYER_CLASSES.get(_op_name)
+    if _op_cls is not None:
+        _op_cls.surface_schema = _op_schema
+
+
+def _bind_moved_ops_singletons():
+    """Bind ``Ops.<grammar_op>`` to ``_OpHandle`` instances for the grammar
+    rule operator classes that moved here from Layers.py per the
+    2026-05-29 grammar-file-refactor (\xa75).
+
+    Mirrors ``Layers._bind_ops_singletons`` for the moved subset
+    (negation / non / conjunction / disjunction / lift / lower / part).
+    Called once at module load. The ``equal`` binding remains in
+    Layers.py because EqualLayer stays there.
+    """
+    from Layers import _OpHandle
+    bindings = (
+        ('negation',    Ops._negation_kernel,    NotLayer),
+        ('non',         Ops._non_kernel,         NonLayer),
+        ('conjunction', Ops._conjunction_kernel, ConjunctionLayer),
+        ('disjunction', Ops._disjunction_kernel, DisjunctionLayer),
+        ('min', torch.minimum, MinLayer),
+        ('max', torch.maximum, MaxLayer),
+        ('lift',        Ops._lift_kernel,        LiftLayer),
+        ('lower',       Ops._lower_kernel,       LowerLayer),
+        ('part',        Ops._part_kernel,        PartLayer),
+    )
+    for name, kernel, cls in bindings:
+        try:
+            inst = cls()
+        except TypeError:
+            continue
+        setattr(Ops, name, _OpHandle(kernel, inst))
+
+
+_bind_moved_ops_singletons()
+
+
+# =====================================================================
+# RuleCodebook -- grammatical operation codebook (Phase 3 of the
+# SubSpace.what STM refactor; see
+# doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md).
+#
+# The rule codebook holds rule **identity / location**, NOT parent
+# vectors. Parent vectors for reductions are computed by SyntacticLayer
+# .execute on child arguments. This codebook only provides:
+#   * the ``.where`` location stamped into reduced stack slots
+#     (delegated to ``Grammar.where_id_for_rule``)
+#   * an optional learned per-rule embedding for router scoring
+#   * an optional rule identity vector for diagnostics
+#
+# Distinct from the WholeSpace symbol codebook (`WholeSpace
+# .subspace.what`), which holds the long-term terminal symbol prototypes
+# the SHIFT path quantizes against.
+# =====================================================================
+class RuleCodebook(nn.Module):
+    """Long-term identity store for grammatical operations.
+
+    Args:
+        num_rules: number of grammar rules (R).
+        embedding_dim: width of the optional per-rule scoring embedding.
+            Default 0 (no learned embedding).
+        grammar: optional non-owning reference to a ``Grammar`` whose
+            ``where_id_for_rule`` provides the ``.where`` namespace.
+            When unset the location falls back to a bare ``rule_id + 1``.
+    """
+
+    def __init__(self, num_rules, *, embedding_dim=0, grammar=None):
+        """Allocate state; see class docstring."""
+        super().__init__()
+        self.num_rules = int(num_rules)
+        # Non-owning reference so the Module graph stays cycle-free
+        # (Grammar is a plain Python object, not an nn.Module, but the
+        # stash-via-object.__setattr__ pattern is conservative).
+        object.__setattr__(self, '_grammar', grammar)
+        if embedding_dim and embedding_dim > 0:
+            self.embedding = nn.Parameter(
+                torch.zeros(self.num_rules, int(embedding_dim))
+            )
+            if self.num_rules > 0:
+                nn.init.xavier_normal_(self.embedding)
+        else:
+            self.register_parameter('embedding', None)
+
+    @property
+    def grammar(self):
+        """Read-only accessor for the bound Grammar (or None)."""
+        return self._grammar
+
+    def location(self, rule_id):
+        """Return the ``.where`` location for ``rule_id``.
+
+        Routes through ``grammar.where_id_for_rule`` when a Grammar is
+        attached; otherwise uses a bare ``rule_id + 1`` fallback so
+        ``RuleCodebook(num_rules=R)`` is usable in isolation.
+        Returns 0 for invalid inputs (matches the spec's empty sentinel).
+        """
+        if rule_id is None:
+            return 0
+        rid = int(rule_id)
+        if rid < 0:
+            return 0
+        if self._grammar is not None:
+            return self._grammar.where_id_for_rule(rid)
+        return rid + 1
+
+
+# =====================================================================
+# LanguageLayer -- inlined from bin/LanguageLayer.py (2026-05-11 module
+# consolidation). Stage 3 (2026-05-27): promoted to the canonical
+# parser; constructed directly on ``SymbolSubSpace.languageLayer``. The
+# CKY chart and its ``_ensure_signal_router`` lazy bridge retired
+# alongside the chart class.
+# =====================================================================
+def _freeze_structural_snapshot(value):
+    """Copy owner metadata without retaining aliases; current structural reads stay live."""
+    if torch.is_tensor(value):
+        return value.clone()
+    if isinstance(value, tuple):
+        return tuple(_freeze_structural_snapshot(item) for item in value)
+    if isinstance(value, list):
+        return tuple(_freeze_structural_snapshot(item) for item in value)
+    return value
+
+
+def _conceptual_space_capability(owner):
+    """Return the grammar's narrow full-width conceptual capability.
+
+    Do not put the actual space owner on a context: from it an operator could
+    walk to SymbolSpace, taxonomy, LTM, or the model.  Its parameters are
+    already owned by the dispatched layer; the only shared fact a structural
+    face needs is the width of a legal full conceptual value.
+    """
+    space = getattr(owner, 'conceptualSpace', None)
+    geometry = getattr(space, 'subspace', None) if space is not None else None
+    candidates = (
+        getattr(geometry, 'muxedSize', 0) if geometry is not None else 0,
+        getattr(space, 'muxedSize', 0) if space is not None else 0,
+        getattr(geometry, 'nDim', 0) if geometry is not None else 0,
+        getattr(space, 'nDim', 0) if space is not None else 0,
+    )
+    width = next((int(value) for value in candidates
+                  if isinstance(value, (int, np.integer)) and int(value) > 0), 0)
+    if width <= 0:
+        raise ValueError('structural grammar context requires conceptual-space width')
+    return ConceptualSpaceCapability(width)
+
+
+def _structural_face_phase(layer, operands, *, context, phase=None):
+    """Validate the public structural-face boundary and return its phase.
+
+    The contextual BIND compatibility path still receives an internal live
+    slab so its configured gradient path remains intact.  It shares this
+    validation helper rather than bypassing the public context contract.
+    """
+    if not isinstance(context, StructuralGrammarContext):
+        raise TypeError('structural grammar execution requires StructuralGrammarContext')
+    if any(getattr(context, name, None) is not None for name in ('ltm', 'taxonomy', 'continuation', 'expectation')):
+        raise ValueError('structural context contains a forbidden capability')
+    if context.phase == 'generate' and context.primed_symbols is not None:
+        raise ValueError('generate context cannot read priming')
+    resolved_phase = context.phase if phase is None else str(phase)
+    if resolved_phase not in ('compose', 'generate'):
+        raise ValueError('structural grammar phase must be compose or generate')
+    if context.phase != resolved_phase:
+        raise ValueError(
+            f'structural grammar context phase {context.phase!r} does not match '
+            f'{resolved_phase!r}')
+    operands = tuple(operands)
+    expected = getattr(layer, 'arity', None)
+    if resolved_phase == 'compose':
+        if type(expected) is int and len(operands) != expected:
+            raise ValueError(
+                f'structural compose expects {expected} operands, got {len(operands)}')
+    elif len(operands) != 1:
+        raise ValueError('structural generate takes exactly one result concept')
+    return resolved_phase, operands
+
+
+def invoke_structural_face(layer, operands, *, context, phase=None):
+    """Run one pure grammar face through its common capability contract.
+
+    Legacy grammar layers retain their tensor-shaped kernels behind
+    ``GrammarLayer.compose_from_grammar_context`` and
+    ``.generate_from_grammar_context``.  Every new structural call reaches
+    this single adapter with the owner-selected context; it has no route to
+    LTM, taxonomy, a controller, or an executor.
+    """
+    resolved_phase, operands = _structural_face_phase(
+        layer, operands, context=context, phase=phase)
+    if resolved_phase == 'compose':
+        call = getattr(layer, 'compose_from_grammar_context', None)
+        if callable(call):
+            return call(operands, context=context)
+        compose = getattr(layer, 'compose', None)
+        if callable(compose):
+            return compose(*operands)
+        # Some established unary grammar hosts (notably the membership
+        # pi/sigma fold) predate ``GrammarLayer`` and expose only the normal
+        # PyTorch forward/reverse pair.  Adapt that kernel *behind* this
+        # owner-validated public call; do not let the caller bypass the
+        # StructuralGrammarContext merely because the layer is older.
+        forward = getattr(layer, 'forward', None)
+        if len(operands) == 1 and callable(forward):
+            return forward(operands[0])
+        raise TypeError(
+            'structural compose layer must provide compose_from_grammar_context, '
+            'compose, or a unary forward kernel')
+    call = getattr(layer, 'generate_from_grammar_context', None)
+    if callable(call):
+        value = call(operands[0], context=context)
+    else:
+        generate = getattr(layer, 'generate', None)
+        if callable(generate):
+            value = generate(operands[0])
+        else:
+            reverse = getattr(layer, 'reverse', None)
+            if not callable(reverse):
+                raise TypeError(
+                    'structural generate layer must provide '
+                    'generate_from_grammar_context, generate, or a '
+                    'reverse kernel')
+            value = reverse(operands[0])
+    return value if isinstance(value, tuple) else (value,)
+
+
+class _BinaryGrammarOpAdapter(nn.Module):
+    """Adapt a GrammarLayer with a `.compose(left, right)` method into a
+    plain binary callable for the LanguageLayer's `OperationSelectionLayer`.
+
+    The CKY chart calls `gl.compose(left, right)` on `[..., D]` pairs;
+    `OperationSelectionLayer` calls `op(left, right)` on
+    `[B, N-1, D]` pairs. The two contracts agree element-wise; this
+    adapter just forwards.
+    """
+
+    def __init__(self, gl):
+        """Wrap a GrammarLayer ``gl`` so it can act as a binary callable."""
+        super().__init__()
+        self.gl = gl
+
+    def forward(self, left, right):
+        """Forward ``(left, right)`` to the wrapped grammar layer's compose."""
+        return self.gl.compose(left, right)
+
+    def forward_with_context(self, left, right, slab):
+        """Apply an op with explicit read-only parse context.
+
+        Contextual BIND used to install ``slab`` on its GrammarLayer before
+        calling forward.  That module mutation is illegal inside
+        ``torch.while_loop``; the explicit tensor input preserves the same
+        nearest-left computation without persistent state.
+        """
+        compose = getattr(self.gl, "compose_with_context", None)
+        if callable(compose):
+            return compose(left, right, slab)
+        return self.gl.compose(left, right)
+
+    def forward_with_grammar_context(self, left, right, slab, *, context):
+        """Run a routed compose face with its formal grammar context.
+
+        ``ContextualBindLayer`` is the one legacy exception whose numerical
+        kernel needs the current live slab to select the older participant.
+        That slab is an adapter-private differentiable input, not a field on
+        the public context.  Every other layer reaches the common dispatcher.
+        """
+        _structural_face_phase(
+            self.gl, (left, right), context=context, phase='compose')
+        compose = getattr(self.gl, 'compose_with_context', None)
+        if callable(compose):
+            return compose(left, right, slab)
+        # The base GrammarLayer adapter only delegates back to ``compose``.
+        # Keep that established tensor kernel (and its selected-op gradient
+        # path) intact; a layer that actually consumes a grammar context
+        # overrides the base method and is routed through the public call.
+        if (getattr(type(self.gl), 'compose_from_grammar_context', None)
+                is getattr(GrammarLayer, 'compose_from_grammar_context', None)):
+            return self.forward_with_context(left, right, slab)
+        return invoke_structural_face(
+            self.gl, (left, right), context=context, phase='compose')
+
+
+class _UnaryGrammarOpAdapter(nn.Module):
+    """Give unary router candidates the same structural-face boundary."""
+
+    def __init__(self, gl):
+        super().__init__()
+        self.gl = gl
+
+    @property
+    def nInput(self):
+        return int(getattr(self.gl, 'nInput', 0) or 0)
+
+    @property
+    def nOutput(self):
+        return int(getattr(self.gl, 'nOutput', 0) or 0)
+
+    @property
+    def arity(self):
+        return int(getattr(self.gl, 'arity', 1) or 1)
+
+    def forward(self, value):
+        return self.gl.compose(value)
+
+    def forward_with_grammar_context(self, value, *, context):
+        _structural_face_phase(
+            self.gl, (value,), context=context, phase='compose')
+        if (getattr(type(self.gl), 'compose_from_grammar_context', None)
+                is getattr(GrammarLayer, 'compose_from_grammar_context', None)):
+            return self.forward(value)
+        return invoke_structural_face(
+            self.gl, (value,), context=context, phase='compose')
+
+
+def sentence_anchor_mask(word_subspace, B, device=None):
+    """Existing closed-class anchor evidence, with tensor-only live PID reads."""
+    owner = getattr(word_subspace, 'conceptualSpace', None)
+    anchors = getattr(owner, '_anchored_pids', None) or {}
+    grid = getattr(owner, '_category_last_pid', None) or []
+    flags = [any(int(pid) in anchors for pid in (grid[min(b, len(grid) - 1)] if grid else []))
+             for b in range(B)]
+    anchored = torch.tensor(flags, dtype=torch.bool, device=device)
+    ps = getattr(word_subspace, 'perceptualSpace', None)
+    current = getattr(ps, '_forward_input', None)
+    pids = current.get('indices') if isinstance(current, dict) else None
+    if anchors and torch.is_tensor(pids) and pids.dim() >= 2 and pids.shape[0] == B:
+        known = torch.tensor(tuple(anchors), dtype=pids.dtype, device=pids.device)
+        anchored = anchored | torch.isin(pids, known).reshape(B, -1).any(-1).to(device=device)
+    return anchored
+
+
+def sentence_relative_mask(word_subspace, B, device=None):
+    """Per-row ``[B]`` bool: True where the current sentence is a RELATIVE
+    truth, read from the final sentence's selected operation trace. Explicit
+    grammar plans remain readable when no operation trace is staged. Shared
+    with the reducer. An actual clause state takes priority; incomplete
+    role-plan evidence retains the existing conservative anchor check.
+    """
+    false_mask = torch.zeros(B, dtype=torch.bool, device=device)
+    if word_subspace is None:
+        return false_mask
+    stm = getattr(getattr(word_subspace, 'conceptualSpace', None), 'stm', None)
+    state = getattr(stm, '_clause_state', None)
+    if torch.is_tensor(state) and state.shape[0] == B:
+        from ClauseScope import ClauseScope
+        return (ClauseScope.slots(state, stm._depth) == 3).to(device=device)
+    trace = getattr(word_subspace, 'reconstruction_stack', None)
+    ids = getattr(trace, '_choice_rule_ids', None)
+    valid = getattr(trace, '_choice_mask', None)
+    owners = getattr(trace, '_choice_sentence_ids', None)
+    last = getattr(trace, '_last_sentence_id', None)
+    relative_ids = getattr(trace, '_relative_rule_ids', None)
+    if (torch.is_tensor(ids) and ids.shape[0] == B and torch.is_tensor(valid)
+            and torch.is_tensor(owners) and owners.shape == ids.shape
+            and torch.is_tensor(last) and torch.is_tensor(relative_ids)):
+        selected = (ids[..., None] == relative_ids.to(ids.device)).any(-1)
+        scoped = valid & (owners == last)
+        return (selected & scoped).any(-1) & sentence_anchor_mask(word_subspace, B, device=device)
+    current_rules = getattr(word_subspace, 'current_rules', None)
+    if not current_rules:
+        return false_mask
+    if not TheGrammar._relative_rule_id_set():
+        return false_mask
+
+    def _row_is_relative(rule_ids):
+        for rid in (rule_ids or ()):
+            if TheGrammar.is_relative_rule(rid):
+                return True
+        return False
+
+    def _mask_for(s_rules):
+        if not s_rules:
+            return false_mask
+        try:
+            n_outer = len(s_rules)
+        except TypeError:
+            return false_mask
+        if n_outer > 0 and not isinstance(s_rules[0], (list, tuple)):
+            shared = _row_is_relative(s_rules)
+            return torch.full((B,), bool(shared), dtype=torch.bool,
+                              device=device)
+        if n_outer == B:
+            flags = [_row_is_relative(row) for row in s_rules]
+            return torch.tensor(flags, dtype=torch.bool, device=device)
+        if n_outer == 1:
+            shared = _row_is_relative(s_rules[0])
+            return torch.full((B,), bool(shared), dtype=torch.bool,
+                              device=device)
+        return false_mask
+
+    mask = false_mask
+    if 'SS' in current_rules:
+        mask = mask | _mask_for(current_rules['SS'])
+    if 'CS' in current_rules:
+        mask = mask | (_mask_for(current_rules['CS']) & sentence_anchor_mask(word_subspace, B, device=device))
+    return mask
+
+
+def sentence_row_slots(relative):
+    """An absolute sentence fuses to one event; a relative keeps S REL S."""
+    return torch.where(relative, 3, 1)
+
+
+class LanguageLayer(Layer):
+    """Compose parser with one shared selector for every arity and location.
+
+    ``compose`` returns the exploit rule sequence. The same operation layer
+    serves the serial two-slot STM window; supplied stack actions remain
+    available for replay through ``forward`` and ``reverse``.
+    """
+
+    def __init__(self, n_input, n_output, *, hidden_dim, feature_dim,
+                 max_depth, temperature=0.0, reduce_pressure=1.0):
+        super().__init__(int(n_input), int(n_output))
+        self.n_input, self.n_output = int(n_input), int(n_output)
+        self.hidden_dim, self.feature_dim = int(hidden_dim), int(feature_dim)
+        self.max_depth, self.temperature = int(max_depth), float(temperature)
+        self.reduce_pressure = float(reduce_pressure)
+        self.subsymbolic_order = 1
+        self.transform_chooser = "anchordot"
+        self.operation_layer = None
+        self._operation_specs = {}
+        self._unary_rule_ids, self._binary_rule_ids = {}, {}
+        self._last_input = self._last_output = None
+        self._last_space_role_routings = {}
+        self._last_rules = {}
+
+    def _attach_ops(self, arity, ops, rule_ids, op_names, op_space_roles, space_role):
+        ops = tuple(ops)
+        rule_ids = list(range(len(ops))) if rule_ids is None else list(map(int, rule_ids))
+        if len(rule_ids) != len(ops):
+            raise ValueError("one rule id is required for each compose operator")
+        role = str(space_role)
+        self._operation_specs[(role, arity)] = (ops, rule_ids, op_names, op_space_roles)
+        (self._binary_rule_ids if arity == 2 else self._unary_rule_ids)[role] = rule_ids
+        tables = {1: ([], [], [], [], []), 2: ([], [], [], [], [])}
+        for (owner, a), (operations, ids, names, roles) in sorted(self._operation_specs.items()):
+            table = tables[a]
+            table[0].extend(operations); table[1].extend(ids)
+            table[2].extend(names or [None] * len(operations))
+            table[3].extend(roles or [owner] * len(operations))
+            table[4].extend([owner] * len(operations))
+        binary, unary = tables[2], tables[1]
+        self.operation_layer = OperationSelectionLayer(
+            d_model=self.feature_dim, ops=binary[0], unary_ops=unary[0],
+            op_names=binary[2], unary_names=unary[2], op_space_roles=binary[3],
+            temperature=self.temperature, reduce_pressure=self.reduce_pressure,
+            chooser=self.transform_chooser,
+            n_role_cats=self._chooser_role_cats())
+        self.binary_rule_ids, self.unary_rule_ids = binary[1], unary[1]
+        self.binary_roles, self.unary_roles = binary[4], unary[4]
+
+
+    def _chooser_role_cats(self):
+        """Category-context width for structured-layer MLP choosers.
+
+        The role count comes from the same :func:`compute_role_vocabulary` the
+        WholeSpace category codebook uses, so the chooser's context block and
+        the codebook's role vectors share a width. Anchor-dot also uses the
+        category vector, but as a layer-level score prior, so it needs no MLP
+        input widening.
+        """
+        if str(getattr(self, "transform_chooser", "anchordot")) != "mlp":
+            return 0
+        if not bool(TheXMLConfig.get("architecture.categoryCodebook",
+                                     default=True)):
+            return 0
+        try:
+            return int(compute_role_vocabulary(TheGrammar)[2])
+        except Exception:
+            return 0
+
+    def attach_unary_ops(self, *, ops, rule_ids=None, op_names=None,
+                         op_space_roles=None, space_role="SS"):
+        """Add unary candidates to the same global operation layer."""
+        self._attach_ops(1, ops, rule_ids, op_names, op_space_roles, space_role)
+
+
+    def attach_layer_ops(self, *, ops, rule_ids=None, op_names=None,
+                         op_space_roles=None, space_role="SS"):
+        """Add binary candidates to the same global operation layer."""
+        self._attach_ops(2, ops, rule_ids, op_names, op_space_roles, space_role)
+
+
+    def compose(self, data, word_space, subspace=None, grammar_context=None, *, exploit=None):
+        """Select one operation each round and publish only the exploit program."""
+        if self.operation_layer is None:
+            raise RuntimeError("LanguageLayer.compose needs attach_layer_ops or attach_unary_ops")
+        owner = self._category_owner(word_space)
+        cat = self._build_category_context(data, owner) if (
+            owner is not None and callable(getattr(owner, 'category_codebook_enabled', None))
+            and owner.category_codebook_enabled()) else None
+        # The row contract is one absolute slot or three relative slots.
+        slots = sentence_row_slots(sentence_relative_mask(word_space, data.shape[0], device=data.device))
+        budget = max(1, self.max_depth, 2 * data.shape[1])
+        derivation = self.operation_layer.derive(
+            data, slots=slots, rounds=budget, exploit=exploit,
+            greedy=not self.training, cat_ctx=cat,
+            what_ctx=getattr(self, '_what_context', None), grammar_context=grammar_context)
+        self._last_derivation = derivation
+        traces = derivation['traces']
+        roles = sorted(set(self.binary_roles + self.unary_roles))
+        rules = {role: [[] for _ in range(data.shape[0])] for role in roles}
+        for route in traces:
+            rows = torch.stack((route['kind'], route['op'], route['valid'].long()), -1).detach().cpu().tolist()
+            for b, (kind, op, valid) in enumerate(rows):
+                if valid and kind in (1, 2):
+                    ids, owners = ((self.binary_rule_ids, self.binary_roles) if kind == 1
+                                   else (self.unary_rule_ids, self.unary_roles))
+                    rules[owners[op]][b].append(ids[op])
+        self._last_input = data
+        self._last_root_state = derivation['value'][:, :1]
+        self._last_output = self._last_root_state.expand(-1, data.shape[1], -1).contiguous()
+        # These are this trial's transient reconstruction/feedback carriers.
+        # runBatch keeps the lower-loss trial's carriers after both train.
+        complete = derivation['complete'].detach().tolist()
+        self._last_rules = {role: [row if complete[b] else [] for b, row in enumerate(rows)]
+                            for role, rows in rules.items()}
+        self._last_space_role_routings = {'operations': {'rounds': traces}}
+        if owner is not None and cat is not None:
+            owner._category_role_obs = self._collect_round0_role_obs()
+        return self._last_rules
+
+
+    @staticmethod
+    def _category_owner(word_space):
+        """Return the live grammatical-category owner for ``word_space``.
+
+        ``WholeSpace`` is only an upstream property basis in the canonical
+        architecture, so category VQ state and concept participation live on
+        the sibling ``ConceptualSpace``. Resolve this from
+        the already-wired SymbolSubSpace rather than planting a downstream
+        back-reference on a property WholeSpace.
+        """
+        return getattr(word_space, 'conceptualSpace', None)
+
+    def _build_category_context(self, x, category_owner):
+        """Per-slot category role vector ``[B, N, n_roles]`` for grammar
+        routing, or ``None`` when unavailable.
+
+        Pure reads only (no E-step at score time): each terminal slot position
+        -> percept id (stashed by the autobind hook earlier this step) -> word
+        concept -> assigned centroid -> role vector. Slots with no percept,
+        binding, or centroid become a zero (neutral) row. The position index
+        aligns with the round-0 slab (== original percept positions; the same
+        correspondence Phase 1's role observation relies on)."""
+        last_pid = getattr(category_owner, '_category_last_pid', None)
+        last_concepts = getattr(category_owner, '_category_last_concept_ids', None)
+        n_roles = int(
+            getattr(category_owner, '_category_n_roles', 0) or 0)
+        if not (last_pid or last_concepts) or n_roles == 0:
+            return None
+        B, N = int(x.shape[0]), int(x.shape[1])
+        ctx = x.new_zeros(B, N, n_roles)
+        anch = getattr(category_owner, '_anchored_pids', None)
+        role_index = (
+            getattr(category_owner, '_category_role_index', None) or {})
+        concept_of_percept = getattr(
+            category_owner, 'concept_of_percept', None)
+        row_to_pos = getattr(category_owner, '_ps_row_to_pos', None)
+        grid = last_concepts if last_concepts is not None else last_pid
+        for b in range(min(B, len(grid))):
+            prow = grid[b]
+            for n in range(min(N, len(prow))):
+                pid = int(prow[n])
+                if pid < 0:
+                    continue
+                # Syntactic anchor first (Alec 2026-07-13): a closed-class
+                # relation surface resolves its slot to the OPERATOR's
+                # output role directly — the NP-R-NP form is grammatical,
+                # not a learned centroid assignment.
+                if anch is not None and last_concepts is None:
+                    _op = anch.get(pid)
+                    if _op is not None:
+                        _ri = role_index.get(f"{_op}_O1")
+                        if _ri is not None:
+                            ctx[b, n, int(_ri)] = 1.0
+                            continue
+                meta_pos = (pid if last_concepts is not None else
+                            concept_of_percept(pid) if callable(concept_of_percept) else None)
+                if meta_pos is None:
+                    continue
+                role = category_owner.category_role_for_meta(
+                    int(meta_pos), device=x.device, dtype=x.dtype)
+                if role is not None:
+                    ctx[b, n, :] = role.reshape(-1)[:n_roles]
+        return ctx
+
+    def _collect_round0_role_obs(self):
+        traces = self._last_space_role_routings.get('operations', {}).get('rounds', [])
+        if not traces:
+            return []
+        route = traces[0]
+        rows = torch.stack((route['kind'], route['op'], route['position']), -1).detach().cpu().tolist()
+        names = self.operation_layer.op_names
+        return [[(p, p + 1, names[op])] if kind == 1 and names[op] else []
+                for kind, op, p in rows]
+
+
+    def generate(self, target, word_space, subspace=None, grammar_context=None):
+        """Reverse-pass mirror: emit the compose-order rule list reversed.
+
+        If compose has not yet been called for ``target``, run it now.
+        Space-role order is reversed (innermost first) and each row's rule
+        sequence is reversed so the inverse pass pops last-applied first.
+        """
+        if self.operation_layer is None:
+            raise RuntimeError(
+                "LanguageLayer.generate called before attach_layer_ops() / "
+                "attach_unary_ops().")
+        if grammar_context is not None and grammar_context.phase != 'generate':
+            raise ValueError('LanguageLayer.generate requires a generate context')
+        if not self._last_space_role_routings:
+            # This legacy route recovery selects a structural program; it is
+            # not output realization and must never expose ``target`` as the
+            # generate face's word stream.  The owner will later execute the
+            # selected inverse with its output-owned generate context.
+            self.compose(target, word_space, subspace=subspace)
+        # Generate emits the compose-order list reversed per row, so that
+        # the inverse pass pops the last-applied rule first. Space-role order is
+        # also reversed (innermost first).
+        compose_rules = self._compose_rules_from_routings()
+        all_space_roles = sorted(compose_rules.keys(), reverse=True)
+        return {space_role: [row[::-1] for row in compose_rules[space_role]]
+                for space_role in all_space_roles}
+
+    def _compose_rules_from_routings(self):
+        return self._last_rules
+
+
+    # -- backwards-compat shims for diagnostics / older tests -----------
+    @property
+    def _last_routing(self):
+        traces = self._last_space_role_routings.get('operations', {}).get('rounds', [])
+        return traces[-1] if traces else None
+
+
+    @property
+    def _last_hard_slab(self):
+        return self._last_output
+
+    @property
+    def _last_soft_slab(self):
+        return self._last_output
+
+    # -- Phase 4 stack-rewrite path -------------------------------------
+    #
+    # See doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md
+    # §"Phase 4: LanguageLayer Stack Rewrite Path". These methods operate
+    # on a stack-mode SubSpace whose ``.what`` IS the live STM:
+    #
+    #     subspace.what:       [B, K, D] payloads
+    #     subspace.where:      [B, K, W] codebook locations
+    #     subspace.activation: [B, K]    occupancy mask (1=live, 0=empty)
+    #
+    # Existing ``compose`` / ``generate`` paths above remain intact for
+    # the chart-router compatibility surface; ``shift`` / ``reduce`` /
+    # ``forward_stack`` are the new path.
+    #
+    # First-patch design choices (per the plan's "Implementation Notes
+    # For Claude"):
+    #   * Hard SHIFT/REDUCE actions are explicit replay inputs.
+    #   * Per-row occupancy reads use a small eager bridge (occ.sum
+    #     along K). This is the documented "small eager bridge" the
+    #     plan permits for a first correctness patch.
+    #   * Gradient flow: parent.what flows through the cloned-then-
+    #     scatter write into subspace.what, then back through the
+    #     SyntacticLayer.execute call to left/right child payloads and
+    #     to the op's parameters.
+
+    @staticmethod
+    def _stack_n_live(subspace):
+        """Per-row count of live stack slots (``activation > 0``)."""
+        occ = subspace.materialize(mode="activation")
+        if occ is None:
+            raise RuntimeError(
+                "LanguageLayer stack-mode: subspace.activation is None; "
+                "set_activation([B, K]) must be called before SHIFT/REDUCE"
+            )
+        if occ.ndim != 2:
+            raise ValueError(
+                f"LanguageLayer stack-mode: activation must be [B, K], "
+                f"got shape {tuple(occ.shape)}"
+            )
+        return (occ.abs() > 0).long().sum(dim=-1)              # [B]
+
+    @staticmethod
+    def _encode_where(where_buf, where_id):
+        """Encode a scalar location into a single-slot ``.where`` vector.
+
+        First-patch convention: stamp the integer into element [0] of
+        the W-wide row; remaining elements are zero. The plan's
+        encode/decode helpers can later swap this for a proper sin/cos
+        encoding without changing the namespace semantics.
+        """
+        W = where_buf.shape[-1]
+        vec = where_buf.new_zeros(W)
+        if W >= 1:
+            vec[0] = float(where_id)
+        return vec
+
+    def shift(self, subspace, terminal_what, where_id):
+        """Push a terminal payload into the next empty stack slot.
+
+        Mutates ``subspace.what`` / ``.where`` / ``.activation`` in
+        place (via setters; the underlying Basis tensors are replaced).
+        Returns the same subspace for fluent call chains.
+
+        Args:
+            subspace: stack-mode SubSpace.
+            terminal_what: ``[B, D]`` payload (the snap of a continuous
+                concept against the terminal symbol codebook).
+            where_id: scalar int location in the stack ``.where``
+                namespace (typically ``grammar.where_id_for_symbol(s)``).
+
+        Raises:
+            RuntimeError: if any batch row's stack is already full
+                (no empty slot to receive the terminal).
+        """
+        what = subspace.materialize(mode="what")
+        where = subspace.materialize(mode="where")
+        if what is None or what.ndim != 3:
+            raise ValueError(
+                f"LanguageLayer.shift: subspace.what must be [B, K, D], "
+                f"got shape {None if what is None else tuple(what.shape)}"
+            )
+        if where is None or where.ndim != 3:
+            raise ValueError(
+                f"LanguageLayer.shift: subspace.where must be [B, K, W], "
+                f"got shape {None if where is None else tuple(where.shape)}"
+            )
+        B, K, D = what.shape
+        if terminal_what.shape != (B, D):
+            raise ValueError(
+                f"LanguageLayer.shift: terminal_what shape {tuple(terminal_what.shape)} "
+                f"!= ({B}, {D})"
+            )
+        n_live = self._stack_n_live(subspace)                  # [B]
+        if (n_live >= K).any():
+            raise RuntimeError(
+                f"LanguageLayer.shift: stack full (K={K}); per-row n_live="
+                f"{n_live.tolist()}"
+            )
+        next_empty = n_live                                    # [B] -- push index
+        arange_B = torch.arange(B, device=what.device)
+
+        # Clone-then-scatter preserves gradient flow back through the
+        # untouched slots (autograd path: each row's other slots are
+        # functions of the prior `what` tensor) AND through the new
+        # `terminal_what` (the scatter writes it into slot `next_empty`).
+        what_new = what.clone()
+        what_new[arange_B, next_empty, :] = terminal_what
+
+        where_new = where.clone()
+        where_vec = self._encode_where(where, where_id)        # [W]
+        where_new[arange_B, next_empty, :] = where_vec
+
+        # Activation: stack-mode occupancy is a scalar 1.0 per live slot.
+        occ = subspace.materialize(mode="activation")
+        occ_new = occ.clone()
+        occ_new[arange_B, next_empty] = 1.0
+
+        subspace.set_what(what_new)
+        subspace.set_where(where_new)
+        subspace.set_activation(occ_new)
+        return subspace
+
+    def reduce(self, subspace, syntactic_layer, rule_id,
+               *, rule_codebook=None, where_id=None):
+        """Reduce the top two live stack slots with the given grammar rule.
+
+        Implements the plan's hard REDUCE pseudo-code:
+
+            parent = syntactic_layer.execute(rule_id, left, right)
+            what[:, i, :] = parent      # surviving slot
+            where[:, i, :] = rule_where
+            occ[:, i] = 1
+            what[:, j, :] = 0           # consumed slot
+            where[:, j, :] = 0
+            occ[:, j] = 0
+
+        where ``i = n_live - 2`` (left, survives) and
+              ``j = n_live - 1`` (right, consumed).
+
+        Args:
+            subspace: stack-mode SubSpace.
+            syntactic_layer: per-space_role SyntacticLayer with ``execute``
+                (Phase 2). Computes parent.what from child payloads.
+            rule_id: grammar rule id (must be arity 2 for top-2 reduce).
+            rule_codebook: optional RuleCodebook providing the .where
+                stamp via ``rule_codebook.location(rule_id)``. Either
+                ``rule_codebook`` or ``where_id`` must be supplied.
+            where_id: explicit ``.where`` location override. Wins when
+                both are provided.
+
+        Raises:
+            RuntimeError: if any batch row has fewer than 2 live slots.
+            ValueError: when neither rule_codebook nor where_id supply
+                the rule's .where location.
+        """
+        if where_id is None and rule_codebook is None:
+            raise ValueError(
+                "LanguageLayer.reduce: provide either `rule_codebook` "
+                "(preferred) or `where_id` (override)"
+            )
+        if where_id is None:
+            where_id = rule_codebook.location(rule_id)
+
+        what = subspace.materialize(mode="what")
+        where = subspace.materialize(mode="where")
+        n_live = self._stack_n_live(subspace)                  # [B]
+        if (n_live < 2).any():
+            raise RuntimeError(
+                f"LanguageLayer.reduce: stack underflow (need >=2 live "
+                f"slots); per-row n_live={n_live.tolist()}"
+            )
+        B, K, D = what.shape
+        arange_B = torch.arange(B, device=what.device)
+        i_slot = n_live - 2                                    # [B] survives
+        j_slot = n_live - 1                                    # [B] consumed
+
+        # CS-space_role ops operate on the muxed event [what | where | when] so
+        # LIFT/LOWER can alter the .when span and PREPOSITION can modify the
+        # .where (spec Section 5 / 6.4). The WS-space_role stack route stays
+        # content-only (WS carries no where/when). Space-role comes off the
+        # per-space_role syntactic layer.
+        # Only event-aware ops (LIFT / LOWER / PREPOSITION) receive the muxed
+        # event; content-only CS-space_role ops (intersection / union / ...) keep the
+        # .what operand so their content-sized folds are unaffected.
+        is_c_space_role = str(getattr(syntactic_layer, 'space_role', '')) == 'CS'
+        _op = None
+        if is_c_space_role:
+            _mname = TheGrammar.method_name(int(rule_id))
+            _op = syntactic_layer._by_name.get(_mname) if _mname else None
+        _event_op = bool(getattr(_op, 'event_aware', False))
+        when = subspace.materialize(mode="when") if _event_op else None
+        use_event = (_event_op and when is not None
+                     and when.ndim == 3 and when.shape[-1] > 0)
+        if use_event:
+            def _ev(slot):
+                return torch.cat([what[arange_B, slot, :],
+                                  where[arange_B, slot, :],
+                                  when[arange_B, slot, :]], dim=-1)
+            parent = syntactic_layer.execute(int(rule_id), _ev(i_slot), _ev(j_slot))
+            p_what, p_where, p_when = _split_event(
+                parent, what.shape[-1], when_width=when.shape[-1])
+        else:
+            left  = what[arange_B, i_slot, :]                  # [B, D]
+            right = what[arange_B, j_slot, :]                  # [B, D]
+            parent = syntactic_layer.execute(int(rule_id), left, right)  # [B, D]
+            p_what, p_where, p_when = parent, None, None
+
+        what_new = what.clone()
+        what_new[arange_B, i_slot, :] = p_what
+        what_new[arange_B, j_slot, :] = 0.0
+
+        where_new = where.clone()
+        if p_where is not None:
+            # Op-modified .where (e.g. PREPOSITION) wins over the rule stamp.
+            where_new[arange_B, i_slot, :] = p_where
+        else:
+            where_vec = self._encode_where(where, where_id)    # [W]
+            where_new[arange_B, i_slot, :] = where_vec
+        where_new[arange_B, j_slot, :] = 0.0
+
+        occ = subspace.materialize(mode="activation")
+        occ_new = occ.clone()
+        occ_new[arange_B, i_slot] = 1.0
+        occ_new[arange_B, j_slot] = 0.0
+
+        subspace.set_what(what_new)
+        subspace.set_where(where_new)
+        if p_when is not None and when is not None:
+            when_new = when.clone()
+            when_new[arange_B, i_slot, :] = p_when             # op-altered .when
+            when_new[arange_B, j_slot, :] = 0.0
+            subspace.set_when(when_new)
+        subspace.set_activation(occ_new)
+        # Symbolic-priming forward-commit at the CS-space_role reduction
+        # (plan doc/plans/2026-06-06-symbolic-heat-retrieval.md §Grammar
+        # reduction) is DEFERRED here: the stack-mode ``subspace`` carries
+        # only content (.what/.where/.when) at slots i_slot/j_slot — it has
+        # no ref-id channel, and ``forward_stack``'s ('reduce', rule_id)
+        # action supplies no operand ref_ids. The reduced children are not
+        # snapped to codebook ref ids at this site, so there is nothing to
+        # prime without inventing a content->ref nearest-row lookup (which
+        # would add a host sync + dense scan on the training path). The
+        # plan explicitly permits deferring row priming for unsnapped
+        # parents (update only the semantic carrier z from the idea vector).
+        # When a caller does have committed child ref_ids at a reduction,
+        # ``SymbolSubSpace._commit_priming(b, ref_id)`` is the gated API to
+        # prime them (see test_symbolic_heat_retrieval.py
+        # ::TestReduceCommitPrimesChildRefs).
+        return subspace
+
+    @staticmethod
+    def _recover_selected_row(vec, W, cand_rows=None, *, tol=1e-4):
+        """Best-effort recover the W-row id the recommender selected.
+
+        The mereology recommender (``Ops._binary_op_recommend``) returns
+        selected operand VECTORS drawn verbatim from the augmented codebook
+        ``[⊥, W..., ⊤]``; this maps such a vector back to its row id in ``W``.
+        Used by ``unreduce``'s reverse self-priming (Phase 3b CAPSTONE; plan
+        doc/plans/2026-06-06-symbolic-heat-retrieval.md §Reverse-path
+        responsibilities). Search is restricted to ``cand_rows`` (the small
+        per-slot candidate subset) when supplied, else the full ``W``.
+
+        Returns the integer row id of the nearest W row within ``tol`` (L2),
+        or ``None`` when ``vec`` matched no candidate within tolerance — which
+        includes the ⊥ / ⊤ sentinel picks (zeros / ones), since those are not
+        real codebook rows and (by construction) sit far from learned rows.
+        Pure host-side; only invoked under the priming_enabled gate.
+        """
+        try:
+            if W is None or not hasattr(W, 'shape') or W.shape[0] == 0:
+                return None
+            v = vec.reshape(-1)[:W.shape[1]].to(W.device, W.dtype)
+            if cand_rows is not None:
+                rows = torch.as_tensor(
+                    cand_rows, dtype=torch.long, device=W.device).reshape(-1)
+                rows = rows[(rows >= 0) & (rows < W.shape[0])]
+                if rows.numel() == 0:
+                    rows = torch.arange(W.shape[0], device=W.device)
+            else:
+                rows = torch.arange(W.shape[0], device=W.device)
+            sub = W[rows]                                  # [|rows|, D]
+            d = torch.linalg.vector_norm(
+                sub - v.unsqueeze(0), dim=-1)              # [|rows|]
+            j = int(torch.argmin(d).item())
+            if float(d[j].item()) <= tol:
+                return int(rows[j].item())
+            return None
+        except Exception:
+            return None
+
+    def unreduce(self, subspace, syntactic_layer, *,
+                 grammar=None, rule_codebook=None):
+        """Inverse of ``reduce``: split the top live slot via ``layer.reverse``.
+
+        Phase 7 of the SubSpace.what STM refactor (see plan §"Reverse
+        And Reconstruction"). Decodes the top live slot's ``.where`` to
+        find which rule produced the parent, then calls that rule
+        layer's ``reverse`` on the parent payload to recover children
+        and writes them back into the stack.
+
+        The identity/pass-through stub sanction is REVOKED (2026-07-04
+        serial-derivation plan, Task 1): a rule that cannot run a
+        FAITHFUL reverse raises ``NotImplementedError`` naming the rule
+        (the Gate-S1 inventory row) instead of fabricating
+        ``(parent, parent)`` children. Rules with real inverses (or the
+        basis recommender) are untouched.
+
+        No-op when the top slot is empty or stamped as a terminal --
+        terminals are leaves on this path; their reverse is the
+        codebook unsnap (Phase 8+ work).
+
+        Args:
+            subspace: stack-mode SubSpace (mutated in place).
+            syntactic_layer: per-space_role SyntacticLayer; provides the
+                host layer for the decoded rule via ``_by_name``.
+            grammar: Grammar for ``decode_where``. Required when
+                ``rule_codebook`` is not supplied (or its grammar is
+                None).
+            rule_codebook: optional RuleCodebook with an attached
+                Grammar; falls back to ``grammar`` when None.
+
+        Raises:
+            RuntimeError: on stack underflow (no live slots) or
+                overflow (no room for the new right-child slot).
+            KeyError: when the decoded rule is not registered on the
+                SyntacticLayer's ``_by_name`` table.
+        """
+        # Resolve the Grammar used for .where decoding.
+        if grammar is None and rule_codebook is not None:
+            grammar = rule_codebook.grammar
+        if grammar is None:
+            raise ValueError(
+                "LanguageLayer.unreduce: provide `grammar` or a "
+                "`rule_codebook` with an attached Grammar"
+            )
+
+        what = subspace.materialize(mode="what")
+        where = subspace.materialize(mode="where")
+        n_live = self._stack_n_live(subspace)                  # [B]
+        if (n_live < 1).any():
+            raise RuntimeError(
+                f"LanguageLayer.unreduce: stack underflow (no live "
+                f"slots); per-row n_live={n_live.tolist()}"
+            )
+        B, K, D = what.shape
+        if (n_live >= K).any():
+            raise RuntimeError(
+                f"LanguageLayer.unreduce: stack overflow (K={K}); "
+                f"unreduce needs an empty slot to the right of the "
+                f"top. Per-row n_live={n_live.tolist()}"
+            )
+        arange_B = torch.arange(B, device=what.device)
+        top_slot = n_live - 1                                  # [B]
+
+        # Decode .where to find the rule. First-patch convention:
+        # batch-row-0's slot is canonical; per-row decoding is a
+        # follow-up. The where carrier is float; decode_where rounds.
+        top_where_b0 = where[0, int(top_slot[0].item()), 0]
+        kind, decoded_id = grammar.decode_where(top_where_b0)
+
+        if kind != 'rule':
+            # Empty or terminal -- no reverse on this path.
+            return subspace
+
+        rule_id = int(decoded_id)
+        method_name = grammar.method_name(rule_id)
+        owner = getattr(syntactic_layer, '_word_space', None)
+        generation = getattr(owner, '_generation_space', None)
+        # Output may dispatch only its declared catalogue. Reconstruction
+        # replays the recorded compose rule, using the same numerical owner.
+        layer = (generation.resolve_generation_op(syntactic_layer.space_role, method_name)
+                 if generation is not None and generation._generation_active
+                 else syntactic_layer._by_name.get(method_name))
+        if layer is None:
+            # Post-2026-05-29 grammar-file-refactor (\xa75): rule's class
+            # space_role may differ from this syntactic_layer's space_role (e.g.
+            # intersection lives in IntersectionLayer with space_role='CS', so it
+            # binds on ConceptualSpace's syntactic layer rather than the
+            # WholeSpace one). Fall back to a fresh GRAMMAR_LAYER_CLASSES
+            # instance so the dispatch path still completes; the identity-
+            # stub reverse logic below will run on it.
+            cls = GRAMMAR_LAYER_CLASSES.get(method_name)
+            if cls is not None:
+                try:
+                    layer = cls()
+                except TypeError:
+                    layer = None
+        if layer is None:
+            raise KeyError(
+                f"LanguageLayer.unreduce: space_role={syntactic_layer.space_role!r} "
+                f"has no host layer for rule_id={rule_id} "
+                f"(method_name={method_name!r}). Registered rules: "
+                f"{sorted(syntactic_layer._by_name.keys())}"
+            )
+        arity = int(getattr(layer, 'arity', 2))
+
+        parent = what[arange_B, top_slot, :]                   # [B, D]
+
+        # 2026-07-04 serial plan Task 1: the identity-stub fallback is
+        # REVOKED. A rule that cannot run a faithful reverse raises the
+        # Gate-S1 inventory error (write a real reverse or remove the
+        # rule); nothing on this path fabricates (parent[, parent]).
+        def _no_inverse(why):
+            raiser = getattr(layer, 'raise_no_inverse', None)
+            if raiser is not None:
+                raiser(why)
+            raise NotImplementedError(
+                f"unreduce: rule {method_name!r} has no faithful "
+                f"reverse [{why}] -- write a real reverse() or remove "
+                f"the rule from the grammar.")
+
+        # 2026-05-29: pass the space_role-local Basis (codebook) as an
+        # explicit arg so binary reverses (UnionLayer /
+        # IntersectionLayer) can use the mereology-guided recommender
+        # (``Ops.unionReverse`` / ``Ops.intersectionReverse``)
+        # to recover an actual operand pair instead of returning the
+        # lossy ``(parent, parent)`` pseudo-inverse. The layer's
+        # ``reverse`` accepts ``basis`` as a keyword and falls back to
+        # ``(parent, parent)`` when ``basis`` is None or has no W.
+        # Passing the Basis (rather than its W tensor) keeps the door
+        # open for richer codebook methods on reverse without changing
+        # the call site.
+        space_role_basis = getattr(subspace, 'what', None)
+
+        # Phase 3b CAPSTONE (plan doc/plans/2026-06-06-symbolic-heat-retrieval
+        # .md §Reverse-path responsibilities, §Phase 3): heat-biased candidate
+        # restriction for the binary recommender (Intersection / Union only).
+        #
+        # GATED + DEFAULT-OFF BYTE-IDENTITY: ``reverse_kwargs`` stays EMPTY
+        # unless ALL of (a) ``subspace.symbolSpace`` exists, (b) the host
+        # layer is Intersection/Union (arity-2 recommender ops), AND (c) the
+        # owning space's ``attention_mode != 'off'``. Every current config is
+        # attention=off, so this whole block is dormant and the call below is
+        # exactly ``layer.reverse(parent, basis=space_role_basis)`` as before — no
+        # observable change on the live generation path. The broad ``except``
+        # collapses any heat-path failure back to a plain reverse so a bug
+        # here can NEVER break generation. Decoding is row-0-canonical
+        # (``where[0, ...]`` above), so the query / order are taken at batch
+        # row 0 to match. Lift/Lower joined the recommender family with the
+        # Track-1 G1 rework (their reverse routes through
+        # liftReverseAll/lowerReverseAll when a basis is present), so the
+        # G3 guard now includes them (open-fronts Task C) — still dormant
+        # while attention stays off.
+        reverse_kwargs = {}
+        ss = getattr(subspace, 'symbolSpace', None)
+        if (ss is not None and arity == 2
+                and isinstance(layer, (IntersectionLayer, UnionLayer,
+                                       LiftLayer, LowerLayer))):
+            space_role = str(getattr(syntactic_layer, 'space_role', ''))
+            space = (getattr(ss, 'wholeSpace', None) if space_role == 'SS'
+                     else getattr(ss, 'conceptualSpace', None) if space_role == 'CS'
+                     else None)
+            mode = (str(getattr(space, 'attention_mode', 'off'))
+                    if space is not None else 'off')
+            if mode != 'off':
+                try:
+                    # NOTE: ``grammar.rule(rule_id)`` returns the ``RuleDef``
+                    # that ``_rule_order_signature`` consumes (it reads
+                    # ``.lhs`` / ``.rhs_symbols``). ``grammar.rule_by_id``
+                    # returns the canonical PRODUCTION STRING in this codebase,
+                    # which would AttributeError here — the broad ``except``
+                    # below would swallow it into a plain reverse, silently
+                    # disabling the heat path. Use the RuleDef accessor.
+                    rule_def = (grammar.rule(rule_id)
+                                if hasattr(grammar, 'rule')
+                                else grammar.rules[rule_id])
+                    sig = grammar._rule_order_signature(rule_def)
+                    cats = getattr(sig, 'rhs_categories', None)
+                    if (cats is not None and len(cats) >= 2
+                            and cats[0] is not None and cats[1] is not None):
+                        # Intersection/Union are order-preserving, so the
+                        # operands share the parent's order. Read the parent's
+                        # per-slot order from the SymbolSubSpace order buffer at
+                        # the row-0 canonical top slot. Guard the second-axis
+                        # index: ``_order``'s width (the SymbolSubSpace STM depth)
+                        # need not equal the language-layer stack width, so an
+                        # out-of-range (or zeroed) slot yields order 0.
+                        # A zeroed order can make ``refs_by_category ∩
+                        # refs_by_order`` empty, which triggers the plan-
+                        # sanctioned untyped content+heat fallback inside
+                        # ``retrieval_candidates_for_slot`` (plan §Candidate
+                        # generation fallback) -- the category filter is dropped
+                        # for that slot, never the heat bias. When the typed
+                        # set IS non-empty, hot-type-invalid-row exclusion still
+                        # holds. The path never crashes.
+
+                        # Phase 5: read retrieval scalar knobs from config
+                        # (plan §Configuration).  All keys are optional; fall
+                        # back to the sensible defaults below when absent.
+                        # The space section name is "WholeSpace" for space_role
+                        # 'SS' and "ConceptualSpace" for space_role 'CS'.
+                        #
+                        # ROBUSTNESS (critical): a knob read must NEVER disable
+                        # the heat path. ``TheXMLConfig`` is a process-wide
+                        # singleton whose ``_data`` is mutated by other code /
+                        # tests; under some orderings it can be left WITHOUT an
+                        # ``architecture`` section (or with a duplicated scalar
+                        # key), in which case a bare ``TheXMLConfig.space(...,
+                        # default)`` would still raise -- and that raise, caught
+                        # by the broad ``except`` below, would silently bypass
+                        # the heat path (ON==OFF). ``_cfg_knob`` localizes any
+                        # such config-read failure and degrades it to the
+                        # supplied default, so a config-state issue yields
+                        # DEFAULT KNOBS, not a bypassed capstone. (The space()
+                        # lookup is itself hardened against a missing
+                        # <architecture> section; this is belt-and-suspenders
+                        # for genuinely unexpected config-read errors.)
+                        def _cfg_knob(_sec, _key, _default):
+                            try:
+                                return TheXMLConfig.space(_sec, _key, _default)
+                            except Exception:
+                                return _default
+                        _cfg_sec = ('WholeSpace' if space_role == 'SS'
+                                    else 'ConceptualSpace')
+                        _r_alpha = float(_cfg_knob(
+                            _cfg_sec, 'retrievalAlpha', 1.0))
+                        _r_beta = float(_cfg_knob(
+                            _cfg_sec, 'retrievalBeta', 0.5))
+                        # gamma / delta default to 0.0 for primer mode so
+                        # behavior is byte-identical to pre-Phase-5 when
+                        # mode=='primer'.  For second-order / low-rank modes
+                        # the caller must set non-zero values in the XML;
+                        # code defaults remain 0.0 (no carrier contribution).
+                        _r_gamma = float(_cfg_knob(
+                            _cfg_sec, 'retrievalGamma', 0.0))
+                        _r_delta = float(_cfg_knob(
+                            _cfg_sec, 'retrievalDelta', 0.0))
+                        _r_topk_content = int(_cfg_knob(
+                            _cfg_sec, 'retrievalTopKContent', 64))
+                        _r_topk_heat = int(_cfg_knob(
+                            _cfg_sec, 'retrievalTopKHeat', 64))
+                        _r_outer_topk = int(_cfg_knob(
+                            _cfg_sec, 'retrievalOuterTopK', 32))
+                        # CRITICAL: when mode=='primer', gamma and delta must
+                        # be 0 to preserve byte-identity with pre-Phase-5.
+                        if mode == 'primer':
+                            _r_gamma = 0.0
+                            _r_delta = 0.0
+
+                        slot0 = int(top_slot[0].item())
+                        order_buf = ss._order
+                        if 0 <= slot0 < int(order_buf.shape[1]):
+                            parent_order = int(order_buf[0, slot0].item())
+                        else:
+                            parent_order = 0
+                        q = parent[0]  # row-0 canonical query
+                        left = ss.retrieval_candidates_for_slot(
+                            q, space_role_basis, cats[0], parent_order, batch=0,
+                            topk_content=_r_topk_content,
+                            topk_heat=_r_topk_heat,
+                            alpha=_r_alpha, beta=_r_beta,
+                            mode=mode, gamma=_r_gamma, delta=_r_delta,
+                            outer_topk=_r_outer_topk)
+                        right = ss.retrieval_candidates_for_slot(
+                            q, space_role_basis, cats[1], parent_order, batch=0,
+                            topk_content=_r_topk_content,
+                            topk_heat=_r_topk_heat,
+                            alpha=_r_alpha, beta=_r_beta,
+                            mode=mode, gamma=_r_gamma, delta=_r_delta,
+                            outer_topk=_r_outer_topk)
+                        if left:
+                            if left.get('rows') is not None:
+                                reverse_kwargs['left_rows'] = left['rows']
+                            if left.get('priming') is not None:
+                                reverse_kwargs['left_priming'] = left['priming']
+                        if right:
+                            if right.get('rows') is not None:
+                                reverse_kwargs['right_rows'] = right['rows']
+                            if right.get('priming') is not None:
+                                reverse_kwargs['right_priming'] = (
+                                    right['priming'])
+                except Exception:
+                    # Any failure -> plain reverse (never break generation).
+                    reverse_kwargs = {}
+
+        # Reverse only when a FAITHFUL inverse is available. Two ways an op
+        # opts out: (1) it declares ``reverse_dispatchable = False`` because
+        # no inverse exists at all (a lossy op, e.g. AdverbLayer); (2) it
+        # declares ``reverse_required_kwargs`` naming operands the reverse
+        # path could not recover (VerbLayer needs ``verb_what``). Either way
+        # the rule RAISES the inventory error (fabricating a split would
+        # corrupt the reconstruction -- and hiding that fact is worse).
+        _required = getattr(layer, 'reverse_required_kwargs', ())
+        _missing = [k for k in _required if k not in reverse_kwargs]
+        if not getattr(layer, 'reverse_dispatchable', True):
+            _no_inverse("reverse_dispatchable=False")
+        if _missing:
+            _no_inverse(f"reverse needs operands this path cannot "
+                        f"recover: {_missing}")
+        try:
+            child = layer.reverse(parent, basis=space_role_basis,
+                                  **reverse_kwargs)
+        except TypeError:
+            # Backward-compat for layer reverses that don't accept the
+            # basis kwarg (NotLayer, NonLayer, ...): a real inverse may
+            # still run bare; anything it raises propagates (fail loud).
+            child = layer.reverse(parent)
+        if arity == 2 and (not isinstance(child, tuple)
+                            or len(child) != 2):
+            _no_inverse(f"reverse returned "
+                        f"{type(child).__name__}, not the (left, right) "
+                        f"pair arity 2 demands")
+
+        what_new = what.clone()
+        where_new = where.clone()
+        occ = subspace.materialize(mode="activation")
+        occ_new = occ.clone()
+
+        if arity == 1:
+            # Reverse returned a single tensor; write back into the
+            # top slot and leave occupancy / where unchanged for the
+            # other slots. (Arity-1 reduce is not yet a primitive --
+            # this branch is forward-looking.)
+            if isinstance(child, tuple):
+                # Some arity-1 reverses return single-tuple wrappings.
+                child = child[0]
+            what_new[arange_B, top_slot, :] = child
+            # Where stays as the rule stamp; downstream callers can
+            # re-decode if they want to track depth.
+        else:
+            # Arity-2: child is (left, right). Write left into the
+            # top slot and right into the next-empty slot (top + 1).
+            if not isinstance(child, tuple) or len(child) != 2:
+                raise TypeError(
+                    f"LanguageLayer.unreduce: arity-2 layer "
+                    f"{method_name!r}.reverse(parent) must return "
+                    f"(left, right); got {type(child).__name__}"
+                )
+            left, right = child
+            new_slot = top_slot + 1                            # [B]
+            what_new[arange_B, top_slot, :] = left
+            what_new[arange_B, new_slot, :] = right
+
+            # Phase 3b CAPSTONE — reverse self-priming (plan
+            # doc/plans/2026-06-06-symbolic-heat-retrieval.md §Reverse-path
+            # responsibilities steps 7-8; plan-test 10). After a HEAT-STEERED
+            # binary pick (reverse_kwargs was used), prime the selected
+            # operand rows so subsequent reverse steps in the same sentence
+            # see them as hot. BEST-EFFORT: gated on priming_enabled and fully
+            # guarded — any difficulty is silently skipped (it must never
+            # break generation). The recommender returns operand VECTORS, not
+            # ids, so each selected row id is recovered by matching the
+            # returned vector against the candidate ``rows`` subset of
+            # ``W = space_role_basis.getW()`` (a small set), row-0 canonical.
+            if reverse_kwargs:
+                try:
+                    tax = getattr(ss, 'taxonomy', None)
+                    if (tax is not None
+                            and getattr(tax, 'priming_enabled', False)
+                            and space_role_basis is not None
+                            and hasattr(space_role_basis, 'getW')):
+                        W_rec = _active_basis_prototypes(space_role_basis)
+                        if W_rec is not None:
+                            for vec, side in ((left[0], 'left_rows'),
+                                              (right[0], 'right_rows')):
+                                cand = reverse_kwargs.get(side, None)
+                                cand = _filter_active_candidate_rows(
+                                    cand, int(W_rec.shape[0]))
+                                rid = self._recover_selected_row(
+                                    vec, W_rec, cand)
+                                if rid is not None and rid >= 0:
+                                    tax.note_selection(rid, batch=0)
+                                    ss._commit_priming(0, rid)
+                except Exception:
+                    # Never let a priming-lifecycle bug break generation.
+                    pass
+            # Children's .where is unknown without history -- clear it
+            # to the empty sentinel (the plan permits identity-stub
+            # behavior for reverse). Phase 8+ can carry an in-band
+            # provenance trail if needed.
+            where_new[arange_B, top_slot, :] = 0.0
+            where_new[arange_B, new_slot, :] = 0.0
+            occ_new[arange_B, new_slot] = 1.0
+            # Top slot was already occupied; activation[top_slot] stays
+            # at 1.0.
+
+        subspace.set_what(what_new)
+        subspace.set_where(where_new)
+        subspace.set_activation(occ_new)
+        return subspace
+
+    def reverse_stack(self, subspace, syntactic_layer, *,
+                      grammar=None, rule_codebook=None, max_steps=None):
+        """Repeatedly ``unreduce`` until only terminal / empty slots
+        remain (or ``max_steps`` is reached).
+
+        Inverse-orchestrator counterpart to ``forward_stack``. Each
+        step examines the top live slot's ``.where``; if it decodes
+        to a rule, unreduce; otherwise we are done. ``max_steps``
+        bounds the loop (defaults to ``K-1`` reductions worth).
+
+        Returns the same subspace after unwinding.
+        """
+        if grammar is None and rule_codebook is not None:
+            grammar = rule_codebook.grammar
+        if grammar is None:
+            raise ValueError(
+                "LanguageLayer.reverse_stack: provide `grammar` or a "
+                "`rule_codebook` with an attached Grammar"
+            )
+        what = subspace.materialize(mode="what")
+        K = what.shape[1]
+        budget = (K - 1) if max_steps is None else int(max_steps)
+        for _ in range(budget):
+            where = subspace.materialize(mode="where")
+            n_live = self._stack_n_live(subspace)
+            if int(n_live[0].item()) < 1:
+                break
+            top = int(n_live[0].item()) - 1
+            top_where = where[0, top, 0]
+            kind, _id = grammar.decode_where(top_where)
+            if kind != 'rule':
+                break
+            self.unreduce(subspace, syntactic_layer,
+                          grammar=grammar, rule_codebook=rule_codebook)
+            # Dissipate priming between reverse calls (Phase 3b).
+            # No-op today: the priming buffer is unallocated or all-1.0
+            # until forward heat updates land in Phase 4.  Guard ensures
+            # a missing symbolSpace / taxonomy is silently skipped.
+            ss = getattr(subspace, 'symbolSpace', None)
+            tax = getattr(ss, 'taxonomy', None) if ss is not None else None
+            if tax is not None:
+                tax.decay(temporal_decay=getattr(tax, 'temporal_decay', 0.9))
+        return subspace
+
+    def forward_stack(self, subspace, syntactic_layer, *,
+                      actions, rule_codebook=None, grammar=None):
+        """Run a sequence of hard SHIFT / REDUCE actions on a stack-mode subspace.
+
+        First-patch orchestrator: takes an explicit ``actions`` list.
+        Production routing belongs to OperationSelectionLayer. This replay
+        contract is that the actions, regardless
+        of how they are produced, rewrite ``subspace.what / .where /
+        .activation`` correctly.
+
+        Action format:
+            ('shift', terminal_what: Tensor [B, D], where_id: int)
+            ('reduce', rule_id: int)
+
+        Args:
+            subspace: stack-mode SubSpace (mutated in place).
+            syntactic_layer: per-space_role SyntacticLayer for REDUCE.
+            actions: iterable of (kind, ...) tuples.
+            rule_codebook: optional, used to resolve rule .where ids
+                for REDUCE actions. Falls back to ``grammar`` when
+                None.
+            grammar: optional Grammar, used as a secondary fallback
+                for ``where_id_for_rule`` when no rule_codebook is
+                provided.
+
+        Returns:
+            The same subspace.
+        """
+        for step, action in enumerate(actions):
+            if not action:
+                continue
+            kind = action[0]
+            if kind == 'shift':
+                if len(action) != 3:
+                    raise ValueError(
+                        f"forward_stack step {step}: shift expects "
+                        f"(kind, terminal_what, where_id); got {action!r}"
+                    )
+                _, terminal_what, where_id = action
+                self.shift(subspace, terminal_what, where_id)
+            elif kind == 'reduce':
+                if len(action) != 2:
+                    raise ValueError(
+                        f"forward_stack step {step}: reduce expects "
+                        f"(kind, rule_id); got {action!r}"
+                    )
+                _, rule_id = action
+                where_id = None
+                rc = rule_codebook
+                if rc is None and grammar is not None:
+                    where_id = grammar.where_id_for_rule(int(rule_id))
+                self.reduce(subspace, syntactic_layer, rule_id,
+                            rule_codebook=rc, where_id=where_id)
+            else:
+                raise ValueError(
+                    f"forward_stack step {step}: unknown action kind "
+                    f"{kind!r}; expected 'shift' or 'reduce'"
+                )
+        return subspace
+
+    # -- Canonical Layer-style entry points ----------------------------
+    #
+    # Mirrors the plan's "target call shape" (§"LanguageLayer Refactor"):
+    #
+    #     subspace = self.languageLayer.forward(
+    #         subspace=subspace, syntactic_layer=...,
+    #         grammar=..., terminal_codebook=...,
+    #         rule_codebook=...,
+    #     )
+    #
+    # ``forward`` wraps ``forward_stack``; ``reverse`` wraps
+    # ``reverse_stack``. The wrappers exist so callers can treat
+    # LanguageLayer like any other Layer subclass (``languageLayer
+    # .forward(...) / .reverse(...)``) instead of having to know about
+    # the lower-level shift/reduce/unreduce primitives.
+
+    def forward(self, subspace, syntactic_layer, *,
+                grammar=None, rule_codebook=None,
+                terminal_codebook=None, actions=None):
+        """Canonical forward entry: dispatch the stack-rewrite path.
+
+        Args mirror the plan's target call shape. The router needs an
+        explicit ``actions`` list for the first-patch implementation;
+        a learned SHIFT-vs-REDUCE scorer that produces actions from
+        ``terminal_codebook`` + ``rule_codebook`` is Phase 8+ work.
+
+        Args:
+            subspace: stack-mode SubSpace (mutated in place).
+            syntactic_layer: per-space_role SyntacticLayer with ``execute``.
+            grammar: Grammar (used for rule .where decoding when
+                ``rule_codebook`` is omitted).
+            rule_codebook: optional RuleCodebook for rule .where
+                stamping.
+            terminal_codebook: accepted for plan-API symmetry but
+                NOT consumed yet -- the terminal snap currently
+                lives in ``WholeSpace._stack_route_forward`` as
+                the eager bridge; future phases can move it here.
+            actions: explicit ``[('shift', payload, where_id), ...]``
+                action list. Required until a learned policy is wired.
+
+        Raises:
+            NotImplementedError: when ``actions`` is None (no learned
+                scorer yet). The error message points to the lower-
+                level shift/reduce primitives for the explicit path.
+        """
+        # ``terminal_codebook`` is part of the plan's target signature
+        # but the stack-rewrite path's snap stays in WholeSpace for
+        # now (first-patch eager bridge). Accepting + ignoring keeps
+        # the API stable so future phases can move the snap here.
+        del terminal_codebook
+        if actions is None:
+            raise NotImplementedError(
+                "LanguageLayer.forward without explicit `actions` "
+                "requires a learned SHIFT/REDUCE scorer (Phase 8+). "
+                "Either pass actions=[('shift', payload, where_id), "
+                "('reduce', rule_id), ...] explicitly, or call the "
+                "shift()/reduce() primitives directly."
+            )
+        return self.forward_stack(
+            subspace, syntactic_layer,
+            actions=actions,
+            rule_codebook=rule_codebook,
+            grammar=grammar,
+        )
+
+    def reverse(self, subspace, syntactic_layer, *,
+                grammar=None, rule_codebook=None, max_steps=None):
+        """Canonical reverse entry: unwind the stack via reverse_stack.
+
+        Args:
+            subspace: stack-mode SubSpace (mutated in place).
+            syntactic_layer: per-space_role SyntacticLayer (provides
+                ``_by_name`` for rule layer lookup).
+            grammar: Grammar for ``.where`` decoding. Required when
+                ``rule_codebook`` is None.
+            rule_codebook: optional RuleCodebook with an attached
+                Grammar; falls back to ``grammar`` when None.
+            max_steps: bound on the unwind loop; defaults to ``K - 1``.
+
+        Note: under the identity-stub contract (lossy ops like
+        ConjunctionLayer where ``reverse(parent) == (parent, parent)``)
+        the unwind only goes one level deep -- the children's .where
+        is cleared by ``unreduce`` so reverse_stack sees an empty
+        top and halts. Full multi-level unwinding requires a
+        provenance trail (Phase 8+).
+        """
+        return self.reverse_stack(
+            subspace, syntactic_layer,
+            grammar=grammar,
+            rule_codebook=rule_codebook,
+            max_steps=max_steps,
+        )
+
+
+def _masked_softmax_lastdim(scores: torch.Tensor) -> torch.Tensor:
+    """Softmax over the last dim that is NaN-safe for fully-masked rows.
+
+    Standard ``F.softmax`` returns NaN for a row that is entirely
+    ``-inf`` (every entry masked out). Here such a row is a
+    structurally-impossible action whose action-level marginal is
+    already 0, so the per-op posterior is multiplied by 0 downstream --
+    any finite value is correct. This returns a 0 posterior on
+    fully-dead rows and the ordinary softmax elsewhere, keeping the op
+    posterior finite without altering the live (non-dead) rows or
+    silencing a genuine divergence. Gradient-safe: dead rows carry no
+    gradient (they are constant 0), live rows get the usual softmax
+    gradient.
+    """
+    if scores.numel() == 0:
+        return scores
+    # A row is "dead" when its max over ops is non-finite (all -inf).
+    row_max = scores.amax(dim=-1, keepdim=True)            # [..., 1]
+    dead = ~torch.isfinite(row_max)                        # [..., 1] bool
+    # Replace dead rows with zeros so softmax is finite (uniform) there;
+    # zero out that uniform afterwards so the posterior is exactly 0.
+    safe_scores = torch.where(dead, torch.zeros_like(scores), scores)
+    post = F.softmax(safe_scores, dim=-1)
+    post = torch.where(dead, torch.zeros_like(post), post)
+    return post
+
+
+def sample_eligible_logits(logits, draw=None):
+    """Sample the masked policy at unit temperature; no gradient through RNG.
+
+    A departure excludes the greedy action before this call. Its original
+    unmasked policy still owns the selected action's training credit.
+    """
+    probabilities = _masked_softmax_lastdim(logits.detach())
+    if draw is None:
+        draw = torch.rand(*logits.shape[:-1], 1, device=logits.device,
+                          dtype=logits.dtype)
+    # Normalize the CDF endpoint to one even after floating-point summation.
+    cumulative = probabilities.cumsum(-1)
+    cumulative = cumulative / cumulative[..., -1:].clamp_min(torch.finfo(logits.dtype).tiny)
+    return (draw.reshape(*logits.shape[:-1], 1) >= cumulative).sum(-1).clamp_max(logits.shape[-1] - 1)
+
+
+class TransformChooser(nn.Module):
+    """Routing policy: scores tool/location candidates for a structured
+    layer.
+
+    The plan separates the transform/tool IMPLEMENTATION (the
+    ``GrammarLayer`` ops) from the CHOICE POLICY (which op to apply,
+    where). ``OperationSelectionLayer`` delegates candidate scoring here;
+    its joint softmax and selected operation execution stay on the layer.
+
+    The default chooser (:class:`AnchorDotTransformChooser`) reproduces the
+    layers' inline anchor-dot scoring exactly. ``MLPTransformChooser`` swaps
+    in a contextual network behind a config flag. Subclasses implement
+    ``score_unary`` / ``score_binary``.
+    """
+
+    def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
+                    cat_ctx=None, what_ctx=None, op_offset=0):
+        raise NotImplementedError
+
+    def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
+                     cat_ctx=None, what_ctx=None):
+        raise NotImplementedError
+
+
+class AnchorDotTransformChooser(TransformChooser):
+    """Anchor-dot placement scorer -- the scorer-level byte-identical default.
+
+    Reproduces the original inline scoring (Stern et al. 2017 /
+    Vaswani et al. 2017 style): the placement score is the inner product
+    between a candidate's output and a per-rule learnable anchor. The scorer
+    ignores ``cat_ctx``; the category-role prior is applied by the owning
+    layer after scoring, so with ``categoryCodebook`` enabled (now the
+    default) the END-TO-END route is no longer byte-identical even though
+    this scorer is.
+
+    Deliberately STATELESS: the ``copy_anchor`` / ``apply_anchor`` /
+    ``reduce_anchor`` Parameters stay OWNED BY THE LAYER and are passed in
+    at call time. Moving them into this submodule would rename their
+    state_dict keys (``layer.copy_anchor`` -> ``layer.chooser.copy_anchor``)
+    and risk a pinned basin; a param-less chooser adds no keys and keeps
+    the scoring byte-identical. (The future MLPTransformChooser owns its own
+    params -- a deliberate new-params cutover, behind a config flag.)
+    """
+
+    def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
+                    cat_ctx=None, what_ctx=None, op_offset=0):
+        """Return ``(copy_score, apply_score)`` for the unary layer.
+
+        ``copy_score[b,n,c]  = <x_score[b,n,:],       copy_anchor[c,:]>``
+        ``apply_score[b,n,a] = <applied_score[b,n,a,:], apply_anchor[a,:]>``
+
+        ``cat_ctx`` is NOT consumed here -- the anchor-dot scorer stays
+        stateless. The labelled-role category prior is added by the OWNING
+        layer AFTER scoring (``_category_apply_prior``). Because
+        ``categoryCodebook`` now defaults ON, that prior shifts routing by
+        default, so the END-TO-END route is no longer byte-identical to the
+        bare anchor-dot for category-bearing grammars (this scorer still is).
+        """
+        # Device safety (MPS): the anchors are the owning layer's Parameters; if
+        # a device move missed them (e.g. choosers built lazily after the model's
+        # .to(device)), align to the input's device. No-op when co-located.
+        copy_anchor = copy_anchor.to(x_score.device)
+        apply_anchor = apply_anchor.to(x_score.device)
+        copy_score = torch.einsum('bnd,cd->bnc', x_score, copy_anchor)
+        r_apply = int(apply_anchor.shape[0])
+        if r_apply > 0 and applied_score.shape[2] > 0:
+            apply_score = torch.einsum(
+                'bnad,ad->bna', applied_score, apply_anchor)
+        else:
+            apply_score = x_score.new_zeros(
+                x_score.shape[0], x_score.shape[1], r_apply)
+        return copy_score, apply_score
+
+    def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
+                     cat_ctx=None, what_ctx=None):
+        """Return ``(copy_score, reduce_score)`` for the binary layer.
+
+        ``copy_score[b,n,c]   = <x_score[b,n,:],            copy_anchor[c,:]>``
+        ``reduce_score[b,p,r] = <reduced_score[b,p,r,:], reduce_anchor[r,:]>``
+
+        ``cat_ctx`` is NOT consumed here -- the anchor-dot scorer stays
+        stateless. The labelled-role category prior is added by the OWNING
+        layer AFTER scoring (``_category_reduce_prior``). Because
+        ``categoryCodebook`` now defaults ON, that prior shifts routing by
+        default, so the END-TO-END route is no longer byte-identical to the
+        bare anchor-dot for category-bearing grammars (this scorer still is).
+        """
+        # Device safety (MPS): align the owning layer's anchor Parameters to the
+        # input's device in case a device move missed them. No-op when co-located.
+        copy_anchor = copy_anchor.to(x_score.device)
+        reduce_anchor = reduce_anchor.to(x_score.device)
+        copy_score = torch.einsum('bnd,cd->bnc', x_score, copy_anchor)
+        r_reduce = int(reduce_anchor.shape[0])
+        if reduced_score.shape[1] > 0 and r_reduce > 0:
+            reduce_score = torch.einsum(
+                'bnrd,rd->bnr', reduced_score, reduce_anchor)
+        else:
+            reduce_score = x_score.new_zeros(
+                x_score.shape[0], max(x_score.shape[1] - 1, 0), r_reduce)
+        return copy_score, reduce_score
+
+
+def _chooser_size(value, name, *, minimum=1):
+    """Validate architectural dimensions without silently truncating them."""
+    try:
+        size = int(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be an integer >= {minimum}, got {value!r}") from exc
+    if (isinstance(value, bool) or size < minimum
+            or (not isinstance(value, str) and size != value)):
+        raise ValueError(f"{name} must be an integer >= {minimum}, got {value!r}")
+    return size
+
+
+def _chooser_mlp(in_dim, hidden, depth):
+    """Hidden Linear/GELU blocks plus a scalar score; preserve depth-1 keys."""
+    layers = []
+    for i in range(depth):
+        layers.extend((nn.Linear(in_dim if i == 0 else hidden, hidden), nn.GELU()))
+    layers.append(nn.Linear(hidden, 1))
+    return nn.Sequential(*layers)
+
+
+class SelectedThoughtChooser(nn.Module):
+    """Hard selector for an ordinary grammatical thought at a boundary.
+
+    BasicModel supplies complete masked root/active/candidate roles, bounded
+    semantic metadata, attended visible memory, execution level and pressure.  References
+    and native IDs deliberately stay out of the numerical features: they are
+    addresses owned by the registry/history, not operand values.  Each
+    operation is represented by its complete candidate meaning; the only
+    categorical feature distinguishes an ordinary operation from the
+    controller's non-semantic conclude transition.  It never encodes a
+    semantic id, alias, or catalog position.  The two-wide feature shape is
+    retained so existing saved policy tensors map ``query`` -> operation and
+    ``finish`` -> conclude without a shape migration.
+    """
+
+    ACTION_KINDS = ("operation", "conclude")
+    CANDIDATE_FEATURES = len(ACTION_KINDS)
+
+    def __init__(self, *, context_dim, hidden=16, depth=1):
+        super().__init__()
+        self.context_dim = int(context_dim)
+        if self.context_dim < 1:
+            raise ValueError("selected thought context must be nonempty")
+        self.hidden = _chooser_size(hidden, "selectedThoughtHidden")
+        self.depth = _chooser_size(depth, "selectedThoughtDepth")
+        with torch.random.fork_rng(devices=[]):
+            self.mlp = _chooser_mlp(
+                self.context_dim + self.CANDIDATE_FEATURES,
+                self.hidden, self.depth)
+        nn.init.zeros_(self.mlp[-1].weight)
+        nn.init.zeros_(self.mlp[-1].bias)
+
+    def logits(self, contexts, concludes):
+        """Score candidate-meaning contexts plus their conclude flag.
+
+        ``contexts`` has one full semantic context per action.  ``concludes``
+        is structural control metadata only; it is deliberately not an
+        operator/index encoding.
+        """
+        contexts = torch.as_tensor(contexts)
+        if contexts.dim() == 1:
+            contexts = contexts.unsqueeze(0)
+        if (contexts.dim() != 2
+                or int(contexts.shape[-1]) != self.context_dim):
+            raise ValueError(
+                f"selected thought contexts have width {tuple(contexts.shape)} "
+                f"!= [K, {self.context_dim}]")
+        concludes = torch.as_tensor(concludes, device=contexts.device,
+                                    dtype=torch.bool).reshape(-1)
+        if int(concludes.numel()) != int(contexts.shape[0]):
+            raise ValueError("selected thought needs one conclude flag per context")
+        if not int(contexts.shape[0]):
+            return contexts.new_zeros(0)
+        features = contexts.new_zeros(
+            int(contexts.shape[0]), self.CANDIDATE_FEATURES)
+        features[:, 0] = (~concludes).to(features)
+        features[:, 1] = concludes.to(features)
+        return self.mlp(torch.cat((contexts, features), dim=-1)).squeeze(-1)
+
+    def choose(self, contexts, concludes, *, sample=False, temperature=1.0,
+               structural=None, excluded=None, forced=None):
+        """Return a hard action index and its live policy log probability."""
+        logits = self.logits(contexts, concludes)
+        if logits.numel() == 0:
+            raise ValueError("SelectedThoughtChooser.choose needs one action")
+        log_probs = torch.log_softmax(
+            logits / max(1e-6, float(temperature)), dim=-1)
+        choice_logits=logits.detach().clone()
+        if excluded is not None and logits.numel()>1:
+            choice_logits[int(excluded)]=-torch.inf
+        if forced is not None:
+            index=int(forced)
+            if not 0<=index<logits.numel():raise ValueError('thought replay chose an unavailable action')
+        elif excluded is not None and torch.isfinite(choice_logits).any():
+            index = int(sample_eligible_logits(choice_logits).item())
+        elif sample and logits.numel() > 1:
+            index = int(torch.multinomial(log_probs.detach().exp(), 1).item())
+        else:
+            index = int(structural_argmax(choice_logits, structural).item())
+        return index, log_probs[index]
+
+
+class MLPTransformChooser(TransformChooser):
+    """Contextual MLP placement scorer -- the expressive cutover chooser.
+
+    Replaces the anchor-dot single inner product with a learned MLP over
+    per-candidate CONTEXT: the slot / pair state, the candidate op's output,
+    a learned tool-identity embedding, and a sinusoidal position encoding.
+    It produces the same per-(op, location) logit shapes as
+    ``AnchorDotTransformChooser`` -- ``copy_score`` / ``apply_score`` (unary)
+    and ``copy_score`` / ``reduce_score`` (binary) -- so it is a drop-in for
+    the structured grammar layers.
+
+    UNLIKE the anchor-dot chooser this OWNS parameters (the tool embeddings
+    + the MLP), so enabling it CHANGES the state_dict and starts a fresh
+    basin -- a deliberate cutover behind ``<transformChooser>mlp`` (default
+    anchordot). The copy/apply/reduce anchors passed by the layer are
+    ignored; the MLP conditions on context instead.
+
+    Sizing (one chooser per layer): ``n_copy`` copy ops then ``n_op``
+    apply/reduce ops, one tool-embedding row each (copy rows first).
+    Binary layers pass ``ordered_binary=True`` so operand/role means and
+    signed differences enter the same first hidden layer. Unary heads retain
+    their existing input and checkpoint layout.
+    """
+
+    # relation one-hot (5), signed/magnitude offset (2), the question's
+    # absolute dataset position and its target position normalized by the
+    # split extent (2), the model's 4-dim .where ladder of each of those two
+    # positions (8), LTM input/output counts (2), derived open depth (1),
+    # closure pressure (1), and four bounded summary features for each side
+    # of the latest relevant LTM slot (8).
+    WHAT_CONTEXT_DIM = 29
+
+    def __init__(self, *, d_model, n_copy, n_op, embed_dim=8, pos_dim=8,
+                 hidden=None, n_role_cats=0, depth=1, ordered_binary=False):
+        super().__init__()
+        self.d_model = int(d_model)
+        self.n_copy = int(n_copy)
+        self.n_op = int(n_op)
+        self.embed_dim = int(embed_dim)
+        self.pos_dim = int(pos_dim)
+        # MetaSymbol Category codebook: per-slot syntactic-category context
+        # width fed alongside the slot/cand/tool/pos features. 0 = no MLP input
+        # widening. >0 widens the first Linear by ``n_role_cats``; ``_score``
+        # then concatenates the per-slot role vector (zeros when no
+        # ``cat_ctx`` is supplied at call time).
+        self.n_role_cats = int(n_role_cats)
+        self.hidden = _chooser_size(
+            hidden if hidden is not None else max(8, self.d_model),
+            "transformChooserHidden")
+        self.depth = _chooser_size(depth, "transformChooserDepth")
+        self.tool_embedding = nn.Parameter(
+            torch.randn(max(1, self.n_copy + self.n_op), self.embed_dim) * 0.02)
+        in_dim = (2 * self.d_model + self.embed_dim
+                  + self.n_role_cats + self.pos_dim)
+        self.mlp = _chooser_mlp(in_dim, self.hidden, self.depth)
+        # The mean alone identifies (left, right) with (right, left).
+        # Feed their signed difference into THIS MLP's first hidden layer;
+        # together mean and difference retain both full-width operands and
+        # both role vectors. No lexical classifier or additional policy owns
+        # this association. Zero initialization preserves old predictions and
+        # the RNG stream while ordinary reconstruction/answer credit learns
+        # how order affects a grammar choice.
+        self.operand_order = None
+        self.copy_order = None
+        if ordered_binary:
+            # Allocate without a random draw on ANY default device. A CPU
+            # fork_rng alone would still advance the production MPS stream.
+            self.operand_order = nn.Linear(
+                self.d_model + self.n_role_cats, self.hidden, bias=False,
+                device="meta")
+            self.operand_order.weight = nn.Parameter(self.mlp[0].weight.new_zeros(
+                self.hidden, self.d_model + self.n_role_cats))
+            self.register_buffer("_operand_order_version", torch.tensor(1))
+            # Waiting is also a contextual grammar decision. A function
+            # word's isolated copy preference must not override a licensed
+            # attachment to its neighbour. This feeds the same hidden layer;
+            # it is not another classifier or policy.
+            self.copy_order = nn.Linear(
+                self.d_model + self.n_role_cats, self.hidden, bias=False,
+                device="meta")
+            self.copy_order.weight = nn.Parameter(torch.zeros_like(self.operand_order.weight))
+            self.register_buffer("_copy_order_version", torch.tensor(1))
+        # Question intent is a chooser input, not an output shortcut.  This
+        # zero-initialized head preserves the established clean route exactly
+        # until a temporal/supervised curriculum trains it.  One logit bias is
+        # learned for every copy/apply-or-reduce operation.
+        # Preserve the pre-What initialization stream.  Although the weights
+        # start at zero, ``nn.Linear`` initializes them before we clear them;
+        # without an RNG fork that invisible draw shifts every module built
+        # after the chooser and changes established seed-pinned convergence
+        # behaviour.
+        with torch.random.fork_rng(devices=[]):
+            self.what_projection = nn.Linear(
+                self.WHAT_CONTEXT_DIM, max(1, self.n_copy + self.n_op),
+                bias=False)
+        nn.init.zeros_(self.what_projection.weight)
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        if self.copy_order is not None:
+            marker, weight = prefix + "_copy_order_version", prefix + "copy_order.weight"
+            if marker not in state_dict and weight not in state_dict:
+                state_dict[marker] = self._copy_order_version.detach().clone()
+                state_dict[weight] = torch.zeros_like(self.copy_order.weight)
+            elif marker in state_dict and int(state_dict[marker]) != 1:
+                error_msgs.append(prefix + "unsupported grammar copy-context schema")
+        if self.operand_order is not None:
+            marker = prefix + "_operand_order_version"
+            weight = prefix + "operand_order.weight"
+            if marker not in state_dict and weight not in state_dict:
+                # Only a pre-order checkpoint gets the zero extension. A
+                # marked current checkpoint missing its learned projection
+                # must still fail strict restoration.
+                state_dict[marker] = self._operand_order_version.detach().clone()
+                state_dict[weight] = torch.zeros_like(self.operand_order.weight)
+            elif marker in state_dict and int(state_dict[marker]) != 1:
+                error_msgs.append(prefix + "unsupported grammar operand-order schema")
+        super()._load_from_state_dict(
+            state_dict, prefix, local_metadata, strict,
+            missing_keys, unexpected_keys, error_msgs)
+
+    def _pos_emb(self, n, device, dtype):
+        """Sinusoidal positional encoding ``[n, pos_dim]``."""
+        if n <= 0:
+            return torch.zeros(0, self.pos_dim, device=device, dtype=dtype)
+        pos = torch.arange(n, device=device, dtype=dtype).unsqueeze(1)   # [n,1]
+        half = max(1, self.pos_dim // 2)
+        k = torch.arange(half, device=device, dtype=dtype)
+        div = torch.exp(-math.log(10000.0) * k / float(half))           # [half]
+        ang = pos * div.unsqueeze(0)                                    # [n, half]
+        pe = torch.cat([torch.sin(ang), torch.cos(ang)], dim=-1)
+        if pe.shape[-1] < self.pos_dim:                                # pad odd
+            pe = torch.cat(
+                [pe, pe.new_zeros(n, self.pos_dim - pe.shape[-1])], dim=-1)
+        return pe[:, :self.pos_dim]
+
+    def _score(self, slot, cand, tool_rows, pos, cat_ctx=None, order_ctx=None,
+               order_projection=None):
+        """Score ``R`` candidates at each of ``Npos`` locations.
+
+        ``slot`` / ``cand``: ``[B, Npos, D]`` (broadcast over R) or ``cand``
+        ``[B, Npos, R, D]``; ``tool_rows``: ``[R, embed_dim]``; ``pos``:
+        ``[Npos, pos_dim]``. ``cat_ctx``: optional per-slot category
+        role vector ``[B, Npos, n_role_cats]`` broadcast over R; ``None`` (or
+        ``n_role_cats == 0``) feeds a zero block / no block. Returns
+        ``[B, Npos, R]``.
+        """
+        B, Npos = slot.shape[0], slot.shape[1]
+        R = int(tool_rows.shape[0])
+        if R == 0 or Npos == 0:
+            return slot.new_zeros(B, Npos, R)
+        slot_e = slot.unsqueeze(2).expand(B, Npos, R, self.d_model)
+        cand_e = (cand if cand.dim() == 4
+                  else cand.unsqueeze(2).expand(B, Npos, R, self.d_model))
+        tool_e = tool_rows.view(1, 1, R, self.embed_dim).expand(
+            B, Npos, R, self.embed_dim)
+        pos_e = pos.view(1, Npos, 1, self.pos_dim).expand(
+            B, Npos, R, self.pos_dim)
+        if self.n_role_cats > 0:
+            # Category context block: the per-slot role vector, broadcast over
+            # candidates and placed between the tool and position blocks (the
+            # in_dim layout the first Linear was sized for). Missing context
+            # (terminal codebook off, composed slot) -> a zero block.
+            if cat_ctx is None:
+                cat_e = slot.new_zeros(B, Npos, R, self.n_role_cats)
+            else:
+                cat_e = cat_ctx.to(slot.dtype).unsqueeze(2).expand(
+                    B, Npos, R, self.n_role_cats)
+            feat = torch.cat([slot_e, cand_e, tool_e, cat_e, pos_e], dim=-1)
+        else:
+            feat = torch.cat([slot_e, cand_e, tool_e, pos_e], dim=-1)
+        # Cast to the slot dtype so the computed path and the degenerate
+        # zero fallbacks agree even under autocast (the MLP may emit
+        # bf16/fp16; the fallbacks keep the input dtype).
+        projection = self.operand_order if order_projection is None else order_projection
+        if projection is not None and order_ctx is not None:
+            hidden = self.mlp[0](feat)
+            hidden = hidden + projection(order_ctx).unsqueeze(2).to(hidden.dtype)
+            for index, block in enumerate(self.mlp):
+                if index:
+                    hidden = block(hidden)
+            return hidden.squeeze(-1).to(slot.dtype)
+        return self.mlp(feat).squeeze(-1).to(slot.dtype)              # [B,Npos,R]
+
+    def _what_bias(self, what_ctx, *, batch, device, dtype):
+        if what_ctx is None:
+            return None
+        ctx = torch.as_tensor(what_ctx, device=device, dtype=dtype)
+        if ctx.dim() == 1:
+            ctx = ctx.unsqueeze(0)
+        if ctx.shape[-1] != self.WHAT_CONTEXT_DIM:
+            raise ValueError(
+                f"what grammar context width {ctx.shape[-1]} != "
+                f"{self.WHAT_CONTEXT_DIM}")
+        if ctx.shape[0] == 1 and batch > 1:
+            ctx = ctx.expand(batch, -1)
+        if ctx.shape[0] != batch:
+            raise ValueError(
+                f"what grammar context batch {ctx.shape[0]} != {batch}")
+        return self.what_projection(ctx).to(dtype)
+
+    def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
+                    cat_ctx=None, what_ctx=None, op_offset=0):
+        B, N, D = x_score.shape
+        pos = self._pos_emb(N, x_score.device, x_score.dtype)
+        copy_rows = self.tool_embedding[:self.n_copy]
+        copy_score = self._score(x_score, x_score, copy_rows, pos,
+                                 cat_ctx=cat_ctx)                      # copy=slot
+        r_apply = applied_score.shape[2] if applied_score.dim() == 4 else 0
+        if r_apply > 0:
+            apply_rows = self.tool_embedding[self.n_copy + op_offset:self.n_copy + op_offset + r_apply]
+            apply_score = self._score(x_score, applied_score, apply_rows, pos,
+                                      cat_ctx=cat_ctx)
+        else:
+            apply_score = x_score.new_zeros(B, N, 0)
+        what_bias = self._what_bias(
+            what_ctx, batch=B, device=x_score.device, dtype=x_score.dtype)
+        if what_bias is not None:
+            copy_score = copy_score + what_bias[:, None, :self.n_copy]
+            if r_apply > 0:
+                apply_score = apply_score + what_bias[
+                    :, None, self.n_copy + op_offset:self.n_copy + op_offset + r_apply]
+        return copy_score, apply_score
+
+    def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
+                     cat_ctx=None, what_ctx=None):
+        B, N, D = x_score.shape
+        pos = self._pos_emb(N, x_score.device, x_score.dtype)
+        copy_rows = self.tool_embedding[:self.n_copy]
+        copy_context = None
+        if self.copy_order is not None and N >= 2:
+            pair = .5 * (x_score[:, :-1] - x_score[:, 1:])
+            if self.n_role_cats:
+                cats = (.5 * (cat_ctx[:, :-1] - cat_ctx[:, 1:]) if cat_ctx is not None
+                        else x_score.new_zeros(B, N - 1, self.n_role_cats))
+                pair = torch.cat((pair, cats.to(pair.dtype)), -1)
+            zero = torch.zeros_like(pair[:, :1])
+            copy_context = torch.cat((pair, zero), 1) + torch.cat((zero, pair), 1)
+        copy_score = self._score(x_score, x_score, copy_rows, pos,
+                                 cat_ctx=cat_ctx, order_ctx=copy_context,
+                                 order_projection=self.copy_order)
+        if (N >= 2 and reduced_score.dim() == 4
+                and reduced_score.shape[1] > 0 and reduced_score.shape[2] > 0):
+            pair_slot = 0.5 * (x_score[:, :-1] + x_score[:, 1:])       # [B,N-1,D]
+            # Means keep the old feature layout. The signed differences are
+            # additional inputs to the same first hidden layer, so symmetric
+            # candidate results cannot erase converse/role order.
+            pair_cat = (0.5 * (cat_ctx[:, :-1] + cat_ctx[:, 1:])
+                        if cat_ctx is not None else None)
+            order_ctx = None
+            if self.operand_order is not None:
+                order_ctx = 0.5 * (x_score[:, :-1] - x_score[:, 1:])
+                if self.n_role_cats:
+                    cat_order = (0.5 * (cat_ctx[:, :-1] - cat_ctx[:, 1:])
+                                 if cat_ctx is not None else
+                                 x_score.new_zeros(B, N - 1, self.n_role_cats))
+                    order_ctx = torch.cat((order_ctx, cat_order.to(x_score.dtype)), dim=-1)
+            pos_pair = self._pos_emb(N - 1, x_score.device, x_score.dtype)
+            r_reduce = int(reduced_score.shape[2])
+            # The reduce op-axis must equal n_op (the construction-time
+            # r_reduce) so the R_reduce layout is consistent with the
+            # degenerate branch below and with the operation
+            # readers -- fail loud on any future contract drift.
+            reduce_rows = self.tool_embedding[
+                self.n_copy:self.n_copy + r_reduce]
+            reduce_score = self._score(
+                pair_slot, reduced_score, reduce_rows, pos_pair,
+                cat_ctx=pair_cat, order_ctx=order_ctx)
+        else:
+            reduce_score = x_score.new_zeros(B, max(N - 1, 0), int(reduced_score.shape[2]) if reduced_score.dim() == 4 else self.n_op)
+        what_bias = self._what_bias(
+            what_ctx, batch=B, device=x_score.device, dtype=x_score.dtype)
+        if what_bias is not None:
+            copy_score = copy_score + what_bias[:, None, :self.n_copy]
+            if reduce_score.shape[-1] > 0:
+                reduce_score = reduce_score + what_bias[
+                    :, None, self.n_copy:self.n_copy + reduce_score.shape[-1]]
+        return copy_score, reduce_score
+
+
+def make_transform_chooser(kind, *, d_model, n_copy, n_op, n_role_cats=0,
+                           ordered_binary=False):
+    """Factory: build the placement chooser for a structured layer.
+
+    ``kind`` ``"anchordot"`` (default) -> the stateless behavior-preserving
+    scorer (no params, basin unchanged); ``"mlp"`` -> the contextual
+    :class:`MLPTransformChooser` (owns params; a deliberate new-basin
+    cutover behind ``<transformChooser>``).
+
+    ``n_role_cats``: the MetaSymbol category-context width fed to the MLP
+    chooser; 0 leaves the MLP feature set unchanged. Anchor-dot uses category
+    context via the structured layer's labelled-role prior.
+    ``ordered_binary`` retains left/right differences in a binary MLP head.
+    """
+    k = str(kind or "anchordot").strip().lower()
+    if k == "mlp":
+        hidden = _chooser_size(TheXMLConfig.get(
+            "architecture.transformChooserHidden", default=0),
+            "transformChooserHidden", minimum=0)
+        depth = _chooser_size(TheXMLConfig.get(
+            "architecture.transformChooserDepth", default=1),
+            "transformChooserDepth")
+        return MLPTransformChooser(
+            d_model=d_model, n_copy=n_copy, n_op=n_op, n_role_cats=n_role_cats,
+            hidden=hidden or None, depth=depth, ordered_binary=ordered_binary)
+    # Accept exactly the values the <transformChooser> XSD enum allows, so
+    # the factory and schema validation agree on the legal set.
+    if k != "anchordot":
+        raise ValueError(
+            f"<transformChooser> must be 'anchordot' or 'mlp' (got {kind!r}).")
+    return AnchorDotTransformChooser()
+
+
+def compute_role_vocabulary(grammar):
+    """Enumerate the role-collapsed grammar's operator roles for the
+    MetaSymbol Category codebook (doc/Language.md "Participation Categories as
+    the Chooser's Syntactic-Category Context").
+
+    A ROLE is one operator argument slot. Input role ``(method, pos)`` renders
+    ``<method>_I<pos+1>`` (operand position ``pos`` fed INTO the operator);
+    output role ``(method,)`` renders ``<method>_O1`` (the result produced BY
+    the operator) -- the same naming as ``bin/participation.py``. Roles are
+    read off the live UPWARD (compose) rules; a rule with no ``method_name``
+    (epsilon / passthrough projection) declares no role and is skipped.
+
+    Returns ``(roles, role_index, n_roles)``: ``roles`` a deterministically
+    ordered list of role-name strings (sorted inputs, then sorted outputs),
+    ``role_index`` mapping role-name -> int column, ``n_roles == len(roles)``.
+    Enumerate ONCE at build from the live rule set (not the .grammar text) --
+    ``method_name is None`` projections drop out, so the file is not the
+    source of truth.
+    """
+    rules = (getattr(grammar, 'rules_upward', None)
+             or getattr(grammar, 'rules', None) or [])
+    in_roles = set()
+    out_roles = set()
+    for r in rules:
+        method = getattr(r, 'method_name', None)
+        if not method:
+            continue
+        method = str(method)
+        rhs = getattr(r, 'rhs_symbols', None) or []
+        for pos in range(len(rhs)):
+            in_roles.add((method, pos))
+        out_roles.add(method)
+    roles = [f"{m}_I{pos + 1}" for (m, pos) in sorted(in_roles)]
+    roles += [f"{m}_O1" for m in sorted(out_roles)]
+    role_index = {name: i for i, name in enumerate(roles)}
+    return roles, role_index, len(roles)
+
+
+def _role_index_for_categories():
+    try:
+        return compute_role_vocabulary(TheGrammar)[1]
+    except Exception:
+        return {}
+
+
+def _role_column(role_index, method, suffix):
+    if not method:
+        return None
+    return role_index.get(f"{method}_{suffix}")
+
+
+# ----------------------------------------------------------------------
+# Online category-collapse consumption in rule selection (<categoryCollapse>).
+#
+# The category-role priors (_category_apply_prior / _category_reduce_prior)
+# read each operator role's column out of the per-position category context
+# and add it to that rule's routing score. When <categoryCollapse> is on, the
+# collapse (participation.learned_collapse via Grammar.category_collapse) tells
+# us which role columns belong to the same collapsed category. We POOL the
+# category context across those columns so every rule whose input category was
+# merged shares the same routing evidence -- rule choice by the probable
+# COLLAPSED word category, not the raw per-role activation.
+#
+# On the live (already role-collapsed) grammar the collapse is identity, so the
+# pooling matrix is None and this is a strict no-op; it only shifts routing when
+# a grammar carries genuinely redundant categories.
+# ----------------------------------------------------------------------
+_COLLAPSE_POOL_CACHE = {}
+
+
+def _build_collapse_pool(role_index, collapse, n_cols):
+    """Pure builder: ``[n_cols, n_cols]`` pooling matrix ``P`` where
+    ``P[j, i] == 1`` iff role column ``j`` shares role column ``i``'s collapsed
+    category. ``cat_ctx @ P`` then replaces each column ``i`` with the sum over
+    its collapsed-category members. Returns ``None`` when the collapse is
+    trivial (every occupied column is its own class), so callers skip the
+    matmul entirely."""
+    col_class = {}
+    for name, col in role_index.items():
+        if 0 <= col < n_cols:
+            # Roles absent from the collapse are their own singleton class.
+            col_class[col] = collapse.get(name, ("__self__", name))
+    occupied = [c for c in range(n_cols) if c in col_class]
+    if len({col_class[c] for c in occupied}) == len(occupied):
+        return None                              # identity -> nothing to pool
+    P = torch.zeros(n_cols, n_cols)
+    for i in occupied:
+        ci = col_class[i]
+        for j in occupied:
+            if col_class[j] == ci:
+                P[j, i] = 1.0
+    for i in range(n_cols):                       # unoccupied columns pass through
+        if i not in col_class:
+            P[i, i] = 1.0
+    return P
+
+
+def _collapse_pool_matrix(n_cols):
+    """Cached pooling matrix for the live grammar's collapse (or ``None`` when
+    identity). Keyed by ``(id(TheGrammar), n_cols)`` -- the collapse is static
+    per model, so this is built once."""
+    key = (id(TheGrammar), int(n_cols))
+    if key not in _COLLAPSE_POOL_CACHE:
+        try:
+            collapse = TheGrammar.category_collapse(direction="compose")
+        except Exception:
+            collapse = {}
+        _COLLAPSE_POOL_CACHE[key] = _build_collapse_pool(
+            _role_index_for_categories(), collapse, int(n_cols))
+    return _COLLAPSE_POOL_CACHE[key]
+
+
+def _collapsed_cat_ctx(cat_ctx):
+    """Pool the category context over collapsed-category siblings when
+    ``<categoryCollapse>`` is on; identity otherwise (or when the collapse is
+    trivial). Shared by the unary and binary category-role priors so rule
+    selection reads the collapsed (probable) word category."""
+    if cat_ctx is None:
+        return cat_ctx
+    if not bool(TheXMLConfig.get("architecture.categoryCollapse", default=False)):
+        return cat_ctx
+    P = _collapse_pool_matrix(int(cat_ctx.shape[-1]))
+    if P is None:
+        return cat_ctx
+    return torch.matmul(
+        cat_ctx, P.to(device=cat_ctx.device, dtype=cat_ctx.dtype))
+
+
+class OperationSelectionLayer(nn.Module):
+    """One global categorical choice over operations at all live locations.
+
+    The slab width and round budget are static. Only the occupied depth changes;
+    binary rewrites remove one operand, unary rewrites preserve depth, and STOP
+    is admissible only when the sequence fits its destination row. The chosen
+    candidate retains its own operand/operator gradient. The selector learns
+    only from the reconstruction-owned paired-cost surrogate at the sampled
+    departure; neither the hard argmax nor STOP supplies a pathwise gradient.
+    """
+
+    def __init__(self, *, d_model, ops=(), unary_ops=(), temperature=0.0, reduce_pressure=1.0,
+                 op_names=None, unary_names=None, op_space_roles=None,
+                 chooser="anchordot", n_role_cats=0):
+        super().__init__()
+        self.d_model = int(d_model)
+        self.ops = nn.ModuleList(ops)
+        self.unary_ops = nn.ModuleList(unary_ops)
+        self.r_reduce, self.r_apply = len(self.ops), len(self.unary_ops)
+        declared = tuple(getattr(op, 'gl', op) for op in self.unary_ops)
+        self._unary_inverse_pairs = tuple(tuple(
+            getattr(candidate, 'inverse_identity', None) is not None
+            and getattr(candidate, 'inverse_identity', None) == getattr(previous, 'operation_identity', None)
+            for candidate in declared) for previous in declared)
+        require_opaque_mlp((*self.ops, *self.unary_ops), chooser)
+        self.structural_ops = tuple(operator_is_structural(op) for op in self.ops)
+        self.unary_structural_ops = tuple(operator_is_structural(op) for op in self.unary_ops)
+        self.temperature = float(temperature)
+        if not math.isfinite(self.temperature) or self.temperature < 0:
+            raise ValueError("compose temperature must be finite and nonnegative")
+        self.reduce_pressure = float(reduce_pressure)
+        if not math.isfinite(self.reduce_pressure) or self.reduce_pressure < 0:
+            raise ValueError("reduction pressure must be finite and nonnegative")
+        self.stop_anchor = nn.Parameter(torch.randn(1, self.d_model) * .02)
+        self.reduce_anchor = nn.Parameter(torch.randn(self.r_reduce, self.d_model) * .02)
+        self.apply_anchor = nn.Parameter(torch.randn(self.r_apply, self.d_model) * .02)
+        self.chooser = make_transform_chooser(
+            chooser, d_model=self.d_model, n_copy=1,
+            n_op=self.r_reduce + self.r_apply + 6, n_role_cats=n_role_cats,
+            ordered_binary=True)
+        self.bracket_anchor = nn.Parameter(torch.zeros(6,self.d_model))
+        self.attention_operations = (0, 1, 2)
+        self.space_prior = nn.Parameter(torch.zeros(6))
+        self.op_names = list(op_names) if op_names is not None else None
+        self.unary_names = list(unary_names) if unary_names is not None else None
+        self.op_space_roles = list(op_space_roles) if op_space_roles is not None else None
+
+    def select_logits(self, logits, *, structural, masked_action=None, replay_action=None, sample=False,
+                      departure_eligible=None):
+        """The 7.5 categorical selection law, shared by every candidate kind."""
+        probabilities=_masked_softmax_lastdim(logits)
+        selected=logits
+        if masked_action is not None:
+            ids=torch.arange(logits.shape[-1],device=logits.device)[None]
+            other=logits.masked_fill(ids==masked_action[:,None],-torch.inf)
+            if departure_eligible is not None:
+                other=other.masked_fill(~departure_eligible,-torch.inf)
+            selected=torch.where((masked_action>=0)[:,None] & torch.isfinite(other).any(-1,keepdim=True),other,logits)
+        action=structural_argmax(selected,structural)
+        if self.training and sample and self.temperature>0:
+            noise=-torch.log(-torch.log(torch.rand_like(logits).clamp(torch.finfo(logits.dtype).tiny,1-torch.finfo(logits.dtype).eps)))
+            action=(selected/self.temperature+noise).argmax(-1)
+        if masked_action is not None:
+            departure = (masked_action >= 0) & torch.isfinite(other).any(-1)
+            # Compose uses a uniform proposal over distinct values. Its own
+            # softmax remains the probability credited by the surrogate.
+            proposal = (selected if departure_eligible is None else
+                        torch.where(torch.isfinite(selected), 0., -torch.inf))
+            action = torch.where(departure, sample_eligible_logits(proposal), action)
+        if replay_action is not None:
+            action=torch.where(replay_action>=0,replay_action,action)
+        legal=torch.isfinite(selected.gather(1,action[:,None])).squeeze(1)
+        return action,probabilities,legal
+
+    @staticmethod
+    def _distinct_departures(x, depth, candidates, logits, reference, n_binary, n_unary,
+                             r_reduce, r_apply, stop_exact=None):
+        """One representative of each distinct numerical next state.
+
+        Exact equality is the value criterion; no tolerance, target, or
+        reconstruction cost enters a choice. Identity unaries are omitted.
+        Known exactly readable leaves also exclude STOP from exploration.
+        Comparing in fixed-size blocks bounds temporary pairwise storage.
+        """
+        x, candidates = x.detach(), candidates.detach()
+        B, N, D = x.shape
+        A = logits.shape[1]
+        ids = torch.arange(A, device=x.device)
+        binary = ids < n_binary
+        unary = (ids >= n_binary) & (ids < n_binary + n_unary)
+        position = torch.where(binary, ids // max(1, r_reduce),
+            (ids - n_binary) // max(1, r_apply)).clamp(0, N - 1)
+        columns = torch.arange(N, device=x.device)
+        source = columns[None] + (binary[:, None] & (columns[None] > position[:, None])).long()
+        states = x[:, None].expand(B, A, N, D).gather(2,
+            source.clamp_max(N - 1)[None, :, :, None].expand(B, A, N, D))
+        rewrite = (binary | unary)[:, None] & (columns[None] == position[:, None])
+        states = torch.where(rewrite[None, :, :, None], candidates[:, :, None], states)
+        counts = depth[:, None] - binary.long()[None]
+        states = torch.where(columns[None, None, :, None] < counts[:, :, None, None], states, 0.)
+        allowed = torch.isfinite(logits)
+        unchanged = (states == x[:, None]).all(-1).all(-1)
+        allowed = allowed & ~(unary[None] & unchanged)
+        if stop_exact is not None:
+            allowed = allowed & ~((ids == A - 1)[None] & stop_exact[:, None])
+        reference = reference.clamp(0, A - 1)
+        ref_state = states.gather(1, reference[:, None, None, None].expand(B, 1, N, D))
+        ref_count = counts.gather(1, reference[:, None])
+        same_reference = (states == ref_state).all(-1).all(-1) & (counts == ref_count)
+        allowed = allowed & ~same_reference
+        representatives = []
+        for first in range(0, A, 16):
+            same = (states[:, first:first + 16, None] == states[:, None]).all(-1).all(-1)
+            same = same & (counts[:, first:first + 16, None] == counts[:, None])
+            earlier = ids[None] < ids[first:first + 16, None]
+            duplicates = (same & earlier[None] & allowed[:, None]).any(-1)
+            representatives.append(allowed[:, first:first + 16] & ~duplicates)
+        return torch.cat(representatives, -1)
+
+    def attend(self, keys, legal, space, *, prior=None, masked_action=None, replay_action=None):
+        """Field locations in this same chooser; symbols enter forward after gloss."""
+        B,K,D=keys.shape
+        candidates=keys[:,:,None].expand(B,K,legal.shape[-1],D)
+        _,scores=self.chooser.score_unary(keys,candidates,self.stop_anchor,self.bracket_anchor[:legal.shape[-1]],
+                                          op_offset=self.r_reduce+self.r_apply)
+        scores=scores+self.space_prior[space][...,None]
+        if prior is not None:scores=scores+prior[...,None]
+        scores=scores.masked_fill(~legal,-torch.inf).reshape(B,-1)
+        stop=torch.where(legal.reshape(B,-1).any(-1),-torch.inf,0.)
+        logits=torch.cat((scores,stop[:,None]),-1)
+        action,probability,valid=self.select_logits(logits,structural=(True,)*logits.shape[-1],
+                  masked_action=masked_action,replay_action=replay_action)
+        weight=probability.gather(1,action[:,None])[:,0]
+        return action,1+(weight-weight.detach()),(torch.isfinite(logits).sum(-1)>1)
+
+    def reduction_pressure(self, depth, *, allowance, rounds_left):
+        """Fixed load prior, using the whole stack and an inclusive deadline."""
+        depth = depth.to(torch.get_default_dtype()) if not depth.is_floating_point() else depth
+        allowance = torch.as_tensor(allowance, device=depth.device, dtype=depth.dtype)
+        remaining = torch.as_tensor(rounds_left, device=depth.device, dtype=depth.dtype)
+        required = (depth - allowance).clamp_min(0)
+        return torch.where(depth > 0, self.reduce_pressure * (
+            depth / allowance.clamp_min(1) + required / remaining.clamp_min(1)), 0.)
+
+    def forward(self, x, *, depth=None, slots=1, active=None, sample=False,
+                masked_action=None, cat_ctx=None, what_ctx=None, op_prior=None,
+                grammar_context=None, replay_action=None, allowance=None,
+                rounds_left=None, load_depth=None, reference_data=None,
+                previous_unary=None, stop_exact=None, operand_activations=None):
+        B, N, D = x.shape
+        if N < 1:
+            raise ValueError("compose needs a nonempty static slab")
+        depth = (torch.full((B,), N, dtype=torch.long, device=x.device)
+                 if depth is None else depth)
+        active = (depth > 0 if active is None else active.bool() & (depth > 0))
+        positions = torch.arange(N, device=x.device)[None, :]
+        live = positions < depth[:, None]
+        x = torch.where(live[..., None], x, 0.)
+        if not torch.compiler.is_compiling():
+            for op in self.ops:
+                grammar_op = getattr(op, 'gl', op)
+                if hasattr(grammar_op, 'set_bind_context'):
+                    grammar_op.set_bind_context(slab=x)
+        binary = self._stacked_reduced(x, grammar_context, reference_data, operand_activations)
+        unary = self._stacked_applied(x, grammar_context, reference_data)
+        content = x[..., :self.d_model]
+        what_ctx = getattr(self, '_what_context', None) if what_ctx is None else what_ctx
+        score_cats = None if cat_ctx is None else cat_ctx.detach()
+        score_context = None if what_ctx is None else what_ctx.detach()
+        stop_scores, binary_scores = self.chooser.score_binary(
+            content.detach(), binary[..., :self.d_model].detach(), self.stop_anchor,
+            self.reduce_anchor, cat_ctx=score_cats, what_ctx=score_context)
+        _, unary_scores = self.chooser.score_unary(
+            content.detach(), unary[..., :self.d_model].detach(), self.stop_anchor,
+            self.apply_anchor, cat_ctx=score_cats, what_ctx=score_context,
+            op_offset=self.r_reduce)
+        prior = self._category_reduce_prior(cat_ctx)
+        if prior is not None:
+            binary_scores = binary_scores + prior.detach().to(binary_scores)
+        prior = self._category_apply_prior(cat_ctx)
+        if prior is not None:
+            unary_scores = unary_scores + prior.detach().to(unary_scores)
+        if op_prior is not None:
+            binary_scores = binary_scores + op_prior.detach().to(binary_scores)
+        deadline = torch.zeros_like(depth, dtype=torch.bool)
+        needs_reduction = torch.zeros_like(depth, dtype=torch.bool)
+        if rounds_left is not None:
+            # A serial candidate sees two operands, but load/deadline apply
+            # to the entire STM. Parallel candidates already see that depth.
+            load = depth if load_depth is None else load_depth
+            limit = slots if allowance is None else allowance
+            required = (load - torch.as_tensor(limit, device=x.device)).clamp_min(0)
+            needs_reduction = required > 0
+            deadline = required >= torch.as_tensor(rounds_left, device=x.device)
+            pressure = self.reduction_pressure(load.to(binary_scores),
+                allowance=limit, rounds_left=rounds_left)
+            binary_scores = binary_scores + pressure[:, None, None]
+        if reference_data is None:
+            needs_cases = torch.tensor([bool(getattr(getattr(op, 'gl', op), 'case_head_role', 0))
+                                        for op in self.ops], device=x.device, dtype=torch.bool)
+            binary_scores = binary_scores.masked_fill(needs_cases[None, None], -torch.inf)
+        if reference_data is not None:
+            binary_scores = binary_scores.masked_fill(~reference_data['binary_valid'], -torch.inf)
+            unary_scores = unary_scores.masked_fill(~reference_data['unary_valid'], -torch.inf)
+        binary_scores = binary_scores.masked_fill(~live[:, 1:, None], -torch.inf)
+        unary_scores = unary_scores.masked_fill(~live[..., None] | deadline[:, None, None], -torch.inf)
+        if previous_unary is not None and self.r_apply:
+            inverse = torch.tensor(self._unary_inverse_pairs, device=x.device, dtype=torch.bool)
+            excluded = inverse[previous_unary.clamp(0, self.r_apply - 1)]
+            excluded = excluded & (previous_unary >= 0)[..., None]
+            unary_scores = unary_scores.masked_fill(excluded, -torch.inf)
+        stop = (stop_scores.squeeze(-1) * live).sum(-1) / depth.clamp_min(1)
+        limit = torch.as_tensor(slots, device=x.device)
+        # In a small STM a relative row can fit while the next-word slot is
+        # still occupied. Early STOP must also satisfy the phase allowance.
+        stop = stop.masked_fill((depth > limit) | needs_reduction | deadline, -torch.inf)
+        logits = torch.cat((binary_scores.reshape(B, -1),
+                            unary_scores.reshape(B, -1), stop[:, None]), -1)
+        # Credit always uses the model's own distribution over legal actions.
+        # A forced counterfactual constrains selection, not its probability
+        # weight; neither that exclusion nor sampling temperature changes it.
+        flags = (self.structural_ops * (N - 1)
+                 + self.unary_structural_ops * N + (True,))
+        nb = (N - 1) * self.r_reduce
+        nu = N * self.r_apply
+        candidates = torch.cat((binary.reshape(B, nb, D), unary.reshape(B, nu, D),
+                                x.new_zeros(B, 1, D)), 1)
+        greedy = structural_argmax(logits, flags)
+        reference = (greedy if masked_action is None else
+                     torch.where(masked_action >= 0, masked_action, greedy))
+        departure_eligible = self._distinct_departures(x, depth, candidates, logits, reference,
+            nb, nu, self.r_reduce, self.r_apply, stop_exact=stop_exact)
+        action, probabilities, has_choice = self.select_logits(logits, structural=flags,
+            masked_action=masked_action,replay_action=replay_action,sample=sample,
+            departure_eligible=departure_eligible)
+        torch._assert_async((~active | has_choice).all(),
+                            "compose has no legal alternative at the selected exploration round")
+        active = active & has_choice
+        is_binary = active & (action < nb)
+        is_unary = active & (action >= nb) & (action < nb + nu)
+        kind = torch.where(is_binary, 1, torch.where(is_unary, 2, 0))
+        position = torch.where(is_binary, action // max(1, self.r_reduce),
+                               (action - nb) // max(1, self.r_apply)).clamp(0, N - 1)
+        local_op = torch.where(is_binary, action % max(1, self.r_reduce),
+                               (action - nb) % max(1, self.r_apply))
+        chosen = candidates.gather(1, action[:, None, None].expand(B, 1, D)).squeeze(1)
+        probability = probabilities.gather(1, action[:, None])
+        next_depth = depth - is_binary.long()
+        # A single deletion/rewrite, not tile compaction or a length DP.
+        source = positions.expand(B, N) + (is_binary[:, None] & (positions > position[:, None])).long()
+        base = x.gather(1, source.clamp_max(N - 1)[..., None].expand(B, N, D))
+        selected = (is_binary | is_unary)[:, None] & (positions == position[:, None])
+        path = torch.where(selected[..., None], chosen[:, None], base)
+        hard = torch.where(selected[..., None], chosen.detach()[:, None], base)
+        path = torch.where((active & (kind == 0))[:, None, None], x, path)
+        path = torch.where((positions < next_depth[:, None])[..., None], path, 0.)
+        hard = torch.where((positions < next_depth[:, None])[..., None], hard, 0.)
+        routing = dict(action=torch.where(active, action, -1), kind=kind, position=position, op=local_op,
+                       depth=next_depth, probabilities=probabilities, logits=logits,
+                       probability=probability.squeeze(-1), candidate=chosen,
+                       stopped=active & (kind == 0), valid=active,
+                       binary_probabilities=probabilities[:, :nb].reshape(B, N - 1, self.r_reduce),
+                       unary_probabilities=probabilities[:, nb:nb + nu].reshape(B, N, self.r_apply))
+        history = (torch.full((B, N), -1, device=x.device, dtype=torch.long)
+                   if previous_unary is None else previous_unary)
+        history = history.gather(1, source.clamp_max(N - 1))
+        history = torch.where(selected, torch.where(is_unary, local_op, -1)[:, None], history)
+        routing['previous_unary'] = torch.where(positions < next_depth[:, None], history, -1)
+        routing['alternatives'] = active & departure_eligible.any(-1)
+        routing['departure_eligible'] = departure_eligible
+        if reference_data is not None:
+            b_operands = torch.stack((reference_data['left'], reference_data['right']), -2)
+            u_operands = torch.stack(
+                (reference_data['unary'], torch.zeros_like(reference_data['unary'])), -2)
+            operands = torch.cat((b_operands.reshape(B, nb, 2, D),
+                                 u_operands.reshape(B, nu, 2, D), x.new_zeros(B, 1, 2, D)), 1)
+            routing['operands'] = operands.gather(
+                1, action[:, None, None, None].expand(B, 1, 2, D))[:, 0]
+            for label in ('refs', 'relations'):
+                b = reference_data['binary_' + label].reshape(B, nb, 2)
+                u = reference_data['unary_' + label].reshape(B, nu, 2)
+                values = torch.cat(
+                    (b, u, torch.zeros((B, 1, 2), device=b.device, dtype=b.dtype)), 1)
+                routing[label] = values.gather(1, action[:, None, None].expand(B, 1, 2))[:, 0]
+        return hard, path, routing
+
+    def derive(self, x, *, slots=1, rounds, depth=None, exploit=None, greedy=False,
+               cat_ctx=None, what_ctx=None, grammar_context=None, allow_identical=False):
+        B, N, _ = x.shape
+        depth = (torch.full((B,), N, dtype=torch.long, device=x.device)
+                 if depth is None else depth)
+        active = depth > 0
+        used = torch.zeros_like(depth)
+        actions, traces = [], []
+        history = torch.full((B, N), -1, device=x.device, dtype=torch.long)
+        if exploit is not None:
+            eligible = exploit['alternatives']
+            if not allow_identical:
+                torch._assert_async(eligible.any(-1).all(),
+                    'compose has no legal alternative to this derivation')
+            rank = (torch.rand(B, device=x.device) * eligible.sum(-1)).long()
+            selected = eligible & (eligible.long().cumsum(-1) == rank[:, None] + 1)
+            forced = torch.where(eligible.any(-1), selected.long().argmax(-1), -1)
+        else:
+            forced = torch.full_like(depth, -1)
+        for i in range(int(rounds)):
+            mask = (torch.where(forced == i, exploit['actions'][:, i], -1)
+                    if exploit is not None else None)
+            replay = (torch.where(i < forced, exploit['actions'][:, i], -1)
+                      if exploit is not None and self.temperature == 0 else None)
+            _, x, route = self(
+                x, depth=depth, slots=slots, active=active,
+                sample=not greedy, masked_action=mask, replay_action=replay,
+                cat_ctx=cat_ctx if i == 0 else None, what_ctx=what_ctx,
+                grammar_context=grammar_context, allowance=slots, rounds_left=int(rounds) - i,
+                previous_unary=history)
+            actions.append(torch.where(active & route['valid'], route['action'], -1))
+            used = used + (active & route['valid']).long()
+            depth = route['depth']
+            history = route['previous_unary']
+            active = active & route['valid'] & ~route['stopped']
+            traces.append(route)
+        return dict(value=x, depth=depth, actions=torch.stack(actions, 1), used=used,
+                    complete=depth <= torch.as_tensor(slots, device=x.device),
+                    forced_round=forced, traces=traces,
+                    alternatives=torch.stack([route['alternatives'] for route in traces], 1))
+
+    def derive_pair(self, x, *, slots=1, rounds, depth=None, **kwargs):
+        exploit = self.derive(x, slots=slots, rounds=rounds, depth=depth, **kwargs)
+        if not self.training:
+            return exploit, None
+        explore = self.derive(x, slots=slots, rounds=rounds, depth=depth,
+                              exploit=exploit, allow_identical=True, **kwargs)
+        explore['different'] = (explore['actions'] != exploit['actions']).any(-1)
+        return exploit, explore
+
+    def _category_reduce_prior(self, cat_ctx):
+        """Role-frequency prior for binary ops from labelled operand slots."""
+        if cat_ctx is None or self.op_names is None or cat_ctx.shape[1] < 2:
+            return None
+        role_index = _role_index_for_categories()
+        if not role_index:
+            return None
+        # <categoryCollapse>: pool the context over merged categories first, so
+        # rules whose operand categories collapsed share routing evidence.
+        cat_ctx = _collapsed_cat_ctx(cat_ctx)
+        left = cat_ctx[:, :-1, :]
+        right = cat_ctx[:, 1:, :]
+        priors = []
+        for name in self.op_names:
+            c1 = _role_column(role_index, name, "I1")
+            c2 = _role_column(role_index, name, "I2")
+            o1 = _role_column(role_index, name, "O1")
+            score = left.new_zeros(left.shape[0], left.shape[1])
+            if c1 is not None and c1 < left.shape[-1]:
+                score = score + left[..., c1]
+            if c2 is not None and c2 < right.shape[-1]:
+                score = score + right[..., c2]
+            # Anchored slots carry the operator's OUTPUT role (<op>_O1,
+            # the syntactic-anchor short-circuit): credit pairs touching
+            # such a slot toward the operator's own rule.
+            if o1 is not None and o1 < left.shape[-1]:
+                score = score + left[..., o1] + right[..., o1]
+            priors.append(0.5 * score)
+        if not priors:
+            return None
+        return torch.stack(priors, dim=-1)
+
+    def _stacked_reduced(self, x, grammar_context=None, reference_data=None, activations=None):
+        """Candidate operators consume their own resolved operands."""
+        if x.shape[1] < 2 or not self.r_reduce:
+            return x.new_zeros(x.shape[0], max(0, x.shape[1] - 1), self.r_reduce, x.shape[-1])
+        result = []
+        for i, op in enumerate(self.ops):
+            left = x[:, :-1] if reference_data is None else reference_data['left'][:, :, i]
+            right = x[:, 1:] if reference_data is None else reference_data['right'][:, :, i]
+            selected_context = grammar_context
+            if getattr(getattr(op, 'gl', op), 'case_head_role', 0):
+                if (reference_data is None or grammar_context is None
+                        or reference_data.get('case_bank') is None):
+                    result.append(torch.zeros_like(left))
+                    continue
+                from dataclasses import replace
+                from CaseSelection import SelectedCases
+                selected_context = replace(grammar_context, selected_cases=SelectedCases(
+                    reference_data['case_bank'].codes,
+                    reference_data['case_weights'][:, :, i],
+                    reference_data['binary_valid'][:, :, i]))
+            implementation = getattr(op, 'gl', op)
+            if getattr(implementation, 'uses_operand_activation', False):
+                if selected_context is not None:
+                    _structural_face_phase(implementation, (left, right), context=selected_context, phase='compose')
+                value = implementation.compose(left, right,
+                    left_activation=None if activations is None else activations[:, :-1],
+                    right_activation=None if activations is None else activations[:, 1:])
+            else:
+                value = (op.forward_with_grammar_context(left, right, x, context=selected_context)
+                          if grammar_context is not None and hasattr(op, 'forward_with_grammar_context')
+                          else op.forward_with_context(left, right, x) if hasattr(op, 'forward_with_context')
+                          else op(left, right))
+            if (reference_data is not None
+                    and getattr(getattr(op, 'gl', op), 'same_reference_idempotent', False)):
+                refs = reference_data['binary_refs'][:, :, i]
+                same = (refs[..., 0] == refs[..., 1]) & (refs[..., 0] != -1) & (refs[..., 0] != 0)
+                repeated = (Ops._presence(left, None if activations is None else activations[:, :-1])
+                            * Ops._code_direction(left))
+                value = torch.where(same[..., None], repeated, value)
+            result.append(value)
+        return torch.stack(result, 2)
+
+
+    def _category_apply_prior(self, cat_ctx):
+        """Role-frequency prior for unary ops from the labelled input slot."""
+        if cat_ctx is None or self.unary_names is None:
+            return None
+        role_index = _role_index_for_categories()
+        if not role_index:
+            return None
+        # <categoryCollapse>: pool the context over merged categories first, so
+        # rules whose input category collapsed share routing evidence.
+        cat_ctx = _collapsed_cat_ctx(cat_ctx)
+        priors = []
+        for name in self.unary_names:
+            col = _role_column(role_index, name, "I1")
+            if col is None or col >= cat_ctx.shape[-1]:
+                priors.append(cat_ctx.new_zeros(cat_ctx.shape[0], cat_ctx.shape[1]))
+            else:
+                priors.append(cat_ctx[..., col])
+        if not priors:
+            return None
+        return torch.stack(priors, dim=-1)
+
+    def _stacked_applied(self, x, grammar_context=None, reference_data=None):
+        """[B, N, R_apply, D] each unary op applied to every position."""
+        if self.r_apply == 0:
+            B, N, D = x.shape
+            return x.new_zeros(B, N, 0, D)
+        per_op = [self._apply_op(op, x if reference_data is None else reference_data['unary'][:, :, i],
+                                 grammar_context=grammar_context)
+                  for i, op in enumerate(self.unary_ops)]
+        return torch.stack(per_op, dim=2)
+
+
+    def _apply_op(self, op, x, grammar_context=None):
+        """Apply one unary op; a content-sized meronymic fold (nInput < D)
+        folds the leading .what columns and rides the where/when band
+        [nInput:] through unchanged -- ConceptualSpace's content-fold + band-
+        passthrough π contract (Spaces._pi_for_pass dispatch), so the stack
+        stays width D without resizing the layer."""
+        def apply(value):
+            if grammar_context is not None and hasattr(op, "forward_with_grammar_context"):
+                return op.forward_with_grammar_context(value, context=grammar_context)
+            return op(value)
+
+        w = int(getattr(op, "nInput", 0) or 0)
+        if 0 < w < x.shape[-1]:
+            return torch.cat([apply(x[..., :w]), x[..., w:]], dim=-1)
+        return apply(x)
+
+
+
+
+
+
+
+
+
+# -- End inlined LanguageLayer section -------------------------------
+
+# =====================================================================
+# Chart -- RETIRED 2026-05-27 (Stage 3 of doc/plans/2026-05-26-two-loop-
+# pi-sigma-substrate.md).
+#
+# The soft-superposition CKY chart parser and its inside / outside
+# passes, packed rule-table machinery, load-balance bookkeeping, top-K
+# gating, and POS side-channel are gone. The signal router
+# (``LanguageLayer`` -- see above) is the canonical parser. SymbolSubSpace
+# constructs ``self.languageLayer`` directly; rule-firing probability is
+# served by ``SymbolSubSpace.should_run_rule`` via the grammar's
+# ``rule_probability`` lookup. The retired XML knobs
+# (``parserBackend``, ``routerKind``, ``chartTau``, ``chartTopK``,
+# ``chartNoiseEps``) raise a loud ``ValueError`` at config load time --
+# see ``_assert_retired_chart_knobs_absent`` above.
+# =====================================================================
+
+
+# =====================================================================
+# Per-space SyntacticLayer (2026-05-01 refactor; legacy class retired
+# 2026-05-08).
+#
+# Spec: doc/specs/2026-05-01-syntactic-layer-refactor.md §4.
+#
+# Each PartSpace / ConceptualSpace / WholeSpace owns one of
+# these. Holds the parametrized GrammarLayer instances for its space_role's
+# rules and dispatches `forward` / `reverse` based on the rule choice
+# the chart wrote into ``word_space.current_rules`` /
+# ``generate_rules`` (Q4 / Q10.1).
+# =====================================================================
+class SyntacticLayer(Layer):
+    """Per-space dispatcher.
+
+    Construction:
+        SyntacticLayer(space_role='CS', word_space=word_space,
+                            host_layers={'pi': pi_layer},
+                            host_space=concept_space)
+
+    Each entry in ``host_layers`` is registered with ``word_space`` at
+    construction. The space's ``forward()`` and ``reverse()`` delegate
+    here; ``forward()`` reads ``word_space.current_rules[space_role]``,
+    advances a per-space_role cursor, and dispatches to the appropriate
+    layer's ``compose`` (binary) or ``forward`` (unary). ``reverse()``
+    mirrors via ``word_space.generate_rules[space_role]`` and ``layer.generate``.
+
+    The cursor resets at the start of each new ``word_space.compose()``
+    / ``word_space.generate()`` call via the generation counters on
+    SymbolSpace (Q10.1).
+
+    Per the 2026-05-07 rollback: there is no ``default_rule`` parameter.
+    The grammar XML drives which rules fire — when the chart hasn't
+    populated rules for this space_role the dispatch is a no-op.
+    """
+
+    def __init__(self, space_role, word_space, host_layers, host_space=None):
+        """Register host layers with the SymbolSpace dispatch table.
+
+        ``host_layers`` is a name -> Layer mapping; each is registered
+        under ``(space_role, rule_name)`` on the SymbolSpace so the chart can
+        dispatch into the right parametrized fold. SymbolSpace / host_space
+        are stashed via ``object.__setattr__`` to avoid the nn.Module
+        ownership cycle (SymbolSpace owns the chart -> chart references
+        this layer -> this layer references SymbolSpace).
+        """
+        super().__init__(0, 0)
+        self.space_role = str(space_role)
+        # Stash host_layers in two parallel structures: ModuleList for
+        # nn.Module bookkeeping (so optimizer scans see the parameters)
+        # and a name-keyed dict for O(1) dispatch lookup.
+        layers_list = [layer for layer in host_layers.values()
+                       if layer is not None]
+        self.layers = nn.ModuleList(layers_list)
+        self._by_name = {name: layer for name, layer in host_layers.items()
+                         if layer is not None}
+        # Register each host_layer with the symbolSpace's host_layer
+        # registry so the chart can dispatch into them.
+        for rule_name, layer in self._by_name.items():
+            word_space.register_host_layer(self.space_role, rule_name, layer)
+        self._cursor_compose = 0
+        self._cursor_generate = 0
+        self._cursor_compose_gen = -1
+        self._cursor_generate_gen = -1
+        # Stash the symbolSpace and host_space as non-Module attributes
+        # to avoid the circular nn.Module ownership trap (symbolSpace
+        # owns the chart; chart's host_layer registry references this
+        # layer's children; this layer references symbolSpace).
+        object.__setattr__(self, '_word_space', word_space)
+        # ``host_space`` is the per-space_role Space (Perceptual / Conceptual /
+        # Symbolic) that owns this dispatcher. When the chart fires
+        # ``pi`` / ``sigma`` and the host space exposes
+        # ``_pi_reverse`` / ``_sigma_reverse`` (two-pass ergodic mode
+        # routes through ``pi2`` / ``sigma2``), reverse() delegates
+        # there instead of the layer's bare ``reverse``.
+        object.__setattr__(self, '_host_space', host_space)
+
+    # -- cursor management ---------------------------------------------
+    def _space_role_index(self):
+        """Map this layer's space_role label to its slot in the per-sentence
+        SymbolSpace ``cursor`` tensor (shape ``[n_space_roles=3]``).
+
+        ``space_role`` is set once at construction to one of the string
+        literals 'subsymbolic' / 'CS' / 'SS' (Language.py
+        ``_attach_per_space_syntactic_layer`` passes ``space_role='subsymbolic'`` /
+        ``'CS'`` / ``'SS'``; ``__init__`` coerces with ``str(space_role)``),
+        so this map is total over the live domain.
+        """
+        return {'subsymbolic': 0, 'CS': 1, 'SS': 2}[str(self.space_role)]
+
+    def _next_rule_name(self, *, direction):
+        """Pop the next rule name for ``direction`` ('compose' or
+        'generate'). Resets the cursor when symbolSpace has bumped its
+        generation counter for this direction.
+
+        Reads ``word_space.current_rules`` / ``generate_rules`` as
+        ``dict[space_role, list[list[int]]]`` (per-row, per-step). For now
+        we use row 0 as the canonical sequence; per-row dispatch (where
+        rows fire different rules at the same step) is a follow-on.
+
+        Returns the rule's ``method_name`` (string) or ``None`` when
+        no chart rule is available (no code-level fallback — the grammar
+        XML is the sole source of truth). The method name is the key
+        used in ``self._by_name``.
+        """
+        ss = self._word_space
+        if direction == 'compose':
+            rules = ss.current_rules
+            # ``ss.cursor`` is a host ``list[int]`` of length 3 (one per
+            # space_role subsymbolic/CS/SS). Reading via Python list indexing gives a
+            # backed Python int the trace can compare with
+            # ``len(per_step)`` — an int64 tensor read via ``int(...)``
+            # would yield an unbacked SymInt and crash
+            # ``fullgraph=True``. The per-compose reset happens
+            # unconditionally at the top of SymbolSpace.compose, so there
+            # is NO data-dependent generation gate here (recompile
+            # cause #3 eliminated).
+            ti = self._space_role_index()
+            cursor = ss.cursor[ti]
+        else:
+            rules = ss.generate_rules
+            gen = ss._generate_generation
+            if gen != self._cursor_generate_gen:
+                self._cursor_generate = 0
+                self._cursor_generate_gen = gen
+            cursor = self._cursor_generate
+        per_space_role = rules.get(self.space_role) if rules else None
+        per_step = self._row_zero_rules(per_space_role)
+        if cursor < len(per_step):
+            rule_id = per_step[cursor]
+            if direction == 'compose':
+                ss.cursor[self._space_role_index()] = cursor + 1
+            else:
+                self._cursor_generate = cursor + 1
+            try:
+                method_name = TheGrammar.rules[int(rule_id)].method_name
+            except (IndexError, AttributeError, ValueError, TypeError):
+                method_name = None
+            return method_name
+        # No chart rule available -- post-2026-05-07 rollback removed
+        # the ``default_rule`` code-level fallback. The grammar XML is
+        # the sole source of truth; callers handle ``None`` as a no-op.
+        return None
+
+    @staticmethod
+    def _row_zero_rules(per_space_role):
+        """Extract row 0's rule sequence from a per-row container.
+
+        Tolerates both legacy ``list[int]`` (flat) and the multi-row
+        ``list[list[int]]`` shape so callers using either contract
+        keep working during the migration window.
+        """
+        if not per_space_role:
+            return []
+        # Multi-row: list of lists.
+        if isinstance(per_space_role[0], list):
+            return per_space_role[0]
+        # Flat list of ints (legacy).
+        return per_space_role
+
+    def _structural_context(self, *, phase, input_stream=None):
+        """Return the owner-built context for a direct structural dispatch.
+
+        The normal SymbolSubSpace has already captured its compose/generate
+        context before cursor dispatch begins.  Small legacy test harnesses
+        do not own that capability and retain their direct tensor fallback;
+        production dispatch never manufactures a model or taxonomy reference.
+        """
+        ss = self._word_space
+        cache_name = ('_last_structural_compose_context'
+                      if phase == 'compose'
+                      else '_last_structural_generate_context')
+        cached = getattr(ss, cache_name, None) if ss is not None else None
+        if isinstance(cached, StructuralGrammarContext) and cached.phase == phase:
+            return cached
+        builder = getattr(ss, '_structural_grammar_context', None)
+        if callable(builder):
+            return builder(phase=phase, input_stream=input_stream)
+        return None
+
+    # -- Phase 2 executor API (cursor-free) -----------------------------
+    #
+    # See doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md
+    # §"Phase 2: SyntacticLayer Executor API". The LanguageLayer calls
+    # these directly with a rule_id it has already selected; no
+    # SymbolSpace.current_rules indirection.
+
+    def execute(self, rule_id, left, right=None, *, context=None):
+        """Run the grammar op for ``rule_id`` on ``(left[, right])``.
+
+        Resolves ``rule_id`` to a host layer via ``TheGrammar`` and
+        ``self._by_name`` and calls ``layer.compose`` with the right
+        number of operands for the rule's arity. Returns the parent
+        tensor. No cursor; no SymbolSpace state read.
+
+        Identity rule (``method_name is None``, ``rhs == lhs``):
+        returns ``left`` unchanged. No layer lookup, no parameter touch
+        — the grammatical no-op used at padding columns of the static
+        per-word loop.
+        """
+        method_name = TheGrammar.method_name(int(rule_id))
+        if method_name is None:
+            return left
+        layer = self._by_name.get(method_name)
+        if layer is None:
+            # Post-2026-05-29 grammar-file-refactor (\xa75): the rule may
+            # bind at a different space_role's syntactic layer than self
+            # (intersection / union / lift / lower carry the CS-space_role class
+            # space_role so they register on ConceptualSpace rather than
+            # WholeSpace; an SS-space_role execute that hits one of those
+            # rule_ids needs the layer even though _by_name doesn't have
+            # it). Fall back to a fresh GRAMMAR_LAYER_CLASSES instance for
+            # the dispatch; parameterized layers that need an inner pi /
+            # sigma won't instantiate (TypeError) and we re-raise the
+            # original KeyError so the failure mode stays loud.
+            cls = GRAMMAR_LAYER_CLASSES.get(method_name)
+            if cls is not None:
+                try:
+                    layer = cls()
+                except TypeError:
+                    layer = None
+        if layer is None:
+            raise KeyError(
+                f"SyntacticLayer.execute: space_role={self.space_role!r} has no host "
+                f"layer for rule_id={rule_id} (method_name={method_name!r}). "
+                f"Registered rules: {sorted(self._by_name.keys())}"
+            )
+        context = (context if context is not None else self._structural_context(
+            phase='compose', input_stream=left))
+        arity = int(getattr(layer, 'arity', 1))
+        if arity == 1:
+            if context is not None:
+                return invoke_structural_face(
+                    layer, (left,), context=context, phase='compose')
+            return layer.compose(left)
+        if right is None:
+            raise ValueError(
+                f"SyntacticLayer.execute: arity-2 rule {method_name!r} "
+                f"requires `right`; got None"
+            )
+        if context is not None:
+            return invoke_structural_face(
+                layer, (left, right), context=context, phase='compose')
+        return layer.compose(left, right)
+
+    def execute_superposed(self, rule_weights, left, right=None,
+                           rule_ids=None, *, context=None):
+        """Weighted combination of independent per-rule executions.
+
+        Each candidate op computes on its own copy of ``(left, right)``
+        and the results are combined once by weighted sum. Independent
+        contribution semantics: no shared in-place accumulator one op
+        mutates before the next. Matches the plan's superposed pseudo-
+        code; implementations may optimize internally but must preserve
+        the semantics.
+
+        Args:
+            rule_weights: shape ``[..., R]`` -- soft weights over the R
+                candidate rules. Broadcast against the per-rule output's
+                leading dims.
+            left: arity-1 input (and arity-2 left operand).
+            right: arity-2 right operand (None for arity-1-only mixes).
+            rule_ids: iterable of R rule ids in the same order as the
+                last axis of ``rule_weights``. Required.
+
+        Returns:
+            Tensor with the same per-rule output shape (R axis summed
+            out).
+        """
+        if rule_ids is None:
+            raise ValueError(
+                "SyntacticLayer.execute_superposed: rule_ids is required"
+            )
+        if hasattr(rule_ids, "tolist"):
+            rule_ids = list(rule_ids.tolist())
+        rule_ids = list(rule_ids)
+        if rule_weights.shape[-1] != len(rule_ids):
+            raise ValueError(
+                f"rule_weights last dim {rule_weights.shape[-1]} does not "
+                f"match rule_ids length {len(rule_ids)}"
+            )
+        outs = []
+        for rid in rule_ids:
+            outs.append(self.execute(int(rid), left, right, context=context))
+        stacked = torch.stack(outs, dim=-2)              # [..., R, D]
+        return (stacked * rule_weights.unsqueeze(-1)).sum(dim=-2)
+
+    # -- forward / reverse dispatch ------------------------------------
+    #
+    # The per-space dispatch takes a subspace and operates on the
+    # subspace's space_role-appropriate field:
+    #   * SS space_role: the .what content (symbol activations)
+    #   * subsymbolic / CS space_role: the .event content (percept / concept activations)
+    #
+    # Rule choices come from word_space.current_rules / generate_rules
+    # (populated by the chart). Cursor advances one step per call.
+    def forward(self, subspace):
+        """Fire one fold step on ``subspace`` per the chart's rule choice.
+
+        Materializes the subspace's space_role-appropriate field, applies
+        the chosen rule's GrammarLayer.forward, writes the result back
+        into the same field. Returns the (possibly-mutated) subspace.
+
+        Per the 2026-05-07 rollback, when the chart hasn't written a
+        rule for this space_role, dispatch is a no-op (no code-level
+        fallback).
+
+        Stage 3 (chart retirement): the signal router has already
+        executed the derivation tensorially (languageLayer.compose
+        folded the slab via the op modules and wrote the [B, 1, D] root
+        state back into subspace.event). The legacy per-rule unary fold
+        here would double-apply the op (and crash on truly-binary ops
+        like ConjunctionLayer / DisjunctionLayer that don't expose a
+        unary forward). When a non-default grammar is wired, skip it.
+        """
+        ss = self._word_space
+        if (ss is not None
+                and getattr(ss, 'languageLayer', None) is not None
+                and not getattr(ss, '_grammar_is_default_only', True)):
+            # Still advance the cursor so reverse() pops in sync.
+            self._next_rule_name(direction='compose')
+            return subspace
+        rule_name = self._next_rule_name(direction='compose')
+        if rule_name is None:
+            return subspace
+        layer = self._by_name.get(rule_name)
+        if layer is None:
+            return subspace
+        # Binary (arity-2) rules are executed inside the chart's compose
+        # via host_layer.compose(left, right). Calling .forward(x) on
+        # them as a unary post-chart fold would crash (no `right` arg).
+        # Only fire unary rules here.
+        if int(getattr(layer, 'arity', 1)) != 1:
+            return subspace
+        x = self._read_subspace(subspace, layer=layer)
+        if x is None:
+            return subspace
+        # Unified fold-width law: content-sized folds (0 < nInput < D) fold
+        # the leading content columns; the where/when band rides through.
+        context = self._structural_context(phase='compose', input_stream=x)
+        if context is None:
+            apply = layer.forward
+        else:
+            apply = lambda value: invoke_structural_face(
+                layer, (value,), context=context, phase='compose')
+        y = fold_content_apply(apply, getattr(layer, 'nInput', 0), x)
+        self._write_subspace(subspace, y, layer=layer)
+        return subspace
+
+    def reverse(self, subspace):
+        """Inverse of ``forward``: fire one fold-reverse step on the
+        subspace's space_role-appropriate field.
+
+        2026-07-04 serial plan Task 1: the silent skip for hosted
+        NON-INVERTIBLE rules is revoked -- it raises the Gate-S1
+        inventory error (the replay must not walk past a recorded rule
+        it cannot undo). Un-hosted rules (cross-space_role dispatch) and
+        binary rules still route elsewhere (chart generate).
+
+        Stage 3 (chart retirement): on the signal-router path the
+        router's ``generate`` handles inverse routing tensorially,
+        so the per-rule reverse here is a cursor-advance no-op.
+        """
+        ss = self._word_space
+        if (ss is not None
+                and getattr(ss, 'languageLayer', None) is not None
+                and not getattr(ss, '_grammar_is_default_only', True)):
+            self._next_rule_name(direction='generate')
+            return subspace
+        rule_name = self._next_rule_name(direction='generate')
+        if rule_name is None:
+            return subspace
+        generation = getattr(ss, '_generation_space', None)
+        layer = (generation.resolve_generation_op(self.space_role, rule_name)
+                 if generation is not None and generation._generation_active
+                 else self._by_name.get(rule_name))
+        if layer is None:
+            return subspace                 # cross-space_role routing skip
+        if not getattr(layer, 'invertible', False):
+            # Fail loud: a recorded rule with no faithful inverse
+            # (the fifth fail-loud application; Gate-S1 inventory).
+            raiser = getattr(layer, 'raise_no_inverse', None)
+            if raiser is not None:
+                raiser("recorded rule reached SyntacticLayer.reverse "
+                       "with invertible=False")
+            raise NotImplementedError(
+                f"SyntacticLayer.reverse: rule {rule_name!r} is not "
+                f"invertible -- write a real reverse() or remove the "
+                f"rule from the grammar.")
+        # Binary rules' inverse is handled by the chart's generate via
+        # host_layer.generate(parent); skip here.
+        if int(getattr(layer, 'arity', 1)) != 1:
+            return subspace
+        y = self._read_subspace(subspace, layer=layer)
+        if y is None:
+            return subspace
+        context = self._structural_context(phase='generate')
+        # Two-pass ergodic adapter: when ``pi`` / ``sigma`` fires and
+        # the host space exposes a space_role-specific ``_pi_reverse`` /
+        # ``_sigma_reverse`` (which routes through pi2/sigma2 in
+        # two-pass ergodic mode), delegate there. Other unary rules
+        # (not, etc.) keep going through ``layer.reverse``.
+        host = getattr(self, '_host_space', None)
+        if host is not None and rule_name == 'pi' and hasattr(host, '_pi_reverse'):
+            if context is not None:
+                _structural_face_phase(
+                    layer, (y,), context=context, phase='generate')
+            x = host._pi_reverse(y)
+        elif host is not None and rule_name == 'sigma' and hasattr(host, '_sigma_reverse'):
+            if context is not None:
+                _structural_face_phase(
+                    layer, (y,), context=context, phase='generate')
+            x = host._sigma_reverse(y)
+        else:
+            # Unified fold-width law (same trim as forward's dispatch).
+            def generate(value):
+                if context is None:
+                    return layer.reverse(value)
+                operands = invoke_structural_face(
+                    layer, (value,), context=context, phase='generate')
+                if len(operands) != 1:
+                    raise ValueError(
+                        'unary structural generate must return one operand')
+                return operands[0]
+            x = fold_content_apply(
+                generate, getattr(layer, 'nInput', 0), y)
+        self._write_subspace(subspace, x, layer=layer)
+        return subspace
+
+    # -- subspace I/O per space_role ------------------------------------------
+    def _read_subspace(self, subspace, layer=None):
+        """Read the per-position tensor from ``subspace`` for op dispatch.
+
+        Routes through ``subspace.materialize()`` so the
+        ``.active`` mask is applied and the op sees the live
+        per-position activation -- never the underlying codebook
+        weights ``W``. ``getW()`` on any ``.what`` / ``.where`` /
+        ``.when`` Basis returns the codebook (a global lookup
+        table); operating on that would mutate the codebook itself
+        instead of the per-position activations the op is meant to
+        transform.
+
+        When ``layer.reads_activation`` is True (e.g.
+        ``IntersectionLayer`` / ``UnionLayer``), the read source
+        switches to ``materialize(mode='activation')`` -- the
+        ``[B, V, 2]`` bivector activation -- because those ops
+        operate on the activation poles, not the muxed event.
+
+        Space-role distinction is irrelevant here: every space_role's per-
+        position read goes through ``materialize()``. Space-role-specific
+        slicing of the muxed event (e.g. operating on the ``.what``
+        bivector only) is the op's responsibility.
+        """
+        if subspace is None:
+            return None
+        # Activation-reading ops (IntersectionLayer / UnionLayer at
+        # CS-space_role) read the bivector activation directly.
+        if layer is not None and getattr(layer, 'reads_activation', False):
+            if hasattr(subspace, 'materialize'):
+                try:
+                    return subspace.materialize(mode='activation')
+                except Exception:
+                    pass
+        if hasattr(subspace, 'materialize'):
+            return subspace.materialize()
+        return getattr(subspace, 'event', None)
+
+    def _write_subspace(self, subspace, tensor, layer=None):
+        """Write the op's output back into ``subspace``.
+
+        Default path: ``set_event(tensor)`` writes the muxed event
+        and invalidates the cached materialize.
+
+        Activation-writing path: when ``layer.reads_activation`` is
+        True, the op produced a bivector activation
+        ``[..., 2]`` -- write it via ``set_activation`` so the
+        ``.activation`` Basis is updated and downstream
+        ``materialize(mode='activation')`` reads the new value.
+        """
+        if subspace is None or tensor is None:
+            return
+        if layer is not None and getattr(layer, 'reads_activation', False):
+            if hasattr(subspace, 'set_activation'):
+                try:
+                    subspace.set_activation(tensor)
+                    return
+                except Exception:
+                    pass
+        if hasattr(subspace, 'set_event'):
+            subspace.set_event(tensor)
+
+# =====================================================================
+# Grammar-op class registry for lazy host_layer construction (Q10.4).
+# Maps rule method_name -> GrammarLayer class. Per-space syntactic
+# layers consult this when the grammar references a rule whose host
+# parametrized layer isn't already owned by the space.
+# =====================================================================
+def _grammar_layer_classes():
+    """Return the rule_name -> GrammarLayer class registry.
+
+    Step 8 of the 2026-05-01 refactor: read from the canonical module-
+    level ``GRAMMAR_LAYER_CLASSES`` dict on Layers.py instead of
+    rebuilding it. Returns ``{}`` if Layers.py isn't yet importable
+    (Layers.py imports from Language.py at module load).
+    """
+    try:
+        from Layers import GRAMMAR_LAYER_CLASSES
+    except ImportError:
+        return {}
+    return dict(GRAMMAR_LAYER_CLASSES)
+
+def build_space_syntactic_layer(space, word_space, *, space_role,
+                                builtin_layers=None, owner_space=None):
+    """Construct a per-space SyntacticLayer.
+
+    Args:
+        space: the host Space whose geometry sizes host operations.
+        owner_space: optional architectural owner of the dispatcher.  When
+            omitted this is ``space``.  The split is used by the canonical
+            property-basis model: symbolic grammar is owned by SymbolSpace,
+            while its operands use ConceptualSpace geometry.
+        word_space: the SymbolSpace coordinator. Owns the host_layer
+            registry and the chart.
+        space_role: space_role name ('subsymbolic' / 'CS' / 'SS') used as the registry key.
+        builtin_layers: dict[rule_name -> GrammarLayer instance] for
+            rules backed by an already-constructed parametrized layer
+            (e.g. {'intersection': space.pi}). These instances are
+            registered as-is so their existing weights participate in
+            training.
+
+    Per the 2026-05-07 rollback there is no ``default_rule`` parameter;
+    the grammar XML is the sole source of truth for which rule fires.
+    """
+    builtin_layers = dict(builtin_layers or {})
+    host_layers = dict(builtin_layers)
+    cls_registry = _grammar_layer_classes()
+    for rule in TheGrammar.rules:
+        rule_space_role = getattr(rule, 'space_role', None)
+        if rule_space_role != space_role:
+            continue
+        mn = getattr(rule, 'method_name', None)
+        if not mn or mn in host_layers:
+            continue
+        cls = cls_registry.get(mn)
+        if cls is None:
+            continue
+        try:
+            if cls is SurfaceLayer:
+                width = int(space.muxedSize)
+                host_layers[mn] = cls(nInput=width, nOutput=width)
+            else:
+                host_layers[mn] = cls()
+        except TypeError:
+            # Some GrammarLayer wrappers (IntersectionLayer / UnionLayer)
+            # require a parametrized inner layer at construction. Without
+            # one, the host space's existing instance should already be
+            # in builtin_layers; if it isn't, skip rather than fail.
+            continue
+    layer = SyntacticLayer(
+        space_role=space_role, word_space=word_space,
+        host_layers=host_layers, host_space=space)
+    (owner_space if owner_space is not None else space).syntacticLayer = layer
+    return layer
+
+class CategoryStack:
+    """Per-row push/pop stack of derivation-state embeddings.
+
+    Holds one learned embedding per category slot pushed during parsing
+    (e.g. S, VO). Consumed by the rule predictor MLP as a flattened
+    window over recent stack frames.
+
+    Storage is one Python list per batch row (``self._entries[b]``).
+    The spec proposed a ``[B, max_depth, dim]`` tensor backing, but
+    in-place ``__setitem__`` on a non-grad tensor breaks autograd
+    propagation back to the pushed vec — and the rule-predictor
+    gradient test depends on that propagation. List-of-lists preserves
+    autograd through ``torch.cat`` in ``flatten`` while still giving
+    per-row isolation under microbatch ``B*K`` rows.
+    """
+
+    def __init__(self, dim, batch=1, max_depth=64):
+        """Allocate per-row empty lists sized for ``batch`` rows.
+
+        ``dim`` is the embedding dim; ``max_depth`` caps per-row depth
+        (push asserts on overflow).
+        """
+        self._dim = int(dim)
+        self._batch = int(batch)
+        self._max_depth = int(max_depth)
+        self._entries = [[] for _ in range(self._batch)]
+
+    def ensure_batch(self, batch):
+        """Reset per-row state to ``batch`` empty stacks.
+
+        Cheap no-op when ``batch`` already matches the current width.
+        """
+        batch = int(batch)
+        if batch == self._batch:
+            return
+        self._batch = batch
+        self._entries = [[] for _ in range(self._batch)]
+
+    def push(self, b, vec):
+        """Append ``vec`` to row ``b``'s stack; assert shape + depth bound."""
+        assert vec.shape == (self._dim,), (
+            f"CategoryStack dim={self._dim}, got vec shape {tuple(vec.shape)}"
+        )
+        assert len(self._entries[b]) < self._max_depth, (
+            f"CategoryStack overflow at row {b}: max_depth={self._max_depth}"
+        )
+        self._entries[b].append(vec)
+
+    def pop(self, b):
+        """Pop and return row ``b``'s top embedding."""
+        return self._entries[b].pop()
+
+    def depth(self, b):
+        """Return current stack depth for row ``b``."""
+        return len(self._entries[b])
+
+    def flatten(self, b):
+        """Concatenate row ``b``'s stack into a single 1D tensor.
+
+        Empty rows return a zero-length tensor. Uses ``torch.cat`` so
+        autograd flows back through any param-bearing entries.
+        """
+        if not self._entries[b]:
+            return torch.zeros(0)
+        return torch.cat(self._entries[b], dim=0)
+
+    def clear_rows(self, start, end):
+        """Empty rows ``[start, end)``. Used by per-row hard reset.
+
+        Drops all pushed embeddings for the row range; subsequent
+        ``depth(b)`` returns 0. Does not free the backing list slot.
+        """
+        for b in range(int(start), min(int(end), self._batch)):
+            self._entries[b] = []
+
+class ReconstructionStack:
+    """SymbolSpace-owned, sentence-scoped forward-construction trace.
+
+    ``_entries`` preserves the original per-row ``(rule_id, word_id)`` stack
+    API.  The live serial path also records the two sufficient teacher
+    artifacts that used to be parked on ``BasicModel``:
+
+    * the ordered word identities and exact percept leaves; and
+    * the grammatical reduction choices made while constructing the idea.
+
+    All artifacts are detached observations of the forward construction.
+    They are authoritative targets for reconstruction / reverse-choice
+    training, not hidden inputs to a free reverse derivation.  Compatibility
+    evaluators may still replay the stored leaves or legacy reduction trace;
+    a learned idea-only reverse must consume ``S`` alone.  Keeping the teacher
+    here gives it one lifecycle and one owner (SymbolSpace) without putting
+    request-scoped state in checkpoints.
+    """
+
+    def __init__(self, batch=1, max_depth=64):
+        """Allocate ``[B, max_depth, 2]`` long storage plus per-row top index."""
+        self._batch = int(batch)
+        self._max_depth = int(max_depth)
+        self._entries = torch.zeros(self._batch, self._max_depth, 2,
+                                    dtype=torch.long)
+        self._top = torch.zeros(self._batch, dtype=torch.long)
+        self._word_ids = None
+        self._word_mask = None
+        self._word_part_ids = None
+        self._word_part_mask = None
+        self._leaf_slab = None
+        self._reductions = None
+        self._reductions_sentence_scoped = False
+        self._choice_rule_ids = None
+        self._choice_arities = None
+        self._choice_mask = None
+        self._choice_positions = self._choice_actions = self._choice_attempted = None
+        self._choice_explorable = self._choice_alternative_counts = None
+        self._unary_rule_map = None
+        self._binary_rule_map = None
+        self._forward_losses = None
+        self._forward_loss_mask = None
+
+    @staticmethod
+    def _detached_clone(value):
+        return value.detach().clone() if torch.is_tensor(value) else None
+
+    def begin_sentence(self):
+        """Clear every artifact before recording one sentence."""
+        self._entries.zero_()
+        self._top.zero_()
+        self._word_ids = None
+        self._word_mask = None
+        self._word_part_ids = None
+        self._word_part_mask = None
+        self._leaf_slab = None
+        self._reductions = []
+        self._reductions_sentence_scoped = True
+        self._choice_rule_ids = None
+        self._choice_arities = None
+        self._choice_mask = None
+        self._choice_positions = self._choice_actions = self._choice_attempted = None
+        self._choice_explorable = self._choice_alternative_counts = None
+        self._forward_losses = None
+        self._forward_loss_mask = None
+
+    def ensure_batch(self, batch):
+        """Reallocate backing tensors if ``batch`` width changed."""
+        batch = int(batch)
+        if batch == self._batch:
+            return
+        self._batch = batch
+        self._entries = torch.zeros(batch, self._max_depth, 2,
+                                    dtype=torch.long)
+        self._top = torch.zeros(batch, dtype=torch.long)
+        self._word_ids = None
+        self._word_mask = None
+        self._word_part_ids = None
+        self._word_part_mask = None
+        self._leaf_slab = None
+        self._reductions = None
+        self._reductions_sentence_scoped = False
+        self._choice_rule_ids = None
+        self._choice_arities = None
+        self._choice_mask = None
+        self._choice_positions = self._choice_actions = self._choice_attempted = None
+        self._choice_explorable = self._choice_alternative_counts = None
+        self._unary_rule_map = None
+        self._binary_rule_map = None
+        self._forward_losses = None
+        self._forward_loss_mask = None
+
+    def push(self, b, rule_id, word_id):
+        """Push ``(rule_id, word_id)`` onto row ``b``'s stack.
+
+        Asserts the depth bound and advances the row's top index.
+        """
+        idx = int(self._top[b].item())
+        assert idx < self._max_depth, (
+            f"ReconstructionStack overflow at row {b}: max_depth={self._max_depth}"
+        )
+        self._entries[b, idx, 0] = int(rule_id)
+        self._entries[b, idx, 1] = int(word_id)
+        self._top[b] += 1
+
+    def peek(self, b):
+        """Return the top (rule_id, word_id) tuple for row ``b`` without popping."""
+        idx = int(self._top[b].item()) - 1
+        return (int(self._entries[b, idx, 0].item()),
+                int(self._entries[b, idx, 1].item()))
+
+    def pop(self, b):
+        """Pop and return the top (rule_id, word_id) tuple from row ``b``."""
+        self._top[b] -= 1
+        idx = int(self._top[b].item())
+        return (int(self._entries[b, idx, 0].item()),
+                int(self._entries[b, idx, 1].item()))
+
+    def clear_rows(self, start, end):
+        """Reset rows ``[start, end)`` to empty stacks. Per-row hard reset.
+
+        Zeros the (rule_id, word_id) backing tensor slice and the
+        per-row top index; no-op when the range is empty / past end.
+        """
+        s, e = int(start), min(int(end), self._batch)
+        if e <= s:
+            return
+        self._entries[s:e].zero_()
+        self._top[s:e] = 0
+        if (torch.is_tensor(self._word_mask)
+                and int(self._word_mask.shape[0]) >= e):
+            self._word_mask[s:e] = False
+        if (torch.is_tensor(self._word_ids)
+                and int(self._word_ids.shape[0]) >= e):
+            self._word_ids[s:e] = -1
+        if (torch.is_tensor(self._word_part_mask)
+                and int(self._word_part_mask.shape[0]) >= e):
+            self._word_part_mask[s:e] = False
+        if (torch.is_tensor(self._word_part_ids)
+                and int(self._word_part_ids.shape[0]) >= e):
+            self._word_part_ids[s:e] = -1
+        if (torch.is_tensor(self._leaf_slab)
+                and int(self._leaf_slab.shape[0]) >= e):
+            self._leaf_slab[s:e].zero_()
+        if self._reductions:
+            cleared = []
+            for step in self._reductions:
+                values = list(step)
+                # Slot 1 is the per-row ``can`` mask; optional slots 2/3 are
+                # the corresponding left/right word-provenance masks.
+                for i in range(1, min(4, len(values))):
+                    value = values[i]
+                    if (torch.is_tensor(value) and value.dim() >= 1
+                            and int(value.shape[0]) >= e):
+                        value = value.clone()
+                        value[s:e] = False
+                        values[i] = value
+                cleared.append(tuple(values))
+            self._reductions = cleared
+        if (torch.is_tensor(self._choice_mask)
+                and int(self._choice_mask.shape[0]) >= e):
+            self._choice_mask[s:e] = False
+            self._choice_rule_ids[s:e] = -1
+            self._choice_arities[s:e] = 0
+            self._choice_attempted[s:e] = False
+            if torch.is_tensor(self._choice_explorable):
+                self._choice_explorable[s:e] = False
+            for name in ("_choice_left_rows", "_choice_right_rows", "_choice_positions", "_choice_actions"):
+                slab = getattr(self, name, None)
+                if torch.is_tensor(slab) and int(slab.shape[0]) >= e:
+                    slab[s:e] = -1
+        if (torch.is_tensor(self._forward_loss_mask)
+                and int(self._forward_loss_mask.shape[0]) >= e):
+            self._forward_loss_mask[s:e] = False
+            self._forward_losses[s:e] = 0
+
+    def depth(self, b):
+        """Return current stack depth for row ``b`` (number of entries)."""
+        return int(self._top[b].item())
+
+    # -- sentence teacher artifacts -----------------------------------
+    def store_words(self, word_ids, mask=None):
+        """Store ordered durable word identities and their validity mask."""
+        if not torch.is_tensor(word_ids) or word_ids.dim() != 2:
+            raise ValueError("ReconstructionStack word_ids must be [B, W]")
+        if mask is None:
+            mask = word_ids >= 0
+        if (not torch.is_tensor(mask) or mask.shape != word_ids.shape):
+            raise ValueError(
+                "ReconstructionStack word mask must match word_ids [B, W]")
+        self._word_ids = self._detached_clone(word_ids).to(dtype=torch.long)
+        self._word_mask = self._detached_clone(mask).to(dtype=torch.bool)
+
+    def words(self):
+        """Return ``(word_ids, valid_mask)`` for the current sentence."""
+        return self._word_ids, self._word_mask
+
+    def store_word_parts(self, part_ids, mask):
+        """Store each word's exact radix spelling as ``[B, W, P]`` IDs.
+
+        A promoted word may have one percept ID while an open-vocabulary word
+        has several.  This representation is therefore the lossless discrete
+        surface teacher even when no single durable concept ID exists yet.
+        """
+        if (not torch.is_tensor(part_ids) or part_ids.dim() != 3
+                or not torch.is_tensor(mask)
+                or tuple(mask.shape) != tuple(part_ids.shape)):
+            raise ValueError(
+                "ReconstructionStack word parts must be matching [B, W, P]")
+        self._word_part_ids = self._detached_clone(part_ids).to(
+            dtype=torch.long)
+        self._word_part_mask = self._detached_clone(mask).to(dtype=torch.bool)
+
+    def word_parts(self):
+        """Return the exact ``(part_ids, mask)`` surface-word teacher."""
+        return self._word_part_ids, self._word_part_mask
+
+    def store_leaves(self, slab):
+        """Store the exact ``[B, W, D]`` percept leaves used by forward."""
+        if not torch.is_tensor(slab) or slab.dim() != 3:
+            raise ValueError("ReconstructionStack leaves must be [B, W, D]")
+        self._leaf_slab = self._detached_clone(slab)
+
+    def leaves(self):
+        """Return the detached exact-leaf teacher for the current sentence."""
+        return self._leaf_slab
+
+    def begin_reductions(self, *, sentence_scoped=False):
+        """Reset and enable grammatical-choice recording."""
+        self._reductions = []
+        self._reductions_sentence_scoped = bool(sentence_scoped)
+
+    @property
+    def reductions_sentence_scoped(self):
+        return bool(self._reductions_sentence_scoped)
+
+    def record_reduction(self, marginal, can, left_word=None, right_word=None):
+        """Append one detached grammatical reduction decision.
+
+        ``marginal`` is ``[B, 1, R]`` in the reducer's fixed local-op order;
+        its argmax plus LanguageLayer's immutable local-op -> global-rule map
+        is the hard teacher choice.  ``can`` records which rows actually
+        committed the fold.  Optional word-provenance masks retain the legacy
+        trace-walk information without creating another model-owned cache.
+        """
+        if self._reductions is None:
+            return
+        if (not torch.is_tensor(marginal) or marginal.dim() != 3
+                or not torch.is_tensor(can) or can.dim() != 1
+                or int(marginal.shape[0]) != int(can.shape[0])):
+            raise ValueError(
+                "ReconstructionStack reduction must be [B,1,R] plus [B]")
+        values = [self._detached_clone(marginal),
+                  self._detached_clone(can).to(dtype=torch.bool)]
+        if left_word is not None or right_word is not None:
+            if (not torch.is_tensor(left_word)
+                    or not torch.is_tensor(right_word)
+                    or left_word.shape != can.shape
+                    or right_word.shape != can.shape):
+                raise ValueError(
+                    "ReconstructionStack word provenance must match can [B]")
+            values.extend([
+                self._detached_clone(left_word).to(dtype=torch.bool),
+                self._detached_clone(right_word).to(dtype=torch.bool),
+            ])
+        self._reductions.append(tuple(values))
+
+    def reduction_trace(self):
+        """Return the current grammatical-choice trace as an immutable tuple."""
+        return tuple(self._reductions or ())
+
+    def clear_reductions(self):
+        """Disable and discard grammatical-choice recording."""
+        self._reductions = None
+        self._reductions_sentence_scoped = False
+
+    # -- compiler-visible hard choices --------------------------------
+    def prepare_choices(self, batch, max_steps, *, device,
+                        unary_rule_ids=(), binary_rule_ids=()):
+        """Allocate a fixed hard-choice slab before a captured W loop.
+
+        The fullgraph loop writes only small integer/mask tensors here; no
+        Python list append, tensor-to-host read, or dense activation copy sits
+        in the captured recurrence.  A fresh sentence overwrites every slot.
+        """
+        batch, max_steps = int(batch), int(max_steps)
+        if batch <= 0 or max_steps <= 0:
+            raise ValueError("ReconstructionStack choice slab must be non-empty")
+        self._choice_rule_ids = torch.full(
+            (batch, max_steps), -1, dtype=torch.long, device=device)
+        self._choice_positions = torch.full((batch, max_steps), -1, dtype=torch.long, device=device)
+        self._choice_actions = torch.full((batch, max_steps), -1, dtype=torch.long, device=device)
+        self._choice_attempted = torch.zeros((batch, max_steps), dtype=torch.bool, device=device)
+        self._choice_explorable = torch.zeros_like(self._choice_attempted)
+        self._choice_alternative_counts = torch.zeros_like(self._choice_actions)
+        self._choice_arities = torch.zeros(
+            batch, max_steps, dtype=torch.int8, device=device)
+        self._choice_mask = torch.zeros(
+            batch, max_steps, dtype=torch.bool, device=device)
+        # Float loss slots deliberately remain ordinary tensors.  A copy from
+        # a grad-bearing local objective gives the slab a CopySlices grad_fn;
+        # consuming its masked mean after the compiled sentence body preserves
+        # the chooser gradient without Python list appends in the W loop.
+        self._forward_losses = torch.zeros(
+            batch, max_steps, dtype=torch.float32, device=device)
+        self._forward_loss_mask = torch.zeros(
+            batch, max_steps, dtype=torch.bool, device=device)
+        # Operand identity per recorded fold (contract 1 of the compiled
+        # reverse-loops plan): the concept rows of the left (older) and
+        # right (newest) operands at the fold, -1 for a composite.
+        self._choice_left_rows = torch.full(
+            (batch, max_steps), -1, dtype=torch.long, device=device)
+        self._choice_right_rows = torch.full(
+            (batch, max_steps), -1, dtype=torch.long, device=device)
+        self._unary_rule_map = torch.as_tensor(
+            tuple(int(v) for v in unary_rule_ids),
+            dtype=torch.long, device=device)
+        self._binary_rule_map = torch.as_tensor(
+            tuple(int(v) for v in binary_rule_ids),
+            dtype=torch.long, device=device)
+
+    def rule_map(self, arity):
+        """Return the immutable local-op -> global-rule map for ``arity``."""
+        return self._unary_rule_map if int(arity) == 1 else self._binary_rule_map
+
+    def operand_rows(self):
+        """``(left_rows, right_rows)`` ``[B, max_steps]`` concept rows of
+        each recorded fold's operands (-1: composite / unknown), or
+        ``(None, None)`` before a slab exists."""
+        return (getattr(self, "_choice_left_rows", None),
+                getattr(self, "_choice_right_rows", None))
+
+    def record_choice(self, slot, rule_ids, arity, mask,
+                      local_structural_loss=None, left_row=None,
+                      right_row=None, position=0):
+        """Commit one hard choice and its optional bounded local objective."""
+        if self._choice_rule_ids is None:
+            return
+        slot = int(slot)
+        if slot < 0 or slot >= int(self._choice_rule_ids.shape[1]):
+            raise IndexError(
+                f"ReconstructionStack choice slot {slot} out of range")
+        active = mask.to(device=self._choice_mask.device, dtype=torch.bool)
+        chosen = rule_ids.to(
+            device=self._choice_rule_ids.device, dtype=torch.long)
+        chosen = torch.where(active, chosen, torch.full_like(chosen, -1))
+        self._choice_rule_ids[:, slot].copy_(chosen)
+        self._choice_arities[:, slot].copy_(torch.where(
+            active,
+            torch.full_like(chosen, int(arity), dtype=torch.int8),
+            torch.zeros_like(chosen, dtype=torch.int8)))
+        self._choice_mask[:, slot].copy_(active)
+        self._choice_positions[:, slot].copy_(torch.where(active,
+            torch.as_tensor(position, device=active.device), -1))
+        self._choice_attempted[:, slot].copy_(active)
+        self._choice_explorable[:, slot].copy_(active)
+        for name, value in (("_choice_left_rows", left_row),
+                            ("_choice_right_rows", right_row)):
+            slab = getattr(self, name, None)
+            if torch.is_tensor(slab) and torch.is_tensor(value):
+                rows = value.reshape(-1).to(device=slab.device, dtype=torch.long)
+                slab[:, slot].copy_(torch.where(active, rows, torch.full_like(rows, -1)))
+        if (torch.is_tensor(local_structural_loss)
+                and torch.is_tensor(self._forward_losses)):
+            local = local_structural_loss.reshape(-1).to(
+                device=self._forward_losses.device,
+                dtype=self._forward_losses.dtype)
+            local = torch.where(active, local, torch.zeros_like(local))
+            self._forward_losses[:, slot].copy_(local)
+            self._forward_loss_mask[:, slot].copy_(active)
+
+    def detach_live(self):
+        """Cut the autograd history of the trace's floating slabs at a
+        brick boundary: ``record_choice`` writes each step's bounded local
+        loss in place (``copy_``), and an in-place write on a tensor with
+        a graph chains every brick's graph to the previous one."""
+        for name, value in list(self.__dict__.items()):
+            if (torch.is_tensor(value) and value.is_floating_point()
+                    and value.grad_fn is not None):
+                self.__dict__[name] = value.detach()
+
+    def choices(self):
+        """Return ``(rule_ids, arities, mask)`` for reverse supervision."""
+        return (self._choice_rule_ids, self._choice_arities,
+                self._choice_mask)
+
+    def forward_loss_slots(self):
+        """Return fixed local-loss values/mask for compiler-safe remapping."""
+        return self._forward_losses, self._forward_loss_mask
+
+    def forward_loss(self):
+        """Mean bounded local grammar loss over choices that actually fired."""
+        values, mask = self.forward_loss_slots()
+        if (not torch.is_tensor(values) or not torch.is_tensor(mask)
+                or not values.requires_grad):
+            return None
+        weight = mask.to(values.dtype)
+        return (values * weight).sum() / weight.sum().clamp_min(1.0)
+
+
+
+def _intersect_long_rows(a, b):
+    """LongTensor intersection by row index, preserving sort order.
+
+    Both inputs are 1-D ``LongTensor`` of unique row indices (typical
+    output of ``refs_by_category`` / ``refs_by_order``). Returns the
+    sorted intersection as a 1-D ``LongTensor``. Either side empty
+    yields an empty result; both empty yields empty.
+    """
+    if a is None or b is None:
+        return torch.empty(0, dtype=torch.long)
+    if a.numel() == 0 or b.numel() == 0:
+        return torch.empty(0, dtype=torch.long)
+    # Boolean ``isin`` is the simplest correct implementation; sizes are
+    # category-bounded (tens, not thousands) so cost is negligible.
+    return a[torch.isin(a, b)]
+
+class Taxonomy:
+    """Explicit parent->children order hierarchy for ramsified symbols.
+
+    Distinct from the Meronomy (parthood) -- which stays codebook-
+    per-order implicit / geometric (the ``PartLayer`` clipped-cosine,
+    unchanged). The Taxonomy is the explicit hierarchy organizing
+    symbols by order (0 = proper / specific; higher = more general).
+    Pure-Python bookkeeping: no parameters, not an ``nn.Module``;
+    hosted on the SymbolSpace singleton.
+
+    Also hosts the **priming buffer** for reverse-generation working-
+    memory state (plan doc/plans/2026-05-20-primed-reverse-generation.md).
+    The buffer lives on the Taxonomy because propagation walks
+    parent/children adjacency; co-locating the state with the graph
+    avoids indirection. The legacy in-process dicts
+    (``_parent``/``_children``) are unused on the SymbolSpace's instance
+    — propagation queries the attached ``embed.KnowledgeView`` instead.
+    """
+
+    # Default priming knobs (overrideable per instance via
+    # ``configure_priming``). Plan doc/plans/2026-05-20-primed-reverse-
+    # generation.md §Configuration.
+    DEFAULT_PRIMING_DEPTH = 2
+    DEFAULT_HOP_DECAY = 0.5
+    DEFAULT_TEMPORAL_DECAY = 0.9
+    DEFAULT_BOOST_INITIAL = 1.0
+    # Class default True preserves the historical retrieval-helper gate for
+    # bare Taxonomy() instances (priming_kwargs_for_slots /
+    # retrieval_candidates_for_slot).  PRODUCTION SymbolSubSpace taxonomies are
+    # set off-by-default by SymbolSubSpace.attach_knowledge, which calls
+    # configure_priming(priming_enabled=<symbolicPriming>) (default False)
+    # right where it allocates the priming buffer — so forward heat production
+    # is off (zero training-path cost) unless <symbolicPriming> is set.
+    # Plan doc/plans/2026-06-06-symbolic-heat-retrieval.md.
+    DEFAULT_PRIMING_ENABLED = True
+
+    def __init__(self):
+        self._order = {}      # node id -> int order
+        self._children = {}   # node id -> list[node id]
+        self._parent = {}     # node id -> parent node id or None
+        self._next = 0
+        # Priming state (allocated lazily via ``allocate_priming``).
+        self._priming = None      # FloatTensor [B, V_ref_capacity] | None
+        self._priming_B = 0
+        self._priming_capacity = 0
+        self._priming_live = 0
+        self._priming_view = None  # embed.KnowledgeView for adjacency walks
+        # Per-instance priming config (defaults from class constants).
+        self.priming_depth = self.DEFAULT_PRIMING_DEPTH
+        self.hop_decay = self.DEFAULT_HOP_DECAY
+        self.temporal_decay = self.DEFAULT_TEMPORAL_DECAY
+        self.boost_initial = self.DEFAULT_BOOST_INITIAL
+        self.priming_enabled = self.DEFAULT_PRIMING_ENABLED
+        # Telemetry counters (host-side; cheap to read in tests / logs).
+        self._priming_select_count = 0
+        self._priming_boosted_select_count = 0
+
+    def add(self, order, parent=None):
+        """Create a node at ``order`` (optionally under ``parent``);
+        return its node id."""
+        nid = self._next
+        self._next += 1
+        self._order[nid] = int(order)
+        self._children[nid] = []
+        self._parent[nid] = parent
+        if parent is not None:
+            self._children.setdefault(parent, []).append(nid)
+        return nid
+
+    def children(self, node):
+        """Direct children of ``node`` (list of node ids)."""
+        return list(self._children.get(node, []))
+
+    def parent(self, node):
+        """Parent node id of ``node`` (or ``None`` for a root)."""
+        return self._parent.get(node)
+
+    def order(self, node):
+        """The order (0..N) recorded for ``node``."""
+        return self._order[node]
+
+    def all(self):
+        """All node ids, in insertion order."""
+        return list(self._order.keys())
+
+    def __len__(self):
+        return len(self._order)
+
+    # -- priming buffer ---------------------------------------------------
+    # Plan: doc/plans/2026-05-20-primed-reverse-generation.md §Part/whole
+    # priming mask. ``_priming[b, ref_id] = 1 + boost(ref_id)``:
+    #   * 1.0 = multiplicative identity (no priming, no change downstream)
+    #   * >1.0 = boost (recently active or near-neighbor in taxonomy)
+    #   * dissipates back toward 1.0 via ``decay`` and ``propagate``'s
+    #     hop_decay
+    # Allocated to ``capacity`` (V_ref_capacity) with only the first
+    # ``live`` columns active; matches the artifact's capacity-slack
+    # pattern for symbol-learning appends.
+
+    def allocate_priming(self, batch_size, capacity, live, *, device=None,
+                         dtype=None):
+        """Allocate the priming buffer at ``[batch_size, capacity]``,
+        initialized to 1.0 (multiplicative identity).
+
+        ``live`` is the number of currently-occupied ref rows (the rest
+        is slack reserved for symbol-learning appends). Re-allocation
+        with a smaller batch / capacity / live preserves any current
+        primed values in the overlapping region; a larger allocation
+        copies forward and fills the new space with 1.0.
+        """
+        import torch
+        B = int(batch_size)
+        C = int(capacity)
+        L = int(live)
+        if dtype is None:
+            dtype = torch.float32
+        new = torch.ones(B, C, dtype=dtype, device=device)
+        old = self._priming
+        if old is not None:
+            ob = min(B, old.shape[0])
+            oc = min(C, old.shape[1])
+            new[:ob, :oc] = old[:ob, :oc].to(device=device, dtype=dtype)
+        self._priming = new
+        self._priming_B = B
+        self._priming_capacity = C
+        self._priming_live = L
+
+    def attach_view(self, view):
+        """Attach an ``embed.KnowledgeView`` whose parent/children CSR
+        drives priming propagation. Stored as a plain reference (the
+        view is read-only). ``view=None`` detaches.
+        """
+        self._priming_view = view
+        if view is not None:
+            self._priming_live = int(view.n_refs_live)
+
+    def reset(self, batch=None):
+        """Reset the priming buffer to multiplicative identity (1.0).
+        No-op when the buffer hasn't been allocated yet.
+
+        ``batch=None`` resets every row; an integer resets only that
+        row. Called at sentence boundaries — priming is sentence-
+        scoped working memory, not a persistent learned signal.
+        """
+        if self._priming is None:
+            return
+        if batch is None:
+            self._priming.fill_(1.0)
+            return
+        b = int(batch)
+        if 0 <= b < self._priming_B:
+            self._priming[b].fill_(1.0)
+
+    def decay(self, temporal_decay=0.9, batch=None):
+        """Dissipate priming boost between reverse calls within a
+        sentence: ``priming = 1 + (priming - 1) * temporal_decay``.
+        Identity (1.0) entries stay at 1.0.
+
+        ``batch=None`` decays every row; an integer decays only that
+        row.
+        """
+        if self._priming is None:
+            return
+        td = float(temporal_decay)
+        if batch is None:
+            self._priming.sub_(1.0).mul_(td).add_(1.0)
+            return
+        b = int(batch)
+        if 0 <= b < self._priming_B:
+            self._priming[b].sub_(1.0).mul_(td).add_(1.0)
+
+    def prime(self, ref_ids, batch=0, boost=1.0):
+        """Set ``priming_mask[batch, ref_ids] = max(current, 1 + boost)``.
+
+        Element-wise max so multiple primings of the same ref within a
+        sentence don't compound past ``1 + boost``. Out-of-range or
+        negative ref_ids are silently dropped.
+        """
+        if self._priming is None:
+            return
+        import torch
+        rids = torch.as_tensor(ref_ids, dtype=torch.long)
+        if rids.ndim == 0:
+            rids = rids.unsqueeze(0)
+        mask = (rids >= 0) & (rids < self._priming_capacity)
+        rids = rids[mask]
+        if rids.numel() == 0:
+            return
+        b = int(batch)
+        if b < 0 or b >= self._priming_B:
+            return
+        target = 1.0 + float(boost)
+        cur = self._priming[b, rids]
+        self._priming[b, rids] = torch.maximum(
+            cur, torch.full_like(cur, target))
+
+    def prime_with_weights(self, weights, batch=None):
+        """Merge boost-above-unity row weights into the priming buffer
+        (element-wise max; GrammarOpsPass §5).
+
+        The single intent's per-tower boosts enter the WS retrieval
+        plumbing here: the merged buffer flows to the inverse
+        recommender through ``priming_kwargs_for_slots`` — no new
+        mechanism, one new producer. ``weights``: ``[V]`` (``>= 1.0``
+        by convention; sized to ``min(V, capacity)``, the rest stays).
+        ``batch=None`` merges into every row, an integer into one.
+        No-op when the buffer is unallocated (dark by construction);
+        the merge dissipates through ``decay`` / ``reset`` exactly like
+        every other priming write (sentence-scoped working memory).
+        """
+        if self._priming is None or weights is None:
+            return
+        import torch
+        w = torch.as_tensor(weights, dtype=self._priming.dtype,
+                            device=self._priming.device).reshape(-1)
+        n = min(int(w.shape[0]), self._priming_capacity)
+        if n <= 0:
+            return
+        if batch is None:
+            self._priming[:, :n] = torch.maximum(
+                self._priming[:, :n], w[:n].unsqueeze(0))
+            return
+        b = int(batch)
+        if 0 <= b < self._priming_B:
+            self._priming[b, :n] = torch.maximum(
+                self._priming[b, :n], w[:n])
+
+    def propagate(self, ref_ids, batch=0, depth=2, hop_decay=0.5):
+        """Spread the boost from ``ref_ids`` along the attached view's
+        parent/children adjacency for ``depth`` hops, multiplying the
+        per-hop boost by ``hop_decay`` each step.
+
+        At each hop, every active node ``r`` writes
+        ``1 + (current[r] - 1) * hop_decay`` into its immediate parent
+        and immediate children, taking element-wise max with whatever
+        was already there. The frontier for the next hop is the union
+        of the just-touched neighbors. Siblings are not directly
+        primed — they reach the boost only via a shared parent across
+        two hops.
+
+        ``ref_ids`` is the seed set (typically the freshly-snapped refs
+        that just entered STM). No-op when the buffer is unallocated,
+        depth ≤ 0, or no view is attached.
+        """
+        if self._priming is None or depth <= 0:
+            return
+        view = self._priming_view
+        if view is None:
+            return
+        import torch
+        b = int(batch)
+        if b < 0 or b >= self._priming_B:
+            return
+        seeds = torch.as_tensor(ref_ids, dtype=torch.long)
+        if seeds.ndim == 0:
+            seeds = seeds.unsqueeze(0)
+        seeds = seeds[(seeds >= 0) & (seeds < self._priming_capacity)]
+        if seeds.numel() == 0:
+            return
+        frontier = set(int(r) for r in seeds.tolist())
+        decay = float(hop_decay)
+        for _ in range(int(depth)):
+            next_frontier = set()
+            for r in frontier:
+                cur = float(self._priming[b, r].item())
+                if cur <= 1.0:
+                    continue
+                neighbor_value = 1.0 + (cur - 1.0) * decay
+                if neighbor_value <= 1.0:
+                    continue
+                p = view.parent_of(r)
+                if p is not None and 0 <= p < self._priming_capacity:
+                    prev = float(self._priming[b, p].item())
+                    if neighbor_value > prev:
+                        self._priming[b, p] = neighbor_value
+                        next_frontier.add(int(p))
+                kids = view.children_of(r)
+                for c in kids.tolist():
+                    ci = int(c)
+                    if 0 <= ci < self._priming_capacity:
+                        prev = float(self._priming[b, ci].item())
+                        if neighbor_value > prev:
+                            self._priming[b, ci] = neighbor_value
+                            next_frontier.add(ci)
+            if not next_frontier:
+                break
+            frontier = next_frontier
+
+    def priming_mask(self, batch=None):
+        """Return the live slice of the priming buffer.
+
+        ``batch=None`` returns ``[B, V_ref_live]``; an integer returns
+        ``[V_ref_live]`` for that row. ``None`` when the buffer hasn't
+        been allocated yet.
+        """
+        if self._priming is None:
+            return None
+        live = self._priming_live or self._priming_capacity
+        if batch is None:
+            return self._priming[:, :live]
+        b = int(batch)
+        if b < 0 or b >= self._priming_B:
+            return None
+        return self._priming[b, :live]
+
+    @property
+    def priming_live(self):
+        return self._priming_live
+
+    def configure_priming(self, *,
+                          priming_depth=None,
+                          hop_decay=None,
+                          temporal_decay=None,
+                          boost_initial=None,
+                          priming_enabled=None):
+        """Override per-instance priming knobs.
+
+        Typically called from ``BasicModel`` setup after parsing
+        ``<architecture><priming>`` config. Any ``None`` argument
+        leaves the existing value unchanged.
+        """
+        if priming_depth is not None:
+            self.priming_depth = int(priming_depth)
+        if hop_decay is not None:
+            self.hop_decay = float(hop_decay)
+        if temporal_decay is not None:
+            self.temporal_decay = float(temporal_decay)
+        if boost_initial is not None:
+            self.boost_initial = float(boost_initial)
+        if priming_enabled is not None:
+            self.priming_enabled = bool(priming_enabled)
+
+    def note_selection(self, ref_id, batch=0):
+        """Telemetry: record that ``ref_id`` was selected in row ``batch``.
+        Bumps ``_priming_select_count`` always; bumps
+        ``_priming_boosted_select_count`` when the selected ref's
+        priming was above identity (1.0) at selection time. Host-side
+        counters — safe to read from tests and logs.
+        """
+        self._priming_select_count += 1
+        if self._priming is None:
+            return
+        b = int(batch)
+        r = int(ref_id)
+        if (0 <= b < self._priming_B and 0 <= r < self._priming_capacity):
+            if float(self._priming[b, r].item()) > 1.0:
+                self._priming_boosted_select_count += 1
+
+    def priming_telemetry(self):
+        """Return ``(total, boosted)`` selection counts."""
+        return (self._priming_select_count,
+                self._priming_boosted_select_count)
+
+    # -- derived heat: content+heat retrieval (plan 2026-06-06-symbolic-heat-retrieval) --
+
+    def heat_mask(self, batch=0):
+        """Return r = max(_priming - 1, 0) over the LIVE rows.
+
+        Mirrors ``priming_mask`` slicing:
+          * ``batch=None`` -> ``[B, V_live]``
+          * an integer    -> ``[V_live]``
+        Returns ``None`` when ``_priming`` is ``None`` AND when an integer
+        ``batch`` is out of range (same as ``priming_mask``; the two cases
+        are indistinguishable to callers).
+        Default ``batch=0`` per plan
+        ``doc/plans/2026-06-06-symbolic-heat-retrieval.md`` §API additions.
+        """
+        if self._priming is None:
+            return None
+        live = self._priming_live or self._priming_capacity
+        if batch is None:
+            return (self._priming[:, :live] - 1.0).clamp(min=0.0)
+        b = int(batch)
+        if b < 0 or b >= self._priming_B:
+            return None
+        return (self._priming[b, :live] - 1.0).clamp(min=0.0)
+
+    def topk_heat(self, k, batch=0, rows=None):
+        """Return ref-ids (LongTensor) of the up-to-k hottest LIVE rows.
+
+        Only rows with r > 0 are eligible.  Result is sorted by heat
+        descending.  ``rows`` (optional LongTensor of ref-ids) restricts
+        the candidate set to those ids (still intersected with live +
+        r > 0).  Returns an empty LongTensor when ``_priming`` is None,
+        ``k <= 0``, or nothing is hot.
+
+        See plan
+        ``doc/plans/2026-06-06-symbolic-heat-retrieval.md`` §API additions.
+        """
+        import torch
+        if self._priming is None or int(k) <= 0:
+            return torch.zeros(0, dtype=torch.long)
+        empty = torch.zeros(0, dtype=torch.long, device=self._priming.device)
+        b = int(batch)
+        if b < 0 or b >= self._priming_B:
+            return empty
+        live = self._priming_live or self._priming_capacity
+        r = (self._priming[b, :live] - 1.0).clamp(min=0.0)
+        # Candidate ids: arange(live) filtered to r > 0.
+        cand_ids = torch.where(r > 0)[0]           # LongTensor of live indices
+        if rows is not None:
+            # Restrict to the caller-supplied ids that are also live.
+            rows_t = torch.as_tensor(rows, dtype=torch.long, device=self._priming.device)
+            valid_rows = rows_t[(rows_t >= 0) & (rows_t < live)]
+            # Intersect: keep only cand_ids that appear in valid_rows.
+            mask = torch.isin(cand_ids, valid_rows)
+            cand_ids = cand_ids[mask]
+        if cand_ids.numel() == 0:
+            return empty
+        cand_r = r[cand_ids]
+        actual_k = min(int(k), cand_ids.numel())
+        topk_vals, topk_local = torch.topk(cand_r, actual_k, largest=True, sorted=True)
+        return cand_ids[topk_local]
+
+    def _active_heat_set(self, batch, rows, topk):
+        """Private helper: compute (ids, r_vals) for the active hot set.
+
+        ``ids``   — LongTensor of ref-ids in the active set S.
+        ``r_vals``— FloatTensor of heat values at those ids.
+        Returns ``(ids, r_vals)``; both tensors are on the priming
+        buffer's device.
+
+        Used internally by ``build_semantic_heat`` and ``build_outer_heat``
+        to avoid logic duplication.
+        Plan ``doc/plans/2026-06-06-symbolic-heat-retrieval.md`` §Core
+        representation.
+        """
+        import torch
+        b = int(batch)
+        if b < 0 or b >= self._priming_B:
+            empty_ids = torch.zeros(0, dtype=torch.long, device=self._priming.device)
+            empty_r   = torch.zeros(0, dtype=self._priming.dtype, device=self._priming.device)
+            return empty_ids, empty_r
+        device = self._priming.device
+        live = self._priming_live or self._priming_capacity
+        r = (self._priming[b, :live] - 1.0).clamp(min=0.0)
+        # Start with all hot live ids.
+        hot_ids = torch.where(r > 0)[0]
+        if rows is not None:
+            rows_t = torch.as_tensor(rows, dtype=torch.long, device=device)
+            valid_rows = rows_t[(rows_t >= 0) & (rows_t < live)]
+            mask = torch.isin(hot_ids, valid_rows)
+            hot_ids = hot_ids[mask]
+        if topk is not None and int(topk) > 0 and hot_ids.numel() > 0:
+            actual_k = min(int(topk), hot_ids.numel())
+            cand_r = r[hot_ids]
+            _, local_top = torch.topk(cand_r, actual_k, largest=True, sorted=True)
+            hot_ids = hot_ids[local_top]
+        r_vals = r[hot_ids]
+        return hot_ids, r_vals
+
+    def build_semantic_heat(self, codebook_rows, batch=0, rows=None, topk=None):
+        """Return z = A_S^T r_S, shape [D].
+
+        S = live rows with r > 0 for ``batch``, optionally restricted to
+        ``rows`` and/or limited to the top-``topk`` hottest (via
+        ``topk_heat`` logic, delegated to ``_active_heat_set``).
+        A_S = ``codebook_rows[S]``; r_S = heat at S.
+        z = r_S @ A_S.
+
+        Returns ``zeros([D])`` when S is empty or ``_priming`` is None.
+        Preserves ``codebook_rows.device`` and ``codebook_rows.dtype``.
+
+        Plan ``doc/plans/2026-06-06-symbolic-heat-retrieval.md``
+        §Core representation, §API additions.
+        """
+        import torch
+        D = codebook_rows.shape[1]
+        zero = torch.zeros(D, device=codebook_rows.device,
+                           dtype=codebook_rows.dtype)
+        if self._priming is None:
+            return zero
+        b = int(batch)
+        if b < 0 or b >= self._priming_B:
+            return zero
+        ids, r_vals = self._active_heat_set(batch, rows, topk)
+        if ids.numel() == 0:
+            return zero
+        # Move ids/r_vals to codebook device; cast r_vals to codebook dtype.
+        ids = ids.to(device=codebook_rows.device)
+        r_vals = r_vals.to(device=codebook_rows.device,
+                           dtype=codebook_rows.dtype)
+        A_S = codebook_rows[ids]       # [|S|, D]
+        return r_vals @ A_S            # [D]
+
+    def build_outer_heat(self, codebook_rows, batch=0, rows=None, topk=None,
+                         low_rank=True):
+        """Return the active outer-product factor(s) for S.
+
+        U = diag(sqrt(r_S)) @ A_S = sqrt(r_S)[:, None] * A_S, shape [|S|, D].
+
+        ``low_rank=True``  -> return U  (shape [|S|, D]).
+        ``low_rank=False`` -> return dense C = U^T @ U  (shape [D, D]).
+
+        Empty S:
+          ``low_rank=True``  -> [0, D]
+          ``low_rank=False`` -> zeros([D, D])
+
+        Preserves ``codebook_rows.device`` and ``codebook_rows.dtype``.
+
+        Plan ``doc/plans/2026-06-06-symbolic-heat-retrieval.md``
+        §Core representation (``low-rank`` mode), §API additions.
+        """
+        import torch
+        D = codebook_rows.shape[1]
+        if self._priming is None or int(batch) < 0 or int(batch) >= self._priming_B:
+            if low_rank:
+                return torch.zeros(0, D, device=codebook_rows.device,
+                                   dtype=codebook_rows.dtype)
+            return torch.zeros(D, D, device=codebook_rows.device,
+                               dtype=codebook_rows.dtype)
+        ids, r_vals = self._active_heat_set(batch, rows, topk)
+        if ids.numel() == 0:
+            if low_rank:
+                return torch.zeros(0, D, device=codebook_rows.device,
+                                   dtype=codebook_rows.dtype)
+            return torch.zeros(D, D, device=codebook_rows.device,
+                               dtype=codebook_rows.dtype)
+        ids = ids.to(device=codebook_rows.device)
+        r_vals = r_vals.to(device=codebook_rows.device,
+                           dtype=codebook_rows.dtype)
+        A_S = codebook_rows[ids]                          # [|S|, D]
+        sqrt_r = r_vals.sqrt()[:, None]                   # [|S|, 1]
+        U = sqrt_r * A_S                                   # [|S|, D]
+        if low_rank:
+            return U
+        return U.t() @ U                                   # [D, D]
+
+
+
+class SymbolSubSpace(SubSpace):
+    """Per-sentence grammar / serial-processing carrier — the third
+    argument that travels alongside the data SubSpaces through the
+    pipeline (reached via ``subspace.symbolSpace`` after
+    ``copy_context`` stamps the back-reference).
+
+    Runtime-parallel to PartSpace / ConceptualSpace / WholeSpace
+    but functionally a composition dispatcher rather than a pipeline
+    stage that produces data tensors. SymbolSubSpace owns:
+
+      * the per-space_role ``SyntacticLayer`` dispatchers (registered on
+        each home space; reached via ``forwardSymbols`` /
+        ``reverseSymbols``);
+      * the CKY chart and truth store;
+      * the per-sentence parser cursor (``self.cursor`` — Python ints,
+        one per space_role) and PartSpace recurrent-pass index
+        (``self.recur_pass`` — Python int);
+      * the **typed STM stack** (payload frames + per-frame category /
+        order / ref_id metadata) — formerly held by ``TypedStack`` at
+        ``ConceptualSpace._stm_typed``; the ``ShortTermMemory`` Layer
+        on ``ConceptualSpace`` reads/writes these buffers (Phase D of
+        doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md);
+      * inter-sentence discourse substrate (``BracketExpectation`` /
+        priming taxonomy).
+
+    The standalone ``SentenceState`` carrier was retired (2026-05-21):
+    ``cursor`` and ``recur_pass`` now live directly on SymbolSubSpace;
+    the cross-pass C→P / C→S feedback is read straight off
+    ``ConceptualSpace._subspaceForPS`` / ``_subspaceForWS`` (the
+    persistent CS-space_role storage that ``ConceptualSpace.forward``
+    mutates in place).
+
+    Real ``SubSpace`` subclass (2026-05-21 SymbolSubSpace/STM Layer
+    refactor): SymbolSubSpace IS the data carrier the STM driver acts on.
+    It inherits the SubSpace slot machinery but is not a pipeline
+    ``Space`` and does not produce data tensors of its own; the inherited
+    ``.event`` / ``.what`` / ``.where`` / ``.when`` slots stay empty,
+    while the parallel-tensor typed STM stack (``_buffer`` / ``_category``
+    / ``_order`` / ``_ref_id`` / ``_depth``) carries the parse state.
+    """
+
+    name = "Words"
+    config_section = "SymbolSpace"
+
+    def __init__(self, perceptualSpace, conceptualSpace, wholeSpace,
+                 nPercepts, nConcepts, nSymbols,
+                 concept_dim, symbol_dim):
+        """Build the chart, grammar layer, truth store, per-space_role dispatch,
+        and the typed STM stack data.
+
+        SymbolSpace IS a SubSpace (2026-05-21 refactor) and bypasses the
+        Space factory because its construction crosses space_role boundaries
+        (it needs references to Perceptual / Conceptual / Symbolic
+        spaces). Detects the default-only grammar case so compose /
+        generate can skip the CKY pass entirely. Mutates ``self`` to
+        install ``syntacticLayer``, ``chart``, ``truthLayer``, the
+        host_layer registry, per-row buffers, and the typed STM stack.
+        """
+        # 1. Symbolic operations consume conceptual activations, so mirror
+        # ConceptualSpace's column layout for the Space-contract fields that
+        # downstream callers occasionally read off SymbolSpace.  WholeSpace
+        # is an upstream, native-width property tower in the canonical model;
+        # its 128-D WHAT basis must never size the 1024-D grammar/STM path.
+        # (``nDim`` / ``nWhat`` / ``nWhere`` / ``nWhen`` / ``muxedSize``).
+        geometry_space = (conceptualSpace
+                          if conceptualSpace is not None else wholeSpace)
+        if geometry_space is None:
+            raise ValueError(
+                "SymbolSubSpace requires ConceptualSpace geometry (or a "
+                "legacy WholeSpace fallback).")
+        sub = geometry_space.subspace
+        # The symbol event has the concept's width, but symbols are
+        # percepts and keep their own .where/.when coordinates (the
+        # SymbolSpace band), while the concept is one opaque code with no
+        # band (Alec, 2026-09-14).
+        from architecture import canonical_shape as _cshape
+        muxed  = int(getattr(sub, 'muxedSize', 0) or getattr(sub, 'nWhat', 0) or 0)
+        nWhere, nWhen = (int(v) for v in _cshape("SymbolSpace"))
+        if muxed <= nWhere + nWhen:
+            nWhere, nWhen = 0, 0
+        nWhat  = max(0, muxed - nWhere - nWhen)
+        symbol_dim = nWhat
+
+        # 2. Initialise as a real SubSpace. The slot Bases stay empty
+        # — SymbolSubSpace is a data carrier (typed STM stack), not a
+        # pipeline space that produces tensors via ``.what`` / ``.event``.
+        # Pass encodings sized to mirror ConceptualSpace's band so encoding
+        # nDim == self.nWhen / self.nWhere downstream readers expect (the
+        # 2026-06-06 uniform-band convention gives WS (2, 2) so the
+        # default WhereEncoding(0,0) / WhenEncoding(0,0) would drift).
+        from Spaces import WhereEncoding as _WhereEncoding
+        from Spaces import WhenEncoding as _WhenEncoding
+        SubSpace.__init__(
+            self,
+            inputShape=[0, muxed], outputShape=[0, muxed],
+            nInputDim=muxed, nOutputDim=muxed,
+            whereEncoding=_WhereEncoding(0, nWhere, nWhen) if nWhere else None,
+            whenEncoding=_WhenEncoding(n_when=nWhen) if nWhen else None,
+        )
+        # Restamp nWhat / nWhere / nWhen to mirror ConceptualSpace's column
+        # layout (downstream callers read these to size projections).
+        self.nWhat = nWhat
+        self.nWhere = nWhere
+        self.nWhen = nWhen
+        self.muxedSize = muxed
+        self.nDim = muxed
+        self.spaceShape = [0, muxed]
+
+        # Back-references to the three Spaces. Used post-2026-05-12 by
+        # the grammar's lift/lower wiring to pass perceptual / conceptual
+        # references to LiftLayer / LowerLayer at construction time, so
+        # those layers can route the substrate sigma/pi after gating.
+        # ``object.__setattr__`` bypasses nn.Module's submodule
+        # registration so we don't create cycles (each Space is already
+        # a direct child of the Model).
+        object.__setattr__(self, 'perceptualSpace', perceptualSpace)
+        object.__setattr__(self, 'conceptualSpace', conceptualSpace)
+        object.__setattr__(self, 'wholeSpace', wholeSpace)
+
+        # 3. Grammar must be configured before any SyntacticLayer
+        # construction can resolve rule sets / transition rules.
+        TheGrammar._configured = False
+        TheGrammar._ensure_configured()
+        grammar = TheGrammar
+
+        # Legacy WS-as-symbol-dictionary configurations stored operation
+        # identities beside their symbols.  A property-basis WholeSpace is
+        # upstream perceptual state, so grammar construction must not mutate or
+        # even annotate it; operators and parsing live on this SymbolSpace.
+        pass
+
+        # 3a. Detect the default-only case (every operational rule is
+        # a unary substrate fold registered as the per-space_role default).
+        # When true, ``compose`` / ``generate`` skip the CKY-style
+        # inside / outside pass entirely; per-space SyntacticLayer
+        # dispatch falls through to its registered default rule, which
+        # fires the substrate layer (``pi_input``, ``sigma_percept``,
+        # …) exactly once per step -- mathematically identical to the
+        # bare ``self.sigma_percept(x)`` / ``self.pi_input(x)`` call
+        # sites. Legacy ``pi`` / ``sigma`` names alias to the new
+        # substrates (see ``_attach_per_space_syntactic_layer``), so
+        # both old and new grammar names qualify for the bypass.
+        # Implicit non-operational rules (epsilon, X -> X passthrough
+        # whose method_name is None) don't disqualify the bypass.
+        self._grammar_is_default_only = all(
+            r.method_name is None or 'field' in r.operand_kinds or (
+                r.method_name in ('pi', 'sigma') and r.arity == 1)
+            for r in grammar.rules
+        )
+
+        # 4. Space-contract fields. SubSpace.__init__ already set
+        # ``self.symbolSpace = None``; the rest are SymbolSubSpace-specific.
+        self.layers = nn.ModuleList()
+        self.params = []
+
+        # Slice B / conceptualize (Alec 2026-06-21): the SYMBOL CODEBOOK on this
+        # carrier's ``.what``. When symbol_tower is on, ``SS.subspace.what`` holds
+        # the symbol codebook (symbols 1:1 with concepts); CS reads it as the SS
+        # bind leg (tower-symmetric with PS/WS ``.what``). The other slot Bases
+        # stay empty -- this object is also the grammar/STM stack, which rides on
+        # ``.event``, not ``.what``, so the codebook does not disturb it. Default
+        # off -> ``.what`` stays empty -> byte-identical.
+        if bool(TheXMLConfig.get("architecture.symbolTower", default=False)):
+            from Spaces import Codebook as _Codebook
+            _sym_cb = _Codebook()
+            _sym_cb.use_dot_product = False
+            _sym_cb.create(1, int(nSymbols), int(symbol_dim), customVQ=True)
+            self.what = _sym_cb
+            for _p in _sym_cb.parameters():
+                if all(_p is not _q for _q in self.params):
+                    self.params.append(_p)
+
+        # 4. Per-space SyntacticLayer dispatch lives on each space
+        # (``space.syntacticLayer``); SymbolSpace itself no longer owns a
+        # central SyntacticLayer instance.
+        # 4a. Chart + host-layer registry. Per the 2026-05-01 syntactic-
+        # layer refactor (doc/specs/2026-05-01-syntactic-layer-refactor.md):
+        # SymbolSpace owns a Chart that runs CKY inside / outside passes
+        # and writes per-(space_role, step) rule selections into
+        # ``current_rules`` / ``generate_rules``. Each per-space
+        # SyntacticLayer registers its parametrized layers via
+        # ``register_host_layer``; the chart consults
+        # ``host_layer(space_role, rule_name)`` to fire host-owned folds.
+        self._host_layer_registry = {}
+        # Initialize current_rules / generate_rules from the grammar
+        # XML's per-space_role natural folds. Per the 2026-05-07 rollback,
+        # the grammar XML is the sole source of truth -- with no
+        # ``default_rule`` code-level fallback the per-stage Spaces'
+        # syntacticLayer dispatch must always have rules to fire.
+        # ``compose`` / ``generate`` overwrite these on call.
+        self.current_rules = self._default_compose_rules()
+        self.generate_rules = self._default_generate_rules()
+        # First-class routing decision (ADDITIVE companion to
+        # ``current_rules``; never replaces it -- see ``RoutingState``).
+        # Built in ``compose`` (both the default-only fast path and the
+        # full-router path) right after ``current_rules`` is set. Carries
+        # the dense ``[B, n_rules]`` ``rule_probs`` the intra-sentence
+        # predictor consumes. Initialized here from the default fold so
+        # ``routing_state`` is always a valid object (its ``rule_probs``
+        # is None until the first ``compose`` with a known batch size).
+        self.routing_state = self._build_routing_state(
+            self.current_rules, batch_size=None)
+        # Bumped on each compose / generate. Per-space SyntacticLayers
+        # compare against this to know when to reset their per-space_role
+        # cursor (Q10.1).
+        self._compose_generation = 0
+        self._generate_generation = 0
+        # Per-sentence serial-parser state, owned directly by SymbolSpace
+        # (no separate SentenceState carrier).
+        #   ``cursor``      — ``list[int]`` of length 3 (one per space_role
+        #                     subsymbolic/CS/SS), the per-space_role rule cursor consumed
+        #                     by ``SyntacticLayer._next_rule_name``.
+        #                     HOST Python ints (not a tensor) so the
+        #                     read inside compiled forwards produces a
+        #                     backed Python int that Dynamo can compare
+        #                     against ``len(per_step)`` — an int64
+        #                     tensor read via ``int(tensor)`` would
+        #                     produce an unbacked SymInt and break
+        #                     ``fullgraph=True`` at the rule-list
+        #                     bounds check. Dynamo specializes the
+        #                     traced graph per observed cursor value;
+        #                     compose() resets to ``[0, 0, 0]`` at the
+        #                     top of every call.
+        #   ``recur_pass``  — Python int, PartSpace recurrent-pass
+        #                     index that selects ``pi_input[oi]`` from a
+        #                     ModuleList (Dynamo-specialized natively;
+        #                     Inductor would emit an unbacked SymInt for
+        #                     a 0-d tensor source — see D8 capture-gate).
+        self.cursor = [0, 0, 0]
+        self.recur_pass = 0
+        # Forward-only padding target for the static per-word loop
+        # (doc/plans/2026-05-20-static-per-word-loop-impl.md §1).
+        # The Model sets this to InputSpace.outputShape[0] after
+        # construction; 0 means "no padding" so legacy / non-static
+        # callers behave unchanged. The reverse cursor is NOT padded
+        # — see §2R for the asymmetric left-shift on reconstruction.
+        self._target_cursor_length = 0
+        # Output realization is the sole owner of this stream. It begins
+        # empty; a generate context never substitutes a target teacher or
+        # reconstruction seed for it.
+        self._generated_word_stream = ()
+        self._last_structural_compose_context = None
+        self._last_structural_generate_context = None
+
+        # Stage 3 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+        # the signal router (``LanguageLayer``) is the canonical parser.
+        # The CKY ``Chart`` class and the STM shift-reduce path retire
+        # here. ``self.languageLayer`` is constructed directly on the
+        # SymbolSubSpace -- the chart's lazy ``_ensure_signal_router``
+        # indirection is gone.
+        _assert_retired_chart_knobs_absent()
+        chart_hidden = self._resolve_hidden_dim(nSymbols)
+        compose_temperature = float(TheXMLConfig.get(
+            "architecture.composeTemperature", 0.0))
+        reduce_pressure = float(TheXMLConfig.get("architecture.reducePressure", 1.0))
+        self.languageLayer = LanguageLayer(
+            n_input=nSymbols, n_output=nSymbols,
+            hidden_dim=chart_hidden,
+            # The grammar sees opaque concept codes, including every
+            # coordinate. The symbol's located-event content width is not
+            # a semantic slice of those codes.
+            feature_dim=self.muxedSize,
+            max_depth=max(nSymbols - 1, 1),
+            temperature=compose_temperature,
+            reduce_pressure=reduce_pressure,
+        )
+        # The signal router's grammar reference (read by per-rule gating
+        # and the diagnostics that used to call ``chart.grammar``).
+        self.languageLayer.grammar = grammar
+        self.layers.append(self.languageLayer)
+        # Stage 3: the chart was the GrammarLayer ``_chart_authority``
+        # gating per-rule firing via ``should_run_rule``. The chart is
+        # retired; SymbolSubSpace itself now serves as the authority --
+        # it owns the live grammar and exposes the same
+        # ``register_grammar_layer`` / ``should_run_rule`` surface.
+        self._registered_grammar_layers = []
+        try:
+            from Layers import GrammarLayer as _GrammarLayer
+            _GrammarLayer.set_chart_authority(self)
+        except Exception:
+            pass
+
+        # 5. Per-space SyntacticLayer attachment. The perceptual
+        # and conceptual spaces also get a ``symbolSpace`` back-reference
+        # so they can route through the shared buffer, but only the
+        # symbolic space's compose() fires the chart.
+        # Post-split: grammar's canonical home is S; the
+        # SyntacticLayers at the subsymbolic and CS space_roles are retained
+        # as backward-compat dispatchers that no-op for grammars omitting
+        # per-space_role rules. They're not the architectural locus of grammar
+        # after the split (SS is), but the mechanism stays in place so
+        # legacy configs continue to function and so any future
+        # subsymbolic/CS-space_role rule (e.g. for lift/lower at concept_dim) can
+        # still fire through the chart's per-space_role dispatch.
+        if perceptualSpace is not None:
+            perceptualSpace.attach_symbolSpace(self)
+            # subsymbolic-space_role SyntacticLayer retired (2026-05-18 CS/SS split): the
+            # perceptual space no longer carries a chart-dispatched
+            # SyntacticLayer. ``attach_symbolSpace`` (shared-buffer
+            # back-ref) is unrelated wiring and is kept. The space_role='subsymbolic'
+            # branch in ``_attach_per_space_syntactic_layer`` is now
+            # unreached but left dead-safe.
+        if conceptualSpace is not None:
+            conceptualSpace.attach_symbolSpace(self)
+            self._attach_per_space_syntactic_layer(
+                conceptualSpace, space_role='CS')
+        if conceptualSpace is not None:
+            # Symbolic operators are downstream of concepts.  Keep their
+            # dispatcher physically on SymbolSpace, and use ConceptualSpace
+            # solely as the operand-geometry host.  This preserves the distinct
+            # CS-role dispatcher already owned by ConceptualSpace.
+            self._attach_per_space_syntactic_layer(
+                conceptualSpace, space_role='SS', owner_space=self)
+
+        # 5b. Signal-router grammar wiring. The LanguageLayer needs
+        # explicit op modules attached to its per-space_role scorers before
+        # compose() can fire. We wire from the host_layer registry
+        # populated in step 5 above. Stage 3 (chart retirement): this
+        # always runs -- the signal router is the canonical parser.
+        self._wire_signal_router_grammar_ops()
+        # ``LanguageLayer`` starts with empty unary/binary ModuleDicts.  The
+        # wiring call above constructs their routing anchors, chooser MLPs,
+        # and comparator, so taking the optimizer snapshot before it would
+        # omit every router-local Parameter while still saving them in the
+        # state_dict.  Enlist only after wiring; identity dedup preserves the
+        # single optimizer owner for host grammar layers shared with CS.
+        for p in self.languageLayer.parameters():
+            if p.requires_grad and all(p is not q for q in self.params):
+                self.params.append(p)
+
+        # 6. TruthLayer -- shared truth store for symbolic activations.
+        # Lives on SymbolSpace so WholeSpace doesn't have to carry it
+        # alongside its already heavy pi/sort/codebook machinery.
+        try:
+            max_truths = int(TheXMLConfig.get("SymbolSpace.truthMaxEntries"))
+        except (KeyError, TypeError, ValueError):
+            max_truths = 1024
+        # Truths and relative triples hold IDEAS (concept codes): the
+        # concept width, not the symbol's content width (2026-09-14).
+        self.truth_layer = TruthLayer(muxed, max_truths=max_truths)
+        if self.truth_layer not in self.layers:
+            self.layers.append(self.truth_layer)
+        for p in self.truth_layer.parameters():
+            if all(p is not q for q in self.params):
+                self.params.append(p)
+
+        # Every completed clause uses the one row store. Coverage is a view
+        # restricted to idea rows; inference reads relations by native address.
+        _ltm_cap = int(TheXMLConfig.space(
+            "SymbolSpace", "ltmCapacity", default=max_truths) or max_truths)
+        self.ltm_store = TernaryTruthStore(muxed, capacity=_ltm_cap, content_width=symbol_dim)
+        self.truth_layer.attach_ltm(self.ltm_store)
+        self._stateless = bool(TheXMLConfig.get("architecture.stateless", default=True))
+        self.register_load_state_dict_post_hook(self._revive_ltm_post_load)
+
+        # 6b. Category codebook -- learned embedding per derivation label.
+        # The first len(TheGrammar.categories) rows are reserved one-per-
+        # label (category_index maps 'S' -> 0, 'VO' -> 1, ... in sorted
+        # order); extra capacity is kept for the legacy pos_lookup path
+        # (nearest-neighbor over activations). Not registered in
+        # self.layers (no training-loop integration yet); the
+        # VectorQuantize backend provides the nn.Module bookkeeping.
+        #
+        # Step 6: capacity is now max(64, len(categories)) so a richer
+        # grammar.cfg (Layer 1 productions add VO, NP, VP, AP, MP, PP,
+        # DEF, HAS plus the closed-class terminals) cannot overflow the
+        # per-label slot reservation.  Legacy XML grammars stay at 64
+        # since their category set is small.
+        # Category / part-of-speech codebook.  This is the SymbolSpace's
+        # ONLY codebook -- distinct from WholeSpace's symbol-prototype
+        # codebook on ``WholeSpace.subspace.what.W``.
+        #
+        # Stores learned ``pos_dim``-wide embeddings for grammar
+        # nonterminals AND POS terminals (S, NP, VP, AP, MP, PP, N, V,
+        # ADJ, ADV, DET, P, O, '?', plus headroom).  Keyed by name via
+        # ``self.category_index: dict[str, int]``; row ``i`` is the
+        # embedding for category ``ordered_categories[i]``.
+        #
+        # Read by:
+        #   * the chart's per-leaf POS scorer (Language.py: ``_chart_pos``,
+        #     ``_apply_codebook_pos_seed``)
+        #   * the rule predictor's input stack (the parsing-history
+        #     vectors pushed onto ``self.category_stack``)
+        # NOT used for symbol quantization -- that runs against the
+        # symbolic codebook on WholeSpace.subspace.what.
+        #
+        # 2026-05-20 category_codebook retirement (plan
+        # ``doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md``):
+        # the embedding is now an ``nn.Embedding[N_categories, pos_dim]``
+        # rather than a ``Codebook``. The codebook's VQ / polarity /
+        # meronomy / SVD machinery was never used by the category-label
+        # consumers; a plain Embedding is the right type and removes the
+        # weight (no Codebook hidden state in the checkpoint).
+        pos_dim = 4  # embedding width; also the category stack vector dim
+        category_capacity = max(64, len(TheGrammar.categories))
+        self.category_embedding = nn.Embedding(category_capacity, pos_dim)
+        # Feed the manual optimizer-feed list (consumed by
+        # ``getParameters``); ``nn.Embedding`` auto-registers its weight
+        # as a Parameter on the parent module via attribute assignment,
+        # but ``self.params`` is the canonical list callers walk.
+        for p in self.category_embedding.parameters():
+            if all(p is not q for q in self.params):
+                self.params.append(p)
+        self.category_index = {
+            name: idx for idx, name in enumerate(TheGrammar.categories)
+        }
+        # Taxonomy: explicit parent->children order hierarchy for the
+        # ramsified symbol space (Meronomy/parthood stays codebook-
+        # per-order implicit, unchanged). Pure-Python; hosted here on
+        # the SymbolSpace singleton, reached at runtime via
+        # ``vspace.symbolSpace.taxonomy``.
+        self.taxonomy = Taxonomy()
+        # 6c. Category stack -- push/pop store for category-embedding
+        # vectors during parsing. One frame per reduction step.
+        self.category_stack = CategoryStack(dim=pos_dim)
+
+        # 6c'. Reconstruction stack -- SymbolSpace owns the sentence's
+        # detached forward-construction teacher.  A W-position may contribute
+        # a word, a binary choice, a unary choice, and a boundary fold, so the
+        # configured word capacity needs four trace slots per position.
+        try:
+            trace_words = int(TheXMLConfig.get(
+                "architecture.serialWordCapacity", default=16) or 16)
+        except (TypeError, ValueError):
+            trace_words = 16
+        self.reconstruction_stack = ReconstructionStack(
+            max_depth=max(64, 4 * trace_words))
+
+        # 6d. Rule predictor -- nonlinear head over the flattened PoS stack.
+        # Task 4.2: emits softmax logits over TheGrammar.rule_table, the
+        # authoritative rule-id space (includes START/S/P productions);
+        # len(symbolic()) would be only the SS-space_role subset and would under-size
+        # the output.
+        #
+        # Option A (per task notes): torch.nn stdlib Sequential with a Tanh
+        # nonlinearity -- no new layer type added to Layers.py. Stash
+        # in_features on the SymbolSpace because Sequential has no such attr.
+        n_rules = len(TheGrammar.rule_table)
+        self.n_rules = n_rules
+        max_depth = int(nPercepts)
+        # pos_dim already bound above (category_embedding / category_stack dim).
+        rule_in_features = max_depth * pos_dim
+        # When nPercepts=0 (minimal test configs with no PartSpace),
+        # rule_in_features is 0; nn.Linear(0, 0) would emit a "zero-element
+        # tensor init is a no-op" UserWarning. Widen to 1 feature so init
+        # is well-defined. predict_rule pads the flattened stack to the
+        # same target_len, so the head stays consistent with the stack.
+        self._rule_predictor_in_features = max(1, rule_in_features)
+        # Hidden dim is bottlenecked: the legacy square form
+        # ``Linear(in, in)`` ballooned to ~17M params at in=4096
+        # (~80% of the model).  A 256-wide bottleneck keeps the
+        # capacity-vs-rule-count ratio healthy at the rule-counts
+        # currently in use (a few dozen) while shrinking the layer
+        # ~16x.  Caps at the input width so tiny test configs (where
+        # in_features < 256) don't gain spurious capacity.
+        rule_hidden = min(self._rule_predictor_in_features, 256)
+        self.rule_predictor = nn.Sequential(
+            nn.Linear(self._rule_predictor_in_features, rule_hidden),
+            nn.Tanh(),
+            nn.Linear(rule_hidden, max(1, n_rules)),
+        )
+        for p in self.rule_predictor.parameters():
+            if all(p is not q for q in self.params):
+                self.params.append(p)
+
+        # Historical checkpoints may contain reverse_chooser keys; loading
+        # drops them. The tied inverse has no independent student parameters.
+        self.detached_reverse = False
+        self.reverse_chooser = None
+
+        # 7. Sentence expectation defaults on; structured roles and presence
+        # use sentenceExpectationLossWeight. Explicit sentenceExpectation=false bypasses
+        # that cycle while the single interaction-memory owner remains live.
+        # The separately weighted ARMA baseline uses SymbolSpace armaP,
+        # armaQ and armaHiddenDim, with training.sentenceExpectationArmaScale (default zero).
+        # Capture construction options even while off so a runtime enable
+        # creates the same configured head and adopts its optimizer weights.
+        # Interaction state never belongs to the expectation layer.
+        self.expectation = None
+        # Interaction state has one owner, independent of expectation.
+        self.what_memory = WhatInteractionMemory(
+            batch=1,
+            capacity=int(TheXMLConfig.space(
+                "SymbolSpace", "ltmCapacity", default=1024) or 1024))
+        try:
+            n_sym_rows = int(wholeSpace.outputShape[0])
+        except (AttributeError, IndexError, TypeError):
+            n_sym_rows = int(getattr(wholeSpace, 'nVectors', 0) or 0)
+        arma_hidden = TheXMLConfig.space("SymbolSpace", "armaHiddenDim", default=None)
+        self._expectation_options = (dict(
+            n_symbols=n_sym_rows,
+            max_depth=int(getattr(self.__dict__.get('subspace'), 'max_depth', 256) or 256),
+            n_dim=muxed,
+            p=int(TheXMLConfig.space("SymbolSpace", "armaP", default=5) or 5),
+            q=int(TheXMLConfig.space("SymbolSpace", "armaQ", default=2) or 2),
+            hidden_dim=int(arma_hidden) if arma_hidden is not None else None,
+            concept_dim=int(concept_dim),
+            ltm_capacity=int(TheXMLConfig.space("SymbolSpace", "ltmCapacity", default=1024) or 1024),
+            expectation_scope=str(TheXMLConfig.training("sentenceExpectationScope", "structured")),
+        ) if n_sym_rows > 0 and muxed > 0 else None)
+        self._expectation_weights = (
+            float(TheXMLConfig.training("sentenceExpectationLossWeight", 0.1)),
+            float(TheXMLConfig.training("sentenceExpectationContrastiveWeight", 0.0)),
+            float(TheXMLConfig.training("interContrastiveTemp", 0.1)))
+        if (bool(TheXMLConfig.training("sentenceExpectation", True)) or bool(TheXMLConfig.training("wordExpectation", True))) and self._expectation_options:
+            self.ensure_sentence_expectation()
+
+        # -- pipeline-carried per-batch state -----------------------------
+        # batch / svo_dim track the per-row state allocations below.
+        # ensure_batch() resizes them in step.
+        self.batch = 1
+        self.svo_dim = int(symbol_dim)
+
+        # last_svo: (subject, verb, object) snapshot from the most recent
+        # chart-compose trace. Stored as [B, 3, svo_dim] + a [B] bool valid
+        # mask so each batch row is independent. Written via set_last_svo;
+        # cleared by clear_last_svo (also at Reset on sentence boundary).
+        # persistent=False: runtime scratch state, not learned weights.
+        # Excluding from state_dict avoids load-time shape mismatches when
+        # the live model rebuilds at batch=1 and ensure_batch() resizes later.
+        self.register_buffer(
+            "_last_svo", torch.zeros(self.batch, 3, self.svo_dim),
+            persistent=False)
+        self.register_buffer(
+            "_svo_valid", torch.zeros(self.batch, dtype=torch.bool),
+            persistent=False)
+
+        self._source_batch = int(self.batch)
+
+        # Per-source-row sentence-completed signal driven by
+        # SyntacticLayer.compose: True for row b when this tick's parse
+        # derivation matches a configured Grammar start pattern. Outer
+        # doc-streaming loop drains via drain_sentence_completed() after
+        # each runBatch and dispatches soft_reset(batch=b). Host-side
+        # list (no GPU sync); resized to B by ensure_microbatch.
+        self._sentence_completed = [False] * self.batch
+
+        # -- typed STM stack (Phase D of the 2026-05-21 SymbolSubSpace /
+        # STM Layer refactor) ---------------------------------------------
+        # The parallel-tensor stack carrying per-frame ``category`` /
+        # ``order`` / ``ref_id`` metadata alongside the vector payload.
+        # Formerly ``TypedStack`` lived at ``ConceptualSpace._stm_typed``;
+        # it is now SymbolSubSpace's own data. The ``ShortTermMemory`` Layer
+        # on ``ConceptualSpace`` (Phase E) reads / writes these buffers.
+        # Capacity defaults to ConceptualSpace's stm_capacity (XML
+        # ``<stmCapacity>`` -- see ConceptualSpace.__init__), else 8.
+        try:
+            stm_capacity = int(getattr(conceptualSpace, 'stm_capacity', 0))
+        except (TypeError, ValueError):
+            stm_capacity = 0
+        if stm_capacity <= 0:
+            stm_capacity = 8
+        self._stm_capacity = int(stm_capacity)
+        self._stm_payload_dim = int(concept_dim)
+        # TypedStack-equivalent public attributes (mirror its old API
+        # so legacy callers and tests still see ``.max_depth`` / ``.dim``
+        # on the stack carrier).
+        self.max_depth = self._stm_capacity
+        self.dim = self._stm_payload_dim
+        cap = self._stm_capacity
+        dim_p = self._stm_payload_dim
+        # Float payload + long-typed metadata, all sized to ``self.batch``
+        # (which ``ensure_batch`` / ``ensure_microbatch`` grow on demand).
+        self.register_buffer(
+            '_buffer',
+            torch.zeros(self.batch, cap, dim_p),
+            persistent=False)
+        self.register_buffer(
+            '_category',
+            torch.full((self.batch, cap), -1, dtype=torch.long),
+            persistent=False)
+        self.register_buffer(
+            '_order',
+            torch.zeros((self.batch, cap), dtype=torch.long),
+            persistent=False)
+        self.register_buffer(
+            '_ref_id',
+            torch.full((self.batch, cap), -1, dtype=torch.long),
+            persistent=False)
+        self.register_buffer(
+            '_depth',
+            torch.zeros(self.batch, dtype=torch.long),
+            persistent=False)
+        # Parallel host-side string-form category names. Populated when
+        # ``push`` is given ``category_id_str``; left ``None`` when the
+        # int id is the primary form.
+        self._category_names = [
+            [None] * cap for _ in range(self.batch)
+        ]
+
+        # -- legacy idea-stack buffers (Phase E completion of doc/specs/
+        # 2026-05-21-wordsubspace-stm-layer-refactor.md) --------------------
+        # The CKY-compose chart pushes unquantized CS-space_role activations
+        # ("ideas") via the ``ShortTermMemory`` Layer; spec §"Removed
+        # Public Surfaces" calls for that Layer to be data-free. The
+        # idea-stack data therefore lives on SymbolSubSpace alongside the
+        # typed STM (separate parallel buffers; the chart's push doesn't
+        # carry typed metadata so they cannot share a row). The
+        # ``ShortTermMemory`` Layer proxies ``push`` / ``peek`` /
+        # ``snapshot`` / ``push_step`` / ``push_window_batch`` /
+        # ``push_step_masked`` / ``size`` / ``is_full`` / ``is_empty`` /
+        # ``clear`` / ``ensure_batch`` / ``ensure_capacity`` to the
+        # ``_idea_*`` methods below via the back-reference attached at
+        # ``SymbolSubSpace.__init__`` tail.
+        self._idea_capacity = cap
+        self._idea_max_depth_host = 0
+        self.register_buffer(
+            '_idea_buffer',
+            torch.zeros(self.batch, cap, dim_p),
+            persistent=False)
+        self.register_buffer(
+            '_idea_depth',
+            torch.zeros(self.batch, dtype=torch.long),
+            persistent=False)
+
+        # Attach this SymbolSubSpace to conceptualSpace.stm so the
+        # ShortTermMemory Layer can route its data-accessor methods to
+        # our idea-stack buffers (Phase E completion).
+        stm_layer = getattr(conceptualSpace, 'stm', None)
+        if stm_layer is not None and hasattr(stm_layer, 'attach_word_subspace'):
+            stm_layer.attach_word_subspace(self)
+
+    # -- typed STM stack API (formerly TypedStack methods) -------------------
+    # Mirrors the public surface of the retired ``typed_stack.TypedStack``.
+    # Callers pass the row index ``b`` (host-side int); all four parallel
+    # buffers stay in sync. The ``ShortTermMemory`` Layer on
+    # ``ConceptualSpace`` invokes these via
+    # ``ss.push(...)`` / ``ss.pop(b)`` / ``ss.top(b)`` etc.
+
+    def conceptualize(self, order, part=None, whole=None,
+                      word_parts=None, word_whole=None, key=None, parts=None):
+        """Form a concept on the ConceptualSpace symbol tables (Alec 2026-06-21).
+
+        A concept is a FLEXIBLE combination of two percepts; this is the unified
+        dispatch over the three orders (doc/old/2026-06-21-higher-order-symbolic-
+        composition.md sections 2b / 4b / 4c). The SS subspace owns this method;
+        the CS owns the ``_sym_*`` relation tables it mutates -- the duality
+        (``CS.forward`` processes ``SS.subspace``). Host-side; the caller runs it
+        in the eager island (``symbol_tower`` relaxes fullgraph).
+
+          order 0 -> ``[part, whole]``      : ``relate(part, whole)`` -- one
+                     part-percept tied to one whole-percept (constituents carry
+                     ``.where`` / ``.when``).
+          order 1 -> ``[object isa word]``  : ``interpret.forward(word)`` after lookup of ``word_parts,
+                     word_whole, key)`` -> ``(A=word, B=object, C=meta)``; the
+                     constituents' ``.where`` / ``.when`` = 0 (abstract).
+          order 2 -> higher-order object    : ``synthesize_higher_order(parts)`` --
+                     collapse the over-collected many into one superset.
+
+
+        Constituents are stored BY REFERENCE (codebook index, or ``('sym', id)``
+        for sub-symbols) -- never duplicate codes (section 4c). Letters/bytes are
+        snapped to the percept codebook by the caller; other data is referenced by
+        its ``.where`` boundary, unsnapped. Returns the concept id (order 0/2) or
+        the ``(A, B, C)`` triple (order 1), or ``None`` on missing inputs.
+        """
+        cs = getattr(self, 'conceptualSpace', None)
+        if cs is None:
+            return None
+        if order == 0:
+            if part is None or whole is None:
+                return None
+            return cs.relate(part, whole)
+        if order == 1:
+            if word_parts is None or word_whole is None:
+                return None
+            return cs.interpret_word(word_parts, word_whole, key=key)
+        if order == 2:
+            if not parts:
+                return None
+            return cs.synthesize_higher_order(parts)
+        return None
+
+    def _commit_priming(self, b, ref_id):
+        """Gated forward-commit heat update for a single committed ref.
+
+        Primes ``ref_id`` and propagates the boost along the taxonomy
+        adjacency for the freshly-committed word/percept/idea. Plan
+        ``doc/plans/2026-06-06-symbolic-heat-retrieval.md`` §Forward-path
+        responsibilities (word/percept commit; CS-space_role grammar reduction).
+
+        TRAINING-PATH ZERO-COST GUARANTEE: the ``priming_enabled`` check
+        (False by default — set from ``<symbolicPriming>`` via
+        ``configure_priming``) short-circuits FIRST, before any
+        ``prime``/``propagate``. ``propagate`` is the expensive host-side
+        graph walk (``.item()`` per node); it must never run when the
+        feature is off. With ``<symbolicPriming>`` absent/false this method
+        is a guaranteed no-op (a single ``getattr`` + boolean test, no
+        host sync, no tensor mutation).
+        """
+        tax = getattr(self, 'taxonomy', None)
+        # Sentinel False: a missing/absent taxonomy attribute must default to
+        # production-off (no forward heat).  Contrast with Taxonomy's class
+        # constant DEFAULT_PRIMING_ENABLED=True, which is the historical gate
+        # for bare Taxonomy() retrieval helpers — not for missing attributes.
+        if (tax is not None and getattr(tax, 'priming_enabled', False)
+                and tax._priming is not None and int(ref_id) >= 0):
+            rid = int(ref_id)
+            tax.prime([rid], batch=b, boost=tax.boost_initial)
+            tax.propagate([rid], batch=b, depth=tax.priming_depth,
+                          hop_decay=tax.hop_decay)
+
+    def push(self, b, vec, *, category_id=None, category_id_str=None,
+             order=0, ref_id=-1):
+        """Push one frame onto row ``b``'s typed STM stack.
+
+        ``category_id`` (int) and / or ``category_id_str`` (str) may be
+        provided. At least one must be set. When only the string form
+        is given, the int slot defaults to -1 and the integer-keyed
+        admissibility paths can't be used until a codebook lookup fills
+        in the id.
+        """
+        if category_id is None and category_id_str is None:
+            raise ValueError(
+                "SymbolSubSpace.push: provide category_id or category_id_str")
+        d = int(self._depth[b].item())
+        assert d < self.max_depth, (
+            f"SymbolSubSpace STM overflow at row {b}: "
+            f"max_depth={self.max_depth}")
+        self._buffer[b, d] = vec.to(
+            device=self._buffer.device, dtype=self._buffer.dtype)
+        self._category[b, d] = (
+            int(category_id) if category_id is not None else -1)
+        self._order[b, d] = int(order)
+        self._ref_id[b, d] = int(ref_id)
+        self._category_names[b][d] = category_id_str
+        self._depth[b] = d + 1
+        # Forward-commit symbolic-priming heat (gated; no-op unless
+        # <symbolicPriming> is enabled — guard is priming_enabled-FIRST).
+        # Plan doc/plans/2026-06-06-symbolic-heat-retrieval.md §Word/percept
+        # commit.
+        self._commit_priming(b, ref_id)
+
+    def pop(self, b):
+        """Pop the top frame from row ``b`` and return its metadata.
+
+        Returns a dict with ``payload``, ``category`` (int),
+        ``category_str`` (Optional[str]), ``order``, ``ref_id``.
+        """
+        d = int(self._depth[b].item())
+        assert d > 0, (
+            f"SymbolSubSpace STM underflow at row {b}: stack is empty")
+        top_slot = d - 1
+        out = {
+            'payload':  self._buffer[b, top_slot].clone(),
+            'category': int(self._category[b, top_slot].item()),
+            'category_str': self._category_names[b][top_slot],
+            'order':    int(self._order[b, top_slot].item()),
+            'ref_id':   int(self._ref_id[b, top_slot].item()),
+        }
+        self._buffer[b, top_slot] = 0
+        self._category[b, top_slot] = -1
+        self._order[b, top_slot] = 0
+        self._ref_id[b, top_slot] = -1
+        self._category_names[b][top_slot] = None
+        self._depth[b] = top_slot
+        return out
+
+    def top(self, b, k=1):
+        """Peek at the k-th frame from the top on row ``b`` without popping
+        (k=1 is the most recent; k=2 the one beneath it; etc.).
+        """
+        d = int(self._depth[b].item())
+        assert d >= k, (
+            f"SymbolSubSpace.top: row {b} has {d} items, asked for k={k}")
+        slot = d - k
+        return {
+            'payload':  self._buffer[b, slot].clone(),
+            'category': int(self._category[b, slot].item()),
+            'category_str': self._category_names[b][slot],
+            'order':    int(self._order[b, slot].item()),
+            'ref_id':   int(self._ref_id[b, slot].item()),
+        }
+
+    def reduce_admissibility(self, b, rule_signatures):
+        """Build the admissibility mask for row ``b``'s current stack top.
+
+        Reads the top two items (or top one for unary REDUCEs at
+        depth==1) and matches against each rule signature via
+        :func:`embed.admissibility_mask`. Returns a length-
+        ``len(rule_signatures)`` ``BoolTensor``.
+
+        Convention: with depth ``d``, the "left operand" is slot
+        ``d-2`` (second from top) and the "right operand" is slot
+        ``d-1`` (top). When ``d == 1``, only ``left`` is set --
+        producing a unary admissibility check.
+        """
+        from embed import admissibility_mask as _admissibility_mask
+        d = int(self._depth[b].item())
+        if d == 0:
+            return torch.zeros(len(rule_signatures), dtype=torch.bool)
+        right_slot = d - 1
+        left_slot = d - 2 if d >= 2 else d - 1
+        if d == 1:
+            return _admissibility_mask(
+                rule_signatures,
+                left_cat=self._category_names[b][left_slot]
+                or str(int(self._category[b, left_slot].item())),
+                left_order=int(self._order[b, left_slot].item()),
+            )
+        return _admissibility_mask(
+            rule_signatures,
+            left_cat=self._category_names[b][left_slot]
+            or str(int(self._category[b, left_slot].item())),
+            left_order=int(self._order[b, left_slot].item()),
+            right_cat=self._category_names[b][right_slot]
+            or str(int(self._category[b, right_slot].item())),
+            right_order=int(self._order[b, right_slot].item()),
+        )
+
+    def _ensure_stm_batch(self, batch):
+        """Grow the typed-STM row dimension to ``batch``, preserving
+        existing live stack state. Called from ``ensure_batch`` so the
+        STM (and the parallel idea-stack buffers) stays in lockstep
+        with the rest of SymbolSubSpace's per-row buffers.
+        """
+        batch = int(batch)
+        if batch <= self._buffer.shape[0]:
+            return
+        device = self._buffer.device
+        cap = self._stm_capacity
+        dim_p = self._stm_payload_dim
+        prev = self._buffer.shape[0]
+        new_buffer = torch.zeros(
+            batch, cap, dim_p,
+            dtype=self._buffer.dtype, device=device)
+        new_category = torch.full(
+            (batch, cap), -1,
+            dtype=self._category.dtype, device=device)
+        new_order = torch.zeros(
+            (batch, cap),
+            dtype=self._order.dtype, device=device)
+        new_ref_id = torch.full(
+            (batch, cap), -1,
+            dtype=self._ref_id.dtype, device=device)
+        new_depth = torch.zeros(
+            batch, dtype=self._depth.dtype, device=device)
+        new_buffer[:prev] = self._buffer
+        new_category[:prev] = self._category
+        new_order[:prev] = self._order
+        new_ref_id[:prev] = self._ref_id
+        new_depth[:prev] = self._depth
+        self._buffer = new_buffer
+        self._category = new_category
+        self._order = new_order
+        self._ref_id = new_ref_id
+        self._depth = new_depth
+        self._category_names.extend(
+            [[None] * cap for _ in range(batch - prev)])
+        # Mirror the resize onto the legacy idea-stack buffers (Phase E
+        # completion of the 2026-05-21 refactor). Fresh allocation
+        # zero-fills new rows; existing live state is preserved.
+        idea_cap = self._idea_capacity
+        new_idea_buf = torch.zeros(
+            batch, idea_cap, dim_p,
+            dtype=self._idea_buffer.dtype, device=device)
+        new_idea_depth = torch.zeros(
+            batch, dtype=self._idea_depth.dtype, device=device)
+        new_idea_buf[:prev] = self._idea_buffer
+        new_idea_depth[:prev] = self._idea_depth
+        self._idea_buffer = new_idea_buf
+        self._idea_depth = new_idea_depth
+
+    # -- idea-stack methods (Phase E completion: chart's
+    # ``ShortTermMemory.push`` / ``peek`` / etc. proxy here) ---------------
+
+    def idea_push(self, b, idea):
+        """Untyped push onto row ``b`` of the idea stack. Mirrors the
+        retired ``ShortTermMemory.push(b, idea)``.
+
+        Newest-at-slot-0 convention: the new idea lands at slot 0 and the
+        existing occupants shift RIGHT (slots ``[0, depth)`` -> ``[1,
+        depth+1)``). Overflow RAISES (capacity is managed by the caller /
+        the rolling-window ``_stm_shift_and_push``; ``push`` itself is the
+        strict-bound primitive).
+        """
+        depth = int(self._idea_depth[b].item())
+        if depth >= self._idea_capacity:
+            raise RuntimeError(
+                f"SymbolSubSpace.idea_push: row {b} is at capacity "
+                f"({self._idea_capacity}); reduce before pushing further.")
+        if depth > 0:
+            self._idea_buffer[b, 1:depth + 1] = self._idea_buffer[
+                b, 0:depth].clone()
+        self._idea_buffer[b, 0] = idea
+        self._idea_depth[b] = depth + 1
+        if depth + 1 > self._idea_max_depth_host:
+            self._idea_max_depth_host = depth + 1
+
+    def idea_push_step(self, ideas):
+        """Vectorised single-step push: shape ``[B, D]``.
+
+        Newest-at-slot-0: shift every row's stack RIGHT by one slot, then
+        write the new idea to slot 0.
+        """
+        B, D = ideas.shape
+        buf = self._idea_buffer
+        cap = int(buf.shape[1])
+        if cap > 1:
+            buf[:, 1:cap] = buf[:, 0:cap - 1].clone()
+        buf[:, 0] = ideas
+        self._idea_depth = self._idea_depth + 1
+        self._idea_max_depth_host = self._idea_max_depth_host + 1
+
+    def idea_size(self, b):
+        """Current depth (number of occupied slots) for row ``b``."""
+        return int(self._idea_depth[b].item())
+
+    def idea_ensure_capacity(self, capacity):
+        """Grow the per-slot capacity to at least ``capacity`` (grow-only)."""
+        capacity = int(capacity)
+        if capacity <= self._idea_capacity:
+            return
+        device = self._idea_buffer.device
+        B = int(self._idea_buffer.shape[0])
+        new_buf = torch.zeros(
+            B, capacity, self._stm_payload_dim, device=device,
+            dtype=self._idea_buffer.dtype)
+        old_cap = int(self._idea_buffer.shape[1])
+        if old_cap > 0:
+            new_buf[:, :old_cap, :] = self._idea_buffer
+        self._idea_buffer = new_buf
+        self._idea_capacity = capacity
+
+    # -- WS-side constituent stack (MeronomySpec §6 rev 2026-06-10c/11;
+    # MeronomyPlan Stage 7) -------------------------------------------
+    # The serial-mode ANALYSIS workspace: symbolic constituents under
+    # analysis, word codes at the leaves -- the dual of the PS-side
+    # ``_idea_*`` stack (which is structurally unchanged and holds
+    # semantic referent content). Same newest-at-slot-0 convention and
+    # capacity discipline. Allocated lazily on first use: parallel mode
+    # never touches it (the duals engage only in serial mode), so the
+    # stack stays dark for every existing path.
+
+    def _ensure_constituent_stack(self, code_dim=None):
+        """Lazily allocate the constituent stack beside the idea stack."""
+        if getattr(self, '_constituent_buffer', None) is not None:
+            return
+        B = int(self._idea_buffer.shape[0])
+        D = int(code_dim if code_dim is not None else self._stm_payload_dim)
+        cap = int(self._idea_capacity)
+        device = self._idea_buffer.device
+        self._constituent_buffer = torch.zeros(B, cap, D, device=device)
+        self._constituent_depth = torch.zeros(
+            B, dtype=torch.long, device=device)
+
+    def constituent_depth_of(self, b):
+        """Current analysis-stack depth for row ``b`` (0 when dark)."""
+        if getattr(self, '_constituent_buffer', None) is None:
+            return 0
+        return int(self._constituent_depth[b].item())
+
+    def constituent_peek(self, b, n=0):
+        """The n-th most recent constituent (newest at 0)."""
+        depth = self.constituent_depth_of(b)
+        if n >= depth:
+            raise IndexError(
+                f"constituent_peek({b}, {n}): depth is {depth}")
+        return self._constituent_buffer[b, n]
+
+    def constituent_push(self, b, code):
+        """One ANALYSIS write: push a symbolic constituent (newest at 0).
+
+        Overflow raises, mirroring ``idea_push`` -- capacity is the
+        workspace's Miller cap, managed by the caller.
+        """
+        code = torch.as_tensor(code)
+        self._ensure_constituent_stack(code_dim=int(code.shape[-1]))
+        depth = int(self._constituent_depth[b].item())
+        cap = int(self._constituent_buffer.shape[1])
+        if depth >= cap:
+            raise RuntimeError(
+                f"SymbolSubSpace.constituent_push: row {b} is at capacity "
+                f"({cap}); split/shift before pushing further.")
+        if depth > 0:
+            self._constituent_buffer[b, 1:depth + 1] = \
+                self._constituent_buffer[b, 0:depth].clone()
+        self._constituent_buffer[b, 0] = code
+        self._constituent_depth[b] = depth + 1
+
+    def constituent_pop(self, b):
+        """Pop and return the newest constituent (slot 0)."""
+        depth = self.constituent_depth_of(b)
+        if depth == 0:
+            raise RuntimeError(
+                f"SymbolSubSpace.constituent_pop: row {b} is empty")
+        top = self._constituent_buffer[b, 0].clone()
+        if depth > 1:
+            self._constituent_buffer[b, 0:depth - 1] = \
+                self._constituent_buffer[b, 1:depth].clone()
+        self._constituent_buffer[b, depth - 1] = 0
+        self._constituent_depth[b] = depth - 1
+        return top
+
+    def constituent_split(self, b, left, right):
+        """The binary SPLIT move (the serial form of π; spec §6 rev c).
+
+        Replaces the top constituent with its two parts -- ONE move,
+        one stack written (the single-writer mutex counts this as the
+        tick's move). ``left`` lands newest (slot 0), ``right`` beneath
+        it, mirroring left-to-right analysis order.
+        """
+        self.constituent_pop(b)
+        self.constituent_push(b, torch.as_tensor(right))
+        self.constituent_push(b, torch.as_tensor(left))
+
+    def constituent_clear(self):
+        """Sentence-boundary reset of the analysis stack (idempotent)."""
+        if getattr(self, '_constituent_buffer', None) is None:
+            return
+        self._constituent_buffer.zero_()
+        self._constituent_depth.zero_()
+
+    # -- knowledge-artifact attach -----------------------------------------
+    # Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
+    # §Phase 2 — Loaders. ``attach_knowledge(view)`` wires a loaded
+    # ``embed.KnowledgeView`` into the SymbolSpace so downstream consumers
+    # (chart POS scorer, rule predictor, lift/lower restricted-candidate
+    # inverse, STM REDUCE typed admissibility) consult it instead of the
+    # legacy ``Taxonomy()`` scaffold; ``category_codebook`` was retired
+    # 2026-05-20 in favor of ``category_embedding: nn.Embedding``. The
+    # remaining legacy fields stay in place during Phase 2 for back-compat.
+
+    def attach_knowledge(self, view):
+        """Attach a loaded :class:`embed.KnowledgeView`. Replaces any
+        previously attached view (last-write-wins). Stored via
+        ``object.__setattr__`` to bypass nn.Module's submodule
+        registration — the view holds tensors but isn't itself a Module
+        and shouldn't appear in ``state_dict``.
+
+        Also wires the view into ``self.taxonomy`` (for priming
+        propagation adjacency) and allocates the per-batch priming
+        buffer at multiplicative identity. Plan
+        doc/plans/2026-05-20-primed-reverse-generation.md §Storage.
+        """
+        object.__setattr__(self, '_knowledge', view)
+        # Bind the taxonomy's adjacency source + allocate priming.
+        tax = getattr(self, 'taxonomy', None)
+        if tax is not None and view is not None:
+            tax.attach_view(view)
+            capacity = int(view._parent.shape[0])
+            tax.allocate_priming(
+                batch_size=int(self.batch),
+                capacity=capacity,
+                live=int(view.n_refs_live),
+            )
+            # Master switch for symbolic-priming heat (forward working
+            # memory). Default false => taxonomy.priming_enabled False =>
+            # the gated forward-commit path (push / reduce) is a no-op with
+            # zero training-path cost. Coerced to bool the same way
+            # ``hasAttention`` is (the XML parser already yields a Python
+            # bool for ``xs:boolean`` leaves). Plan
+            # doc/plans/2026-06-06-symbolic-heat-retrieval.md §A.
+            symbolic_priming = bool(
+                TheXMLConfig.get("architecture.symbolicPriming",
+                                 default=False))
+            tax.configure_priming(priming_enabled=symbolic_priming)
+
+    @property
+    def knowledge(self):
+        """The attached :class:`embed.KnowledgeView`, or ``None`` when
+        ``attach_knowledge`` has not been called for this SymbolSpace
+        instance."""
+        return getattr(self, '_knowledge', None)
+
+    # -- priming kwargs helper ---------------------------------------------
+    # Plan: doc/plans/2026-05-20-primed-reverse-generation.md §Reverse
+    # operation flow. Given a rule's RuleOrderSignature + operand-side
+    # bindings, builds the four kwargs (``left_rows``, ``right_rows``,
+    # ``left_priming``, ``right_priming``) the recommender consumes.
+
+    def priming_kwargs_for_slots(self, *,
+                                 left_category, left_order,
+                                 right_category=None, right_order=None,
+                                 batch=0):
+        """Build (left_rows, right_rows, left_priming, right_priming)
+        kwargs for the inverse recommender from typed slot info.
+
+        ``left_category`` / ``right_category`` are grammar category
+        names (e.g. ``'NP'``, ``'VP'``). ``left_order`` / ``right_order``
+        are the resolved integer conceptual orders for the slot,
+        derived by the caller from the active rule's
+        ``RuleOrderSignature`` and the operand-side order binding.
+
+        Returns a dict with up to four keys (any ``None`` slot is
+        omitted). Empty intersection rows are passed through as empty
+        LongTensors — the recommender's row-mask helper then admits
+        only the ⊥/⊤ sentinels for that slot (graceful degradation
+        rather than failure).
+
+        Priming weights are sliced from ``self.taxonomy.priming_mask
+        (batch=batch)``, sized to ``V_ref_live``. The recommender
+        truncates / pads to ``W.shape[0]`` (``K``) at use time, so
+        passing the live slice is safe even when the codebook is
+        capacity-slack-padded.
+
+        Returns ``{}`` when no knowledge is attached (graceful fallback
+        — caller can still proceed with un-typed, un-primed selection).
+        """
+        view = self.knowledge
+        if view is None:
+            return {}
+        out = {}
+        # Left slot
+        if left_category is not None:
+            cat_rows = view.refs_by_category(left_category)
+            ord_rows = view.refs_by_order(int(left_order))
+            out['left_rows'] = _intersect_long_rows(cat_rows, ord_rows)
+        # Right slot
+        if right_category is not None:
+            cat_rows = view.refs_by_category(right_category)
+            ord_rows = view.refs_by_order(int(right_order))
+            out['right_rows'] = _intersect_long_rows(cat_rows, ord_rows)
+        # Priming (per batch row). One mask covers all rows; the
+        # recommender's row mask already gates feasibility, so the
+        # full ref-id-indexed priming is correct for both slots.
+        tax = getattr(self, 'taxonomy', None)
+        # ``priming_enabled = false`` short-circuits to typed-only
+        # behavior — no priming kwargs emitted at all.
+        enabled = (tax is not None and getattr(tax, 'priming_enabled', True))
+        if enabled:
+            pm = None if tax is None else tax.priming_mask(batch=int(batch))
+            if pm is not None:
+                if left_category is not None:
+                    out['left_priming'] = pm
+                if right_category is not None:
+                    out['right_priming'] = pm
+        return out
+
+    def retrieval_candidates_for_slot(self, query, basis, category, order,
+                                      batch=0, topk_content=64, topk_heat=64,
+                                      *, alpha=1.0, beta=0.5,
+                                      mode='primer', gamma=0.0, delta=0.0,
+                                      outer_topk=32):
+        """Heat+content candidate union and boosted row-weights for ONE
+        inverse-recommender slot.  Returns a dict the caller maps onto
+        ``left_*`` or ``right_*`` recommender kwargs.  Plan
+        ``doc/plans/2026-06-06-symbolic-heat-retrieval.md`` §Candidate
+        generation / §Recommender changes / §Phase 5.
+
+        Parameters
+        ----------
+        query : Tensor
+            Query vector.  Any shape ending in ``D`` (the codebook column
+            dimension).  Extra leading dims are collapsed with
+            ``.reshape(-1)[:D]``, so passing a ``[1, D]`` or ``[B, D]``
+            slice is safe.
+        basis : object
+            Object with a ``getW()`` method returning the ``[K, D]``
+            symbolic codebook.  ``K ≈ V_live`` (live ref rows).
+        category : str
+            Grammar/POS category name passed to
+            ``KnowledgeView.refs_by_category``.
+        order : int
+            Conceptual order passed to ``KnowledgeView.refs_by_order``.
+        batch : int
+            Which priming batch row to use.  Default 0.
+        topk_content : int
+            How many content-nearest rows to include in the union candidate
+            set.  Default 64.
+        topk_heat : int
+            How many hottest priming rows to include.  Default 64.
+        alpha : float
+            Weight on cosine similarity in the boosted priming exponent.
+            Default 1.0.  See §Retrieval score.
+        beta : float
+            Weight on ``log1p(r_i)`` (taxonomic heat) in the exponent.
+            Default 0.5.  Logarithmic scale prevents a hot ancestor from
+            swamping content proximity.
+        mode : str
+            Retrieval mode (one of ``'off'``, ``'primer'``, ``'second-order'``,
+            ``'low-rank'``).  Default ``'primer'``.  When ``mode`` is
+            ``'off'`` or ``'primer'`` (or ``gamma == delta == 0``), NO carrier
+            terms are added — weight is exactly
+            ``exp(alpha*sim + beta*log1p(r))``, preserving byte-identical
+            output with pre-Phase-5 behavior.  When ``mode`` is
+            ``'second-order'`` or ``'low-rank'``, first- and second-order
+            carrier contributions are added for candidate rows.
+        gamma : float
+            Weight on the first-order carrier term ``dot(a_i, z)`` where
+            ``z = A_S^T r_S`` (plan §Retrieval score).  Default 0.0.
+            Only active when mode is ``'second-order'`` or ``'low-rank'``.
+        delta : float
+            Weight on the second-order carrier term ``dot(a_i, Cq)`` where
+            ``Cq`` is computed without materializing a ``[V,V]`` tensor
+            (plan §Retrieval score).  Default 0.0.  For ``'low-rank'``
+            mode: ``Cq = U^T(Uq)``; for ``'second-order'``: ``Cq = C_dense @ q``
+            (only when D is small).  Only active when mode is
+            ``'second-order'`` or ``'low-rank'``.
+        outer_topk : int
+            Top-k active rows for ``build_semantic_heat`` /
+            ``build_outer_heat`` carrier builders.  Default 32.
+
+        Returns
+        -------
+        dict
+            ``{'rows': LongTensor, 'priming': FloatTensor[K],
+               'diagnostics': {...}}`` — or ``{}`` on graceful fallback.
+
+            * ``rows``     — candidate union (up to topk_content + topk_heat),
+              further intersected with the typed admissible set when non-empty.
+            * ``priming``  — ``[K]`` float weight tensor; 1.0 = identity for
+              non-candidate rows; ``exp(alpha*sim + beta*log1p(r))`` for
+              candidate rows (+ optional carrier terms when active).
+              Drop-in for ``left_priming`` / ``right_priming``.
+            * ``diagnostics`` — counts and fallback label for debugging.
+
+        Notes
+        -----
+        Graceful fallback:  returns ``{}`` when ``self.knowledge`` is ``None``,
+        ``basis`` is ``None`` or has no ``getW()``, or ``getW()`` returns
+        ``None``.  This mirrors ``priming_kwargs_for_slots``'s ``{}`` fallback.
+
+        Device consistency:  ``q`` is moved to ``A.device`` before any
+        computation.  The returned ``rows`` and ``priming`` live on the same
+        device as ``A``.
+
+        No [V,V] allocation:  ``z`` and ``Cq`` are ``[D]`` vectors; carrier
+        gathers are over the small candidate set ``C``.  A ``[V,V]`` dense
+        matrix is NEVER formed, even in second-order mode (where ``C_mat`` is
+        ``[D,D]``, not ``[V,V]``).
+
+        Size of ``priming``:  sized to ``A.shape[0]`` (K), which equals
+        ``V_live`` for a fully-allocated codebook.  If the taxonomy priming
+        buffer has a different live count, the returned vector still has K
+        elements (heat gathered from positions within-range, zeros elsewhere).
+        The recommender truncates / pads ``priming`` to ``W.shape[0]`` at
+        use time, consistent with ``priming_kwargs_for_slots``.
+        """
+        import torch
+        import torch.nn.functional as F
+
+        # --- Graceful fallback guards (mirror priming_kwargs_for_slots) ------
+        view = self.knowledge
+        if view is None:
+            return {}
+        if basis is None:
+            return {}
+        getW_fn = getattr(basis, 'getW', None)
+        if getW_fn is None:
+            return {}
+        A = getW_fn()
+        if A is None:
+            return {}
+
+        K, D = A.shape  # [K, D] codebook
+
+        # --- Reduce query to a single [D] vector on A's device ---------------
+        q = query
+        if not isinstance(q, torch.Tensor):
+            q = torch.as_tensor(q, dtype=A.dtype)
+        q = q.reshape(-1)[:D].to(A.device, A.dtype)
+
+        # --- Step 1: Content scores — cosine similarity [K] ------------------
+        # Single matrix-vector proximity; NOT [V,V].
+        sim = F.cosine_similarity(q.reshape(1, -1), A, dim=1)  # [K]
+        k_c = min(topk_content, K)
+        if k_c > 0:
+            _, topk_idx = torch.topk(sim, k=k_c)
+            C_content = topk_idx  # LongTensor [k_c]
+        else:
+            C_content = torch.empty(0, dtype=torch.long, device=A.device)
+
+        # --- Step 2: Heat candidates -----------------------------------------
+        tax = getattr(self, 'taxonomy', None)
+        enabled = (tax is not None and getattr(tax, 'priming_enabled', True))
+        if enabled and tax is not None:
+            C_heat = tax.topk_heat(topk_heat, batch=batch)
+            C_heat = C_heat.to(A.device)
+        else:
+            C_heat = torch.empty(0, dtype=torch.long, device=A.device)
+
+        # --- Step 3: Typed admissible set ------------------------------------
+        cat_rows = view.refs_by_category(category)
+        ord_rows = view.refs_by_order(int(order))
+        C_typed = _intersect_long_rows(cat_rows, ord_rows)
+        if C_typed.numel() > 0:
+            C_typed = C_typed.to(A.device)
+
+        # --- Step 4: Union + typed mask + fallback ---------------------------
+        # union = unique(C_content ∪ C_heat)
+        if C_content.numel() > 0 and C_heat.numel() > 0:
+            union = torch.unique(torch.cat([C_content, C_heat]))
+        elif C_content.numel() > 0:
+            union = C_content
+        elif C_heat.numel() > 0:
+            union = C_heat
+        else:
+            union = torch.empty(0, dtype=torch.long, device=A.device)
+
+        fallback = 'none'
+        if C_typed.numel() > 0:
+            C = _intersect_long_rows(union, C_typed)
+        else:
+            C = union
+
+        if C.numel() == 0:
+            # Three-level fallback (plan §Candidate generation)
+            if C_typed.numel() > 0:
+                C = C_typed
+                fallback = 'typed_only'
+            elif C_content.numel() > 0:
+                C = C_content
+                fallback = 'content_only'
+            else:
+                C = torch.empty(0, dtype=torch.long, device=A.device)
+                fallback = 'sentinel'
+
+        # --- Step 5: Boosted row-weight vector [K] ---------------------------
+        # Initialize to 1.0 (multiplicative identity; non-candidates unchanged)
+        priming = torch.ones(K, dtype=torch.float32, device=A.device)
+
+        if C.numel() > 0:
+            # Gather heat mask (r = max(p - 1, 0)) for indexed rows in C
+            if enabled and tax is not None:
+                heat_vec = tax.heat_mask(batch=batch)  # [V_live] or None
+            else:
+                heat_vec = None
+
+            # Gather cosine scores at candidate ids
+            # C may contain ids >= K if taxonomy live > codebook rows; clip.
+            valid_mask = C < K
+            C_valid = C[valid_mask]
+            if C_valid.numel() > 0:
+                sim_C = sim[C_valid]   # [|C_valid|] content scores
+
+                # Heat at each candidate: r_i = heat_vec[i] if available
+                if heat_vec is not None and C_valid.numel() > 0:
+                    in_range = C_valid < heat_vec.numel()
+                    r_C = torch.zeros(C_valid.numel(),
+                                      dtype=torch.float32, device=A.device)
+                    if in_range.any():
+                        r_C[in_range] = heat_vec[C_valid[in_range]].to(
+                            dtype=torch.float32, device=A.device)
+                else:
+                    r_C = torch.zeros(C_valid.numel(),
+                                      dtype=torch.float32, device=A.device)
+
+                # Base exponent: exp(alpha * sim_i + beta * log1p(r_i))
+                exponent = (alpha * sim_C.to(torch.float32)
+                            + beta * torch.log1p(r_C))
+
+                # --- Phase 5: optional carrier terms (plan §Phase 5) ---------
+                # Only active when mode is 'second-order' or 'low-rank' AND
+                # at least one of gamma/delta is non-zero.  When mode is
+                # 'off' or 'primer', this block is entirely skipped and
+                # the output is byte-identical to pre-Phase-5 behavior.
+                # No [V,V] tensor is ever formed: z and Cq are [D] vectors;
+                # all gathers are over C_valid (the small candidate set).
+                use_carriers = (mode in ('second-order', 'low-rank')
+                                and (gamma != 0.0 or delta != 0.0))
+                if use_carriers:
+                    k_outer = outer_topk if outer_topk > 0 else None
+
+                    # gamma term: z = A_S^T r_S  (plan §Core representation)
+                    if gamma != 0.0 and tax is not None:
+                        z = tax.build_semantic_heat(
+                            A, batch=batch, topk=k_outer)  # [D]
+                        z = z.to(dtype=torch.float32, device=A.device)
+                        carrier_z = (A[C_valid].to(dtype=torch.float32,
+                                                    device=A.device)
+                                     @ z)   # [|C_valid|]
+                        exponent = exponent + gamma * carrier_z
+
+                    # delta term: Cq via low-rank or dense path
+                    if delta != 0.0 and tax is not None:
+                        if mode == 'low-rank':
+                            # Cq = U^T (U q)  — no [D,D] or [V,V] materialized
+                            U = tax.build_outer_heat(
+                                A, batch=batch, topk=k_outer,
+                                low_rank=True)          # [k, D]
+                            U = U.to(dtype=torch.float32, device=A.device)
+                            q_f32 = q.to(dtype=torch.float32, device=A.device)
+                            Cq = U.t() @ (U @ q_f32)   # [D]
+                        else:
+                            # 'second-order': dense C_mat [D, D] — only safe
+                            # when D is small (plan: dense C only for small D)
+                            C_mat = tax.build_outer_heat(
+                                A, batch=batch, topk=k_outer,
+                                low_rank=False)         # [D, D]
+                            C_mat = C_mat.to(dtype=torch.float32,
+                                             device=A.device)
+                            q_f32 = q.to(dtype=torch.float32, device=A.device)
+                            Cq = C_mat @ q_f32          # [D]
+                        carrier_C = (A[C_valid].to(dtype=torch.float32,
+                                                    device=A.device)
+                                     @ Cq)              # [|C_valid|]
+                        exponent = exponent + delta * carrier_C
+
+                boost = torch.exp(exponent)
+                priming[C_valid] = boost
+
+        # --- Step 6: Return dict ---------------------------------------------
+        diagnostics = {
+            'n_content':    int(C_content.numel()),
+            'n_heat':       int(C_heat.numel()),
+            'n_typed':      int(C_typed.numel()),
+            'n_candidates': int(C.numel()),
+            'fallback':     fallback,
+        }
+        return {
+            'rows':        C,
+            'priming':     priming,
+            'diagnostics': diagnostics,
+        }
+
+    # -- per-row last_svo accessors ---------------------------------------
+    def set_last_svo(self, b, subj, verb, obj):
+        """Write the SVO triple for batch row ``b``.
+
+        Stamps the three vectors into the ``[B, 3, svo_dim]`` buffer
+        and marks the row's valid flag True. Subsequent reads via
+        ``get_last_svo`` until ``clear_last_svo`` fires.
+        """
+        self._last_svo[b, 0] = subj
+        self._last_svo[b, 1] = verb
+        self._last_svo[b, 2] = obj
+        self._svo_valid[b] = True
+
+    def get_last_svo(self, b):
+        """Return ``(subj, verb, obj)`` tensors for batch row ``b``.
+
+        Caller is responsible for checking ``svo_valid(b)`` first;
+        otherwise the returned vectors may be stale or zero.
+        """
+        e = self._last_svo[b]
+        return e[0], e[1], e[2]
+
+    def svo_valid(self, b):
+        """True iff set_last_svo has fired for row ``b`` since last clear.
+
+        Cheap CPU sync via ``.item()``; do not call inside tight loops.
+        """
+        return bool(self._svo_valid[b].item())
+
+    def clear_last_svo(self, b=None):
+        """Clear the SVO valid mask for row ``b`` (or all rows when None).
+
+        Does not zero the underlying tensor -- subsequent ``get_last_svo``
+        will return stale data unless re-stamped by ``set_last_svo``.
+        """
+        if torch.compiler.is_exporting():
+            # Host bookkeeping -- skip under torch.export. ``_svo_valid`` is not
+            # a registered buffer, so it lifts as a CONSTANT and this in-place
+            # ``zero_()`` trips executorch edge-lowering ("Constant ... is
+            # mutated in the forward method. Pls register it as buffer"). The
+            # mask only gates the NEXT cycle's get_last_svo; it never feeds the
+            # exported head prediction, so skipping it during export is a no-op
+            # on the traced output (normal/compiled runs are unaffected).
+            return
+        if b is None:
+            self._svo_valid.zero_()
+        else:
+            self._svo_valid[b] = False
+
+    # -- Category helpers ---------------------------------------------
+    def category_lookup(self, category):
+        """Return the learned embedding row for a derivation label.
+
+        One entry per label: ``category_index['S'] = 0``,
+        ``category_index['VO'] = 1``, etc. Looks up directly by index —
+        no activation-similarity snap — so this is the canonical path
+        for "embedding for category X" when the label is already known
+        from the grammar.
+
+        Args:
+            category: string category name ('S', 'VO', ...) or int
+                row index into ``category_embedding``.
+
+        Returns:
+            Tensor of shape ``(pos_dim,)`` — the embedding row.
+        """
+        if isinstance(category, str):
+            idx = self.category_index[category]
+        else:
+            idx = int(category)
+        return self.category_embedding.weight[idx]
+
+    # -- PoS helpers (legacy) -----------------------------------------
+    def pos_lookup(self, active_symbols):
+        """Activation-similarity nearest-neighbor lookup into the embedding.
+
+        Legacy path kept so ``WholeSpace.forward`` (and its tests) can
+        map an active-symbol pattern to an embedding row without knowing
+        the grammar category up-front. New code that already has the
+        category name should use ``category_lookup(name)`` instead.
+
+        Args:
+            active_symbols: 1-D tensor of shape [N], typically resolved
+                activations from WholeSpace.resolve().
+
+        Returns:
+            Tensor of shape (pos_dim,) -- the matching prototype row.
+        """
+        w = self.category_embedding.weight  # [N_categories, pos_dim]
+        # Project active_symbols to a query vector by taking the weighted
+        # mean of codebook rows, then snap to the nearest row.
+        # For a pure lookup, we map from symbol-index space to a scalar
+        # by summing activation * codebook row for each symbol slot
+        # (mod number of codebook rows).
+        n_sym = active_symbols.shape[0]
+        n_cb = w.shape[0]
+        # Compute a soft query: sum active_symbols[i] * w[i % n_cb]
+        indices = torch.arange(n_sym, device=w.device) % n_cb
+        query = (active_symbols.to(w.device).unsqueeze(-1) * w[indices]).sum(0)  # [4]
+        # Nearest-neighbor snap: argmax cosine similarity
+        query_norm = query / (query.norm() + 1e-8)
+        w_norm = w / (w.norm(dim=-1, keepdim=True) + 1e-8)
+        idx = (w_norm @ query_norm).argmax()
+        return w[idx]
+
+    # -- rule predictor ------------------------------------------------
+    def predict_rule(self, b=0):
+        """Emit softmax logits over the rule table from row ``b``'s category stack.
+
+        Reads ``self.category_stack.flatten(b)`` as a 1-D tensor of
+        length ``depth * pos_dim``. Zero-pads up to
+        ``self._rule_predictor_in_features`` when the stack is shallower
+        than ``max_depth``; truncates (keeping the most recent frames)
+        when the stack has overflowed, so the head always sees a fixed-
+        width window of the top ``max_depth`` category embeddings.
+        Returns a tensor of shape ``(n_rules,)`` suitable for
+        ``torch.softmax`` / CE loss.
+        """
+        assert self.rule_predictor[-1].out_features == len(TheGrammar.rule_table), (
+            "Grammar reconfigured after SymbolSpace construction; rule_predictor stale"
+        )
+        flat = self.category_stack.flatten(b)
+        target_len = self._rule_predictor_in_features
+        numel = flat.numel()
+        # Pick a device/dtype anchor that follows the rule_predictor, so
+        # padding lives on the same device whether or not the stack was
+        # previously populated.
+        first_param = next(self.rule_predictor.parameters())
+        if numel < target_len:
+            pad = torch.zeros(
+                target_len - numel,
+                device=flat.device if numel > 0 else first_param.device,
+                dtype=flat.dtype if numel > 0 else first_param.dtype,
+            )
+            if numel == 0:
+                flat = pad
+            else:
+                flat = torch.cat([flat, pad])
+        elif numel > target_len:
+            # Stack deeper than the configured max_depth window: keep the
+            # most recent frames (tail slice) so the predictor always sees
+            # the top of the stack.
+            flat = flat[numel - target_len:]
+        return self.rule_predictor(flat.unsqueeze(0)).squeeze(0)
+
+    def predict_rule_hard(self, b=0):
+        """Return argmax rule_id for inference.
+
+        Detached from autograd (wraps predict_rule in no_grad). If gradients
+        through the argmax path are ever needed (e.g., REINFORCE baseline,
+        Gumbel-argmax), call predict_rule(b).argmax() directly instead.
+        """
+        with torch.no_grad():
+            return int(self.predict_rule(b).argmax().item())
+
+    # -- reconstruction stack -----------------------------------------
+    def record_derivation(self, rule_id, word_id, b=0):
+        """Record a (rule_id, word_id) derivation step on row ``b``'s reconstruction stack.
+
+        Compatibility surface for explicit derivation producers. The live
+        serial path records its tensor teachers on the same stack via
+        ``store_words`` / ``store_leaves`` / ``record_reduction``.
+        """
+        self.reconstruction_stack.push(b, rule_id, word_id)
+
+    def set_generated_word_stream(self, stream):
+        """Install an output-owned emitted prefix for structural generation.
+
+        Input teachers and reconstruction seeds are intentionally not accepted
+        as substitutes. The stored snapshot cannot be mutated by a later
+        output step or by an operator receiving a context.
+        """
+        self._generated_word_stream = _freeze_structural_snapshot(stream)
+
+    def _structural_grammar_context(self, *, phase, input_stream=None):
+        """Build the one capability-limited context for a structural face.
+
+        Compose owns its current input stream. Generate owns only its emitted
+        output prefix, so ``input_stream`` is purposefully ignored in that
+        branch even where a legacy caller passes a reconstruction target.
+        """
+        phase = str(phase)
+        if phase == 'compose':
+            stream = input_stream if input_stream is not None else ()
+        elif phase == 'generate':
+            stream = getattr(self, '_generated_word_stream', ())
+        else:
+            raise ValueError('structural grammar context phase must be compose or generate')
+        taxonomy = getattr(self, 'taxonomy', None)
+        primed = None
+        priming_enabled = getattr(taxonomy, 'priming_enabled', None)
+        if phase == 'compose' and taxonomy is not None and (priming_enabled is None or bool(priming_enabled)):
+            snapshot = getattr(taxonomy, 'priming_mask', None)
+            if callable(snapshot):
+                primed = snapshot()
+        return StructuralGrammarContext(
+            word_stream=_freeze_structural_snapshot(stream),
+            conceptual_space=_conceptual_space_capability(self),
+            primed_symbols=_freeze_structural_snapshot(primed),
+            phase=phase)
+
+    # -- chart compose / generate (2026-05-01 refactor) ---------------
+    def compose(self, input_vectors, subspace=None):
+        """Run the signal router's compose pass; populate
+        ``self.current_rules``.
+
+        Idempotent within a forward pass: each per-space SyntacticLayer
+        resets its per-space_role cursor to 0 and pops one rule per fold step.
+
+        Fast paths (no router compose):
+          * ``_grammar_is_default_only`` — every rule is the unary pi /
+            sigma fold; rule selection is fully determined by the
+            grammar XML so the router adds no information.
+
+        Stage 3 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+        the CKY ``Chart`` and STM shift-reduce parsers retire; the
+        signal router (``self.languageLayer``) is the canonical parser.
+        The ``<parserBackend>`` and ``<routerKind>`` knobs that gated
+        the legacy paths raise loudly at config load.
+
+        WS-analysis / CS-execution split
+        --------------------------------
+        Conceptually this is the WS-side analysis stage: a soft
+        superposition over the taxonymic codebook that selects, per
+        space_role, a hard rule list (the returned ``current_rules`` dict,
+        ``{space_role: [rule_id, ...]}``). The CS-side execution stage --
+        actually applying the chosen reductions (lift / lower / union /
+        intersection / swap / quantize / not) to the concept tensors --
+        runs in ``ConceptualSpace.forward`` (and the WholeSpace
+        stack-route path) and the per-space_role ``SyntacticLayer`` cursors
+        during reverse. Only lift / lower / union / intersection consult
+        the codebook (inverse-recommended via ``Ops.unionReverse``
+        / ``Ops.intersectionReverse``); swap / quantize / not are
+        tensor-only.
+
+        Implementation caveat (read before trusting the split as a code
+        boundary): on the DEFAULT-ONLY fast path the split holds
+        cleanly -- ``compose`` emits ``current_rules`` from the grammar
+        XML and runs NO tensor reduction, and the per-space_role
+        ``SyntacticLayer.forward`` cursors execute the unary pi / sigma
+        fold (CS-side). On the FULL-ROUTER path, however,
+        ``LanguageLayer.compose`` currently does BOTH: it selects the
+        rules AND folds the slab tensorially through the op modules
+        (``OperationSelectionLayer.forward`` -> ``op(left,
+        right)``), caching the [B, 1, D] root in ``_last_root_state``.
+        The per-space_role ``SyntacticLayer.forward`` / ``reverse`` then
+        deliberately SKIP re-execution on that path (guarded by
+        ``not _grammar_is_default_only``) precisely because re-running
+        the ops would double-apply them. So in the full-router case the
+        WS-analysis and CS-execution stages are co-located inside
+        ``LanguageLayer.compose`` rather than separated across the
+        modules named above. See plan task 5 follow-up.
+        """
+        grammar_context = self._structural_grammar_context(
+            phase='compose', input_stream=input_vectors)
+        self._last_structural_compose_context = grammar_context
+        # Per-compose cursor reset. The OLD semantics zeroed each
+        # per-space_role SyntacticLayer cursor lazily on every compose() call
+        # (via the ``gen != _cursor_compose_gen`` branch keyed off this
+        # counter). On the SymbolSpace.cursor path we reproduce that
+        # EXACTLY with an unconditional in-place reset of all space_roles'
+        # cursors at the top of compose -- no data-dependent Python
+        # branch on a per-batch nn.Module int (recompile cause #3
+        # eliminated). ``cursor`` is a host list[int] so the read in
+        # SyntacticLayer._next_rule_name traces cleanly under Dynamo
+        # (no unbacked SymInt from ``int(tensor)``).
+        for i in range(len(self.cursor)):
+            self.cursor[i] = 0
+        # Bump the generation counter for any consumers that haven't
+        # been migrated off it yet (purely host-side bookkeeping).
+        self._compose_generation += 1
+        # Two firing modes, gated by ``_grammar_is_default_only``
+        # (computed from the configured grammar at __init__ time):
+        #
+        #   * Default-only fast path — every operational rule is the
+        #     unary substrate fold (``pi`` / ``sigma`` arity-1). The
+        #     router adds no information; ``current_rules`` is
+        #     populated from the grammar XML directly.
+        #
+        #   * Full router — any other rule is present (``intersection``,
+        #     ``union``, ``lift``, ``lower``, ``not``, …). The signal
+        #     router runs its compose pass to select per-position
+        #     copy / reduce ops.
+        #
+        # The retired ``<SymbolSpace><useGrammar>`` XML knob used to
+        # also gate this; the grammar XML is now the sole driver.
+        # Batch size for the dense ``rule_probs``: the per-word /
+        # boundary fire passes the STM snapshot ``[B, N, D]`` as
+        # ``input_vectors``, so its leading dim is the predictor's B.
+        # ``None`` when the operand is not a [B, ...] tensor (the
+        # ``RoutingState`` then falls back to inferring B from the rule
+        # rows / leaves ``rule_probs=None`` -- see ``_build_routing_state``).
+        b_hint = (int(input_vectors.shape[0])
+                  if torch.is_tensor(input_vectors) and input_vectors.dim() >= 1
+                  else None)
+        # A5 fullgraph fix: thread the compose operand's device into the
+        # RoutingState build so the dense ``rule_probs`` allocation avoids
+        # the non-proxyable ``TheDevice.get()`` inside the traced forward.
+        dev_hint = (input_vectors.device
+                    if torch.is_tensor(input_vectors) else None)
+        if self._grammar_is_default_only:
+            self.current_rules = self._default_compose_rules()
+            self._pad_S_cursor_to_target(self.current_rules)
+            # ADDITIVE: build the first-class RoutingState alongside the
+            # (unchanged) ``current_rules`` dict so the intra-sentence
+            # predictor can read a dense ``[B, n_rules]`` ``rule_probs``.
+            self.routing_state = self._build_routing_state(
+                self.current_rules, batch_size=b_hint, device=dev_hint)
+            return self.current_rules
+        self.current_rules = self.languageLayer.compose(
+            input_vectors, self, subspace=subspace,
+            grammar_context=grammar_context) or {}
+        self._pad_S_cursor_to_target(self.current_rules)
+        # ADDITIVE: same RoutingState build on the full-router path.
+        self.routing_state = self._build_routing_state(
+            self.current_rules, batch_size=b_hint, device=dev_hint)
+        return self.current_rules
+
+    def _pad_S_cursor_to_target(self, rules_dict):
+        # Forward-only asymmetric padding: extend the SS-space_role rule cursor
+        # to ``self._target_cursor_length`` with ``TheGrammar.id_SS``
+        # (the no-op grammatical transition).
+        # See doc/plans/2026-05-20-static-per-word-loop-impl.md §1.
+        # Non-SS space_roles naturally return None past their end (a no-op),
+        # so only the SS space_role — the one that owns the per-word stem —
+        # needs explicit padding.
+        N = int(self._target_cursor_length)
+        if N <= 0:
+            return rules_dict
+        id_SS = TheGrammar.id_SS
+        if id_SS is None or rules_dict is None:
+            return rules_dict
+        s_rules = rules_dict.get('SS')
+        if s_rules is None:
+            rules_dict['SS'] = [id_SS] * N
+            return rules_dict
+        if s_rules and isinstance(s_rules[0], list):
+            for row in s_rules:
+                while len(row) < N:
+                    row.append(id_SS)
+        else:
+            while len(s_rules) < N:
+                s_rules.append(id_SS)
+        return rules_dict
+
+    def generate(self, target_vectors, subspace=None):
+        """Run the signal router's reverse pass; populate
+        ``self.generate_rules``.
+
+        Default-only fast path mirrors ``compose``.
+
+        Stage 3 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+        the signal router (``self.languageLayer``) is the canonical
+        parser. The retired chart and STM shift-reduce dispatch paths
+        are gone.
+
+        Reverse mirror of the WS-analysis / CS-execution split (see
+        ``compose``): this populates ``self.generate_rules`` (the hard
+        reverse rule list per space_role). On the default-only path the
+        CS-side execution stage is the per-space_role ``SyntacticLayer.reverse``
+        cursors, which pop ``generate_rules`` last-applied-first and run
+        each rule's inverse fold. On the full-router path
+        ``LanguageLayer.generate`` handles the inverse routing
+        tensorially and ``SyntacticLayer.reverse`` is a cursor-advance
+        no-op (same co-location caveat as ``compose``).
+        """
+        grammar_context = self._structural_grammar_context(
+            phase='generate', input_stream=target_vectors)
+        self._last_structural_generate_context = grammar_context
+        self._generate_generation += 1
+        if self._grammar_is_default_only:
+            self.generate_rules = self._default_generate_rules()
+            return self.generate_rules
+        self.generate_rules = self.languageLayer.generate(
+            target_vectors, self, subspace=subspace,
+            grammar_context=grammar_context) or {}
+        return self.generate_rules
+
+    # Method names that count as the per-space_role "natural fold". The
+    # default-only / useGrammar='none' fast paths fire only these from
+    # the grammar XML so the per-space dispatch doesn't accidentally
+    # invoke compositional operators (not, intersection, lift, ...)
+    # that were authored for the chart's selection pass and are
+    # disabled under useGrammar='none'. Maps the OLD ``default_rule``
+    # semantics ('pi' for CS, 'sigma' for subsymbolic / SS) onto the grammar XML
+    # without re-introducing a code-level fallback: when the grammar
+    # XML lacks ``C = pi(C)`` / ``S = sigma(S)`` / ``P = sigma(P)``
+    # entries the dispatch is correctly a no-op for that space_role.
+    _NATURAL_FOLD_METHODS = ('pi', 'sigma')
+
+    # Map a rule's LHS nonterminal to a per-space_role value for dispatch
+    # routing. The legacy flat-format grammar parser tags every rule
+    # ``space_role='SS'`` regardless of LHS; the canonical's LHS is
+    # authoritative. Restrict to the three Space space_roles; non-space_role
+    # nonterminals (NP, VP, ...) get filtered out by the caller.
+    # KEYS are LHS nonterminal categories ('P' / 'C' / 'S'); VALUES are
+    # the space_role labels.
+    _LHS_SPACE_ROLE_MAP = {'P': 'subsymbolic', 'C': 'CS', 'S': 'SS'}
+
+    # -- RoutingState construction (Task: rule-conditioned predictor) --
+
+    @staticmethod
+    def _flatten_selected_rules(rules_by_space_role):
+        """Flat row-0 rule-id list across space_roles (sorted-space_role order).
+
+        Row 0 is the canonical sequence convention already used by
+        ``SyntacticLayer._next_rule_name`` (per-row dispatch is a
+        follow-on). Tolerates both the multi-row ``list[list[int]]`` and
+        the legacy flat ``list[int]`` per-space_role shapes via
+        ``SyntacticLayer._row_zero_rules``.
+        """
+        if not rules_by_space_role:
+            return []
+        flat = []
+        for space_role in sorted(rules_by_space_role.keys()):
+            per_space_role = rules_by_space_role.get(space_role)
+            row0 = SyntacticLayer._row_zero_rules(per_space_role)
+            for rid in row0:
+                try:
+                    flat.append(int(rid))
+                except (TypeError, ValueError):
+                    continue
+        return flat
+
+    def _synthesize_rule_probs(self, rules_by_space_role, batch_size, device=None):
+        """Build the dense ``[B, n_rules]`` rule distribution.
+
+        ``device`` (A5 fullgraph fix): the compose operand's device,
+        threaded down to the ``torch.zeros`` allocations so neither builder
+        calls ``TheDevice.get()`` inside the traced forward (DeviceHandle is
+        not Dynamo-proxyable). ``None`` falls back to ``TheDevice.get()``.
+
+        Dispatches between two builders:
+
+        * SOFT path (``_synthesize_rule_probs_soft``): when the signal
+          router (``self.languageLayer``) ran ``compose`` and cached its
+          per-space_role SOFT marginals in ``_last_space_role_routings``, aggregate
+          those differentiable marginals into a global ``[B, n_rules]``
+          tensor. This keeps a graph back to the router's anchor
+          scorers, so the intra-sentence predictor's ``routing_proj``
+          bias backprops predictor-loss -> ``rule_probs`` -> router
+          marginals -> router scorer params (``copy_anchor`` /
+          ``apply_anchor`` / ``reduce_anchor``).
+        * HARD path (``_synthesize_rule_probs_hard``): the default-only /
+          ``useGrammar='none'`` fast path never calls
+          ``LanguageLayer.compose`` (so ``_last_space_role_routings`` is
+          empty); there is no router to train. Fall back to the
+          (detached) hard scatter -- unit mass onto the SELECTED rule-ids,
+          L1-normalized per row.
+
+        Branch on whether ``self.languageLayer._last_space_role_routings`` is
+        populated.
+        """
+        ll = getattr(self, 'languageLayer', None)
+        space_role_routings = getattr(ll, '_last_space_role_routings', None) if ll is not None else None
+        if space_role_routings:
+            soft = self._synthesize_rule_probs_soft(
+                space_role_routings, batch_size, device=device)
+            if soft is not None:
+                return soft
+            # Soft aggregation declined (no usable marginals / shapes did
+            # not line up): fall through to the hard scatter so the
+            # predictor still gets a (detached) conditioning signal.
+        return self._synthesize_rule_probs_hard(
+            rules_by_space_role, batch_size, device=device)
+
+    def _synthesize_rule_probs_soft(self, space_role_routings, batch_size, device=None):
+        layer = self.languageLayer
+        traces = space_role_routings.get('operations', {}).get('rounds', [])
+        if not traces:
+            return None
+        first = traces[0]['probabilities']
+        result = first.new_zeros(first.shape[0], len(TheGrammar.rule_table))
+        for trace in traces:
+            for name, ids in (('binary_probabilities', layer.binary_rule_ids),
+                              ('unary_probabilities', layer.unary_rule_ids)):
+                counts = trace[name].sum(1) * trace['valid'][:, None]
+                if ids:
+                    index = torch.tensor(ids, device=result.device, dtype=torch.long)
+                    result = result.index_add(1, index, counts)
+        return result / result.sum(-1, keepdim=True).clamp_min(torch.finfo(result.dtype).tiny)
+
+
+    def _map_op_columns(self, counts, rid_table, n_rules):
+        """Map per-op count columns ``counts`` ``[B, R]`` to their global
+        rule_id indices for a differentiable ``index_add``.
+
+        ``rid_table`` is the per-space_role ``op_id -> rule_id`` list
+        (``_unary_rule_ids`` / ``_binary_rule_ids``). Returns
+        ``(idx [K] long, cols [B, K] float)`` selecting only the op
+        columns whose rule_id is in ``[0, n_rules)``; ``(None, None)``
+        when no column maps. ``cols`` is a (differentiable) column
+        gather of ``counts`` -- it keeps the graph to the marginals.
+        """
+        if not torch.is_tensor(counts) or counts.dim() != 2:
+            return None, None
+        R = int(counts.shape[1])
+        keep_cols = []
+        keep_rids = []
+        for op_id in range(min(R, len(rid_table))):
+            try:
+                rid = int(rid_table[op_id])
+            except (TypeError, ValueError):
+                continue
+            if 0 <= rid < n_rules:
+                keep_cols.append(op_id)
+                keep_rids.append(rid)
+        if not keep_cols:
+            return None, None
+        col_idx = torch.tensor(keep_cols, dtype=torch.long,
+                               device=counts.device)
+        cols = counts.index_select(1, col_idx)                  # [B, K]
+        idx = torch.tensor(keep_rids, dtype=torch.long)
+        return idx, cols
+
+    def _synthesize_rule_probs_hard(self, rules_by_space_role, batch_size,
+                                    device=None):
+        """Build the dense ``[B, n_rules]`` rule distribution (HARD scatter).
+
+        DETACHED fallback for the default-only / ``useGrammar='none'``
+        fast path (no router to train): scatter unit mass onto the
+        SELECTED rule-ids and L1-normalize per row, so each
+        ``rule_probs[b]`` is a distribution over the rules that FIRED on
+        row ``b``. This conditions the intra-sentence predictor on WHICH
+        rules fired. The gradient-bearing soft-marginal aggregation lives
+        in ``_synthesize_rule_probs_soft`` (used whenever the router ran).
+
+        Per-row handling
+        ----------------
+        * Full-router path: ``rules_by_space_role[space_role]`` is ``B`` rows (one
+          per batch element, see ``LanguageLayer.compose``); each row's
+          own selected ids are scattered onto that row.
+        * Default-only / single-canonical-row path: a single row 0 is the
+          canonical sequence; it is BROADCAST across all ``B`` rows (the
+          predictor then sees one shared distribution -- matching the
+          "row 0 is canonical" convention).
+
+        Zero-fire rows (no selected ids) are left as an all-zero row (the
+        additive bias then contributes only ``routing_proj``'s bias term;
+        documented). Returns ``None`` when ``n_rules <= 0`` or no usable
+        batch size can be resolved.
+
+        FAIL LOUD: a non-finite value in the assembled tensor raises
+        (never silently sanitized) per the project's numerical policy.
+        """
+        n_rules = int(len(TheGrammar.rule_table))
+        if n_rules <= 0:
+            return None
+
+        # Resolve B: prefer the caller's hint (the compose operand's
+        # leading dim). Fall back to the rule-row count when the operand
+        # batch dim was unavailable but the rows are per-row.
+        per_space_role_rows = None
+        max_rows = 0
+        if rules_by_space_role:
+            for space_role in rules_by_space_role:
+                rows = rules_by_space_role[space_role]
+                if isinstance(rows, list) and rows and isinstance(rows[0], list):
+                    max_rows = max(max_rows, len(rows))
+                    per_space_role_rows = per_space_role_rows or {}
+        B = batch_size if batch_size is not None else (max_rows or None)
+        if B is None or int(B) <= 0:
+            return None
+        B = int(B)
+
+        # A5: device threaded from the compose operand (avoids the
+        # non-proxyable ``TheDevice.get()`` inside the traced forward).
+        if device is None:
+            device = TheDevice.get()
+        probs = torch.zeros(B, n_rules, device=device)
+
+        # Per-row scatter. For each batch row, accumulate the row's own
+        # rule-ids if the per-space_role container is per-row (len == B or the
+        # row index exists), else fall back to row 0 (broadcast canonical).
+        canonical_flat = self._flatten_selected_rules(rules_by_space_role)
+        for b in range(B):
+            row_ids = []
+            for space_role in sorted(rules_by_space_role.keys()) if rules_by_space_role else []:
+                per_space_role = rules_by_space_role.get(space_role)
+                if (isinstance(per_space_role, list) and per_space_role
+                        and isinstance(per_space_role[0], list)):
+                    # Per-row container: use this row when present, else
+                    # the canonical row 0 (broadcast).
+                    row = per_space_role[b] if b < len(per_space_role) else per_space_role[0]
+                    for rid in row:
+                        try:
+                            row_ids.append(int(rid))
+                        except (TypeError, ValueError):
+                            continue
+                else:
+                    # Legacy flat list: shared across rows.
+                    for rid in (per_space_role or []):
+                        try:
+                            row_ids.append(int(rid))
+                        except (TypeError, ValueError):
+                            continue
+            if not row_ids:
+                # Per-row container existed but this row fired nothing AND
+                # there is no per-row fallback -> use the canonical flat.
+                row_ids = canonical_flat
+            for rid in row_ids:
+                if 0 <= rid < n_rules:
+                    probs[b, rid] += 1.0
+
+        # L1-normalize each row that has any mass; zero rows stay zero
+        # (documented: the additive bias is then just routing_proj's bias).
+        # Branchless so the compiled forward carries no data-dependent guard:
+        # a zero row has ``probs == 0`` and ``row_sum == 0``, and
+        # ``0 / clamp_min(tiny) == 0``; non-zero rows have integer mass
+        # ``>= 1`` that ``clamp_min(tiny)`` leaves untouched. Equivalent to
+        # the old ``if nz.any(): probs[nz] /= row_sums[nz]``.
+        row_sums = probs.sum(dim=1, keepdim=True)
+        probs = probs / row_sums.clamp_min(torch.finfo(probs.dtype).tiny)
+
+        # FAIL LOUD on a non-finite rule-prob tensor -- but gate behind
+        # MODEL_DEBUG: ``isfinite().all()`` is a data-dependent host sync
+        # (graph break) under torch.compile, and ``util.MODEL_DEBUG`` is a
+        # constant the tracer folds away when off, so the check leaves the
+        # compiled forward entirely. Divergence still surfaces under
+        # MODEL_DEBUG runs and via the eager finite-loss guard.
+        if util.MODEL_DEBUG and not torch.isfinite(probs).all():
+            raise ValueError(
+                "SymbolSubSpace._synthesize_rule_probs produced a non-finite "
+                "rule_probs tensor (fail-loud per numerical policy).")
+        return probs
+
+    def _build_routing_state(self, rules_by_space_role, batch_size, device=None):
+        """Assemble the ``RoutingState`` companion for ``current_rules``.
+
+        ``rules_by_space_role`` is the (unchanged) ``current_rules`` dict;
+        ``batch_size`` is the predictor's B (the compose operand's
+        leading dim) or ``None``. Builds ``selected_rules`` (flat row-0
+        ids) and the dense ``rule_probs`` ``[B, n_rules]`` (or ``None``).
+
+        ``device`` (A5 fullgraph fix): the compose operand's device,
+        threaded so the dense ``rule_probs`` is allocated WITHOUT calling
+        ``TheDevice.get()`` inside the traced forward (that returns a
+        ``DeviceHandle`` Dynamo cannot proxy -> a fullgraph graph break).
+        ``None`` (the eager ``__init__`` seed call) falls back to
+        ``TheDevice.get()``.
+        """
+        rules_by_space_role = rules_by_space_role or {}
+        selected = self._flatten_selected_rules(rules_by_space_role)
+        rule_probs = self._synthesize_rule_probs(
+            rules_by_space_role, batch_size, device=device)
+        return RoutingState(
+            rules_by_space_role=rules_by_space_role,
+            selected_rules=selected,
+            rule_probs=rule_probs)
+
+    def _default_compose_rules(self):
+        """Per-space_role rule IDs for the default-only / useGrammar='none'
+        fast path (forward direction).
+
+        Returns ``dict[space_role, list[list[int]]]`` listing each space_role's
+        forward natural-fold rule_ids from ``TheGrammar.rules``
+        (``method_name`` in :data:`_NATURAL_FOLD_METHODS`,
+        ``canonical`` not containing ``.reverse``). Cached after
+        first call -- the grammar is fixed at construction time.
+        """
+        cache = getattr(self, '_default_compose_rules_cache', None)
+        if cache is not None:
+            return cache
+        per_space_role = {}
+        for i, r in enumerate(TheGrammar.rules):
+            mn = getattr(r, 'method_name', None)
+            if mn not in self._NATURAL_FOLD_METHODS:
+                continue
+            canonical = getattr(r, 'canonical', '') or ''
+            if '.reverse' in canonical:
+                continue
+            # The legacy flat-format parser tags every rule
+            # ``space_role='SS'``; the canonical's LHS nonterminal is
+            # authoritative for which Space space_role should dispatch.
+            space_role = self._LHS_SPACE_ROLE_MAP.get(getattr(r, 'lhs', None))
+            if space_role is None:
+                continue
+            per_space_role.setdefault(space_role, []).append([i])
+        merged = {space_role: [[rid for row in rows for rid in row]]
+                  for space_role, rows in per_space_role.items()}
+        self._default_compose_rules_cache = merged
+        return merged
+
+    def _default_generate_rules(self):
+        """Per-space_role rule IDs for the default-only / useGrammar='none'
+        fast path (reverse direction).
+
+        Returns ``dict[space_role, list[list[int]]]`` listing each space_role's
+        reverse natural-fold rule_ids (``method_name`` in
+        :data:`_NATURAL_FOLD_METHODS`, ``canonical`` containing
+        ``.reverse``). The dispatched ``method_name`` is shared with
+        the matching forward rule so ``SyntacticLayer._by_name``
+        resolves to the same parametrized layer either way.
+
+        Falls back to the per-space_role forward rule_ids when no explicit
+        ``.reverse`` rules are listed for that space_role. Legacy
+        flat-format grammar blocks (``<S>sigma(S)</S>`` etc., without
+        a ``<generate>`` section) still get the per-space_role reverse
+        dispatch because dispatch reads ``method_name`` rather than
+        the canonical string.
+        """
+        cache = getattr(self, '_default_generate_rules_cache', None)
+        if cache is not None:
+            return cache
+        forward_per_space_role = {}
+        reverse_per_space_role = {}
+        for i, r in enumerate(TheGrammar.rules):
+            mn = getattr(r, 'method_name', None)
+            if mn not in self._NATURAL_FOLD_METHODS:
+                continue
+            space_role = self._LHS_SPACE_ROLE_MAP.get(getattr(r, 'lhs', None))
+            if space_role is None:
+                continue
+            canonical = getattr(r, 'canonical', '') or ''
+            if '.reverse' in canonical:
+                reverse_per_space_role.setdefault(space_role, []).append([i])
+            else:
+                forward_per_space_role.setdefault(space_role, []).append([i])
+        per_space_role = {}
+        all_space_roles = set(forward_per_space_role) | set(reverse_per_space_role)
+        for space_role in all_space_roles:
+            per_space_role[space_role] = (
+                reverse_per_space_role.get(space_role)
+                or forward_per_space_role.get(space_role))
+        merged = {space_role: [[rid for row in rows for rid in row]]
+                  for space_role, rows in per_space_role.items()}
+        self._default_generate_rules_cache = merged
+        return merged
+
+    def clear_grammar_cache(self):
+        """Erase forward-derived grammar/routing traces before idea reverse.
+
+        ``reconstructFromIdea`` uses this to avoid replaying the parse tree
+        that comprehension left behind. The next ``generate`` call must infer a
+        fresh reverse rule path from its target idea snapshot.
+        """
+        self.current_rules = {}
+        self.generate_rules = {}
+        self.recur_pass = 0
+        for i in range(len(self.cursor)):
+            self.cursor[i] = 0
+        self.routing_state = self._build_routing_state(
+            {}, batch_size=None)
+        ll = getattr(self, 'languageLayer', None)
+        if ll is not None:
+            ll._last_space_role_routings = {}
+            ll._last_output = None
+            ll._last_root_state = None
+
+    def gate_l1_loss(self, lam=0.0):
+        """L1 penalty on every per-rule ``raw_gate`` Parameter owned by
+        this SymbolSpace's per-space SyntacticLayers.
+
+        Post-2026-05-12: LiftLayer and LowerLayer no longer carry a
+        learnable ``raw_gate`` -- VP's codebook activation now supplies
+        the gate via elementwise multiplication. So this loss is a
+        no-op for the rewritten lift/lower layers. The method is kept
+        for back-compat with any GrammarLayer subclass that still
+        owns a ``raw_gate`` parameter (none in tree today). Returns
+        ``None`` when no such parameter is found.
+        """
+        lam = float(lam or 0.0)
+        if lam <= 0.0:
+            return None
+        total = None
+        for (_space_role, _name), layer in self._host_layer_registry.items():
+            raw = getattr(layer, 'raw_gate', None)
+            if raw is not None and torch.is_tensor(raw):
+                term = torch.tanh(raw).abs().sum()
+                total = term if total is None else total + term
+            # Adverb eigenvalue edit: an L1 pull on the per-adverb edit
+            # projection encourages a sparse expression over the eigs (the
+            # primary sparsity is the in-forward soft-threshold; this is the
+            # additional training pressure). Only present when <adverbEigEdit>
+            # built it, so this is naturally gated.
+            adv_edit = getattr(layer, '_adv_edit', None)
+            if adv_edit is not None and hasattr(adv_edit, 'weight'):
+                term = torch.tanh(adv_edit.weight).abs().sum()
+                total = term if total is None else total + term
+        if total is None:
+            return None
+        return lam * total
+
+    def register_host_layer(self, space_role, rule_name, layer):
+        """Register ``layer`` as the parametrized GrammarLayer for
+        ``(space_role, rule_name)``. The chart's per-cell rule dispatch reads
+        the registry to fire the host space's owned fold.
+
+        Per-space SyntacticLayers call this at construction.
+        """
+        if not rule_name:
+            return
+        self._host_layer_registry[(space_role, rule_name)] = layer
+
+    def host_layer(self, space_role, rule_name):
+        """Return the registered GrammarLayer for ``(space_role, rule_name)``,
+        or ``None``. The chart treats ``None`` as "rule has no host
+        parametrized layer", routing to the generic fallback (Ops /
+        typed-GrammarLayer facade) instead.
+        """
+        return self._host_layer_registry.get((space_role, rule_name))
+
+    # -- Chart-authority surface (Stage 3) --
+    #
+    # The chart's ``register_grammar_layer`` / ``should_run_rule`` pair
+    # serviced ``GrammarLayer.gated_run`` via ``_chart_authority``. The
+    # chart is retired; SymbolSubSpace inherits the responsibility.
+
+    def register_grammar_layer(self, layer):
+        """Add a GrammarLayer instance to the chart-authority roster.
+        Idempotent on repeated registration."""
+        if layer not in self._registered_grammar_layers:
+            self._registered_grammar_layers.append(layer)
+
+    def should_run_rule(self, rule_name):
+        """Return the firing probability for ``rule_name`` per the
+        grammar's ``rule_probability`` lookup.
+
+        Synthesizes a body string matching ``Grammar.rule_probability``
+        prefix-checks (``"<name>("``) so dormant defaults (e.g.
+        ``not(...) -> 0.0``) still apply. Used by
+        ``GrammarLayer.gated_run`` to gate parameterized folds. Returns
+        1.0 when no grammar is wired.
+        """
+        grammar = getattr(self.languageLayer, 'grammar', None)
+        if grammar is None or not rule_name:
+            return 1.0
+        body = f"{rule_name}(S)"
+        try:
+            return float(grammar.rule_probability(body))
+        except Exception:
+            return 1.0
+
+    def _wire_signal_router_grammar_ops(self):
+        """Attach grammar-rule layers to the signal router, grouped by
+        (space_role, arity), driven by the loaded rule list.
+
+        Post-2026-05-29 grammar-file-refactor (\xa75): the rule list is
+        the canonical source of (name, space_role, arity) — the .grammar XML
+        the model config points to is decoded into ``TheGrammar.rules``
+        by ``Grammar.load_from_grammar_file``; this method consumes the
+        decoded list, resolves a layer for each entry, and calls
+        ``attach_unary_ops`` / ``attach_layer_ops`` per (space_role, arity).
+        Per-rule space_role and op-name metadata is now propagated to the
+        attached layers so the binary reduction layer can do
+        space_role-respecting position gating (plan \xa76).
+
+        Binary GrammarLayers (IntersectionLayer, UnionLayer, ...) expose
+        their pair-wise math via ``.compose(left, right)``; unary ones
+        (NotLayer, NonLayer, ...) via ``.forward(x)``. The signal
+        router's ``OperationSelectionLayer`` calls ``op(left,
+        right)``, so binary ops get wrapped with
+        ``_BinaryGrammarOpAdapter``.
+        """
+        router = self.languageLayer
+
+        # Group: (space_role, arity) -> list of (rule_id, layer, rule_name)
+        #
+        # Only compose rules (rules_upward) participate in the
+        # forward-direction wiring: each one becomes an op the router
+        # can dispatch in ``compose()``. Generate rules (rules_downward
+        # — bodies like ``S, S = lower(S)``) describe the *reverse*
+        # operation of the same op, not a separate op. Their arity counts
+        # the LHS multi-output -- e.g. ``S, S = lower(S)`` has body arity
+        # 1 but the underlying layer is binary, so attaching it again as
+        # a unary op would call ``LowerLayer.forward(x)`` with one
+        # argument and trip the layer's binary kernel.
+        by_space_role_arity = {}
+        n_upward = len(TheGrammar.rules_upward)
+        for rule_id in range(n_upward):
+            rule = TheGrammar.rules_upward[rule_id]
+            space_role = rule.space_role
+            arity = int(rule.arity)
+            if arity not in (1, 2):
+                continue
+            rule_name = rule.method_name
+            if (not rule_name or rule_name == 'interpret'
+                    or getattr(GRAMMAR_LAYER_CLASSES.get(rule_name), 'field_only', False)):
+                # The word transaction always runs interpret before composition.
+                continue
+            layer = self._resolve_rule_layer(
+                space_role, _dispatch_method_name_for_rule(rule))
+            if layer is None:
+                continue
+            by_space_role_arity.setdefault((space_role, arity), []).append(
+                (rule_id, layer, rule_name))
+
+        # plan \xa76: collapse CS and SS into a single reduction space_role in CS.
+        # Instead of attaching one layer per (space_role, arity), aggregate every
+        # entry of a given arity ACROSS space_roles into a single attach call under
+        # the conceptual reduction space_role 'CS'. ``op_space_roles`` / ``op_names`` still
+        # carry the .grammar-declared metadata, so the merged binary layer
+        # (OperationSelectionLayer) keeps each op's original space_role
+        # tag for lift/lower (CS<->SS) role identification; ops, rule_ids,
+        # op_names and op_space_roles are concatenated in lockstep so op order
+        # stays aligned with rule_id order. Group by arity only, with a
+        # stable (space_role, original-order) ordering for determinism.
+        REDUCE_SPACE_ROLE = 'CS'
+        by_arity = {}
+        for (space_role, arity), entries in sorted(by_space_role_arity.items()):
+            for rule_id, layer, name in entries:
+                if arity == 2:
+                    op = _BinaryGrammarOpAdapter(layer)
+                else:
+                    op = _UnaryGrammarOpAdapter(layer)
+                by_arity.setdefault(arity, {
+                    "ops": [], "rule_ids": [], "op_names": [],
+                    "op_space_roles": [],
+                })
+                bucket = by_arity[arity]
+                bucket["ops"].append(op)
+                bucket["rule_ids"].append(rule_id)
+                bucket["op_names"].append(name)
+                # preserve the op's *original* space_role letter as the role label
+                bucket["op_space_roles"].append(space_role)
+        # Placement-chooser cutover: pick the chooser kind BEFORE the
+        # structured layers are built (they choose at construction).
+        # ``<architecture><transformChooser>`` -- default "anchordot"
+        # (stateless, basin unchanged); "mlp" builds the contextual
+        # MLPTransformChooser (owns params, deliberate new basin).
+        router.transform_chooser = str(TheXMLConfig.get(
+            "architecture.transformChooser", default="anchordot"))
+        for arity, bucket in sorted(by_arity.items()):
+            if (router.transform_chooser != 'mlp'
+                    and any(not operator_is_structural(op) for op in bucket['ops'])):
+                raise ValueError('opaque grammar operators require the ordinary mlp chooser')
+            if arity == 1:
+                router.attach_unary_ops(
+                    ops=bucket["ops"], rule_ids=bucket["rule_ids"],
+                    op_names=bucket["op_names"], op_space_roles=bucket["op_space_roles"],
+                    space_role=REDUCE_SPACE_ROLE)
+            else:
+                router.attach_layer_ops(
+                    ops=bucket["ops"], rule_ids=bucket["rule_ids"],
+                    op_names=bucket["op_names"], op_space_roles=bucket["op_space_roles"],
+                    space_role=REDUCE_SPACE_ROLE)
+
+        if router.operation_layer is None:
+            router.attach_unary_ops(ops=(), rule_ids=(), space_role='CS')
+        declarations = tuple(getattr(GRAMMAR_LAYER_CLASSES.get(rule.method_name),
+                                     'field_action', getattr(GRAMMAR_LAYER_CLASSES.get(rule.method_name), 'bracket_action', None))
+                             for rule in TheGrammar.rules_upward)
+        router.operation_layer.attention_operations = tuple(dict.fromkeys(
+            value for value in declarations if value is not None))
+
+        # plan \xa76: plumb the conceptual-reduction round floor onto the
+        # router. bindingDepth lives on the model (Models.py), not on
+        # SymbolSubSpace, and is not cleanly reachable here within ~2 attribute
+        # hops -- so leave the LanguageLayer default of 1. ``max(1, N-1) ==
+        # N-1`` reproduces the pre-collapse round count, making the floor a
+        # harmless no-op until/unless a host wires bindingDepth through.
+        _co = getattr(self, 'bindingDepth', None)
+        if _co is not None:
+            router.subsymbolic_order = int(_co)
+
+    def _resolve_rule_layer(self, space_role, rule_name):
+        """Return a Layer instance for ``(space_role, rule_name)`` from the host
+        registry, falling back to a fresh GRAMMAR_LAYER_CLASSES instance.
+
+        Lookup order:
+          1. Exact ``(space_role, rule_name)`` match in ``_host_layer_registry``
+             -- the canonical wiring set up when the host space (e.g.
+             ConceptualSpace) constructs its parametrized fold.
+          2. Same ``rule_name`` registered under any other space_role --
+             IntersectionLayer's PiLayer is owned by ConceptualSpace; the
+             grammar may name it at the symbolic space_role.
+          3. Fresh ``GRAMMAR_LAYER_CLASSES[rule_name]()`` instance --
+             parameter-free ops (NotLayer, NonLayer, ...) that don't need
+             a learned host module.
+        Returns None if no resolution succeeds.
+        """
+        layer = self._host_layer_registry.get((space_role, rule_name))
+        if layer is not None:
+            return layer
+        for (_other_space_role, other_rule), other_layer in (
+                self._host_layer_registry.items()):
+            if other_rule == rule_name:
+                return other_layer
+        cls = GRAMMAR_LAYER_CLASSES.get(rule_name)
+        if cls is None:
+            return None
+        if cls is SurfaceLayer:
+            # The host owns this numerical map once; the separate compose and
+            # generate catalogues retain references to that identical instance.
+            width = int(self.muxedSize)
+            layer = cls(nInput=width, nOutput=width)
+            self.register_host_layer(space_role, rule_name, layer)
+            return layer
+        try:
+            return cls()
+        except TypeError:
+            return None
+
+    # -- truth-modulated loss -----------------------------------------
+    def truth_modulated_loss(self, total_loss, symbolic_space,
+                             symbol_acts=None, universality_score=None,
+                             luminosity_weight=0.1, universality_weight=0.1,
+                             truth_loss_weight=0.0,
+                             allow_excluded_middle=1,
+                             allow_contradiction=0,
+                             balance_weight=0.1,
+                             model=None, gradient_objectives=None):
+        """Apply the SymbolSpace-owned TruthLayer modulation to a loss.
+
+        The transform has two parts:
+
+        1. **Multiplicative modulation** -- penalize irrational and
+           unkind propositions by scaling ``total_loss`` by
+           ``(1 + lum_w * (1 - lum_norm) + u_w * (1 - u_norm))``,
+           where ``lum_norm = luminosity(symbolic_space.sigma).clamp(0, 1)``
+           and ``u_norm = universality_score.detach().clamp(-1, 1)`` (or 0
+           when the caller has no universality score cached yet).
+
+        2. **Additive falsity penalty** -- when
+           ``truth_loss_weight > 0`` and the caller provides
+           committed symbol activations, add
+           ``truth_loss_weight * falsity_penalty(symbol_acts, basis)``
+           using ``symbolic_space.subspace.basis``.  ``symbol_acts``
+           should be the last entry of the model's ``symbol_states``
+           cache -- the post-pi activations from the final Sigma-Pi
+           iteration.  Both operands of the
+           disjunction then live in symbol space by construction
+           (stored truths were also recorded from symbol-space
+           activations in ``WholeSpace.forwardEnd``).
+
+        Returns ``total_loss`` unchanged when the TruthLayer is
+        absent or empty (bootstrap case with no truths recorded
+        yet).  The caller is responsible for only invoking this in
+        train mode -- the method itself has no ``train`` flag.
+
+        All inputs that reach outside SymbolSpace (``symbolic_space``,
+        ``symbol_acts``, ``universality_score``, the three weights)
+        are passed explicitly so SymbolSpace never needs a back-
+        reference to the model.
+
+        When supplied, ``gradient_objectives`` contains weighted primary
+        losses used for per-operator diagnostics. Apply the same detached
+        contextual multiplier to each branch. A context-dependent scale must
+        not reopen the concluded-state boundary. Additive truth/balance
+        penalties remain independent auxiliary objectives.
+        """
+        if self.truth_layer is None or self.truth_layer.is_empty():
+            return total_loss
+
+        # Luminosity is now a Mereology measure on the model itself.
+        # When the caller supplies a `model` reference we delegate to
+        # `model.Luminosity(truth_layer=...)`; otherwise (legacy path
+        # without a model handle) we fall back to a neutral 0.0 score
+        # so the multiplicative modulation degenerates to the
+        # universality-only term -- preserving training stability for
+        # callers that haven't been migrated yet.
+        if model is not None and hasattr(model, 'Luminosity'):
+            lum_val = float(model.Luminosity(truth_layer=self.truth_layer))
+        else:
+            lum_val = 0.0
+        lum = torch.tensor(lum_val, device=total_loss.device,
+                           dtype=total_loss.dtype)
+        lum_norm = lum.clamp(0, 1)
+        if universality_score is not None:
+            u_norm = universality_score.detach().clamp(-1, 1)
+        else:
+            u_norm = torch.tensor(0.0, device=total_loss.device)
+
+        multiplier = (1 + luminosity_weight * (1 - lum_norm)
+                      + universality_weight * (1 - u_norm))
+        total_loss = total_loss * multiplier
+        registry = getattr(model, 'errors', None) if model is not None else None
+        if registry is not None:
+            registry.scale(multiplier)
+        if gradient_objectives is not None:
+            for name, objective in gradient_objectives.items():
+                gradient_objectives[name] = objective * multiplier
+
+        if truth_loss_weight > 0 and symbol_acts is not None:
+            basis = getattr(
+                getattr(symbolic_space, 'subspace', None), 'basis', None)
+            if basis is not None:
+                truth_penalty = self.truth_layer.falsity_penalty(
+                    symbol_acts, basis)
+                total_loss = total_loss + truth_loss_weight * truth_penalty
+                if registry is not None:
+                    registry.add('truth.falsity', truth_penalty, weight=truth_loss_weight,
+                                 category='truth', kind='penalty')
+
+        # Quaternary-corner balance penalty: discourages forbidden
+        # corners (N, B). The bivector substrate was retired (Phase 3):
+        # ``symbol_acts`` is now a single signed scalar, so the old
+        # ``symbol_acts[..., :2]`` pole slice is gone. The corner policy
+        # instead reads the TruthLayer-internal accumulator -- the only
+        # legitimate remaining bivector surface. ``tetralemma_balance_
+        # penalty`` is a kept op that returns 0 for a non-paired
+        # accumulator, so the term is inert until a paired/bivector
+        # accumulator is configured; the Phase 5 client assessment
+        # builds on this same accumulator read.
+        wants_balance = (int(allow_excluded_middle) == -1
+                         or int(allow_contradiction) == 0)
+        if (balance_weight > 0 and wants_balance
+                and not self.truth_layer.is_empty()):
+            n = self.truth_layer.count.item()
+            accumulator = self.truth_layer.truths[:n]
+            balance = self.truth_layer.tetralemma_balance_penalty(
+                accumulator,
+                allow_excluded_middle=int(allow_excluded_middle),
+                allow_contradiction=int(allow_contradiction))
+            total_loss = total_loss + balance_weight * balance
+            if registry is not None:
+                registry.add('truth.balance', balance, weight=balance_weight,
+                             category='truth', kind='penalty')
+
+        return total_loss
+
+    # -- wiring -------------------------------------------------------
+    # -- private factory helper: build + wire the SyntacticLayer -----
+    def _resolve_hidden_dim(self, n_slots):
+        try:
+            configured = int(TheXMLConfig.get("SymbolSpace.syntacticHiddenDim"))
+            if configured > 0:
+                return configured
+        except (KeyError, TypeError, ValueError):
+            pass
+        return min(256, max(64, n_slots * 4))
+
+    def _attach_per_space_syntactic_layer(self, space, *, space_role,
+                                          owner_space=None):
+        """Build the per-space SyntacticLayer for ``space`` (Step 4
+        of doc/specs/2026-05-01-syntactic-layer-refactor.md).
+
+        Gathers the space's already-constructed parametrized layers
+        (PiLayer / SigmaLayer / NotLayer / ContiguousLayer) and passes
+        them into ``build_space_syntactic_layer`` as ``builtin_layers``
+        so their existing weights stay live. Other rules the configured
+        grammar references for this space_role get lazy-constructed
+        GrammarLayer wrappers.
+        """
+        builtin_layers = {}
+        # Inner instance probes: use try/except rather than getattr-with-
+        # defaults per the project's no-defensive-getattr stance.
+        if space_role == 'subsymbolic':
+            # Phase C (2026-05-13 rebalance): PartSpace owns
+            # ``pi_input`` (input_dim → percept_dim) and ``pi_concept``
+            # (concept_dim → percept_dim); both fire unconditionally
+            # in the bare forward path. The chart can dispatch them by
+            # rule name as well — ``pi_input`` is the IS-side fold so
+            # we register it under both the new ``pi`` rule name (per
+            # the doc/Spaces.md migration table: ``P = pi(IS)``) and
+            # the legacy ``sigma`` alias (so old grammars
+            # ``P = sigma(P)`` continue to find a layer). ``pi_concept``
+            # is the C-feedback fold and gets the ``lower`` rule name.
+            pi_input = getattr(space, 'pi_input', None)
+            if pi_input is not None:
+                builtin_layers['pi'] = pi_input
+                builtin_layers['sigma'] = pi_input  # legacy alias
+            pi_concept = getattr(space, 'pi_concept', None)
+            if pi_concept is not None:
+                builtin_layers['lower'] = pi_concept
+        elif space_role == 'CS':
+            # Phase B (2026-05-13 rebalance): ConceptualSpace owns
+            # ``sigma_percept`` (percept_dim → concept_dim) — the
+            # canonical forward CS-space_role fold. Register it under the new
+            # ``sigma`` rule name (per the doc/Spaces.md migration
+            # table: ``C = sigma(PS)``) and the legacy ``pi`` alias so
+            # old grammars ``C = pi(C)`` continue to dispatch correctly.
+            sigma_percept = getattr(space, 'sigma_percept', None)
+            if sigma_percept is not None:
+                builtin_layers['sigma'] = sigma_percept
+                builtin_layers['pi'] = sigma_percept  # legacy alias
+            # Stage 4 (2026-05-27 doc/plans/2026-05-26-two-loop-pi-
+            # sigma-substrate.md): LiftLayer / LowerLayer are binary
+            # GrammarLayer ops at the CS space_role (STM-pair composition).
+            # When the active grammar declares them inside <concepts>
+            # (rule.space_role == 'CS'), build them here so they bind at the
+            # ConceptualSpace SyntacticLayer and flow through to the
+            # signal router as CS-space_role reduce ops via
+            # ``_wire_signal_router_grammar_ops``.
+            #
+            # These operators act on ConceptualSpace WHAT.  WholeSpace may be
+            # a much narrower property basis, so its codebook width is not an
+            # admissible sizing source.  Event-aware operators retain the
+            # ConceptualSpace where/when band around this content fold.
+            grammar_C_methods = {
+                r.method_name for r in TheGrammar.rules
+                if r.space_role == 'CS' and r.method_name is not None}
+            wholeSpace = getattr(self, 'wholeSpace', None)
+            perceptualSpace = getattr(self, 'perceptualSpace', None)
+            conceptualSpace = getattr(self, 'conceptualSpace', None)
+            # Concepts are full-width codes (a codebook lookup generalised
+            # over what/where/when): the grammar ops take the whole muxed
+            # event and never split it (Alec, 2026-09-13).
+            _cs_sub = getattr(conceptualSpace, 'subspace', None)
+            concept_width = int(getattr(_cs_sub, 'muxedSize', 0)
+                                or getattr(_cs_sub, 'nWhat', 0) or 0)
+            if 'lift' in grammar_C_methods:
+                from Layers import LiftLayer
+                builtin_layers['lift'] = LiftLayer(
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=wholeSpace,
+                    conceptualSpace=conceptualSpace)
+            if 'verb' in grammar_C_methods:
+                builtin_layers['verb'] = VerbLayer(
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=wholeSpace,
+                    conceptualSpace=conceptualSpace)
+            if 'adverb' in grammar_C_methods:
+                builtin_layers['adverb'] = AdverbLayer(
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=wholeSpace,
+                    conceptualSpace=conceptualSpace)
+            if 'lower' in grammar_C_methods:
+                from Layers import LowerLayer
+                builtin_layers['lower'] = LowerLayer(
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=wholeSpace,
+                    conceptualSpace=conceptualSpace)
+        elif space_role == 'SS':
+            # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev.
+            # 2026-06-09): the WS-owned fold is ``self.pi`` (top-down
+            # analysis). Register it under the new ``pi`` rule name AND the
+            # legacy ``sigma`` alias -- the same alias idiom the subsymbolic/CS space_roles
+            # use above -- so existing grammars (``S = sigma(S)``,
+            # model.xml's default) keep dispatching the WS fold. The
+            # grammar-DSL token migration is Phase-4 (knob split) work.
+            fold = getattr(space, 'pi', None)
+            if fold is not None:
+                builtin_layers['pi'] = fold
+                builtin_layers['sigma'] = fold  # legacy alias
+            if getattr(self, 'conceptualSpace', None) is not None:
+                builtin_layers['interpret'] = self.conceptualSpace.interpret
+            negation = getattr(space, 'propositional_negation', None)
+            if negation is not None:
+                builtin_layers['not'] = negation
+            # FusionLayer / ContiguousLayer were retired 2026-05-04:
+            # the operator was a duplicate of DisjunctionLayer at
+            # SS-space_role. Existing XML grammars referencing
+            # ``Fusion(S, S)`` / ``Contiguous(S)`` should migrate to
+            # ``disjunction(S, S)``.
+            # Lift / Lower wiring: per Stage 4 of doc/plans/
+            # 2026-05-26-two-loop-pi-sigma-substrate.md, LiftLayer
+            # and LowerLayer are first-class binary GrammarLayer ops
+            # at the CS space_role with their own internal SigmaLayer /
+            # PiLayer (no substrate borrow).  This SS-space_role branch is
+            # kept for back-compat with XML grammars that still
+            # declare ``<S>lift(S, S)</S>`` / ``<S>lower(S, S)</S>``
+            # -- in that case rule.space_role == 'SS' and the wiring picks
+            # the layer up under the SS-space_role host registry.  The
+            # canonical home (post-Stage 4) is the CS-space_role branch
+            # above.
+            grammar_S_methods = {
+                r.method_name for r in TheGrammar.rules
+                if r.space_role == 'SS' and r.method_name is not None}
+            conceptualSpace = getattr(self, 'conceptualSpace', None)
+            # Concepts are full-width codes (a codebook lookup generalised
+            # over what/where/when): the grammar ops take the whole muxed
+            # event and never split it (Alec, 2026-09-13).
+            _cs_sub = getattr(conceptualSpace, 'subspace', None)
+            concept_width = int(getattr(_cs_sub, 'muxedSize', 0)
+                                or getattr(_cs_sub, 'nWhat', 0) or 0)
+            # Lift / Lower stay explicit: they are parametrized ops that
+            # need host wiring (``wholeSpace=space``), so the generic
+            # ``cls()`` below would mis-build them. They are wired first
+            # and the loop's ``if name in builtin_layers`` guard skips
+            # them.
+            if 'lift' in grammar_S_methods:
+                from Layers import LiftLayer
+                builtin_layers['lift'] = LiftLayer(
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=space,
+                    conceptualSpace=conceptualSpace)
+            if 'verb' in grammar_S_methods:
+                builtin_layers['verb'] = VerbLayer(
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=space,
+                    conceptualSpace=conceptualSpace)
+            if 'adverb' in grammar_S_methods:
+                builtin_layers['adverb'] = AdverbLayer(
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=space,
+                    conceptualSpace=conceptualSpace)
+            if 'lower' in grammar_S_methods:
+                from Layers import LowerLayer
+                builtin_layers['lower'] = LowerLayer(
+                    nInput=concept_width, nOutput=concept_width,
+                    wholeSpace=space,
+                    conceptualSpace=conceptualSpace)
+            # All other SS-space_role ops: instantiate the parameter-free ops
+            # generically from the module-local GRAMMAR_LAYER_CLASSES
+            # registry rather than a hardcoded per-op special-case chain.
+            # The registry maps every op name to its canonical class
+            # (defined in THIS file), so this both (a) preserves the ops
+            # the old chain wired (``isEqual`` / ``part`` / ``query``)
+            # and (b) picks up any other parameter-free op a grammar
+            # declares at the symbolic (SS) space_role (``queryPart`` / ``assertPart``
+            # / ``not`` / ``swap`` / ``copy`` / ...) that the old chain
+            # silently missed.
+            #
+            # Mereological grammar layers (``part`` / ``isEqual`` /
+            # ``query`` / ...) are pure-geometric operations on the
+            # WholeSpace codebook (clipped cosine projection on the
+            # non-negative paired-index cone, per Architecture.md
+            # §"Monotonicity of the bivector chain"); the standalone
+            # ``MereologicalTree`` sidecar was retired -- the codebook IS
+            # the meronymic structure.
+            for name in grammar_S_methods:
+                if name in builtin_layers:
+                    # Already wired (lift / lower above; sigma / not from
+                    # the substrate). Don't clobber the parametrized
+                    # instance with a fresh parameter-free one.
+                    continue
+                cls = GRAMMAR_LAYER_CLASSES.get(name)
+                if cls is None:
+                    # 'merge' / unknown -- not a registry op.
+                    continue
+                try:
+                    builtin_layers[name] = cls()
+                except TypeError:
+                    # Op needs constructor params (host-wired elsewhere,
+                    # e.g. via _resolve_rule_layer / the CS-space_role branch).
+                    # Skip rather than force; only the narrow
+                    # constructor-arity TypeError is swallowed -- any
+                    # other exception propagates (fail loud).
+                    continue
+        layer = build_space_syntactic_layer(
+            space, self, space_role=space_role,
+            builtin_layers=builtin_layers, owner_space=owner_space)
+        # Register the new layer's parameters with the SymbolSpace param
+        # list so the optimizer scan sees the lazily-constructed
+        # GrammarLayer instances. The space already owns the built-in
+        # parametrized fold layers (PiLayer / SigmaLayer / NotLayer /
+        # ContiguousLayer) in its own params list, so register only
+        # the *new* lazy-constructed wrappers (their parameters won't
+        # already be in self.params).
+        for p in layer.parameters():
+            if all(p is not q for q in self.params):
+                self.params.append(p)
+        return layer
+
+    # -- composition dispatch ----------------------------------------
+    def forwardSymbols(self, data, subspace):
+        """Demux the muxed symbol tensor into the subspace's modality
+        slots (Rule #2 axis commitment side effect).
+
+        Post-2026-05-12 refactor: the actual symbolic composition runs
+        on the chart at CS-space_role over the per-word STM buffer
+        (``_chart_compose_at_C`` inside ``_forward_body``), with the
+        per-space ``SyntacticLayer.forward`` dispatch consuming the
+        chart's rule choices.  This helper retains the demux side
+        effect that downstream slot selectors depend on.
+
+        Per the 2026-05-07 rollback, demux is skipped when there are
+        no aux axes to split (nWhere == 0 and nWhen == 0). In that
+        configuration the muxed event IS the .what content; routing
+        it through ``set_what`` would clobber the codebook's transient
+        slot and shadow the prototype Parameter from downstream
+        ``getW()`` consumers (e.g. ``_nearest_symbol_target``).
+        """
+        if data.ndim == 3 and data.shape[-1] == getattr(subspace, 'muxedSize', -1):
+            has_aux = (
+                getattr(subspace, 'nWhere', 0) > 0
+                or getattr(subspace, 'nWhen', 0) > 0)
+            if has_aux:
+                subspace.demux(data)
+        return data
+
+    def reverseSymbols(self, data, subspace):
+        """No-op pass-through: chart-driven generation handles the
+        symbol-side reverse via ``BasicModel._chart_generate_from_stm``
+        + per-space ``SyntacticLayer.reverse`` dispatch.
+        """
+        return data
+
+    def reconstruct(self, state, codebook_space, max_tokens=1):
+        """Downward-generation MVP. The ``emit_head`` kernel lived on
+        the legacy ``SyntacticLayer`` class (retired 2026-05-08); the
+        Chart-based generation surface that replaces it doesn't yet
+        expose a one-shot head emission. Until it does, this method
+        returns the empty-emission stub callers (``Models._predicted_head``)
+        already gate on.
+        """
+        return {'heads': [], 'residual': state, 'state': state}
+
+    # -- buffer access + lifecycle ------------------------------------
+    def clear_sentence(self):
+        """Reset per-sentence state at sentence boundaries.
+
+        Called by ``BasicModel`` on sentence boundary signals. The
+        legacy SR-parser SymbolSubSpace stack was removed (2026-05-20);
+        the per-sentence cursor / recur_pass on SymbolSubSpace are reset
+        in ``soft_reset``, and the category / reconstruction stacks
+        have their own ``clear`` paths — so this entry point is now a
+        no-op retained for API compatibility with existing callers.
+        """
+        return
+
+    def _detach_persistent_state(self):
+        """Sever the autograd graph carried across batches by persistent
+        per-row state tensors.
+
+        In-place writes during forward (``set_last_svo``, ``subspace.event.setW(...)``,
+        etc.) leave the persistent buffers wired to the previous batch's
+        autograd graph. Once that batch's ``backward()`` runs, the saved
+        tensors are freed; the next batch's forward re-reads the same
+        buffers, so its ``backward()`` walks into freed nodes and raises
+        "Trying to backward through the graph a second time."
+
+        Detaching here breaks history without changing values: the
+        carried numeric state is preserved, but no autograd edges cross
+        the batch boundary.
+
+        Must be called only from the eager post-backward dispatch path
+        (``BasicModel.post_tick_compact``) -- never from inside a
+        ``torch.compile``'d region. ``self.buffers()`` / ``self.modules()``
+        iteration trips Dynamo's "getattr() on nn.Module with pending
+        mutation" guard under ``fullgraph=True``.
+        """
+        self._last_svo = self._last_svo.detach()
+        # Catch floating-point buffers carried transitively by
+        # submodules (subspace, category_stack, reconstruction_stack,
+        # discourse, truth_layer).
+        for buf in self.buffers():
+            if buf.is_floating_point():
+                buf.detach_()
+        # Basis ``Tensor`` payloads (``subspace.event``, ``.what``, etc.)
+        # store the live activation in ``W`` when ``W`` is a plain tensor
+        # (non-Parameter slots) — those are plain attributes, not
+        # registered buffers, so ``self.buffers()`` misses them.
+        # The ``_active_payload`` shadow was retired Stage 4 of
+        # doc/plans/2026-05-21-active-payload-retirement.md; per-batch
+        # content for codebook-bearing slots reconstructs via
+        # ``SubSpace.materialize``. Skip ``W`` when it's an
+        # ``nn.Parameter`` (learned weight, not a transient).
+        for mod in self.modules():
+            w = getattr(mod, 'W', None)
+            if (w is not None and torch.is_tensor(w)
+                    and not isinstance(w, nn.Parameter)
+                    and w.is_floating_point()):
+                mod.W = w.detach()
+
+    # -- Space-contract lifecycle hooks --------------------------------
+    # SymbolSubSpace is a plain ``nn.Module`` (not a ``Space``) but the
+    # model iterates ``self.spaces`` calling ``set_sigma`` /
+    # ``paramUpdate`` / ``getParameters`` / ``Start`` / ``End`` /
+    # ``Reset`` on each entry, so we provide the same surface directly.
+    # All five inline the same "iterate self.layers, call if present"
+    # pattern the ``Space`` base class implements.
+
+    def set_sigma(self, sigma):
+        """Propagate exploration meta-parameters to owned layers.
+
+        Mirrors ``Space.set_sigma`` (the no-basis branch — SymbolSubSpace
+        has no codebook basis slots; ``self.subspace`` is ``None``).
+        """
+        for layer in self.layers:
+            if hasattr(layer, 'set_sigma'):
+                layer.set_sigma(sigma)
+
+    def paramUpdate(self):
+        """In-place parameter update hook called once per training step."""
+        for layer in self.layers:
+            if hasattr(layer, 'paramUpdate'):
+                layer.paramUpdate()
+
+    def ensure_sentence_expectation(self):
+        """Create the configured head once, with normal SymbolSpace ownership."""
+        if self.expectation is not None:
+            return self.expectation
+        if not self._expectation_options:
+            raise RuntimeError("sentence expectation requires a nonempty symbol/concept space")
+        # An optional head must not change the random initialization of
+        # later comprehension modules or the caller's sampling stream.
+        device_type = torch.device(str(TheDevice.get())).type
+        devices = [] if device_type == "cpu" else [TheDevice.get().index or 0]
+        with torch.random.fork_rng(devices=devices, device_type=device_type):
+            discourse = BracketExpectation(**self._expectation_options)
+        parameter = next(self.parameters(), None)
+        if parameter is not None:
+            discourse.to(device=parameter.device, dtype=parameter.dtype)
+        discourse.train(self.training)
+        discourse.enabled_levels = tuple(level for level in ('word','sentence')
+            if bool(TheXMLConfig.training(level+'Expectation', True)))
+        discourse.set_expectation_enabled('sentence' in discourse.enabled_levels)
+        weight, contrastive, temperature = self._expectation_weights
+        discourse.set_inter_loss_weight(weight)
+        discourse.set_inter_contrastive(contrastive, temperature)
+        store = getattr(self, "ltm_store", None)
+        if store is not None:
+            discourse._ltm_store = store
+            discourse._ltm_consolidation = True
+        self.expectation = discourse
+        self.layers.append(discourse)
+        for parameter in discourse.parameters():
+            if all(parameter is not existing for existing in self.params):
+                self.params.append(parameter)
+        return discourse
+
+    def getParameters(self):
+        """Return optimizable parameters owned by this module."""
+        return self.params
+
+    def Start(self):
+        """Per-run initialization: cascade ``Start`` to owned layers."""
+        for layer in self.layers:
+            if hasattr(layer, 'Start'):
+                layer.Start()
+
+    def End(self):
+        """Per-batch teardown: cascade ``End`` to owned layers."""
+        for layer in self.layers:
+            if hasattr(layer, 'End'):
+                layer.End()
+
+    def Reset(self, batch=None, hard=True):
+        """Per-document teardown called by the outer doc-streaming loop.
+
+        ``batch`` (optional int): clear per-row state only for source
+        row ``batch``. ``None`` clears every row. When ``batch`` is set,
+        the SyntacticLayer per-cell state at rows ``batch*K..(batch+1)*K``
+        is cleared via the underlying stack helpers; the per-source-row
+        ``_sentence_completed[batch]`` is cleared.
+
+        ``hard`` (default True): True is the document boundary (full
+        wipe of stack, SVO, STM, discourse). False is a sentence-internal
+        soft reset — see ``soft_reset(batch=b)`` for the structured entry
+        point. Cascades ``Reset`` to owned layers (no ``super().Reset``
+        — SymbolSubSpace inherits from ``nn.Module``, not ``Space``).
+        """
+        for layer in self.layers:
+            if hasattr(layer, 'Reset'):
+                layer.Reset(batch=batch, hard=hard)
+        if getattr(self, 'what_memory', None) is not None:
+            self.what_memory.Reset(batch=batch, hard=hard)
+        if not hard:
+            # Soft reset (sentence boundary): callers should use
+            # soft_reset(batch=b) directly. Treat a soft Reset as a
+            # request to soft_reset every row in batch=None scope so the
+            # cascade stays well-defined for callers that pass hard=False.
+            if batch is None:
+                B = int(self._source_batch)
+                for b in range(B):
+                    self.soft_reset(batch=b)
+            else:
+                self.soft_reset(batch=batch)
+            return
+        if batch is None:
+            self.clear_sentence()
+            # Re-arm STM residual on every row so the next sentence fires
+            # once per row; drop the stale per-row SVO so composed-chart
+            # readers don't carry it across sentence boundaries.
+
+            self.clear_last_svo()
+            self.clear_sentence_completed()
+            return
+        # Per-row hard reset. The body-side parse stack lives at
+        # [B*K, ...] so the row's K cells span indices [batch*K, (batch+1)*K).
+        # Use the existing per-row helpers where they exist; fall back to
+        # a localized clear when not.
+        K = self._row_K()
+        bk_start, bk_end = int(batch) * K, (int(batch) + 1) * K
+        # Stack: clear the K cells owned by this source row.
+        sub = getattr(self, 'subspace', None)
+        if sub is not None and hasattr(sub, 'clear_rows'):
+            sub.clear_rows(bk_start, bk_end)
+        elif sub is not None:
+            # Fallback: full subspace clear keeps semantics safe even if
+            # the per-row helper isn't available; the next forward will
+            # reseed per-row state from the input.
+            sub.clear()
+        if hasattr(self, 'category_stack') and self.category_stack is not None:
+            if hasattr(self.category_stack, 'clear_rows'):
+                self.category_stack.clear_rows(bk_start, bk_end)
+        if (hasattr(self, 'reconstruction_stack')
+                and self.reconstruction_stack is not None):
+            if hasattr(self.reconstruction_stack, 'clear_rows'):
+                self.reconstruction_stack.clear_rows(bk_start, bk_end)
+        # Per-source-row STM / SVO / sentence-complete signal.
+
+        self.clear_last_svo(int(batch))
+        self.clear_sentence_completed(int(batch))
+
+    def _revive_ltm_post_load(self, module, incompatible_keys):
+        """``load_state_dict`` post-hook: rematerialize the TruthLayer view
+        from the freshly-loaded consolidated LTM (see the registration site
+        for the stateless gate). Registered only on consolidated configs, so
+        ``ltm_store`` / ``truth_layer`` are present. A tensor-only restore
+        withdraws request authority immediately but defers physical pruning
+        while the semantic sidecar and other occurrence owners are absent.
+        Invalid complete structure is not silently treated as unreferenced.
+
+        ``incompatible_keys`` is the standard post-hook payload (unused;
+        accepted for the hook signature)."""
+        del incompatible_keys
+        store = getattr(self, 'ltm_store', None)
+        tl = getattr(self, 'truth_layer', None)
+        if store is None or tl is None or tl.ltm_backed is not store:
+            return
+        if getattr(self, '_stateless', True):
+            incomplete = any(
+                bool(store.metadata_required[index])
+                and int(store.occurrence_id[index]) not in store._semantic_rows
+                for index in range(len(store))
+            )
+            if getattr(self, '_defer_ltm_pruning', False) or incomplete:
+                # Missing ownership metadata cannot prove an occurrence has no
+                # reader.  It loses fact authority now, then structural restore
+                # either safely prunes it or reports invalid structure.
+                store.withdraw_origin(store.ORIGIN_USER)
+                self._ltm_pruning_pending = True
+            else:
+                self._finish_ltm_restore()
+        tl.sync_from_ltm()
+
+    def _finish_ltm_restore(self):
+        """Prune stateless request content after all occurrence owners exist."""
+        store = getattr(self, 'ltm_store', None)
+        tl = getattr(self, 'truth_layer', None)
+        if store is None or tl is None or tl.ltm_backed is not store:
+            return
+        if getattr(self, '_stateless', True):
+            memory = getattr(self, 'what_memory', None)
+            namespace = bytes(store._occurrence_namespace.tolist()).hex()
+            roots = (memory.retained_ltm_occurrences(namespace)
+                     if memory is not None else ())
+            store.clear_origin(store.ORIGIN_USER, retained_occurrences=roots)
+        self._ltm_pruning_pending = False
+        tl.sync_from_ltm()
+
+    def soft_reset(self, batch=None):
+        """Re-arm sentence-internal state for row ``batch`` (or all rows).
+
+        Soft reset fires when the parse derivation for a row reaches the
+        configured ``Grammar.start_symbol`` — the structural sentence
+        boundary. Clears every per-sentence working buffer so the next
+        sentence starts fresh, while preserving the document-scoped
+        carryover that bridges sentences:
+          * **Cleared**: parse stack, category stack, reconstruction
+            stack, ``_last_svo[batch]``, ``_sentence_completed[batch]`` (cleared);
+            sentence-completed flag.
+          * **Preserved**: ``BracketExpectation`` discourse history (the
+            chronological context and predictor) — this is the
+            inter-sentence prior, accumulating across true sentences
+            within a document.
+          * **Preserved**: codebook EMA, learned weights — those are
+            training-time state, not per-sentence context.
+
+        Differs from a hard reset (``Reset(batch=b, hard=True)``) by
+        leaving discourse history alone; hard reset wipes that too.
+        """
+        if batch is None:
+
+            self.clear_last_svo()
+            self.clear_sentence_completed()
+            # ``cursor`` is a host-side list[int] of length 3 (see
+            # __init__ for rationale). Reset in place to preserve
+            # object identity for Dynamo cache reuse.
+            for i in range(len(self.cursor)):
+                self.cursor[i] = 0
+            self.recur_pass = 0
+            # Reset every row's parse-side working state. clear_sentence
+            # zeroes the SymbolSubSpace stack; the category and
+            # reconstruction stacks fan out to the same row count.
+            self.clear_sentence()
+            if (hasattr(self, 'category_stack')
+                    and self.category_stack is not None
+                    and hasattr(self.category_stack, 'clear_rows')):
+                self.category_stack.clear_rows(0, self.batch)
+            if (hasattr(self, 'reconstruction_stack')
+                    and self.reconstruction_stack is not None
+                    and hasattr(self.reconstruction_stack, 'clear_rows')):
+                self.reconstruction_stack.clear_rows(0, self.batch)
+            # Reset priming working memory at the sentence boundary.
+            # Plan doc/plans/2026-05-20-primed-reverse-generation.md
+            # §Storage — sentence-scoped lifecycle.
+            tax = getattr(self, 'taxonomy', None)
+            if tax is not None:
+                tax.reset()
+            return
+        b = int(batch)
+
+        self.clear_last_svo(b)
+        self.clear_sentence_completed(b)
+        # ``cursor`` is a host-side list[int] (see __init__); reset in
+        # place to keep object identity stable for the Dynamo cache.
+        for i in range(len(self.cursor)):
+            self.cursor[i] = 0
+        self.recur_pass = 0
+        # Per-row clear over the K cells [b*K, (b+1)*K) that own this
+        # source row in the body's flattened microbatch view.
+        K = self._row_K()
+        bk_start, bk_end = b * K, (b + 1) * K
+        sub = getattr(self, 'subspace', None)
+        if sub is not None and hasattr(sub, 'clear_rows'):
+            sub.clear_rows(bk_start, bk_end)
+        if (hasattr(self, 'category_stack')
+                and self.category_stack is not None
+                and hasattr(self.category_stack, 'clear_rows')):
+            self.category_stack.clear_rows(bk_start, bk_end)
+        if (hasattr(self, 'reconstruction_stack')
+                and self.reconstruction_stack is not None
+                and hasattr(self.reconstruction_stack, 'clear_rows')):
+            self.reconstruction_stack.clear_rows(bk_start, bk_end)
+        # Reset priming working memory for this source row at the
+        # sentence boundary. _priming is sized [self.batch, V_ref_cap],
+        # which matches the body's B*K view, so we reset each window
+        # cell separately.
+        tax = getattr(self, 'taxonomy', None)
+        if tax is not None and tax._priming is not None:
+            for bk in range(bk_start, bk_end):
+                tax.reset(batch=bk)
+
+    def _row_K(self):
+        """Per-source-row K (microbatch window count) inferred from state.
+
+        ``_source_batch`` retains B (source rows); the body-side
+        ``self.batch`` is sized [B*K]. The ratio recovers K. Returns 1
+        when no microbatch has been allocated yet.
+        """
+        try:
+            B = int(self._source_batch)
+        except (AttributeError, IndexError, TypeError):
+            return 1
+        if B <= 0:
+            return 1
+        return max(1, int(self.batch) // B)
+
+    def clear_sentence_completed(self, batch=None):
+        """Clear the sentence-completed signal for row ``batch`` (or all).
+
+        ``_sentence_completed`` is a host-side ``list[bool]`` of length B
+        that ``SyntacticLayer.compose`` appends into when a row's
+        derivation matches a configured ``Grammar.start_patterns`` entry.
+        The outer doc-streaming loop drains it after each ``runBatch``.
+        """
+        # Lazy-init so callers (and Reset) work before the first compose
+        # has populated the list.
+        if not hasattr(self, '_sentence_completed') or self._sentence_completed is None:
+            try:
+                B = int(self._source_batch)
+            except (AttributeError, IndexError, TypeError):
+                B = 1
+            self._sentence_completed = [False] * B
+            return
+        if batch is None:
+            for i in range(len(self._sentence_completed)):
+                self._sentence_completed[i] = False
+            return
+        b = int(batch)
+        if 0 <= b < len(self._sentence_completed):
+            self._sentence_completed[b] = False
+
+    def drain_sentence_completed(self):
+        """Return-and-clear the per-row sentence-completed signal.
+
+        Outer loop pattern (post-runBatch):
+          ``for b in symbolSpace.drain_sentence_completed(): soft_reset(b)``
+
+        Returns a ``list[int]`` of source-row indices whose derivation
+        completed during the last compose; the underlying buffer is then
+        cleared so the next tick starts from a clean slate.
+        """
+        if not hasattr(self, '_sentence_completed') or self._sentence_completed is None:
+            return []
+        completed = [
+            i for i, v in enumerate(self._sentence_completed) if v]
+        for i in completed:
+            self._sentence_completed[i] = False
+        return completed
+
+    def ensure_batch(self, batch):
+        """Resize the BODY-side per-row buffers to ``batch`` (= B*K under
+        the microbatch contract).
+
+        Body-side buffers owned here: the SymbolSubSpace event, the
+        CategoryStack / ReconstructionStack stacks, and the per-window
+        transient tensors ``_last_svo`` / ``_svo_valid``.  These reallocate
+        fresh-zero on shape change -- they're per-microbatch-row state
+        with no cross-batch lifecycle.
+
+        Source-row completion and discourse are owned by ensure_microbatch;
+        changing K must not clear the B chronological streams.
+        """
+        batch = int(batch)
+        if batch == self.batch:
+            # Cascade still runs in case callers grew their own state
+            # without going through the SymbolSpace.batch counter.
+            self.category_stack.ensure_batch(batch)
+            self.reconstruction_stack.ensure_batch(batch)
+            self._ensure_stm_batch(batch)
+            return
+        self.batch = batch
+        self.category_stack.ensure_batch(batch)
+        self.reconstruction_stack.ensure_batch(batch)
+        self._ensure_stm_batch(batch)
+        # Keep the new buffers on the existing device so .to(device)
+        # invariants survive the resize.
+        device = self._last_svo.device
+        self._last_svo = torch.zeros(batch, 3, self.svo_dim, device=device)
+        self._svo_valid = torch.zeros(batch, dtype=torch.bool, device=device)
+        # Resize priming buffer to match the new batch size. Existing
+        # primed values in the overlapping region are preserved (the
+        # Taxonomy.allocate_priming implementation does the copy).
+        view = getattr(self, '_knowledge', None)
+        tax = getattr(self, 'taxonomy', None)
+        if view is not None and tax is not None and tax._priming is not None:
+            tax.allocate_priming(
+                batch_size=batch,
+                capacity=int(view._parent.shape[0]),
+                live=int(view.n_refs_live),
+                device=device,
+            )
+        # Source-row completion is intentionally not resized here -- see
+        # docstring.  ``ensure_microbatch`` handles the B-sized fields.
+
+    def ensure_microbatch(self, B, K):
+        """Resize per-row state for the microbatch AR pipeline.
+
+        Body-side state (subspace, stacks, last_svo, svo_valid) is sized
+        to B*K — each window has its own row inside the body's flattened
+        view. Sentence completion stays at B, shared by all K windows.
+        Discourse buffers (BracketExpectation) also stay at B: discourse
+        history accumulates across sentences within one source stream,
+        and all K windows of a stream share that history (the post-body
+        snapshot collapses K to mirror legacy last-cursor semantics).
+        """
+        BK = int(B) * int(K)
+        self.ensure_batch(BK)  # body-side only; preserves source rows
+        self._source_batch = int(B)
+        if self.expectation is not None and hasattr(self.expectation, 'ensure_batch'):
+            self.expectation.ensure_batch(int(B))
+        if getattr(self, 'what_memory', None) is not None:
+            self.what_memory.ensure_batch(int(B))
+        # _sentence_completed: per-source-row host bool, drained by the
+        # outer doc-streaming loop after each runBatch. Resized in step
+        # with the source-row count B so soft-reset signaling tracks the
+        # current microbatch shape.
+        if (not hasattr(self, '_sentence_completed')
+                or self._sentence_completed is None
+                or len(self._sentence_completed) != int(B)):
+            self._sentence_completed = [False] * int(B)
+
+
+# Plain-attr writes that the held SymbolSubSpace coordinator reads back
+# INTERNALLY must forward through ``SymbolSpace.__setattr__`` -- otherwise an
+# external ``symbolSpace.recur_pass = t`` would land on the wrapper while the
+# coordinator's own ``self.recur_pass`` read never sees it.
+_SYMBOLSPACE_FORWARD_WRITES = {
+    'recur_pass', 'serial_mode', 'normalizer',
+    '_per_sentence_initialized', '_target_cursor_length',
+}
+
+
+
+class LanguageSpace(nn.Module):
+    """Scheduling owner for the grammar layer without owning a second copy.
+
+    ``SymbolSubSpace.languageLayer`` remains the sole parameter/state owner.
+    This Space is the explicit pipeline stage that invokes it after CSsym/SS;
+    it chooses immutable operation results for ConceptualSpace to apply
+    instead of constructing or mutating the next CS state.
+    """
+    def __init__(self, symbol_space):
+        super().__init__()
+        object.__setattr__(self, "_symbol_space", symbol_space)
+        object.__setattr__(
+            self, "_language_layer_ref",
+            getattr(symbol_space.subspace, "languageLayer", None))
+        layer = self._language_layer_ref
+        from DecompositionChooser import DecompositionChooser
+        self.decomposition_chooser = DecompositionChooser()
+        unary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_unary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        binary_ids = tuple(
+            int(value)
+            for value in ((getattr(layer, "_binary_rule_ids", {}) or {}).get(
+                "CS", ()) or ()))
+        self.register_buffer(
+            "_cs_unary_rule_ids",
+            torch.tensor(unary_ids, dtype=torch.long), persistent=False)
+        self.register_buffer(
+            "_cs_binary_rule_ids",
+            torch.tensor(binary_ids, dtype=torch.long), persistent=False)
+        # A program records *local* compose-op indices.  Keep the immutable
+        # grammar definitions that those indices meant at construction time so
+        # a later global grammar reconfiguration cannot relabel an already
+        # completed sentence.  This is metadata only: the SymbolSubSpace
+        # language layer remains the sole owner of compose parameters.
+        def snapshot_compose_rules(rule_ids):
+            rules = tuple(TheGrammar.rules_upward)
+            # A non-output LanguageSpace can legitimately be assembled from a
+            # small chooser harness with synthetic local rule IDs.  It has no
+            # completed grammar program to recover, so retain no misleading
+            # structural metadata.  Production construction has already
+            # configured every referenced rule and still fails later if its
+            # actual dispatcher cannot resolve one.
+            if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
+                return ()
+            return tuple(rules[rule_id] for rule_id in rule_ids)
+
+        object.__setattr__(
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+        object.__setattr__(
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+        from ClauseScope import ClauseScope
+        self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        # An unreduced lexical relative sentence can retain the native VP of a
+        # canonical family while losing which grammar-spelled converse form
+        # anchored its middle word.  Copy only the grammar's closed-class
+        # surface-to-form classification with this program owner.  The eager
+        # forward resolves it once per retained WORD row; capture gathers that
+        # result without consulting text or anchors again.  A future global
+        # grammar reconfiguration cannot relabel a completed sentence.
+        # A normal private dict (rather than a mapping proxy) keeps cloned
+        # training models deepcopy-safe.
+        anchors = getattr(TheGrammar, "surface_anchors", {}) or {}
+        object.__setattr__(
+            self, "_surface_anchors", {
+                str(surface).casefold(): str(form)
+                for surface, form in anchors.items()
+                if isinstance(surface, str) and isinstance(form, str)
+            })
+        self._n_rules = int(len(TheGrammar.rule_table))
+        # Relative-row eligibility follows the operations that actually fired.
+        # This immutable grammar map is also read inside the tensor word loop.
+        self.register_buffer(
+            "_relative_cs_rule_ids",
+            torch.tensor(tuple(rule_id for rule_id in (*binary_ids, *unary_ids)
+                               if TheGrammar.is_relative_rule(rule_id)), dtype=torch.long),
+            persistent=False)
+        # The decoder has its own rule inventory. The LHS counts generated
+        # children; the RHS arity of a binary reverse is only one parent.
+        width = int(getattr(symbol_space.subspace, "muxedSize", 0))
+        catalog = {1: [], 2: []}
+        resolved = {}
+        default_only = getattr(symbol_space.subspace, "_grammar_is_default_only", False)
+        default_interfaces = {}
+        # Natural-fold dispatch uses exact per-space hosts. An inactive space
+        # may retain a declaration in the grammar but has no executable fold;
+        # borrowing another space's sigma/pi would also borrow its geometry.
+        if width and default_only:
+            hosts = symbol_space.subspace._host_layer_registry
+            for role, rows in symbol_space.subspace._default_generate_rules().items():
+                for row in rows:
+                    for rule_id in row:
+                        rule = TheGrammar.rules[rule_id]
+                        identity = (role, _dispatch_method_name_for_rule(rule))
+                        if identity in hosts:
+                            default_interfaces[rule_id] = (identity, hosts[identity])
+                            resolved[identity] = hosts[identity]
+        # A zero-width scheduling harness has no numerical dispatcher. Every
+        # real model snapshots its declarations, including non-loop output;
+        # only the learned walk chooser is gated by outputInLoop.
+        for offset, rule in enumerate(TheGrammar.rules_downward if width else ()):
+            arity = len(str(rule.lhs).split(','))
+            if arity not in catalog or not rule.method_name or rule.method_name == 'interpret':
+                # Lexicalization is the mandatory leaf inverse, not a chooser.
+                continue
+            identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+            if default_only:
+                interface = default_interfaces.get(len(TheGrammar.rules_upward) + offset)
+                if interface is None:
+                    continue
+                identity, op = interface
+            else:
+                op = resolved.get(identity)
+                if op is None:
+                    op = symbol_space.subspace._resolve_rule_layer(*identity)
+            if op is None:
+                raise ValueError(f"unresolved generate rule: {rule.canonical}")
+            resolved[identity] = op
+            catalog[arity].append((rule.space_role, offset, rule, op))
+        # A compose-only grammar declares the same operators' generate
+        # faces implicitly. It must still reconstruct, including numeric
+        # answer configurations with no output loop. No recorded choice is
+        # supplied: only this immutable operator catalogue is shared.
+        if width and not TheGrammar.rules_downward and not getattr(TheGrammar, 'generate_declared', False):
+            for arity, ids in ((2, binary_ids), (1, unary_ids)):
+                tree = self._tree_layer(arity)
+                ops = (() if tree is None else
+                       tree.ops if arity == 2 else tree.unary_ops)
+                for rid, wrapped in zip(ids, ops):
+                    if rid >= len(TheGrammar.rules_upward):
+                        continue
+                    rule = TheGrammar.rules_upward[rid]
+                    op = getattr(wrapped, 'gl', wrapped)
+                    identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
+                    resolved[identity] = op
+                    catalog[arity].append((rule.space_role, rid-len(TheGrammar.rules_upward), rule, op))
+        # Non-owning views: no copied weights, state-dict aliases, parameter
+        # adoption or RNG consumption. The host keeps its checkpoint identity.
+        object.__setattr__(self, "_generation_resolved", resolved)
+        object.__setattr__(symbol_space.subspace, "_generation_space", self)
+        self._generation_active = False
+        for arity in (2, 1):
+            catalog[arity].sort(key=lambda entry: entry[:2])
+            entries = catalog[arity]
+            label = "binary" if arity == 2 else "unary"
+            self.register_buffer(
+                f"_generate_{label}_rule_ids", torch.tensor([
+                    len(TheGrammar.rules_upward) + entry[1] for entry in entries
+                ], dtype=torch.long), persistent=False)
+            # Learned numerical operators remain owned by their host spaces.
+            object.__setattr__(self, f"_generate_{label}_ops",
+                               tuple(entry[3] for entry in entries))
+            setattr(self, f"_generate_{label}_names",
+                    tuple(entry[2].method_name for entry in entries))
+        keys = [self._generate_rule_key(entry[2], arity)
+                for arity in (2, 1) for entry in catalog[arity]] + [0]
+        cw = width
+        # Legacy action keys exist only to migrate the output-owned chooser.
+        # A non-output LanguageSpace may legitimately be assembled from a
+        # local chooser harness whose rule ids have no configured grammar
+        # rows; it neither owns nor consumes that checkpoint metadata.
+        legacy_keys = ([self._legacy_generate_rule_key(TheGrammar.rules_upward[rid], arity)
+                        for arity, ids in ((2, binary_ids), (1, unary_ids))
+                        for rid in ids] + [0]) if cw else ()
+        self._legacy_generate_rule_keys = tuple(legacy_keys)
+        n_choices = len(keys)
+        self._generate_policy_width = int(cw)
+        # Reconstruction owns this chooser in every numerical grammar.
+        self.generate_policy = (
+            nn.Linear(int(cw), n_choices) if cw else None)
+        if self.generate_policy is not None:
+            self.register_buffer("_generate_rule_keys", torch.tensor(keys, dtype=torch.long))
+            with torch.no_grad():
+                self.generate_policy.weight.mul_(0.1)
+                self.generate_policy.bias.zero_()
+                # Untrained, the policy completes constituents (stop): the
+                # output loop then emits the idea's slots as they are, and
+                # reconstruction learns the expansions.
+                self.generate_policy.bias[-1] = 2.0
+
+    @contextmanager
+    def generation_scope(self):
+        """Scope ordinary output dispatch to this model's declared catalogue.
+
+        The model already scopes its mutable synthesis carriers. This host
+        phase bit restores on errors and nested calls; compiled dispatch can
+        guard its value without reading a process-global context variable.
+        """
+        previous = self._generation_active
+        self._generation_active = True
+        try:
+            yield
+        finally:
+            self._generation_active = previous
+
+    def resolve_generation_op(self, space_role, method):
+        """Resolve a declared interface to its shared numerical host."""
+        exact = self._generation_resolved.get((str(space_role), str(method)))
+        if exact is not None:
+            return exact
+        # Structural aliases can share a host across roles; natural folds
+        # have space-specific geometry and require the exact interface.
+        if method not in SymbolSubSpace._NATURAL_FOLD_METHODS:
+            matches = {id(op): op for (_role, name), op in self._generation_resolved.items()
+                       if name == method}
+            if len(matches) == 1:
+                return next(iter(matches.values()))
+        raise KeyError(f"undeclared or ambiguous generate operator: {space_role}:{method}")
+
+    @staticmethod
+    def _generate_rule_key(rule, arity):
+        """Stable action meaning, shared with a legacy compose counterpart."""
+        import hashlib
+        key = repr((rule.space_role, _dispatch_method_name_for_rule(rule),
+                    arity, rule.width_min, rule.width_max))
+        return int.from_bytes(hashlib.sha256(key.encode()).digest()[:8], 'big') >> 1
+
+    @staticmethod
+    def _legacy_generate_rule_key(rule, arity):
+        """Action key used by checkpoints saved before pure query composition."""
+        import hashlib
+        key = repr((rule.space_role, _legacy_dispatch_method_name_for_rule(rule),
+                    arity, rule.width_min, rule.width_max))
+        return int.from_bytes(hashlib.sha256(key.encode()).digest()[:8], 'big') >> 1
+
+    def migrate_generate_checkpoint(self, state, prefix):
+        """Align saved chooser rows by rule meaning, including legacy heads.
+
+        The returned row map also migrates optimizer moments. New generate
+        actions retain fresh weights and receive zero moments; stop survives.
+        """
+        weight_key = prefix + "generate_policy.weight"
+        marker = prefix + "_generate_rule_keys"
+        if self.generate_policy is None or weight_key not in state:
+            return {}
+        saved_keys = state.get(marker)
+        old = (saved_keys.tolist() if torch.is_tensor(saved_keys)
+               else list(self._legacy_generate_rule_keys))
+        new = self._generate_rule_keys.tolist()
+        if len(old) != int(state[weight_key].shape[0]) or len(set(old)) != len(old):
+            raise ValueError("generate-policy checkpoint has an invalid rule catalog")
+        rows = tuple(old.index(key) if key in old else -1 for key in new)
+        migrations = {}
+        for name, live in self.generate_policy.state_dict().items():
+            key = prefix + "generate_policy." + name
+            saved = state[key]
+            if tuple(saved.shape[1:]) != tuple(live.shape[1:]):
+                raise ValueError(f"generate-policy content width changed: {key}")
+            if old != new:
+                value = live.detach().to(saved).clone()
+                for dst, src in enumerate(rows):
+                    if src >= 0:
+                        value[dst].copy_(saved[src])
+                state[key] = value
+                migrations[key] = rows
+        state[marker] = self._generate_rule_keys.detach().clone()
+        return migrations
+
+    def generate_policy_logits(self, top):
+        """``[B, R2 + R1 + 1]`` logits of the generate policy on the top
+        slot's content (binary rules, unary rules, stop); zeros (stop) when
+        the policy does not exist."""
+        B = int(top.shape[0])
+        if self.generate_policy is None:
+            return top.new_zeros(B, 1)
+        cw = self._generate_policy_width
+        return self.generate_policy(top[:, :cw])
+
+    def generate_policy_credit(self, logits, target, valid):
+        """``[B]`` cross-entropy of the policy against the recorded choice
+        ``target`` (an index into the policy's choices) on rows where
+        ``valid``; zero elsewhere."""
+        n = int(logits.shape[-1])
+        logp = torch.log_softmax(logits, dim=-1)
+        picked = logp.gather(1, target.clamp(0, n - 1).reshape(-1, 1)).reshape(-1)
+        return torch.where(valid, -picked, torch.zeros_like(picked))
+
+    def choose_generate(self, logits):
+        """The existing generate policy's hard decision, with the same tie rule."""
+        if logits.shape[-1] == 1:
+            return logits.argmax(dim=-1)  # A disabled output policy only has STOP.
+        flags = tuple(operator_is_structural(op) for op in
+                      (*self._generate_binary_ops, *self._generate_unary_ops)) + (True,)
+        return structural_argmax(logits, flags)
+
+    @property
+    def language_layer(self):
+        return self._language_layer_ref
+
+    def _structural_context(self, *, phase, input_stream=None):
+        """Get the owning SymbolSubSpace's structural context when present.
+
+        This is used by the forced/replay path as well as the ordinary router:
+        a recorded structural action remains a structural face, not a hidden
+        legacy call that loses its owner-selected stream and capability view.
+        Detached local harnesses deliberately return ``None`` and retain their
+        tensor-only compatibility path.
+        """
+        owner = getattr(self._symbol_space, 'subspace', self._symbol_space)
+        cache_name = ('_last_structural_compose_context'
+                      if phase == 'compose'
+                      else '_last_structural_generate_context')
+        cached = getattr(owner, cache_name, None) if owner is not None else None
+        if isinstance(cached, StructuralGrammarContext) and cached.phase == phase:
+            return cached
+        builder = getattr(owner, '_structural_grammar_context', None)
+        if callable(builder):
+            return builder(phase=phase, input_stream=input_stream)
+        return None
+
+    def _tree_layer(self, arity):
+        return self.language_layer.operation_layer
+
+    def choose_operation(self, state, row_gate, *, slots=1, op_prior=None,
+                         sample=True, masked_action=None, replay_action=None,
+                         allowance=None, rounds_left=None, reference_scope=None,
+                         previous_unary=None):
+        """The shared compose layer with the two newest occupied STM slots."""
+        buffer, depth = state[:2]
+        B, K, D = buffer.shape
+        n = min(2, K)
+        window_depth = depth.clamp(0, n)
+        source = (window_depth[:, None] - 1 - torch.arange(n, device=buffer.device)[None, :]).clamp_min(0)
+        window = buffer.gather(1, source[..., None].expand(B, n, D))
+        # Native leaves carry their projection coefficient separately from
+        # their full-presence form. A composed kernel result already encodes
+        # its activation as its norm, with identity in its unit direction.
+        window_activations = None
+        if len(state) >= 6:
+            magnitudes = torch.where(state[4] >= 0, state[5].abs(), buffer.norm(dim=-1))
+            window_activations = magnitudes.gather(1, source)
+        # STOP tests the whole sentence/STM depth, not the two-slot window.
+        limit = torch.as_tensor(slots, device=buffer.device)
+        stop_slots = torch.where(depth <= limit, n, 0)
+        # A STOP departure cannot improve already exact leaf read-back. This
+        # uses the same primed bank as reconstruction and the leaves' source
+        # identities, without cost evaluation, targets, or another random draw.
+        stop_exact = None
+        bank = getattr(self, '_compose_primed_bank', None)
+        if bank is not None:
+            from SentenceUnderstanding import readback_scores
+            identities = state[4].gather(1, source)
+            exact = []
+            for i in range(n):
+                scores = readback_scores(window[:, i].detach(), bank.codes.detach(),
+                    bank.weights.detach(), percept_width=bank.percept_width)
+                scores = scores.masked_fill(~(bank.valid & bank.byte_valid.any(-1)), -torch.inf)
+                winner = scores.argmax(-1, keepdim=True)
+                exact.append((identities[:, i] >= 0)
+                    & (bank.rows.gather(1, winner).squeeze(1) == identities[:, i])
+                    & (scores.gather(1, winner).squeeze(1) > 0))
+            live = torch.arange(n, device=buffer.device)[None] < window_depth[:, None]
+            stop_exact = ((torch.stack(exact, -1) | ~live).all(-1)
+                          & (depth > 0) & (depth <= n))
+        references = None
+        if reference_scope is not None:
+            from ReferenceContext import prepare_operands
+            scopes = reference_scope.gather(1, source[..., None].expand(B, n, 2))
+            positions = depth[:, None] - 1 - source
+            live_positions = depth[:, None] - 1 - torch.arange(K, device=buffer.device)[None]
+            orders = torch.where(live_positions >= 0, state[2], -1)
+            references = prepare_operands(window, scopes[..., 1], scopes[..., 0], positions,
+                                          rules=self._compose_binary_rules, unary_rules=self._compose_unary_rules,
+                                          bank=self._reference_bank,
+                                          live=(buffer, reference_scope[..., 1], orders,
+                                                reference_scope[..., 0].bitwise_and(1) != 0, live_positions),
+                                          active=(torch.arange(n, device=buffer.device)[None] < window_depth[:, None]) & row_gate.reshape(B, 1))
+        _, _, route = self.language_layer.operation_layer(
+            window, depth=window_depth, slots=stop_slots,
+            active=row_gate.reshape(B), sample=sample, masked_action=masked_action,
+            replay_action=replay_action, allowance=slots if allowance is None else allowance,
+            rounds_left=rounds_left, load_depth=depth,
+            stop_exact=stop_exact,
+            operand_activations=window_activations,
+            previous_unary=(None if previous_unary is None else previous_unary.gather(1, source)),
+            op_prior=op_prior, grammar_context=self._structural_context(
+                phase='compose', input_stream=buffer), reference_data=references)
+        position = (window_depth - 1 - route['position']).clamp_min(0)
+        choice = LanguageOperationChoice(
+            route['candidate'], route['kind'], position, route['op'],
+            route['valid'] & (route['kind'] != 0), route['probability'],
+            route['action'], route['valid'], route['alternatives'],
+            torch.where(route['valid'],
+                torch.log_softmax(torch.where(route['valid'][:, None],
+                    route['logits'], torch.zeros_like(route['logits'])), -1)
+                .gather(1, route['action'].clamp_min(0)[:, None]).squeeze(1), 0.),
+            route['departure_eligible'].sum(-1))
+        if reference_scope is None:
+            return choice
+        return choice, route['refs'], route['relations'], route['operands']
+
+    @staticmethod
+    def push_unary_history(history, active):
+        """Move each slot's last unary with the newest-first STM push."""
+        pushed = torch.cat((torch.full_like(history[:, :1], -1), history[:, :-1]), 1)
+        return torch.where(active.reshape(-1, 1), pushed, history)
+
+    @staticmethod
+    def update_unary_history(history, choice):
+        """A binary result has no last unary; an untouched slot keeps its own."""
+        binary = choice.applied & (choice.kind == 1)
+        folded = torch.cat((torch.full_like(history[:, :1], -1), history[:, 2:],
+                            torch.full_like(history[:, :1], -1)), 1)[:, :history.shape[1]]
+        history = torch.where(binary[:, None], folded, history)
+        unary = choice.applied & (choice.kind == 2)
+        position = torch.arange(history.shape[1], device=history.device)[None]
+        return torch.where(unary[:, None] & (position == choice.position[:, None]),
+                           choice.local_op[:, None], history)
+
+
+    @torch.compiler.disable
+    def resolve_lexical_references(self, owner, word_rows, concept_ids, actions, *, admit=True):
+        """Resolve the selected grammar's reference orders at capture time.
+
+        Operator-role metadata supplies the order, never a token list or a
+        perceptual depth. Inner reference phrases retain their chosen order.
+        Existing associations are resolved first; an unassociated word can
+        acquire testimony through interpret. Ambiguous associations stay unknown.
+        """
+        refs = concept_ids.clone()
+        orders = refs.new_full(refs.shape, -1)
+        if owner is None or not callable(getattr(owner, 'resolve_word_concept', None)):
+            return refs, orders
+        stack = []
+        requests = {}
+        for kind, local, word in actions.detach().to('cpu').tolist():
+            if kind < 0:
+                break
+            if kind == 0:
+                if not 0 <= word < refs.numel():
+                    raise ValueError('reference program leaf is out of bounds')
+                stack.append((word,))
+                continue
+            rules = self._compose_binary_rules if kind == 1 else self._compose_unary_rules
+            arity = 2 if kind == 1 else 1
+            if kind not in (1, 2) or not 0 <= local < len(rules) or len(stack) < arity:
+                raise ValueError('reference program has an invalid selected rule')
+            operands = stack[-arity:]
+            del stack[-arity:]
+            for role, order in getattr(rules[local], 'reference_orders', ()):
+                for leaf in operands[int(role[1:]) - 1]:
+                    requests.setdefault(leaf, order)
+            stack.append(tuple(leaf for operand in operands for leaf in operand))
+        for leaf, order in requests.items():
+            surface = owner.word_surface_for_row(int(word_rows[leaf]))
+            if surface is None or not owner.word_concepts(surface):
+                continue
+            word_id = owner.definitions.word(form=surface)
+            cid = owner.resolve_word_concept(surface, order=order, previous=int(refs[leaf]))
+            associated = [identity for identity in owner.word_concepts(surface)
+                          if owner._concept_source_order(identity) == order]
+            if admit and cid is None and not associated and word_id is not None and order > 0:
+                cid = owner.interpret.forward(word_id, order=order)
+            # A trial can request a new symbolization order but may not mint
+            # it. Its singleton has the source's point; retain that source
+            # address until the winning host closing admits the new identity.
+            refs[leaf] = (int(concept_ids[leaf]) if cid is None and not admit else
+                          -1 if cid is None else cid)
+            orders[leaf] = order if cid is None else owner._concept_source_order(cid)
+        return refs, orders
+
+    def program_meaning(self, entry, registry):
+        """Recover one selected meaning from its owned compose program.
+
+        A folded root is deliberately insufficient here: lossy compose faces
+        such as ``part`` and ``whole`` erase one operand.  The answer program
+        retains the actual signed leaf tensors and native *addresses* beside
+        that root, so this host-boundary adapter rebuilds the canonical
+        ``[NP1, VP, NP2]`` meaning without treating a row, concept ID, or word
+        surface as semantic payload.  It only forms structure; it never calls
+        ``registry.execute`` or writes memory.
+
+        The adapter accepts a completed structural relation, an
+        unreduced lexical ``[NP1, VP, NP2]`` whose middle leaf is an already
+        registered native VP and whose frozen grammar-form provenance resolves
+        any shared-VP converse, or a direct-leaf unary form whose declared
+        operand is one full-width concept. Declared ``not``/``non`` wrappers
+        carry polarity. Nested operands retain complete child meanings with
+        local constituent references. The existing occurrence owner binds those
+        references at the completed observation/thought boundary; pure recovery
+        performs no durable write. A bare leaf cannot invent a description.
+        """
+        if not (hasattr(registry, "form") and entry is not None):
+            return None
+        actions = getattr(entry, "actions", None)
+        leaves = getattr(entry, "leaves", None)
+        concept_ids = getattr(entry, "concept_ids", None)
+        if not (torch.is_tensor(actions) and torch.is_tensor(leaves)
+                and torch.is_tensor(concept_ids)
+                and actions.ndim == 2 and actions.shape[1] >= 3
+                and leaves.ndim == 2 and concept_ids.ndim == 1
+                and int(concept_ids.numel()) == int(leaves.shape[0])):
+            return None
+        # Action and address metadata are structural, so the boundary may
+        # read their bounded host values.  Leaf payloads remain live tensors.
+        action_rows = actions.detach().to("cpu").tolist()
+        references = getattr(entry, 'reference_ids', None)
+        references = concept_ids if references is None else references
+        native_ids = references.detach().to("cpu").tolist()
+        supplied_values = getattr(entry, 'reference_values', None) is not None
+        if supplied_values:
+            leaves = entry.reference_values
+        elif bool((references != concept_ids).any()):
+            values = list(leaves.unbind(0))
+            store_reader = getattr(getattr(registry, 'space', None), '_closed_clause_store', None)
+            store = store_reader() if callable(store_reader) else None
+            for i in (references != concept_ids).nonzero().reshape(-1).tolist():
+                identity = int(native_ids[i])
+                if identity > 0:
+                    if store is not None and store.index_of_row(identity) is not None:
+                        point = store.point_of_row(identity)
+                        if point is None:
+                            # A relative clause has no concept point. Its
+                            # reference remains available to clause recovery;
+                            # this concept-operand adapter cannot form it.
+                            return None
+                    else:
+                        point = registry._payload(('sym', identity))
+                    values[i] = point.to(leaves)
+            leaves = torch.stack(values)
+            supplied_values = True
+        lexical_forms = getattr(entry, "lexical_forms", None)
+        if lexical_forms is None:
+            lexical_forms = (None,) * len(native_ids)
+        else:
+            try:
+                lexical_forms = tuple(lexical_forms)
+            except TypeError:
+                return None
+            if len(lexical_forms) != len(native_ids):
+                return None
+        stack = []
+        for row in action_rows:
+            kind, local, word = (int(row[0]), int(row[1]), int(row[2]))
+            if kind < 0:                       # terminal action padding
+                break
+            if kind == 0:
+                if not 0 <= word < int(leaves.shape[0]):
+                    return None
+                stack.append(("leaf", word))
+                continue
+            if kind == 1:
+                if not 0 <= local < len(self._compose_binary_rules) or len(stack) < 2:
+                    return None
+                # STM/derivation order is older-left, newer-right.
+                right, left = stack.pop(), stack.pop()
+                stack.append(("binary", self._compose_binary_rules[local], left, right))
+                continue
+            if kind == 2:
+                if not 0 <= local < len(self._compose_unary_rules) or not stack:
+                    return None
+                stack.append(("unary", self._compose_unary_rules[local], stack.pop()))
+                continue
+            return None
+        def relation(face, left_index, right_index, *, mode, polarity,
+                     expected_vp=None):
+            """Recover one direct-leaf relation through its grammar form.
+
+            ``face`` remains grammar metadata.  Native addresses select the
+            registered VP and retain provenance, while only the two selected
+            leaf tensors supply live semantic operand values.  The optional
+            VP check is what makes an unreduced lexical middle word a native
+            grammar identity rather than a token-name or numeric shortcut.
+            """
+            if not (0 <= left_index < len(native_ids)
+                    and 0 <= right_index < len(native_ids)):
+                return None
+            left_id, right_id = (
+                int(native_ids[left_index]), int(native_ids[right_index]))
+            if left_id <= 0 or right_id <= 0:
+                return None
+            left_ref, right_ref = ("sym", left_id), ("sym", right_id)
+            operation_form = getattr(registry, "operation_form", None)
+            if not callable(operation_form):
+                # Program recovery is a thought-grammar operation: it may
+                # not reconstruct a question through the retired query alias
+                # table.
+                return None
+            try:
+                operation, form = operation_form(face)
+            except ValueError:
+                return None
+            if len(operation.operand_roles) != 2:
+                return None
+            try:
+                if not supplied_values:
+                    canonical = registry.form(
+                        face, left_ref, right_ref, mode=mode, polarity=polarity)
+                else:
+                    supplied = {'I1': (leaves[left_index], left_ref),
+                                'I2': (leaves[right_index], right_ref)}
+                    source = ConceptualMeaning.from_payload(leaves[left_index][None],
+                        depth=1, layout='infix', mode=mode, polarity=polarity)
+                    canonical = registry._form_candidate(operation,
+                        registry.descriptors[operation.semantic_id],
+                        dict(zip(operation.operand_roles, (supplied[role] for role in form.permutation))),
+                        source=source)
+            except RuntimeError:
+                # A deliberately small ConceptualSpace may retain the
+                # structural family while lacking room to reserve every native
+                # thought VP.  That face is structural-only for this model; it
+                # must not turn a normal answer boundary into a lazy allocation
+                # or a crash.
+                if operation.semantic_id in getattr(
+                        registry, 'unavailable_operation_ids', ()):
+                    return None
+                raise
+            if not isinstance(canonical, ConceptualMeaning):
+                raise TypeError(
+                    "grammatical thought registry returned no conceptual meaning")
+            if expected_vp is not None and canonical.role_refs[1] != expected_vp:
+                return None
+            surface_values = {"I1": leaves[left_index], "I2": leaves[right_index]}
+            source_by_canonical_role = dict(zip(
+                operation.operand_roles, form.permutation))
+            live_by_role = {
+                role: surface_values[source_by_canonical_role[role]]
+                for role in operation.operand_roles}
+            canonical_roles = tuple(operation.operand_roles)
+            live_operands = tuple(live_by_role[role] for role in canonical_roles)
+            if any(value.shape != canonical.roles[0].shape for value in live_operands):
+                return None
+            roles = list(canonical.roles.unbind(0))
+            for role, value in live_by_role.items():
+                if role == "I1":
+                    roles[0] = value
+                elif role == "I2":
+                    roles[2] = value
+                else:
+                    return None
+            return ConceptualMeaning(
+                torch.stack(roles), canonical.role_mask, mode=canonical.mode,
+                polarity=canonical.polarity, role_refs=canonical.role_refs,
+                bindings=canonical.bindings, scope=canonical.scope)
+
+        def unary_concept_operation(face, operand_index, *, mode, polarity):
+            """Recover a direct-leaf unary operation with a concept operand.
+
+            A selected unary form such as ``quantize`` has no physical middle
+            VP word: its VP is the registry's one native grammar binding.
+            The completed program nevertheless owns the actual signed operand
+            leaf, which must remain the value supplied to the selected meaning
+            and its policy path.  Description/reference unary forms stay
+            deliberately unavailable here: their argument must be an existing
+            owned occurrence, and an action tree alone cannot manufacture one.
+            """
+            if not 0 <= operand_index < int(leaves.shape[0]):
+                return None
+            operation_form = getattr(registry, "operation_form", None)
+            if not callable(operation_form):
+                return None
+            try:
+                operation, form = operation_form(face)
+            except ValueError:
+                return None
+            if (len(operation.operand_roles) != 1
+                    or len(getattr(form, "operand_roles", ())) != 1
+                    or tuple(getattr(form, "permutation", ()))
+                    != tuple(operation.operand_roles)):
+                return None
+            descriptor = getattr(registry, "descriptors", {}).get(
+                operation.semantic_id)
+            # Only a direct full-width concept can be recovered from one
+            # leaf. A description/reference operation must wait for its real
+            # occurrence owner instead of treating a concept ID as one.
+            if (descriptor is None
+                    or tuple(getattr(descriptor, "argument_kinds", ()))
+                    != ("concept",)):
+                return None
+            try:
+                canonical = registry.form(
+                    face, leaves[operand_index], mode=mode, polarity=polarity)
+            except RuntimeError:
+                if operation.semantic_id in getattr(
+                        registry, "unavailable_operation_ids", ()):
+                    return None
+                raise
+            if not isinstance(canonical, ConceptualMeaning):
+                raise TypeError(
+                    "grammatical thought registry returned no conceptual meaning")
+            # Validate the fully formed result too, in particular rejecting
+            # a non-truth unary operation under an outer negation before the
+            # controller could open an unexecutable episode.
+            signature_for = getattr(registry, "signature_for", None)
+            if not callable(signature_for):
+                return None
+            try:
+                signature = signature_for(ConceptualMeaning(
+                    canonical.roles, canonical.role_mask,
+                    **dict(canonical.metadata(), mode="interrogative")))
+            except (RuntimeError, ValueError):
+                return None
+            if tuple(getattr(signature, "argument_kinds", ())) != ("concept",):
+                return None
+            role = operation.operand_roles[0]
+            slot = {"I1": 0, "I2": 2}.get(role)
+            if slot is None or not bool(canonical.role_mask[slot]):
+                return None
+            roles = list(canonical.roles.unbind(0))
+            roles[slot] = leaves[operand_index]
+            return ConceptualMeaning(
+                torch.stack(roles), canonical.role_mask, mode=canonical.mode,
+                polarity=canonical.polarity, role_refs=canonical.role_refs,
+                bindings=canonical.bindings, scope=canonical.scope)
+
+        if len(stack) == 3 and all(node[0] == "leaf" for node in stack):
+            # A relative sentence can arrive as its native lexical infix
+            # roles without a lossy binary fold.  The middle leaf must name a
+            # registry-owned VP; arbitrary symbol IDs are not grammar aliases.
+            left, middle, right = (int(node[1]) for node in stack)
+            if not 0 <= middle < len(native_ids):
+                return None
+            vp_id = int(native_ids[middle])
+            if vp_id <= 0:
+                return None
+            vp_ref = ("sym", vp_id)
+            signature_for = getattr(registry, "signature_for", None)
+            if not callable(signature_for):
+                return None
+            if not (0 <= left < len(native_ids) and 0 <= right < len(native_ids)):
+                return None
+            try:
+                probe = ConceptualMeaning(
+                    torch.stack((leaves[left], leaves[middle], leaves[right])),
+                    torch.ones(3, dtype=torch.bool, device=leaves.device),
+                    mode="interrogative",
+                    role_refs=(("sym", int(native_ids[left])), vp_ref,
+                               ("sym", int(native_ids[right]))))
+                operation = signature_for(probe).operation
+            except (RuntimeError, ValueError):
+                return None
+            form_id = lexical_forms[middle]
+            if form_id is None:
+                # A canonical VP may serve multiple grammar-spelled forms
+                # (``part`` and its converse ``whole``).  Older captures have
+                # no form provenance, so only an unambiguous family remains
+                # safe; choosing declaration order would silently reverse
+                # operands for a lexical converse.
+                forms = tuple(getattr(operation, "forms", ()) or ())
+                if len(forms) != 1:
+                    return None
+                form_id = forms[0].structural_id
+            if not isinstance(form_id, str):
+                return None
+            form_lookup = getattr(registry, "operation_form", None)
+            if not callable(form_lookup):
+                return None
+            try:
+                form_operation, _form = form_lookup(form_id)
+            except ValueError:
+                return None
+            if form_operation.semantic_id != operation.semantic_id:
+                return None
+            return relation(
+                form_id, left, right, mode="assertive",
+                polarity=True, expected_vp=vp_ref)
+
+        if len(stack) != 1:
+            return None
+
+        def semantic_tree(node):
+            # Only a SELECTED surface rule licenses this projection. There is
+            # no word list and no guessed head of lift/lower/verb/negation.
+            # Keeping the entire right subtree preserves nested descriptions,
+            # mode and scope instead of reducing every phrase to a noun index.
+            # A legal configured sentence can make a left-deep tree longer
+            # than Python's recursion limit. Preserve the same projection in
+            # postorder without imposing another sentence-length bound.
+            pending, projected = [(node, False)], []
+            while pending:
+                current, visited = pending.pop()
+                kind = current[0]
+                if kind == "leaf":
+                    projected.append(current)
+                elif kind == "binary" and getattr(current[1], 'head_role', 0) and getattr(current[1], 'clause_form', None) != 'VP':
+                    pending.append((current[1 + current[1].head_role], False))
+                elif visited:
+                    if kind == "unary":
+                        projected.append((kind, current[1], projected.pop()))
+                    else:
+                        right, left = projected.pop(), projected.pop()
+                        projected.append((kind, current[1], left, right))
+                else:
+                    pending.append((current, True))
+                    pending.extend((child, False) for child in reversed(current[2:]))
+            return projected[0]
+
+        def recover(node, level=0):
+            if level > 64 or node[0] == "leaf":
+                return None
+            name = getattr(node[1], "method_name", None)
+            if node[0] == "unary":
+                child = recover(node[2], level + 1)
+                polarity_effect = getattr(node[1], 'polarity_effect', None)
+                mode = getattr(node[1], 'meaning_mode', None)
+                if polarity_effect == 'exclude':
+                    # Only closing owns the expressed evidence pole. A request
+                    # adapter must not turn withdrawal into opposite truth.
+                    return None
+                if child is not None and (polarity_effect == 'invert' or mode is not None):
+                    if mode is None or child.mode != mode:
+                        result = ConceptualMeaning(
+                            child.roles, child.role_mask,
+                            **dict(child.metadata(), mode=mode or child.mode,
+                                   polarity=not child.polarity if polarity_effect == 'invert' else child.polarity),
+                            constituents=child.constituents)
+                        if result.mode == 'interrogative':
+                            try:
+                                registry.signature_for(result)
+                            except (RuntimeError, ValueError):
+                                return None
+                        return result
+                if node[2][0] == "leaf":
+                    return unary_concept_operation(
+                        name, int(node[2][1]), mode="assertive", polarity=True)
+                operands = (child,)
+            else:
+                if node[2][0] == node[3][0] == "leaf":
+                    return relation(name, int(node[2][1]), int(node[3][1]),
+                                    mode="assertive", polarity=True)
+                operands = tuple(
+                    int(item[1]) if item[0] == "leaf" else recover(item, level + 1)
+                    for item in node[2:])
+            if any(item is None for item in operands):
+                return None
+            try:
+                operation, form = registry.operation_form(name)
+                descriptor = registry.descriptors[operation.semantic_id]
+                vp = registry._reference((descriptor.domain, operation.semantic_id))
+                vp_value = registry._payload(vp)
+            except (KeyError, ValueError, RuntimeError):
+                return None
+            if len(operation.operand_roles) != len(operands):
+                return None
+            supplied = dict(zip(form.operand_roles, operands))
+            sources = dict(zip(operation.operand_roles, form.permutation))
+            values = [torch.zeros_like(vp_value), vp_value, torch.zeros_like(vp_value)]
+            refs = [None, vp, None]
+            children = []
+            for role, kind in zip(operation.operand_roles, descriptor.argument_kinds):
+                item = supplied[sources[role]]
+                slot = {"I1": 0, "I2": 2}[role]
+                if isinstance(item, ConceptualMeaning):
+                    # The same bounded illumination summary as registry.form.
+                    # The complete child, never this summary, owns its meaning.
+                    values[slot] = item.roles.sum(0) / item.role_mask.sum().sqrt()
+                    refs[slot] = ("constituent", len(children))
+                    children.append(item)
+                else:
+                    if kind == "description" or native_ids[item] <= 0:
+                        return None
+                    values[slot] = leaves[item]
+                    refs[slot] = ("sym", int(native_ids[item]))
+            return ConceptualMeaning(
+                torch.stack(values), torch.tensor(
+                    ["I1" in operation.operand_roles, True, "I2" in operation.operand_roles],
+                    device=leaves.device),
+                mode=getattr(node[1], 'meaning_mode', None) or 'assertive',
+                role_refs=tuple(refs), constituents=tuple(children))
+
+        return recover(semantic_tree(stack[0]))
+
+
+
+
+
+    # -- functional reverses (compiled reverse-loops plan, contract 2) ------
+    #
+    # The tied inverses of the reduce ops as fixed-shape tensor steps, so a
+    # bounded ``torch.while_loop`` can replay a recorded derivation backward.
+    # Only selected recorded operators execute. ``lift``/``lower`` reverse through their own
+    # ``generate`` (the balanced split, tied to the compose weights),
+    # ``chunk``/``sum`` through the residual against a retained constituent,
+    # ``not``/``non`` through themselves. Lossy folds use a bounded, masked
+    # compose-candidate search; a missing inverse reports unavailability.
+
+    def reverse_inverses(self, ops=None, required=None):
+        """The tied inverses the binary reverses need, computed once per
+        traversal: one ``W^-1`` per lift/lower op (``None`` for the
+        others), so a loop body applies a ready matrix instead of
+        rebuilding the LDU factors (and saving them for backward) at every
+        step."""
+        if ops is None:
+            binary = self._tree_layer(2)
+            ops = list(binary.ops) if binary is not None else ()
+        out = []
+        for index, op in enumerate(ops):
+            gl = getattr(op, "gl", op)
+            if isinstance(gl, SurfaceLayer):
+                out.append(torch.linalg.inv(gl.marker_map.weight))
+                continue
+            # Verb and adverb inherit Lift's Sigma, but do not use it in
+            # their actual compose operation.
+            if getattr(gl, "inverse_kind", None) == "gain":
+                out.append(None)
+                continue
+            inner = getattr(gl, "_sigma", None)
+            if inner is None:
+                inner = getattr(gl, "_pi", None)
+            layer = getattr(inner, "layer", None) if inner is not None else None
+            if layer is not None and hasattr(layer, "functional_Winverse") \
+                    and hasattr(inner, "generate_functional"):
+                if required is None:
+                    out.append(layer.functional_Winverse())
+                elif torch.compiler.is_compiling():
+                    out.append(torch.cond(
+                        required[index],
+                        lambda: layer.functional_Winverse(),
+                        lambda: torch.eye(
+                            layer.nOutput, layer.nInput,
+                            device=layer.raw_L.device, dtype=layer.raw_L.dtype),
+                        ()))
+                else:
+                    out.append(layer.functional_Winverse()
+                               if bool(required[index]) else None)
+            else:
+                out.append(None)
+        return out
+
+    def reverse_binary_step(self, parent, op_local, valid, reference=None,
+                            inverses=None, reference_side="right", ops=None,
+                            basis=None, basis_valid=None, candidate_limit=16,
+                            basis_priming=None, return_status=False, *, free=False,
+                            left_basis=None, right_basis=None, case_bank=None):
+        """``(left, right)`` ``[B, D]`` of one recorded binary fold.
+
+        ``parent`` is the folded slot; ``op_local`` ``[B]`` the recorded
+        local op index; ``valid`` ``[B]`` whether the step happened on the
+        row (an invalid row returns ``(parent, parent)``); ``reference``
+        ``[B, D]`` (optional) the retained constituent reference of the
+        newest operand (the dictionary row the word was pushed with), used
+        by the residual reverses; ``inverses`` the list ``reverse_inverses``
+        returned (optional; computed here otherwise).
+        """
+        if ops is None:
+            binary = self._tree_layer(2)
+            if binary is None:
+                raise RuntimeError("LanguageSpace requires a CS binary tree layer")
+            ops = list(binary.ops)
+        if not ops:
+            return (parent, parent, valid.to(torch.bool)) if return_status else (parent, parent)
+        if torch.compiler.is_compiling():
+            # Concept width is a model setting, unlike the sentence length.
+            # A symbolic width gives cond a Max(1, 2*D) stride for batch 1,
+            # which its branch metadata merger cannot represent.
+            torch._dynamo.mark_static(parent, -1)
+        B, D = int(parent.shape[0]), int(parent.shape[-1])
+        has_reference = torch.is_tensor(reference)
+        ref = reference.detach() if has_reference else torch.zeros_like(parent)
+        basis = basis if torch.is_tensor(basis) else None
+        if isinstance(reference_side, tuple):
+            right_side, known = reference_side
+        else:
+            right_side = torch.full_like(valid, reference_side == "right", dtype=torch.bool)
+            known = torch.full_like(valid, has_reference, dtype=torch.bool)
+        sides = torch.stack((right_side.reshape(B), known.reshape(B)), dim=1)
+        operands = torch.stack((parent, ref), dim=1)
+        raw_local = op_local.reshape(B)
+        local = raw_local.clamp(0, len(ops) - 1)
+        live = valid.reshape(B).to(torch.bool) & (raw_local >= 0) & (raw_local < len(ops))
+        # A third plane carries availability through cond with the same
+        # independent contiguous storage as the two children.
+        result = torch.stack((parent, parent, torch.ones_like(parent)), dim=1)
+        compiling = torch.compiler.is_compiling()
+        indices = (range(len(ops)) if compiling else
+                   sorted(set(local[live].detach().cpu().tolist())))
+        for index in indices:
+            op = ops[index]
+            W_inv = inverses[index] if inverses is not None else None
+            selected = live & (local == index)
+
+            def apply(values, side, row_mask):
+                # Mask before nonlinear/inverse work: a zero downstream
+                # gradient does not rescue 0*NaN from an inactive row.
+                values = torch.where(row_mask[:, None, None], values, torch.zeros_like(values))
+                side = side & row_mask[:, None]
+                candidate_valid = (basis_valid & row_mask[:, None]
+                                   if basis_valid is not None else None)
+                a, b, available = self._reverse_of_binary_op(
+                    op, values[:, 0], values[:, 1] if has_reference else None,
+                    W_inv, (side[:, 0], side[:, 1]), basis, candidate_valid,
+                    candidate_limit, basis_priming=basis_priming, free=free,
+                    left_basis=left_basis, right_basis=right_basis, case_bank=case_bank)
+                return torch.stack((a, b, available[:, None].expand_as(a).to(a.dtype)), dim=1)
+
+            if compiling:
+                pair = torch.cond(
+                    selected.any(), apply,
+                    lambda values, side, row_mask: torch.stack(
+                        (values[:, 0], values[:, 0], torch.ones_like(values[:, 0])), dim=1),
+                    (operands, sides, selected))
+            else:
+                pair = apply(operands, sides, selected)
+            result = torch.where(selected[:, None, None], pair, result)
+        if return_status:
+            unavailable = valid.reshape(B).bool() & (~live | (result[:, 2, 0] < .5))
+            return result[:, 0], result[:, 1], unavailable
+        return result[:, 0], result[:, 1]
+
+    def _reverse_of_binary_op(self, op, parent, reference, W_inv=None,
+                              reference_side="right", basis=None, basis_valid=None,
+                              candidate_limit=16, *, basis_priming=None, free=False,
+                              left_basis=None, right_basis=None, case_bank=None):
+        op = getattr(op, "gl", op)          # the reducer wraps grammar layers
+        sigma = getattr(op, "_sigma", None)
+        pi = getattr(op, "_pi", None)
+        inverse = getattr(op, "inverse_kind", None)
+        B = parent.shape[0]
+        yes = torch.ones(B, dtype=torch.bool, device=parent.device)
+        on_right, known = reference_side
+        ref = reference if reference is not None else torch.zeros_like(parent)
+
+        if inverse == 'case_search':
+            if case_bank is None:
+                return torch.zeros_like(parent), torch.zeros_like(parent), ~yes
+            from CaseSelection import search_cases
+            return search_cases(case_bank, parent)
+
+        if reference is None and basis is not None and inverse is not None:
+            # The input's free read-back has neither an occurrence operand
+            # nor a balanced pseudo-split. Both children come from the same
+            # primed bank used by its byte scorer and the reconstruction gate.
+            return self._bounded_binary_reconstruction(
+                op, parent, ref, on_right, known, basis, basis_valid, candidate_limit,
+                left_priming=basis_priming, right_priming=basis_priming,
+                left_basis=left_basis, right_basis=right_basis,
+                chooser=self.decomposition_chooser)
+
+        def oriented(remainder):
+            return (torch.where(on_right[:, None], remainder, ref),
+                    torch.where(on_right[:, None], ref, remainder))
+
+        def finish(left, right, available):
+            return self._finish_binary_inverse(
+                op, parent, ref, on_right, known, left, right, available,
+                basis, basis_valid, candidate_limit, basis_priming=basis_priming)
+
+        if inverse == "surface":
+            # A reconstruction witness belongs only to this occurrence. Free
+            # generation instead uses the operator's learned marker prior.
+            generated_left, generated_right = op.generate(parent)
+            if reference is None:
+                return generated_left, generated_right, yes
+            from_left = op.reconstruct(parent, ref, "left")
+            inverse = W_inv if W_inv is not None else torch.linalg.inv(op.marker_map.weight)
+            from_right = (F.linear(parent - ref - op.marker_map.bias, inverse), ref)
+            left = torch.where(on_right[:, None], from_right[0], from_left[0])
+            right = torch.where(on_right[:, None], from_right[1], from_left[1])
+            return (torch.where(known[:, None], left, generated_left),
+                    torch.where(known[:, None], right, generated_right), yes)
+
+        # These subclasses own inherited Sigma modules which are not their
+        # compose operator. Only lift/lower use the affine inverse below.
+        if inverse == "fold":
+            inner = sigma if sigma is not None else pi
+            if inner is not None and hasattr(inner, "generate_functional"):
+                if not hasattr(inner.layer, "functional_reverse"):
+                    return self._bounded_binary_reconstruction(
+                        op, parent, ref, on_right, known, basis, basis_valid,
+                        candidate_limit, left_priming=basis_priming, right_priming=basis_priming,
+                chooser=self.decomposition_chooser)
+                left, right = inner.generate_functional(
+                    parent, W_inv=W_inv, reference=reference,
+                    reference_side=(on_right, known))
+                return left, right, yes
+        if inverse == "residual":
+            scale = op.residual_scale
+            left, right = oriented(parent * scale - ref)
+            half = parent * (scale * .5)
+            return (torch.where(known[:, None], left, half),
+                    torch.where(known[:, None], right, half), yes)
+        if inverse == "right":
+            # The marker is the discarded LEFT operand.
+            usable = known & ~on_right
+            return finish(torch.where(usable[:, None], ref, torch.zeros_like(ref)), parent, usable)
+        if inverse == "left":
+            # A two-slot contextual bind passes its left operand. No live
+            # binding context from a later sentence may enter this inverse.
+            usable = known & on_right
+            return finish(parent, torch.where(usable[:, None], ref, torch.zeros_like(ref)), usable)
+        if inverse == "product":
+            nonzero = ref.abs() > 1e-8
+            remainder = parent / torch.where(nonzero, ref, torch.ones_like(ref))
+            remainder = torch.where(nonzero, remainder, torch.zeros_like(remainder))
+            left, right = oriented(remainder)
+            return finish(left, right, known & nonzero.all(dim=-1))
+        if inverse == "gain":
+            usable = known & on_right
+            left = getattr(op, op.witness_inverse)(parent, ref)
+            # The spectral inverse requires the right operand. A missing
+            # one is explicit; it is never the parent's inherited Sigma.
+            return finish(torch.where(usable[:, None], left, torch.zeros_like(left)),
+                          torch.where(usable[:, None], ref, torch.zeros_like(ref)), usable)
+        if inverse == "search":
+            return self._bounded_binary_reconstruction(
+                op, parent, ref, on_right, known, basis, basis_valid, candidate_limit,
+                left_priming=basis_priming, right_priming=basis_priming,
+                chooser=self.decomposition_chooser)
+        return torch.zeros_like(parent), torch.zeros_like(parent), ~yes
+
+    def _finish_binary_inverse(self, op, parent, reference, on_right, known,
+                               left, right, available, basis, basis_valid, limit, *, basis_priming=None):
+        """Only rows missing sufficient witnesses need candidate search."""
+        if basis is None or basis_valid is None:
+            return left, right, available
+        base = torch.stack((left, right, available[:, None].expand_as(left).to(left.dtype)), dim=1)
+        operands = torch.stack((parent, reference), dim=1)
+        sides = torch.stack((on_right, known), dim=1)
+
+        def search(values, side):
+            a, b, ready = self._bounded_binary_reconstruction(
+                op, values[:, 0], values[:, 1], side[:, 0], side[:, 1],
+                basis, basis_valid, limit, left_priming=basis_priming, right_priming=basis_priming,
+                chooser=self.decomposition_chooser)
+            return torch.stack((a, b, ready[:, None].expand_as(a).to(a.dtype)), dim=1)
+
+        if torch.compiler.is_compiling():
+            fallback = torch.cond((~available).any(), search,
+                                  lambda values, side: base.clone(), (operands, sides))
+        elif bool((~available).any()):
+            fallback = search(operands, sides)
+        else:
+            return left, right, available
+        result = torch.where(available[:, None, None], base, fallback)
+        return result[:, 0], result[:, 1], result[:, 2, 0] > .5
+
+    @staticmethod
+    def _bounded_binary_reconstruction(op, parent, reference, on_right, known,
+                                       basis, basis_valid, candidate_limit, *,
+                                       left_valid=None, right_valid=None,
+                                       left_priming=None, right_priming=None,
+                                       left_basis=None, right_basis=None,
+                                       chooser=None, return_details=False):
+        """Reconstruction-owned hard pair, initially least residual; no straight-through search gradient.
+
+        At most K prototypes per side and K squared pairs, K=candidate_limit.
+        Retrieval indices and any supplied reference are detached. Dictionary
+        candidates are detached constants. Residuals are relative to the
+        parent's mean square. The trial comparison trains the compose chooser.
+        This is an approximate reconstruction; recomposition and child fidelity
+        must be measured separately. No candidate means unavailable, never an
+        identity pseudo-inverse. Callers own the snapshot and its row masks.
+        """
+        B, D = parent.shape
+        absent = torch.zeros(B, dtype=torch.bool, device=parent.device)
+        if basis is None or basis_valid is None or int(basis.shape[1]) == 0:
+            return torch.zeros_like(parent), torch.zeros_like(parent), absent
+        K = min(max(1, int(candidate_limit)), int(basis.shape[1]))
+        from SentenceUnderstanding import readback_scores
+        def shortlist(valid, priming, candidates):
+            candidates = (basis if candidates is None else candidates).detach()
+            valid = basis_valid if valid is None else basis_valid & valid
+            priming = torch.ones_like(valid, dtype=parent.dtype) if priming is None else priming
+            scores = readback_scores(parent.detach(), candidates, priming)
+            indices = scores.masked_fill(~valid, -torch.inf).topk(K, dim=-1).indices
+            # Top-k chooses the search set, not operand order. Preserve bank
+            # order for equal-residual pairs (commutative operations otherwise
+            # reverse a pair merely because their parent scores swapped).
+            indices = indices.sort(dim=-1).values
+            candidates = candidates.gather(1, indices[:, :, None].expand(B, K, D))
+            active = valid.gather(1, indices)
+            return torch.where(active[:, :, None], candidates, 0.), active, indices
+        left_candidates, left_active, left_indices = shortlist(left_valid, left_priming, left_basis)
+        right_candidates, right_active, right_indices = shortlist(right_valid, right_priming, right_basis)
+        older = left_candidates[:, :, None, :].expand(B, K, K, D)
+        newer = right_candidates[:, None, :, :].expand(B, K, K, D)
+        reference = reference.detach()
+        older = torch.where((known & ~on_right)[:, None, None, None],
+                            reference[:, None, None, :], older)
+        newer = torch.where((known & on_right)[:, None, None, None],
+                            reference[:, None, None, :], newer)
+        allowed = left_active[:, :, None] & right_active[:, None, :]
+        folded = older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer)
+        if getattr(op, 'same_reference_idempotent', False):
+            same = left_indices[:, :, None] == right_indices[:, None, :]
+            # A known occurrence is not identified by an unrelated basis row.
+            same = same & ~known[:, None, None] & (older == newer).all(-1)
+            folded = torch.where(same[..., None], Ops._code_direction(older), folded)
+        residual = (folded - parent[:, None, None, :]).square().mean(-1)
+        energy = parent.square().mean(-1)[:, None, None]
+        # Exact zero origins use the existing Error squared-penalty convention;
+        # no floor changes any positive parent scale.
+        residual = residual / torch.where(energy > 0, energy, torch.ones_like(energy))
+        # The shortlist and eligibility are unchanged. Context learns only
+        # through the separate teacher loss, never through candidate codes.
+        def candidate_features(candidates, indices, priming):
+            energy = candidates.square().sum(-1)
+            activation = (parent.detach()[:, None] * candidates).sum(-1) / torch.where(
+                energy > 0, energy, torch.ones_like(energy))
+            heat = (torch.ones_like(activation) if priming is None else
+                    priming.detach().gather(1, indices))
+            return activation, heat
+        la, lp = candidate_features(left_candidates, left_indices, left_priming)
+        ra, rp = candidate_features(right_candidates, right_indices, right_priming)
+        features = torch.stack((-residual.detach(), la[:, :, None].expand_as(residual),
+            ra[:, None, :].expand_as(residual), lp[:, :, None].expand_as(residual),
+            rp[:, None, :].expand_as(residual)), -1)
+        if chooser is None:
+            selected = residual.masked_fill(~allowed, torch.inf).flatten(1).argmin(-1)
+            logits = -residual.detach().masked_fill(~allowed, torch.inf).flatten(1)
+            logits = torch.where(allowed.flatten(1).any(-1)[:, None], logits, 0.)
+        else:
+            selected, _, logits = chooser(features, allowed)
+        gather = selected[:, None, None].expand(B, 1, D)
+        hard_left = older.reshape(B, K * K, D).gather(1, gather).squeeze(1)
+        hard_right = newer.reshape(B, K * K, D).gather(1, gather).squeeze(1)
+        available = left_active.any(-1) & right_active.any(-1)
+        hard_left = torch.where(available[:, None], hard_left, 0.)
+        hard_right = torch.where(available[:, None], hard_right, 0.)
+        result = (hard_left.detach(), hard_right.detach(), available)
+        if return_details:
+            return (*result, dict(logits=logits, selected=selected, allowed=allowed,
+                left_indices=left_indices, right_indices=right_indices, features=features))
+        return result
+
+    @staticmethod
+    def decoder_eligibility(parent, lefts, rights, available, binary_ops,
+                            basis, basis_valid, *, case_bank=None):
+        """A supported pair takes precedence over a single-symbol projection.
+
+        Use the pair search's squared reconstruction residual, compared with
+        the best one-code least-squares explanation (the activation used by
+        readback_scores). There is no tunable purity cutoff. Equal fits prefer
+        two readable, progressing children, including a known chunk's parts.
+        An inverse that merely repeats its parent is not a decomposition.
+        A tie between different one-code explanations is not singular.
+        """
+        binary_count = len(binary_ops)
+        singular = torch.zeros_like(parent[:, 0], dtype=torch.bool)
+        pair_masks = []
+        if basis is None or basis_valid is None or basis.shape[1] == 0:
+            return torch.zeros_like(available)
+        bank = basis.detach()
+        value = parent.detach()
+        valid = basis_valid & bank.square().sum(-1).gt(0)
+        denominator = bank.square().sum(-1).clamp_min(torch.finfo(bank.dtype).tiny)
+        activation = (value[:, None] * bank).sum(-1) / denominator
+        residual = (value[:, None] - activation[..., None] * bank).square().mean(-1)
+        residual = residual.masked_fill(~valid, torch.inf)
+        best = residual.amin(-1)
+        singular = (valid & residual.eq(best[:, None])).sum(-1).eq(1) & value.ne(0).any(-1)
+        for index, wrapped in enumerate(binary_ops):
+            op = getattr(wrapped, 'gl', wrapped)
+            left, right = lefts[index].detach(), rights[index].detach()
+            left_readable = (valid & (bank == left[:, None]).all(-1)).any(-1)
+            right_readable = (valid & (bank == right[:, None]).all(-1)).any(-1)
+            progress = left.ne(value).any(-1) & right.ne(value).any(-1)
+            if getattr(op, 'inverse_kind', None) == 'case_search':
+                if case_bank is None:
+                    pair_masks.append(torch.zeros_like(singular))
+                    continue
+                from CaseSelection import select_cases, fold_cases
+                li = (case_bank.codes[None] - left[:, None]).square().sum(-1).argmin(-1)
+                ri = (case_bank.codes[None] - right[:, None]).square().sum(-1).argmin(-1)
+                folded = fold_cases(select_cases(case_bank, case_bank.ids[li], case_bank.ids[ri]))
+            else:
+                folded = left if getattr(op, 'reconstructs_left', False) else op.compose(left, right)
+                if getattr(op, 'same_reference_idempotent', False):
+                    folded = torch.where(left.eq(right).all(-1)[:, None], Ops._code_direction(left), folded)
+            pair_error = (folded.detach() - value).square().mean(-1)
+            pair_masks.append(available[:, index] & left_readable & right_readable
+                              & progress & (pair_error <= best))
+        pairs = (torch.stack(pair_masks, -1) if pair_masks else
+                 available[:, :0])
+        compound = pairs.any(-1)
+        unaries = available[:, binary_count:-1] & (~compound & ~singular)[:, None]
+        return torch.cat((pairs, unaries, (singular & ~compound)[:, None]), -1)
+
+    def generate_unary_step(self, x, op_local, valid, *, return_status=False):
+        """Decode a unary through its declared generate face, never its journal."""
+        result = x.clone()
+        available = torch.zeros_like(valid, dtype=torch.bool)
+        for index, wrapped in enumerate(self._generate_unary_ops):
+            selected = valid.bool() & (op_local == index)
+            op = getattr(wrapped, 'gl', wrapped)
+            if not getattr(op, 'reverse_dispatchable', True):
+                continue
+            value = op.generate(x)
+            result = torch.where(selected[:, None], value, result)
+            available = available | selected
+        return (result, valid.bool() & ~available) if return_status else result
+
+    def reverse_unary_step(self, x, op_local, valid, ops=None, return_status=False):
+        """Undo the selected unary, reporting unsupported operations explicitly.
+
+        Declared CS identities preserve their value. An unknown operation also
+        preserves the value, but is unavailable when ``return_status`` is true.
+        """
+        if ops is None:
+            unary = self._tree_layer(1)
+            ops = list(unary.unary_ops) if unary is not None else ()
+        if not ops:
+            return (x, valid.bool()) if return_status else x
+        if torch.compiler.is_compiling():
+            torch._dynamo.mark_static(x, -1)
+        # A stack slice can carry an unrelated symbolic capacity stride,
+        # including at batch 1. Cond requires matching branch metadata.
+        x = x.clone(memory_format=torch.contiguous_format)
+        B, D = int(x.shape[0]), int(x.shape[-1])
+        local = op_local.reshape(B)
+        live = valid.reshape(B).bool() & (local >= 0) & (local < len(ops))
+        available = torch.zeros_like(live)
+        result = x.clone()
+        compiling = torch.compiler.is_compiling()
+        indices = (range(len(ops)) if compiling else
+                   sorted(set(local[live].detach().cpu().tolist())))
+        for index in indices:
+            op = getattr(ops[index], "gl", ops[index])
+            selected = live & (local == index)
+            inverse = getattr(op, "inverse_kind", None)
+            if inverse == "identity":
+                # These declared operators are tensor identities on opaque
+                # concepts. Morphology's surface-token analysis cannot change
+                # this CS value and must not read a later token during replay.
+                available = available | selected
+                continue
+            if inverse != "unary":
+                continue
+            available = available | selected
+            def apply(value):
+                return op.reverse(value).clone()
+            undone = (torch.cond(selected.any(), apply, lambda value: value.clone(), (x,))
+                      if compiling else apply(x))
+            result = torch.where(selected[:, None], undone, result)
+        return (result, valid.reshape(B).bool() & ~available) if return_status else result
+
+    def forward_binary_step(self, left, right, op_local, valid):
+        """``[B, D]`` parent of one recorded binary fold applied forward:
+        the reducer's candidate of the recorded local op on the (older,
+        newer) pair, the value the forward's hard choice committed; an
+        invalid row keeps ``right`` (the newest operand).
+
+        The trace has already selected its rule. Evaluating every candidate
+        here would retain every operator's transforms for backward at every
+        replayed word. Execute only operators selected by at least one live
+        row; compilation uses conditional branches with the same row masks.
+        """
+        binary = self._tree_layer(2)
+        if binary is None:
+            raise RuntimeError("LanguageSpace requires a CS binary tree layer")
+        B, D = int(left.shape[0]), int(left.shape[-1])
+        ops = list(binary.ops)
+        local = op_local.reshape(B).clamp(0, len(ops) - 1)
+        live = valid.reshape(B).to(dtype=torch.bool)
+        window = torch.stack((left, right), dim=1)  # independent cond operand storage
+        grammar_context = self._structural_context(
+            phase='compose', input_stream=window)
+        result = right.clone()
+        compiling = torch.compiler.is_compiling()
+        indices = (range(len(ops)) if compiling else
+                   sorted(set(local[live].detach().cpu().tolist())))
+        for index in indices:
+            op = ops[index]
+            # Fullgraph traces every conditional body, including impossible
+            # compound branches. A case-less replay has no eligible compound.
+            if bool(getattr(getattr(op,'gl',op),'case_head_role',0)) and (
+                    grammar_context is None or grammar_context.selected_cases is None):
+                continue
+            selected = torch.logical_and(live, local == index)
+
+            def apply(w, previous, row_mask):
+                older, newer = w[:, :-1, :], w[:, 1:, :]
+                parent = (op.forward_with_grammar_context(
+                    older, newer, w, context=grammar_context)
+                          if grammar_context is not None
+                          and hasattr(op, "forward_with_grammar_context")
+                          else op.forward_with_context(older, newer, w)
+                          if hasattr(op, "forward_with_context")
+                          else op(older, newer))
+                return torch.where(
+                    row_mask.reshape(B, 1), parent.reshape(B, D), previous).clone()
+
+            if compiling:
+                result = torch.cond(
+                    selected.any(), apply,
+                    lambda w, previous, row_mask: previous.clone(),
+                    (window, result, selected))
+            else:
+                result = apply(window, result, selected)
+        return result
+
+    def forward_unary_step(self, x, op_local, valid):
+        """``[B, D]`` of one recorded unary rewrite applied forward (the
+        unary candidate of the recorded local op); an invalid row
+        keeps ``x``."""
+        unary = self._tree_layer(1)
+        if unary is None:
+            return x
+        ops = list(unary.unary_ops)
+        if not ops:
+            return x
+        B, D = int(x.shape[0]), int(x.shape[-1])
+        grammar_context = self._structural_context(
+            phase='compose', input_stream=x.unsqueeze(1))
+        outs = [unary._apply_op(
+            op, x.unsqueeze(1), grammar_context=grammar_context).reshape(B, D)
+                for op in ops]
+        stacked = torch.stack(outs, dim=1)                            # [B, R1, D]
+        R1 = len(ops)
+        idx = op_local.reshape(B).clamp(0, R1 - 1).reshape(B, 1, 1).expand(B, 1, D)
+        sel = stacked.gather(1, idx).reshape(B, D)
+        gate = valid.reshape(B, 1).to(dtype=torch.bool)
+        return torch.where(gate, sel, x)
+
+    def decode_where_ids(self, event, content_width):
+        """``(kind [B, N], rule_id [B, N])`` from an event slab's ``.where``
+        stamp (tensor form of ``Grammar.decode_where``): kind 0 = empty,
+        1 = terminal, 2 = rule; ``rule_id`` is valid where kind == 2."""
+        grammar = getattr(self, "_grammar", None) or TheGrammar
+        v_sym = int(getattr(grammar, "symbol_vocab_size", 0) or 0)
+        wid = torch.round(event[..., int(content_width)]).to(torch.long)
+        kind = torch.where(wid <= 0, torch.zeros_like(wid),
+                           torch.where(wid <= v_sym, torch.ones_like(wid),
+                                       torch.full_like(wid, 2)))
+        rule_id = (wid - v_sym - 1).clamp_min(0)
+        return kind, rule_id
+
+    @staticmethod
+    def local_op_from_rule_ids(rule_ids, rule_map):
+        """``(local [B], known [B])``: invert the local-op -> global-rule
+        map on recorded global ids (fixed shape)."""
+        B = int(rule_ids.shape[0])
+        if rule_map is None or int(rule_map.numel()) == 0:
+            return (torch.zeros(B, dtype=torch.long, device=rule_ids.device),
+                    torch.zeros(B, dtype=torch.bool, device=rule_ids.device))
+        m = rule_map.to(device=rule_ids.device, dtype=torch.long).reshape(1, -1)
+        hit = rule_ids.reshape(B, 1) == m
+        known = hit.any(dim=1)
+        local = hit.to(torch.long).argmax(dim=1)
+        return local, known
+
+
+    def relative_from_choices(self, rule_ids, valid, anchored=None):
+        """Per-row relative evidence from a scoped hard trace, never a reparse."""
+        relative = self._relative_cs_rule_ids.to(device=rule_ids.device)
+        chosen = (rule_ids[..., None] == relative).any(-1)
+        result = (chosen & valid).any(-1)
+        return result if anchored is None else result & anchored
+
+    @staticmethod
+    def _scatter_rule_counts(base, rule_ids, counts):
+        if (not torch.is_tensor(counts) or counts.dim() != 2
+                or int(counts.shape[1]) == 0
+                or int(rule_ids.numel()) == 0):
+            return base
+        width = min(int(counts.shape[1]), int(rule_ids.numel()))
+        ids = rule_ids[:width].to(device=base.device)
+        valid = torch.logical_and(ids >= 0, ids < int(base.shape[1]))
+        safe = ids.clamp(0, max(0, int(base.shape[1]) - 1))
+        columns = counts[:, :width] * valid.to(counts.dtype).reshape(1, width)
+        return base.index_add(1, safe, columns.to(base.dtype))
+
+    def record_category_observations(self, trace, active, *, concept_ids=None):
+        owner = self.language_layer._category_owner(self._symbol_space)
+        if (owner is None or not int(getattr(owner, '_category_n_roles', 0) or 0)
+                or not torch.is_tensor(active)):
+            return
+        ids, arities, masks = trace.choices()
+        positions = trace._choice_positions
+        if positions is None:
+            return
+        ids, arities, masks, positions, active = [
+            value.detach().cpu().tolist()
+            for value in (ids, arities, masks, positions, active)]
+        layer = self.language_layer.operation_layer
+        names = dict(zip(self._cs_binary_rule_ids.tolist(), layer.op_names or []))
+        names.update(zip(self._cs_unary_rule_ids.tolist(), layer.unary_names or []))
+        observations = []
+        for b, words in enumerate(active):
+            forest, row = [], []
+            for w, live in enumerate(words):
+                if not live:
+                    continue
+                forest.append(w)
+                for slot in range(3 * w, min(3 * w + 3, len(ids[b]))):
+                    if not masks[b][slot]:
+                        continue
+                    name = names.get(ids[b][slot])
+                    if arities[b][slot] == 2 and len(forest) >= 2:
+                        right, left = forest.pop(), forest.pop()
+                        if name and (left >= 0 or right >= 0):
+                            row.append((left, right, name))
+                        forest.append(-1)
+                    elif arities[b][slot] == 1:
+                        p = positions[b][slot]
+                        if 0 <= p < len(forest):
+                            leaf = forest[-1 - p]
+                            if name and leaf >= 0:
+                                row.append((leaf, -1, name))
+                            forest[-1 - p] = -1
+            observations.append(row)
+        owner._category_role_obs = observations
+        if torch.is_tensor(concept_ids):
+            # Serial positions address grammar words, not byte percepts.
+            # Learn from the admitted object references of this reading;
+            # looking up a word by a byte PID cannot recover that identity.
+            grid = concept_ids.detach().cpu().tolist()
+            owner._category_last_concept_ids = grid
+            role_index = owner._category_role_index
+            for b, row in enumerate(observations):
+                accumulated = {}
+                for left, right, method in row:
+                    for position, suffix in ((left, 'I1'), (right, 'I2')):
+                        column = role_index.get(f'{method}_{suffix}')
+                        if column is None or not 0 <= position < len(grid[b]):
+                            continue
+                        identity = int(grid[b][position])
+                        if identity < 0:
+                            continue
+                        vector = accumulated.setdefault(identity, [0.] * owner._category_n_roles)
+                        vector[column] += 1.
+                for identity, vector in accumulated.items():
+                    owner.observe_category_roles(identity, torch.tensor([vector]))
+            owner._category_role_obs = None
+
+    def compute_local_plan(self, symbolic_snapshot, depth):
+        B = symbolic_snapshot.shape[0]
+        n = min(2, symbolic_snapshot.shape[1])
+        live = depth.clamp(0, n)
+        source = (live[:, None] - 1 - torch.arange(n, device=depth.device)[None]).clamp_min(0)
+        x = symbolic_snapshot.gather(1, source[..., None].expand(B, n, symbolic_snapshot.shape[-1]))
+        layer = self.language_layer.operation_layer
+        _, _, route = layer(x, depth=live, slots=torch.where(depth <= 1, n, 0))
+        plan = x.new_zeros(B, self._n_rules)
+        for name, ids in (('binary_probabilities', self._cs_binary_rule_ids),
+                          ('unary_probabilities', self._cs_unary_rule_ids)):
+            plan = self._scatter_rule_counts(plan, ids, route[name].sum(1))
+        return plan / plan.sum(-1, keepdim=True).clamp_min(torch.finfo(plan.dtype).tiny)
+
+
+    def feedback_from_local_choices(
+            self, binary_ops, binary_valid, unary_op, unary_valid,
+            *, like):
+        """Convert the tree step's actual local choices to global feedback.
+
+        No chooser is re-run here.  LanguageSpace owns the local-to-global
+        grammar map and emits one normalized plan from the binary/unary
+        decisions that actually built the tree.
+        """
+        B = int(like.shape[0])
+        plan = like.new_zeros(B, int(self._n_rules))
+
+        def add(local_op, valid, rule_ids, current):
+            width = int(rule_ids.numel())
+            if width < 1 or int(self._n_rules) < 1:
+                return current
+            local = local_op.reshape(B).to(
+                device=current.device, dtype=torch.long)
+            active = valid.reshape(B).to(
+                device=current.device, dtype=torch.bool)
+            active = torch.logical_and(active, local >= 0)
+            active = torch.logical_and(active, local < width)
+            safe = local.clamp(0, width - 1)
+            global_ids = rule_ids.to(
+                device=current.device, dtype=torch.long
+            ).index_select(0, safe)
+            in_range = torch.logical_and(
+                global_ids >= 0, global_ids < int(self._n_rules))
+            active = torch.logical_and(active, in_range)
+            global_ids = global_ids.clamp(
+                0, max(0, int(self._n_rules) - 1))
+            values = active.to(dtype=current.dtype).reshape(B, 1)
+            return current.scatter_add(
+                1, global_ids.reshape(B, 1), values)
+
+        for local_op, valid in zip(tuple(binary_ops), tuple(binary_valid)):
+            plan = add(
+                local_op, valid, self._cs_binary_rule_ids, plan)
+        plan = add(unary_op, unary_valid, self._cs_unary_rule_ids, plan)
+        mass = plan.sum(dim=1, keepdim=True)
+        valid = mass > 0
+        return (
+            plan / mass.clamp_min(torch.finfo(plan.dtype).tiny),
+            valid)
+
+    def forward(self, symbolic_snapshot):
+        """The symbolic loop's compose step: run the grammar over the STM
+        snapshot (``SymbolSpace.forward``) and return the reduction plan.
+        Called as ``forward()`` like every other Space (meronomy fold-ladder
+        plan, "Loop placement")."""
+        self._symbol_space.forward(symbolic_snapshot)
+        return self.reduction_plan()
+
+    def reverse(self, symbolic_snapshot):
+        """The symbolic loop's generate step (``SymbolSpace.reverse``);
+        returns the reduction plan."""
+        self._symbol_space.reverse(symbolic_snapshot)
+        return self.reduction_plan()
+
+    # Legacy spellings of the two entries above (kept for older callers;
+    # the model calls ``forward`` / ``reverse``).
+    def compose(self, symbolic_snapshot):
+        return self.forward(symbolic_snapshot)
+
+    def generate(self, symbolic_snapshot):
+        return self.reverse(symbolic_snapshot)
+
+    @staticmethod
+    def _snapshot_plan_value(value):
+        """Detach the small grammar-plan surface from later C-stage writes."""
+        if torch.is_tensor(value):
+            return value.detach().clone()
+        if isinstance(value, RoutingState):
+            return RoutingState(
+                rules_by_space_role=LanguageSpace._snapshot_plan_value(
+                    value.rules_by_space_role),
+                selected_rules=LanguageSpace._snapshot_plan_value(
+                    value.selected_rules),
+                rule_probs=LanguageSpace._snapshot_plan_value(
+                    value.rule_probs),
+            )
+        if isinstance(value, dict):
+            return {key: LanguageSpace._snapshot_plan_value(item)
+                    for key, item in value.items()}
+        if isinstance(value, list):
+            return [LanguageSpace._snapshot_plan_value(item)
+                    for item in value]
+        if isinstance(value, tuple):
+            return tuple(LanguageSpace._snapshot_plan_value(item)
+                         for item in value)
+        return value
+
+    def reduction_plan(self):
+        """Immutable description of the grammar result for a CS-owned commit."""
+        coordinator = self._symbol_space.subspace
+        return {
+            "rules": self._snapshot_plan_value(coordinator.current_rules),
+            "routing": self._snapshot_plan_value(coordinator.routing_state),
+            "generation": int(getattr(coordinator, "_compose_generation", 0)),
+        }
+
+
+class SymbolSpace(Space):
+    """The unified grammar/symbol container (2026-06-21 SymbolSpace refactor,
+    Stage 3).
+
+    Relevance: SYMBOLIC HISTORY -- the QUADRATIC priming heat
+    (``build_semantic_heat`` / ``topk_heat``: activation spreading among
+    taxonomy peers; cog-psych selection history), which ALSO spreads
+    downward into the mereological level: intent priming and
+    readingAttention are this basis's downward projections (symbols
+    mapping onto the wholes that isolate words -- Architecture sec C).
+    ``relevance_weights()`` returns None until the heat rows are
+    projected into the CS inventory (open spec).
+
+    OWNS the ``SymbolSubSpace`` coordinator (the typed-STM stack + grammar
+    dispatch carrier) and is the home for the per-space_role SyntacticLayers and (Stage
+    4) the symbol tables. It is a transparent CONTAINER: every ``symbolSpace.X``
+    call site keeps working by FORWARDING to the held coordinator -- reads fall
+    through ``__getattr__``, and the plain-attr writes the coordinator reads back
+    internally (``_SYMBOLSPACE_FORWARD_WRITES`` + anything it already owns)
+    forward through ``__setattr__``. Registered submodules / parameters stay on
+    SymbolSpace.
+
+    It SUBCLASSES ``Space`` (SS is a peer perceptual tower alongside
+    PartSpace/WholeSpace, the third ``.what``/``.where`` carrier) but constructs
+    via ``nn.Module.__init__``, deliberately SKIPPING ``Space.__init__``'s
+    object/what/where/when VQ-basis construction this coordinator must not own.
+    The eight Space-contract members defined on BOTH ``Space`` and the held
+    ``SymbolSubSpace`` (``Reset`` / ``Start`` / ``End`` / ``paramUpdate`` /
+    ``set_sigma`` / ``getParameters`` / ``attach_knowledge`` / ``knowledge``) are
+    EXPLICITLY overridden below to delegate to the coordinator -- the inherited
+    ``Space`` versions would otherwise SHADOW it (``__getattr__`` only catches
+    *missing* attrs), breaking e.g. ``ss.Reset()``'s STM re-arm. Transparent
+    forwarding is byte-identical to the pre-refactor behaviour where
+    ``m.symbolSpace`` *was* the coordinator.
+    """
+
+    config_section = "SymbolSpace"
+
+    def __init__(self, perceptualSpace, conceptualSpace, wholeSpace,
+                 nPercepts, nConcepts, nSymbols, concept_dim, symbol_dim):
+        nn.Module.__init__(self)
+        self._codebook_parameter_version = 0
+        self._codebook_structure_versions = {}
+        self._codebook_owner_path = None
+        self.subspace = SymbolSubSpace(
+            perceptualSpace=perceptualSpace,
+            conceptualSpace=conceptualSpace,
+            wholeSpace=wholeSpace,
+            nPercepts=nPercepts,
+            nConcepts=nConcepts,
+            nSymbols=nSymbols,
+            concept_dim=concept_dim,
+            symbol_dim=symbol_dim,
+        )
+        # The coordinator owns grammar/STM state; its durable slot Bases and
+        # Encodings are registered exactly once on this Space.
+        self._adopt_subspace_modules()
+        # First-class scheduling boundary.  It holds a non-registering
+        # reference to this SymbolSpace, so LanguageLayer parameters and state
+        # remain registered exactly once under SymbolSubSpace.
+        self.languageSpace = LanguageSpace(self)
+        # LanguageSpace is held by SymbolSpace, not listed in model.spaces.
+        # Its reconstruction choosers join this Space's explicit params
+        # before getOptimizer walks the owners.
+        if self.languageSpace.generate_policy is not None:
+            self.params.extend(self.languageSpace.generate_policy.parameters())
+        self.params.extend(self.languageSpace.decomposition_chooser.parameters())
+        # SymbolSubSpace.__init__ pointed the home spaces' ``.symbolSpace``
+        # back-ref at ITSELF (the coordinator); re-point them at THIS container so
+        # ``perceptualSpace.symbolSpace is model.symbolSpace`` holds (the pipeline
+        # carry contract). ``attach_symbolSpace`` uses object.__setattr__ -> no
+        # nn.Module cycle.
+        for _sp in (perceptualSpace, conceptualSpace, wholeSpace):
+            if (_sp is not None and (not isinstance(_sp, WholeSpace)) and hasattr(_sp, 'attach_symbolSpace')):
+                _sp.attach_symbolSpace(self)
+
+    # The SS (symbol) bind leg is produced by ``forward_concept_to_symbol``
+    # below: the concept arrives THROUGH ``forward`` and the row-aligned symbol
+    # view is built from the concept's OWN codes (writing only the codebook this
+    # Space owns). The earlier reaches are both retired: ``forward_symbol`` (the
+    # SymbolSpace->WholeSpace reach) AND the later CS-mediated
+    # ``ConceptualSpace._build_symbol_leg`` (which dereferenced a stashed
+    # ``_model_symbolSpace`` and copied WholeSpace meta rows). The parallel body
+    # (``Models._forward_body``) computes ``SS_sub =
+    # symbolSpace.forward_concept_to_symbol(CS_sub)`` and hands it to
+    # ``cs.bind_streams(..., SS_sub=SS_sub)``; ``bind_streams`` no longer builds
+    # the leg.
+
+    # -- attribute forwarding to the held coordinator --------------------
+    def __getattr__(self, name):
+        # nn.Module.__getattr__ resolves registered submodules / params /
+        # buffers and real instance attrs first; everything else (the
+        # coordinator's API + Space-contract fields) forwards to the held
+        # SymbolSubSpace. Guarded so a lookup before ``subspace`` is
+        # registered raises cleanly instead of recursing.
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            sub = self.__dict__.get('_modules', {}).get('subspace')
+            if sub is not None:
+                return getattr(sub, name)
+            raise
+
+    def __setattr__(self, name, value):
+        # Submodules / parameters register on SymbolSpace. Plain-attr writes the
+        # coordinator already owns (or in the explicit forward set) forward to it
+        # so the coordinator's internal reads observe the external write.
+        if not isinstance(value, (nn.Module, nn.Parameter)):
+            sub = self.__dict__.get('_modules', {}).get('subspace')
+            if (sub is not None and name != 'subspace'
+                    and (name in _SYMBOLSPACE_FORWARD_WRITES
+                         or (hasattr(sub, name)
+                             and not hasattr(type(self), name)))):
+                # Forward DATA writes the subspace owns -- but NOT assignments to
+                # names SymbolSpace itself defines (its override methods /
+                # properties), so e.g. a test spying ``ss.Reset = fn`` replaces
+                # SymbolSpace's Reset rather than looping through the subspace.
+                setattr(sub, name, value)
+                return
+        super().__setattr__(name, value)
+
+    # -- Space-method OVERLAP: explicit overrides delegating to the subspace --
+    # These 8 members are defined on BOTH ``Space`` and the SymbolSubSpace; the
+    # inherited ``Space`` versions would shadow the subspace's (``__getattr__``
+    # only catches MISSING attrs), so we override them to run the subspace's
+    # implementation. (Step 2 of the decomposition migrates the grammar half UP
+    # into this Space; these delegations shrink as that lands.)
+    def Reset(self, *a, **k):
+        return self.subspace.Reset(*a, **k)
+
+    def Start(self, *a, **k):
+        return self.subspace.Start(*a, **k)
+
+    def End(self, *a, **k):
+        return self.subspace.End(*a, **k)
+
+    def paramUpdate(self, *a, **k):
+        return self.subspace.paramUpdate(*a, **k)
+
+    def set_sigma(self, *a, **k):
+        return self.subspace.set_sigma(*a, **k)
+
+    def getParameters(self, *a, **k):
+        return self.subspace.getParameters(*a, **k)
+
+    def attach_knowledge(self, *a, **k):
+        return self.subspace.attach_knowledge(*a, **k)
+
+    @property
+    def knowledge(self):
+        return self.subspace.knowledge
+
+    # -- the CS coupling interface: forward / reverse ---------------------
+    # CS interacts with SymbolSpace ONLY through these (the grammar compose /
+    # generate dispatch over a CS-space_role STM snapshot CS provides). Default-only
+    # grammars run inline (traceable under fullgraph=True); full-router grammars
+    # run in a @torch.compiler.disable eager island (their per-row rule-id
+    # bookkeeping is data-dependent host control flow dynamo cannot guard on; the
+    # products are host dicts read before captured regions, so the island changes
+    # no numerics). Moved here from Models._chart_compose_at_C / _ss_*_eager.
+    def forward(self, snap):
+        """Grammar COMPOSE over the STM snapshot (populates current_rules)."""
+        if snap is None:
+            return
+        if getattr(self, '_grammar_is_default_only', True):
+            self.compose(snap)
+        else:
+            self._compose_eager(snap)
+
+    def reverse(self, snap):
+        """Grammar GENERATE over the STM snapshot (populates generate_rules)."""
+        if snap is None:
+            return
+        if getattr(self, '_grammar_is_default_only', True):
+            self.generate(snap)
+        else:
+            self._generate_eager(snap)
+
+    @torch.compiler.disable
+    def _compose_eager(self, snap):
+        self.compose(snap)
+
+    @torch.compiler.disable
+    def _generate_eager(self, snap):
+        self.generate(snap)
+
+    # -- CS -> SS: the .forward()-mediated symbol leg --------------------------
+    def compute_symbolic_reference(
+            self, concept_event, concept_row, concept_activations,
+            concept_orders, active_rows, *, n_what):
+        """Expose one completed CS concept as a zero-dimensional reference.
+
+        SymbolSpace owns reference interpretation but no duplicate continuous
+        concept dictionary.  Its compiler-visible output is consequently the
+        row identity, signed activation, derivation order, and the positional
+        band that must survive the round trip.  ConceptualSpace alone decodes
+        that reference and commits the promoted conceptual event.
+        """
+        if not torch.is_tensor(concept_event) or concept_event.dim() != 3:
+            raise ValueError(
+                "symbolic reference expects concept event [B,N,D]")
+        B, N = int(concept_event.shape[0]), int(concept_event.shape[1])
+        if (not torch.is_tensor(concept_row)
+                or tuple(concept_row.reshape(B).shape) != (B,)
+                or not torch.is_tensor(concept_activations)
+                or tuple(concept_activations.shape) != (B, N)
+                or not torch.is_tensor(concept_orders)
+                or tuple(concept_orders.shape) != (B, N)):
+            raise ValueError(
+                "symbolic reference identity/order tensors do not align")
+        active = active_rows.reshape(B).to(
+            device=concept_event.device, dtype=torch.bool)
+        rows = concept_row.reshape(B, 1).expand(B, N).to(
+            device=concept_event.device, dtype=torch.long)
+        valid = torch.logical_and(active.reshape(B, 1), rows >= 0)
+        rows = torch.where(valid, rows, torch.full_like(rows, -1))
+        activations = torch.where(
+            valid, concept_activations,
+            torch.zeros_like(concept_activations))
+        band_start = int(n_what)
+        bands = concept_event[..., band_start:]
+        bands = torch.where(
+            valid.unsqueeze(-1), bands, torch.zeros_like(bands))
+        orders = torch.where(
+            valid, concept_orders, torch.full_like(concept_orders, -1))
+        return rows, activations, bands, orders, valid
+
+    def commit_word_reference_slab(
+            self, rows, activations, active_rows, *, orders=None, evidence=None):
+        """Own the word-aligned, quantized CSLang -> SymbolSpace handoff.
+
+        ConceptualSpace retains continuous ideas only in its eight-slot STM.
+        A completed word crosses into SymbolSpace as a sparse reference:
+        identity ``rows`` plus one signed activation.  Keeping this owner API
+        explicit prevents callers from replacing that compact representation
+        with a duplicate ``[B,W,concept_dim]`` concept history.
+        """
+        if (not torch.is_tensor(rows) or rows.dim() != 2
+                or not torch.is_tensor(activations)
+                or activations.dim() != 3
+                or int(activations.shape[-1]) != 1
+                or tuple(rows.shape) != tuple(activations.shape[:2])
+                or not torch.is_tensor(active_rows)
+                or tuple(active_rows.shape) != tuple(rows.shape)):
+            raise ValueError(
+                "word references require rows [B,W], activations [B,W,1], "
+                "and an aligned activity mask")
+        valid = active_rows.to(device=rows.device, dtype=torch.bool)
+        valid = torch.logical_and(valid, rows >= 0)
+        committed_rows = torch.where(
+            valid, rows, torch.full_like(rows, -1))
+        committed_activations = torch.where(
+            valid.unsqueeze(-1), activations,
+            torch.zeros_like(activations))
+        object.__setattr__(
+            self, "_word_reference_rows", committed_rows)
+        object.__setattr__(
+            self, "_word_reference_activations", committed_activations)
+        object.__setattr__(self, "_word_reference_mask", valid)
+        # Keep a supplied pair intact. A scalar-only serial reference has
+        # support on its expressed pole; it cannot manufacture a both value.
+        if evidence is None:
+            signed = committed_activations.squeeze(-1)
+            evidence = torch.stack((signed.clamp(0, 1), (-signed).clamp(0, 1)), -1)
+        if not torch.is_tensor(evidence) or evidence.shape != (*rows.shape, 2):
+            raise ValueError('word reference evidence requires an aligned pair')
+        torch._assert_async((torch.isfinite(evidence) & (evidence >= 0) & (evidence <= 1)).all(),
+                            'word reference evidence requires finite poles in [0, 1]')
+        object.__setattr__(self, '_word_reference_evidence',
+                           torch.where(valid[..., None], evidence.detach(), torch.zeros_like(evidence)))
+        if orders is not None:
+            if (not torch.is_tensor(orders)
+                    or tuple(orders.shape) != tuple(rows.shape)):
+                raise ValueError(
+                    "word reference orders must align with rows [B,W]")
+            object.__setattr__(
+                self, "_word_reference_orders",
+                torch.where(
+                    valid, orders, torch.full_like(orders, -1)))
+        return committed_activations
+
+    def _publish_symbol_snapshot(self, event, source=None, *,
+                                 prior_symbolic=None, language_plan=None):
+        """Return an SS-owned transient result carrier for one peer tick.
+
+        The carrier has no parameters and is intentionally not registered as a
+        second state path.  Its event is a zero-copy reference to ``event``;
+        ownership exists solely so a consumer can receive a read-only view and
+        the debug guard has a concrete owner to report.
+        """
+        if not torch.is_tensor(event):
+            return None
+        payload = event.unsqueeze(1) if event.dim() == 2 else event
+        if payload.dim() != 3:
+            return None
+        sub = SubSpace(
+            inputShape=(int(payload.shape[1]), int(payload.shape[-1])),
+            outputShape=(int(payload.shape[1]), int(payload.shape[-1])),
+            nInputDim=int(payload.shape[-1]), nOutputDim=int(payload.shape[-1]))
+        object.__setattr__(sub, "_owner_space", self)
+        if source is not None and not isinstance(source, SubSpaceView):
+            sub.copy_context(source)
+        object.__setattr__(sub, 'whereEncoding', self.subspace.whereEncoding)
+        object.__setattr__(sub, 'whenEncoding', self.subspace.whenEncoding)
+        sub.commit_event(self, payload)
+        if prior_symbolic is not None:
+            prior = (prior_symbolic.materialize(mode="event")
+                     if hasattr(prior_symbolic, "materialize")
+                     else prior_symbolic)
+            object.__setattr__(sub, "_prior_symbolic_snapshot", prior)
+        if language_plan is not None:
+            object.__setattr__(sub, "_language_plan", language_plan)
+        return sub
+
+    def forward_concept_to_symbol(self, concept_sub, *, prior_symbolic=None,
+                                  language_plan=None):
+        """Decode paired symbols from the argument's one code per concept.
+
+        A paired field produces [B, 2S, D], with positive and negative rows
+        interleaved. Gradients flow through evidence; the detached dictionary
+        names each concept once. Located, row-aligned input events retain
+        their band on both symbol rows. An opaque conceptual dictionary has
+        no band; its occurrence scope travels in the evidence field.
+        Serial event inputs without a paired field remain detached snapshots.
+        """
+        # The peer scheduler hands SS a completed CS tensor rather than the
+        # live mutable CS carrier: A(w+1) may already have reused that carrier
+        # when B(w) begins.  Keep the legacy SubSpace/read-view API as well so
+        # parallel callers remain unchanged.
+        raw_event = torch.is_tensor(concept_sub)
+        read_view = isinstance(concept_sub, SubSpaceView)
+        if concept_sub is None:
+            return None
+        acts = (None if raw_event or read_view
+                else getattr(concept_sub, '_concept_activations', None))
+        if raw_event:
+            event = concept_sub
+        else:
+            if concept_sub.is_empty() and not torch.is_tensor(acts):
+                return None
+            event = concept_sub.materialize()
+        if not torch.is_tensor(acts) and (event is None or event.dim() < 2):
+            return None
+        if torch.is_tensor(acts):
+            from ConceptEvidence import decode, symbols
+            codes = getattr(concept_sub, '_concept_codes', None)
+            row_events = codes is None
+            if codes is None:
+                if event is None:
+                    raise ValueError('paired symbol read requires concept codes')
+                if event.ndim == 2:
+                    event = event.unsqueeze(0)
+                codes = event.detach().mean(dim=0)
+            if codes.ndim not in (2, 3) or codes.shape[-2] < len(acts):
+                raise ValueError('paired symbol read requires one code per concept')
+            codes = codes[..., :len(acts), :].detach().clone()
+            cb = getattr(getattr(self, 'subspace', None), 'what', None)
+            W = cb.getW() if cb is not None and hasattr(cb, 'getW') else None
+            if W is not None:
+                n, d = min(codes.shape[-2], len(W)), min(codes.shape[-1], W.shape[-1])
+                with torch.no_grad():
+                    addresses = getattr(concept_sub, '_concept_inventory_rows', None)
+                    if addresses is None:
+                        W[:n, :d].copy_(codes[:n, :d].to(W))
+                    else:
+                        valid = (addresses >= 0) & (addresses < len(W))
+                        values = codes.permute(1, 0, 2) if codes.ndim == 3 else codes
+                        W[addresses[valid], :d] = values[valid, :d].to(W)
+            symbol_event = decode(acts, codes)
+            width = int(getattr(self.subspace, 'nWhat', codes.shape[-1]))
+            if row_events and event.shape[-1] > width:
+                band = event.detach()[..., width:].repeat_interleave(2, dim=1)
+                symbol_event = torch.cat((symbol_event[..., :width], band), dim=-1)
+            leg = self._publish_symbol_snapshot(
+                symbol_event, concept_sub,
+                prior_symbolic=prior_symbolic, language_plan=language_plan)
+            object.__setattr__(leg, '_symbol_evidence', symbols(acts))
+            object.__setattr__(leg, '_concept_activations', acts)
+            object.__setattr__(leg, '_concept_codes', codes)
+            ids = getattr(concept_sub, '_concept_ids', None)
+            if ids is not None:
+                # Packed slots travel with logical symbol addresses: 2*cid
+                # and 2*cid+1. Rebinding a slot cannot rename a symbol.
+                addresses = 2 * ids[..., None] + torch.arange(2, device=ids.device)
+                object.__setattr__(leg, '_symbol_indices', addresses)
+                registry = getattr(self, 'where_registry', None)
+                if registry is not None:
+                    rows = concept_sub._concept_inventory_rows
+                    locations = 2 * rows[..., None] + torch.arange(2, device=rows.device)
+                    band = registry.encode('symbols', locations)
+                    object.__setattr__(leg, '_symbol_where', band)
+                    when = self.subspace.whenEncoding.encode(self.subspace.whenEncoding.t)
+                    object.__setattr__(leg, '_symbol_when', when.expand_as(band))
+                    # The SS carrier owns its bands; concept codes stay opaque.
+                    # Broadcast the same identity addresses over batch/readings.
+                    # These are the symbol's address bands, alongside its
+                    # opaque concept code. Rebuilding the event with band
+                    # setters would discard a snapshot's full-width content.
+            for name in ('where', 'when', 'ids', 'inventory_rows'):
+                object.__setattr__(leg, '_concept_' + name,
+                                   getattr(concept_sub, '_concept_' + name, None))
+            return leg
+        sym_event = event.detach()
+        if sym_event.dim() == 2:
+            sym_event = sym_event.unsqueeze(0)
+        N = int(sym_event.shape[-2])
+        D = int(sym_event.shape[-1])
+        # Sync SS's OWN .what codebook (row-aligned, first-N rows) to the
+        # per-batch-mean concept codes. Self-write only -- no cross-space reach.
+        cb = getattr(getattr(self, "subspace", None), "what", None)
+        W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
+        if W is not None and torch.is_tensor(W) and int(W.shape[0]) > 0:
+            rows = min(N, int(W.shape[0]))
+            cw = min(D, int(W.shape[-1]))
+            if rows > 0 and cw > 0:
+                with torch.no_grad():
+                    W[:rows, :cw] = sym_event[:, :rows, :cw].mean(dim=0).to(
+                        W.device, W.dtype)
+        return self._publish_symbol_snapshot(
+            sym_event, concept_sub, prior_symbolic=prior_symbolic,
+            language_plan=language_plan)
+
+
+# The historical ``SymbolSpace = SymbolSubSpace`` alias (retired Phase G of
+# doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md) is now a REAL
+# container Space (``SymbolSpace`` above) that OWNS the SymbolSubSpace. The XML
+# config section name ``<SymbolSpace>`` is preserved unchanged.

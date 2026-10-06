@@ -1,16 +1,16 @@
-"""Concept-code negation is reflection; explicit evidence still exchanges poles."""
+"""Negation exchanges poles without changing the concept code."""
 import torch
 
 
-def test_not_reflects_a_full_concept_code():
+def test_not_preserves_a_full_concept_code():
     from Language import NotLayer
     code = torch.tensor([[.1, -.2, .3, .4, -.5, .6, -.7, .8, -.9, 1.]], requires_grad=True)
     layer = NotLayer()
     reflected = layer(code)
-    torch.testing.assert_close(reflected, -code, rtol=0, atol=0)
+    torch.testing.assert_close(reflected, code, rtol=0, atol=0)
     torch.testing.assert_close(layer.reverse(reflected), code, rtol=0, atol=0)
     reflected.sum().backward()
-    torch.testing.assert_close(code.grad, -torch.ones_like(code), rtol=0, atol=0)
+    torch.testing.assert_close(code.grad, torch.ones_like(code), rtol=0, atol=0)
 
 
 def test_not_keeps_the_explicit_pole_exchange():

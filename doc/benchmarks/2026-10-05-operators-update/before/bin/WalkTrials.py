@@ -1,0 +1,248 @@
+"""Compare complete walks at their owner's scoring boundary."""
+from dataclasses import dataclass, replace
+import torch
+
+
+def departure_at(eligible):
+    """One uniformly selected legal departure per row; -1 means none."""
+    rank=(torch.rand(eligible.shape[0],device=eligible.device)*eligible.sum(-1)).long()
+    selected=eligible & (eligible.long().cumsum(-1)==rank[:,None]+1)
+    return torch.where(eligible.any(-1),selected.long().argmax(-1),-1)
+
+
+def select_output(greedy,explore,wins):
+    def selected(a,b):
+        if torch.is_tensor(a) and torch.is_tensor(b):
+            if a.shape != b.shape:
+                raise ValueError('output trials require the same bounded realization shape')
+            return torch.where(wins.reshape(-1,*([1]*(a.ndim-1))),b,a)
+        if a is None and b is None:return None
+        raise ValueError('output trials disagree about their realization carrier')
+    values={name:selected(getattr(greedy,name),getattr(explore,name))
+            for name in ('actual','concepts','percepts','surface')}
+    texts=tuple(b if bool(wins[row]) else a for row,(a,b) in
+                enumerate(zip(greedy.texts,explore.texts)))
+    return replace(greedy,**values,texts=texts)
+
+
+def output_pair(realize,score):
+    """Realize, then cost, both paths before returning either live graph.
+
+    The scorer is loss-side only. It never enters the walk. Shared generate
+    parameters still require the caller's reconstruction ownership boundary.
+    """
+    greedy,trace=realize(return_candidates=True)
+    first=score(greedy)
+    departure=departure_at(trace[1])
+    explore,other=realize(exploit_actions=trace[0],departure=departure)
+    second=score(explore)
+    costs=torch.stack((first,second),-1).detach()
+    wins=trace[1].any(-1)&(costs[:,1]<costs[:,0])
+    audit=dict(costs=costs,wins=wins,departure=departure,
+               greedy=trace[0].detach(),explore=other[0].detach(),
+               stable=(trace[0]==other[0]).all(-1))
+    result=replace(select_output(greedy,explore,wins),trace=greedy.trace+(
+        {'operation':'generate:owner_comparison','owner':'output',
+         'explore_kept':tuple(wins.tolist())},))
+    return result,audit
+
+
+def narrowing_pair(read, score):
+    """Compare complete percept walks before admission or any owner update."""
+    from SentenceCompose import select_rows
+    greedy = read()
+    first = score(greedy)
+    departure = departure_at(greedy.alternatives)
+    explore = read(exploit=greedy, departure=departure)
+    second = score(explore)
+    costs = torch.stack((first, second), -1).detach()
+    wins = (departure >= 0) & (costs[:, 1] < costs[:, 0])
+    table = type(greedy.table)(*select_rows(greedy.table, explore.table, wins))
+    kept = type(greedy)(table, *select_rows(greedy[1:], explore[1:], wins))
+    return kept, dict(costs=costs, wins=wins, departure=departure,
+        greedy=greedy.actions.detach(), explore=explore.actions.detach())
+
+
+def _copy_containers(value):
+    """Copy mutable scratch containers while retaining each live graph."""
+    from collections import deque
+    if isinstance(value,deque):return deque(value)
+    if isinstance(value,list):return [_copy_containers(v) for v in value]
+    if isinstance(value,dict):return {k:_copy_containers(v) for k,v in value.items()}
+    return value
+
+
+class ThoughtTrialState:
+    """Snapshot only the declared thought-effect owners, never model weights.
+
+    History records are immutable. Knowing writes fresh field tensors and
+    expectation replaces its pending estimate. Their old graphs therefore
+    remain safe to restore without detaching the kept policy's credit.
+    """
+    def __init__(self,model):
+        memory=model._what_memory()
+        owners=[(memory,('_what_slots','_what_closure_pressure','_episode_live','_thought_next_id')),
+                (model,('_selected_thought_policy_records',))]
+        carrier=getattr(getattr(model,'conceptualSpace',None),'subspace',None)
+        if carrier is not None:
+            owners.append((carrier,tuple(name for name in vars(carrier)
+                if name.startswith('_concept_'))+('_thought_occurrence',)))
+        expectation=getattr(getattr(model,'symbolSpace',None),'expectation',None)
+        if expectation is not None:owners.append((expectation,('_inter_last_meaning',)))
+        self.saved=[(owner,{name:_copy_containers(getattr(owner,name)) for name in names if hasattr(owner,name)},names)
+                    for owner,names in owners if owner is not None]
+
+    def restore(self):
+        for owner,values,names in self.saved:
+            # A trial may introduce a knowing carrier for the first time.
+            dynamic=tuple(name for name in vars(owner) if name.startswith('_concept_')) if '_thought_occurrence' in names else ()
+            for name in set(names)|set(dynamic):
+                if name in values:object.__setattr__(owner,name,_copy_containers(values[name]))
+                elif name in vars(owner):delattr(owner,name)
+
+
+@dataclass(frozen=True)
+class ForecastWalk:
+    """Two prior-only forecasts awaiting one external observation.
+
+    The records belong to the forecast, not the interaction history. Restoring
+    a speculative history after the observation would erase newer evidence.
+    """
+    other: object
+    greedy: tuple
+    explore: tuple
+    departure: int
+    records: tuple
+    step_cost: float
+
+    def detached(self):
+        return replace(self, other=self.other.detached())
+
+
+def forecast_pair(model, meaning, *, row, run):
+    """Hold both forecasts at one parameter version, with no published effects."""
+    base = ThoughtTrialState(model)
+    old = getattr(model, '_thought_walk', None)
+    def trial(exploit=None, departure=-1):
+        trace = dict(actions=[], eligible=[], exploit=exploit, departure=departure)
+        model._thought_walk = trace
+        model._anticipatory_choices = []
+        result, pending = run()
+        return pending, trace, tuple(result.records)
+    try:
+        greedy, trace, records = trial()
+        base.restore()
+        eligible = torch.tensor([trace['eligible']], dtype=torch.bool, device=meaning.roles.device)
+        departure = int(departure_at(eligible)[0]) if eligible.numel() else -1
+        explore, other, other_records = trial(tuple(trace['actions']), departure)
+        if greedy.versions != explore.versions:
+            raise RuntimeError('anticipation trials crossed a predictor update')
+        walk = ForecastWalk(explore.detached(), tuple(trace['actions']),
+            tuple(other['actions']), departure, (records, other_records), model.WHAT_STEP_COST)
+        return replace(greedy.detached(), walk=walk)
+    finally:
+        base.restore()
+        model._thought_walk = old
+
+
+def select_forecast(pending, roles, occupied, kind):
+    """Loss-side comparison of held estimates; the target never enters a walk."""
+    walk = pending.walk
+    if walk is None or pending.comparison is not None:
+        return pending
+    from torch.nn import functional as F
+    def cost(value):
+        prediction = value.prediction
+        error = (prediction.roles - roles.detach().to(prediction.roles)).square().mean()
+        error = error + F.binary_cross_entropy_with_logits(
+            prediction.presence_logits, occupied.to(prediction.presence_logits))
+        if kind is not None:
+            error = error + F.binary_cross_entropy_with_logits(
+                prediction.kind_logit, prediction.kind_logit.new_tensor(float(kind == 'relation')))
+        return float(error.detach()) + walk.step_cost * value.work
+    costs = (cost(pending), cost(walk.other))
+    if not all(torch.isfinite(torch.tensor(costs))):
+        raise FloatingPointError('non-finite anticipation comparison')
+    wins = walk.departure >= 0 and costs[1] < costs[0]
+    width = max(len(walk.greedy), len(walk.explore))
+    audit = dict(costs=costs, explore_kept=wins, departure=walk.departure,
+        greedy=walk.greedy + (-1,) * (width-len(walk.greedy)),
+        explore=walk.explore + (-1,) * (width-len(walk.explore)),
+        records=walk.records[int(wins)])
+    return replace(walk.other if wins else pending, walk=None, comparison=audit)
+
+
+def thought_pair(model,meaning,*,row,work_budget,registry,work,score):
+    """Two complete ordinary episodes; only the strictly better one survives."""
+    from copy import copy
+    from QueryWork import QueryWorkBudget
+    base=ThoughtTrialState(model)
+    initial=QueryWorkBudget(work_budget) if work is None else work
+    def run(exploit=None,departure=-1):
+        meter=copy(initial)
+        meter._counts=initial._counts.copy()
+        trace=dict(actions=[],eligible=[],exploit=exploit,departure=departure)
+        model._thought_walk=trace
+        result=model._run_selected_thought_once(meaning,row=row,work_budget=work_budget,registry=registry,work=meter)
+        error=score(result)
+        cost=float(error.detach() if torch.is_tensor(error) else error)+model.WHAT_STEP_COST*meter.spent
+        return result,cost,trace,ThoughtTrialState(model)
+    old=getattr(model,'_thought_walk',None)
+    try:
+        greedy,first,trace,state=run()
+        base.restore()
+        eligible=torch.tensor([trace['eligible']],dtype=torch.bool,device=meaning.roles.device)
+        departure=int(departure_at(eligible)[0]) if eligible.numel() else -1
+        explore,second,other,other_state=run(tuple(trace['actions']),departure)
+        wins=departure>=0 and second<first
+        result=explore if wins else greedy
+        (other_state if wins else state).restore()
+        if work is not None:
+            work._spent=result.work.spent
+            work._counts=result.work._counts.copy()
+            result=replace(result,work=work)
+        model._last_thought_comparison=dict(costs=(first,second),explore_kept=wins,
+            departure=departure,greedy=tuple(trace['actions']),explore=tuple(other['actions']),
+            stable=trace['actions']==other['actions'])
+        observe_comparison(model,'think',model._last_thought_comparison,row=row)
+        return result
+    except BaseException:
+        base.restore()
+        raise
+    finally:model._thought_walk=old
+
+
+def observe_comparison(model,kind,audit,*,sentence=None,row=None,active=None):
+    """Bounded observation-only counts; geometry is never an acceptance bar."""
+    from collections import OrderedDict,deque
+    costs=torch.as_tensor(audit['costs']).detach().cpu().reshape(-1,2)
+    wins=torch.as_tensor(audit.get('wins',audit.get('explore_kept',False))).detach().cpu().reshape(-1)
+    greedy=torch.as_tensor(audit['greedy']).detach().cpu().reshape(len(costs),-1)
+    explore=torch.as_tensor(audit['explore']).detach().cpu().reshape(len(costs),-1)
+    departure=torch.as_tensor(audit.get('departure',-1)).detach().cpu().reshape(-1)
+    valid=torch.ones(len(costs),dtype=torch.bool) if active is None else active.detach().cpu().bool()
+    stats=getattr(model,'_walk_audit',None)
+    if stats is None:stats={};model._walk_audit=stats
+    result=stats.setdefault(kind,dict(walks=0,explorable=0,explore_wins=0,strict_violations=0,
+        stability_pairs=0,stable_pairs=0,explore_fraction=0.,derivation_stability=None))
+    previous=getattr(model,'_walk_previous',None)
+    if previous is None:previous=OrderedDict();model._walk_previous=previous
+    details=getattr(model,'_walk_observations',None)
+    if details is None:details=deque(maxlen=256);model._walk_observations=details
+    staged=getattr(model,'_attention_forms',None)
+    for b in range(len(costs)):
+        if not bool(valid[b]):continue
+        actual=b if row is None else row
+        surface=tuple(name for name in staged[0][actual] if name) if staged is not None and actual<len(staged[0]) else ('row',actual)
+        key=(kind,surface,sentence)
+        kept=tuple((explore if bool(wins[b]) else greedy)[b].tolist())
+        result['walks']+=1;result['explorable']+=int(departure[min(b,len(departure)-1)]>=0)
+        result['explore_wins']+=int(wins[b]);result['strict_violations']+=int(wins[b] and not costs[b,1]<costs[b,0])
+        if key in previous:
+            result['stability_pairs']+=1;result['stable_pairs']+=int(previous[key]==kept)
+        previous[key]=kept;previous.move_to_end(key)
+        while len(previous)>512:previous.popitem(last=False)
+        result['explore_fraction']=result['explore_wins']/result['walks']
+        result['derivation_stability']=(result['stable_pairs']/result['stability_pairs'] if result['stability_pairs'] else None)
+        details.append(dict(kind=kind,surface=surface,sentence=sentence,row=actual,
+            costs=costs[b].tolist(),explore_kept=bool(wins[b]),actions=kept))

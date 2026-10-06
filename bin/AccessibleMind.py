@@ -85,6 +85,37 @@ class EffectRound:
         self.written.add(subsystem)
 
 
+@dataclass(frozen=True)
+class OperatorFootprint:
+    """Exhaustive coordinate capabilities, subordinate to subsystem effects.
+
+    Addresses, time and work meters are outside these three coordinate
+    families. A percept can carry form and poles; meaning needs a conceptual
+    carrier. A face may remove a subsystem write, never grant a coordinate.
+    """
+    reads: tuple
+    writes: tuple
+
+    def __post_init__(self):
+        for name in ('reads', 'writes'):
+            values = tuple(getattr(self, name))
+            if len(set(values)) != len(values) or not set(values) <= {'form', 'meaning', 'poles'}:
+                raise ValueError(f'footprint {name} requires distinct form, meaning or poles')
+            object.__setattr__(self, name, values)
+
+    def check_effects(self, effects):
+        carriers = {
+            'form': {S.PERCEPT, S.KNOWING, S.SYMBOLIC, S.SERIAL, S.LTM, S.EXPECTATION},
+            'meaning': {S.KNOWING, S.SYMBOLIC, S.SERIAL, S.LTM, S.EXPECTATION, S.PRIMING},
+            'poles': {S.PERCEPT, S.KNOWING, S.SYMBOLIC, S.SERIAL, S.LTM, S.EXPECTATION},
+        }
+        for name in ('reads', 'writes'):
+            for component in getattr(self, name):
+                if not carriers[component].intersection(getattr(effects, name)):
+                    raise ValueError(f'footprint {name} {component} has no declared subsystem {name}')
+        return self
+
+
 def apply_thought_effect(model, result, *, row, work, effect_round=None):
     """Commit parameter-free effects to the existing parallel field.
 

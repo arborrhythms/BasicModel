@@ -83,7 +83,12 @@ def test_output_spelling_uses_the_echoic_shortlist():
 @pytest.mark.parametrize('compiled', [False, True])
 def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compiled):
     import Models, util
-    from Language import LanguageSpace, ConjunctionLayer, NotLayer
+    from Language import LanguageSpace, ConjunctionLayer, GrammarLayer
+    class Reflection(GrammarLayer):
+        inverse_kind = "unary"
+        invertible = True
+        def forward(self, x): return -x
+        def reverse(self, x): return -x
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     conjunction = ConjunctionLayer()
     policy = torch.nn.Linear(2, 3)
@@ -91,7 +96,7 @@ def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compil
         policy.weight.copy_(torch.tensor([[1., 1.], [-1., -1.], [0., 0.]]))
         # The composed root has unit activation, independent of form norms.
         policy.bias.copy_(torch.tensor([-1., -1., 0.]))
-    language = SimpleNamespace(_generate_binary_ops=(conjunction,), _generate_unary_ops=(NotLayer(),),
+    language = SimpleNamespace(_generate_binary_ops=(conjunction,), _generate_unary_ops=(Reflection(0, 0),),
         generate_policy=policy, _generate_policy_width=2,
         decomposition_chooser=DecompositionChooser())
     for name in ('reverse_binary_step', '_reverse_of_binary_op', '_finish_binary_inverse',
@@ -117,10 +122,8 @@ def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compil
     torch.testing.assert_close(out[:, :2], bank)
     assert actions[0, :3].tolist() == [0, 2, 2]
     assert actions[1, :4].tolist() == [1, 0, 2, 2]
-    # The production eligibility above has one legal action at each step,
-    # so its chooser gradient is correctly zero. Preserve the historical
-    # numerical-credit assertion on the same hard trace with a declared
-    # choice oracle. Real multi-operation credit is tested in review11.
+    # Even with multiple eligible actions, the free walk supplies no policy
+    # gradient. The policy learns the compose structure in its teacher loss.
     def choice_at_compound(parent, lefts, rights, available, ops, codes, valid, **kwargs):
         # The unit-activation parent is shorter than these form codes. Keep
         # the same hard trace by offering alternatives at the compound, not
@@ -133,5 +136,5 @@ def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compil
     torch.testing.assert_close(credited, out)
     out = credited
     out.square().sum().backward()
-    assert policy.weight.grad is not None and policy.weight.grad.norm() > 0
-    assert bank.grad is not None and bank.grad.norm() > 0
+    assert policy.weight.grad is None or not policy.weight.grad.any()
+    assert bank.grad is None or not bank.grad.any()  # searched symbols remain detached

@@ -182,8 +182,8 @@ def test_walk_is_invariant_to_reconstruction_only_state():
     assert torch.equal(again[1], base[1]) and torch.equal(again[2], base[2])
 
 
-def test_generate_policy_has_numerical_credit_without_imitation(monkeypatch):
-    """The decoder's owner supplies the loss; no sampled imitation term."""
+def test_free_generate_policy_has_no_numerical_credit(monkeypatch):
+    """Free inference has no policy gradient; the compose teacher owns CE."""
     _walk_control_oracle(monkeypatch)
     m=_model()
     try:
@@ -198,8 +198,7 @@ def test_generate_policy_has_numerical_credit_without_imitation(monkeypatch):
         assert cost.shape==(1,) and float(cost.detach())==0.
         assert bool(torch.isfinite(cost))
         out.square().sum().backward()
-        assert language.generate_policy.weight.grad is not None
-        assert float(language.generate_policy.weight.grad.abs().sum())>0
+        assert language.generate_policy.weight.grad is None or not language.generate_policy.weight.grad.any()
     finally:
         m.End();m.symbolSpace.soft_reset()
 

@@ -1,0 +1,14 @@
+........................................................................ [ 45%]
+.......................s................................................ [ 90%]
+...............                                                          [100%]
+=============================== warnings summary ===============================
+test/test_nanochat_grammar_eval.py::test_word_gate_matches_full_forward_without_building_unused_answer
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_occurrence_coordinates.py::test_input_event_time_uses_the_subjective_clock
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7164: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2281/test_input_event_time_uses_the0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+158 passed, 1 skipped, 2 warnings in 38.11s

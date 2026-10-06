@@ -7,7 +7,7 @@ import pytest
 def _prefer_unary(monkeypatch, both=False):
     from Language import OperationSelectionLayer, NotLayer, NonLayer, SumLayer
     layer = OperationSelectionLayer(d_model=2, ops=[SumLayer()],
-        unary_ops=[NotLayer(), NonLayer()] if both else [NotLayer()], chooser='mlp')
+        unary_ops=[NotLayer(representation='poles'), NonLayer(representation='poles')] if both else [NotLayer(representation='poles')], chooser='mlp')
     def binary(content, candidates, *args, **kwargs):
         B, N, _ = content.shape
         return content.new_zeros(B, N, 1), content.new_zeros(B, N-1, 1)
@@ -25,7 +25,7 @@ def test_closing_does_not_spend_rounds_repeating_not_at_one_slot(monkeypatch):
     result = layer.derive(value, rounds=6, slots=1, greedy=True)
     assert result['used'].tolist() == [2]  # not, then STOP
     assert [int(route['kind'][0]) for route in result['traces'][:2]] == [2, 0]
-    torch.testing.assert_close(result['value'], -value)
+    torch.testing.assert_close(result['value'], value.flip(-1))
 
 
 @pytest.mark.parametrize('compiled', [False, True])

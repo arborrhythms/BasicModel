@@ -1,0 +1,6 @@
+[collect] 15 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 4.2s; peak 0.43 GiB
+[worker-000] 179 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 1; 121.7s; peak 1.94 GiB
+Result: test_failure, exit 1; 179/179 cases completed.
+doc/benchmarks/2026-10-05-operators-update/focused/result.json

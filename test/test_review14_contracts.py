@@ -145,14 +145,15 @@ def test_review17_measurement_wiring_on_one_ordinary_batch(tmp_path):
     from pathlib import Path
     from bounded_tests import run_guarded, GIB
     root=Path(__file__).resolve().parents[1]
-    receipt=root/'doc/benchmarks/2026-10-03-operators-attention'
+    receipt=root/'doc/benchmarks/2026-10-05-operators-update'
+    prior=root/'doc/benchmarks/2026-10-03-operators-attention'
     env=os.environ.copy()
-    env.update(PYTEST_PLUGINS='review17_gate_observer', MODEL_COMPILE='none',
+    env.update(PYTEST_PLUGINS='operators_gate_observer', MODEL_COMPILE='none',
         OWNERSHIP_OBSERVER_OUTPUT=str(tmp_path/'ownership'),
         ITEM7_XOR_MEASUREMENTS=str(tmp_path/'observations.jsonl'), ITEM7_XOR_GATE='5',
         REVIEW17_REPORTS=str(tmp_path/'reports.jsonl'),
-        PYTHONPATH=os.pathsep.join(map(str,(receipt,root/'bin',root/'test'))))
-    result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'review22_observer_probe.py')],
+        PYTHONPATH=os.pathsep.join(map(str,(receipt,prior,root/'bin',root/'test'))))
+    result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'observer_probe.py')],
         cwd=root,env=env,log_path=tmp_path/'observer.log',memory_bytes=8*GIB,timeout=1800)
     assert result['exit_code']==0,(tmp_path/'observer.log').read_text()
 

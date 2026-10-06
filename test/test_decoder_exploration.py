@@ -59,7 +59,7 @@ def test_single_departure_replays_prefix_and_is_greedy_after_it(monkeypatch, com
     assert greedy[5][:, :2].all()
     assert not greedy[5][:, 2:].any()
     explore[0].square().sum().backward()
-    assert policy.bias.grad.norm() > 0
+    assert policy.bias.grad is None or not policy.bias.grad.any()  # compiled AD may materialize zero
     assert event.grad.norm() > 0
 
 

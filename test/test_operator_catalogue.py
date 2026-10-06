@@ -31,7 +31,7 @@ def test_non_excludes_without_affirming_or_claiming_an_inverse():
     with pytest.raises((RuntimeError, NotImplementedError)):
         op.reverse(poles)
     code = NonLayer()
-    torch.testing.assert_close(code(torch.tensor([[.5, -.4]])), torch.zeros(1, 2))
+    torch.testing.assert_close(code(torch.tensor([[.5, -.4]])), torch.tensor([[.5, -.4]]))
 
 
 def test_sum_is_a_mean_and_witness_inverse_is_exact():

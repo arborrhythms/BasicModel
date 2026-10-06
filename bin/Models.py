@@ -12928,10 +12928,9 @@ class BasicModel(BaseModel):
                               initial_depth=None, require_symbols=True):
         """The shared conceptual decoder. No compose actions enter this walk.
 
-        Hard generate choices determine the stack topology. Its numerical
-        transition uses the usual straight-through softmax over candidate
-        transitions, so reconstruction teaches the chooser as well as the
-        inverse search. Output's restricted backward trains only its reader.
+        Hard generate choices determine the stack topology. Reconstruction
+        teaches the policy separately from the compose derivation's structure;
+        this free walk supplies no straight-through policy gradient.
         """
         del targets, stamped_events
         language = self.languageSpace
@@ -12959,8 +12958,7 @@ class BasicModel(BaseModel):
             parent = stack[ar, pos]
             live = depth > 0
             logits = language.generate_policy_logits(parent)
-            # One candidate numerical transition per generate face. The hard
-            # branch remains exact; soft probabilities supply its derivative.
+            # Only the chosen numerical inverse supplies a pathwise gradient.
             lefts, rights, unavailable = [], [], []
             for i in range(R2):
                 index = torch.full_like(depth, i)
@@ -12976,6 +12974,10 @@ class BasicModel(BaseModel):
             for i in range(R1):
                 value, missing = language.generate_unary_step(
                     parent, torch.full_like(depth, i), live, return_status=True)
+                # Pole-only operations preserve the code. Such an identity
+                # cannot advance this code walk and must not consume its
+                # entire allowance before STOP can emit the operand.
+                missing = missing | ~value.detach().ne(parent.detach()).any(-1)
                 lefts.append(value); rights.append(parent); unavailable.append(missing)
             lefts.append(parent); rights.append(parent); unavailable.append(torch.zeros_like(live))
             from Language import LanguageSpace
@@ -13007,11 +13009,9 @@ class BasicModel(BaseModel):
                 choice = torch.where((t < departure) & (prior >= 0), prior, choice)
             options = torch.stack(lefts, 1)
             others = torch.stack(rights, 1)
-            probability = logits.softmax(-1)
             selected = F.one_hot(choice, stop + 1).to(parent)
-            mixture = selected + (probability - probability.detach())
-            left = (options * mixture[..., None]).sum(1)
-            right = (others * mixture[..., None]).sum(1)
+            left = (options * selected[..., None]).sum(1)
+            right = (others * selected[..., None]).sum(1)
             missing = ~legal.gather(1, choice[:, None]).reshape(B)
             binary = live & (choice < R2) & (depth < N) & ~missing
             unary = live & (choice >= R2) & (choice < stop) & ~missing
@@ -13023,8 +13023,7 @@ class BasicModel(BaseModel):
             stack1[ar, above] = torch.where(binary[:, None], right, stack1[ar, above])
             slot = (T - 1 - count).clamp(0, T - 1)
             emitted1 = emitted.clone()
-            # At STOP, left is exactly the parent, with the chooser's
-            # alternative numerical transitions retained for backward.
+            # At STOP, left is exactly the parent.
             emitted1[ar, slot] = torch.where(pop[:, None], left, emitted1[ar, slot])
             actions1 = actions.scatter(1, t.reshape(1, 1).expand(B, 1),
                                        torch.where(live & ready, choice, -1)[:, None])
@@ -14715,6 +14714,14 @@ class BasicModel(BaseModel):
                 # signal-router rule load-balancing; no consumer yet.
 
             if train:
+                # Field-only training has no sentence owner step. Consume
+                # the same pending attention term at its batch boundary.
+                attention = getattr(self, '_attention_score_term', None)
+                if attention is not None:
+                    self._attention_score_term = None
+                    if attention.requires_grad:
+                        self.errors.add('reconstruction.attention_score_function', attention,
+                                        category='reconstruction')
                 batch_objective = self.errors.total()
                 readout_l1 = self._configure_concept_readout_l1(optimizer,
                     stage=batch_objective is not None and batch_objective.requires_grad)
@@ -19875,6 +19882,49 @@ class BasicModel(BaseModel):
         self._last_decomposition_teacher = reports
         return loss
 
+    def _decomposition_walk_teacher_loss(self, observation, record):
+        """Teach undo/unary/STOP on the actual compose tree's detached states.
+
+        Each leaf teaches STOP; each recorded parent teaches its declared
+        generate face. Replaying these states is teacher forcing, independent
+        of the free decoder's decisions, legal mask and numerical inverses.
+        No target or compose trace enters inference.
+        """
+        language = self.languageSpace
+        stop = len(language._generate_binary_ops) + len(language._generate_unary_ops)
+        keys = language._generate_rule_keys.detach().cpu().tolist() if language.generate_policy is not None else []
+        mappings = {}
+        for kind, arity, rules in ((1, 2, language._compose_binary_rules),
+                                    (2, 1, language._compose_unary_rules)):
+            for index, rule in enumerate(rules):
+                key = language._generate_rule_key(rule, arity)
+                mappings[kind, index] = keys.index(key) if key in keys else -1
+        terms, reports = [], []
+        for b, program in enumerate(observation['entries']):
+            states, targets = [], []
+            if program is not None and program.operation_values is not None:
+                for index, (kind, operation, word) in enumerate(program.actions.detach().cpu().tolist()):
+                    if kind == 0:
+                        value, target = program.leaves[word], stop
+                    elif kind in (1, 2):
+                        value = program.operation_values[index, 2]
+                        target = mappings.get((kind, operation), -1)
+                    else:
+                        continue
+                    reports.append(dict(row=b, kind=kind, operation=operation, target=target,
+                                        present=target >= 0))
+                    if target >= 0:
+                        states.append(value.detach())
+                        targets.append(target)
+            if states and language.generate_policy is not None:
+                logits = language.generate_policy_logits(torch.stack(states))
+                target = torch.tensor(targets, device=logits.device)
+                terms.append(F.cross_entropy(logits, target))
+            else:
+                terms.append(record.root.new_zeros(()))
+        self._last_decomposition_walk_teacher = reports
+        return torch.stack(terms)
+
     def _sentence_path_cost(self, state, sid, active):
         """Both trials use the registry's named, relative objectives."""
         self._publish_sentence_scratch(state)
@@ -19896,6 +19946,8 @@ class BasicModel(BaseModel):
         observation = self._sentence_observation(state, sid, active)
         observation['record'] = record
         observation['decomposition_loss'] = (self._decomposition_teacher_loss(observation, record)
+            if getattr(self, '_sentence_training', False) and torch.is_grad_enabled() else None)
+        observation['walk_loss'] = (self._decomposition_walk_teacher_loss(observation, record)
             if getattr(self, '_sentence_training', False) and torch.is_grad_enabled() else None)
         if getattr(self, '_reading_lesson_enabled', False) and self.grammar_lesson_weight > 0:
             source_rows = self._reading_lesson_sources
@@ -20391,7 +20443,8 @@ class BasicModel(BaseModel):
                     if self._sentence_gradient_objectives is not None:
                         self._sentence_gradient_objectives['expectation'] = intra
                 if self._sentence_training and torch.is_grad_enabled():
-                    pending_steps[-1] = (*pending_steps[-1], self._sentence_cost_registry, observation['decomposition_loss'])
+                    pending_steps[-1] = (*pending_steps[-1], self._sentence_cost_registry,
+                        observation['decomposition_loss'], observation['walk_loss'])
                 # Expectation and grammar lessons train their owners but are
                 # not evidence for preferring one reading over the other.
                 reconstruction_cost = self._sentence_cost_registry.total(objective='reconstruction')
@@ -20405,13 +20458,24 @@ class BasicModel(BaseModel):
             def train_trial(loss):
                 # Both graphs now exist. Restore this trial's perception
                 # pullback and scratch bindings before its own backward.
-                trial, pullback, path, registry, decomposition_loss = pending_steps.pop(0)
+                trial, pullback, path, registry, decomposition_loss, walk_loss = pending_steps.pop(0)
                 self._sentence_trial, self._sentence_pullback = trial, pullback
                 self._sentence_cost_registry = registry
                 self._restore_sentence_state(path)
+                attention = getattr(self, '_attention_score_term', None)
+                if attention is not None:
+                    self._attention_score_term = None
+                    if attention.requires_grad:
+                        registry.add('reconstruction.attention_score_function', attention,
+                                     category='reconstruction')
+                        live = self.inputSpace._word_active_mask.any(-1)
+                        loss = loss + (attention * live).sum() / live.sum().clamp_min(1)
                 if decomposition_loss is not None and decomposition_loss.requires_grad:
                     registry.add('reconstruction.decomposition', decomposition_loss, category='reconstruction')
                     loss = loss + (decomposition_loss * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
+                if walk_loss is not None and walk_loss.requires_grad:
+                    registry.add('reconstruction.walk_policy', walk_loss, category='reconstruction')
+                    loss = loss + (walk_loss * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
                 if trial == 'explore':
                     loss = loss + self._compose_score_function_loss(path, torch.stack(paired_costs, -1))
                 self._sentence_train_step(loss)

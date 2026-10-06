@@ -215,12 +215,12 @@ deltas, and records the eligibility mask. A positive raw STOP margin no longer
 implies STOP was eligible; a masked STOP logit receives zero choice gradient.
 The gate spells the leaves of this same walk with the same scoring as output.
 
-The decoder's hard choice determines stack topology. Its numerical transition
-uses a straight-through softmax over candidate generate transitions at the
-existing unit softmax scale: the forward value is the chosen transition, and
-its derivative includes the chooser. It adds no policy reward or extra cost.
-The byte reconstruction term trains that graph; the answer's restricted backward
-can train its conditioner through it but cannot update decoder parameters.
+The decoder's hard choice determines stack topology. As of the operators
+update round 1, its numerical transition has no straight-through policy path.
+Reconstruction teaches undo, unary and STOP by cross-entropy on detached
+states from the compose derivation. The free byte walk and the answer's
+restricted backward cannot train the policy; selected numerical inverses
+retain their ordinary parameter/operand gradients.
 Compose-only grammars implicitly expose their operators' generate faces, so
 numeric-answer configurations also learn a decoder without a configuration edit.
 
@@ -529,8 +529,8 @@ Decided in the 6.8 §14–§15 rounds
   reached it through the attention straight-through value, cached perception
   and the perception pullback even when the two compose costs tied. Detaching
   that credit closes this additional sentence-path writer; the original
-  no-movement tie assertion passes. This repair does not add the separate
-  attention score-function objective proposed in the later §21 review note.
+  no-movement tie assertion passes. Round 1 adds attention's own paired-cost
+  score-function objective; the sentence handoff remains detached.
 - **The compose chooser's gradient is the score-function estimator (Alec,
   2026-10-05: "So we are doing SCG?"; supersedes the comparison step of
   2026-10-04 and the straight-through of the same morning).** The chooser's
@@ -554,8 +554,8 @@ Decided in the 6.8 §14–§15 rounds
   perception's and operators parameterless, nothing on the compose side
   needs a gradient through the inverse, and the blend's gradient was a biased
   proxy (the true pair's margin) weighted by the decoder's uncertainty. The
-  byte scorer's bank codes are detached; the recovered leaf stays live for
-  the generate policy's own path in the walk, which is unchanged.
+  byte scorer's bank codes are detached. Selected numerical inverses retain
+  operand gradients, but the free walk supplies no policy gradient.
 - **The decomposition chooser learns the true pair (6.8 §§16.4, 17).** For
   the selected undo, a separate reconstruction-owned scorer reads each
   shortlisted pair's negative relative residual, both candidates' activation
@@ -567,7 +567,8 @@ Decided in the 6.8 §14–§15 rounds
   codes and all scorer features are detached. The teacher term is added in
   reconstruction's owner step after both trials' byte costs and the keep
   decision; targets never enter free decoding. These parameters are separate
-  from the forward chooser, and the walk policy and §11.6 mask are unchanged.
+  from the forward chooser. Round 1 extends supervision to the walk policy
+  and retains the §11.6 mask at free inference.
 - **One affine reader for both gates.** XOR_grammar's class reader and the
   sum control read the raw root through the same output-owned affine head;
   the root's address bands are zero. A normalization of the root is a
@@ -583,9 +584,9 @@ Decided in the 6.8 §14–§15 rounds
   byte cost's cotangent at the forked leaves pushed back through the cached
   perception graph), a second, pathwise writer beside the score-function term
   that was below float32 resolution at the old code scale. Attention's credit
-  is detached at the sentence handoff; the attention walk trains nothing until
-  the operators update gives it the score-function estimator (FutureWork). The
-  compose chooser now has one writer.
+  remains detached at the sentence handoff. Round 1 trains the attention
+  choices by the score-function estimator below. Reconstruction remains
+  the shared chooser's sole gradient owner.
 - **The binding kernels take magnitude from the activation**, codes entering
   as directions: conjunction `a·b·unit(u∘v)`, disjunction
   `(a + b − ab)·unit(u + v − u∘v)` with `u, v` unit codes and `a, b` the operand
@@ -595,5 +596,52 @@ Decided in the 6.8 §14–§15 rounds
   above 1 was non-monotone and the product leaked form length.
 - **Full-presence admitted rows:** `RadixLayer.insert()` initializes an
   admitted percept row at full presence (6.8 plan §19–§22; unit L2 norm then
-  the cube clamp from the last round on). The decoder's generate policy moves
-  only where a live decoder step has more than one legal action.
+  the cube clamp from the last round on). The decoder's policy now learns
+  from the compose teacher even where its free walk has one legal action.
+
+
+## Operators update round 1 (October 5)
+
+**Attention uses the same estimator as compose.** The input walk samples one
+eligible round uniformly and one non-greedy legal action uniformly. With K
+alternatives and R eligible rounds, its surrogate is
+`K·R·p(a_departure)·detach(C_explore−C_greedy)`. Both native-percept byte costs
+are measured before any owner step, with the greedy cost as baseline. Features,
+keys and priming are detached; hard attention values have no straight-through
+credit. The term is consumed once at reconstruction's first sentence owner
+step (or the batch owner step for a field-only path). Exact ties attach no
+gradient or momentum-only update. Compose retains
+its own sentence comparison; both terms have the same reconstruction owner.
+The tenth-run audit records costs, actions, K and R, advantages, probabilities
+before/after the actual update, analytic gradients and finite differences.
+
+**Exact pair recomposition precedes learned context.** The bounded shortlist
+and candidate limits are unchanged. A squared relative residual at most
+`(8·finfo(dtype).eps)²` is float-roundoff exact; if one exists, the residual
+argmin wins independently of all context weights. Equal residuals retain bank
+order. The pair scorer's CE still sees every eligible pair. Each operand's
+projection coefficients are centered and divided by their population standard
+deviation over its valid shortlist; constant features become zero and invalid
+slots contribute neither mean nor variance. Codes and these features are
+detached. Missing targets are still counted without a CE term.
+
+**The walk policy is teacher-forced.** Each actual compose parent teaches its
+declared undo or unary generate face; each input leaf teaches STOP. The states
+are detached saved values. Cross-entropy averages nodes within a sentence and
+then active rows; it is added as `reconstruction.walk_policy` after the paired
+byte-cost comparison, alongside `reconstruction.decomposition`. No imitation
+loss enters the forward chooser or trial selection. At inference the policy
+chooses freely under the existing eligibility mask, with no compose journal.
+Its straight-through transition blend is removed. The receipt audits the new
+CE logits and confirms that the free decoder logits receive no gradients.
+
+In the round's tenth measured run, all 1,600 attention advantages and all
+1,600 compose advantages were zero. Those records confirm tied-cost behavior,
+not a nonzero score-function learning signal; the positive/negative-advantage
+analytic and finite-difference checks are separate focused tests. The 3,200
+walk-teacher records match CE gradients within 7.45e−9 and show actual policy
+logit updates. Code displacement, sentence-path perception gradients and
+ownership conflicts remain zero. The round nevertheless fails its standing
+gate because MM_xor is 9/10 rather than 10/10; the receipt records the miss.
+
+[Round-1 source, tests, measurements and review receipt](benchmarks/2026-10-05-operators-update/README.md).

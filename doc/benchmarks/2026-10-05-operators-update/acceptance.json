@@ -1,0 +1,21 @@
+{
+  "status": "Accepted by Alec; commit, push and parent submodule bump authorized",
+  "date": "2026-10-06",
+  "instruction": "First, land round 1. Alec accepted round 1 on 2026-10-06; the \u00a75 findings carry here. Commit, push and bump are authorized by Alec.",
+  "candidate_base_commit": "42daf96f454a30a3633054151e4ba8d498cd3b59",
+  "runtime_source": "delivered-source/source.json",
+  "runtime_source_manifest_sha256": "c49d69779f8f065dd7aebf71ce9c23fe04c0ccf837a1c1e14de7caf88fbcabfe",
+  "candidate_review_manifest_sha256": "a12a5fe90378fa1a984de669b220709245bc05272651bea08bec014a91fb91a5",
+  "runtime_source_unchanged": true,
+  "measurements_repeated": false,
+  "acceptance_document_changes": [
+    {
+      "path": "doc/benchmarks/2026-10-05-operators-update/README.md",
+      "at_review_sha256": "9b863aad82cda3a2696a4b53d31f4a0814d04fd52397859b98b056502530d557",
+      "accepted_sha256": "132bf21224dc7f188c272c8cafec787cdd9b90e1df04d014f78b100272b29965",
+      "change": "acceptance status; historical candidate assessment and measurements retained"
+    }
+  ],
+  "new_acceptance_record": "doc/benchmarks/2026-10-05-operators-update/acceptance.json",
+  "basis": "Alec acceptance and plan \u00a75: MM_xor trajectories identical to landing for 33/33 seeds; unchanged gate not a regression test of round 1."
+}

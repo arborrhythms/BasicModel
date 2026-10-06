@@ -113,7 +113,7 @@ def test_capacity_does_not_make_stop_eligible_for_a_compound(monkeypatch):
     assert torch.isfinite(out).all()
 
 
-def test_policy_still_learns_between_supported_operations(monkeypatch):
+def test_free_policy_has_no_pathwise_credit_between_supported_operations(monkeypatch):
     import util
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     model, _ = decoder()
@@ -136,8 +136,7 @@ def test_policy_still_learns_between_supported_operations(monkeypatch):
     assert count.tolist() == [2] and not truncated.any()
     out[:, 0].sum().backward()
     gradient = language.generate_policy.bias.grad
-    assert gradient[:2].abs().sum() > 0
-    assert gradient[2] == 0  # an ineligible STOP receives no surrogate credit
+    assert gradient is None or not gradient.any()  # CE is supplied only by the teacher
 
 
 @pytest.mark.parametrize('configuration', ['XOR_grammar.xml', 'MM_xor.xml'])

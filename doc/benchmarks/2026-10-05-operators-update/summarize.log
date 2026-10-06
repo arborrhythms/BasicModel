@@ -1,0 +1,1 @@
+{"counts": {"class_pass": 8, "reconstruction_pass": 10, "joint": 8, "mm_pass": 9, "sum_pass": 10, "xor_bands": {"at 0": 8, "at 1/4": 0, "between": 2, "above 1/4": 0}, "sum_bands": {"at 0": 0, "at 1/4": 10, "between": 0, "above 1/4": 0}}, "below_comparison": [{"count": "mm_pass", "prior": 10, "current": 9}]}

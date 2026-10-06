@@ -33,8 +33,8 @@ def test_initial_choice_is_exactly_the_residual_argmin_without_rng():
 
 def test_teacher_recovers_true_shortlisted_pair_despite_misleading_priming():
     bank = torch.tensor([[[.2, .8], [.7, .3], [.8, .4]]], requires_grad=True)
-    # A lossy/noisy root fits the heavily primed distractor exactly.
-    parent = torch.tensor([[.16, .32]], requires_grad=True)
+    # A lossy/noisy root is near the heavily primed distractor, but not exact.
+    parent = torch.tensor([[.161, .321]], requires_grad=True)
     chooser = DecompositionChooser()
     optimizer = torch.optim.SGD(chooser.parameters(), lr=.1)
     rows = torch.tensor([[10, 11, 12]])

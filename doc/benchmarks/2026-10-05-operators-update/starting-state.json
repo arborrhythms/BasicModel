@@ -1,0 +1,14 @@
+{
+  "basicmodel_head": "42daf96f454a30a3633054151e4ba8d498cd3b59",
+  "status": " M doc/FutureWork.md\n M todo.md\n?? doc/benchmarks/2026-10-05-operators-update/\n?? doc/plans/2026-10-05-operators-update.md\n",
+  "sha256": {
+    "bin/Attention.py": "2163c645ccbb23508f4f475aabeb9ffa594131bfe2117e4f85a5a67f17f7a852",
+    "bin/ModelAttention.py": "08b7a15a218c2215faf7936e6dd9acdcfc440f3ecf1efabf05a2f565cf4b5fe2",
+    "bin/WalkTrials.py": "c504a0424fca06f26baa90c8048fc6b0ccccce43df79f8857d01fbdd7361043b",
+    "bin/DecompositionChooser.py": "fee304006fc4a29213e45b792139a1bfff3844f05bf60c159c740be2b39693ee",
+    "bin/Language.py": "aabc62218c530caabc3b063a827d6006aa014996d6f96d185d10aab0195e100a",
+    "bin/Layers.py": "08f326b12b1666acd79d5f4f31758222485dca16ced5a6d03ca0f9c76c196b20",
+    "bin/Models.py": "87f1468ecd6f9b82ccda99f44a9ab91ed291e2ecdd3d5b4712d046579ebd9680",
+    "bin/AccessibleMind.py": "ad1e8b059f2c960054cf9ff3b39b68c9b488de03d89c496a05478c4402fd9c25"
+  }
+}

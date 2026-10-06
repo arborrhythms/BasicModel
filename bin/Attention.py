@@ -148,6 +148,8 @@ class NarrowedWords(NamedTuple):
     descended: torch.Tensor
     actions: torch.Tensor
     alternatives: torch.Tensor
+    probabilities: torch.Tensor = None
+    alternative_counts: torch.Tensor = None
 
 
 def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None):
@@ -161,12 +163,13 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
     if W==0:
         table=BracketTable.open(spans.new_zeros(B),budget=K)
         return NarrowedWords(table,keys,known,known,spans.new_full((B,K),-1),
-                             torch.zeros(B,K,device=keys.device,dtype=torch.bool))
+            torch.zeros(B,K,device=keys.device,dtype=torch.bool),
+            keys.new_zeros(B,K),spans.new_zeros(B,K))
     lengths=spans[...,1].amax(1)
     table=BracketTable.open(lengths,budget=K)
     if spent is not None:table=table._replace(spent=spent)
     accepted=torch.zeros_like(known);descended=torch.zeros_like(known)
-    values=torch.zeros_like(keys);actions=[];alternatives=[]
+    values=torch.zeros_like(keys);actions=[];alternatives=[];probabilities=[];counts=[]
     reductions=torch.zeros(B,K,3,dtype=torch.bool,device=keys.device)
     field_values=keys.new_zeros(B,K,D)
     field_poles=keys.new_zeros(B,K,2)
@@ -207,8 +210,8 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
         local_prior=None if prior is None else (covered.to(keys)@prior[...,None])[...,0]/count.clamp_min(1)
         mask=None if exploit is None else torch.where(departure==step,exploit.actions[:,step],-1)
         replay=None if exploit is None else torch.where(step<departure,exploit.actions[:,step],-1)
-        action,credit,alternate=chooser.attend(pooled,legal,table.space,prior=local_prior,
-                                                masked_action=mask,replay_action=replay)
+        action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
+            masked_action=mask,replay_action=replay,return_details=True)
         slot=(action//A).clamp_max(K-1);op=action%A
         chosen=live[rows,slot]&(action<A*K)
         selected=covered[rows,slot]&chosen[:,None]
@@ -221,8 +224,7 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
         if identities is not None:
             witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
         descended=descended|witness
-        sign=torch.where(negative[rows,slot],-1.,1.)
-        values=torch.where(picked_gloss[...,None],keys*(sign*credit)[:,None,None],values)
+        values=torch.where(picked_gloss[...,None],keys*credit[:,None,None],values)
         # Divide at the first pole disagreement, descend at a retained part.
         first=selected.long().argmax(-1)
         first_positive=evidence[rows,first,0]>0
@@ -245,7 +247,7 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
         positive_keys=keys.clamp_min(0);negative_keys=(-keys).clamp_min(0)
         conjunction=torch.where(covered[...,None],positive_keys[:,None],torch.inf).amin(2)-torch.where(covered[...,None],negative_keys[:,None],0.).amax(2)
         disjunction=torch.where(covered[...,None],positive_keys[:,None],0.).amax(2)-torch.where(covered[...,None],negative_keys[:,None],torch.inf).amin(2)
-        changed=torch.where((op==3)[:,None,None],conjunction,torch.where((op==4)[:,None,None],disjunction,-pooled))
+        changed=torch.where((op==3)[:,None,None],conjunction,torch.where((op==4)[:,None,None],disjunction,pooled))
         # Empty padding contributes no field. In particular, never multiply
         # its reduction sentinel (inf) by a live straight-through credit.
         changed=torch.where((count>0)[...,None],changed,0.)
@@ -264,7 +266,10 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
         reset=(slots==slot[:,None])&(split|unknown|gloss)[:,None]
         field_valid=(field_valid|where)&~reset
         actions.append(torch.where(live.any(-1),action,-1));alternatives.append(alternate&live.any(-1))
-    return NarrowedWords(table,values,accepted,descended,torch.stack(actions,1),torch.stack(alternatives,1))
+        probabilities.append(detail['probability'])
+        counts.append(torch.where(live.any(-1),detail['alternative_count'],0))
+    return NarrowedWords(table,values,accepted,descended,torch.stack(actions,1),
+        torch.stack(alternatives,1),torch.stack(probabilities,1),torch.stack(counts,1))
 
 
 class BracketKeys:

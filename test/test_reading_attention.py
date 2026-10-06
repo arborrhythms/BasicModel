@@ -93,7 +93,9 @@ def test_codebook_path_preserves_gradient_boundary():
     W=torch.randn(32,16,requires_grad=True)
     prior=BracketKeys._codebook_retrieval_prior(keys,W,cq.requires_grad_(),None)
     assert not prior.requires_grad
-    out=_reading(spans,percept,prior);out.values.sum().backward()
+    out=_reading(spans,percept,prior)
+    assert not out.values.requires_grad
+    out.probabilities.sum().backward()
     assert W.grad is None and cq.grad is None and percept.grad is None
 
 

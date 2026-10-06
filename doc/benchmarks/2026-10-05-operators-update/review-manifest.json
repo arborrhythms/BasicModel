@@ -1,0 +1,11 @@
+{
+  "source_matches_measured": true,
+  "staged_files": [],
+  "review_files": {
+    "doc/GradientFlow.md": "7907f1e51a418080658a556b256c7102ecb456b0ee1d6c4b51679c9b5bfbe5db",
+    "doc/specs/2026-09-29-operator-catalogue.md": "f7c1fb5adf43d5e0572bbc1492eb5293fbc90c321ad01a4d438e90d87a9059f9",
+    "doc/benchmarks/2026-10-05-operators-update/README.md": "9b863aad82cda3a2696a4b53d31f4a0814d04fd52397859b98b056502530d557",
+    "doc/benchmarks/2026-10-05-operators-update/review-changes.patch": "a88558abedc941dcd54491f3e1e7a2cc9a30092b30f2b5e6448f9cda353df1aa",
+    "doc/benchmarks/2026-10-05-operators-update/validate_results.py": "239ae17d64e3548a8ecd4e3171c897005c36d29f4a801a91d6c1ea38cadd4c5f"
+  }
+}
