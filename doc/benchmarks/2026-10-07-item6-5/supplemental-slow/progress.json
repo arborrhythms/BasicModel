@@ -1,0 +1,78 @@
+[
+  {
+    "selector": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+    "folder": "supplemental-slow/case-01",
+    "process": {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct"
+      ],
+      "pid": 85462,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1238486232,
+      "elapsed_seconds": 36.16338041599374,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-5/supplemental-slow/case-01/run.log"
+    }
+  },
+  {
+    "selector": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+    "folder": "supplemental-slow/case-02",
+    "process": {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp"
+      ],
+      "pid": 85497,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1238977752,
+      "elapsed_seconds": 36.163636958110146,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-5/supplemental-slow/case-02/run.log"
+    }
+  },
+  {
+    "selector": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+    "folder": "supplemental-slow/case-03",
+    "process": {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal"
+      ],
+      "pid": 85522,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 522470744,
+      "elapsed_seconds": 4.074356249999255,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-5/supplemental-slow/case-03/run.log"
+    }
+  },
+  {
+    "selector": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+    "folder": "supplemental-slow/case-04",
+    "process": {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+      ],
+      "pid": 85533,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 597018040,
+      "elapsed_seconds": 5.600059375050478,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-5/supplemental-slow/case-04/run.log"
+    }
+  }
+]

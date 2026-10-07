@@ -1,0 +1,38 @@
+...........F..                                                           [100%]
+=================================== FAILURES ===================================
+_ test_prediction_reencodes_live_columns_but_detaches_targets_and_older_context _
+
+    def test_prediction_reencodes_live_columns_but_detaches_targets_and_older_context():
+        from Layers import BracketExpectation
+        columns = component_fixture()
+        predictor = BracketExpectation(n_symbols=4, max_depth=8, n_dim=4, concept_dim=4,
+                                       batch=1, expectation_scope='structured')
+        sources = []
+        def encode(value):
+            result = columns.source(value)
+            result.retain_grad()
+            sources.append(result)
+            return result
+        object.__setattr__(predictor, '_source_encoder', encode)
+        older = torch.nn.Parameter(torch.ones(3, 4))
+        current = torch.nn.Parameter(torch.eye(4)[:3])
+        target = torch.nn.Parameter(torch.full((3, 4), .25))
+        for value in (older, current, target):
+            predictor.predict_and_observe_stm_end_state([3], [value], documents=['stream'], layout='infix')
+        loss = predictor.consume_inter_loss()
+        loss.backward()
+>       assert any(value.grad is not None and value.grad.abs().sum() > 0 for value in sources)
+E       assert False
+E        +  where False = any(<generator object test_prediction_reencodes_live_columns_but_detaches_targets_and_older_context.<locals>.<genexpr> at 0x10a053370>)
+
+test/test_independent_components.py:263: AssertionError
+=============================== warnings summary ===============================
+test/test_independent_components.py::test_temporal_shuffle_reports_loss_of_predictability_without_changing_identity
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_independent_components.py::test_prediction_reencodes_live_columns_but_detaches_targets_and_older_context
+1 failed, 13 passed, 1 warning in 2.14s

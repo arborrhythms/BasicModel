@@ -1,7 +1,8 @@
 """Fixed sentence indexes and bipolar, open-world meaning coordinates.
 
 The flat complement is [for_0 ... for_K-1 | against_0 ... against_K-1].
-Its scale is evidence, never part of a form-direction normalization.
+Concept definedness scales the unit direction before each independent
+evidence pole is applied. Neither quantity normalizes the form block.
 """
 import hashlib
 from functools import lru_cache
@@ -11,6 +12,27 @@ import torch
 
 
 from Occurrence import sentence_key
+
+
+DEFINEDNESS_RECURRENCE = 4
+
+
+def definedness(witnesses, recurrence=DEFINEDNESS_RECURRENCE):
+    """Witnessed knowledge, separate from the evidence in any one reading."""
+    if recurrence <= 0:
+        raise ValueError('definedness requires a positive recurrence count')
+    if torch.is_tensor(witnesses):
+        torch._assert_async((witnesses >= 0).all(), 'witness count must be nonnegative')
+    elif witnesses < 0:
+        raise ValueError('witness count must be nonnegative')
+    return witnesses / (witnesses + recurrence)
+
+
+def defined_code(direction, witnesses, recurrence=DEFINEDNESS_RECURRENCE):
+    """m times a unit direction; an unwitnessed or empty concept stays zero."""
+    magnitude = torch.as_tensor(definedness(witnesses, recurrence),
+                                dtype=direction.dtype, device=direction.device)
+    return torch.nn.functional.normalize(direction, dim=-1) * magnitude[..., None]
 
 
 def exchange(value):

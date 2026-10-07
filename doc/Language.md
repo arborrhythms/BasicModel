@@ -779,11 +779,28 @@ original assertions.
 
 ## Words narrow the domain of discourse (2026-09-28)
 
+**Item 6.5 mechanism, accepted by Alec (October 7).** An operation that
+requests an individual now has variants for each bounded situation column
+and, where permitted, mint. All variants use the grammar operator's existing
+scoring parameters in the one global operation softmax. The numerical journal
+keeps the original operator index and the chosen reference. The old local
+reference argmax does not participate in this production path; ambiguous
+interpretation returns unresolved instead of raising. Kind/extension
+operations choose no individual. Mint is a choice during reading and a
+recurrence-gated effect after the kept closing. No word spelling anchors any
+of these choices. See [the specification](specs/2026-09-26-independent-components.md).
+
+Expectation and population sparse-coding costs supply the existing sentence
+choice credit. The columns' meanings exclude reference geometry; situated
+operands retain it as binding evidence. Tests of this mechanism do not prove
+that natural determiners or pronouns have learned the intended routing.
+
 Decided in direction by Alec on 2026-09-28. The statement and its
 consequences are in
 [the accessible-mind specification §2.0.1](specs/2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention);
-this section gives the language mechanics. Nothing in it is implemented as
-such or measured.
+this section gives the language mechanics. The binding mechanism above is
+implemented; the full narrowing account and its natural-language behaviour
+remain unmeasured.
 
 **The parse.** "A fake gun" is `lower(fake(gun(thing)))`. `thing` is the
 domain of discourse. `gun()` and `fake()` are the same kind of operation,

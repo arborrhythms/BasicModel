@@ -198,6 +198,15 @@ Training loop and I/O.
 | `expectationQueryBudget` | nonnegative integer | `64` | Local cap on optional prior thought, clipped to the same input's remaining `attentionBudget`. Both forecasts reserve the larger spend until their later comparison. Later packed slots use prediction without an optional query episode. |
 | `intraLossWeight` | float | `0.1` | Loss weight on the in-STM next-idea term $\mathcal{L}_\text{intra} = \mathrm{MSE}(\hat{c}_t, c_t)$ from `IntraSentenceLayer` (owned by ConceptualSpace), added to the IR-loss path. `0` disables. See [STM.md Section 6](STM.md#6-intrasentencelayer). |
 | `sentenceExpectationLossWeight` | float | `0.1` | Weight on role MSE, role-presence binary cross entropy and clause-kind binary cross entropy (`structured`), or root MSE (`root`). Uses a bounded row/document observation view: current-step source context can train its encoder, targets/durable history are detached. Consumed alongside Teacher reconstruction; `0` disables. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
+| `independenceWeight` | nonnegative float | `0.1` | Weight of the LTM-population sparse-coding objective, owned by expectation. Applies to grammars declaring individual references. |
+| `independencePriorScale` | positive float | `0.05` | Laplace activation prior and automatic-relevance pressure on unit direction columns; also scales column incoherence. |
+| `independenceMintThreshold` | positive float | `0.2` | Unexplained event-coordinate residual norm required for column admission after four distinct witnesses. Admission remains a kept-closing effect. |
+
+Item 6.5 keeps `k=4` for definedness `n/(n+4)` and recurrence. It introduces
+no live-source compatibility switch. The raw role predictor keeps its
+architecture; where identity columns exist its role error is evaluated in
+column coordinates, with a detached target and a freshly encoded current
+source. No independence term reads the geometric reference bands.
 
 Gradient-balance defaults and validation are implemented in
 [Models.py](../bin/Models.py), with the numerical contract in

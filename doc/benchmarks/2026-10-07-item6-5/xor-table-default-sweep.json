@@ -1,0 +1,74 @@
+{
+  "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct": {
+    "outcome": "skipped",
+    "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_dimensions.py', 163, 'Skipped: slow -- set RUN_SLOW=1')"
+  },
+  "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp": {
+    "outcome": "skipped",
+    "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_explicit_dimensions.py', 181, 'Skipped: slow -- set RUN_SLOW=1')"
+  },
+  "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0]": {
+    "outcome": "passed",
+    "message": ""
+  },
+  "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[1]": {
+    "outcome": "passed",
+    "message": ""
+  },
+  "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]": {
+    "outcome": "passed",
+    "message": ""
+  },
+  "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs": {
+    "outcome": "passed",
+    "message": ""
+  },
+  "test/test_mm_xor.py::TestMMXorConvergence::test_convergence": {
+    "outcome": "skipped",
+    "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py', 182, 'Skipped: slow -- set RUN_SLOW=1')"
+  },
+  "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols": {
+    "outcome": "passed",
+    "message": ""
+  },
+  "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces": {
+    "outcome": "passed",
+    "message": ""
+  },
+  "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal": {
+    "outcome": "skipped",
+    "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py', 171, 'Skipped: slow -- set RUN_SLOW=1')"
+  },
+  "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal": {
+    "outcome": "skipped",
+    "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py', 176, 'Skipped: slow -- set RUN_SLOW=1')"
+  },
+  "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental": {
+    "outcome": "passed",
+    "message": ""
+  },
+  "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]": {
+    "outcome": "passed",
+    "message": ""
+  },
+  "test/test_grounded_xor.py::test_native_unseeded_xor[0-8]": {
+    "outcome": "passed",
+    "message": ""
+  },
+  "test/test_grounded_xor.py::test_native_unseeded_xor[1-4]": {
+    "outcome": "passed",
+    "message": ""
+  },
+  "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]": {
+    "outcome": "passed",
+    "message": ""
+  },
+  "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]": {
+    "outcome": "passed",
+    "message": ""
+  },
+  "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]": {
+    "outcome": "passed",
+    "message": ""
+  }
+}

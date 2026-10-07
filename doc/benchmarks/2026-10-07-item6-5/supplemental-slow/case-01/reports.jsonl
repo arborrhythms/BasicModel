@@ -1,0 +1,3 @@
+{"nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct", "phase": "setup", "outcome": "passed", "seconds": 1.4560723749455065, "failure": null}
+{"nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct", "phase": "call", "outcome": "passed", "seconds": 32.341976583004, "failure": null}
+{"nodeid": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct", "phase": "teardown", "outcome": "passed", "seconds": 0.06893554097041488, "failure": null}

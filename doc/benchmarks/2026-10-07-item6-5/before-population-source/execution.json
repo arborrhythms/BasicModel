@@ -1,0 +1,9 @@
+{
+  "full_suite": {
+    "MODEL_COMPILE": "none",
+    "BASICMODEL_DEVICE": "cpu",
+    "DEVELOPER_DIR": "/Library/Developer/CommandLineTools"
+  },
+  "compilation": "Explicit full-graph and compiled-boundary tests select their backends independently. Automatic model compilation is disabled for the CPU regression suite; no test selection or assertion changes.",
+  "source_sha256": "9c821ae47a1ba9423f597e08c76b1c2db0be4cfeee067a8977ae358d233caf8c"
+}

@@ -1,0 +1,65 @@
+...............F                                                         [100%]
+=================================== FAILURES ===================================
+___________ test_native_admission_optimizer_ownership_and_checkpoint ___________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3189/test_native_admission_optimize0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11f351af0>
+
+    def test_native_admission_optimizer_ownership_and_checkpoint(tmp_path, monkeypatch):
+        import copy
+        from pathlib import Path
+        import Language
+        import Models
+        import util
+        from data import TheData
+        from Spaces import _concept_alloc_of
+        from IndependentComponents import EventChart
+        source = Path(__file__).resolve().parents[1] / 'data' / 'MM_ladder.xml'
+        config = tmp_path / 'components.xml'
+        config.write_text(source.read_text().replace('>136<', '>264<').replace('<architecture>',
+            '<architecture><ltmConsolidation>true</ltmConsolidation>', 1))
+        util.init_config(path=str(config), defaults_path=str(source.parent / 'model.xml'))
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        Language.TheGrammar._configured = False
+        cfg = Models.BaseModel.load_config(str(config))
+        TheData.load('math', dat=dict(cfg['architecture']['data']))
+        model, _ = Models.BaseModel.from_config(str(config), data=TheData)
+        try:
+            owner = model._concept_owner()
+            columns = owner.components
+            event = owner.new_concept()
+            event_row = owner._csw_row_of(event)
+            width = owner.similarity_codebook.W.shape[-1]
+            code = torch.zeros(1, width)
+            derived = owner.similarity_codebook.mereology
+>           code[0, derived.percept_event_width] = 1.
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_independent_components.py:338: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x10cd391c0>
+func = <slot wrapper '__setitem__' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+         0.,... 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+         0., 0., 0., 0., 0., 0., 0., 0.]]), (0, 104), 1.0)
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       IndexError: index 104 is out of bounds for dimension 1 with size 104
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: IndexError
+=============================== warnings summary ===============================
+test/test_independent_components.py::test_native_admission_optimizer_ownership_and_checkpoint
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_independent_components.py::test_native_admission_optimizer_ownership_and_checkpoint
+1 failed, 15 passed, 1 warning in 2.33s

@@ -6,8 +6,12 @@ October 3, with sampled exploration, the decoder margin audit, affine numeric
 reading and support-governed decoder eligibility under the uncommitted
 [6.8 §§10–14 review and §14 addendum](plans/2026-09-27-item-6-8-one-attention.md).
 Each optimizer parameter has one objective owner. The supplied
-answer stops at the understanding, and expectation detaches both its evidence
-and targets. Step 5a's uncut answer and the supplied-answer gradient projection
+answer stops at the understanding. Item 6.5's accepted mechanism adds
+fresh current-source encodings through the live identity columns; older
+context, routing evidence and observed targets remain detached. The
+[implementation proposal](specs/2026-09-26-independent-components.md#9-implementation-proposal-october-7)
+records this sentence-boundary choice and the sparse-coding energy, accepted
+in spec §10 and by Alec on October 7. Step 5a's uncut answer and the supplied-answer gradient projection
 are retired. Forward representations and numerical operator hosts remain shared.
 
 <a id="the-training-step-october-1"></a>
@@ -49,7 +53,7 @@ accompany the sentence comparison.
 | Parameter owner | Weights and permitted update |
 |---|---|
 | Reconstruction (R) | Perception (the sole writer of native PS/WS prototypes and 11b evidence), field dictionaries, compose operators and tied inverses, compose chooser, and the shared generate decoder (chooser and parameterized generate faces). Grammar lessons train only their chooser, never an operator. Momentum descent; codes have no EMA refresh or contextual rotation. |
-| Expectation (E) | Within-sentence, between-sentence, ARMA and contrastive predictors; the predictive reading-attention module where enabled. All sources, routing evidence and targets are detached. |
+| Expectation (E) | Within-sentence, between-sentence, ARMA and contrastive predictors; the predictive reading-attention module where enabled; item 6.5's identity/change columns and relevance scales. The latest source is freshly encoded through live columns; older context, routing evidence and targets detach. |
 | Answer (A) | Numeric head and affine root/end/echoic-bank reader, plus its independent comparison copy on the sentence path; learned memory retrieval for thought and generation, question conditioners and answer adapters/controllers. Only the presented reader supplies outputs; the comparison copy supplies the chooser's answer cost. The concluded understanding is detached. The generate chooser belongs to reconstruction. |
 
 [ObjectiveOwnership](../bin/ObjectiveOwnership.py) reads the trained named
@@ -104,7 +108,10 @@ addresses remain provenance and never seed the code. Direct opaque rows use
 native roles and metadata as a fallback content key. The content lookup retains all
 distinct occurrences; repeated presentations re-witness one addressed row.
 
-Order-zero meaning is the detached, recency-weighted mean of those identities
+Under plan §44, each fixed identity direction has magnitude `n/(n+4)`, with
+`n` the row's witness count. Order-zero meaning takes the detached,
+recency-weighted mean of those identities, normalizes its nonzero direction,
+and scales it by `n/(n+4)` for the number of containing rows. It remains
 on the **for** pole, with zero on the **against** pole. The flat complement is
 `[for_0 … for_K−1 | against_0 … against_K−1]`. References and inverted leaf
 postings retain their membership; only REL_NONE rows contribute and DEF rows
@@ -433,7 +440,8 @@ prevents generation or lessons from writing an operator.
 | `reconstruction.free_bytes` | Shared generate walk spelling vs observed bytes including NUL; `log 256` | `reconstructionScale` | Trial; R, including decoder and live root; candidate bank codes detached. Detached chosen report at batch end |
 | `reconstruction.what/where/when`, `reconstruction_reverse.what/where/when` | Grammar-free perceptual/masked or reverse event vs input target; origin per band | reconstruction scale × band scale | Batch; perception and the active input inverse |
 | `leaf_distill` | Historical root decoder's predicted exact leaves vs retained leaves; origin | `leafDistillWeight` | Batch; decoder and live input root where enabled |
-| `expectation.roles` | Predicted complete role payload vs arriving detached meaning; origin | `interLossWeight` | Trial or batch, once; E only; source and target detached |
+| `expectation.roles` | Predicted role payload vs arriving detached meaning, in identity-column coordinates once available; origin | `interLossWeight` | Trial or batch, once; E; latest source encoded through live columns, target and older context detached |
+| `expectation.components` | Retained observation population plus current fused S; Laplace sparse-coding energy for A and one-sparse innovation energy for B | `independenceWeight` | Trial; E owns columns and relevance; the existing closing comparison credits the global grammar choice |
 | `expectation.presence` | Role-presence logits vs occupied-role bits; `log 2` | `interLossWeight` | Trial or batch, once; E |
 | `expectation.kind` | Idea/relation logit vs arriving kind; `log 2` | `interLossWeight` | Trial or batch, once; E |
 | `expectation.root` | Root predictor vs arriving root where structured roles are inactive; origin | `interLossWeight` | Trial or batch, once; E only |

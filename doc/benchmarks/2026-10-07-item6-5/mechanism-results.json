@@ -1,0 +1,33 @@
+{
+  "cases": {
+    "test/test_independent_components.py::test_definedness_keeps_direction_input_uncertainty_and_evidence_separate": "passed",
+    "test/test_independent_components.py::test_row_definedness_survives_rewitness_and_checkpoint_without_changing_truth": "passed",
+    "test/test_independent_components.py::test_word_magnitude_counts_containing_rows_and_excludes_definition_rows": "passed",
+    "test/test_independent_components.py::test_fixed_column_and_individuation_are_recurrence_effects": "passed",
+    "test/test_independent_components.py::test_two_cats_share_a_word_but_have_distinct_recurring_properties": "passed",
+    "test/test_independent_components.py::test_mint_threshold_duplicate_witness_and_relevance_do_not_delete_columns": "passed",
+    "test/test_independent_components.py::test_population_loss_is_batch_partition_invariant_and_has_one_backward": "passed",
+    "test/test_independent_components.py::test_role_superposition_does_not_claim_role_binding": "passed",
+    "test/test_independent_components.py::test_change_dictionary_is_one_sparse_per_sentence": "passed",
+    "test/test_independent_components.py::test_dictionary_checkpoint_preserves_pending_recurrence_and_learned_parameters": "passed",
+    "test/test_independent_components.py::test_identity_candidates_share_the_operation_softmax_and_live_credit": "passed",
+    "test/test_independent_components.py::test_event_chart_excludes_address_bands_and_preserves_evidence_poles": "passed",
+    "test/test_independent_components.py::test_prediction_reencodes_live_columns_but_detaches_targets_and_older_context": "passed",
+    "test/test_independent_components.py::test_native_column_reads_use_witness_magnitude_and_only_situation_candidates": "passed",
+    "test/test_independent_components.py::test_kind_bind_and_mint_closings_obey_the_selected_choice": "passed",
+    "test/test_independent_components.py::test_selected_grammar_controls_admission_without_word_lookup[mint--1-expected0]": "passed",
+    "test/test_independent_components.py::test_selected_grammar_controls_admission_without_word_lookup[bind-77-expected1]": "passed",
+    "test/test_independent_components.py::test_selected_grammar_controls_admission_without_word_lookup[kind--1-expected2]": "passed",
+    "test/test_independent_components.py::test_ltm_population_is_detached_and_independent_of_current_batch_partition": "passed",
+    "test/test_independent_components.py::test_unretained_innovation_cannot_change_population_cost": "passed",
+    "test/test_independent_components.py::test_continuity_is_binding_evidence_and_never_a_column_signature": "passed",
+    "test/test_independent_components.py::test_prediction_role_cost_uses_column_coordinates_with_a_frozen_target": "passed",
+    "test/test_independent_components.py::test_relative_clause_sources_extend_the_ordinary_ceiling_only_to_stm_capacity": "passed",
+    "test/test_independent_components.py::test_temporal_shuffle_reports_loss_of_predictability_without_changing_identity": "passed",
+    "test/test_independent_components.py::test_native_admission_optimizer_ownership_and_checkpoint": "passed"
+  },
+  "counts": {
+    "passed": 25
+  },
+  "source_manifest_sha256": "d8f374317ea8054cdb9e99077ccdf35df76866e28d6bf46492903f3f4948b099"
+}

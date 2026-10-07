@@ -1,0 +1,22 @@
+.......s.................................F...........................sss [ 63%]
+..................................ssssssss                               [100%]
+=================================== FAILURES ===================================
+_______ test_registry_installation_reuses_native_bindings_and_checkpoint _______
+test/test_query_vp_boundaries.py:123: in test_registry_installation_reuses_native_bindings_and_checkpoint
+    assert target.load_weights(path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5061: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[GrammaticalVPCheckpoint] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3217/test_registry_installation_reu0/query-vps.ckpt
+=============================== warnings summary ===============================
+test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_query_vp_boundaries.py::test_registry_installation_reuses_native_bindings_and_checkpoint
+1 failed, 101 passed, 12 skipped, 1 warning in 9.89s

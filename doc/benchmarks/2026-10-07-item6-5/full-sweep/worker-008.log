@@ -1,0 +1,93 @@
+.......F...................................s...............ssssss..FFFF. [ 64%]
+............ss......Fs..................                                 [100%]
+=================================== FAILURES ===================================
+_________ test_actual_model_checkpoint_preserves_scoped_fact_identity __________
+test/test_existence_metadata.py:195: in test_actual_model_checkpoint_preserves_scoped_fact_identity
+    assert restored.load_weights(path, strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5061: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3199/test_actual_model_checkpoint_p0/scoped-fact.pt
+__ test_inventory_checkpoint_preserves_definition_between_modes[mixing-False] __
+test/test_field_binding.py:71: in test_inventory_checkpoint_preserves_definition_between_modes
+    assert target.load_weights(checkpoint, strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5061: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3199/test_inventory_checkpoint_pres0/shared-inventory.pt
+[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3199/test_inventory_checkpoint_pres0/shared-inventory.pt has no embedding bundle; embeddings stay at random init.
+__ test_inventory_checkpoint_preserves_definition_between_modes[mixing-True] ___
+test/test_field_binding.py:71: in test_inventory_checkpoint_preserves_definition_between_modes
+    assert target.load_weights(checkpoint, strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5061: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3199/test_inventory_checkpoint_pres1/shared-inventory.pt
+[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3199/test_inventory_checkpoint_pres1/shared-inventory.pt has no embedding bundle; embeddings stay at random init.
+_ test_inventory_checkpoint_preserves_definition_between_modes[aligned-False] __
+test/test_field_binding.py:71: in test_inventory_checkpoint_preserves_definition_between_modes
+    assert target.load_weights(checkpoint, strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5061: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3199/test_inventory_checkpoint_pres2/shared-inventory.pt
+[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3199/test_inventory_checkpoint_pres2/shared-inventory.pt has no embedding bundle; embeddings stay at random init.
+__ test_inventory_checkpoint_preserves_definition_between_modes[aligned-True] __
+test/test_field_binding.py:71: in test_inventory_checkpoint_preserves_definition_between_modes
+    assert target.load_weights(checkpoint, strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5061: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3199/test_inventory_checkpoint_pres3/shared-inventory.pt
+[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3199/test_inventory_checkpoint_pres3/shared-inventory.pt has no embedding bundle; embeddings stay at random init.
+_____________ test_checkpoint_restores_optimizer_counters_and_rng ______________
+test/test_fineweb_preflight.py:145: in test_checkpoint_restores_optimizer_counters_and_rng
+    assert restored.load_weights(str(path), require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5061: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=False).
+Training throughput: 1 batches in 0.074s; word units 100.0% of 4 words (letters-only 100.0% of 4).
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3199/test_checkpoint_restores_optim0/resume.ckpt
+=============================== warnings summary ===============================
+test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_field_binding.py::test_vector_head_selects_symbols_without_truncating_knowing
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:16786: RuntimeWarning: concept pool order 1 exhausted: cannot reserve 4 provisional rows
+    warnings.warn(f"concept pool order {order} exhausted: cannot reserve {self.concept_pool_size} provisional rows", RuntimeWarning)
+
+test/test_field_learning.py::test_sentence_boundary_writes_present_percepts_at_the_negative_pole
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_existence_metadata.py::test_actual_model_checkpoint_preserves_scoped_fact_identity
+FAILED test/test_field_binding.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-False]
+FAILED test/test_field_binding.py::test_inventory_checkpoint_preserves_definition_between_modes[mixing-True]
+FAILED test/test_field_binding.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-False]
+FAILED test/test_field_binding.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-True]
+FAILED test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng
+6 failed, 96 passed, 10 skipped, 3 warnings in 15.73s

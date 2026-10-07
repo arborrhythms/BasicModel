@@ -1,0 +1,19 @@
+{
+  "selectors": [
+    "test/test_independent_components.py",
+    "test/test_definition_rows.py",
+    "test/test_review13_subspaces.py",
+    "test/test_lexical_reference_orders.py",
+    "test/test_operators_round4a0.py",
+    "test/test_basicmodel.py",
+    "test/test_primitive_properties.py",
+    "test/test_field_binding.py",
+    "test/test_objective_ownership.py",
+    "test/test_reasoning_cde_model.py",
+    "test/test_learning_readiness.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

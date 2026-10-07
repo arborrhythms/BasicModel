@@ -1,0 +1,68 @@
+{
+  "startup_failures": [
+    {
+      "run": "sum-01",
+      "exit_code": 1,
+      "elapsed_seconds": 4.299037958029658,
+      "failed_before": "module.child(), model construction and all training"
+    },
+    {
+      "run": "sum-02",
+      "exit_code": 1,
+      "elapsed_seconds": 5.311628290917724,
+      "failed_before": "module.child(), model construction and all training"
+    },
+    {
+      "run": "sum-03",
+      "exit_code": 1,
+      "elapsed_seconds": 6.322981041041203,
+      "failed_before": "module.child(), model construction and all training"
+    },
+    {
+      "run": "sum-04",
+      "exit_code": 1,
+      "elapsed_seconds": 4.318648708052933,
+      "failed_before": "module.child(), model construction and all training"
+    },
+    {
+      "run": "sum-05",
+      "exit_code": 1,
+      "elapsed_seconds": 5.323957666987553,
+      "failed_before": "module.child(), model construction and all training"
+    },
+    {
+      "run": "sum-06",
+      "exit_code": 1,
+      "elapsed_seconds": 6.334798292024061,
+      "failed_before": "module.child(), model construction and all training"
+    },
+    {
+      "run": "sum-07",
+      "exit_code": 1,
+      "elapsed_seconds": 4.297365832957439,
+      "failed_before": "module.child(), model construction and all training"
+    },
+    {
+      "run": "sum-08",
+      "exit_code": 1,
+      "elapsed_seconds": 5.303203333052807,
+      "failed_before": "module.child(), model construction and all training"
+    },
+    {
+      "run": "sum-09",
+      "exit_code": 1,
+      "elapsed_seconds": 6.310200291918591,
+      "failed_before": "module.child(), model construction and all training"
+    },
+    {
+      "run": "sum-10",
+      "exit_code": 1,
+      "elapsed_seconds": 3.727509667049162,
+      "failed_before": "module.child(), model construction and all training"
+    }
+  ],
+  "trainings_started": 0,
+  "trained_results_discarded": 0,
+  "source_changed": false,
+  "reason": "Observer context entry failed before the sum training function was called; round2_score_probe.py and handoff_probe.py were missing from the copied audit harness."
+}

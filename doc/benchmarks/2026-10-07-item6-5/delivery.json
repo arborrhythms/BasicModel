@@ -1,0 +1,51 @@
+{
+  "status": "ready for Claude code review; uncommitted",
+  "baseline": "f4a68404ea8d4704bfeb6279a738c93356d289d6",
+  "source_manifest_sha256": "d8f374317ea8054cdb9e99077ccdf35df76866e28d6bf46492903f3f4948b099",
+  "source_matched": true,
+  "primary_helpers_matched": true,
+  "supplemental_helpers_matched": true,
+  "full_sweep": {
+    "selected": 5527,
+    "completed": 5527,
+    "exit_code": 0
+  },
+  "mechanism_cases": 25,
+  "standing_counts": {
+    "class_pass": 10,
+    "reconstruction_pass": 10,
+    "joint": 10,
+    "mm_pass": 10,
+    "sum_pass": 10,
+    "sum_floor_pass": 10,
+    "xor_bands": {
+      "at 0": 10,
+      "at 1/4": 0,
+      "between": 0,
+      "above 1/4": 0
+    },
+    "sum_bands": {
+      "at 0": 0,
+      "at 1/4": 10,
+      "between": 0,
+      "above 1/4": 0
+    }
+  },
+  "supplemental_slow": {
+    "passed": 4,
+    "total": 4
+  },
+  "training_retries": 0,
+  "replacement_trainings": 0,
+  "pre_training_launcher_failures": 10,
+  "learning_gates": "prerequisite missing: no inspected checkpoint records 1,000,000 completed FineWeb sentences",
+  "review_decisions": [
+    "Amortized Laplace sparse-coding energy versus the exact likelihood wording",
+    "Fresh current-source column encoding at sentence update boundaries",
+    "Existing detached role view plus native LTM anchor in the bounded situation"
+  ],
+  "other_work_preserved": [
+    "WikiOracle nanochat gitlink change",
+    "doc/plans/2026-10-07-thought-loop.md"
+  ]
+}

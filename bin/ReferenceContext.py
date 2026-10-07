@@ -18,6 +18,8 @@ class SituationFrame:
     row_id: int
     point: object
     order: int = 1
+    where: object = None
+    when: object = None
 
     def __iter__(self):
         # The existing predictor reads its three-role context unchanged.
@@ -25,7 +27,9 @@ class SituationFrame:
 
     def detached(self):
         return replace(self, roles=self.roles.detach().clone(),
-                       point=None if self.point is None else self.point.detach().clone())
+                       point=None if self.point is None else self.point.detach().clone(),
+                       where=None if self.where is None else self.where.detach().clone(),
+                       when=None if self.when is None else self.when.detach().clone())
 
     @classmethod
     def from_row(cls, row):
@@ -34,13 +38,19 @@ class SituationFrame:
             return None
         return cls(int(meaning.role_mask.sum()), meaning.roles.detach().clone(),
                    meaning.role_mask, row['row_id'],
-                   row['np1'].detach().clone() if row['rel_type'] == 0 else None)
+                   row['np1'].detach().clone() if row['rel_type'] == 0 else None,
+                   where=row.get('where'), when=row.get('when'))
 
 
-def reference_requests(language, actions):
-    """Resolve a selected role at its head; the enclosing scope owns its kind."""
+def reference_requests(language, actions, *, operation_refs=None):
+    """Resolve a selected role at its head; the enclosing scope owns its kind.
+
+    A kept numerical journal optionally adds the selected native reference
+    to each request. No identity is inferred from a word or its coordinates.
+    """
     requests, stack = {}, []
-    for kind, local, word in actions.detach().cpu().tolist():
+    references = None if operation_refs is None else operation_refs.detach().cpu().tolist()
+    for action, (kind, local, word) in enumerate(actions.detach().cpu().tolist()):
         if kind < 0:
             break
         if kind == 0:
@@ -58,11 +68,24 @@ def reference_requests(language, actions):
             modes['I' + str(rules[local].head_role)] = determiner
         for role, order in getattr(rules[local], 'reference_orders', ()):
             for leaf in operands[int(role[1:]) - 1]:
-                requests[leaf] = order, modes.get(role)
+                request = order, modes.get(role)
+                if references is not None:
+                    request = (*request, int(references[action][int(role[1:]) - 1]))
+                requests[leaf] = request
         head = getattr(rules[local], 'head_role', 0)
         stack.append(operands[head - 1]
                      if head else tuple(leaf for operand in operands for leaf in operand))
     return requests
+
+
+def selected_individual_references(language, program):
+    """The kept choice, including -1 for mint, after enclosing kind scopes."""
+    if program is None or program.operation_refs is None:
+        return ()
+    requests = reference_requests(language, program.actions,
+                                  operation_refs=program.operation_refs)
+    return tuple(dict.fromkeys(reference for order, mode, reference in requests.values()
+                               if order == 1 and mode != 'kind'))
 
 
 class ReferenceTypes(NamedTuple):
@@ -82,6 +105,7 @@ class ReferenceBank(NamedTuple):
     predicted: torch.Tensor
     types: object = None
     cases: object = None
+    column_ids: object = None
 
 
 def resolve_order(value, identity, order, types):
@@ -178,7 +202,11 @@ def resolve_operand(value, identity, position, *, mode, bank, live, active, forc
 
 def prepare_operands(window, identities, flags, positions, *, rules, unary_rules,
                      bank, live, active):
-    """Resolve each candidate's declared noun roles before evaluating it."""
+    """Enumerate reference variants of each operation for one global softmax.
+
+    A variant retains the grammar operation's index and learned scoring row.
+    No local score, argmax, allocation or dictionary choice occurs here.
+    """
     B, N, D = window.shape
 
     def propose(value, ids, scope, pos, rule, role, valid):
@@ -188,54 +216,124 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
         if determiner is not None and role == 'I' + str(rule.head_role):
             mode = determiner
             if mode == 'kind':
-                return value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid)
+                return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
             order = 1
         if mode == 'mint':
-            return value, torch.full_like(ids, -1), torch.zeros_like(valid), torch.ones_like(valid)
-        if order is not None:
+            return [(value, torch.full_like(ids, -1), torch.zeros_like(valid), torch.ones_like(valid))]
+        if order is not None and order != 1:
             value, ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
         if order != 1:
-            return value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid)
+            return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
+        inventory = getattr(bank, 'column_ids', None)
+        if inventory is not None and inventory.numel() == 0:
+            # A cold inventory cannot bind. Keep one masked proposal for a
+            # pronoun/definite, or the single mint proposal, without expanding
+            # a compiled graph into many copies of unavailable candidates.
+            permitted = torch.zeros_like(valid) if mode in ('pronoun', 'bind') else valid
+            return [(value, torch.full_like(ids, -1), torch.zeros_like(valid), permitted)]
         from ClauseScope import ClauseScope
-        return resolve_operand(value, ids, pos, mode=mode, bank=bank, live=live, active=valid,
-                               local=scope.bitwise_and(ClauseScope.LOCAL) != 0)
-    lefts, rights, brefs, brels, bvalid, case_weights = [], [], [], [], [], []
+        P, C = value.shape[1], bank.ids.shape[1]
+        live_values, live_ids, live_orders, live_relations, live_positions = live[:5]
+        live_local = live[5] if len(live) > 5 else torch.zeros_like(live_ids, dtype=torch.bool)
+        earlier = (live_positions[:, None] < pos[:, :, None]) & (live_orders[:, None] == 1)
+        earlier = earlier & ~live_local[:, None]
+        if inventory is not None:
+            earlier = earlier & torch.isin(live_ids, inventory)[:, None]
+        earlier = earlier & (live_ids[:, None] != -1) & (live_ids[:, None] != 0)
+        own_inventory = bank.ids.flatten() if inventory is None else inventory
+        own = torch.isin(ids, own_inventory) & (scope.bitwise_and(ClauseScope.LOCAL) == 0)
+        # Only a native column can be its own candidate. A word's dictionary
+        # type is never silently promoted to an individual.
+        candidate_ids = torch.cat((ids[:, :, None], bank.ids.flip(1)[:, None].expand(B, P, C),
+                                   live_ids[:, None].expand(B, P, -1)), -1)
+        candidate_values = torch.cat((value[:, :, None], bank.values.flip(1)[:, None].expand(B, P, C, D),
+                                      live_values[:, None].expand(B, P, -1, D)), -2)
+        candidate_relations = torch.cat(((scope.bitwise_and(1) != 0)[:, :, None],
+                                         bank.relations.flip(1)[:, None].expand(B, P, C),
+                                         live_relations[:, None].expand(B, P, -1)), -1)
+        available = torch.cat((own[:, :, None], bank.valid.flip(1)[:, None].expand(B, P, C), earlier), -1)
+        size = candidate_ids.shape[-1]
+        preceding = torch.arange(size, device=ids.device)[None] < torch.arange(size, device=ids.device)[:, None]
+        duplicate = ((candidate_ids[..., :, None] == candidate_ids[..., None, :])
+                     & preceding & available[..., None, :]).any(-1)
+        available = available & ~duplicate & valid[..., None]
+        # Enumerate no more than the existing situation/STM capacity, even
+        # when a column appears in both. This is recency enumeration, not a
+        # content score or a referent selection.
+        count = min(size, max(C, live_ids.shape[1]))
+        if inventory is not None:
+            count = min(count, inventory.numel())
+        priority = torch.arange(size, 0, -1, device=ids.device) * available
+        retained = priority.topk(count, dim=-1).indices
+        candidate_ids = candidate_ids.gather(-1, retained)
+        candidate_values = candidate_values.gather(-2, retained[..., None].expand(B, P, count, D))
+        candidate_relations = candidate_relations.gather(-1, retained)
+        available = available.gather(-1, retained)
+        options = [(candidate_values[:, :, c], candidate_ids[:, :, c],
+                    candidate_relations[:, :, c], available[:, :, c]) for c in range(count)]
+        if mode not in ('pronoun', 'bind'):
+            options.append((value, torch.full_like(ids, -1), torch.zeros_like(valid), valid))
+        return options
+
+    def choice_tag(refs, rule, role):
+        order = dict(getattr(rule, 'reference_orders', ())).get(role)
+        mode = dict(getattr(rule, 'reference_kinds', ())).get(role)
+        determiner = getattr(rule, 'determiner_mode', None)
+        if determiner is not None and role == 'I' + str(rule.head_role):
+            order, mode = 1, determiner
+        if order != 1 or mode == 'kind':
+            return torch.full_like(refs, -1)
+        # -2 is a comparison-only tag for mint, never a native reference.
+        return torch.where(refs == -1, -2, refs)
+
+    lefts, rights, brefs, brels, bvalid, case_weights, binary_ops = [], [], [], [], [], [], []
+    bchoices, uchoices = [], []
     case_bank = getattr(bank, 'cases', None)
     case_count = 1 if case_bank is None else len(case_bank.ids)
-    for rule in rules:
-        left = propose(window[:, :-1], identities[:, :-1], flags[:, :-1], positions[:, :-1],
+    for operation, rule in enumerate(rules):
+        left_options = propose(window[:, :-1], identities[:, :-1], flags[:, :-1], positions[:, :-1],
                        rule, 'I1', active[:, :-1] & active[:, 1:])
-        right = propose(window[:, 1:], identities[:, 1:], flags[:, 1:], positions[:, 1:],
+        right_options = propose(window[:, 1:], identities[:, 1:], flags[:, 1:], positions[:, 1:],
                         rule, 'I2', active[:, :-1] & active[:, 1:])
-        lefts.append(left[0])
-        rights.append(right[0])
-        brefs.append(torch.stack((left[1], right[1]), -1))
-        brels.append(torch.stack((left[2], right[2]), -1))
-        valid = left[3] & right[3]
-        weights = window.new_zeros(B, N-1, case_count, 2)
-        case_head = getattr(rule, 'case_head_role', 0)
-        if case_head:
-            if case_bank is None:
-                valid = torch.zeros_like(valid)
-            else:
-                from CaseSelection import select_cases
-                modifier, head = (left[1], right[1]) if case_head == 2 else (right[1], left[1])
-                selection = select_cases(case_bank, modifier, head)
-                weights = selection.weights
-                valid = valid & selection.available
-        case_weights.append(weights)
-        bvalid.append(valid)
-    values, urefs, urels, uvalid = [], [], [], []
-    for rule in unary_rules:
-        operand = propose(window, identities, flags, positions, rule, 'I1', active)
-        values.append(operand[0])
-        urefs.append(torch.stack((operand[1], torch.full_like(operand[1], -1)), -1))
-        urels.append(torch.stack((operand[2], torch.zeros_like(operand[2])), -1))
-        uvalid.append(operand[3])
+        for left in left_options:
+            for right in right_options:
+                binary_ops.append(operation)
+                lefts.append(left[0])
+                rights.append(right[0])
+                brefs.append(torch.stack((left[1], right[1]), -1))
+                bchoices.append(torch.stack((choice_tag(left[1], rule, 'I1'),
+                                             choice_tag(right[1], rule, 'I2')), -1))
+                brels.append(torch.stack((left[2], right[2]), -1))
+                valid = left[3] & right[3]
+                weights = window.new_zeros(B, N-1, case_count, 2)
+                case_head = getattr(rule, 'case_head_role', 0)
+                if case_head:
+                    if case_bank is None:
+                        valid = torch.zeros_like(valid)
+                    else:
+                        from CaseSelection import select_cases
+                        modifier, head = (left[1], right[1]) if case_head == 2 else (right[1], left[1])
+                        selection = select_cases(case_bank, modifier, head)
+                        weights = selection.weights
+                        valid = valid & selection.available
+                case_weights.append(weights)
+                bvalid.append(valid)
+    values, urefs, urels, uvalid, unary_ops = [], [], [], [], []
+    for operation, rule in enumerate(unary_rules):
+        for operand in propose(window, identities, flags, positions, rule, 'I1', active):
+            unary_ops.append(operation)
+            values.append(operand[0])
+            urefs.append(torch.stack((operand[1], torch.full_like(operand[1], -1)), -1))
+            uchoices.append(torch.stack((choice_tag(operand[1], rule, 'I1'),
+                                         torch.full_like(operand[1], -1)), -1))
+            urels.append(torch.stack((operand[2], torch.zeros_like(operand[2])), -1))
+            uvalid.append(operand[3])
 
     def stack(items, width, tail=(), *, dtype=None):
         return torch.stack(items, 2) if items else torch.zeros((B, width, 0, *tail), device=window.device, dtype=dtype or window.dtype)
-    return dict(case_bank=case_bank, case_weights=stack(case_weights, N-1, (case_count, 2)), left=stack(lefts, N-1, (D,)), right=stack(rights, N-1, (D,)), unary=stack(values, N, (D,)),
+    return dict(binary_ops=tuple(binary_ops), unary_ops=tuple(unary_ops),
+                case_bank=case_bank, case_weights=stack(case_weights, N-1, (case_count, 2)), left=stack(lefts, N-1, (D,)), right=stack(rights, N-1, (D,)), unary=stack(values, N, (D,)),
                 binary_refs=stack(brefs, N-1, (2,), dtype=torch.long), unary_refs=stack(urefs, N, (2,), dtype=torch.long),
+                binary_choices=stack(bchoices, N-1, (2,), dtype=torch.long), unary_choices=stack(uchoices, N, (2,), dtype=torch.long),
                 binary_relations=stack(brels, N-1, (2,), dtype=torch.bool), unary_relations=stack(urels, N, (2,), dtype=torch.bool),
                 binary_valid=stack(bvalid, N-1, dtype=torch.bool), unary_valid=stack(uvalid, N, dtype=torch.bool))

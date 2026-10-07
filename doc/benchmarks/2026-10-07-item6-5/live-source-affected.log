@@ -1,0 +1,30 @@
+..F                                                                      [100%]
+=================================== FAILURES ===================================
+_______ test_full_role_loss_trains_predictor_but_never_source_or_target ________
+
+    def test_full_role_loss_trains_predictor_but_never_source_or_target():
+        model = layer()
+        encoder = torch.nn.Linear(4, 4, bias=False)
+        source = encoder(torch.arange(12.).reshape(3, 4) / 12)
+        target = torch.nn.Parameter(torch.ones(3, 4))
+        observe(model, source)
+        observe(model, target)
+        loss = model.consume_inter_loss()
+        assert loss is not None
+        loss.backward()
+        assert target.grad is None
+>       assert encoder.weight.grad is None
+E       assert tensor([[ 0.0220,  0.0251,  0.0281,  0.0312],\n        [-0.0143, -0.0198, -0.0253, -0.0309],\n        [-0.0289, -0.0346, -0.0402, -0.0459],\n        [-0.0041, -0.0021, -0.0001,  0.0018]]) is None
+E        +  where tensor([[ 0.0220,  0.0251,  0.0281,  0.0312],\n        [-0.0143, -0.0198, -0.0253, -0.0309],\n        [-0.0289, -0.0346, -0.0402, -0.0459],\n        [-0.0041, -0.0021, -0.0001,  0.0018]]) = Parameter containing:\ntensor([[-0.3119,  0.3244, -0.3625, -0.3953],\n        [ 0.0341,  0.2140, -0.3723, -0.1863],\n        [ 0.1475, -0.2352, -0.0808,  0.4007],\n        [ 0.1308, -0.1819, -0.4075,  0.1248]], requires_grad=True).grad
+E        +    where Parameter containing:\ntensor([[-0.3119,  0.3244, -0.3625, -0.3953],\n        [ 0.0341,  0.2140, -0.3723, -0.1863],\n        [ 0.1475, -0.2352, -0.0808,  0.4007],\n        [ 0.1308, -0.1819, -0.4075,  0.1248]], requires_grad=True) = Linear(in_features=4, out_features=4, bias=False).weight
+
+test/test_sentence_expectation.py:95: AssertionError
+=============================== warnings summary ===============================
+test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_expectation.py::test_full_role_loss_trains_predictor_but_never_source_or_target
+1 failed, 2 passed, 24 deselected, 1 warning in 4.14s

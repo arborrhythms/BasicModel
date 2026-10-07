@@ -1,0 +1,4 @@
+{"selector": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct", "exit_code": 0, "reason": "exit"}
+{"selector": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp", "exit_code": 0, "reason": "exit"}
+{"selector": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal", "exit_code": 0, "reason": "exit"}
+{"selector": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal", "exit_code": 0, "reason": "exit"}

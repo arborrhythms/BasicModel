@@ -1,0 +1,92 @@
+...............................F........................................ [ 21%]
+........................................................................ [ 43%]
+........................................................................ [ 65%]
+...................................................F.................... [ 87%]
+.................................F......F                                [100%]
+=================================== FAILURES ===================================
+_________________ test_relative_links_resolve[doc/Testing.md] __________________
+
+path = PosixPath('/Users/arogers/github/WikiOracle/basicmodel/doc/Testing.md')
+
+    @pytest.mark.parametrize("path", _markdown_files(),
+                             ids=lambda p: str(p.relative_to(_ROOT)))
+    def test_relative_links_resolve(path):
+        text = path.read_text(encoding="utf-8")
+        missing = []
+        for target in _relative_targets(text):
+            if not target:
+                continue
+            resolved = (path.parent / target).resolve()
+            if not resolved.exists():
+                missing.append(target)
+>       assert not missing, f"{path.relative_to(_ROOT)}: unresolved {missing}"
+E       AssertionError: doc/Testing.md: unresolved ['benchmarks/2026-10-07-item6-5/acceptance.json']
+E       assert not ['benchmarks/2026-10-07-item6-5/acceptance.json']
+
+test/test_doc_links.py:58: AssertionError
+___ test_relative_links_resolve[doc/benchmarks/2026-10-07-item6-5/README.md] ___
+
+path = PosixPath('/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-5/README.md')
+
+    @pytest.mark.parametrize("path", _markdown_files(),
+                             ids=lambda p: str(p.relative_to(_ROOT)))
+    def test_relative_links_resolve(path):
+        text = path.read_text(encoding="utf-8")
+        missing = []
+        for target in _relative_targets(text):
+            if not target:
+                continue
+            resolved = (path.parent / target).resolve()
+            if not resolved.exists():
+                missing.append(target)
+>       assert not missing, f"{path.relative_to(_ROOT)}: unresolved {missing}"
+E       AssertionError: doc/benchmarks/2026-10-07-item6-5/README.md: unresolved ['acceptance.json', 'acceptance.json']
+E       assert not ['acceptance.json', 'acceptance.json']
+
+test/test_doc_links.py:58: AssertionError
+_ test_relative_links_resolve[doc/specs/2026-09-26-independent-components.md] __
+
+path = PosixPath('/Users/arogers/github/WikiOracle/basicmodel/doc/specs/2026-09-26-independent-components.md')
+
+    @pytest.mark.parametrize("path", _markdown_files(),
+                             ids=lambda p: str(p.relative_to(_ROOT)))
+    def test_relative_links_resolve(path):
+        text = path.read_text(encoding="utf-8")
+        missing = []
+        for target in _relative_targets(text):
+            if not target:
+                continue
+            resolved = (path.parent / target).resolve()
+            if not resolved.exists():
+                missing.append(target)
+>       assert not missing, f"{path.relative_to(_ROOT)}: unresolved {missing}"
+E       AssertionError: doc/specs/2026-09-26-independent-components.md: unresolved ['../benchmarks/2026-10-07-item6-5/acceptance.json']
+E       assert not ['../benchmarks/2026-10-07-item6-5/acceptance.json']
+
+test/test_doc_links.py:58: AssertionError
+_____________________ test_relative_links_resolve[todo.md] _____________________
+
+path = PosixPath('/Users/arogers/github/WikiOracle/basicmodel/todo.md')
+
+    @pytest.mark.parametrize("path", _markdown_files(),
+                             ids=lambda p: str(p.relative_to(_ROOT)))
+    def test_relative_links_resolve(path):
+        text = path.read_text(encoding="utf-8")
+        missing = []
+        for target in _relative_targets(text):
+            if not target:
+                continue
+            resolved = (path.parent / target).resolve()
+            if not resolved.exists():
+                missing.append(target)
+>       assert not missing, f"{path.relative_to(_ROOT)}: unresolved {missing}"
+E       AssertionError: todo.md: unresolved ['doc/benchmarks/2026-10-07-item6-5/acceptance.json', 'doc/benchmarks/2026-10-07-item6-5/acceptance.json']
+E       assert not ['doc/benchmarks/2026-10-07-item6-5/acceptance.json', 'doc/benchmarks/2026-10-07-item6-5/acceptance.json']
+
+test/test_doc_links.py:58: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_doc_links.py::test_relative_links_resolve[doc/Testing.md] - ...
+FAILED test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-item6-5/README.md]
+FAILED test/test_doc_links.py::test_relative_links_resolve[doc/specs/2026-09-26-independent-components.md]
+FAILED test/test_doc_links.py::test_relative_links_resolve[todo.md] - Asserti...
+4 failed, 325 passed in 3.52s

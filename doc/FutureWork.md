@@ -8,6 +8,20 @@ detail once it exists. Section-local future-work lists elsewhere
 stay where they are; this file indexes the items that span documents.
 Items marked **urgent** block ordinary operation before long.
 
+Item 6.5's accepted mechanism uses gradient sparse coding for individual and change columns.
+SIGReg was considered and not adopted: an isotropic Gaussian is invariant
+under rotation and cannot select identity axes, while a heavy-tailed sparse
+source model can prefer particular axes. The implementation uses unit
+directions, a Laplace activation prior, reconstruction and incoherence
+pressure, with gradient-trained relevance scales. It is an amortized
+sparse-coding energy, not a claim of exact marginal likelihood or a separate
+FastICA solve. Learned identity, verb reuse and natural determiner cues remain
+unproven pending the million-sentence prerequisite and all declared seeds.
+See [the decisions and implementation limits](specs/2026-09-26-independent-components.md).
+The detached role view carried beside the native occurrence anchor remains
+transitional and is to be retired in later work (spec §10); item 5 owns
+pruning of learned columns using their relevance scales.
+
 ## 1. Operation profile: optimal versus human
 
 **Decision (Alec, 2026-09-16).** Parameterise optimal versus more-human
@@ -1085,7 +1099,7 @@ conceptual space and the remaining catalogue. Item 6.8 owns the open read and
 MM_xor's word-level XOR proof. Surface markers own operand-order recovery.
 The standing XOR rule is no regression against the [closing record](benchmarks/2026-10-03-item6-9-closing/README.md),
 including its explicit red gates; this is not a claim that every gate is green.
-Next: item 6.5, with [operators plan §44](plans/2026-10-05-operators-update.md#44-the-two-zeros-resolved-by-magnitude-alec-2026-10-07) first. The operators update is accepted under §45 (Alec, October 7).
+Next: query and ask under the [thought-loop plan §§5–7](plans/2026-10-07-thought-loop.md#5-the-query-rename-claude-for-codex-2026-10-07), then item 6.2, thinking, whose specification follows from Claude. Alec accepted item 6.5's mechanism on October 7; its learning gates remain pending the million-sentence checkpoint.
 
 ## Carried from the 6.8 §13–§15 rounds (2026-10-04)
 
@@ -1122,7 +1136,8 @@ Not in the 6.8 rounds; each names its home.
   bounds retrieval priming and scales the affine reader blocks.
   The repair's exact source has a green 5,500-case sweep, all thirty standing
   trainings pass, and R and E are identically zero. Alec accepted the repair
-  under plan §45 on October 7; magnitude as definedness (§44) follows in 6.5.
+  under plan §45 on October 7; magnitude as definedness (§44) is included in
+  the subsequently accepted 6.5 mechanism landing.
 - **The `not` items — closed across rounds 1–4a:** exclusion clears the
   expressed evidence, conjunction reads explicit poles, and negation exchanges
   the meaning poles while preserving form.

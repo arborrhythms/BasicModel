@@ -1,0 +1,25 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_kind_only_closing_does_not_mint_an_individual ______________
+
+    def test_kind_only_closing_does_not_mint_an_individual():
+        columns = component_fixture()
+        existing = columns.nouns.ids
+        store = TernaryTruthStore(4, capacity=8)
+        columns.owner._closed_clause_store = lambda: store
+        columns._allocate = lambda direction: 100
+        meaning = ConceptualMeaning.from_description(torch.eye(4)[2])
+        for position in range(4):
+            row = store.append_meaning(meaning, document_key='extension',
+                sentence_index=position, order=2, kind='observation')
+            columns.commit(row, meaning)
+>       assert columns.nouns.ids == existing
+E       assert (1, 2, 100) == (1, 2)
+E         
+E         Left contains one more item: 100
+E         Use -v to get more diff
+
+doc/benchmarks/2026-10-07-item6-5/admission_probe.py:19: AssertionError
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-10-07-item6-5/admission_probe.py::test_kind_only_closing_does_not_mint_an_individual
+1 failed in 2.00s

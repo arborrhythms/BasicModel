@@ -97,7 +97,8 @@ def test_operation_runs_on_the_selected_occurrence_eager_and_compiled():
     scope = torch.tensor([[[0, 3], [0, 1], [0, -1]]])
 
     def choose(state, scope):
-        return LanguageSpace.choose_operation(owner, state, torch.tensor([True]), slots=1, reference_scope=scope)
+        return LanguageSpace.choose_operation(owner, state, torch.tensor([True]), slots=1, reference_scope=scope,
+                                               replay_action=torch.tensor([0]))
     eager = choose(state, scope)
     compiled = torch.compile(choose, backend='eager', fullgraph=True)(state, scope)
     for result in (eager, compiled):
@@ -107,8 +108,9 @@ def test_operation_runs_on_the_selected_occurrence_eager_and_compiled():
         torch.testing.assert_close(operands[0, 0], prior, rtol=0, atol=0)
         torch.testing.assert_close(operands[0, 1], second, rtol=0, atol=0)
         assert not relations.any()
-    eager[0].candidate.sum().backward()
-    assert query.grad is not None and query.grad.any()
+    (-eager[0].log_probability.sum()).backward()
+    assert query.grad is None
+    assert any(p.grad is not None and p.grad.any() for p in layer.chooser.parameters())
 
 
 def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, monkeypatch):
@@ -138,11 +140,19 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     language._compose_binary_rules = tuple(rules)
     layer = language._tree_layer(2)
     original = layer.forward
+    routes = []
 
     def forced(x, **kwargs):
-        stop = (x.shape[1]-1)*layer.r_reduce+x.shape[1]*layer.r_apply
-        kwargs['replay_action'] = torch.where(kwargs['depth'] >= 2, op, stop)
-        return original(x, **kwargs)
+        reference = kwargs.get('reference_data')
+        binary = tuple(range(layer.r_reduce)) if reference is None else reference['binary_ops']
+        unary = tuple(range(layer.r_apply)) if reference is None else reference['unary_ops']
+        stop = (x.shape[1]-1)*len(binary)+x.shape[1]*len(unary)
+        # Force the grammar operation with the first (held-column) binding,
+        # whose global action is no longer its local operation number.
+        kwargs['replay_action'] = torch.where(kwargs['depth'] >= 2, binary.index(op), stop)
+        result = original(x, **kwargs)
+        routes.append(result[2])
+        return result
     monkeypatch.setattr(layer, 'forward', forced)
     width = model.conceptualSpace.stm.concept_dim
     prior = torch.nn.functional.normalize(torch.arange(1, width+1, dtype=torch.float32), dim=0)
@@ -201,7 +211,11 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         torch.testing.assert_close(model._recon_ideas[active], expected[active], rtol=1e-4, atol=1e-4)
         torch.testing.assert_close(changed[active], expected[active], rtol=0, atol=0)
         clause.point.sum().backward()
-        assert query.grad is not None and query.grad.any()
+        assert query.grad is None
+        route = next(route for route in routes if bool((route['kind'] == 1).any()))
+        credit = route['logits'].log_softmax(-1).gather(1, route['action'][:, None]).sum()
+        (-credit).backward()
+        assert any(p.grad is not None and p.grad.any() for p in layer.chooser.parameters())
     finally:
         model.End()
         model.symbolSpace.soft_reset()

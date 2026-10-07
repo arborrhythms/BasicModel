@@ -740,7 +740,23 @@ role and chronological positions remain distinct. It predicts three separate
 vectors, three presence logits and one clause-kind logit. The loss combines
 role MSE with binary cross entropy for presence and clause kind. Targets are detached;
 current-step source representations remain live under the objective-local
-boundaries in [GradientFlow](GradientFlow.md). See [Layers.py](../bin/Layers.py).
+boundaries in [GradientFlow](GradientFlow.md). For individual-reference
+grammars, item 6.5 re-encodes the latest source through the current identity
+columns before each trial. Older context and the observation target detach.
+Once columns exist, role prediction error is measured in their coordinates;
+presence and clause-kind losses keep their existing meanings. This preserves
+sentence optimizer boundaries without keeping a preceding compose graph
+across an update. See [Layers.py](../bin/Layers.py) and
+[IndependentComponents.py](../bin/IndependentComponents.py).
+
+The independence population comes from retained external observation rows,
+excluding definitions, estimates and asserted facts. It is snapshotted before
+reading, independently of the batch partition. Accumulated innovations use
+identified object coordinates and retain occurrence addresses. A has at most
+two active noun columns per ordinary frame; B has at most one change column.
+The same expectation objective owns both dictionaries. Recurrence admission
+and witness counts happen only after the kept closing. These are mechanism
+contracts under review, not a finding of learned identity or verb reuse.
 
 The packed observer uses the existing ended end-slot/depth outputs for each
 sentence, with an explicit STM-to-infix permutation. Corpus source addresses

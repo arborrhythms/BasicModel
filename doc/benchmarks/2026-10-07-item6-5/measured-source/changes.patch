@@ -1,0 +1,1254 @@
+diff --git a/bin/Interpret.py b/bin/Interpret.py
+index 3e281ff96..a37a10da0 100644
+--- a/bin/Interpret.py
++++ b/bin/Interpret.py
+@@ -307,7 +307,7 @@ class InterpretLayer(GrammarLayer):
+             if not choices:
+                 choices = candidates
+             if len(choices) != 1:
+-                raise ValueError('ambiguous word association requires a grammar selection')
++                return None  # Enumerate associations; the grammar chooses.
+             obj = choices[0]
+         else:
+             if word not in self._pending:
+diff --git a/bin/Language.py b/bin/Language.py
+index 9cb4bdaac..ad57ef97f 100644
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -6465,11 +6465,11 @@ class TransformChooser(nn.Module):
+     """
+ 
+     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
+-                    cat_ctx=None, what_ctx=None, op_offset=0):
++                    cat_ctx=None, what_ctx=None, op_offset=0, op_indices=None):
+         raise NotImplementedError
+ 
+     def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
+-                     cat_ctx=None, what_ctx=None):
++                     cat_ctx=None, what_ctx=None, op_indices=None):
+         raise NotImplementedError
+ 
+ 
+@@ -6494,7 +6494,7 @@ class AnchorDotTransformChooser(TransformChooser):
+     """
+ 
+     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
+-                    cat_ctx=None, what_ctx=None, op_offset=0):
++                    cat_ctx=None, what_ctx=None, op_offset=0, op_indices=None):
+         """Return ``(copy_score, apply_score)`` for the unary layer.
+ 
+         ``copy_score[b,n,c]  = <x_score[b,n,:],       copy_anchor[c,:]>``
+@@ -6523,7 +6523,7 @@ class AnchorDotTransformChooser(TransformChooser):
+         return copy_score, apply_score
+ 
+     def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
+-                     cat_ctx=None, what_ctx=None):
++                     cat_ctx=None, what_ctx=None, op_indices=None):
+         """Return ``(copy_score, reduce_score)`` for the binary layer.
+ 
+         ``copy_score[b,n,c]   = <x_score[b,n,:],            copy_anchor[c,:]>``
+@@ -6856,7 +6856,7 @@ class MLPTransformChooser(TransformChooser):
+         return self.what_projection(ctx).to(dtype)
+ 
+     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
+-                    cat_ctx=None, what_ctx=None, op_offset=0):
++                    cat_ctx=None, what_ctx=None, op_offset=0, op_indices=None):
+         B, N, D = x_score.shape
+         pos = self._pos_emb(N, x_score.device, x_score.dtype)
+         copy_rows = self.tool_embedding[:self.n_copy]
+@@ -6864,7 +6864,9 @@ class MLPTransformChooser(TransformChooser):
+                                  cat_ctx=cat_ctx)                      # copy=slot
+         r_apply = applied_score.shape[2] if applied_score.dim() == 4 else 0
+         if r_apply > 0:
+-            apply_rows = self.tool_embedding[self.n_copy + op_offset:self.n_copy + op_offset + r_apply]
++            indices = (torch.arange(r_apply, device=x_score.device) if op_indices is None else op_indices)
++            indices = indices + self.n_copy + op_offset
++            apply_rows = self.tool_embedding.index_select(0, indices)
+             apply_score = self._score(x_score, applied_score, apply_rows, pos,
+                                       cat_ctx=cat_ctx)
+         else:
+@@ -6874,12 +6876,11 @@ class MLPTransformChooser(TransformChooser):
+         if what_bias is not None:
+             copy_score = copy_score + what_bias[:, None, :self.n_copy]
+             if r_apply > 0:
+-                apply_score = apply_score + what_bias[
+-                    :, None, self.n_copy + op_offset:self.n_copy + op_offset + r_apply]
++                apply_score = apply_score + what_bias.index_select(-1, indices)[:, None]
+         return copy_score, apply_score
+ 
+     def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
+-                     cat_ctx=None, what_ctx=None):
++                     cat_ctx=None, what_ctx=None, op_indices=None):
+         B, N, D = x_score.shape
+         pos = self._pos_emb(N, x_score.device, x_score.dtype)
+         copy_rows = self.tool_embedding[:self.n_copy]
+@@ -6913,12 +6914,10 @@ class MLPTransformChooser(TransformChooser):
+                     order_ctx = torch.cat((order_ctx, cat_order.to(x_score.dtype)), dim=-1)
+             pos_pair = self._pos_emb(N - 1, x_score.device, x_score.dtype)
+             r_reduce = int(reduced_score.shape[2])
+-            # The reduce op-axis must equal n_op (the construction-time
+-            # r_reduce) so the R_reduce layout is consistent with the
+-            # degenerate branch below and with the operation
+-            # readers -- fail loud on any future contract drift.
+-            reduce_rows = self.tool_embedding[
+-                self.n_copy:self.n_copy + r_reduce]
++            # Reference variants share their grammar operator's scoring row.
++            indices = (torch.arange(r_reduce, device=x_score.device) if op_indices is None else op_indices)
++            indices = indices + self.n_copy
++            reduce_rows = self.tool_embedding.index_select(0, indices)
+             reduce_score = self._score(
+                 pair_slot, reduced_score, reduce_rows, pos_pair,
+                 cat_ctx=pair_cat, order_ctx=order_ctx)
+@@ -6929,8 +6928,7 @@ class MLPTransformChooser(TransformChooser):
+         if what_bias is not None:
+             copy_score = copy_score + what_bias[:, None, :self.n_copy]
+             if reduce_score.shape[-1] > 0:
+-                reduce_score = reduce_score + what_bias[
+-                    :, None, self.n_copy:self.n_copy + reduce_score.shape[-1]]
++                reduce_score = reduce_score + what_bias.index_select(-1, indices)[:, None]
+         return copy_score, reduce_score
+ 
+ 
+@@ -7171,7 +7169,7 @@ class OperationSelectionLayer(nn.Module):
+ 
+     @staticmethod
+     def _distinct_departures(x, depth, candidates, logits, reference, n_binary, n_unary,
+-                             r_reduce, r_apply, stop_exact=None):
++                             r_reduce, r_apply, stop_exact=None, reference_ids=None):
+         """One representative of each distinct numerical next state.
+ 
+         Exact equality is the value criterion; no tolerance, target, or
+@@ -7197,6 +7195,10 @@ class OperationSelectionLayer(nn.Module):
+         states = torch.where(columns[None, None, :, None] < counts[:, :, None, None], states, 0.)
+         allowed = torch.isfinite(logits)
+         unchanged = (states == x[:, None]).all(-1).all(-1)
++        if reference_ids is not None:
++            # Equal content can denote two different individuals. Reference
++            # changes remain choices even when an identity unary copies x.
++            unchanged = unchanged & (reference_ids == -1).all(-1)
+         allowed = allowed & ~(unary[None] & unchanged)
+         if stop_exact is not None:
+             allowed = allowed & ~((ids == A - 1)[None] & stop_exact[:, None])
+@@ -7204,11 +7206,16 @@ class OperationSelectionLayer(nn.Module):
+         ref_state = states.gather(1, reference[:, None, None, None].expand(B, 1, N, D))
+         ref_count = counts.gather(1, reference[:, None])
+         same_reference = (states == ref_state).all(-1).all(-1) & (counts == ref_count)
++        if reference_ids is not None:
++            ref_ids = reference_ids.gather(1, reference[:, None, None].expand(B, 1, 2))
++            same_reference = same_reference & (reference_ids == ref_ids).all(-1)
+         allowed = allowed & ~same_reference
+         representatives = []
+         for first in range(0, A, 16):
+             same = (states[:, first:first + 16, None] == states[:, None]).all(-1).all(-1)
+             same = same & (counts[:, first:first + 16, None] == counts[:, None])
++            if reference_ids is not None:
++                same = same & (reference_ids[:, first:first + 16, None] == reference_ids[:, None]).all(-1)
+             earlier = ids[None] < ids[first:first + 16, None]
+             duplicates = (same & earlier[None] & allowed[:, None]).any(-1)
+             representatives.append(allowed[:, first:first + 16] & ~duplicates)
+@@ -7266,25 +7273,33 @@ class OperationSelectionLayer(nn.Module):
+                     grammar_op.set_bind_context(slab=x)
+         binary = self._stacked_reduced(x, grammar_context, reference_data, operand_activations)
+         unary = self._stacked_applied(x, grammar_context, reference_data)
++        binary_ops = (tuple(range(self.r_reduce)) if reference_data is None
++                      else reference_data.get('binary_ops', tuple(range(self.r_reduce))))
++        unary_ops = (tuple(range(self.r_apply)) if reference_data is None
++                     else reference_data.get('unary_ops', tuple(range(self.r_apply))))
++        bi = torch.tensor(binary_ops, device=x.device, dtype=torch.long)
++        ui = torch.tensor(unary_ops, device=x.device, dtype=torch.long)
++        r_reduce, r_apply = len(binary_ops), len(unary_ops)
+         content = x[..., :self.d_model]
+         what_ctx = getattr(self, '_what_context', None) if what_ctx is None else what_ctx
+         score_cats = None if cat_ctx is None else cat_ctx.detach()
+         score_context = None if what_ctx is None else what_ctx.detach()
+         stop_scores, binary_scores = self.chooser.score_binary(
+             content.detach(), binary[..., :self.d_model].detach(), self.stop_anchor,
+-            self.reduce_anchor, cat_ctx=score_cats, what_ctx=score_context)
++            self.reduce_anchor.index_select(0, bi), cat_ctx=score_cats, what_ctx=score_context,
++            op_indices=bi)
+         _, unary_scores = self.chooser.score_unary(
+             content.detach(), unary[..., :self.d_model].detach(), self.stop_anchor,
+-            self.apply_anchor, cat_ctx=score_cats, what_ctx=score_context,
+-            op_offset=self.r_reduce)
++            self.apply_anchor.index_select(0, ui), cat_ctx=score_cats, what_ctx=score_context,
++            op_offset=self.r_reduce, op_indices=ui)
+         prior = self._category_reduce_prior(cat_ctx)
+         if prior is not None:
+-            binary_scores = binary_scores + prior.detach().to(binary_scores)
++            binary_scores = binary_scores + prior.index_select(-1, bi).detach().to(binary_scores)
+         prior = self._category_apply_prior(cat_ctx)
+         if prior is not None:
+-            unary_scores = unary_scores + prior.detach().to(unary_scores)
++            unary_scores = unary_scores + prior.index_select(-1, ui).detach().to(unary_scores)
+         if op_prior is not None:
+-            binary_scores = binary_scores + op_prior.detach().to(binary_scores)
++            binary_scores = binary_scores + op_prior.index_select(-1, bi).detach().to(binary_scores)
+         deadline = torch.zeros_like(depth, dtype=torch.bool)
+         needs_reduction = torch.zeros_like(depth, dtype=torch.bool)
+         if rounds_left is not None:
+@@ -7311,6 +7326,7 @@ class OperationSelectionLayer(nn.Module):
+             inverse = torch.tensor(self._unary_inverse_pairs, device=x.device, dtype=torch.bool)
+             excluded = inverse[previous_unary.clamp(0, self.r_apply - 1)]
+             excluded = excluded & (previous_unary >= 0)[..., None]
++            excluded = excluded.index_select(-1, ui)
+             unary_scores = unary_scores.masked_fill(excluded, -torch.inf)
+         stop = (stop_scores.squeeze(-1) * live).sum(-1) / depth.clamp_min(1)
+         limit = torch.as_tensor(slots, device=x.device)
+@@ -7322,17 +7338,22 @@ class OperationSelectionLayer(nn.Module):
+         # Credit always uses the model's own distribution over legal actions.
+         # A forced counterfactual constrains selection, not its probability
+         # weight; neither that exclusion nor sampling temperature changes it.
+-        flags = (self.structural_ops * (N - 1)
+-                 + self.unary_structural_ops * N + (True,))
+-        nb = (N - 1) * self.r_reduce
+-        nu = N * self.r_apply
++        flags = (tuple(self.structural_ops[i] for i in binary_ops) * (N - 1)
++                 + tuple(self.unary_structural_ops[i] for i in unary_ops) * N + (True,))
++        nb = (N - 1) * r_reduce
++        nu = N * r_apply
+         candidates = torch.cat((binary.reshape(B, nb, D), unary.reshape(B, nu, D),
+                                 x.new_zeros(B, 1, D)), 1)
+         greedy = structural_argmax(logits, flags)
+         reference = (greedy if masked_action is None else
+                      torch.where(masked_action >= 0, masked_action, greedy))
++        reference_ids = None
++        if reference_data is not None and 'binary_choices' in reference_data:
++            reference_ids = torch.cat((reference_data['binary_choices'].reshape(B, nb, 2),
++                reference_data['unary_choices'].reshape(B, nu, 2),
++                torch.full((B, 1, 2), -1, device=x.device, dtype=torch.long)), 1)
+         departure_eligible = self._distinct_departures(x, depth, candidates, logits, reference,
+-            nb, nu, self.r_reduce, self.r_apply, stop_exact=stop_exact)
++            nb, nu, r_reduce, r_apply, stop_exact=stop_exact, reference_ids=reference_ids)
+         action, probabilities, has_choice = self.select_logits(logits, structural=flags,
+             masked_action=masked_action,replay_action=replay_action,sample=sample,
+             departure_eligible=departure_eligible)
+@@ -7342,10 +7363,11 @@ class OperationSelectionLayer(nn.Module):
+         is_binary = active & (action < nb)
+         is_unary = active & (action >= nb) & (action < nb + nu)
+         kind = torch.where(is_binary, 1, torch.where(is_unary, 2, 0))
+-        position = torch.where(is_binary, action // max(1, self.r_reduce),
+-                               (action - nb) // max(1, self.r_apply)).clamp(0, N - 1)
+-        local_op = torch.where(is_binary, action % max(1, self.r_reduce),
+-                               (action - nb) % max(1, self.r_apply))
++        position = torch.where(is_binary, action // max(1, r_reduce),
++                               (action - nb) // max(1, r_apply)).clamp(0, N - 1)
++        b_index = bi[action % r_reduce] if r_reduce else torch.zeros_like(action)
++        u_index = ui[(action - nb) % r_apply] if r_apply else torch.zeros_like(action)
++        local_op = torch.where(is_binary, b_index, u_index)
+         chosen = candidates.gather(1, action[:, None, None].expand(B, 1, D)).squeeze(1)
+         probability = probabilities.gather(1, action[:, None])
+         next_depth = depth - is_binary.long()
+@@ -7362,8 +7384,8 @@ class OperationSelectionLayer(nn.Module):
+                        depth=next_depth, probabilities=probabilities, logits=logits,
+                        probability=probability.squeeze(-1), candidate=chosen,
+                        stopped=active & (kind == 0), valid=active,
+-                       binary_probabilities=probabilities[:, :nb].reshape(B, N - 1, self.r_reduce),
+-                       unary_probabilities=probabilities[:, nb:nb + nu].reshape(B, N, self.r_apply))
++                       binary_probabilities=probabilities[:, :nb].reshape(B, N - 1, r_reduce),
++                       unary_probabilities=probabilities[:, nb:nb + nu].reshape(B, N, r_apply))
+         history = (torch.full((B, N), -1, device=x.device, dtype=torch.long)
+                    if previous_unary is None else previous_unary)
+         history = history.gather(1, source.clamp_max(N - 1))
+@@ -7471,10 +7493,13 @@ class OperationSelectionLayer(nn.Module):
+ 
+     def _stacked_reduced(self, x, grammar_context=None, reference_data=None, activations=None):
+         """Candidate operators consume their own resolved operands."""
+-        if x.shape[1] < 2 or not self.r_reduce:
+-            return x.new_zeros(x.shape[0], max(0, x.shape[1] - 1), self.r_reduce, x.shape[-1])
++        operations = (tuple(range(self.r_reduce)) if reference_data is None
++                      else reference_data.get('binary_ops', tuple(range(self.r_reduce))))
++        if x.shape[1] < 2 or not operations:
++            return x.new_zeros(x.shape[0], max(0, x.shape[1] - 1), len(operations), x.shape[-1])
+         result = []
+-        for i, op in enumerate(self.ops):
++        for i, local in enumerate(operations):
++            op = self.ops[local]
+             left = x[:, :-1] if reference_data is None else reference_data['left'][:, :, i]
+             right = x[:, 1:] if reference_data is None else reference_data['right'][:, :, i]
+             selected_context = grammar_context
+@@ -7538,12 +7563,14 @@ class OperationSelectionLayer(nn.Module):
+ 
+     def _stacked_applied(self, x, grammar_context=None, reference_data=None):
+         """[B, N, R_apply, D] each unary op applied to every position."""
+-        if self.r_apply == 0:
++        operations = (tuple(range(self.r_apply)) if reference_data is None
++                      else reference_data.get('unary_ops', tuple(range(self.r_apply))))
++        if not operations:
+             B, N, D = x.shape
+             return x.new_zeros(B, N, 0, D)
+-        per_op = [self._apply_op(op, x if reference_data is None else reference_data['unary'][:, :, i],
++        per_op = [self._apply_op(self.unary_ops[local], x if reference_data is None else reference_data['unary'][:, :, i],
+                                  grammar_context=grammar_context)
+-                  for i, op in enumerate(self.unary_ops)]
++                  for i, local in enumerate(operations)]
+         return torch.stack(per_op, dim=2)
+ 
+ 
+@@ -12875,9 +12902,13 @@ class LanguageSpace(nn.Module):
+             stack.append(tuple(leaf for operand in operands for leaf in operand))
+         for leaf, order in requests.items():
+             mode = selected_requests.get(leaf, (None, None))[1]
+-            if order == 1 and mode in ('mint', 'bind'):
+-                # A determiner addresses an LTM occurrence at closing. It
+-                # must not admit another persistent dictionary interpretation.
++            if order == 1:
++                # The selected operation carries its column reference. A
++                # dictionary association cannot decide individual identity or
++                # bypass the component recurrence gate at this closing.
++                columns = getattr(getattr(owner, 'components', None), 'nouns', None)
++                if columns is None or int(refs[leaf]) not in columns.ids:
++                    refs[leaf] = -1
+                 orders[leaf] = order
+                 continue
+             surface = owner.word_surface_for_row(int(word_rows[leaf]))
+diff --git a/bin/Layers.py b/bin/Layers.py
+index 7e20e672d..b310719a2 100644
+--- a/bin/Layers.py
++++ b/bin/Layers.py
+@@ -10429,7 +10429,9 @@ class SentenceExpectation(Layer):
+         self.kind_bias = nn.Parameter(torch.zeros(()))
+ 
+     def forward(self, roles, masks):
+-        roles, masks = roles.detach(), masks.detach()
++        # The boundary owner detaches retained observations and re-encodes
++        # only the current source. Detaching here would erase that credit.
++        masks = masks.detach()
+         features = torch.cat((
+             torch.where(masks.unsqueeze(-1), roles, torch.zeros_like(roles)),
+             masks.to(roles.dtype).unsqueeze(-1)), dim=-1)
+@@ -11014,6 +11016,30 @@ class BracketExpectation(Layer):
+         return canonical_role_payload(payload, depth, layout, role_mask,
+                                       concept_dim=self.concept_dim)
+ 
++    def _prediction_inputs(self, inputs, *, replay=False):
++        """Re-encode only the latest source with this step's live columns.
++
++        Stored context and observation targets remain detached. Replaying a
++        trial builds a fresh graph at the same parameter snapshot, without
++        carrying the previous sentence's compose graph across its update.
++        """
++        encoder = getattr(self, '_source_encoder', None)
++        roles, occupied = inputs
++        latest = (encoder(roles[:, -1].detach()) if encoder is not None else
++                  roles[:, -1].detach() if replay else roles[:, -1])
++        return torch.cat((roles[:, :-1].detach(), latest[:, None]), 1), occupied.detach()
++
++    def _prediction_versions(self):
++        source = getattr(getattr(self, '_source_encoder', None), '__self__', None)
++        columns = () if source is None else tuple(source.parameters())
++        return tuple(p._version for p in (*self._inter_predictor.parameters(), *columns))
++
++    def _prediction_coordinates(self, predicted, target):
++        owner = getattr(getattr(self, '_source_encoder', None), '__self__', None)
++        if owner is not None and hasattr(owner, 'prediction_coordinates'):
++            return owner.prediction_coordinates(predicted, target)
++        return predicted, target.detach()
++
+     @torch.compiler.disable
+     def expect_next_meaning(self, b=0, *, record=True, work=None,
+                             frames=(), frame_occurrences=(), policy=(), policy_work=0, refresh=False,
+@@ -11056,7 +11082,7 @@ class BracketExpectation(Layer):
+         roles = [zero] * pad + [p.to(parameter) for _, p, _ in chain]
+         masks = [empty] * pad + [m.to(parameter.device) for _, _, m in chain]
+         inputs = (torch.stack(roles)[None], torch.stack(masks)[None])
+-        values, logits, kind_logits = self._inter_predictor(*inputs)
++        values, logits, kind_logits = self._inter_predictor(*self._prediction_inputs(inputs))
+         if not bool(torch.isfinite(values).all() and torch.isfinite(logits).all()
+                     and torch.isfinite(kind_logits).all()):
+             raise FloatingPointError("non-finite structured sentence prediction")
+@@ -11077,7 +11103,7 @@ class BracketExpectation(Layer):
+                 tuple(dict.fromkeys(reference for reference in (*occurrences, *frame_occurrences)
+                                     if reference is not None)),
+                 ("external", document), document, inputs,
+-                tuple(p._version for p in self._inter_predictor.parameters()),
++                self._prediction_versions(),
+                 tuple(policy), int(policy_work), tuple(reference_frames))
+         return prediction
+ 
+@@ -11148,24 +11174,25 @@ class BracketExpectation(Layer):
+                 if (train_prediction and self.training and torch.is_grad_enabled()
+                         and (self._inter_loss_weight > 0 or self._inter_contrastive_weight > 0)):
+                     if (isinstance(pending, _PendingMeaningExpectation) and pending.inputs is not None
+-                            and (not prediction.roles.requires_grad or pending.versions != tuple(
+-                                p._version for p in self._inter_predictor.parameters()))):
++                            and (not prediction.roles.requires_grad or pending.versions != self._prediction_versions())):
+                         # A delayed estimate remains unchanged as evidence.
+                         # Both residual and contrastive objectives train the
+                         # current predictor from the frozen prior, never an
+                         # old parameter version's graph.
+-                        replay, logits, kinds = self._inter_predictor(*(v.detach() for v in pending.inputs))
++                        replay, logits, kinds = self._inter_predictor(
++                            *self._prediction_inputs(pending.inputs, replay=True))
+                         train_roles, train_logits = replay[0], logits[0]
+                         train_kind = kinds[0]
+                 if train_prediction and self.training and torch.is_grad_enabled() and self._inter_loss_weight > 0:
+-                    step = (train_roles - target).square().mean() + F.binary_cross_entropy_with_logits(
++                    predicted_coordinates, target_coordinates = self._prediction_coordinates(train_roles, target)
++                    step = (predicted_coordinates - target_coordinates).square().mean() + F.binary_cross_entropy_with_logits(
+                         train_logits, target_mask.to(train_logits))
+                     step = step + self._kind_loss(train_kind, kind, step)
+                     self._inter_loss_accum = (step if self._inter_loss_accum is None
+                                               else self._inter_loss_accum + step)
+                     self._inter_loss_count += 1
+                     errors = self._inter_error_registry()
+-                    errors.squared('roles', train_roles, target, category='expectation')
++                    errors.squared('roles', predicted_coordinates, target_coordinates, category='expectation')
+                     errors.binary('presence', train_logits, target_mask.to(train_logits), category='expectation')
+                     if kind is not None:
+                         errors.binary('kind', train_kind, train_kind.new_tensor(float(kind == 'relation')),
+@@ -11233,7 +11260,9 @@ class BracketExpectation(Layer):
+             depth, roles, occupied = context[-1]
+             point = store.slots[index, 0] if int(store.rel_type[index]) == store.REL_NONE else None
+             context[-1] = SituationFrame(depth, roles, occupied, int(store.row_ids[index]),
+-                                         None if point is None else point.detach().clone())
++                                         None if point is None else point.detach().clone(),
++                                         where=store.where[index].detach().clone(),
++                                         when=store.when[index].detach().clone())
+ 
+     def situation_references(self, b=0):
+         """Only the bounded frames the predictor already holds; no LTM read."""
+@@ -11799,15 +11828,16 @@ class BracketExpectation(Layer):
+                                 # Replay only the stored prior inputs, keeping
+                                 # the pending record and its estimate intact.
+                                 replay, presence, kinds = self._inter_predictor(
+-                                    *(v.detach() for v in pending.inputs))
++                                    *self._prediction_inputs(pending.inputs, replay=True))
+                                 pred, logits = replay[0], presence[0]
+                                 kind_logit = kinds[0]
+                             target = roles.detach().to(pred)
+-                            cost = (pred - target).square().mean() + F.binary_cross_entropy_with_logits(
++                            predicted_coordinates, target_coordinates = self._prediction_coordinates(pred, target)
++                            cost = (predicted_coordinates - target_coordinates).square().mean() + F.binary_cross_entropy_with_logits(
+                                 logits, occupied.to(logits))
+                             cost = cost + self._kind_loss(kind_logit,
+                                 None if sentence_kinds is None else sentence_kinds[b], cost)
+-                            errors.squared('roles', pred, target, row=b, category='expectation')
++                            errors.squared('roles', predicted_coordinates, target_coordinates, row=b, category='expectation')
+                             errors.binary('presence', logits, occupied.to(logits), row=b, category='expectation')
+                             kind = None if sentence_kinds is None else sentence_kinds[b]
+                             if kind is not None:
+diff --git a/bin/MeaningCodes.py b/bin/MeaningCodes.py
+index 7e9d364b3..0b563c542 100644
+--- a/bin/MeaningCodes.py
++++ b/bin/MeaningCodes.py
+@@ -1,7 +1,8 @@
+ """Fixed sentence indexes and bipolar, open-world meaning coordinates.
+ 
+ The flat complement is [for_0 ... for_K-1 | against_0 ... against_K-1].
+-Its scale is evidence, never part of a form-direction normalization.
++Concept definedness scales the unit direction before each independent
++evidence pole is applied. Neither quantity normalizes the form block.
+ """
+ import hashlib
+ from functools import lru_cache
+@@ -13,6 +14,27 @@ import torch
+ from Occurrence import sentence_key
+ 
+ 
++DEFINEDNESS_RECURRENCE = 4
++
++
++def definedness(witnesses, recurrence=DEFINEDNESS_RECURRENCE):
++    """Witnessed knowledge, separate from the evidence in any one reading."""
++    if recurrence <= 0:
++        raise ValueError('definedness requires a positive recurrence count')
++    if torch.is_tensor(witnesses):
++        torch._assert_async((witnesses >= 0).all(), 'witness count must be nonnegative')
++    elif witnesses < 0:
++        raise ValueError('witness count must be nonnegative')
++    return witnesses / (witnesses + recurrence)
++
++
++def defined_code(direction, witnesses, recurrence=DEFINEDNESS_RECURRENCE):
++    """m times a unit direction; an unwitnessed or empty concept stays zero."""
++    magnitude = torch.as_tensor(definedness(witnesses, recurrence),
++                                dtype=direction.dtype, device=direction.device)
++    return torch.nn.functional.normalize(direction, dim=-1) * magnitude[..., None]
++
++
+ def exchange(value):
+     if value.shape[-1] % 2:
+         raise ValueError('meaning requires an even number of pole coordinates')
+diff --git a/bin/MereologicalCodes.py b/bin/MereologicalCodes.py
+index a041c99f0..574246664 100644
+--- a/bin/MereologicalCodes.py
++++ b/bin/MereologicalCodes.py
+@@ -72,9 +72,8 @@ class MereologicalCodes(nn.Module):
+         now = float(store._next_ts) - 1
+         terms = occurrence_memberships(self.owner, store)
+         result = {}
+-        from MeaningCodes import identity_code
+-        codes = {row: identity_code(store.content_key(row), self.meaning_pairs,
+-                                  self.meaning_ones, like=store.slots)
++        from MeaningCodes import defined_code
++        codes = {row: store.identity_code(row, self.meaning_pairs, self.meaning_ones)
+                  for row in range(len(store)) if int(store.rel_type[row]) == store.REL_NONE}
+         for code, rows in terms.items():
+             rows = [r for r in sorted(rows) if int(store.rel_type[r]) == store.REL_NONE]
+@@ -84,6 +83,7 @@ class MereologicalCodes(nn.Module):
+             weight = 1 / (1 + (now-store.timestamp[idx]).clamp_min(0))
+             roots = torch.stack([codes[row] for row in rows])
+             positive = (roots * weight[:, None]).sum(0) / weight.sum()
++            positive = defined_code(positive, len(rows))
+             result[code] = (len(rows), torch.cat((positive, torch.zeros_like(positive))).detach())
+         return result
+ 
+@@ -239,6 +239,14 @@ class MereologicalCodes(nn.Module):
+                 start, k = self.percept_event_width, self.meaning_pairs
+                 out[row_index[row], start:start+k] = mean[:k]
+                 out[row_index[row], start+self.reserved_pairs:start+self.reserved_pairs+k] = mean[k:]
++        components = getattr(owner, 'components', None)
++        if components is not None and (components.nouns.ids or components.verbs.ids):
++            for row in unique:
++                identity = owner.concept_id_at_row(row)
++                if identity in (*components.nouns.ids, *components.verbs.ids):
++                    point = components.column_point(identity)
++                    if point is not None:
++                        out[row_index[row], self.percept_event_width:] = point[self.percept_event_width:].to(out)
+         result = out[torch.tensor([row_index[r] for r in requested], device=out.device, dtype=torch.long)]
+         return result.reshape(*shape, self.code_width)
+ 
+diff --git a/bin/Models.py b/bin/Models.py
+index 91e6b56bf..257cf1407 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -2614,6 +2614,7 @@ class BaseModel(Mereology, nn.Module):
+         discourse = getattr(getattr(self, 'symbolSpace', None), 'expectation', None)
+         expectation = parameters([
+             *(getattr(cs, 'intraSentenceLayer', None) for cs in getattr(self, 'conceptualSpaces', ())),
++            *(getattr(cs, 'components', None) for cs in getattr(self, 'conceptualSpaces', ())),
+             getattr(discourse, 'predictor', None), getattr(discourse, '_inter_predictor', None),
+             getattr(discourse, 'word_predictor', None)])
+         output = parameters([getattr(self, 'outputSpace', None),
+@@ -4634,6 +4635,15 @@ class BaseModel(Mereology, nn.Module):
+ 
+         # Pre-check for shape mismatches before attempting to load.
+         # This produces an actionable diagnostic instead of a raw PyTorch error.
++        # Materialize admitted columns before strict key/shape preflight.
++        # Their native identities are restored by the structural sidecar.
++        from IndependentComponents import SparseDictionary, IndependentComponents
++        component_metadata = set()
++        for name, module in self.named_modules(remove_duplicate=False):
++            if isinstance(module, SparseDictionary):
++                module.prepare_checkpoint(state, name + '.')
++            if isinstance(module, (SparseDictionary, IndependentComponents)):
++                component_metadata.add(name + '._extra_state')
+         model_state = dict(self.state_dict())
+         for name in tuple(state):
+             renamed=name.replace('.discourse.','.expectation.')
+@@ -5091,6 +5101,7 @@ class BaseModel(Mereology, nn.Module):
+             (k, list(state[k].shape), list(model_state[k].shape))
+             for k in state if k in model_state
+             and state[k].shape != model_state[k].shape
++            and k not in component_metadata
+             and not (k in variable_leaf_columns and state[k].ndim == 1
+                      and state[k].dtype == model_state[k].dtype)
+         ]
+@@ -8338,6 +8349,19 @@ class BasicModel(BaseModel):
+             if derived is not None and id(cb) not in seen_books:
+                 derived.begin_forward()
+                 seen_books.add(id(cb))
++        components = getattr(self._concept_owner(), 'components', None)
++        language = getattr(self, 'languageSpace', None)
++        eligible = any(getattr(rule, 'determiner_mode', None) in ('mint', 'bind') or
++            any(order == 1 for _, order in getattr(rule, 'reference_orders', ())) for rule in (
++            *getattr(language, '_compose_binary_rules', ()),
++            *getattr(language, '_compose_unary_rules', ())))
++        self._component_reading = bool(components is not None and eligible)
++        if self._component_reading:
++            components.begin_forward()
++        discourse = getattr(getattr(self, 'symbolSpace', None), 'expectation', None)
++        if discourse is not None:
++            object.__setattr__(discourse, '_source_encoder',
++                               components.source if self._component_reading else None)
+         self._sentence_codes_snapshotted = True
+ 
+     @_sentence_query_mask
+@@ -20150,6 +20174,17 @@ class BasicModel(BaseModel):
+             if self.inter_contrastive_weight > 0:
+                 errors.merge(disc._sentence_prediction_errors[1],
+                              prefix='expectation.', weight=self.inter_contrastive_weight)
++        if getattr(self, '_component_reading', False):
++            components = self._concept_owner().components
++            estimates = (None if pending is None else [
++                None if item is None else item.prediction for item in pending[0]])
++            component_cost = components.cost(observation['meanings'], estimates, active,
++                                              clauses=observation['clauses'])
++            errors.add('expectation.components', component_cost, weight=components.weight,
++                       category='expectation')
++            cost = component_cost * components.weight
++            self._sentence_expectation_comparison = (cost if self._sentence_expectation_comparison is None
++                else self._sentence_expectation_comparison + cost)
+         word_inputs = getattr(self, '_word_expectation_input', None)
+         word_expected = (None if word_inputs is None or disc is None else disc.expect('word', *word_inputs,
+             teacher_forcing=bool(self.training), gain=self.word_expectation_gain,
+@@ -20475,6 +20510,12 @@ class BasicModel(BaseModel):
+                 if row >= 0:
+                     row_ids[b] = int(store.row_ids[row])
+                     store.witness_adjacency(row, identified_codes)
++                    if getattr(self, '_component_reading', False):
++                        from ReferenceContext import selected_individual_references
++                        self._concept_owner().components.commit(row, view['meanings'][b],
++                            None if comparison is None else comparison.estimate,
++                            individual_references=selected_individual_references(
++                                self.languageSpace, entries[b]))
+                 if row >= 0 and retain:
+                     disc.bind_observation_occurrence(b, store.row(row)['occurrence'])
+         fields = []
+@@ -20533,7 +20574,7 @@ class BasicModel(BaseModel):
+         language = self.languageSpace
+         orders = sorted({order for rule in (*language._compose_binary_rules,
+                                             *language._compose_unary_rules)
+-                         for _role, order in getattr(rule, 'reference_orders', ())})
++                         for _role, order in getattr(rule, 'reference_orders', ()) if order != 1})
+         sources = self._word_symbol_concept_ids()
+         words = getattr(self.inputSpace, '_ar_word_concept_rows', None)
+         if not orders or not torch.is_tensor(sources) or not torch.is_tensor(words):
+@@ -20570,6 +20611,7 @@ class BasicModel(BaseModel):
+         valid = torch.zeros(B, C, device=like.device, dtype=torch.bool)
+         relations = torch.zeros_like(valid)
+         predicted = torch.zeros(B, device=like.device, dtype=torch.bool)
++        components = getattr(self._concept_owner(), 'components', None)
+         queries = []
+         for b in range(B):
+             query = like.new_zeros(D)
+@@ -20580,17 +20622,16 @@ class BasicModel(BaseModel):
+                 query = prediction.roles[0].detach().to(like)
+                 inputs = getattr(pending, 'inputs', None)
+                 if self._sentence_training and torch.is_grad_enabled() and inputs is not None:
+-                    estimates, _, _ = disc._inter_predictor(*(v.detach() for v in inputs))
++                    estimates, _, _ = disc._inter_predictor(*disc._prediction_inputs(inputs, replay=True))
+                     query = estimates[0, 0].detach().to(like)
+                 predicted[b] = True
+-                for i, frame in enumerate(disc.situation_references(b)[-C:]):
+-                    if frame.order != 1:
+-                        continue
+-                    ids[b, i] = frame.row_id
+-                    valid[b, i] = True
+-                    relations[b, i] = frame.point is None
+-                    if frame.point is not None:
+-                        values[b, i] = frame.point.detach().to(like)
++            if components is not None and disc is not None and bool(active[b]):
++                for i, (identity, frame) in enumerate(components.candidate_frames(disc.situation_references(b))[-C:]):
++                    point = components.situated_point(identity, frame)
++                    if point is not None:
++                        ids[b, i] = identity
++                        valid[b, i] = True
++                        values[b, i] = point.detach().to(like)
+             queries.append(query)
+         types = self._sentence_reference_types(like)
+         cases = None
+@@ -20600,7 +20641,9 @@ class BasicModel(BaseModel):
+             if types is not None:
+                 required = torch.cat((required, types.identities.flatten(1)), 1)
+             cases = stage_case_bank(self._concept_owner(), required, limit=self.reconstruction_basis_limit)
+-        return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted, types, cases)
++        inventory = torch.tensor(() if components is None else components.nouns.ids,
++                                 dtype=torch.long, device=like.device)
++        return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted, types, cases, inventory)
+ 
+     def _run_sentence_word_bricks(self, words, active, sentence_ids, stm, sub, sym,
+                                 lang, empty_feedback, perceive, symbolize, compose_word):
+diff --git a/bin/Occurrence.py b/bin/Occurrence.py
+index 943699388..421e48715 100644
+--- a/bin/Occurrence.py
++++ b/bin/Occurrence.py
+@@ -209,6 +209,12 @@ class OccurrenceRows:
+     def content_key(self, row):
+         return bytes(self.sentence_content_keys[int(row)].tolist())
+ 
++    def identity_code(self, row, pairs, ones):
++        """Read the fixed content direction at its durable definedness."""
++        from MeaningCodes import identity_code, defined_code
++        direction = identity_code(self.content_key(row), pairs, ones, like=self.slots)
++        return defined_code(direction, self.witness_count[int(row)])
++
+     def rows_for_content(self, key):
+         return tuple(row for row in range(len(self)) if self.content_key(row) == key)
+ 
+diff --git a/bin/ReferenceContext.py b/bin/ReferenceContext.py
+index 8b856afe7..be6bfcdee 100644
+--- a/bin/ReferenceContext.py
++++ b/bin/ReferenceContext.py
+@@ -18,6 +18,8 @@ class SituationFrame:
+     row_id: int
+     point: object
+     order: int = 1
++    where: object = None
++    when: object = None
+ 
+     def __iter__(self):
+         # The existing predictor reads its three-role context unchanged.
+@@ -25,7 +27,9 @@ class SituationFrame:
+ 
+     def detached(self):
+         return replace(self, roles=self.roles.detach().clone(),
+-                       point=None if self.point is None else self.point.detach().clone())
++                       point=None if self.point is None else self.point.detach().clone(),
++                       where=None if self.where is None else self.where.detach().clone(),
++                       when=None if self.when is None else self.when.detach().clone())
+ 
+     @classmethod
+     def from_row(cls, row):
+@@ -34,13 +38,19 @@ class SituationFrame:
+             return None
+         return cls(int(meaning.role_mask.sum()), meaning.roles.detach().clone(),
+                    meaning.role_mask, row['row_id'],
+-                   row['np1'].detach().clone() if row['rel_type'] == 0 else None)
++                   row['np1'].detach().clone() if row['rel_type'] == 0 else None,
++                   where=row.get('where'), when=row.get('when'))
+ 
+ 
+-def reference_requests(language, actions):
+-    """Resolve a selected role at its head; the enclosing scope owns its kind."""
++def reference_requests(language, actions, *, operation_refs=None):
++    """Resolve a selected role at its head; the enclosing scope owns its kind.
++
++    A kept numerical journal optionally adds the selected native reference
++    to each request. No identity is inferred from a word or its coordinates.
++    """
+     requests, stack = {}, []
+-    for kind, local, word in actions.detach().cpu().tolist():
++    references = None if operation_refs is None else operation_refs.detach().cpu().tolist()
++    for action, (kind, local, word) in enumerate(actions.detach().cpu().tolist()):
+         if kind < 0:
+             break
+         if kind == 0:
+@@ -58,13 +68,26 @@ def reference_requests(language, actions):
+             modes['I' + str(rules[local].head_role)] = determiner
+         for role, order in getattr(rules[local], 'reference_orders', ()):
+             for leaf in operands[int(role[1:]) - 1]:
+-                requests[leaf] = order, modes.get(role)
++                request = order, modes.get(role)
++                if references is not None:
++                    request = (*request, int(references[action][int(role[1:]) - 1]))
++                requests[leaf] = request
+         head = getattr(rules[local], 'head_role', 0)
+         stack.append(operands[head - 1]
+                      if head else tuple(leaf for operand in operands for leaf in operand))
+     return requests
+ 
+ 
++def selected_individual_references(language, program):
++    """The kept choice, including -1 for mint, after enclosing kind scopes."""
++    if program is None or program.operation_refs is None:
++        return ()
++    requests = reference_requests(language, program.actions,
++                                  operation_refs=program.operation_refs)
++    return tuple(dict.fromkeys(reference for order, mode, reference in requests.values()
++                               if order == 1 and mode != 'kind'))
++
++
+ class ReferenceTypes(NamedTuple):
+     """Existing dictionary interpretations of the current sentence's words."""
+     sources: torch.Tensor
+@@ -82,6 +105,7 @@ class ReferenceBank(NamedTuple):
+     predicted: torch.Tensor
+     types: object = None
+     cases: object = None
++    column_ids: object = None
+ 
+ 
+ def resolve_order(value, identity, order, types):
+@@ -178,7 +202,11 @@ def resolve_operand(value, identity, position, *, mode, bank, live, active, forc
+ 
+ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules,
+                      bank, live, active):
+-    """Resolve each candidate's declared noun roles before evaluating it."""
++    """Enumerate reference variants of each operation for one global softmax.
++
++    A variant retains the grammar operation's index and learned scoring row.
++    No local score, argmax, allocation or dictionary choice occurs here.
++    """
+     B, N, D = window.shape
+ 
+     def propose(value, ids, scope, pos, rule, role, valid):
+@@ -188,54 +216,124 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
+         if determiner is not None and role == 'I' + str(rule.head_role):
+             mode = determiner
+             if mode == 'kind':
+-                return value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid)
++                return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
+             order = 1
+         if mode == 'mint':
+-            return value, torch.full_like(ids, -1), torch.zeros_like(valid), torch.ones_like(valid)
+-        if order is not None:
++            return [(value, torch.full_like(ids, -1), torch.zeros_like(valid), torch.ones_like(valid))]
++        if order is not None and order != 1:
+             value, ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
+         if order != 1:
+-            return value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid)
++            return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
++        inventory = getattr(bank, 'column_ids', None)
++        if inventory is not None and inventory.numel() == 0:
++            # A cold inventory cannot bind. Keep one masked proposal for a
++            # pronoun/definite, or the single mint proposal, without expanding
++            # a compiled graph into many copies of unavailable candidates.
++            permitted = torch.zeros_like(valid) if mode in ('pronoun', 'bind') else valid
++            return [(value, torch.full_like(ids, -1), torch.zeros_like(valid), permitted)]
+         from ClauseScope import ClauseScope
+-        return resolve_operand(value, ids, pos, mode=mode, bank=bank, live=live, active=valid,
+-                               local=scope.bitwise_and(ClauseScope.LOCAL) != 0)
+-    lefts, rights, brefs, brels, bvalid, case_weights = [], [], [], [], [], []
++        P, C = value.shape[1], bank.ids.shape[1]
++        live_values, live_ids, live_orders, live_relations, live_positions = live[:5]
++        live_local = live[5] if len(live) > 5 else torch.zeros_like(live_ids, dtype=torch.bool)
++        earlier = (live_positions[:, None] < pos[:, :, None]) & (live_orders[:, None] == 1)
++        earlier = earlier & ~live_local[:, None]
++        if inventory is not None:
++            earlier = earlier & torch.isin(live_ids, inventory)[:, None]
++        earlier = earlier & (live_ids[:, None] != -1) & (live_ids[:, None] != 0)
++        own_inventory = bank.ids.flatten() if inventory is None else inventory
++        own = torch.isin(ids, own_inventory) & (scope.bitwise_and(ClauseScope.LOCAL) == 0)
++        # Only a native column can be its own candidate. A word's dictionary
++        # type is never silently promoted to an individual.
++        candidate_ids = torch.cat((ids[:, :, None], bank.ids.flip(1)[:, None].expand(B, P, C),
++                                   live_ids[:, None].expand(B, P, -1)), -1)
++        candidate_values = torch.cat((value[:, :, None], bank.values.flip(1)[:, None].expand(B, P, C, D),
++                                      live_values[:, None].expand(B, P, -1, D)), -2)
++        candidate_relations = torch.cat(((scope.bitwise_and(1) != 0)[:, :, None],
++                                         bank.relations.flip(1)[:, None].expand(B, P, C),
++                                         live_relations[:, None].expand(B, P, -1)), -1)
++        available = torch.cat((own[:, :, None], bank.valid.flip(1)[:, None].expand(B, P, C), earlier), -1)
++        size = candidate_ids.shape[-1]
++        preceding = torch.arange(size, device=ids.device)[None] < torch.arange(size, device=ids.device)[:, None]
++        duplicate = ((candidate_ids[..., :, None] == candidate_ids[..., None, :])
++                     & preceding & available[..., None, :]).any(-1)
++        available = available & ~duplicate & valid[..., None]
++        # Enumerate no more than the existing situation/STM capacity, even
++        # when a column appears in both. This is recency enumeration, not a
++        # content score or a referent selection.
++        count = min(size, max(C, live_ids.shape[1]))
++        if inventory is not None:
++            count = min(count, inventory.numel())
++        priority = torch.arange(size, 0, -1, device=ids.device) * available
++        retained = priority.topk(count, dim=-1).indices
++        candidate_ids = candidate_ids.gather(-1, retained)
++        candidate_values = candidate_values.gather(-2, retained[..., None].expand(B, P, count, D))
++        candidate_relations = candidate_relations.gather(-1, retained)
++        available = available.gather(-1, retained)
++        options = [(candidate_values[:, :, c], candidate_ids[:, :, c],
++                    candidate_relations[:, :, c], available[:, :, c]) for c in range(count)]
++        if mode not in ('pronoun', 'bind'):
++            options.append((value, torch.full_like(ids, -1), torch.zeros_like(valid), valid))
++        return options
++
++    def choice_tag(refs, rule, role):
++        order = dict(getattr(rule, 'reference_orders', ())).get(role)
++        mode = dict(getattr(rule, 'reference_kinds', ())).get(role)
++        determiner = getattr(rule, 'determiner_mode', None)
++        if determiner is not None and role == 'I' + str(rule.head_role):
++            order, mode = 1, determiner
++        if order != 1 or mode == 'kind':
++            return torch.full_like(refs, -1)
++        # -2 is a comparison-only tag for mint, never a native reference.
++        return torch.where(refs == -1, -2, refs)
++
++    lefts, rights, brefs, brels, bvalid, case_weights, binary_ops = [], [], [], [], [], [], []
++    bchoices, uchoices = [], []
+     case_bank = getattr(bank, 'cases', None)
+     case_count = 1 if case_bank is None else len(case_bank.ids)
+-    for rule in rules:
+-        left = propose(window[:, :-1], identities[:, :-1], flags[:, :-1], positions[:, :-1],
++    for operation, rule in enumerate(rules):
++        left_options = propose(window[:, :-1], identities[:, :-1], flags[:, :-1], positions[:, :-1],
+                        rule, 'I1', active[:, :-1] & active[:, 1:])
+-        right = propose(window[:, 1:], identities[:, 1:], flags[:, 1:], positions[:, 1:],
++        right_options = propose(window[:, 1:], identities[:, 1:], flags[:, 1:], positions[:, 1:],
+                         rule, 'I2', active[:, :-1] & active[:, 1:])
+-        lefts.append(left[0])
+-        rights.append(right[0])
+-        brefs.append(torch.stack((left[1], right[1]), -1))
+-        brels.append(torch.stack((left[2], right[2]), -1))
+-        valid = left[3] & right[3]
+-        weights = window.new_zeros(B, N-1, case_count, 2)
+-        case_head = getattr(rule, 'case_head_role', 0)
+-        if case_head:
+-            if case_bank is None:
+-                valid = torch.zeros_like(valid)
+-            else:
+-                from CaseSelection import select_cases
+-                modifier, head = (left[1], right[1]) if case_head == 2 else (right[1], left[1])
+-                selection = select_cases(case_bank, modifier, head)
+-                weights = selection.weights
+-                valid = valid & selection.available
+-        case_weights.append(weights)
+-        bvalid.append(valid)
+-    values, urefs, urels, uvalid = [], [], [], []
+-    for rule in unary_rules:
+-        operand = propose(window, identities, flags, positions, rule, 'I1', active)
+-        values.append(operand[0])
+-        urefs.append(torch.stack((operand[1], torch.full_like(operand[1], -1)), -1))
+-        urels.append(torch.stack((operand[2], torch.zeros_like(operand[2])), -1))
+-        uvalid.append(operand[3])
++        for left in left_options:
++            for right in right_options:
++                binary_ops.append(operation)
++                lefts.append(left[0])
++                rights.append(right[0])
++                brefs.append(torch.stack((left[1], right[1]), -1))
++                bchoices.append(torch.stack((choice_tag(left[1], rule, 'I1'),
++                                             choice_tag(right[1], rule, 'I2')), -1))
++                brels.append(torch.stack((left[2], right[2]), -1))
++                valid = left[3] & right[3]
++                weights = window.new_zeros(B, N-1, case_count, 2)
++                case_head = getattr(rule, 'case_head_role', 0)
++                if case_head:
++                    if case_bank is None:
++                        valid = torch.zeros_like(valid)
++                    else:
++                        from CaseSelection import select_cases
++                        modifier, head = (left[1], right[1]) if case_head == 2 else (right[1], left[1])
++                        selection = select_cases(case_bank, modifier, head)
++                        weights = selection.weights
++                        valid = valid & selection.available
++                case_weights.append(weights)
++                bvalid.append(valid)
++    values, urefs, urels, uvalid, unary_ops = [], [], [], [], []
++    for operation, rule in enumerate(unary_rules):
++        for operand in propose(window, identities, flags, positions, rule, 'I1', active):
++            unary_ops.append(operation)
++            values.append(operand[0])
++            urefs.append(torch.stack((operand[1], torch.full_like(operand[1], -1)), -1))
++            uchoices.append(torch.stack((choice_tag(operand[1], rule, 'I1'),
++                                         torch.full_like(operand[1], -1)), -1))
++            urels.append(torch.stack((operand[2], torch.zeros_like(operand[2])), -1))
++            uvalid.append(operand[3])
+ 
+     def stack(items, width, tail=(), *, dtype=None):
+         return torch.stack(items, 2) if items else torch.zeros((B, width, 0, *tail), device=window.device, dtype=dtype or window.dtype)
+-    return dict(case_bank=case_bank, case_weights=stack(case_weights, N-1, (case_count, 2)), left=stack(lefts, N-1, (D,)), right=stack(rights, N-1, (D,)), unary=stack(values, N, (D,)),
++    return dict(binary_ops=tuple(binary_ops), unary_ops=tuple(unary_ops),
++                case_bank=case_bank, case_weights=stack(case_weights, N-1, (case_count, 2)), left=stack(lefts, N-1, (D,)), right=stack(rights, N-1, (D,)), unary=stack(values, N, (D,)),
+                 binary_refs=stack(brefs, N-1, (2,), dtype=torch.long), unary_refs=stack(urefs, N, (2,), dtype=torch.long),
++                binary_choices=stack(bchoices, N-1, (2,), dtype=torch.long), unary_choices=stack(uchoices, N, (2,), dtype=torch.long),
+                 binary_relations=stack(brels, N-1, (2,), dtype=torch.bool), unary_relations=stack(urels, N, (2,), dtype=torch.bool),
+                 binary_valid=stack(bvalid, N-1, dtype=torch.bool), unary_valid=stack(uvalid, N, dtype=torch.bool))
+diff --git a/bin/Spaces.py b/bin/Spaces.py
+index a3858cdfb..161b6b714 100644
+--- a/bin/Spaces.py
++++ b/bin/Spaces.py
+@@ -13160,6 +13160,17 @@ class ConceptualSpace(Space):
+         self.similarity_codebook = _sim_cb
+         self.layers.append(_sim_cb)
+         self.params = self.params + list(_sim_cb.parameters())
++        from IndependentComponents import IndependentComponents
++        components = getattr(_sim_cb, 'independent_components', None)
++        if components is None:
++            components = IndependentComponents(self,
++                weight=float(TheXMLConfig.training('independenceWeight', .1)),
++                prior_scale=float(TheXMLConfig.training('independencePriorScale', .05)),
++                mint_threshold=float(TheXMLConfig.training('independenceMintThreshold', .2)))
++            components.to(device=_sim_cb.W.device, dtype=_sim_cb.W.dtype)
++            object.__setattr__(_sim_cb, 'independent_components', components)
++        self.components = components
++        self.layers.append(self.components)
+         # Dual-towers rev 2: the pyramid stages its top-K winners on the
+         # subspace index; the codebook is the lookup basis materialize uses.
+         object.__setattr__(self.subspace, "_index_basis", _sim_cb)
+@@ -15594,6 +15605,7 @@ class ConceptualSpace(Space):
+         migrates optimizer moments without resetting unrelated parameters.
+         """
+         base = list(self.params)
++        base.extend(self.components.parameters())
+         seen = set()
+         for (p, s) in (getattr(self, "_sparse_fam", None) or {}).values():
+             for ly in (p, s, s.features):
+diff --git a/data/model.xml b/data/model.xml
+index 0e542c501..ed4069ab2 100644
+--- a/data/model.xml
++++ b/data/model.xml
+@@ -214,6 +214,10 @@
+     </data>
+ 
+     <training>
++      <!-- Order-one sparse components; admission requires four witnesses. -->
++      <independenceWeight>0.1</independenceWeight>
++      <independencePriorScale>0.05</independencePriorScale>
++      <independenceMintThreshold>0.2</independenceMintThreshold>
+       <!-- Number of independent training runs per invocation. -->
+       <numTrials>1</numTrials>
+       <!-- Training epochs per trial. -->
+diff --git a/data/model.xsd b/data/model.xsd
+index 9f96c77fc..d8a2e143a 100644
+--- a/data/model.xsd
++++ b/data/model.xsd
+@@ -941,6 +941,9 @@
+       <xs:element name="rowExpectationArmaScale" type="nonNegativeFloat" minOccurs="0"/>
+       <xs:element name="rowExpectationContrastiveWeight" type="nonNegativeFloat" minOccurs="0"/>
+       <xs:element name="sentenceExpectation" type="xs:boolean" minOccurs="0"/>
++      <xs:element name="independenceWeight" type="nonNegativeFloat" minOccurs="0"/>
++      <xs:element name="independencePriorScale" type="positiveFloat" minOccurs="0"/>
++      <xs:element name="independenceMintThreshold" type="positiveFloat" minOccurs="0"/>
+       <xs:element name="sentenceExpectationScope" minOccurs="0">
+         <xs:simpleType>
+           <xs:restriction base="xs:string">
+diff --git a/test/fixtures/when-readers-round4a0.json b/test/fixtures/when-readers-round4a0.json
+index 1ce7197af..c0c09e931 100644
+--- a/test/fixtures/when-readers-round4a0.json
++++ b/test/fixtures/when-readers-round4a0.json
+@@ -786,6 +786,24 @@
+       "role": "carrier",
+       "previous_absolute_time": false,
+       "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
++    },
++    {
++      "file": "bin/IndependentComponents.py",
++      "function": "IndependentComponents.situated_point",
++      "previous_absolute_time": false,
++      "now": "Carries the stored source-relative occurrence band as detached binding evidence; never an independence feature."
++    },
++    {
++      "file": "bin/Layers.py",
++      "function": "BracketExpectation.bind_observation_occurrence",
++      "previous_absolute_time": false,
++      "now": "Carries the stored source-relative occurrence band as detached binding evidence; never an independence feature."
++    },
++    {
++      "file": "bin/ReferenceContext.py",
++      "function": "SituationFrame.detached",
++      "previous_absolute_time": false,
++      "now": "Carries the stored source-relative occurrence band as detached binding evidence; never an independence feature."
+     }
+   ],
+   "dynamic_readers": [
+diff --git a/test/reading_fixtures.py b/test/reading_fixtures.py
+index 7dad381a2..71a3131b1 100644
+--- a/test/reading_fixtures.py
++++ b/test/reading_fixtures.py
+@@ -146,12 +146,16 @@ def force_absolute_reading(model):
+     def binary_scores(*args, **kwargs):
+         stop, scores = binary(*args, **kwargs)
+         mask = torch.tensor([name in allowed for name in binary_names], device=scores.device, dtype=torch.bool)
++        if kwargs.get('op_indices') is not None:
++            mask = mask.index_select(0, kwargs['op_indices'])
+         return stop, scores.masked_fill(~mask, -torch.inf) + 1e6
+     def unary_scores(*args, **kwargs):
+         stop, scores = unary(*args, **kwargs)
+         if kwargs.get('op_offset') == layer.r_reduce + layer.r_apply:
+             return stop, scores  # supplied grammar does not force attention
+         mask = torch.tensor([name in ('not', 'non') for name in unary_names], device=scores.device, dtype=torch.bool)
++        if kwargs.get('op_indices') is not None:
++            mask = mask.index_select(0, kwargs['op_indices'])
+         return stop, scores.masked_fill(~mask, -torch.inf) - 1e6
+     layer.chooser.score_binary = binary_scores
+     layer.chooser.score_unary = unary_scores
+diff --git a/test/test_definition_rows.py b/test/test_definition_rows.py
+index 310fdc5d7..66aba2f39 100644
+--- a/test/test_definition_rows.py
++++ b/test/test_definition_rows.py
+@@ -67,8 +67,7 @@ def test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index():
+     synonym, second = admit(m, 'there')
+     cs.interpret.define(word, second)
+     cs.interpret.define(synonym, obj)
+-    with pytest.raises(ValueError, match='ambiguous|selection'):
+-        cs.interpret.forward(word)
++    assert cs.interpret.forward(word) is None
+     assert cs.interpret.forward(word, selected=second) == second
+     assert set(cs.definitions.words(obj)) == {word, synonym}
+     assert set(cs.definitions.objects(word)) == {obj, second}
+diff --git a/test/test_lexical_reference_orders.py b/test/test_lexical_reference_orders.py
+index da6507274..7f5e77408 100644
+--- a/test/test_lexical_reference_orders.py
++++ b/test/test_lexical_reference_orders.py
+@@ -40,7 +40,9 @@ def test_selected_grammar_context_selects_order(context, order):
+     actions = torch.tensor([[0, 0, 0], [0, 0, 1], [1, 0, -1]])
+     got, orders = Language.LanguageSpace.resolve_lexical_references(
+         language, cs, torch.tensor([-1, row]), torch.tensor([-1, ids[0]]), actions)
+-    assert got.tolist() == [-1, ids[order]]
++    # Individual identity is chosen by the global operation, not this
++    # dictionary-order staging helper. Types/events retain their lookup.
++    assert got.tolist() == [-1, -1 if order == 1 else ids[order]]
+     assert orders.tolist() == [-1, order]
+     assert cs.word_concepts('cat') == tuple(sorted([cs.definitions.word(form='cat'), *ids]))
+ 
+@@ -59,11 +61,11 @@ def test_capture_owns_grammar_resolution_without_changing_reconstruction():
+          torch.tensor([[-1, -1, 0]])),
+         leaves, torch.tensor([[-1, row]]), torch.tensor([[-1, row]]),
+         torch.ones(1, 2), torch.zeros(1, 3, 8), concept_ids=torch.tensor([[-1, ids[0]]]))
+-    assert entry.reference_ids.tolist() == [-1, ids[1]]
++    assert entry.reference_ids.tolist() == [-1, -1]
+     assert entry.reference_orders.tolist() == [-1, 1]
+     torch.testing.assert_close(entry.leaves, leaves[0])
+     assert entry.concept_ids.tolist() == [-1, ids[0]]
+-    assert entry.detached().reference_ids.tolist() == [-1, ids[1]]
++    assert entry.detached().reference_ids.tolist() == [-1, -1]
+ 
+ 
+ def test_form_sets_survive_checkpoint_and_missing_order_stays_unknown():
+diff --git a/test/test_live_references.py b/test/test_live_references.py
+index 853223603..44e80f472 100644
+--- a/test/test_live_references.py
++++ b/test/test_live_references.py
+@@ -97,7 +97,8 @@ def test_operation_runs_on_the_selected_occurrence_eager_and_compiled():
+     scope = torch.tensor([[[0, 3], [0, 1], [0, -1]]])
+ 
+     def choose(state, scope):
+-        return LanguageSpace.choose_operation(owner, state, torch.tensor([True]), slots=1, reference_scope=scope)
++        return LanguageSpace.choose_operation(owner, state, torch.tensor([True]), slots=1, reference_scope=scope,
++                                               replay_action=torch.tensor([0]))
+     eager = choose(state, scope)
+     compiled = torch.compile(choose, backend='eager', fullgraph=True)(state, scope)
+     for result in (eager, compiled):
+@@ -107,8 +108,9 @@ def test_operation_runs_on_the_selected_occurrence_eager_and_compiled():
+         torch.testing.assert_close(operands[0, 0], prior, rtol=0, atol=0)
+         torch.testing.assert_close(operands[0, 1], second, rtol=0, atol=0)
+         assert not relations.any()
+-    eager[0].candidate.sum().backward()
+-    assert query.grad is not None and query.grad.any()
++    (-eager[0].log_probability.sum()).backward()
++    assert query.grad is None
++    assert any(p.grad is not None and p.grad.any() for p in layer.chooser.parameters())
+ 
+ 
+ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, monkeypatch):
+@@ -138,11 +140,19 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
+     language._compose_binary_rules = tuple(rules)
+     layer = language._tree_layer(2)
+     original = layer.forward
++    routes = []
+ 
+     def forced(x, **kwargs):
+-        stop = (x.shape[1]-1)*layer.r_reduce+x.shape[1]*layer.r_apply
+-        kwargs['replay_action'] = torch.where(kwargs['depth'] >= 2, op, stop)
+-        return original(x, **kwargs)
++        reference = kwargs.get('reference_data')
++        binary = tuple(range(layer.r_reduce)) if reference is None else reference['binary_ops']
++        unary = tuple(range(layer.r_apply)) if reference is None else reference['unary_ops']
++        stop = (x.shape[1]-1)*len(binary)+x.shape[1]*len(unary)
++        # Force the grammar operation with the first (held-column) binding,
++        # whose global action is no longer its local operation number.
++        kwargs['replay_action'] = torch.where(kwargs['depth'] >= 2, binary.index(op), stop)
++        result = original(x, **kwargs)
++        routes.append(result[2])
++        return result
+     monkeypatch.setattr(layer, 'forward', forced)
+     width = model.conceptualSpace.stm.concept_dim
+     prior = torch.nn.functional.normalize(torch.arange(1, width+1, dtype=torch.float32), dim=0)
+@@ -201,7 +211,11 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
+         torch.testing.assert_close(model._recon_ideas[active], expected[active], rtol=1e-4, atol=1e-4)
+         torch.testing.assert_close(changed[active], expected[active], rtol=0, atol=0)
+         clause.point.sum().backward()
+-        assert query.grad is not None and query.grad.any()
++        assert query.grad is None
++        route = next(route for route in routes if bool((route['kind'] == 1).any()))
++        credit = route['logits'].log_softmax(-1).gather(1, route['action'][:, None]).sum()
++        (-credit).backward()
++        assert any(p.grad is not None and p.grad.any() for p in layer.chooser.parameters())
+     finally:
+         model.End()
+         model.symbolSpace.soft_reset()
+diff --git a/test/test_operators_final.py b/test/test_operators_final.py
+index 2ba45c940..784b6def2 100644
+--- a/test/test_operators_final.py
++++ b/test/test_operators_final.py
+@@ -196,7 +196,9 @@ def test_determiner_kept_closing_is_the_only_mint_and_lowers_once(monkeypatch):
+     refs, orders = LanguageSpace.resolve_lexical_references(f.language, f.cs,
+         program.word_rows, program.concept_ids, program.actions, admit=True)
+     assert len(f.cs.definitions._store()) == before
+-    assert refs[1] == program.concept_ids[1] and orders[1] == 1
++    # The selected mint carries no existing column. Dictionary capture may
++    # not substitute the noun's concept for that individual choice.
++    assert refs[1] == -1 and orders[1] == 1
+     reading = replace(program, reference_ids=refs, reference_orders=orders,
+                       leaf_orders=torch.tensor([0, 2, 0]))
+     clause = finish_reading(f.language, reading, registry=f.registry)
+diff --git a/test/test_operators_round4a.py b/test/test_operators_round4a.py
+index f35989906..21f1f211a 100644
+--- a/test/test_operators_round4a.py
++++ b/test/test_operators_round4a.py
+@@ -54,7 +54,7 @@ def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate
+     configuration = 'XOR_grammar'
+     from test_mm_xor import _fresh_model
+     from MereologicalCodes import occurrence_memberships
+-    from MeaningCodes import identity_code, certificate
++    from MeaningCodes import defined_code, certificate
+     model, _, _ = _fresh_model(f'data/{configuration}.xml')
+     try:
+         with torch.no_grad():
+@@ -66,7 +66,7 @@ def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate
+         store = owner._closed_clause_store()
+         rows = [r for r in range(len(store)) if int(store.rel_type[r]) == store.REL_NONE]
+         assert len(rows) == 4
+-        codes = {r: identity_code(store.content_key(r),64,3) for r in rows}
++        codes = {r: store.identity_code(r,64,3) for r in rows}
+         context = derived.occurrence_terms()
+         postings = occurrence_memberships(owner, store)
+         extents, values = [], []
+@@ -74,6 +74,7 @@ def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate
+             containing = sorted(set(rows) & postings[word])
+             weights = 1/(1+(float(store._next_ts)-1-store.timestamp[containing]).clamp_min(0))
+             expected = (torch.stack([codes[r] for r in containing])*weights[:,None]).sum(0)/weights.sum()
++            expected = defined_code(expected, len(containing))
+             torch.testing.assert_close(value[:64],expected)
+             assert not value[64:].any() and not value.requires_grad and n == len(containing)
+             extents.append({rows.index(r) for r in containing}); values.append(value.numpy())
+@@ -225,7 +226,7 @@ def test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved(
+     from Layers import TernaryTruthStore
+     from Meaning import ConceptualMeaning
+     from MereologicalCodes import MereologicalCodes
+-    from MeaningCodes import identity_code
++    from MeaningCodes import defined_code
+     store=TernaryTruthStore(20,capacity=8);store.image_form_width=4
+     owner=SimpleNamespace(_closed_clause_store=lambda:store,
+         _csw_row_of=lambda cid:{11:0,12:1}.get(cid),_definition_index=lambda:None)
+@@ -238,10 +239,11 @@ def test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved(
+     # The second row is witnessed by a reference alone; membership is still one row.
+     store._leaf_postings[(0,0)].remove(1);store.refs[1,0]=11
+     terms=derived.occurrence_terms();assert set(terms)=={0} and terms[0][0]==2
+-    codes=torch.stack([identity_code(store.content_key(r),8,derived.meaning_ones) for r in [0,1]])
++    codes=torch.stack([store.identity_code(r,8,derived.meaning_ones) for r in [0,1]])
+     assert not torch.equal(codes[0],codes[1])
+     weights=1/(1+(float(store._next_ts)-1-store.timestamp[:2]).clamp_min(0))
+     expected=(codes*weights[:,None]).sum(0)/weights.sum()
++    expected=defined_code(expected, 2)
+     torch.testing.assert_close(terms[0][1],torch.cat((expected,torch.zeros(8))))
+     store.slots[:,0,4:]=99. # composed meanings cannot feed their own bootstrap
+     torch.testing.assert_close(derived.occurrence_terms()[0][1],terms[0][1])
+diff --git a/test/test_review13_subspaces.py b/test/test_review13_subspaces.py
+index a2a7a6eb6..be511726a 100644
+--- a/test/test_review13_subspaces.py
++++ b/test/test_review13_subspaces.py
+@@ -69,7 +69,7 @@ def test_occurrence_mean_is_confined_to_detached_context_coordinates():
+     store._append_leaf_terms(row, ((a,b),(),()), (True,True,True))
+     codes = cb.lookup_rows(torch.tensor([a,b]))
+     torch.testing.assert_close(codes[:,:3], ps.W[[4,7]])
+-    torch.testing.assert_close(codes[:,3:], torch.tensor([[1.,0.],[1.,0.]]))
++    torch.testing.assert_close(codes[:,3:], torch.tensor([[1/5,0.],[1/5,0.]]))
+     assert not codes.requires_grad
+     assert root.grad is None and not store.slots.requires_grad
+     newer = store.append_meaning(ConceptualMeaning(roles*2, torch.tensor([True,False,False]),
+@@ -77,7 +77,7 @@ def test_occurrence_mean_is_confined_to_detached_context_coordinates():
+     store._append_leaf_terms(newer, ((a,b),(),()), (True,True,True))
+     mean = (root.detach()/2 + 2*root.detach())/1.5
+     torch.testing.assert_close(cb.lookup_rows(a)[:3], ps.W[4])
+-    torch.testing.assert_close(cb.lookup_rows(a)[3:], torch.tensor([1.,0.]))
++    torch.testing.assert_close(cb.lookup_rows(a)[3:], torch.tensor([2/6,0.]))
+     assert len(store) == 2
+ 
+ 
+diff --git a/test/test_sentence_expectation.py b/test/test_sentence_expectation.py
+index 897889b0a..27cbcd646 100644
+--- a/test/test_sentence_expectation.py
++++ b/test/test_sentence_expectation.py
+@@ -81,8 +81,9 @@ def test_document_change_is_cold_preserves_scored_loss_and_other_row():
+     assert model.consume_inter_loss() is None
+ 
+ 
+-def test_full_role_loss_trains_predictor_but_never_source_or_target():
+-    model = layer()
++def test_full_role_loss_trains_predictor_and_current_source_but_never_target():
++    model = BracketExpectation(n_symbols=4, max_depth=8, n_dim=4, concept_dim=4,
++                               batch=1, expectation_scope='structured')
+     encoder = torch.nn.Linear(4, 4, bias=False)
+     source = encoder(torch.arange(12.).reshape(3, 4) / 12)
+     target = torch.nn.Parameter(torch.ones(3, 4))
+@@ -92,7 +93,7 @@ def test_full_role_loss_trains_predictor_but_never_source_or_target():
+     assert loss is not None
+     loss.backward()
+     assert target.grad is None
+-    assert encoder.weight.grad is None
++    assert encoder.weight.grad is not None and encoder.weight.grad.abs().sum() > 0
+     assert any(p.grad is not None and p.grad.norm() > 0
+                for p in model._inter_predictor.parameters())
+     assert all(not p.requires_grad for _, p, _ in model.get_stm_chain())

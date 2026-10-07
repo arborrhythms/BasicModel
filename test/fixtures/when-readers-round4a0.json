@@ -786,6 +786,24 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/IndependentComponents.py",
+      "function": "IndependentComponents.situated_point",
+      "previous_absolute_time": false,
+      "now": "Carries the stored source-relative occurrence band as detached binding evidence; never an independence feature."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "BracketExpectation.bind_observation_occurrence",
+      "previous_absolute_time": false,
+      "now": "Carries the stored source-relative occurrence band as detached binding evidence; never an independence feature."
+    },
+    {
+      "file": "bin/ReferenceContext.py",
+      "function": "SituationFrame.detached",
+      "previous_absolute_time": false,
+      "now": "Carries the stored source-relative occurrence band as detached binding evidence; never an independence feature."
     }
   ],
   "dynamic_readers": [

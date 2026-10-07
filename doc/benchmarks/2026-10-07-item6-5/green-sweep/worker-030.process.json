@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-5/green-sweep/worker-030.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-5/green-sweep/worker-030.json"
+  ],
+  "pid": 76532,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 2217053016,
+  "elapsed_seconds": 85.04242054093629,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-5/green-sweep/worker-030.log"
+}

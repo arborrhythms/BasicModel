@@ -1,0 +1,16 @@
+{
+  "result": "passed",
+  "exit_code": 0,
+  "completed": 5527,
+  "selected": 5527,
+  "counts": {
+    "passed": 5241,
+    "skipped": 285,
+    "xpassed": 1
+  },
+  "seconds": 186.86127424996812,
+  "non_strict_xpass": [
+    "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
+  ],
+  "source": "measured-source/source.json"
+}

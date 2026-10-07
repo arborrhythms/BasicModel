@@ -307,7 +307,7 @@ class InterpretLayer(GrammarLayer):
             if not choices:
                 choices = candidates
             if len(choices) != 1:
-                raise ValueError('ambiguous word association requires a grammar selection')
+                return None  # Enumerate associations; the grammar chooses.
             obj = choices[0]
         else:
             if word not in self._pending:

@@ -1,0 +1,18 @@
+........................................................................ [ 32%]
+...............s........................................................ [ 65%]
+.......................................................................F [ 98%]
+...                                                                      [100%]
+=================================== FAILURES ===================================
+________ test_actual_model_entry_and_checkpoint_keep_taxonomy_identity _________
+test/test_taxonomy_entry.py:113: in test_actual_model_entry_and_checkpoint_keep_taxonomy_identity
+    assert restored.load_weights(path, strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5061: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3223/test_actual_model_entry_and_ch0/taxonomy.pt
+=========================== short test summary info ============================
+FAILED test/test_taxonomy_entry.py::test_actual_model_entry_and_checkpoint_keep_taxonomy_identity
+1 failed, 217 passed, 1 skipped in 9.23s

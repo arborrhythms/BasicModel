@@ -1,0 +1,47 @@
+{
+  "minimum_completed_fineweb_sentences": 1000000,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "checkpoints": [
+    {
+      "path": "data/BasicModel.ckpt",
+      "eligible": false,
+      "sentences": 0,
+      "required": 1000000,
+      "reason": "FineWeb exposure is unrecorded; requires 1,000,000 completed training sentences"
+    },
+    {
+      "path": "data/grammar_wording.ckpt",
+      "eligible": false,
+      "sentences": 0,
+      "required": 1000000,
+      "reason": "FineWeb exposure is unrecorded; requires 1,000,000 completed training sentences"
+    },
+    {
+      "path": "output/runs/basicmodel_1h_b24_20260726_075933/BasicModel.ckpt",
+      "eligible": false,
+      "sentences": 0,
+      "required": 1000000,
+      "reason": "FineWeb exposure is unrecorded; requires 1,000,000 completed training sentences"
+    },
+    {
+      "path": "output/runs/basicmodel_teacher_1h_b24_20260727_083632/BasicModel.ckpt",
+      "eligible": false,
+      "sentences": 0,
+      "required": 1000000,
+      "reason": "FineWeb exposure is unrecorded; requires 1,000,000 completed training sentences"
+    }
+  ],
+  "gates": [
+    "anaphora versus 206a0146",
+    "verb reuse",
+    "prediction control",
+    "shuffled order",
+    "renamed vocabulary",
+    "determiner versus shuffled determiner"
+  ],
+  "status": "prerequisite missing; skipped, not passed"
+}

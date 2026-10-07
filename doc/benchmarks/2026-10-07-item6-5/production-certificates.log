@@ -1,0 +1,67 @@
+...............F.                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_native_admission_optimizer_ownership_and_checkpoint ___________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3191/test_native_admission_optimize0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x127c383b0>
+
+    def test_native_admission_optimizer_ownership_and_checkpoint(tmp_path, monkeypatch):
+        import copy
+        from pathlib import Path
+        import Language
+        import Models
+        import util
+        from data import TheData
+        from Spaces import _concept_alloc_of
+        from IndependentComponents import EventChart
+        source = Path(__file__).resolve().parents[1] / 'data' / 'XOR_grammar.xml'
+        config = tmp_path / 'components.xml'
+        config.write_text(source.read_text().replace('<nVectors>6</nVectors>', '<nVectors>32</nVectors>').replace('<architecture>',
+            '<architecture><ltmConsolidation>true</ltmConsolidation>', 1))
+        util.init_config(path=str(config), defaults_path=str(source.parent / 'model.xml'))
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        Language.TheGrammar._configured = False
+        cfg = Models.BaseModel.load_config(str(config))
+        TheData.load('xor', dat=dict(cfg['architecture']['data']))
+        model, _ = Models.BaseModel.from_config(str(config), data=TheData)
+        try:
+            owner = model._concept_owner()
+            columns = owner.components
+            event = owner.new_concept()
+            event_row = owner._csw_concept_row(0, event)
+            width = owner.similarity_codebook.W.shape[-1]
+            code = torch.zeros(1, width)
+            derived = owner.similarity_codebook.mereology
+            code[0, derived.percept_event_width] = 1.
+            columns._chart = EventChart(torch.tensor([event_row]), code, capacity=owner.nVectors,
+                content_width=owner.nWhat, meaning_start=derived.percept_event_width,
+                meaning_pairs=derived.meaning_pairs, pole_stride=derived.reserved_pairs)
+            value = columns._chart.expand(torch.tensor([1., 0.]))
+            for occurrence in range(4):
+                columns.nouns.observe(value, witness=occurrence, allocate=columns._allocate)
+            identity, = columns.nouns.ids
+            assert _concept_alloc_of(owner).order_of(identity) == 1
+            assert owner._csw_row_of(identity) != event_row
+            read = owner.similarity_codebook.lookup_rows(torch.tensor(owner._csw_row_of(identity)))
+            torch.testing.assert_close(read[derived.percept_event_width:],
+                                       columns.column_point(identity)[derived.percept_event_width:])
+            optimizer = model.getOptimizer(lr=.01)
+            owners = model.objective_parameter_groups(optimizer)
+            ids = {id(p) for p in columns.parameters()}
+>           assert ids <= {id(p) for p in owners['expectation']}
+E           assert {4962964400, 4962966000} <= {4963844336, ...63846656, ...}
+E             
+E             Extra items in the left set:
+E             4962964400
+E             4962966000
+
+test/test_independent_components.py:354: AssertionError
+=============================== warnings summary ===============================
+test/test_independent_components.py::test_native_admission_optimizer_ownership_and_checkpoint
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_independent_components.py::test_native_admission_optimizer_ownership_and_checkpoint
+1 failed, 16 passed, 19 deselected, 1 warning in 2.39s

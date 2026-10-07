@@ -7,6 +7,17 @@ model, interpreter, policy or semantic store. This is item 1c's implementation;
 expectation's negative image is derived at the closing;
 [ExpectationRetention](ExpectationRetention.md) gives its gradient and credit contracts.
 
+Item 6.5's mechanism was accepted by Alec on October 7 after spec §10's
+review; its learning gates remain pending. For §2.6.4, the latest sentence
+source is freshly encoded through learned ConceptualSpace columns; the
+predictor no longer unconditionally detaches that encoding. Its observed
+target and older context remain detached. For §2.7.3, the existing bounded
+situation and already cued frames enumerate individual columns. Their
+continuity bands accompany the binding operand while column signatures and
+the independence objective contain only content. Binding and minting are
+variants of the existing global grammar choice. They do not invoke another
+policy or an LTM search. See [the mechanism and limits](specs/2026-09-26-independent-components.md#9-implementation-proposal-october-7).
+
 ## Permissions and effects
 
 `Subsystem` enumerates perceptual knowing, order-zero knowing, higher-order

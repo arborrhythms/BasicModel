@@ -1,0 +1,365 @@
+{
+  "status": "Accepted by Alec as the item 6.5 mechanism landing; commit, push and WikiOracle bump authorized",
+  "date": "2026-10-07",
+  "authority": "Alec acceptance conveyed in the 2026-10-07 Item 6.5 \u2014 landing instruction; Claude review in spec \u00a710 accepts the three \u00a79 choices",
+  "candidate_base_commit": "f4a68404ea8d4704bfeb6279a738c93356d289d6",
+  "scope": "6.5 source, tests, specification and receipt; doc/plans/2026-10-07-thought-loop.md; current document edits; acceptance documentation",
+  "runtime_source": "measured-source/source.json",
+  "runtime_source_manifest_sha256": "d8f374317ea8054cdb9e99077ccdf35df76866e28d6bf46492903f3f4948b099",
+  "runtime_source_files": 718,
+  "runtime_source_unchanged": true,
+  "measurement_helpers": {
+    "measured-source/measurement-helpers.json": {
+      "files": 181,
+      "sha256": "ab2e0cf35809555a36ceaaec81989a54b423e7f7a72770b764c45a9e7042a0bd",
+      "matched": true
+    },
+    "supplemental-helper-manifest.json": {
+      "files": 183,
+      "sha256": "98cbc34be0a4628181e1141d501eb7cdcd5dfb974dcf25ece5679e63aa3e080f",
+      "matched": true
+    }
+  },
+  "measurements_repeated": false,
+  "basis": {
+    "full_sweep": {
+      "result": "passed",
+      "exit_code": 0,
+      "completed": 5527,
+      "selected": 5527,
+      "counts": {
+        "passed": 5241,
+        "skipped": 285,
+        "xpassed": 1
+      },
+      "seconds": 186.86127424996812,
+      "non_strict_xpass": [
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
+      ],
+      "source": "measured-source/source.json"
+    },
+    "mechanism_cases": 25,
+    "standing_counts": {
+      "class_pass": 10,
+      "reconstruction_pass": 10,
+      "joint": 10,
+      "mm_pass": 10,
+      "sum_pass": 10,
+      "sum_floor_pass": 10,
+      "xor_bands": {
+        "at 0": 10,
+        "at 1/4": 0,
+        "between": 0,
+        "above 1/4": 0
+      },
+      "sum_bands": {
+        "at 0": 0,
+        "at 1/4": 10,
+        "between": 0,
+        "above 1/4": 0
+      }
+    },
+    "standing_summary_sha256": "75c5e7326988b9fef4fd85ed9e63e8350508385d3eb6986d5ffece766206427b",
+    "sentence_costs": [
+      {
+        "kind": "xor",
+        "run": 1,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "xor",
+        "run": 2,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "xor",
+        "run": 3,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "xor",
+        "run": 4,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "xor",
+        "run": 5,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "xor",
+        "run": 6,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "xor",
+        "run": 7,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "xor",
+        "run": 8,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "xor",
+        "run": 9,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "xor",
+        "run": 10,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "sum",
+        "run": 1,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "sum",
+        "run": 2,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "sum",
+        "run": 3,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "sum",
+        "run": 4,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "sum",
+        "run": 5,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "sum",
+        "run": 6,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "sum",
+        "run": 7,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "sum",
+        "run": 8,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "sum",
+        "run": 9,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      },
+      {
+        "kind": "sum",
+        "run": 10,
+        "observed_trials": 3208,
+        "maximum_abs_reconstruction": 0.0,
+        "maximum_abs_expectation": 0.0,
+        "nonzero_reconstruction": 0,
+        "nonzero_expectation": 0,
+        "unseeded_entry_saved": true
+      }
+    ],
+    "cost_integrity_sha256": "00da5d8a5deec2da652105b8bd7952133da1d6132499fc508ff69ced69a39b3a",
+    "supplemental_slow": {
+      "passed": 4,
+      "total": 4,
+      "summary_sha256": "ee7433d97d5bf214ea9478e366a92317f042388d97594b273d511eacad14bfbe"
+    }
+  },
+  "learning_gates": {
+    "status": "Pending the million-sentence checkpoint; not claimed",
+    "minimum_completed_fineweb_training_sentences": 1000000,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "gates": [
+      "held-out anaphora",
+      "verb reuse",
+      "prediction control",
+      "shuffled order",
+      "renamed vocabulary",
+      "determiner control"
+    ],
+    "all_declared_seeds_required": true,
+    "prerequisite_evidence": "learning-readiness.json",
+    "mechanism_checks_do_not_establish_learning": true
+  },
+  "reviewed_choices": [
+    "Amortized Laplace sparse-coding energy with one gradient and no independent ICA solve",
+    "Fresh current-source encoding per trial at the sentence update boundary",
+    "Detached role view beside the occurrence anchor accepted as transitional duplication to retire later"
+  ],
+  "acceptance_document_changes": [
+    {
+      "path": "doc/benchmarks/2026-10-07-item6-5/README.md",
+      "at_review_sha256": "07a11d14a291181b331a4ce67a66bc109888b242889af3fc63c99b753a818e94",
+      "accepted_sha256": "6a3d3a590e60a518a2a50a61e381b79fc4ce0e9c7df4129b9bbc29cf277e7aa0"
+    },
+    {
+      "path": "todo.md",
+      "at_review_sha256": "c54fca851694f34c05cdfc9aa2c9cb41f8ddae66b20f8597e5d5355273720a24",
+      "accepted_sha256": "5d7cfaec2242822e2e95527f0b31f3f12b0f4a4cec22df068bf50916f164dd3f"
+    },
+    {
+      "path": "doc/AccessibleMind.md",
+      "at_review_sha256": "7154bb191baeab0254dd6712283fe443b8067134143c0ebfee4fa51a17e410db",
+      "accepted_sha256": "39a9065ad0f2533653af87db74638af2f4c4eed8f037c82f1f5946abda71a13c"
+    },
+    {
+      "path": "doc/FutureWork.md",
+      "at_review_sha256": "03618a8323b40c982b822a60fe73c3bc3c1265905a6dcca3d255489014ffac3b",
+      "accepted_sha256": "721b852a762d24429f8dfd8f7a74f4844ba0a235fff71cdf324c742c2800f005"
+    },
+    {
+      "path": "doc/GradientFlow.md",
+      "at_review_sha256": "239a0bc4cd5b812c4e97ee4e3c7ecea2d2745ad46fc3c88e53fb320518e2bf61",
+      "accepted_sha256": "62e8cf3a267b80cfb9c71c3c2405b69be92e12969b46f4b63d3e95c33e09f6c1"
+    },
+    {
+      "path": "doc/Language.md",
+      "at_review_sha256": "884994eadea4837a23cb6ea91c09a0248daa635f5a207da0e87a8ffa9e181724",
+      "accepted_sha256": "8e2ac8e38badec7aef09299c811d1ed05b29f43e33610a5e4823b494fdcc7ef3"
+    },
+    {
+      "path": "doc/Testing.md",
+      "at_review_sha256": "3d62e6dcd97464d439794d5144c1d5218bc372902a9e599d9728b0a5a7aa8a31",
+      "accepted_sha256": "bfec456b9339135505184c1f49116a5c435d9872f0215de0b257d0ddd8a43933"
+    },
+    {
+      "path": "doc/specs/2026-09-26-independent-components.md",
+      "at_review_sha256": "0e564068ce5f6303a0e64282bc7f7f6ea6bbb34a9096ef4287a44f0747da5592",
+      "accepted_sha256": "25ae148b2f1df8e9970a5babd631161cfeddda3696ab04727631310d174f8f2f"
+    },
+    {
+      "path": "doc/plans/2026-10-07-thought-loop.md",
+      "at_review_sha256": "540df54165acbfa00378d64345ab885862c087aaea3a26f3772227b04081d5a9",
+      "accepted_sha256": "ca032180222eeadb07ba4508d518022ab933fa9595ff1dd3802d5f0f484a4585"
+    }
+  ],
+  "preserved_review_evidence": {
+    "before_manifest": "acceptance-before-manifest.json",
+    "before_manifest_sha256": "6087061a04f3908a07b2989e1f57d4496372798ac4a71e4a0df48631ca8ae64e",
+    "files": 1789,
+    "unchanged_files": 1788,
+    "changed_paths": [
+      "doc/benchmarks/2026-10-07-item6-5/README.md"
+    ],
+    "change": "Receipt README acceptance status only; all prior source snapshots, helpers, outcomes, logs and historical delivery record unchanged"
+  },
+  "thought_loop_plan": "Included with the concurrently supplied \u00a78 rename decisions; no edits by this landing agent",
+  "next": "Query and ask, then item 6.2 thinking; its specification follows from Claude. The thought-loop plan supplies the current decisions.",
+  "historical_reports": "delivery.json retains its pre-acceptance review state; this record supplies acceptance and its documentary delta",
+  "landing_documentation_checks": {
+    "passed": 329,
+    "seconds": 2.52,
+    "log": "landing-doc-links.log",
+    "sha256": "c61eb17f808f845ae80ccc152e19160f8aac3be98cbaaa6530ef800f8d03c8aa",
+    "initial_check": "landing-doc-links-before-acceptance-record.log records four missing-link failures while acceptance.json was not yet written; resolved by creating that record"
+  },
+  "concurrent_next_item_work": "The newly supplied doc/specs/2026-10-07-thinking.md and doc/benchmarks/2026-10-07-thinking-toy/ remain outside this 6.5 landing."
+}

@@ -6465,11 +6465,11 @@ class TransformChooser(nn.Module):
     """
 
     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
-                    cat_ctx=None, what_ctx=None, op_offset=0):
+                    cat_ctx=None, what_ctx=None, op_offset=0, op_indices=None):
         raise NotImplementedError
 
     def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
-                     cat_ctx=None, what_ctx=None):
+                     cat_ctx=None, what_ctx=None, op_indices=None):
         raise NotImplementedError
 
 
@@ -6494,7 +6494,7 @@ class AnchorDotTransformChooser(TransformChooser):
     """
 
     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
-                    cat_ctx=None, what_ctx=None, op_offset=0):
+                    cat_ctx=None, what_ctx=None, op_offset=0, op_indices=None):
         """Return ``(copy_score, apply_score)`` for the unary layer.
 
         ``copy_score[b,n,c]  = <x_score[b,n,:],       copy_anchor[c,:]>``
@@ -6523,7 +6523,7 @@ class AnchorDotTransformChooser(TransformChooser):
         return copy_score, apply_score
 
     def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
-                     cat_ctx=None, what_ctx=None):
+                     cat_ctx=None, what_ctx=None, op_indices=None):
         """Return ``(copy_score, reduce_score)`` for the binary layer.
 
         ``copy_score[b,n,c]   = <x_score[b,n,:],            copy_anchor[c,:]>``
@@ -6856,7 +6856,7 @@ class MLPTransformChooser(TransformChooser):
         return self.what_projection(ctx).to(dtype)
 
     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
-                    cat_ctx=None, what_ctx=None, op_offset=0):
+                    cat_ctx=None, what_ctx=None, op_offset=0, op_indices=None):
         B, N, D = x_score.shape
         pos = self._pos_emb(N, x_score.device, x_score.dtype)
         copy_rows = self.tool_embedding[:self.n_copy]
@@ -6864,7 +6864,9 @@ class MLPTransformChooser(TransformChooser):
                                  cat_ctx=cat_ctx)                      # copy=slot
         r_apply = applied_score.shape[2] if applied_score.dim() == 4 else 0
         if r_apply > 0:
-            apply_rows = self.tool_embedding[self.n_copy + op_offset:self.n_copy + op_offset + r_apply]
+            indices = (torch.arange(r_apply, device=x_score.device) if op_indices is None else op_indices)
+            indices = indices + self.n_copy + op_offset
+            apply_rows = self.tool_embedding.index_select(0, indices)
             apply_score = self._score(x_score, applied_score, apply_rows, pos,
                                       cat_ctx=cat_ctx)
         else:
@@ -6874,12 +6876,11 @@ class MLPTransformChooser(TransformChooser):
         if what_bias is not None:
             copy_score = copy_score + what_bias[:, None, :self.n_copy]
             if r_apply > 0:
-                apply_score = apply_score + what_bias[
-                    :, None, self.n_copy + op_offset:self.n_copy + op_offset + r_apply]
+                apply_score = apply_score + what_bias.index_select(-1, indices)[:, None]
         return copy_score, apply_score
 
     def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
-                     cat_ctx=None, what_ctx=None):
+                     cat_ctx=None, what_ctx=None, op_indices=None):
         B, N, D = x_score.shape
         pos = self._pos_emb(N, x_score.device, x_score.dtype)
         copy_rows = self.tool_embedding[:self.n_copy]
@@ -6913,12 +6914,10 @@ class MLPTransformChooser(TransformChooser):
                     order_ctx = torch.cat((order_ctx, cat_order.to(x_score.dtype)), dim=-1)
             pos_pair = self._pos_emb(N - 1, x_score.device, x_score.dtype)
             r_reduce = int(reduced_score.shape[2])
-            # The reduce op-axis must equal n_op (the construction-time
-            # r_reduce) so the R_reduce layout is consistent with the
-            # degenerate branch below and with the operation
-            # readers -- fail loud on any future contract drift.
-            reduce_rows = self.tool_embedding[
-                self.n_copy:self.n_copy + r_reduce]
+            # Reference variants share their grammar operator's scoring row.
+            indices = (torch.arange(r_reduce, device=x_score.device) if op_indices is None else op_indices)
+            indices = indices + self.n_copy
+            reduce_rows = self.tool_embedding.index_select(0, indices)
             reduce_score = self._score(
                 pair_slot, reduced_score, reduce_rows, pos_pair,
                 cat_ctx=pair_cat, order_ctx=order_ctx)
@@ -6929,8 +6928,7 @@ class MLPTransformChooser(TransformChooser):
         if what_bias is not None:
             copy_score = copy_score + what_bias[:, None, :self.n_copy]
             if reduce_score.shape[-1] > 0:
-                reduce_score = reduce_score + what_bias[
-                    :, None, self.n_copy:self.n_copy + reduce_score.shape[-1]]
+                reduce_score = reduce_score + what_bias.index_select(-1, indices)[:, None]
         return copy_score, reduce_score
 
 
@@ -7171,7 +7169,7 @@ class OperationSelectionLayer(nn.Module):
 
     @staticmethod
     def _distinct_departures(x, depth, candidates, logits, reference, n_binary, n_unary,
-                             r_reduce, r_apply, stop_exact=None):
+                             r_reduce, r_apply, stop_exact=None, reference_ids=None):
         """One representative of each distinct numerical next state.
 
         Exact equality is the value criterion; no tolerance, target, or
@@ -7197,6 +7195,10 @@ class OperationSelectionLayer(nn.Module):
         states = torch.where(columns[None, None, :, None] < counts[:, :, None, None], states, 0.)
         allowed = torch.isfinite(logits)
         unchanged = (states == x[:, None]).all(-1).all(-1)
+        if reference_ids is not None:
+            # Equal content can denote two different individuals. Reference
+            # changes remain choices even when an identity unary copies x.
+            unchanged = unchanged & (reference_ids == -1).all(-1)
         allowed = allowed & ~(unary[None] & unchanged)
         if stop_exact is not None:
             allowed = allowed & ~((ids == A - 1)[None] & stop_exact[:, None])
@@ -7204,11 +7206,16 @@ class OperationSelectionLayer(nn.Module):
         ref_state = states.gather(1, reference[:, None, None, None].expand(B, 1, N, D))
         ref_count = counts.gather(1, reference[:, None])
         same_reference = (states == ref_state).all(-1).all(-1) & (counts == ref_count)
+        if reference_ids is not None:
+            ref_ids = reference_ids.gather(1, reference[:, None, None].expand(B, 1, 2))
+            same_reference = same_reference & (reference_ids == ref_ids).all(-1)
         allowed = allowed & ~same_reference
         representatives = []
         for first in range(0, A, 16):
             same = (states[:, first:first + 16, None] == states[:, None]).all(-1).all(-1)
             same = same & (counts[:, first:first + 16, None] == counts[:, None])
+            if reference_ids is not None:
+                same = same & (reference_ids[:, first:first + 16, None] == reference_ids[:, None]).all(-1)
             earlier = ids[None] < ids[first:first + 16, None]
             duplicates = (same & earlier[None] & allowed[:, None]).any(-1)
             representatives.append(allowed[:, first:first + 16] & ~duplicates)
@@ -7266,25 +7273,33 @@ class OperationSelectionLayer(nn.Module):
                     grammar_op.set_bind_context(slab=x)
         binary = self._stacked_reduced(x, grammar_context, reference_data, operand_activations)
         unary = self._stacked_applied(x, grammar_context, reference_data)
+        binary_ops = (tuple(range(self.r_reduce)) if reference_data is None
+                      else reference_data.get('binary_ops', tuple(range(self.r_reduce))))
+        unary_ops = (tuple(range(self.r_apply)) if reference_data is None
+                     else reference_data.get('unary_ops', tuple(range(self.r_apply))))
+        bi = torch.tensor(binary_ops, device=x.device, dtype=torch.long)
+        ui = torch.tensor(unary_ops, device=x.device, dtype=torch.long)
+        r_reduce, r_apply = len(binary_ops), len(unary_ops)
         content = x[..., :self.d_model]
         what_ctx = getattr(self, '_what_context', None) if what_ctx is None else what_ctx
         score_cats = None if cat_ctx is None else cat_ctx.detach()
         score_context = None if what_ctx is None else what_ctx.detach()
         stop_scores, binary_scores = self.chooser.score_binary(
             content.detach(), binary[..., :self.d_model].detach(), self.stop_anchor,
-            self.reduce_anchor, cat_ctx=score_cats, what_ctx=score_context)
+            self.reduce_anchor.index_select(0, bi), cat_ctx=score_cats, what_ctx=score_context,
+            op_indices=bi)
         _, unary_scores = self.chooser.score_unary(
             content.detach(), unary[..., :self.d_model].detach(), self.stop_anchor,
-            self.apply_anchor, cat_ctx=score_cats, what_ctx=score_context,
-            op_offset=self.r_reduce)
+            self.apply_anchor.index_select(0, ui), cat_ctx=score_cats, what_ctx=score_context,
+            op_offset=self.r_reduce, op_indices=ui)
         prior = self._category_reduce_prior(cat_ctx)
         if prior is not None:
-            binary_scores = binary_scores + prior.detach().to(binary_scores)
+            binary_scores = binary_scores + prior.index_select(-1, bi).detach().to(binary_scores)
         prior = self._category_apply_prior(cat_ctx)
         if prior is not None:
-            unary_scores = unary_scores + prior.detach().to(unary_scores)
+            unary_scores = unary_scores + prior.index_select(-1, ui).detach().to(unary_scores)
         if op_prior is not None:
-            binary_scores = binary_scores + op_prior.detach().to(binary_scores)
+            binary_scores = binary_scores + op_prior.index_select(-1, bi).detach().to(binary_scores)
         deadline = torch.zeros_like(depth, dtype=torch.bool)
         needs_reduction = torch.zeros_like(depth, dtype=torch.bool)
         if rounds_left is not None:
@@ -7311,6 +7326,7 @@ class OperationSelectionLayer(nn.Module):
             inverse = torch.tensor(self._unary_inverse_pairs, device=x.device, dtype=torch.bool)
             excluded = inverse[previous_unary.clamp(0, self.r_apply - 1)]
             excluded = excluded & (previous_unary >= 0)[..., None]
+            excluded = excluded.index_select(-1, ui)
             unary_scores = unary_scores.masked_fill(excluded, -torch.inf)
         stop = (stop_scores.squeeze(-1) * live).sum(-1) / depth.clamp_min(1)
         limit = torch.as_tensor(slots, device=x.device)
@@ -7322,17 +7338,22 @@ class OperationSelectionLayer(nn.Module):
         # Credit always uses the model's own distribution over legal actions.
         # A forced counterfactual constrains selection, not its probability
         # weight; neither that exclusion nor sampling temperature changes it.
-        flags = (self.structural_ops * (N - 1)
-                 + self.unary_structural_ops * N + (True,))
-        nb = (N - 1) * self.r_reduce
-        nu = N * self.r_apply
+        flags = (tuple(self.structural_ops[i] for i in binary_ops) * (N - 1)
+                 + tuple(self.unary_structural_ops[i] for i in unary_ops) * N + (True,))
+        nb = (N - 1) * r_reduce
+        nu = N * r_apply
         candidates = torch.cat((binary.reshape(B, nb, D), unary.reshape(B, nu, D),
                                 x.new_zeros(B, 1, D)), 1)
         greedy = structural_argmax(logits, flags)
         reference = (greedy if masked_action is None else
                      torch.where(masked_action >= 0, masked_action, greedy))
+        reference_ids = None
+        if reference_data is not None and 'binary_choices' in reference_data:
+            reference_ids = torch.cat((reference_data['binary_choices'].reshape(B, nb, 2),
+                reference_data['unary_choices'].reshape(B, nu, 2),
+                torch.full((B, 1, 2), -1, device=x.device, dtype=torch.long)), 1)
         departure_eligible = self._distinct_departures(x, depth, candidates, logits, reference,
-            nb, nu, self.r_reduce, self.r_apply, stop_exact=stop_exact)
+            nb, nu, r_reduce, r_apply, stop_exact=stop_exact, reference_ids=reference_ids)
         action, probabilities, has_choice = self.select_logits(logits, structural=flags,
             masked_action=masked_action,replay_action=replay_action,sample=sample,
             departure_eligible=departure_eligible)
@@ -7342,10 +7363,11 @@ class OperationSelectionLayer(nn.Module):
         is_binary = active & (action < nb)
         is_unary = active & (action >= nb) & (action < nb + nu)
         kind = torch.where(is_binary, 1, torch.where(is_unary, 2, 0))
-        position = torch.where(is_binary, action // max(1, self.r_reduce),
-                               (action - nb) // max(1, self.r_apply)).clamp(0, N - 1)
-        local_op = torch.where(is_binary, action % max(1, self.r_reduce),
-                               (action - nb) % max(1, self.r_apply))
+        position = torch.where(is_binary, action // max(1, r_reduce),
+                               (action - nb) // max(1, r_apply)).clamp(0, N - 1)
+        b_index = bi[action % r_reduce] if r_reduce else torch.zeros_like(action)
+        u_index = ui[(action - nb) % r_apply] if r_apply else torch.zeros_like(action)
+        local_op = torch.where(is_binary, b_index, u_index)
         chosen = candidates.gather(1, action[:, None, None].expand(B, 1, D)).squeeze(1)
         probability = probabilities.gather(1, action[:, None])
         next_depth = depth - is_binary.long()
@@ -7362,8 +7384,8 @@ class OperationSelectionLayer(nn.Module):
                        depth=next_depth, probabilities=probabilities, logits=logits,
                        probability=probability.squeeze(-1), candidate=chosen,
                        stopped=active & (kind == 0), valid=active,
-                       binary_probabilities=probabilities[:, :nb].reshape(B, N - 1, self.r_reduce),
-                       unary_probabilities=probabilities[:, nb:nb + nu].reshape(B, N, self.r_apply))
+                       binary_probabilities=probabilities[:, :nb].reshape(B, N - 1, r_reduce),
+                       unary_probabilities=probabilities[:, nb:nb + nu].reshape(B, N, r_apply))
         history = (torch.full((B, N), -1, device=x.device, dtype=torch.long)
                    if previous_unary is None else previous_unary)
         history = history.gather(1, source.clamp_max(N - 1))
@@ -7471,10 +7493,13 @@ class OperationSelectionLayer(nn.Module):
 
     def _stacked_reduced(self, x, grammar_context=None, reference_data=None, activations=None):
         """Candidate operators consume their own resolved operands."""
-        if x.shape[1] < 2 or not self.r_reduce:
-            return x.new_zeros(x.shape[0], max(0, x.shape[1] - 1), self.r_reduce, x.shape[-1])
+        operations = (tuple(range(self.r_reduce)) if reference_data is None
+                      else reference_data.get('binary_ops', tuple(range(self.r_reduce))))
+        if x.shape[1] < 2 or not operations:
+            return x.new_zeros(x.shape[0], max(0, x.shape[1] - 1), len(operations), x.shape[-1])
         result = []
-        for i, op in enumerate(self.ops):
+        for i, local in enumerate(operations):
+            op = self.ops[local]
             left = x[:, :-1] if reference_data is None else reference_data['left'][:, :, i]
             right = x[:, 1:] if reference_data is None else reference_data['right'][:, :, i]
             selected_context = grammar_context
@@ -7538,12 +7563,14 @@ class OperationSelectionLayer(nn.Module):
 
     def _stacked_applied(self, x, grammar_context=None, reference_data=None):
         """[B, N, R_apply, D] each unary op applied to every position."""
-        if self.r_apply == 0:
+        operations = (tuple(range(self.r_apply)) if reference_data is None
+                      else reference_data.get('unary_ops', tuple(range(self.r_apply))))
+        if not operations:
             B, N, D = x.shape
             return x.new_zeros(B, N, 0, D)
-        per_op = [self._apply_op(op, x if reference_data is None else reference_data['unary'][:, :, i],
+        per_op = [self._apply_op(self.unary_ops[local], x if reference_data is None else reference_data['unary'][:, :, i],
                                  grammar_context=grammar_context)
-                  for i, op in enumerate(self.unary_ops)]
+                  for i, local in enumerate(operations)]
         return torch.stack(per_op, dim=2)
 
 
@@ -12875,9 +12902,13 @@ class LanguageSpace(nn.Module):
             stack.append(tuple(leaf for operand in operands for leaf in operand))
         for leaf, order in requests.items():
             mode = selected_requests.get(leaf, (None, None))[1]
-            if order == 1 and mode in ('mint', 'bind'):
-                # A determiner addresses an LTM occurrence at closing. It
-                # must not admit another persistent dictionary interpretation.
+            if order == 1:
+                # The selected operation carries its column reference. A
+                # dictionary association cannot decide individual identity or
+                # bypass the component recurrence gate at this closing.
+                columns = getattr(getattr(owner, 'components', None), 'nouns', None)
+                if columns is None or int(refs[leaf]) not in columns.ids:
+                    refs[leaf] = -1
                 orders[leaf] = order
                 continue
             surface = owner.word_surface_for_row(int(word_rows[leaf]))

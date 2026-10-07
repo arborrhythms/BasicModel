@@ -214,6 +214,10 @@
     </data>
 
     <training>
+      <!-- Order-one sparse components; admission requires four witnesses. -->
+      <independenceWeight>0.1</independenceWeight>
+      <independencePriorScale>0.05</independencePriorScale>
+      <independenceMintThreshold>0.2</independenceMintThreshold>
       <!-- Number of independent training runs per invocation. -->
       <numTrials>1</numTrials>
       <!-- Training epochs per trial. -->

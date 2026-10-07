@@ -196,7 +196,9 @@ def test_determiner_kept_closing_is_the_only_mint_and_lowers_once(monkeypatch):
     refs, orders = LanguageSpace.resolve_lexical_references(f.language, f.cs,
         program.word_rows, program.concept_ids, program.actions, admit=True)
     assert len(f.cs.definitions._store()) == before
-    assert refs[1] == program.concept_ids[1] and orders[1] == 1
+    # The selected mint carries no existing column. Dictionary capture may
+    # not substitute the noun's concept for that individual choice.
+    assert refs[1] == -1 and orders[1] == 1
     reading = replace(program, reference_ids=refs, reference_orders=orders,
                       leaf_orders=torch.tensor([0, 2, 0]))
     clause = finish_reading(f.language, reading, registry=f.registry)

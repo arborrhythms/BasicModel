@@ -1,0 +1,64 @@
+...................FF................................................... [ 58%]
+.....................FF............................s                     [100%]
+=================================== FAILURES ===================================
+_________________ test_when_time_round_trips_through_save_load _________________
+test/test_model_time_when.py:285: in test_when_time_round_trips_through_save_load
+    m2.load_weights(ckpt)
+bin/Models.py:5061: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 0 (Δ=0.076s)
+batch = 0 (Δ=0.077s)
+batch = 0 (Δ=0.075s)
+batch = 0 (Δ=0.074s)
+[BasicModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp66g6ne60/weights.ckpt
+_____________ test_old_checkpoint_without_when_time_loads_at_zero ______________
+test/test_model_time_when.py:305: in test_old_checkpoint_without_when_time_loads_at_zero
+    m2.load_weights(ckpt)
+bin/Models.py:5061: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 0 (Δ=0.078s)
+[BasicModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpnmbx42el/weights.ckpt
+_ test_full_checkpoint_restores_occurrence_owners_before_stateless_withdrawal __
+test/test_nested_retention_owners.py:55: in test_full_checkpoint_restores_occurrence_owners_before_stateless_withdrawal
+    assert restored.load_weights(path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5061: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3213/test_full_checkpoint_restores_0/nested.ckpt
+_______ test_full_checkpoint_removes_unreferenced_request_scoped_content _______
+test/test_nested_retention_owners.py:70: in test_full_checkpoint_removes_unreferenced_request_scoped_content
+    assert restored.load_weights(path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5061: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3213/test_full_checkpoint_removes_u0/unreferenced.ckpt
+=============================== warnings summary ===============================
+test/test_model_time_when.py::test_clock_increments_once_per_train_batch
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_model_time_when.py::test_clock_increments_once_per_inference_batch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7199: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_model_time_when.py::test_when_time_round_trips_through_save_load
+FAILED test/test_model_time_when.py::test_old_checkpoint_without_when_time_loads_at_zero
+FAILED test/test_nested_retention_owners.py::test_full_checkpoint_restores_occurrence_owners_before_stateless_withdrawal
+FAILED test/test_nested_retention_owners.py::test_full_checkpoint_removes_unreferenced_request_scoped_content
+4 failed, 119 passed, 1 skipped, 2 warnings in 46.61s

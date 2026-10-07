@@ -146,12 +146,16 @@ def force_absolute_reading(model):
     def binary_scores(*args, **kwargs):
         stop, scores = binary(*args, **kwargs)
         mask = torch.tensor([name in allowed for name in binary_names], device=scores.device, dtype=torch.bool)
+        if kwargs.get('op_indices') is not None:
+            mask = mask.index_select(0, kwargs['op_indices'])
         return stop, scores.masked_fill(~mask, -torch.inf) + 1e6
     def unary_scores(*args, **kwargs):
         stop, scores = unary(*args, **kwargs)
         if kwargs.get('op_offset') == layer.r_reduce + layer.r_apply:
             return stop, scores  # supplied grammar does not force attention
         mask = torch.tensor([name in ('not', 'non') for name in unary_names], device=scores.device, dtype=torch.bool)
+        if kwargs.get('op_indices') is not None:
+            mask = mask.index_select(0, kwargs['op_indices'])
         return stop, scores.masked_fill(~mask, -torch.inf) - 1e6
     layer.chooser.score_binary = binary_scores
     layer.chooser.score_unary = unary_scores

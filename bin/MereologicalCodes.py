@@ -72,9 +72,8 @@ class MereologicalCodes(nn.Module):
         now = float(store._next_ts) - 1
         terms = occurrence_memberships(self.owner, store)
         result = {}
-        from MeaningCodes import identity_code
-        codes = {row: identity_code(store.content_key(row), self.meaning_pairs,
-                                  self.meaning_ones, like=store.slots)
+        from MeaningCodes import defined_code
+        codes = {row: store.identity_code(row, self.meaning_pairs, self.meaning_ones)
                  for row in range(len(store)) if int(store.rel_type[row]) == store.REL_NONE}
         for code, rows in terms.items():
             rows = [r for r in sorted(rows) if int(store.rel_type[r]) == store.REL_NONE]
@@ -84,6 +83,7 @@ class MereologicalCodes(nn.Module):
             weight = 1 / (1 + (now-store.timestamp[idx]).clamp_min(0))
             roots = torch.stack([codes[row] for row in rows])
             positive = (roots * weight[:, None]).sum(0) / weight.sum()
+            positive = defined_code(positive, len(rows))
             result[code] = (len(rows), torch.cat((positive, torch.zeros_like(positive))).detach())
         return result
 
@@ -239,6 +239,14 @@ class MereologicalCodes(nn.Module):
                 start, k = self.percept_event_width, self.meaning_pairs
                 out[row_index[row], start:start+k] = mean[:k]
                 out[row_index[row], start+self.reserved_pairs:start+self.reserved_pairs+k] = mean[k:]
+        components = getattr(owner, 'components', None)
+        if components is not None and (components.nouns.ids or components.verbs.ids):
+            for row in unique:
+                identity = owner.concept_id_at_row(row)
+                if identity in (*components.nouns.ids, *components.verbs.ids):
+                    point = components.column_point(identity)
+                    if point is not None:
+                        out[row_index[row], self.percept_event_width:] = point[self.percept_event_width:].to(out)
         result = out[torch.tensor([row_index[r] for r in requested], device=out.device, dtype=torch.long)]
         return result.reshape(*shape, self.code_width)
 

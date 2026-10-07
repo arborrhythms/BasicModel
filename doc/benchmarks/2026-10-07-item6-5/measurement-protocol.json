@@ -1,0 +1,14 @@
+{
+  "item": "6.5 independent components, magnitude as definedness first",
+  "baseline": "f4a68404ea8d4704bfeb6279a738c93356d289d6",
+  "accepted_receipt": "doc/benchmarks/2026-10-07-operators-final-b/acceptance.json",
+  "standing_measurement": "One frozen, source-matched green full sweep before the thirty standing trainings. Preserve every failure and incomplete result.",
+  "trainings": {"sum": 10, "xor_shared_class_reconstruction": 10, "mm_xor": 10},
+  "epochs": {"sum": 400, "xor": 400, "mm_maximum": 200},
+  "seed": null,
+  "retries": 0,
+  "replacement_trainings": 0,
+  "order": "Read all ten sum controls before XOR, then MM_xor. Retain all runs even if a gate misses.",
+  "learning_gates": "Spec section 5; seeds 0/1/2, all retained. Require a checkpoint with at least one million completed FineWeb sentences; missing exposure skips, never passes. No fresh-model bulk scoring.",
+  "review": "Stop for Claude review before committing or pushing. Operators acceptance does not authorize this landing."
+}

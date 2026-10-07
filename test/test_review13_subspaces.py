@@ -69,7 +69,7 @@ def test_occurrence_mean_is_confined_to_detached_context_coordinates():
     store._append_leaf_terms(row, ((a,b),(),()), (True,True,True))
     codes = cb.lookup_rows(torch.tensor([a,b]))
     torch.testing.assert_close(codes[:,:3], ps.W[[4,7]])
-    torch.testing.assert_close(codes[:,3:], torch.tensor([[1.,0.],[1.,0.]]))
+    torch.testing.assert_close(codes[:,3:], torch.tensor([[1/5,0.],[1/5,0.]]))
     assert not codes.requires_grad
     assert root.grad is None and not store.slots.requires_grad
     newer = store.append_meaning(ConceptualMeaning(roles*2, torch.tensor([True,False,False]),
@@ -77,7 +77,7 @@ def test_occurrence_mean_is_confined_to_detached_context_coordinates():
     store._append_leaf_terms(newer, ((a,b),(),()), (True,True,True))
     mean = (root.detach()/2 + 2*root.detach())/1.5
     torch.testing.assert_close(cb.lookup_rows(a)[:3], ps.W[4])
-    torch.testing.assert_close(cb.lookup_rows(a)[3:], torch.tensor([1.,0.]))
+    torch.testing.assert_close(cb.lookup_rows(a)[3:], torch.tensor([2/6,0.]))
     assert len(store) == 2
 
 

@@ -1,0 +1,500 @@
+--- first-source/bin/IndependentComponents.py
++++ repaired-source/bin/IndependentComponents.py
+@@ -5,11 +5,28 @@
+ coding objective trains the columns and the current source coordinates.
+ """
+ from dataclasses import dataclass
++import io
+ import math
+ 
+ import torch
+ from torch import nn
+ from torch.nn import functional as F
++
++
++def _pack_state(state):
++    """Keep the model's tensor-only weight contract for variable metadata."""
++    stream = io.BytesIO()
++    torch.save(state, stream)
++    return torch.frombuffer(bytearray(stream.getvalue()), dtype=torch.uint8).clone()
++
++
++def _unpack_state(state):
++    if torch.is_tensor(state):
++        if state.dtype != torch.uint8 or state.ndim != 1:
++            raise ValueError('invalid independent-component metadata tensor')
++        return torch.load(io.BytesIO(bytes(state.detach().cpu().tolist())),
++                          map_location='cpu', weights_only=True)
++    return state
+ 
+ 
+ @dataclass(frozen=True)
+@@ -66,7 +83,7 @@
+         values = F.normalize(torch.stack(tuple(self.directions.values())), dim=-1)
+         return values if features is None else values.index_select(-1, features)
+ 
+-    def encode(self, values, *, features=None):
++    def encode(self, values, *, features=None, max_sources=None):
+         width = self.dimension if features is None else len(features)
+         if values.shape[-1] != width:
+             raise ValueError('component observations must use the declared event coordinates')
+@@ -76,7 +93,9 @@
+                                   torch.zeros_like(values), values)
+         scales = torch.stack(tuple(self.relevance.values())).clamp_min(0).to(values)
+         projected = values @ matrix.T
+-        count = min(self.max_sources, len(matrix))
++        count = min(self.max_sources if max_sources is None else int(max_sources), len(matrix))
++        if count < 1:
++            raise ValueError('a component observation needs a positive source ceiling')
+         selected = (projected * scales).abs().topk(count, dim=-1).indices
+         active = matrix[selected]
+         # The grammar permits at most two noun sources (one for B). Solve
+@@ -92,17 +111,24 @@
+         reconstruction = coefficients @ matrix
+         return SparseEncoding(coefficients, reconstruction, values - reconstruction)
+ 
+-    def loss(self, population, *, features=None):
++    def loss(self, population, *, features=None, source_limits=None):
+         """Mean likelihood over the supplied population, independent of batching."""
+-        encoded = self.encode(population, features=features)
+         if not population.numel():
+-            return encoded.reconstruction.sum() * 0
++            return population.sum() * 0
+         # Sum over coordinates, mean over observations: adding unused event
+         # capacity cannot make a residual or its admission threshold smaller.
+-        reconstruction = .5 * encoded.residual.square().sum(-1).mean()
++        limits = ([self.max_sources] * len(population) if source_limits is None else list(source_limits))
++        if len(limits) != len(population) or any(count < 1 for count in limits):
++            raise ValueError('one positive grammar source ceiling is required per observation')
++        reconstruction, sparse_prior = population.new_zeros(()), population.new_zeros(())
++        for count in sorted(set(limits)):
++            rows = torch.tensor([i for i, limit in enumerate(limits) if limit == count],
++                                device=population.device, dtype=torch.long)
++            encoded = self.encode(population.index_select(0, rows), features=features, max_sources=count)
++            reconstruction = reconstruction + .5 * encoded.residual.square().sum() / len(population)
++            sparse_prior = sparse_prior + self.prior_scale * encoded.codes.abs().sum() / len(population)
+         if not self.directions:
+             return reconstruction
+-        sparse_prior = self.prior_scale * encoded.codes.abs().sum(-1).mean()
+         matrix = self.matrix()
+         gram = matrix @ matrix.T
+         off_diagonal = gram - torch.diag_embed(gram.diagonal())
+@@ -112,7 +138,7 @@
+         return reconstruction + sparse_prior + self.prior_scale * coherence + relevance_prior
+ 
+     @torch.no_grad()
+-    def observe(self, value, *, witness, allocate=None):
++    def observe(self, value, *, witness, allocate=None, max_sources=None):
+         """Admit unexplained recurring content after a kept closing, as an effect.
+ 
+         ``allocate`` reserves an order-one native concept or returns None when
+@@ -121,7 +147,7 @@
+         """
+         if value.shape != (self.dimension,) or not bool(torch.isfinite(value).all()):
+             raise ValueError('component admission needs one finite event-coordinate vector')
+-        encoded = self.encode(value)
++        encoded = self.encode(value, max_sources=max_sources)
+         for identity, used in zip(self.ids, encoded.codes.ne(0).tolist()):
+             if used:
+                 self._witnesses.setdefault(identity, set()).add(witness)
+@@ -164,12 +190,13 @@
+         return len(self._witnesses.get(int(identity), ()))
+ 
+     def get_extra_state(self):
+-        return dict(version=1, dimension=self.dimension, next_id=self._next_id,
+-                    witnesses={key: list(value) for key, value in self._witnesses.items()},
++        return _pack_state(dict(version=1, dimension=self.dimension, next_id=self._next_id,
++                    witnesses={key: sorted(value, key=repr) for key, value in self._witnesses.items()},
+                     pending=[dict(direction=entry['direction'].detach().cpu(),
+-                                  witnesses=list(entry['witnesses'])) for entry in self._pending])
++                                  witnesses=list(entry['witnesses'])) for entry in self._pending]))
+ 
+     def set_extra_state(self, state):
++        state = _unpack_state(state)
+         if state.get('version') != 1 or state.get('dimension') != self.dimension:
+             raise ValueError('incompatible independent-component dictionary checkpoint')
+         self._next_id = int(state['next_id'])
+@@ -177,13 +204,21 @@
+         self._pending = [dict(direction=entry['direction'].to(self._anchor),
+                               witnesses=list(entry['witnesses'])) for entry in state['pending']]
+ 
+-    def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs):
++    def prepare_checkpoint(self, state_dict, prefix):
+         for name, target in (('directions.', self.directions), ('relevance.', self.relevance)):
+             for key, value in state_dict.items():
+                 if key.startswith(prefix + name):
+                     local = key[len(prefix + name):]
++                    shape = (self.dimension,) if name == 'directions.' else ()
++                    if (not local.isdigit() or int(local) <= 0 or str(int(local)) != local
++                            or not torch.is_tensor(value) or tuple(value.shape) != shape
++                            or not value.is_floating_point() or not bool(torch.isfinite(value).all())):
++                        raise ValueError('invalid independent-component column checkpoint')
+                     if local not in target:
+-                        target[local] = nn.Parameter(torch.empty_like(value, device=self._anchor.device))
++                        target[local] = nn.Parameter(torch.zeros_like(value, device=self._anchor.device))
++
++    def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs):
++        self.prepare_checkpoint(state_dict, prefix)
+         super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
+ 
+ 
+@@ -259,7 +294,30 @@
+         self._innovations = {}
+         self._chart = None
+         self._population = None
++        self._population_limits = None
+         self.admission_drops = 0
++
++    @property
++    def source_capacity(self):
++        return int(getattr(self.owner, 'stm_capacity', getattr(self.owner.stm, 'capacity', 8)))
++
++    def source_limit(self, clause=None, *, store=None, row=None):
++        """Two ordinary noun sources plus referenced S rows, bounded by STM."""
++        seen, pending = set(), [row if store is not None else clause]
++        while pending and 2 * len(seen) < self.source_capacity:
++            value = pending.pop()
++            identity = value if store is not None else id(value)
++            if identity in seen:
++                continue
++            seen.add(identity)
++            if store is None:
++                pending.extend(getattr(value, 'children', getattr(value, 'constituents', ())))
++            elif value is not None:
++                for reference in store.refs[value].tolist():
++                    child = store.index_of_row(reference)
++                    if child is not None and int(store.rel_type[child]) != store.REL_DEF:
++                        pending.append(child)
++        return min(self.source_capacity, max(2, 2 * len(seen)))
+ 
+     def getParameters(self):
+         return list(self.parameters())
+@@ -280,7 +338,7 @@
+             meaning_pairs=None if derived is None else derived.meaning_pairs,
+             pole_stride=None if derived is None else derived.reserved_pairs)
+         store = owner._closed_clause_store()
+-        observations = []
++        observations, limits = [], []
+         if store is not None:
+             for row in range(len(store)):
+                 if (int(store.rel_type[row]) == store.REL_DEF
+@@ -289,8 +347,10 @@
+                 meaning = store.meaning_of(row)
+                 if meaning is not None:
+                     observations.append(noun_frame(self._chart.project(meaning.roles.detach())))
++                    limits.append(self.source_limit(store=store, row=row))
+         self._population = (torch.stack(observations) if observations else
+                             codes.new_zeros(0, 2 * len(rows)))
++        self._population_limits = limits
+ 
+     def _ready(self):
+         if self._chart is None:
+@@ -302,7 +362,8 @@
+         chart = self._ready()
+         if not self.nouns.ids or not len(chart.rows):
+             return roles.detach()
+-        encoded = self.nouns.encode(chart.project(roles.detach()), features=chart.features)
++        encoded = self.nouns.encode(chart.project(roles.detach()), features=chart.features,
++                                    max_sources=self.source_capacity)
+         return chart.render(encoded.reconstruction, like=roles)
+ 
+     def column_point(self, identity):
+@@ -323,7 +384,8 @@
+ 
+     def _identified(self, roles):
+         chart = self._ready()
+-        return self.nouns.encode(chart.project(roles), features=chart.features).codes
++        return self.nouns.encode(chart.project(roles), features=chart.features,
++                                 max_sources=self.source_capacity).codes
+ 
+     def prediction_coordinates(self, predicted, target):
+         """Score role assignment in A's axes with a frozen observed target."""
+@@ -342,7 +404,7 @@
+         indices = torch.tensor(rows, dtype=torch.long, device=values.device).expand(3, -1)
+         return values.new_zeros(3, self.capacity).scatter(-1, indices, values).flatten()
+ 
+-    def cost(self, meanings, predictions, active):
++    def cost(self, meanings, predictions, active, *, clauses=None):
+         """Population likelihood and current-step credit, one scalar per reading."""
+         chart = self._ready()
+         like = self._population
+@@ -357,9 +419,16 @@
+             if meaning is None or not bool(active[b]):
+                 losses.append(like.new_zeros(()))
+                 continue
+-            current = noun_frame(chart.project(meaning.roles))
++            clause = None if clauses is None else clauses[b]
++            # The retained observation is a fused S point. Use that same
++            # observable for the current population member, rather than
++            # comparing an unfused NP pair with fused historical sentences.
++            current = (chart.project(clause.point) if clause is not None and clause.point is not None
++                       else noun_frame(chart.project(meaning.roles)))
+             population = torch.cat((history, current[None]), 0)
+-            loss = self.nouns.loss(population, features=chart.features)
++            limits = ([2] * len(history) if self._population_limits is None else self._population_limits)
++            loss = self.nouns.loss(population, features=chart.features,
++                source_limits=[*limits, self.source_limit(clause if clause is not None else meaning)])
+             prediction = predictions[b] if predictions is not None else None
+             if prediction is not None and self.nouns.ids:
+                 residual = self.innovation(meaning.roles, prediction.roles.detach())
+@@ -406,9 +475,10 @@
+         identity = int(store.row_ids[row])
+         witness = (identity, int(store.witness_count[row]))
+         before = {id(p) for p in self.parameters()}
+-        observed = chart.project(meaning.roles.detach())
++        stored = store.meaning_of(row)
++        observed = chart.project(stored.roles.detach())
+         self.nouns.observe(chart.expand(noun_frame(observed)), witness=witness,
+-                           allocate=self._allocate)
++                           allocate=self._allocate, max_sources=self.source_limit(store=store, row=row))
+         if prediction is not None and self.nouns.ids:
+             residual = self.innovation(meaning.roles.detach(), prediction.roles.detach())
+             self._innovations[identity] = residual.detach().cpu()
+@@ -431,7 +501,7 @@
+                 if used:
+                     result.pop(identity, None)
+                     result[identity] = frame
+-        return tuple(result.items())[-int(getattr(self.owner.stm, 'capacity', 8)):]
++        return tuple(result.items())[-self.source_capacity:]
+ 
+     def candidates(self, frames):
+         return tuple(identity for identity, _ in self.candidate_frames(frames))
+@@ -462,14 +532,15 @@
+         return dict(nouns=self.nouns.pruning_candidates(), verbs=self.verbs.pruning_candidates())
+ 
+     def get_extra_state(self):
+-        return dict(version=1, innovations=self._innovations, admission_drops=self.admission_drops)
++        return _pack_state(dict(version=1, innovations=self._innovations, admission_drops=self.admission_drops))
+ 
+     def set_extra_state(self, state):
++        state = _unpack_state(state)
+         if state.get('version') != 1:
+             raise ValueError('incompatible independent-component population checkpoint')
+         self._innovations = state['innovations']
+         self.admission_drops = int(state['admission_drops'])
+-        self._chart = self._population = None
++        self._chart = self._population = self._population_limits = None
+ 
+     def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs):
+         # A pre-6.5 checkpoint has no component parameters or recurrence yet.
+--- first-source/bin/Language.py
++++ repaired-source/bin/Language.py
+@@ -12906,6 +12906,9 @@
+                 # The selected operation carries its column reference. A
+                 # dictionary association cannot decide individual identity or
+                 # bypass the component recurrence gate at this closing.
++                columns = getattr(getattr(owner, 'components', None), 'nouns', None)
++                if columns is None or int(refs[leaf]) not in columns.ids:
++                    refs[leaf] = -1
+                 orders[leaf] = order
+                 continue
+             surface = owner.word_surface_for_row(int(word_rows[leaf]))
+--- first-source/bin/Models.py
++++ repaired-source/bin/Models.py
+@@ -4635,6 +4635,15 @@
+ 
+         # Pre-check for shape mismatches before attempting to load.
+         # This produces an actionable diagnostic instead of a raw PyTorch error.
++        # Materialize admitted columns before strict key/shape preflight.
++        # Their native identities are restored by the structural sidecar.
++        from IndependentComponents import SparseDictionary, IndependentComponents
++        component_metadata = set()
++        for name, module in self.named_modules(remove_duplicate=False):
++            if isinstance(module, SparseDictionary):
++                module.prepare_checkpoint(state, name + '.')
++            if isinstance(module, (SparseDictionary, IndependentComponents)):
++                component_metadata.add(name + '._extra_state')
+         model_state = dict(self.state_dict())
+         for name in tuple(state):
+             renamed=name.replace('.discourse.','.expectation.')
+@@ -5092,6 +5101,7 @@
+             (k, list(state[k].shape), list(model_state[k].shape))
+             for k in state if k in model_state
+             and state[k].shape != model_state[k].shape
++            and k not in component_metadata
+             and not (k in variable_leaf_columns and state[k].ndim == 1
+                      and state[k].dtype == model_state[k].dtype)
+         ]
+@@ -20168,7 +20178,8 @@
+             components = self._concept_owner().components
+             estimates = (None if pending is None else [
+                 None if item is None else item.prediction for item in pending[0]])
+-            component_cost = components.cost(observation['meanings'], estimates, active)
++            component_cost = components.cost(observation['meanings'], estimates, active,
++                                              clauses=observation['clauses'])
+             errors.add('expectation.components', component_cost, weight=components.weight,
+                        category='expectation')
+             cost = component_cost * components.weight
+--- first-source/bin/ReferenceContext.py
++++ repaired-source/bin/ReferenceContext.py
+@@ -206,13 +206,19 @@
+             value, ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
+         if order != 1:
+             return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
++        inventory = getattr(bank, 'column_ids', None)
++        if inventory is not None and inventory.numel() == 0:
++            # A cold inventory cannot bind. Keep one masked proposal for a
++            # pronoun/definite, or the single mint proposal, without expanding
++            # a compiled graph into many copies of unavailable candidates.
++            permitted = torch.zeros_like(valid) if mode in ('pronoun', 'bind') else valid
++            return [(value, torch.full_like(ids, -1), torch.zeros_like(valid), permitted)]
+         from ClauseScope import ClauseScope
+         P, C = value.shape[1], bank.ids.shape[1]
+         live_values, live_ids, live_orders, live_relations, live_positions = live[:5]
+         live_local = live[5] if len(live) > 5 else torch.zeros_like(live_ids, dtype=torch.bool)
+         earlier = (live_positions[:, None] < pos[:, :, None]) & (live_orders[:, None] == 1)
+         earlier = earlier & ~live_local[:, None]
+-        inventory = getattr(bank, 'column_ids', None)
+         if inventory is not None:
+             earlier = earlier & torch.isin(live_ids, inventory)[:, None]
+         earlier = earlier & (live_ids[:, None] != -1) & (live_ids[:, None] != 0)
+@@ -237,6 +243,8 @@
+         # when a column appears in both. This is recency enumeration, not a
+         # content score or a referent selection.
+         count = min(size, max(C, live_ids.shape[1]))
++        if inventory is not None:
++            count = min(count, inventory.numel())
+         priority = torch.arange(size, 0, -1, device=ids.device) * available
+         retained = priority.topk(count, dim=-1).indices
+         candidate_ids = candidate_ids.gather(-1, retained)
+--- first-source/test/reading_fixtures.py
++++ repaired-source/test/reading_fixtures.py
+@@ -146,12 +146,16 @@
+     def binary_scores(*args, **kwargs):
+         stop, scores = binary(*args, **kwargs)
+         mask = torch.tensor([name in allowed for name in binary_names], device=scores.device, dtype=torch.bool)
++        if kwargs.get('op_indices') is not None:
++            mask = mask.index_select(0, kwargs['op_indices'])
+         return stop, scores.masked_fill(~mask, -torch.inf) + 1e6
+     def unary_scores(*args, **kwargs):
+         stop, scores = unary(*args, **kwargs)
+         if kwargs.get('op_offset') == layer.r_reduce + layer.r_apply:
+             return stop, scores  # supplied grammar does not force attention
+         mask = torch.tensor([name in ('not', 'non') for name in unary_names], device=scores.device, dtype=torch.bool)
++        if kwargs.get('op_indices') is not None:
++            mask = mask.index_select(0, kwargs['op_indices'])
+         return stop, scores.masked_fill(~mask, -torch.inf) - 1e6
+     layer.chooser.score_binary = binary_scores
+     layer.chooser.score_unary = unary_scores
+--- first-source/test/test_definition_rows.py
++++ repaired-source/test/test_definition_rows.py
+@@ -67,8 +67,7 @@
+     synonym, second = admit(m, 'there')
+     cs.interpret.define(word, second)
+     cs.interpret.define(synonym, obj)
+-    with pytest.raises(ValueError, match='ambiguous|selection'):
+-        cs.interpret.forward(word)
++    assert cs.interpret.forward(word) is None
+     assert cs.interpret.forward(word, selected=second) == second
+     assert set(cs.definitions.words(obj)) == {word, synonym}
+     assert set(cs.definitions.objects(word)) == {obj, second}
+--- first-source/test/test_independent_components.py
++++ repaired-source/test/test_independent_components.py
+@@ -320,6 +320,7 @@
+                             for meaning in meanings]).mean()
+     torch.testing.assert_close(together, separate)
+     columns._population = columns._population[:0]
++    columns._population_limits = []
+     assert not torch.isclose(columns.cost(meanings, None, torch.tensor([True, True])).mean(), together)
+ 
+ 
+@@ -354,6 +355,31 @@
+     assert prediction.grad is not None and prediction.grad.abs().sum() > 0
+     assert target.grad is None
+     assert any(p.grad is not None and p.grad.abs().sum() > 0 for p in columns.nouns.parameters())
++
++
++def test_relative_clause_sources_extend_the_ordinary_ceiling_only_to_stm_capacity():
++    from ClauseRow import Clause
++    from Meaning import ConceptualMeaning
++    columns = component_fixture()
++    for index in (2, 3):
++        witness(columns.nouns, columns._chart.expand(torch.cat((torch.eye(4)[index], torch.zeros(4)))),
++                start=10 * index)
++    meaning = ConceptualMeaning.from_description(torch.ones(4))
++    leaf = Clause(meaning, point=meaning.roles[0])
++    relative = Clause(meaning, point=meaning.roles[0], children=(leaf,))
++    assert columns.source_limit(leaf) == 2 and columns.source_limit(relative) == 4
++    deep = relative
++    for _ in range(10):
++        deep = Clause(meaning, point=meaning.roles[0], children=(deep,))
++    assert columns.source_limit(deep) == 8
++    observation = columns._chart.expand(columns._chart.project(torch.ones(4)))
++    assert columns.nouns.encode(observation).codes.ne(0).sum() == 2
++    assert columns.nouns.encode(observation, max_sources=columns.source_limit(relative)).codes.ne(0).sum() == 4
++    population = torch.stack((observation, observation))
++    pooled = columns.nouns.loss(population, source_limits=[2, 4])
++    separate = (columns.nouns.loss(population[:1], source_limits=[2])
++                + columns.nouns.loss(population[1:], source_limits=[4])) / 2
++    torch.testing.assert_close(pooled, separate)
+ 
+ 
+ def test_temporal_shuffle_reports_loss_of_predictability_without_changing_identity(record_property):
+@@ -423,6 +449,20 @@
+         assert restored.nouns.ids == (identity,)
+         torch.testing.assert_close(restored.nouns.encode(value).codes, columns.nouns.encode(value).codes)
+         assert restored.nouns.witness_count(identity) == 4
++        path = tmp_path / 'admitted-columns.ckpt'
++        model.save_weights(path)
++        restored_model, _ = Models.BaseModel.from_config(str(config), data=TheData)
++        try:
++            assert restored_model.load_weights(path, strict=True, require_match=True)
++            restored_owner = restored_model._concept_owner()
++            assert restored_owner.components.nouns.ids == (identity,)
++            assert restored_owner._csw_row_of(identity) == owner._csw_row_of(identity)
++            assert restored_owner.components.nouns.witness_count(identity) == 4
++            torch.testing.assert_close(restored_owner.components.nouns.encode(value).codes,
++                                       columns.nouns.encode(value).codes)
++        finally:
++            restored_model.End()
++            restored_model.symbolSpace.soft_reset()
+     finally:
+         model.End()
+         model.symbolSpace.soft_reset()
+--- first-source/test/test_lexical_reference_orders.py
++++ repaired-source/test/test_lexical_reference_orders.py
+@@ -40,7 +40,9 @@
+     actions = torch.tensor([[0, 0, 0], [0, 0, 1], [1, 0, -1]])
+     got, orders = Language.LanguageSpace.resolve_lexical_references(
+         language, cs, torch.tensor([-1, row]), torch.tensor([-1, ids[0]]), actions)
+-    assert got.tolist() == [-1, ids[order]]
++    # Individual identity is chosen by the global operation, not this
++    # dictionary-order staging helper. Types/events retain their lookup.
++    assert got.tolist() == [-1, -1 if order == 1 else ids[order]]
+     assert orders.tolist() == [-1, order]
+     assert cs.word_concepts('cat') == tuple(sorted([cs.definitions.word(form='cat'), *ids]))
+ 
+@@ -59,11 +61,11 @@
+          torch.tensor([[-1, -1, 0]])),
+         leaves, torch.tensor([[-1, row]]), torch.tensor([[-1, row]]),
+         torch.ones(1, 2), torch.zeros(1, 3, 8), concept_ids=torch.tensor([[-1, ids[0]]]))
+-    assert entry.reference_ids.tolist() == [-1, ids[1]]
++    assert entry.reference_ids.tolist() == [-1, -1]
+     assert entry.reference_orders.tolist() == [-1, 1]
+     torch.testing.assert_close(entry.leaves, leaves[0])
+     assert entry.concept_ids.tolist() == [-1, ids[0]]
+-    assert entry.detached().reference_ids.tolist() == [-1, ids[1]]
++    assert entry.detached().reference_ids.tolist() == [-1, -1]
+ 
+ 
+ def test_form_sets_survive_checkpoint_and_missing_order_stays_unknown():
+--- first-source/test/test_review13_subspaces.py
++++ repaired-source/test/test_review13_subspaces.py
+@@ -69,7 +69,7 @@
+     store._append_leaf_terms(row, ((a,b),(),()), (True,True,True))
+     codes = cb.lookup_rows(torch.tensor([a,b]))
+     torch.testing.assert_close(codes[:,:3], ps.W[[4,7]])
+-    torch.testing.assert_close(codes[:,3:], torch.tensor([[1.,0.],[1.,0.]]))
++    torch.testing.assert_close(codes[:,3:], torch.tensor([[1/5,0.],[1/5,0.]]))
+     assert not codes.requires_grad
+     assert root.grad is None and not store.slots.requires_grad
+     newer = store.append_meaning(ConceptualMeaning(roles*2, torch.tensor([True,False,False]),
+@@ -77,7 +77,7 @@
+     store._append_leaf_terms(newer, ((a,b),(),()), (True,True,True))
+     mean = (root.detach()/2 + 2*root.detach())/1.5
+     torch.testing.assert_close(cb.lookup_rows(a)[:3], ps.W[4])
+-    torch.testing.assert_close(cb.lookup_rows(a)[3:], torch.tensor([1.,0.]))
++    torch.testing.assert_close(cb.lookup_rows(a)[3:], torch.tensor([2/6,0.]))
+     assert len(store) == 2
+ 
+ 

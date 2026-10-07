@@ -1,0 +1,6 @@
+{
+  "reason": "Stopped after a legacy identity assertion failed and an independent admission probe reproduced kind-only minting. No standing training has started. Preserve the incomplete sweep; final source needs a complete green receipt.",
+  "completed": 5479,
+  "selected": 5522,
+  "exit_code": 130
+}

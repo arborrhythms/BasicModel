@@ -1,0 +1,151 @@
+...............FFF...................................                    [100%]
+=================================== FAILURES ===================================
+_ test_selected_grammar_controls_admission_without_word_lookup[lower--1-expected0] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11ec0b920>
+operation = 'lower', reference = -1, expected = (-1,)
+
+    @pytest.mark.parametrize('operation,reference,expected', [
+        ('lower', -1, (-1,)), ('definite', 77, (77,)), ('universal', -1, ()),
+    ])
+    def test_selected_grammar_controls_admission_without_word_lookup(monkeypatch, operation, reference, expected):
+        from dataclasses import replace
+        from test_clause_acceptance import SentenceFixture
+        from reading_fixtures import record_reading
+        from ReferenceContext import selected_individual_references
+        fixture = SentenceFixture(monkeypatch)
+        program = record_reading(fixture.language, fixture.program((operation, 'marker', 'description')))
+        refs = program.operation_refs.clone()
+        refs[-1, 1] = reference
+        program = replace(program, operation_refs=refs)
+        assert selected_individual_references(fixture.language, program) == expected
+        # Enclosing extension scope must erase an inner mint request.
+>       nested = record_reading(fixture.language, fixture.program(
+            ('universal', 'marker', ('lower', 'another-marker', 'description'))))
+
+test/test_independent_components.py:336: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_clause_acceptance.py:73: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+node = ('universal', 'marker', ('lower', 'another-marker', 'description'))
+
+    def visit(node):
+        if isinstance(node, str):
+            obj = self.noun(node)
+            wid = self.words[node][0]
+            point = self.registry._payload(('sym', obj))
+            actions.append((0, -1, len(leaves)))
+            leaves.append(point); ids.append(obj); words.append(node)
+            word_rows.append(self.cs._csw_row_of(obj))
+            word_ids.append(wid)
+            return point
+        name, *children = node
+        values = tuple(visit(child) for child in children)
+        catalog = self.binary if len(children) == 2 else self.unary
+>       local = next(i for i, rule in enumerate(catalog) if rule.method_name == name)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       StopIteration
+
+test/test_clause_acceptance.py:70: StopIteration
+_ test_selected_grammar_controls_admission_without_word_lookup[definite-77-expected1] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11f6e79e0>
+operation = 'definite', reference = 77, expected = (77,)
+
+    @pytest.mark.parametrize('operation,reference,expected', [
+        ('lower', -1, (-1,)), ('definite', 77, (77,)), ('universal', -1, ()),
+    ])
+    def test_selected_grammar_controls_admission_without_word_lookup(monkeypatch, operation, reference, expected):
+        from dataclasses import replace
+        from test_clause_acceptance import SentenceFixture
+        from reading_fixtures import record_reading
+        from ReferenceContext import selected_individual_references
+        fixture = SentenceFixture(monkeypatch)
+>       program = record_reading(fixture.language, fixture.program((operation, 'marker', 'description')))
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_independent_components.py:330: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_clause_acceptance.py:73: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+node = ('definite', 'marker', 'description')
+
+    def visit(node):
+        if isinstance(node, str):
+            obj = self.noun(node)
+            wid = self.words[node][0]
+            point = self.registry._payload(('sym', obj))
+            actions.append((0, -1, len(leaves)))
+            leaves.append(point); ids.append(obj); words.append(node)
+            word_rows.append(self.cs._csw_row_of(obj))
+            word_ids.append(wid)
+            return point
+        name, *children = node
+        values = tuple(visit(child) for child in children)
+        catalog = self.binary if len(children) == 2 else self.unary
+>       local = next(i for i, rule in enumerate(catalog) if rule.method_name == name)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       StopIteration
+
+test/test_clause_acceptance.py:70: StopIteration
+_ test_selected_grammar_controls_admission_without_word_lookup[universal--1-expected2] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1075df020>
+operation = 'universal', reference = -1, expected = ()
+
+    @pytest.mark.parametrize('operation,reference,expected', [
+        ('lower', -1, (-1,)), ('definite', 77, (77,)), ('universal', -1, ()),
+    ])
+    def test_selected_grammar_controls_admission_without_word_lookup(monkeypatch, operation, reference, expected):
+        from dataclasses import replace
+        from test_clause_acceptance import SentenceFixture
+        from reading_fixtures import record_reading
+        from ReferenceContext import selected_individual_references
+        fixture = SentenceFixture(monkeypatch)
+>       program = record_reading(fixture.language, fixture.program((operation, 'marker', 'description')))
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_independent_components.py:330: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_clause_acceptance.py:73: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+node = ('universal', 'marker', 'description')
+
+    def visit(node):
+        if isinstance(node, str):
+            obj = self.noun(node)
+            wid = self.words[node][0]
+            point = self.registry._payload(('sym', obj))
+            actions.append((0, -1, len(leaves)))
+            leaves.append(point); ids.append(obj); words.append(node)
+            word_rows.append(self.cs._csw_row_of(obj))
+            word_ids.append(wid)
+            return point
+        name, *children = node
+        values = tuple(visit(child) for child in children)
+        catalog = self.binary if len(children) == 2 else self.unary
+>       local = next(i for i, rule in enumerate(catalog) if rule.method_name == name)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       StopIteration
+
+test/test_clause_acceptance.py:70: StopIteration
+=============================== warnings summary ===============================
+test/test_independent_components.py::test_selected_grammar_controls_admission_without_word_lookup[lower--1-expected0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_independent_components.py::test_selected_grammar_controls_admission_without_word_lookup[lower--1-expected0]
+FAILED test/test_independent_components.py::test_selected_grammar_controls_admission_without_word_lookup[definite-77-expected1]
+FAILED test/test_independent_components.py::test_selected_grammar_controls_admission_without_word_lookup[universal--1-expected2]
+3 failed, 50 passed, 1 warning in 5.00s

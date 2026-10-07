@@ -54,7 +54,7 @@ def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate
     configuration = 'XOR_grammar'
     from test_mm_xor import _fresh_model
     from MereologicalCodes import occurrence_memberships
-    from MeaningCodes import identity_code, certificate
+    from MeaningCodes import defined_code, certificate
     model, _, _ = _fresh_model(f'data/{configuration}.xml')
     try:
         with torch.no_grad():
@@ -66,7 +66,7 @@ def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate
         store = owner._closed_clause_store()
         rows = [r for r in range(len(store)) if int(store.rel_type[r]) == store.REL_NONE]
         assert len(rows) == 4
-        codes = {r: identity_code(store.content_key(r),64,3) for r in rows}
+        codes = {r: store.identity_code(r,64,3) for r in rows}
         context = derived.occurrence_terms()
         postings = occurrence_memberships(owner, store)
         extents, values = [], []
@@ -74,6 +74,7 @@ def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate
             containing = sorted(set(rows) & postings[word])
             weights = 1/(1+(float(store._next_ts)-1-store.timestamp[containing]).clamp_min(0))
             expected = (torch.stack([codes[r] for r in containing])*weights[:,None]).sum(0)/weights.sum()
+            expected = defined_code(expected, len(containing))
             torch.testing.assert_close(value[:64],expected)
             assert not value[64:].any() and not value.requires_grad and n == len(containing)
             extents.append({rows.index(r) for r in containing}); values.append(value.numpy())
@@ -225,7 +226,7 @@ def test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved(
     from Layers import TernaryTruthStore
     from Meaning import ConceptualMeaning
     from MereologicalCodes import MereologicalCodes
-    from MeaningCodes import identity_code
+    from MeaningCodes import defined_code
     store=TernaryTruthStore(20,capacity=8);store.image_form_width=4
     owner=SimpleNamespace(_closed_clause_store=lambda:store,
         _csw_row_of=lambda cid:{11:0,12:1}.get(cid),_definition_index=lambda:None)
@@ -238,10 +239,11 @@ def test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved(
     # The second row is witnessed by a reference alone; membership is still one row.
     store._leaf_postings[(0,0)].remove(1);store.refs[1,0]=11
     terms=derived.occurrence_terms();assert set(terms)=={0} and terms[0][0]==2
-    codes=torch.stack([identity_code(store.content_key(r),8,derived.meaning_ones) for r in [0,1]])
+    codes=torch.stack([store.identity_code(r,8,derived.meaning_ones) for r in [0,1]])
     assert not torch.equal(codes[0],codes[1])
     weights=1/(1+(float(store._next_ts)-1-store.timestamp[:2]).clamp_min(0))
     expected=(codes*weights[:,None]).sum(0)/weights.sum()
+    expected=defined_code(expected, 2)
     torch.testing.assert_close(terms[0][1],torch.cat((expected,torch.zeros(8))))
     store.slots[:,0,4:]=99. # composed meanings cannot feed their own bootstrap
     torch.testing.assert_close(derived.occurrence_terms()[0][1],terms[0][1])

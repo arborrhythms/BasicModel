@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal"
+  ],
+  "pid": 85522,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 522470744,
+  "elapsed_seconds": 4.074356249999255,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-5/supplemental-slow/case-03/run.log"
+}

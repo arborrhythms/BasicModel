@@ -1583,6 +1583,27 @@ separately resolves defined absence versus ignorance through the concept's
 learned magnitude. That work is the first part of item 6.5, not part of this
 measured landing.
 
+The subsequent 6.5 implementation uses `m=n/(n+4)` on a unit identity
+direction. A word counts containing rows; a sentence counts re-witnesses.
+Forms retain full identification presence, and neither evidence pole nor
+trust is changed. The exact convergence error is `4/(n+4)`, correcting the
+plan's smaller stated bound. Definedness distinguishes ignorance near zero
+from absence at the unit limit without turning the evidence pair into a
+signed truth value.
+
+### Four scopes of binding in item 6.5
+
+A fixed column can represent one individual across frames. Co-varying
+properties can form that column's signature, so statistical binding also
+acts within an object. Neither fact assigns grammatical roles: exchanging
+the two noun slots leaves their superposition unchanged. The closing must
+still represent who did what to whom. Nor does statistical independence
+decide which simultaneous red patch belongs to which thing within a field;
+located meronomy supplies those bundles. These are the four separate scopes
+in the [specification](specs/2026-09-26-independent-components.md#26-scope-which-binding-problems-this-solves).
+The implementation is proposed for review; the learned claims await their
+exposure-qualified measurements.
+
 ## Summary
 
 | WikiOracle | Category | Buddhist Epistemology | Sanskrit |

@@ -67,8 +67,7 @@ def test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index():
     synonym, second = admit(m, 'there')
     cs.interpret.define(word, second)
     cs.interpret.define(synonym, obj)
-    with pytest.raises(ValueError, match='ambiguous|selection'):
-        cs.interpret.forward(word)
+    assert cs.interpret.forward(word) is None
     assert cs.interpret.forward(word, selected=second) == second
     assert set(cs.definitions.words(obj)) == {word, synonym}
     assert set(cs.definitions.objects(word)) == {obj, second}

@@ -1,0 +1,17 @@
+{
+  "reason": "The Required XOR table in doc/Testing.md also requires the four older slow cases omitted by the latest thirty-run standing campaign. Run each once, after that campaign; no source, assertion, seed or training-budget changes.",
+  "selectors": [
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+  ],
+  "earlier_cases": "The six grounded XOR cases and three native curriculum cases pass in retained-sweep; the ten MM convergence and ten shared grammar runs cover the other standing selectors.",
+  "seed": null,
+  "retries": 0,
+  "replacement_trainings": 0,
+  "workers": 1,
+  "worker_memory_bytes": 8589934592,
+  "worker_timeout_seconds": 1800,
+  "source_manifest_sha256": "d8f374317ea8054cdb9e99077ccdf35df76866e28d6bf46492903f3f4948b099"
+}

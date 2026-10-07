@@ -17,10 +17,10 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Next:** **6.5**, with [plan §44's magnitude as definedness](doc/plans/2026-10-05-operators-update.md#44-the-two-zeros-resolved-by-magnitude-alec-2026-10-07) first. Alec accepted the [operators-update repair](doc/benchmarks/2026-10-07-operators-final-b/) under §45 on October 7: all thirty standing trainings pass, R and E are identically zero, and the measured source has a green sweep.
+**Next:** **query and ask**, under [thought-loop §§5–7](doc/plans/2026-10-07-thought-loop.md#5-the-query-rename-claude-for-codex-2026-10-07), then **6.2, thinking**, whose specification follows from Claude. Alec accepted the [6.5 mechanism landing](doc/benchmarks/2026-10-07-item6-5/acceptance.json) on October 7 after spec §10 reviewed the §9 choices; its learning gates remain pending.
 
-**Current sequence (operators update accepted on October 7; no conference freeze):**
-6.5 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0.
+**Current sequence (6.5 mechanism accepted on October 7; no conference freeze):**
+query and ask → 6.2 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0.
 The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
 acceptance does not authorize fresh-model bulk scoring. Items 9 and 8 are implemented and
 reviewed; what remains of them is empirical and waits for the
@@ -72,8 +72,12 @@ generation is expected at this stage and is recorded, not tuned away.
    causal result, and fused AMP conservatively undercounts exposure. Preserve the
    tiny-run nulls, incomplete reverse programs and 5/56 wording failures as
    development diagnostics ([original receipt](doc/benchmarks/2026-09-26-item9/README.md));
-   old context-free and assertion-thought scores are invalid controls. The grammatical operators
-   update is next while this empirical gate waits for training.
+   old context-free and assertion-thought scores are invalid controls.
+   **6.5's learning gates** — held-out anaphora against `206a0146`, verb
+   reuse, prediction control, shuffled order, renamed vocabulary and
+   determiner control — remain pending the million-sentence checkpoint,
+   across **seeds 0/1/2**, and are **not claimed** by its mechanism acceptance
+   ([receipt](doc/benchmarks/2026-10-07-item6-5/README.md#learning-limits)).
 - **8. Evidence: learned utility and structural preference.** Prefer
    understandable structural operators when they carry the meaning; any opaque
    operator must be an ordinary grammar-MLP choice, with the structural face
@@ -134,56 +138,19 @@ retains the dynamic stop, operator renames and other deferred work. The
 residue around forced `interpret` and digit boundaries. Historical operators
 measurements and decisions are in the accepted receipt and its predecessors.
 
-- **6.5. Independent components: identity as columns, verbs as change**
-   ([spec](doc/specs/2026-09-26-independent-components.md)), after item 7
-   (needs the closing writing every S as a row and §3.5's reference chain).
-   **First: magnitude as definedness**, as decided in operators plan §44;
-   its text joins this item before implementation. Direction, magnitude and
-   the reading's evidence pair remain separate.
-   Today identity is bookkeeping and prediction trains only the predictor:
-   `interpret` binds a word to its object by set logic outside autograd,
-   `resolve_word_concept` carries a referent by rule, the inter-sentence loss
-   (weight .1) detaches both target and context although accessible-mind
-   §2.6.4 requires live source ideas, and every policy, contrastive and
-   trial knob is zero — so nothing pulls the encoder toward "same NP → same
-   object" or "same VP → same encoding" (spec §1). **Decided (Alec,
-   2026-09-26): ICA, not SIGReg**, is the model: the isotropic Gaussian is
-   rotation-invariant and can only whiten; independence picks the axes. At
-   the symbol level a frame already has the classical mixing form,
-   `frame = A·a` with A's columns the codebook rows and `a` the sparse signed
-   activations, so an individual is a column and identity across sentences
-   is the fixedness of A over the LTM chain; verbs are the columns of a
-   second matrix over the surprise residual `o − ê` in those coordinates,
-   one-sparse per S (a learned codebook of change patterns). Gradient form
-   only — maximum-likelihood / Infomax with a heavy-tailed prior,
-   overcomplete so sparse coding, no fixed-point iteration (as 7.5) —
-   over the LTM population, not the batch of two, on the content band only.
-   Priors on the number of sources come from the grammar (roles per S)
-   bounded by STM capacity; the total is nonparametric: mint on unexplained
-   surprise under the 9b recurrence gate, prune by item 5's value with an
-   automatic-relevance scale. Identity binding becomes a candidate in the
-   7.5 softmax (bind to a column in the recency buffer or cued frames, or
-   mint), credited by surprise through the closing; the inter-frame predictor's
-   source ideas go live, target detached. ICA binds across frames and within
-   an object; it does **not** bind roles within a sentence — the three slots
-   do, and a test asserts the superposition catastrophe rather than hiding
-   it. Exit: the ten §5 mechanism tests unconditional; the learning gates
-   (held-out anaphora against the rule baseline, verb reuse across streams,
-   prediction against the detached-target control, shuffled-order and
-   renamed-vocabulary controls, seeds 0/1/2) follow item 9's
-   million-sentence prerequisite and are recorded, never tuned.
-   *Compatibility:* 7.5's exploit/explore derivations and tie rule are
-   unchanged in form; item 5 consumes the relevance scale; item 6's recovery
-   measurements are unaffected.
-   *Architecture (Alec, 2026-09-28):* the determiner is the lexical cue for
-   the identity system's bind or mint — "a" mints an individual, "the"
-   binds to one, "every" does not lower and writes a relation; a learning
-   gate is added in direction
-   ([spec §2.7](doc/specs/2026-09-26-independent-components.md#27-tie-to-the-grammatical-derivation)).
-   *Amended (Alec, 2026-09-30):* "every lowers like all but has a different
-   plurality", and a bare plural lowers by an implicit "all" or "some"
-   ([5.5 spec §6](doc/specs/2026-09-30-occurrence-tense-aspect.md#6-surface-form-and-markers));
-   "every" still mints and binds no column.
+**Deferred from 6.5 (non-blocking):** retire the detached role view carried
+beside the native occurrence anchor; learned-column pruning remains with
+item 5 ([limits](doc/FutureWork.md)).
+
+- **Query and ask.** Keep `query` as LTM lookup returning the best match;
+   rename `what` to `ask` throughout the API, executor, grammars, tests and
+   current documents, preserving the shared controller and history. The
+   [thought-loop plan §§5–7](doc/plans/2026-10-07-thought-loop.md#5-the-query-rename-claude-for-codex-2026-10-07)
+   owns the corrected names and the open-reference meaning of asking.
+- **6.2. Thinking.** Next after query and ask, before item 6. Claude's
+   specification follows from the [thought-loop audit and Alec's rulings](doc/plans/2026-10-07-thought-loop.md).
+   Forgetting depends on thought conclusions and their references for
+   deducibility; do not infer implementation details ahead of the specification.
 - **6. Stored-idea generativity.** Forgetting's dropping of derivations depends
    on it. Item 1c's probe reports zero compound recovery
    ([measurements](doc/AccessibleMind.md#measured-limits)). It trains for 8
@@ -356,7 +323,8 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
-- **Operators update, final-b** (Alec accepted October 7; one landing from `cce3a4f7b`): addressed rows, bipolar meanings, centroids, priming, catalogue and two-lane repair; all standing counts 10/10, R/E zero, green sweep ([acceptance](doc/benchmarks/2026-10-07-operators-final-b/acceptance.json)).
+- **Item 6.5 mechanism** (Alec accepted October 7; one landing from `f4a68404e`): definedness, native identity/change columns and global bind/mint; learning gates remain pending the million-sentence checkpoint ([acceptance](doc/benchmarks/2026-10-07-item6-5/acceptance.json)).
+- `f4a68404e` **Operators update, final-b** (Alec accepted October 7): addressed rows, bipolar meanings, centroids, priming, catalogue and two-lane repair; all standing counts 10/10, R/E zero, green sweep ([acceptance](doc/benchmarks/2026-10-07-operators-final-b/acceptance.json)).
 - `cce3a4f7b` Operators round 3a: identity by construction ([receipt](doc/benchmarks/2026-10-07-operators-round3a/README.md)).
 - `3de37eef5` Operators round 2: accepted credit repair ([receipt](doc/benchmarks/2026-10-06-operators-round2e/README.md)).
 - `73cd7b71b` Operators round 1 accepted and pushed, with WikiOracle bumped at `c9670b5` ([receipt](doc/benchmarks/2026-10-05-operators-update/README.md)).

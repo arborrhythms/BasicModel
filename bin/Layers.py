@@ -10429,7 +10429,9 @@ class SentenceExpectation(Layer):
         self.kind_bias = nn.Parameter(torch.zeros(()))
 
     def forward(self, roles, masks):
-        roles, masks = roles.detach(), masks.detach()
+        # The boundary owner detaches retained observations and re-encodes
+        # only the current source. Detaching here would erase that credit.
+        masks = masks.detach()
         features = torch.cat((
             torch.where(masks.unsqueeze(-1), roles, torch.zeros_like(roles)),
             masks.to(roles.dtype).unsqueeze(-1)), dim=-1)
@@ -11014,6 +11016,30 @@ class BracketExpectation(Layer):
         return canonical_role_payload(payload, depth, layout, role_mask,
                                       concept_dim=self.concept_dim)
 
+    def _prediction_inputs(self, inputs, *, replay=False):
+        """Re-encode only the latest source with this step's live columns.
+
+        Stored context and observation targets remain detached. Replaying a
+        trial builds a fresh graph at the same parameter snapshot, without
+        carrying the previous sentence's compose graph across its update.
+        """
+        encoder = getattr(self, '_source_encoder', None)
+        roles, occupied = inputs
+        latest = (encoder(roles[:, -1].detach()) if encoder is not None else
+                  roles[:, -1].detach() if replay else roles[:, -1])
+        return torch.cat((roles[:, :-1].detach(), latest[:, None]), 1), occupied.detach()
+
+    def _prediction_versions(self):
+        source = getattr(getattr(self, '_source_encoder', None), '__self__', None)
+        columns = () if source is None else tuple(source.parameters())
+        return tuple(p._version for p in (*self._inter_predictor.parameters(), *columns))
+
+    def _prediction_coordinates(self, predicted, target):
+        owner = getattr(getattr(self, '_source_encoder', None), '__self__', None)
+        if owner is not None and hasattr(owner, 'prediction_coordinates'):
+            return owner.prediction_coordinates(predicted, target)
+        return predicted, target.detach()
+
     @torch.compiler.disable
     def expect_next_meaning(self, b=0, *, record=True, work=None,
                             frames=(), frame_occurrences=(), policy=(), policy_work=0, refresh=False,
@@ -11056,7 +11082,7 @@ class BracketExpectation(Layer):
         roles = [zero] * pad + [p.to(parameter) for _, p, _ in chain]
         masks = [empty] * pad + [m.to(parameter.device) for _, _, m in chain]
         inputs = (torch.stack(roles)[None], torch.stack(masks)[None])
-        values, logits, kind_logits = self._inter_predictor(*inputs)
+        values, logits, kind_logits = self._inter_predictor(*self._prediction_inputs(inputs))
         if not bool(torch.isfinite(values).all() and torch.isfinite(logits).all()
                     and torch.isfinite(kind_logits).all()):
             raise FloatingPointError("non-finite structured sentence prediction")
@@ -11077,7 +11103,7 @@ class BracketExpectation(Layer):
                 tuple(dict.fromkeys(reference for reference in (*occurrences, *frame_occurrences)
                                     if reference is not None)),
                 ("external", document), document, inputs,
-                tuple(p._version for p in self._inter_predictor.parameters()),
+                self._prediction_versions(),
                 tuple(policy), int(policy_work), tuple(reference_frames))
         return prediction
 
@@ -11148,24 +11174,25 @@ class BracketExpectation(Layer):
                 if (train_prediction and self.training and torch.is_grad_enabled()
                         and (self._inter_loss_weight > 0 or self._inter_contrastive_weight > 0)):
                     if (isinstance(pending, _PendingMeaningExpectation) and pending.inputs is not None
-                            and (not prediction.roles.requires_grad or pending.versions != tuple(
-                                p._version for p in self._inter_predictor.parameters()))):
+                            and (not prediction.roles.requires_grad or pending.versions != self._prediction_versions())):
                         # A delayed estimate remains unchanged as evidence.
                         # Both residual and contrastive objectives train the
                         # current predictor from the frozen prior, never an
                         # old parameter version's graph.
-                        replay, logits, kinds = self._inter_predictor(*(v.detach() for v in pending.inputs))
+                        replay, logits, kinds = self._inter_predictor(
+                            *self._prediction_inputs(pending.inputs, replay=True))
                         train_roles, train_logits = replay[0], logits[0]
                         train_kind = kinds[0]
                 if train_prediction and self.training and torch.is_grad_enabled() and self._inter_loss_weight > 0:
-                    step = (train_roles - target).square().mean() + F.binary_cross_entropy_with_logits(
+                    predicted_coordinates, target_coordinates = self._prediction_coordinates(train_roles, target)
+                    step = (predicted_coordinates - target_coordinates).square().mean() + F.binary_cross_entropy_with_logits(
                         train_logits, target_mask.to(train_logits))
                     step = step + self._kind_loss(train_kind, kind, step)
                     self._inter_loss_accum = (step if self._inter_loss_accum is None
                                               else self._inter_loss_accum + step)
                     self._inter_loss_count += 1
                     errors = self._inter_error_registry()
-                    errors.squared('roles', train_roles, target, category='expectation')
+                    errors.squared('roles', predicted_coordinates, target_coordinates, category='expectation')
                     errors.binary('presence', train_logits, target_mask.to(train_logits), category='expectation')
                     if kind is not None:
                         errors.binary('kind', train_kind, train_kind.new_tensor(float(kind == 'relation')),
@@ -11233,7 +11260,9 @@ class BracketExpectation(Layer):
             depth, roles, occupied = context[-1]
             point = store.slots[index, 0] if int(store.rel_type[index]) == store.REL_NONE else None
             context[-1] = SituationFrame(depth, roles, occupied, int(store.row_ids[index]),
-                                         None if point is None else point.detach().clone())
+                                         None if point is None else point.detach().clone(),
+                                         where=store.where[index].detach().clone(),
+                                         when=store.when[index].detach().clone())
 
     def situation_references(self, b=0):
         """Only the bounded frames the predictor already holds; no LTM read."""
@@ -11799,15 +11828,16 @@ class BracketExpectation(Layer):
                                 # Replay only the stored prior inputs, keeping
                                 # the pending record and its estimate intact.
                                 replay, presence, kinds = self._inter_predictor(
-                                    *(v.detach() for v in pending.inputs))
+                                    *self._prediction_inputs(pending.inputs, replay=True))
                                 pred, logits = replay[0], presence[0]
                                 kind_logit = kinds[0]
                             target = roles.detach().to(pred)
-                            cost = (pred - target).square().mean() + F.binary_cross_entropy_with_logits(
+                            predicted_coordinates, target_coordinates = self._prediction_coordinates(pred, target)
+                            cost = (predicted_coordinates - target_coordinates).square().mean() + F.binary_cross_entropy_with_logits(
                                 logits, occupied.to(logits))
                             cost = cost + self._kind_loss(kind_logit,
                                 None if sentence_kinds is None else sentence_kinds[b], cost)
-                            errors.squared('roles', pred, target, row=b, category='expectation')
+                            errors.squared('roles', predicted_coordinates, target_coordinates, row=b, category='expectation')
                             errors.binary('presence', logits, occupied.to(logits), row=b, category='expectation')
                             kind = None if sentence_kinds is None else sentence_kinds[b]
                             if kind is not None:

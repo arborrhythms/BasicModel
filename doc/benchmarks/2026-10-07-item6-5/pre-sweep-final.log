@@ -1,0 +1,38 @@
+..............F..............................                            [100%]
+=================================== FAILURES ===================================
+__ test_ltm_population_is_detached_and_independent_of_current_batch_partition __
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11ed44530>
+
+    def test_ltm_population_is_detached_and_independent_of_current_batch_partition(monkeypatch):
+        import Spaces
+        from Layers import TernaryTruthStore
+        from Meaning import ConceptualMeaning
+        columns = component_fixture()
+        store = TernaryTruthStore(4, capacity=8)
+        for index, value in enumerate(torch.eye(4)[:3]):
+            store.append_meaning(ConceptualMeaning.from_description(value),
+                                 document_key='stream', sentence_index=index)
+        owner = columns.owner
+        owner._closed_clause_store = lambda: store
+        owner._order0_inventory_row = lambda row: row < 4
+        owner.similarity_codebook = SimpleNamespace(W=torch.eye(4), lookup_rows=lambda rows: torch.eye(4)[rows])
+        monkeypatch.setattr(Spaces, '_concept_alloc_of', lambda _: SimpleNamespace(
+            layer=lambda: SimpleNamespace(_tensor_row_keys={i: i for i in range(4)})))
+        columns.begin_forward()
+>       assert columns._population.shape == (3, 8) and not columns._population.requires_grad
+E       assert (torch.Size([0, 8]) == (3, 8)
+E         
+E         At index 0 diff: 0 != 3
+E         Use -v to get more diff)
+
+test/test_independent_components.py:313: AssertionError
+=============================== warnings summary ===============================
+test/test_independent_components.py::test_native_admission_optimizer_ownership_and_checkpoint
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_independent_components.py::test_ltm_population_is_detached_and_independent_of_current_batch_partition
+1 failed, 44 passed, 1 warning in 15.99s

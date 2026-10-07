@@ -81,8 +81,9 @@ def test_document_change_is_cold_preserves_scored_loss_and_other_row():
     assert model.consume_inter_loss() is None
 
 
-def test_full_role_loss_trains_predictor_but_never_source_or_target():
-    model = layer()
+def test_full_role_loss_trains_predictor_and_current_source_but_never_target():
+    model = BracketExpectation(n_symbols=4, max_depth=8, n_dim=4, concept_dim=4,
+                               batch=1, expectation_scope='structured')
     encoder = torch.nn.Linear(4, 4, bias=False)
     source = encoder(torch.arange(12.).reshape(3, 4) / 12)
     target = torch.nn.Parameter(torch.ones(3, 4))
@@ -92,7 +93,7 @@ def test_full_role_loss_trains_predictor_but_never_source_or_target():
     assert loss is not None
     loss.backward()
     assert target.grad is None
-    assert encoder.weight.grad is None
+    assert encoder.weight.grad is not None and encoder.weight.grad.abs().sum() > 0
     assert any(p.grad is not None and p.grad.norm() > 0
                for p in model._inter_predictor.parameters())
     assert all(not p.requires_grad for _, p, _ in model.get_stm_chain())

@@ -1,0 +1,129 @@
+.....................s...........ss..................s.................. [ 38%]
+........................................................................ [ 77%]
+...F................FFF.F..........F.......                              [100%]
+=================================== FAILURES ===================================
+__________ test_native_progress_and_trained_artifact_evaluation_path ___________
+test/test_learning_readiness.py:149: in test_native_progress_and_trained_artifact_evaluation_path
+    model.runBatch(train=True, split='train', batchSize=2, optimizer=optimizer,
+bin/Models.py:13806: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13945: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14327: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8911: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10409: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8596: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8374: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23636: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17428: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22171: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21724: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20824: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20738: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21487: in stage_cs_lang
+    proposal = language.choose_operation(
+bin/Language.py:12825: in choose_operation
+    _, _, route = self.language_layer.operation_layer(
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7287: in forward
+    stop_scores, binary_scores = self.chooser.score_binary(
+test/reading_fixtures.py:149: in binary_scores
+    return stop, scores.masked_fill(~mask, -torch.inf) + 1e6
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: The size of tensor a (20) must match the size of tensor b (34) at non-singleton dimension 2
+__________ test_selected_grammar_context_selects_order[particular-1] ___________
+test/test_lexical_reference_orders.py:43: in test_selected_grammar_context_selects_order
+    assert got.tolist() == [-1, ids[order]]
+E   assert [-1, 2] == [-1, 3]
+E     
+E     At index 1 diff: 2 != 3
+E     Use -v to get more diff
+_____________ test_selected_grammar_context_selects_order[name-1] ______________
+test/test_lexical_reference_orders.py:43: in test_selected_grammar_context_selects_order
+    assert got.tolist() == [-1, ids[order]]
+E   assert [-1, 2] == [-1, 3]
+E     
+E     At index 1 diff: 2 != 3
+E     Use -v to get more diff
+____________ test_selected_grammar_context_selects_order[pronoun-1] ____________
+test/test_lexical_reference_orders.py:43: in test_selected_grammar_context_selects_order
+    assert got.tolist() == [-1, ids[order]]
+E   assert [-1, 2] == [-1, 3]
+E     
+E     At index 1 diff: 2 != 3
+E     Use -v to get more diff
+_____ test_capture_owns_grammar_resolution_without_changing_reconstruction _____
+test/test_lexical_reference_orders.py:62: in test_capture_owns_grammar_resolution_without_changing_reconstruction
+    assert entry.reference_ids.tolist() == [-1, ids[1]]
+E   assert [-1, 2] == [-1, 3]
+E     
+E     At index 1 diff: 2 != 3
+E     Use -v to get more diff
+________ TestLexiconOwnership.test_save_and_load_embeddings_round_trip _________
+test/test_lexicon_ownership.py:72: in test_save_and_load_embeddings_round_trip
+    ok = m.load_weights(path)
+         ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5061: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpzp7hy8wq/weights.ckpt
+=============================== warnings summary ===============================
+test/test_ir_only_refactor.py::TestIrForwardShape::test_ir_forward_returns_b_n_d
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_ir_only_refactor.py::TestReconstructConceptsLoss::test_reconstruction_is_unconditionally_from_concepts
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7199: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_ir_only_refactor.py::TestArmaPredictAndObserve::test_observe_accumulates_nonzero_loss
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path
+FAILED test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]
+FAILED test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]
+FAILED test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]
+FAILED test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction
+FAILED test/test_lexicon_ownership.py::TestLexiconOwnership::test_save_and_load_embeddings_round_trip
+6 failed, 177 passed, 4 skipped, 3 warnings in 15.75s

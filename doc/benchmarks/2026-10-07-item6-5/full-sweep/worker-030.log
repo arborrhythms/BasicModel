@@ -1,0 +1,24 @@
+........................................................................ [ 48%]
+..................................ssssssss.sssssssss.F.................. [ 96%]
+......                                                                   [100%]
+=================================== FAILURES ===================================
+_____ test_student_checkpoint_migrates_shared_weights_and_momentum_by_name _____
+test/test_tied_reconstruction_objective.py:120: in test_student_checkpoint_migrates_shared_weights_and_momentum_by_name
+    assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5061: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3225/test_student_checkpoint_migrat0/student.ckpt
+reconstructInLoop: dropped 12 detached reverse-student keys from the checkpoint (declared migration)
+=============================== warnings summary ===============================
+test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[set]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_momentum_by_name
+1 failed, 132 passed, 17 skipped, 1 warning in 83.87s (0:01:23)

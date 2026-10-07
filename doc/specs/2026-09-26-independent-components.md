@@ -1,9 +1,12 @@
 # Independent components: identity as columns, verbs as change
 
-> **Status:** specification, 2026-09-26, written by Claude from Alec's
-> decisions in conversation on 2026-09-26. Todo item **6.5**, to be done
-> after item 7 (two truths) and before item 6. Codex implements; Claude
-> reviews before commit under the repository publish rule. It governs how
+> **Status:** accepted by Alec as the **6.5 mechanism landing**, 2026-10-07,
+> after Claude's §10 review of the §9 choices. The six learning gates,
+> across seeds 0/1/2, remain pending the million-sentence checkpoint and
+> are not claimed. The specification was written 2026-09-26 by Claude from Alec's
+> decisions in conversation on 2026-09-26. Todo item **6.5** follows
+> item 7 (two truths). Codex implements; Claude reviews before commit
+> under the repository publish rule. It governs how
 > the identity of an object across consecutive sentences and the identity
 > of a transformation across their differences are *learned*, and it adds
 > the gradient pressure that §1 shows does not exist today. It refines
@@ -12,6 +15,38 @@
 > [the accessible mind §2.6.4](2026-09-20-accessible-mind-subsystems.md)
 > (surprise is what is learned). Everything marked **(decided)** is Alec's
 > decision. Nothing here claims learned behaviour.
+
+The October 7 implementation and receipt are in
+[item 6.5](../benchmarks/2026-10-07-item6-5/README.md). The original decisions
+below remain the review standard; §9 records implementation choices instead
+of silently treating those choices as amendments to the decisions.
+
+## 0. First: magnitude as definedness (Alec, 2026-10-07)
+
+[Operators plan §44](../plans/2026-10-05-operators-update.md#44-the-two-zeros-resolved-by-magnitude-alec-2026-10-07)
+is the first part of this item. Keep three quantities separate: a concept's
+unit direction identifies it; its magnitude measures definedness; and the
+independent pair `(c⁺, c⁻)` records evidence in this reading. Neither the
+pair nor source trust is a signed activation or a definedness estimate.
+
+Use `m = n/(n + k)`, with `k = 4`: `n` is the number of containing rows for
+a word and the re-witness count for a stored sentence. A sentence's identity
+direction is its fixed sparse content code normalized to unit length. The
+word's direction is its existing recency-weighted context mean, normalized
+to unit length. Composition and reads use `m × direction`; forms retain
+their full identification presence. Take the context snapshot once before
+lexical staging, and keep it fixed through both trials and reconstruction.
+The stored identity read uses its durable witness count; no extra mutable
+copy of magnitude is required.
+
+Thus a dot product reads `|input| × m × cos(angle)`. `(0,0)` near `m = 0`
+expresses ignorance; at `m = 1` it expresses absence. Coordinatewise minima
+including zeros stand, with each evidence lane kept separate. Certificates:
+monotone magnitude, the exact convergence error `1 − m = k/(n + k)`, a
+conjunction's for-lane norm bounded by an operand of magnitude `ε`, unchanged
+four corners, and the existing membership certificate at `m = 1`. The exact
+convergence error corrects §44's stated `1/(n+k)` bound for `k = 4` without
+changing its decided rule.
 
 ## 1. The problem (measured, 2026-09-26)
 
@@ -435,3 +470,96 @@ Plate, T. A. (1995). Holographic reduced representations. *IEEE Transactions on 
 Smolensky, P. (1990). Tensor product variable binding and the representation of symbolic structures in connectionist systems. *Artificial Intelligence, 46*, 159–216.
 Treisman, A. (1996). The binding problem. *Current Opinion in Neurobiology, 6*, 171–178.
 von der Malsburg, C. (1999). The what and why of binding: The modeler's perspective. *Neuron, 24*, 95–104.
+
+
+## 9. Implementation proposal (October 7)
+
+`IndependentComponents` is owned by the native ConceptualSpace dictionary;
+stages sharing that dictionary also share its parameters. A column receives
+a native order-one identity only on the fourth distinct unexplained witness.
+Its learned coefficients are not integer addresses or word spellings. B uses
+three role slots of A's coordinates, with one active change column. Relevance
+scales can reach zero and expose pruning candidates to item 5; this item does
+not remove rows. Checkpoints include columns, scales, witness counts, pending
+recurrence and occurrence-addressed innovations.
+An innovation leaves that observation history when its occurrence leaves
+the retained LTM population; its learned change column remains for item 5
+to assess.
+
+The implemented energy combines squared reconstruction, a Laplace activation
+prior, unit direction normalization, column incoherence and relevance pressure.
+A single projection chooses a bounded support, followed by one differentiable
+small normal-equation solve and soft threshold. There is no iterative inference
+loop, whitening pass, independent optimizer, or search over dictionary size.
+This is an amortized sparse-coding energy. It is not exact marginal likelihood
+or an implementation of the square-case Infomax determinant; that distinction
+is explicit for review against §2.2 and §3.1.
+
+The accepted sentence loop updates and detaches after each kept sentence.
+The proposed resolution of §3.4 therefore re-encodes the latest source from its
+retained values through the live columns, with a fresh graph for every trial.
+It does not retain the preceding compose graph across an optimizer update.
+Older context and target coordinates detach. The existing predictor keeps its
+shape; its role loss uses A's coordinates once columns exist. The current
+bounded situation still carries its established role view and native occurrence
+anchor. That role view is not an additional durable population or input journal.
+
+Binding variants share the grammar operation's existing scoring row in the
+single global softmax. Native references remain distinct alternatives even
+when content values coincide. Only the situation, cued frames and earlier live
+constituents enumerate candidates, within their existing capacity. Geometry is
+carried in the reserved reference band beside the column content; the
+independence chart excludes it. The kept closing alone may update recurrence
+or allocate. Word association no longer decides an individual or raises on
+ambiguity. Determiner modes are grammatical metadata, not word anchors.
+The selected operation journal also gates admission: a kind/extension scope
+supplies no individual witness, a bind may re-witness an existing column,
+and only a selected mint may advance unexplained-content recurrence. An
+enclosing kind scope cancels an inner individual request.
+
+The three defaults are `independenceWeight=.1`,
+`independencePriorScale=.05`, and `independenceMintThreshold=.2`.
+Both dictionaries belong to the existing expectation parameter owner; the
+usual sentence credit trains the global chooser. The component path adds no
+backward or optimizer loop. The direct mechanism probe records one gradient
+evaluation; production retains its accepted objective ownership and two-trial
+update schedule.
+
+The receipt distinguishes structural mechanism checks from learning. The
+synthetic temporal shuffle reports persistence error and does not manufacture
+a learned-identity pass. Held-out anaphora versus `206a0146`, verb reuse,
+prediction control, renamed vocabulary, shuffled order and determiner controls
+require at least one million completed FineWeb training sentences and all
+predeclared seeds 0/1/2. Missing prerequisites remain skips. Mechanism probes
+exercise the ordinary two-noun ceiling and nested relative-clause ceilings
+up to STM capacity. They do not establish learned decomposition of arbitrary
+natural-language relative clauses.
+
+## 10. Review of the October 7 candidate (Claude, 2026-10-07)
+
+Receipt `doc/benchmarks/2026-10-07-item6-5/` (measured source 718 files,
+matching the working tree; sweep green at 5,527 cases; the thirty standing
+trainings at 10/10 on every gate with `R ≡ 0` and `E ≡ 0` over 64,160 trial
+rows; the four slow XOR cases 4/4). §0's magnitude is in with its
+certificates (the convergence error is `k/(n+k)`, as §0 corrects). The ten
+acceptance tests of §5 are covered by the 25 mechanism cases.
+
+The three choices of §9, accepted: (1) the amortized sparse-coding energy
+(squared residual, Laplace prior, unit columns, incoherence, relevance; one
+projection, one small normal-equation solve, one soft threshold) is
+maximum-likelihood ICA in its overcomplete noisy form (Lewicki & Sejnowski
+2000; Olshausen & Field 1996) and keeps §2.2's requirement — one gradient,
+one backward, no FastICA, no whitening, no model-order search — the
+square-case determinant being the noiseless special case; (2) a fresh
+encoding of the latest source per trial, consistent with the two-trial
+step; (3) the detached role view carried beside the occurrence anchor, a
+transitional duplication to retire later. The learning gates stay pending
+the million-sentence checkpoint (item 0), as 6.8's evaluator does.
+**Accepted as the mechanism landing**, pending Alec.
+
+**Alec's acceptance (2026-10-07):** accepted as the 6.5 mechanism landing;
+commit, push and WikiOracle bump authorized. Held-out anaphora, verb reuse,
+prediction control, shuffled order, renamed vocabulary and determiner
+control, across seeds 0/1/2, remain pending the million-sentence checkpoint
+and are not claimed. The [receipt's acceptance record](../benchmarks/2026-10-07-item6-5/acceptance.json)
+records this scope and preserves the review evidence.

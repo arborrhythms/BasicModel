@@ -1,5 +1,20 @@
 # Bounded development tests
 
+Item 6.5's [October 7 accepted mechanism receipt](benchmarks/2026-10-07-item6-5/README.md)
+records magnitude definedness first, then native identity/change columns and
+global bind/mint selection. Its final source has a green **5,527-case** sweep:
+5,241 passed, 285 skipped and one existing non-strict XPASS. The 25 component
+mechanism cases pass. The thirty unseeded standing trainings on that exact
+source pass: sum 10/10, joint XOR class/reconstruction 10/10 and MM_xor 10/10.
+The receipt preserves earlier failures, pre-training launcher errors and every
+training outcome. The four older slow-table checks also pass, each run once
+and reported separately with predictions and errors.
+The [acceptance](benchmarks/2026-10-07-item6-5/acceptance.json) records Alec's
+authorization after Claude's spec §10 review. Held-out anaphora, verb reuse,
+prediction control, shuffled order, renamed vocabulary and determiner control
+across seeds 0/1/2 remain pending the million-sentence checkpoint and are not
+claimed. No inspected checkpoint meets that exposure prerequisite.
+
 Run affected files or individual cases during development:
 
 ```sh

@@ -2614,6 +2614,7 @@ class BaseModel(Mereology, nn.Module):
         discourse = getattr(getattr(self, 'symbolSpace', None), 'expectation', None)
         expectation = parameters([
             *(getattr(cs, 'intraSentenceLayer', None) for cs in getattr(self, 'conceptualSpaces', ())),
+            *(getattr(cs, 'components', None) for cs in getattr(self, 'conceptualSpaces', ())),
             getattr(discourse, 'predictor', None), getattr(discourse, '_inter_predictor', None),
             getattr(discourse, 'word_predictor', None)])
         output = parameters([getattr(self, 'outputSpace', None),
@@ -4634,6 +4635,15 @@ class BaseModel(Mereology, nn.Module):
 
         # Pre-check for shape mismatches before attempting to load.
         # This produces an actionable diagnostic instead of a raw PyTorch error.
+        # Materialize admitted columns before strict key/shape preflight.
+        # Their native identities are restored by the structural sidecar.
+        from IndependentComponents import SparseDictionary, IndependentComponents
+        component_metadata = set()
+        for name, module in self.named_modules(remove_duplicate=False):
+            if isinstance(module, SparseDictionary):
+                module.prepare_checkpoint(state, name + '.')
+            if isinstance(module, (SparseDictionary, IndependentComponents)):
+                component_metadata.add(name + '._extra_state')
         model_state = dict(self.state_dict())
         for name in tuple(state):
             renamed=name.replace('.discourse.','.expectation.')
@@ -5091,6 +5101,7 @@ class BaseModel(Mereology, nn.Module):
             (k, list(state[k].shape), list(model_state[k].shape))
             for k in state if k in model_state
             and state[k].shape != model_state[k].shape
+            and k not in component_metadata
             and not (k in variable_leaf_columns and state[k].ndim == 1
                      and state[k].dtype == model_state[k].dtype)
         ]
@@ -8338,6 +8349,19 @@ class BasicModel(BaseModel):
             if derived is not None and id(cb) not in seen_books:
                 derived.begin_forward()
                 seen_books.add(id(cb))
+        components = getattr(self._concept_owner(), 'components', None)
+        language = getattr(self, 'languageSpace', None)
+        eligible = any(getattr(rule, 'determiner_mode', None) in ('mint', 'bind') or
+            any(order == 1 for _, order in getattr(rule, 'reference_orders', ())) for rule in (
+            *getattr(language, '_compose_binary_rules', ()),
+            *getattr(language, '_compose_unary_rules', ())))
+        self._component_reading = bool(components is not None and eligible)
+        if self._component_reading:
+            components.begin_forward()
+        discourse = getattr(getattr(self, 'symbolSpace', None), 'expectation', None)
+        if discourse is not None:
+            object.__setattr__(discourse, '_source_encoder',
+                               components.source if self._component_reading else None)
         self._sentence_codes_snapshotted = True
 
     @_sentence_query_mask
@@ -20150,6 +20174,17 @@ class BasicModel(BaseModel):
             if self.inter_contrastive_weight > 0:
                 errors.merge(disc._sentence_prediction_errors[1],
                              prefix='expectation.', weight=self.inter_contrastive_weight)
+        if getattr(self, '_component_reading', False):
+            components = self._concept_owner().components
+            estimates = (None if pending is None else [
+                None if item is None else item.prediction for item in pending[0]])
+            component_cost = components.cost(observation['meanings'], estimates, active,
+                                              clauses=observation['clauses'])
+            errors.add('expectation.components', component_cost, weight=components.weight,
+                       category='expectation')
+            cost = component_cost * components.weight
+            self._sentence_expectation_comparison = (cost if self._sentence_expectation_comparison is None
+                else self._sentence_expectation_comparison + cost)
         word_inputs = getattr(self, '_word_expectation_input', None)
         word_expected = (None if word_inputs is None or disc is None else disc.expect('word', *word_inputs,
             teacher_forcing=bool(self.training), gain=self.word_expectation_gain,
@@ -20475,6 +20510,12 @@ class BasicModel(BaseModel):
                 if row >= 0:
                     row_ids[b] = int(store.row_ids[row])
                     store.witness_adjacency(row, identified_codes)
+                    if getattr(self, '_component_reading', False):
+                        from ReferenceContext import selected_individual_references
+                        self._concept_owner().components.commit(row, view['meanings'][b],
+                            None if comparison is None else comparison.estimate,
+                            individual_references=selected_individual_references(
+                                self.languageSpace, entries[b]))
                 if row >= 0 and retain:
                     disc.bind_observation_occurrence(b, store.row(row)['occurrence'])
         fields = []
@@ -20533,7 +20574,7 @@ class BasicModel(BaseModel):
         language = self.languageSpace
         orders = sorted({order for rule in (*language._compose_binary_rules,
                                             *language._compose_unary_rules)
-                         for _role, order in getattr(rule, 'reference_orders', ())})
+                         for _role, order in getattr(rule, 'reference_orders', ()) if order != 1})
         sources = self._word_symbol_concept_ids()
         words = getattr(self.inputSpace, '_ar_word_concept_rows', None)
         if not orders or not torch.is_tensor(sources) or not torch.is_tensor(words):
@@ -20570,6 +20611,7 @@ class BasicModel(BaseModel):
         valid = torch.zeros(B, C, device=like.device, dtype=torch.bool)
         relations = torch.zeros_like(valid)
         predicted = torch.zeros(B, device=like.device, dtype=torch.bool)
+        components = getattr(self._concept_owner(), 'components', None)
         queries = []
         for b in range(B):
             query = like.new_zeros(D)
@@ -20580,17 +20622,16 @@ class BasicModel(BaseModel):
                 query = prediction.roles[0].detach().to(like)
                 inputs = getattr(pending, 'inputs', None)
                 if self._sentence_training and torch.is_grad_enabled() and inputs is not None:
-                    estimates, _, _ = disc._inter_predictor(*(v.detach() for v in inputs))
+                    estimates, _, _ = disc._inter_predictor(*disc._prediction_inputs(inputs, replay=True))
                     query = estimates[0, 0].detach().to(like)
                 predicted[b] = True
-                for i, frame in enumerate(disc.situation_references(b)[-C:]):
-                    if frame.order != 1:
-                        continue
-                    ids[b, i] = frame.row_id
-                    valid[b, i] = True
-                    relations[b, i] = frame.point is None
-                    if frame.point is not None:
-                        values[b, i] = frame.point.detach().to(like)
+            if components is not None and disc is not None and bool(active[b]):
+                for i, (identity, frame) in enumerate(components.candidate_frames(disc.situation_references(b))[-C:]):
+                    point = components.situated_point(identity, frame)
+                    if point is not None:
+                        ids[b, i] = identity
+                        valid[b, i] = True
+                        values[b, i] = point.detach().to(like)
             queries.append(query)
         types = self._sentence_reference_types(like)
         cases = None
@@ -20600,7 +20641,9 @@ class BasicModel(BaseModel):
             if types is not None:
                 required = torch.cat((required, types.identities.flatten(1)), 1)
             cases = stage_case_bank(self._concept_owner(), required, limit=self.reconstruction_basis_limit)
-        return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted, types, cases)
+        inventory = torch.tensor(() if components is None else components.nouns.ids,
+                                 dtype=torch.long, device=like.device)
+        return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted, types, cases, inventory)
 
     def _run_sentence_word_bricks(self, words, active, sentence_ids, stm, sub, sym,
                                 lang, empty_feedback, perceive, symbolize, compose_word):

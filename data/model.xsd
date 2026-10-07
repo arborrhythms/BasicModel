@@ -941,6 +941,9 @@
       <xs:element name="rowExpectationArmaScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="rowExpectationContrastiveWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="sentenceExpectation" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="independenceWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="independencePriorScale" type="positiveFloat" minOccurs="0"/>
+      <xs:element name="independenceMintThreshold" type="positiveFloat" minOccurs="0"/>
       <xs:element name="sentenceExpectationScope" minOccurs="0">
         <xs:simpleType>
           <xs:restriction base="xs:string">

@@ -1,0 +1,98 @@
+...FFFFFF                                                                [100%]
+=================================== FAILURES ===================================
+__________ test_fixed_column_and_individuation_are_recurrence_effects __________
+
+    def test_fixed_column_and_individuation_are_recurrence_effects():
+>       columns = dictionary()
+                  ^^^^^^^^^^^^
+
+test/test_independent_components.py:86: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+width = 4, sources = 2
+
+    def dictionary(width=4, sources=2):
+>       from IndependentComponents import SparseDictionary
+E       ModuleNotFoundError: No module named 'IndependentComponents'
+
+test/test_independent_components.py:75: ModuleNotFoundError
+__ test_mint_threshold_duplicate_witness_and_relevance_do_not_delete_columns ___
+
+    def test_mint_threshold_duplicate_witness_and_relevance_do_not_delete_columns():
+>       columns = dictionary()
+                  ^^^^^^^^^^^^
+
+test/test_independent_components.py:106: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+width = 4, sources = 2
+
+    def dictionary(width=4, sources=2):
+>       from IndependentComponents import SparseDictionary
+E       ModuleNotFoundError: No module named 'IndependentComponents'
+
+test/test_independent_components.py:75: ModuleNotFoundError
+____ test_population_loss_is_batch_partition_invariant_and_has_one_backward ____
+
+    def test_population_loss_is_batch_partition_invariant_and_has_one_backward():
+>       columns = dictionary()
+                  ^^^^^^^^^^^^
+
+test/test_independent_components.py:123: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+width = 4, sources = 2
+
+    def dictionary(width=4, sources=2):
+>       from IndependentComponents import SparseDictionary
+E       ModuleNotFoundError: No module named 'IndependentComponents'
+
+test/test_independent_components.py:75: ModuleNotFoundError
+_____________ test_role_superposition_does_not_claim_role_binding ______________
+
+    def test_role_superposition_does_not_claim_role_binding():
+>       from IndependentComponents import noun_frame
+E       ModuleNotFoundError: No module named 'IndependentComponents'
+
+test/test_independent_components.py:140: ModuleNotFoundError
+______________ test_change_dictionary_is_one_sparse_per_sentence _______________
+
+    def test_change_dictionary_is_one_sparse_per_sentence():
+>       changes = dictionary(width=12, sources=1)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_independent_components.py:154: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+width = 12, sources = 1
+
+    def dictionary(width=4, sources=2):
+>       from IndependentComponents import SparseDictionary
+E       ModuleNotFoundError: No module named 'IndependentComponents'
+
+test/test_independent_components.py:75: ModuleNotFoundError
+_ test_dictionary_checkpoint_preserves_pending_recurrence_and_learned_parameters _
+
+    def test_dictionary_checkpoint_preserves_pending_recurrence_and_learned_parameters():
+        import copy
+>       source = dictionary()
+                 ^^^^^^^^^^^^
+
+test/test_independent_components.py:165: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+width = 4, sources = 2
+
+    def dictionary(width=4, sources=2):
+>       from IndependentComponents import SparseDictionary
+E       ModuleNotFoundError: No module named 'IndependentComponents'
+
+test/test_independent_components.py:75: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED test/test_independent_components.py::test_fixed_column_and_individuation_are_recurrence_effects
+FAILED test/test_independent_components.py::test_mint_threshold_duplicate_witness_and_relevance_do_not_delete_columns
+FAILED test/test_independent_components.py::test_population_loss_is_batch_partition_invariant_and_has_one_backward
+FAILED test/test_independent_components.py::test_role_superposition_does_not_claim_role_binding
+FAILED test/test_independent_components.py::test_change_dictionary_is_one_sparse_per_sentence
+FAILED test/test_independent_components.py::test_dictionary_checkpoint_preserves_pending_recurrence_and_learned_parameters
+6 failed, 3 passed in 2.22s

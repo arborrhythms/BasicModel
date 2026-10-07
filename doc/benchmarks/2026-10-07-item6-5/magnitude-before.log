@@ -1,0 +1,77 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+___ test_definedness_keeps_direction_input_uncertainty_and_evidence_separate ___
+
+    def test_definedness_keeps_direction_input_uncertainty_and_evidence_separate():
+>       from MeaningCodes import defined_code, definedness, compose
+E       ImportError: cannot import name 'defined_code' from 'MeaningCodes' (/Users/arogers/github/WikiOracle/basicmodel/bin/MeaningCodes.py)
+
+test/test_independent_components.py:10: ImportError
+_ test_row_definedness_survives_rewitness_and_checkpoint_without_changing_truth _
+
+    def test_row_definedness_survives_rewitness_and_checkpoint_without_changing_truth():
+        from Layers import TernaryTruthStore
+        from Meaning import ConceptualMeaning
+        from MeaningCodes import sentence_key
+        store = TernaryTruthStore(8, capacity=4)
+        meaning = ConceptualMeaning.from_description(torch.ones(8))
+        key = sentence_key([b'a', b'cat'])
+        args = dict(document_key='fixture', sentence_index=0, content_key=key, evidence=(1., 1.))
+        row = store.append_meaning(meaning, **args)
+>       first = store.identity_code(row, 64, 3)
+                ^^^^^^^^^^^^^^^^^^^
+
+test/test_independent_components.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), name = 'identity_code'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'TernaryTruthStore' object has no attribute 'identity_code'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+___ test_word_magnitude_counts_containing_rows_and_excludes_definition_rows ____
+
+    def test_word_magnitude_counts_containing_rows_and_excludes_definition_rows():
+        from Layers import TernaryTruthStore
+        from Meaning import ConceptualMeaning
+        from MeaningCodes import sentence_key
+        from MereologicalCodes import MereologicalCodes
+        store = TernaryTruthStore(20, capacity=8)
+        owner = SimpleNamespace(_closed_clause_store=lambda: store,
+            _csw_row_of=lambda cid: None, _definition_index=lambda: None)
+        codes = MereologicalCodes(owner, torch.zeros(2, 20), percept_width=4, percept_event_width=4)
+        for position, kind in enumerate((store.REL_NONE, store.REL_NONE, store.REL_DEF)):
+            row = store.append_meaning(ConceptualMeaning.from_description(torch.ones(20)),
+                rel_type=kind, document_key='fixture', sentence_index=position,
+                content_key=sentence_key([str(position).encode()]))
+            store._append_leaf_terms(row, ((0,), (), ()), (True, True, True))
+        count, value = codes.occurrence_terms()[0]
+>       assert count == 2 and value.norm().item() == pytest.approx(2 / 6)
+E       assert (2 == 2 and 1.4282857179641724 == 0.3333333333333333 ± 3.3e-07
+E         
+E         comparison failed
+E         Obtained: 1.4282857179641724
+E         Expected: 0.3333333333333333 ± 3.3e-07)
+
+test/test_independent_components.py:70: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_independent_components.py::test_definedness_keeps_direction_input_uncertainty_and_evidence_separate
+FAILED test/test_independent_components.py::test_row_definedness_survives_rewitness_and_checkpoint_without_changing_truth
+FAILED test/test_independent_components.py::test_word_magnitude_counts_containing_rows_and_excludes_definition_rows
+3 failed in 2.07s
