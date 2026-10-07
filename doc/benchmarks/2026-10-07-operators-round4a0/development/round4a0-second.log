@@ -1,0 +1,214 @@
+.............................................F....F........F..F.F....... [ 59%]
+.F...........................................F.FF.                       [100%]
+=================================== FAILURES ===================================
+_____ test_both_evidence_poles_survive_checkpoint_separately_from_neither ______
+
+    def test_both_evidence_poles_survive_checkpoint_separately_from_neither():
+        store = TernaryTruthStore(4, capacity=8)
+        both = store.append_idea(torch.ones(4))
+        neither = store.append_idea(torch.ones(4))
+        store.set_evidence(both, .8, .8)
+        restored = TernaryTruthStore(4, capacity=8)
+        restored.load_state_dict(store.state_dict())
+        assert restored.row(both)['evidence'] == pytest.approx((.8, .8))
+>       assert restored.row(neither)['evidence'] == (0., 0.)
+E       assert (0.8000000119...0000011920929) == (0.0, 0.0)
+E         
+E         At index 0 diff: 0.800000011920929 != 0.0
+E         Use -v to get more diff
+
+test/test_clause_storage.py:34: AssertionError
+_____________ test_recursive_absolute_clauses_each_write_one_idea ______________
+
+    def test_recursive_absolute_clauses_each_write_one_idea():
+        store, _ = clause_store()
+        inner = idea_clause()
+        middle = idea_clause(children=(inner,))
+        outer = idea_clause(children=(middle,))
+>       assert store.write_clause(outer, trust=.7) == 2
+E       AssertionError: assert 1 == 2
+E        +  where 1 = write_clause(Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(),...ence=(0.0, 0.0)),), companions=(), subject_word_id=-1, eternal=False, factored_refs=None, order=0, evidence=(0.0, 0.0)), trust=0.7)
+E        +    where write_clause = TernaryTruthStore().write_clause
+
+test/test_clause_storage.py:112: AssertionError
+_____ test_migration_discards_all_old_provisioned_rows_for_reprovisioning ______
+
+    def test_migration_discards_all_old_provisioned_rows_for_reprovisioning():
+        store = TernaryTruthStore(4, capacity=8)
+        store.append_idea(torch.ones(4), trust=.5, evidence=(.5, 0.))
+        old = store.append_idea(torch.ones(4), trust=.8)
+        store.set_origin(old, store.ORIGIN_PROVISIONED)
+        state = store.state_dict()
+        state.pop('truth_schema')
+        restored = TernaryTruthStore(4, capacity=8)
+        with pytest.warns(UserWarning, match='re-provisioned'):
+            restored.load_state_dict(state)
+>       assert len(restored) == 1
+E       assert 0 == 1
+E        +  where 0 = len(TernaryTruthStore())
+
+test/test_clause_storage.py:241: AssertionError
+______________ test_migration_discards_dependents_of_retired_rows ______________
+
+    def test_migration_discards_dependents_of_retired_rows():
+        import copy
+        store = TernaryTruthStore(4, capacity=8)
+        old = store.append_idea(torch.ones(4))
+        store.set_origin(old, store.ORIGIN_PROVISIONED)
+        child = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool),
+            role_refs=(store.occurrence_of(old), None, None))
+        store.append_meaning(child, kind='observation', rel_type=store.REL_PARTOF)
+        store.append_idea(torch.zeros(4))
+        state, extras = copy.deepcopy(store.state_dict()), copy.deepcopy(store.semantic_extras())
+        state.pop('truth_schema')
+        restored = TernaryTruthStore(4, capacity=8)
+        with pytest.warns(UserWarning):
+            restored.load_state_dict(state)
+            restored.load_semantic_extras(extras)
+>       assert len(restored) == 1 and int(restored.occurrence_id[0]) == 2
+                                          ^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_clause_storage.py:279: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore(), name = 'occurrence_id'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'TernaryTruthStore' object has no attribute 'occurrence_id'. Did you mean: 'occurrence_of'?
+
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_______________ test_full_store_can_update_an_existing_relation ________________
+
+    def test_full_store_can_update_an_existing_relation():
+        store, points = clause_store()
+        store.write_clause(part_clause(), trust=.2)
+        for _ in range(store.capacity - 1):
+            store.append_idea(points[1])
+        assert store.write_clause(part_clause(), trust=.8, evidence=(.8, 0.)) == 0
+>       assert len(store) == store.capacity
+E       assert 2 == 32
+E        +  where 2 = len(TernaryTruthStore())
+E        +  and   32 = TernaryTruthStore().capacity
+
+test/test_clause_storage.py:297: AssertionError
+_____ test_predictor_context_carries_owned_reference_without_a_memory_read _____
+
+    def test_predictor_context_carries_owned_reference_without_a_memory_read():
+        store, _ = clause_store()
+        row = store.write_clause(idea_clause())
+        discourse = layer()
+        discourse._ltm_store = store
+        observe(discourse, store.meaning_of(row).roles)
+        discourse.bind_observation_occurrence(0, store.occurrence_of(row))
+        discourse.detach_prediction_context()
+        discourse._ltm_store = None
+        anchors = discourse.situation_references(0)
+>       assert len(anchors) == 1 and anchors[0].row_id == int(store.row_ids[row])
+E       assert (0 == 1)
+E        +  where 0 = len(())
+
+test/test_sentence_references.py:99: AssertionError
+_______ TestStatelessRevive.test_load_syncs_view_even_with_no_user_rows ________
+
+self = <test_ltm_consolidation.TestStatelessRevive testMethod=test_load_syncs_view_even_with_no_user_rows>
+
+    def test_load_syncs_view_even_with_no_user_rows(self):
+        # A checkpoint with only provisioned + conversation rows still
+        # rematerializes the view on load (stateless drop is a no-op).
+        from Layers import TernaryTruthStore as T
+        m = _make_model(_ON_CONFIG)
+        store = m.symbolSpace.ltm_store
+        store.reset()
+        D = store.nDim
+        v = torch.zeros(D); v[0] = 1.0
+        i0 = store.append_idea(v, trust=0.7, evidence=(.7, 0.))
+        store.set_origin(i0, T.ORIGIN_PROVISIONED, text="p")
+        store.append_idea(v, trust=0.2)                    # conversation
+        sd = m.state_dict()
+        m2 = _make_model(_ON_CONFIG)
+        m2.load_state_dict(sd, strict=False)
+>       self.assertEqual(len(m2.symbolSpace.ltm_store), 2)
+E       AssertionError: 1 != 2
+
+test/test_ltm_consolidation.py:868: AssertionError
+____________ TestStatelessRevive.test_stateful_load_keeps_user_rows ____________
+
+self = <test_ltm_consolidation.TestStatelessRevive testMethod=test_stateful_load_keeps_user_rows>
+
+    def test_stateful_load_keeps_user_rows(self):
+        from Layers import TernaryTruthStore as T
+        m = _make_model(_ON_CONFIG, stateless=False)
+        self._seed(m)
+        sd = m.state_dict()
+        m2 = _make_model(_ON_CONFIG, stateless=False)        # stateful
+        m2.load_state_dict(sd, strict=False)
+        store = m2.symbolSpace.ltm_store
+        # every row survives; the user row is durable state.
+>       self.assertEqual(store.rows_of_origin(T.ORIGIN_USER).tolist(), [1])
+E       AssertionError: Lists differ: [] != [1]
+E       
+E       Second list contains 1 additional elements.
+E       First extra element 0:
+E       1
+E       
+E       - []
+E       + [1]
+E       ?  +
+
+test/test_ltm_consolidation.py:848: AssertionError
+_ TestStatelessRevive.test_stateless_load_prunes_only_after_structural_owners_are_restored _
+
+self = <test_ltm_consolidation.TestStatelessRevive testMethod=test_stateless_load_prunes_only_after_structural_owners_are_restored>
+
+    def test_stateless_load_prunes_only_after_structural_owners_are_restored(self):
+        from Layers import TernaryTruthStore as T
+        m = _make_model(_ON_CONFIG)
+        self._seed(m)
+        sd = m.state_dict()
+        m2 = _make_model(_ON_CONFIG)              # stateless (default)
+        m2.load_state_dict(sd, strict=False)
+        store = m2.symbolSpace.ltm_store
+        # Tensor-only restore cannot prove that another owner does not retain
+        # this request-scoped occurrence.  It withdraws fact authority now,
+        # then prunes after the semantic sidecar / thought owners are restored.
+>       self.assertEqual(len(store), 3)
+E       AssertionError: 1 != 3
+
+test/test_ltm_consolidation.py:824: AssertionError
+=============================== warnings summary ===============================
+test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_clause_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither
+FAILED test/test_clause_storage.py::test_recursive_absolute_clauses_each_write_one_idea
+FAILED test/test_clause_storage.py::test_migration_discards_all_old_provisioned_rows_for_reprovisioning
+FAILED test/test_clause_storage.py::test_migration_discards_dependents_of_retired_rows
+FAILED test/test_clause_storage.py::test_full_store_can_update_an_existing_relation
+FAILED test/test_sentence_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read
+FAILED test/test_ltm_consolidation.py::TestStatelessRevive::test_load_syncs_view_even_with_no_user_rows
+FAILED test/test_ltm_consolidation.py::TestStatelessRevive::test_stateful_load_keeps_user_rows
+FAILED test/test_ltm_consolidation.py::TestStatelessRevive::test_stateless_load_prunes_only_after_structural_owners_are_restored
+9 failed, 113 passed, 2 warnings in 13.78s

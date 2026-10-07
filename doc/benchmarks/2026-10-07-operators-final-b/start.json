@@ -1,0 +1,9 @@
+{
+  "baseline": "operators-final/delivered-source",
+  "working_difference": [
+    "test/test_bounded_stm_fold.py"
+  ],
+  "difference": "one removed trailing space; executable AST unchanged",
+  "prior_receipt_files": 2119,
+  "commits": false
+}

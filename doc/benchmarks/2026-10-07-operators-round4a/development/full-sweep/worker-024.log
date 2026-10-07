@@ -1,0 +1,29 @@
+...............ss....................................................... [ 60%]
+....s........................F.......s.........                          [100%]
+=================================== FAILURES ===================================
+_________ test_streaming_and_packed_boundary_use_same_full_roles[True] _________
+test/test_sentence_expectation.py:120: in test_streaming_and_packed_boundary_use_same_full_roles
+    _, _, cost = commit_reading(f.language, f.registry, entry, packed._ltm_store,
+test/reading_fixtures.py:219: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20430: in _commit_sentence
+    record = self._last_sentence_understanding
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute '_last_sentence_understanding'
+=============================== warnings summary ===============================
+test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_runepoch_runtime_split_no_raise
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7187: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2845/test_first_and_later_words_kee0/tiny_chunk_model.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7187: RuntimeWarning: lossrev_band_clipped [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2845/test_first_and_later_words_kee0/tiny_chunk_model.xml]: lossRev width clip (rev 5 vs fwd 104) misaligns the trailing where/when band; the clipped event takes what_scale
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]
+1 failed, 114 passed, 4 skipped, 3 warnings in 14.23s

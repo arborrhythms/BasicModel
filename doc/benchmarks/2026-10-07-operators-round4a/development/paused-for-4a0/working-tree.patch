@@ -1,0 +1,1156 @@
+diff --git a/bin/ClauseRow.py b/bin/ClauseRow.py
+index 2adf13079..e879a6212 100644
+--- a/bin/ClauseRow.py
++++ b/bin/ClauseRow.py
+@@ -154,6 +154,40 @@ def attach_clause_index(model, store, space):
+ class ClauseRows:
+     """One writer for completed clauses; vector and row readers share its rows."""
+ 
++    @torch.no_grad()
++    def content_key(self, row):
++        """Stable sentence content address, independent of occurrence provenance.
++
++        Text closings bind identified word bytes. A directly appended opaque
++        sentence uses its initial form coordinates; its later meaning is not
++        part of the key. Old checkpoints acquire that same fallback on read.
++        """
++        import hashlib
++        row = int(row)
++        if not 0 <= row < len(self) or int(self.rel_type[row]) != self.REL_NONE:
++            raise ValueError('sentence content keys require a REL_NONE row')
++        if not bool(self.sentence_content_keys[row].any()):
++            width = int(getattr(self, 'image_form_width', self.nDim))
++            form = self.slots[row, :, :width].detach().cpu().float().numpy().astype('<f4')
++            key = hashlib.sha256(b'sentence-form-v1\0' + form.tobytes()
++                                 + bytes(self.role_mask[row].tolist())).digest()
++            self.sentence_content_keys[row] = self.sentence_content_keys.new_tensor(list(key))
++        return bytes(self.sentence_content_keys[row].tolist())
++
++    @torch.no_grad()
++    def bind_sentence_content(self, row, words):
++        from MeaningCodes import sentence_key
++        if int(self.rel_type[row]) != self.REL_NONE:
++            raise ValueError('only sentence rows have a sentence content address')
++        key = sentence_key(words)
++        self.sentence_content_keys[row] = self.sentence_content_keys.new_tensor(list(key))
++        return key
++
++    def rows_for_content(self, key):
++        """Content-addressed lookup retains every occurrence and its recency."""
++        return tuple(row for row in range(len(self))
++                     if int(self.rel_type[row]) == self.REL_NONE and self.content_key(row) == key)
++
+     def configure_clause_index(self, *, allocate, concept_point, predicate_kind=None, on_part=None, preflight=None):
+         object.__setattr__(self, '_allocate_clause_row', allocate)
+         object.__setattr__(self, '_concept_point', concept_point)
+diff --git a/bin/Interpret.py b/bin/Interpret.py
+index 72c9cf5de..b913ea3f6 100644
+--- a/bin/Interpret.py
++++ b/bin/Interpret.py
+@@ -5,10 +5,13 @@ from Definitions import form_key
+ 
+ 
+ def activate_code(atoms, activation, form_width):
+-    """Interpret signed evidence without an additive inverse on the form."""
++    """Scale both blocks by magnitude; negative evidence exchanges meaning poles."""
++    from MeaningCodes import exchange
+     value = activation.unsqueeze(-1)
++    meaning = atoms[..., form_width:]
++    meaning = torch.where(value < 0, exchange(meaning), meaning)
+     return torch.cat((atoms[..., :form_width] * value.abs(),
+-                      atoms[..., form_width:] * value), -1)
++                      meaning * value.abs()), -1)
+ 
+ 
+ class InterpretLayer(GrammarLayer):
+@@ -266,7 +269,7 @@ class InterpretLayer(GrammarLayer):
+         return row
+ 
+     def activate(self, atoms, activation):
+-        """Magnitude on form; signed evidence on the contextual complement."""
++        """Magnitude on form and meaning; sign selects the meaning poles."""
+         bank = getattr(self.owner, 'similarity_codebook', None)
+         derived = getattr(bank, 'mereology', None)
+         width = atoms.shape[-1] if derived is None else derived.percept_event_width
+diff --git a/bin/Language.py b/bin/Language.py
+index 15083ba66..26d492819 100644
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -2478,10 +2478,10 @@ TheGrammar = Grammar()
+ # =====================================================================
+ 
+ class NotLayer(GrammarLayer):
+-    footprint_reads = footprint_writes = ('poles',)
++    footprint_reads = footprint_writes = ('meaning', 'poles')
+     field_only = True
+     field_action = 5
+-    """Exchange evidence poles; the paired concept code is unchanged."""
++    """Exchange evidence poles, including every pair on the meaning face."""
+     inverse_kind = 'unary'
+     scope_transparent = True
+     polarity_effect = 'invert'
+@@ -2504,7 +2504,7 @@ class NotLayer(GrammarLayer):
+     def forward(self, x):
+         """Exchange explicit evidence; serial code slots retain their identity."""
+         if self.representation == 'code':
+-            return x
++            return self.compose_blocks(lambda form: form, x)
+         self._check_bivector_shape(x)
+         bivector = x[..., :2].flip(dims=(-1,))
+         rest     = x[..., 2:]
+@@ -2629,7 +2629,7 @@ class IntersectionLayer(GrammarLayer):
+         """
+         if self.butterfly:
+             return self._butterfly_forward(left)
+-        return Ops.intersection(left, right, monotonic=self.monotonic)
++        return self.compose_blocks(Ops.intersection, left, right, monotonic=self.monotonic)
+ 
+     def reverse(self, parent, basis=None,
+                 left_rows=None, right_rows=None,
+@@ -2703,7 +2703,7 @@ class IntersectionLayer(GrammarLayer):
+             # the configured N (typically left and right are halves).
+             x = torch.cat([left, right], dim=-2)
+             return self._butterfly_forward(x)
+-        return Ops.intersection(left, right, monotonic=self.monotonic)
++        return self.compose_blocks(Ops.intersection, left, right, monotonic=self.monotonic)
+ 
+     def generate(self, parent, basis=None,
+                  left_rows=None, right_rows=None,
+@@ -2784,7 +2784,7 @@ class UnionLayer(GrammarLayer):
+         """
+         if self.butterfly:
+             return self._butterfly_forward(left)
+-        return Ops.union(left, right, monotonic=self.monotonic)
++        return self.compose_blocks(Ops.union, left, right, monotonic=self.monotonic)
+ 
+     def reverse(self, parent, basis=None,
+                 left_rows=None, right_rows=None,
+@@ -2844,7 +2844,7 @@ class UnionLayer(GrammarLayer):
+         if self.butterfly:
+             x = torch.cat([left, right], dim=-2)
+             return self._butterfly_forward(x)
+-        return Ops.union(left, right, monotonic=self.monotonic)
++        return self.compose_blocks(Ops.union, left, right, monotonic=self.monotonic)
+ 
+     def generate(self, parent, basis=None,
+                  left_rows=None, right_rows=None,
+@@ -4191,11 +4191,13 @@ class _SearchedBinaryLayer(GrammarLayer):
+         return torch.cat((value, value), -1)
+ 
+     def forward(self, left, right=None, **activation):
+-        return self._butterfly_forward(left) if self.butterfly else self.kernel(left, right, **activation)
++        return self._butterfly_forward(left) if self.butterfly else self.compose(left, right, **activation)
+ 
+     def compose(self, left, right, **activation):
+         if self.butterfly:
+             return self._butterfly_forward(torch.cat((left, right), -2))
++        if self.rule_name in ('conjunction', 'disjunction') and getattr(self, 'representation', 'code') == 'code':
++            return self.compose_blocks(self.kernel, left, right, **activation)
+         return self.kernel(left, right, **activation)
+ 
+     def reverse(self, parent, basis=None, left_rows=None, right_rows=None,
+diff --git a/bin/Layers.py b/bin/Layers.py
+index 09d557c2b..f8e6ec125 100644
+--- a/bin/Layers.py
++++ b/bin/Layers.py
+@@ -2441,6 +2441,24 @@ class GrammarLayer(Layer):
+     meaning_mode = None
+     same_reference_idempotent = False
+     predicate_identity = None
++    meaning_layout = None
++
++    def compose_blocks(self, kernel, *operands, **kwargs):
++        """Apply the form kernel and the independent declared meaning rule."""
++        layout = self.meaning_layout
++        if layout is None or operands[0].shape[-1] != layout[1]:
++            return kernel(*operands, **kwargs)
++        form_width, _ = layout
++        forms = tuple(value[..., :form_width] for value in operands)
++        # Preserve direct tensor alias idempotence in the original form kernel.
++        if len(operands) == 2 and operands[0] is operands[1]:
++            forms = (forms[0], forms[0])
++        form = kernel(*forms, **kwargs)
++        meanings = tuple(value[..., form_width:] for value in operands)
++        from MeaningCodes import compose
++        meaning = (meanings[0] if 'meaning' not in self.footprint_writes else
++                   compose(self.rule_name, *meanings))
++        return torch.cat((form, meaning), -1)
+ 
+     def compose_from_grammar_context(self, operands, *, context):
+         """Adapt this legacy tensor layer to the public structural-face call.
+@@ -2456,6 +2474,8 @@ class GrammarLayer(Layer):
+             raise ValueError(
+                 f"{type(self).__name__} expects {self.arity} structural operands, "
+                 f"got {len(operands)}")
++        if 'meaning' not in self.footprint_writes:
++            return self.compose_blocks(self.compose, *operands)
+         return self.compose(*operands)
+ 
+     def generate_from_grammar_context(self, result, *, context):
+@@ -2525,6 +2545,13 @@ class GrammarLayer(Layer):
+         node.
+         """
+         super().__init__(nInput, nOutput)
++        # Freeze the configured split on the operator; numeric models retain
++        # their original kernels and consume exactly the original RNG stream.
++        if TheXMLConfig.get('architecture.data.dataType', default=None) == 'embedding':
++            form_width = int(TheXMLConfig.space('PartSpace', 'nDim'))
++            code_width = int(TheXMLConfig.space('ConceptualSpace', 'nDim'))
++            if code_width > form_width:
++                self.meaning_layout = (form_width, code_width)
+         # -- Butterfly cascade state (Stage 5, 2026-05-27 revision) --
+         # FFT-style element-pair cascade over a flattened element axis.
+         # Each node is a 2-element op with a 2x2 LDU block (4 scalars).
+@@ -8698,6 +8725,7 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
+         self.register_buffer('_occurrence_namespace', torch.tensor(list(uuid.uuid4().bytes), dtype=torch.uint8))
+         self.register_buffer('metadata_required', torch.zeros(capacity, dtype=torch.bool))
+         self.register_buffer('semantic_fingerprint', torch.zeros(capacity, 32, dtype=torch.uint8))
++        self.register_buffer('sentence_content_keys', torch.zeros(capacity, 32, dtype=torch.uint8))
+         self._semantic_rows = {}
+         # Estimate/observation provenance has the same durable owner as the
+         # rows themselves. It is sidecar data, not a second LTM: occurrence
+@@ -9205,6 +9233,7 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
+         state_dict.pop(prefix + 'trust', None)
+         # Older checkpoints did not score surprise: unknown is not perfect.
+         state_dict.setdefault(prefix + 'surprise', torch.full_like(self.surprise, -1.))
++        state_dict.setdefault(prefix + 'sentence_content_keys', torch.zeros_like(self.sentence_content_keys))
+         old_schema = prefix + 'truth_schema' not in state_dict
+         # Scalar trust cannot reconstruct missing identification evidence.
+         state_dict.setdefault(prefix + 'c_plus', torch.zeros_like(self.c_plus))
+@@ -9433,6 +9462,9 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
+             if ts >= float(self._next_ts):
+                 self._next_ts.fill_(int(ts) + 1)
+         self.count.fill_(n + 1)
++        self.sentence_content_keys[n].zero_()
++        if int(self.rel_type[n]) == self.REL_NONE:
++            self.content_key(n)
+         self._append_leaf_terms(n, terms, complete, stream)
+         return n
+ 
+@@ -9917,7 +9949,7 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
+         self.surprise[:n_keep] = self.surprise[keep]
+         self.origin[:n_keep] = self.origin[keep]
+         for name in ('role_mask', 'record_kind', 'grammatical_mode', 'polarity',
+-                     'occurrence_id', 'metadata_required', 'semantic_fingerprint',
++                     'occurrence_id', 'metadata_required', 'semantic_fingerprint', 'sentence_content_keys',
+                      'c_plus', 'c_minus', 'refs', 'row_ids', 'where', 'when', 'order'):
+             values = getattr(self, name)
+             values[:n_keep] = values[keep]
+@@ -9928,6 +9960,7 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
+             key: value for key, value in self._expectation_rows.items()
+             if key in alive}
+         self.slots[n_keep:c].zero_()
++        self.sentence_content_keys[n_keep:c].zero_()
+         self.rel_type[n_keep:c].zero_()
+         self.timestamp[n_keep:c].zero_()
+         self.surprise[n_keep:c].fill_(-1.)
+diff --git a/bin/MereologicalCodes.py b/bin/MereologicalCodes.py
+index 81f7c0b12..22efd1c5f 100644
+--- a/bin/MereologicalCodes.py
++++ b/bin/MereologicalCodes.py
+@@ -2,8 +2,8 @@
+ 
+ The cached representation is [form | meaning]. Perception reconstruction alone
+ writes native prototypes and evidence; the sentence read detaches them. Order-zero
+-meaning is the detached occurrence-context mean. Letters need no conceptual row.
+-Bootstrap from conceptual wholes is deferred to the operators update.
++meaning is the detached occurrence-context mean of fixed sentence identities,
++on the for pole, with no against evidence. Letters need no conceptual row.
+ """
+ import torch
+ from torch import nn
+@@ -21,6 +21,12 @@ class MereologicalCodes(nn.Module):
+         if not 0 < self.percept_width <= self.percept_event_width <= self.code_width:
+             raise ValueError('paired representation must contain the native form block')
+         self.context_width = self.code_width - self.percept_event_width
++        if self.context_width % 2:
++            raise ValueError('the meaning complement holds complete pole pairs')
++        from util import TheXMLConfig
++        self.meaning_pairs = self.context_width // 2
++        self.meaning_ones = min(self.meaning_pairs, int(TheXMLConfig.get(
++            'ConceptualSpace.meaningOnes', default=3)))
+         self._context = None
+ 
+     @torch.no_grad()
+@@ -31,24 +37,25 @@ class MereologicalCodes(nn.Module):
+         Its truth poles state a different fact and are never changed here.
+         """
+         store = self.owner._closed_clause_store()
+-        if store is None or not len(store):
++        if store is None or not len(store) or not self.context_width:
+             return {}
+         terms = {}
+         now = float(store._next_ts) - 1
+         terms = occurrence_memberships(self.owner, store)
+         result = {}
+-        width = self.code_width
++        from MeaningCodes import identity_code
++        codes = {row: identity_code(store.content_key(row), self.meaning_pairs,
++                                  self.meaning_ones, like=store.slots)
++                 for row in range(len(store)) if int(store.rel_type[row]) == store.REL_NONE}
+         for code, rows in terms.items():
+             rows = [r for r in sorted(rows) if int(store.rel_type[r]) == store.REL_NONE]
+             if not rows:
+                 continue
+             idx = torch.tensor(rows, dtype=torch.long, device=store.slots.device)
+             weight = 1 / (1 + (now-store.timestamp[idx]).clamp_min(0))
+-            roots = store.slots[idx, 0, :width].detach()
+-            if roots.shape[-1] < width:
+-                roots = F.pad(roots, (0, width-roots.shape[-1]))
+-            roots = roots[:, self.percept_event_width:]
+-            result[code] = (len(rows), ((roots * weight[:, None]).sum(0) / weight.sum()).detach().clone())
++            roots = torch.stack([codes[row] for row in rows])
++            positive = (roots * weight[:, None]).sum(0) / weight.sum()
++            result[code] = (len(rows), torch.cat((positive, torch.zeros_like(positive))).detach())
+         return result
+ 
+     def begin_forward(self):
+diff --git a/bin/Models.py b/bin/Models.py
+index 14d504c48..f8f11372e 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -2713,7 +2713,8 @@ class BaseModel(Mereology, nn.Module):
+         reader = getattr(self, '_sentence_reader_costs', None) if sentence else None
+         rows = getattr(self, '_sentence_reader_rows', None) if sentence else None
+         costs = registry_costs(registry, reader_rows=(
+-            torch.zeros_like(registry.row_mask) if reader is not None else rows))
++            torch.zeros_like(registry.row_mask) if reader is not None else rows),
++            expectation_rows=(torch.zeros_like(registry.row_mask) if reader is not None else None))
+         if reader is not None:
+             costs.update(reader)
+         owners = self.objective_parameter_groups(optimizer)
+@@ -20425,6 +20426,13 @@ class BasicModel(BaseModel):
+                     expectation=comparison, stream=b)
+                 if row >= 0:
+                     row_ids[b] = int(store.row_ids[row])
++                    if int(store.rel_type[row]) == store.REL_NONE:
++                        record = self._last_sentence_understanding
++                        owner = self._concept_owner()
++                        words = [owner.word_surface_for_row(int(code)) for code in
++                                 record.word_rows[b][record.word_valid[b]].tolist()]
++                        if words and all(isinstance(word, bytes) for word in words):
++                            store.bind_sentence_content(row, words)
+                 if row >= 0 and retain:
+                     disc.bind_observation_occurrence(b, store.row(row)['occurrence'])
+         fields = []
+@@ -20704,7 +20712,7 @@ class BasicModel(BaseModel):
+                 trial, pullback, path, registry, decomposition_loss, walk_loss = pending_steps.pop(0)
+                 self._sentence_trial, self._sentence_pullback = trial, pullback
+                 self._sentence_cost_registry = registry
+-                from SentenceCredit import reader_weights, reader_costs
++                from SentenceCredit import reader_weights, reader_costs, expectation_costs
+                 self._sentence_comparison_reader_weights = reader_weights(
+                     torch.stack(cost_parts, 1), present, self._sentence_departure)
+                 self._sentence_reader_weights = reader_weights(
+@@ -20713,6 +20721,9 @@ class BasicModel(BaseModel):
+                 self._sentence_reader_costs = (reader_costs(reader_registries,
+                     self._sentence_reader_weights) if trial == 'explore' else {})
+                 presented_step = any(v.requires_grad for v in self._sentence_reader_costs.values())
++                if trial == 'explore':
++                    self._sentence_reader_costs.update(expectation_costs(
++                        reader_registries, self._sentence_reader_weights))
+                 comparison_costs = (reader_costs(comparison_registries,
+                     self._sentence_comparison_reader_weights) if trial == 'explore' else {})
+                 for name, value in comparison_costs.items():
+@@ -24354,7 +24365,14 @@ class ModelFactory:
+             and _cs_input_dim == cs_dim_e
+             and ps_dim == ws_dim
+             and 0 < ps_dim < cs_dim)
+-        if (is_embedding_mode and not (ps_slab == cs_slab)
++        # A declared sentence-identity complement is an indexed extension of
++        # each word's unchanged form, also on the small grammar fixtures'
++        # mixing path. It does not reshape the perceptual slab.
++        _meaning_extension = (
++            is_embedding_mode and 'meaningOnes' in cfg.get('ConceptualSpace', {})
++            and ps_n == cs_n == _cs_input_n and _cs_input_dim == ps_dim_e
++            and cs_dim_e > ps_dim_e and (cs_dim_e-ps_dim_e) % 2 == 0)
++        if (is_embedding_mode and not (ps_slab == cs_slab or _meaning_extension)
+                 and not _sparse_activation_boundary):
+             errors.append(
+                 f"flat-slab invariant violated: PS.nOutput*content "
+diff --git a/bin/ObjectiveOwnership.py b/bin/ObjectiveOwnership.py
+index 5e1f5afb9..ca7cbc4d9 100644
+--- a/bin/ObjectiveOwnership.py
++++ b/bin/ObjectiveOwnership.py
+@@ -6,7 +6,7 @@ from GradientDiagnostics import _sum_gradients
+ PRIMARY = ('reconstruction', 'expectation', 'output')
+ 
+ 
+-def registry_costs(registry, *, reader_rows=None):
++def registry_costs(registry, *, reader_rows=None, expectation_rows=None):
+     """Read trained terms from Error, retaining lesson and penalty boundaries."""
+     result = {}
+     for name, term in registry._terms.items():
+@@ -29,14 +29,16 @@ def registry_costs(registry, *, reader_rows=None):
+         raw = term['weight'] * term.get('multiplier', 1.) * registry._value(term)
+         for owner in owners:
+             value = raw
+-            if reader_rows is not None and owner in ('output', 'penalty.output'):
++            rows = (reader_rows if owner in ('output', 'penalty.output') else
++                    expectation_rows if owner in ('expectation', 'penalty.expectation') else None)
++            if rows is not None:
+                 # A discarded trial supplies no Adam step, including no
+                 # momentum-only update from a fabricated zero gradient.
+-                if not bool(reader_rows.any()):
++                if not bool(rows.any()):
+                     continue
+                 if value.ndim:
+-                    value = value * reader_rows.to(value)
+-                elif not bool(reader_rows.all()):
++                    value = value * rows.to(value)
++                elif not bool(rows.all()):
+                     raise ValueError('a trial reader cost must retain its batch rows')
+             if value.ndim:
+                 active = registry.row_mask
+diff --git a/bin/SentenceCredit.py b/bin/SentenceCredit.py
+index fcf4c363d..f4a46947c 100644
+--- a/bin/SentenceCredit.py
++++ b/bin/SentenceCredit.py
+@@ -113,3 +113,14 @@ def reader_costs(registries, weights):
+             if name in ('output', 'penalty.output'):
+                 result[name] = result.get(name, 0) + value
+     return result
++
++
++def expectation_costs(registries, weights):
++    """One predictor update against only the reconstruction-kept trial rows."""
++    from ObjectiveOwnership import registry_costs
++    result = {}
++    for registry, rows in zip(registries, weights.unbind(-1), strict=True):
++        for name, value in registry_costs(registry, expectation_rows=rows).items():
++            if name in ('expectation', 'penalty.expectation'):
++                result[name] = result.get(name, 0) + value
++    return result
+diff --git a/data/BasicModel.xml b/data/BasicModel.xml
+index 844220b64..2bb2afd9b 100644
+--- a/data/BasicModel.xml
++++ b/data/BasicModel.xml
+@@ -232,6 +232,8 @@
+     <activeVectors>32768</activeVectors>
+     <stmCapacity>8</stmCapacity>
+     <nDim>1000</nDim>
++    <!-- Round 4a: the 896-D complement contains 448 pole pairs. -->
++    <meaningOnes>6</meaningOnes>
+     <nOutput>8</nOutput>
+     <nOutputDim>1000</nOutputDim>
+ 
+diff --git a/data/MM_grammar.xml b/data/MM_grammar.xml
+index f4a8739e7..562a48517 100644
+--- a/data/MM_grammar.xml
++++ b/data/MM_grammar.xml
+@@ -44,7 +44,9 @@
+ 
+   <ConceptualSpace>
+     <nOutput>8</nOutput>
+-    <nDim>104</nDim>
++    <nDim>232</nDim>
++    <!-- Round 4a: 64 for/against pairs after the unchanged 104-D form. -->
++    <meaningOnes>3</meaningOnes>
+     <!-- §14 addendum: symbol/concept pairs only; letters stay in PS. -->
+     <nVectors>8</nVectors>
+     <invertible>true</invertible>
+diff --git a/data/XOR_grammar.xml b/data/XOR_grammar.xml
+index 7e030410f..560a63307 100644
+--- a/data/XOR_grammar.xml
++++ b/data/XOR_grammar.xml
+@@ -73,7 +73,9 @@
+ 
+   <ConceptualSpace>
+     <nOutput>6</nOutput>
+-    <nDim>104</nDim>
++    <nDim>232</nDim>
++    <!-- Round 4a: 64 for/against pairs after the unchanged 104-D form. -->
++    <meaningOnes>3</meaningOnes>
+     <!-- §14 addendum: symbol/concept pairs only; letters stay in PS. -->
+     <nVectors>6</nVectors>
+     <invertible>true</invertible>
+diff --git a/data/model.xsd b/data/model.xsd
+index 02a63dd35..e6414cb89 100644
+--- a/data/model.xsd
++++ b/data/model.xsd
+@@ -1121,6 +1121,7 @@
+ 
+   <xs:complexType name="conceptualSpaceType">
+     <xs:all>
++      <xs:element name="meaningOnes" type="xs:positiveInteger" minOccurs="0"/>
+       <xs:element name="latticeMargin" type="nonNegativeFloat" minOccurs="0"/>
+       <!-- Incoming-connection L1 for the indexed conceptsFromPercepts Sigma.
+            0 disables; BasicModel opts into weak 0.01. Not activation shrink. -->
+diff --git a/doc/Architecture.md b/doc/Architecture.md
+index 2290dcea2..69201cffe 100644
+--- a/doc/Architecture.md
++++ b/doc/Architecture.md
+@@ -1201,10 +1201,10 @@ wholes a word had — the alphabet cuts — were common to every word of a type.
+ 
+ The round-2 closing image acts only after the complete perceptual block:
+ its form content and reserved coordinates are untouched. Interpretation and
+-retained leaves multiply form by activation magnitude and meaning by signed
+-activation; poles carry the sign into the closing (operators round 2c). With a zero-width
+-concept complement (XOR_grammar and MM_grammar), the image is exactly zero;
+-thought reads the conceived complement while storage keeps the observation.
++retained leaves multiply both blocks by activation magnitude and exchange
++meaning poles for a negative activation (round 4a). The two grammar gates now
++have a 128-coordinate bipolar complement. The image remains zero without a
++prior forecast; thought reads the conceived complement while storage keeps the observation.
+ 
+ The midpoint returns under the scheme confirmed on 2026-10-06 (operators
+ update plan §12–§13): the wholes that bound a word are the alphabet cuts
+@@ -1220,7 +1220,8 @@ Generally characterized codes have zero location/time coordinates in the
+ native perceptual event block. Occurrences carry their own bracket and time.
+ Occurrence rows are not the WS types used for the upper bound. They supply the
+ concept's position in conceptual space: the detached, recency-weighted context
+-mean on the complement of the form block. Existing references and leaf postings give the two-way
++mean of fixed sentence identity codes on the for pole, with a zero against
++pole, on the complement of the form block. Existing references and leaf postings give the two-way
+ lookup. A word primes its occurrence rows, and a primed row its constituents;
+ this conduction admits no new row.
+ 
+@@ -1232,19 +1233,17 @@ Their symbols can have different forms. Max/min folds of forms can coincide,
+ and product composition preserves partner differences only on the other
+ operand's support; form support and root geometry are measured at both endpoints.
+ 
+-Composition still applies the current binding kernel across the paired vector;
+-its normalization can couple block magnitudes. The fold composing forms at all
+-orders, Kleene meet and join on meanings, bootstrap of the complement from the
+-conceptual wholes' locations, the catalogue's `not` items, and expectation's
+-negative image acting on the concept face only (item 2) remain for the operators
+-update. No bootstrap or co-activation objective is added here.
++Round 4a composes each block independently. The form retains round 3a's
++binding kernel and normalization. The meaning complement is bipolar evidence:
++conjunction/intersection `(min⁺, max⁻)`, disjunction/union `(max⁺, min⁻)`,
++sum the mean of each pole, and `not` the pole exchange. Operators without a
++meaning write pass it through. Form normalization never rescales meaning.
+ 
+-XOR_grammar and MM_grammar have 22-dimensional native events and paired
+-representations since 6.8 §22: fourteen form content coordinates, the
+-eight-coordinate address band, and an empty meaning complement. Their concepts are empty: identical contexts with no bootstrap.
+-The XOR class and reconstruction table measures perception's composition of
+-forms, its inverse, the affine read at unit norm, and one owner. The connectives
+-over meanings are measured where meanings exist, as in MM_xor's field path.
++XOR_grammar and MM_grammar retain 104-dimensional native form events and add
++128 meaning coordinates (64 pole pairs, three identity bits per sentence).
++BasicModel's existing 896-coordinate complement holds 448 pairs with six
++identity bits. The static membership certificate, including negation, is the
++semantic test; the XOR class gate may finish with mixed connectives.
+ 
+ `canonical_shape("ConceptualSpace")` remains `(0,0)`. Lexical identity is read
+ by scale-free perceptual cosine and retains either activation pole's spelling.
+@@ -2647,40 +2646,32 @@ atom's bit stream. Other percept prototypes retain perception's reconstruction
+ owner. Identified words read their exact bytes from the indexed row; their
+ rung-zero reconstruction term is an audit, with zero expected error.
+ 
+-**The concept.** An order-0 concept's position in conceptual space is
+-context, entirely: the mean of its occurrence rows' roots on the conceptual
+-coordinates and the conceptual wholes it belongs to (sets one order up,
+-situation and document codes, properties as concepts), by co-activation;
+-zero before it has any; shared by concepts with the same contexts, which is
+-correct (a concept is its contexts; `hello`/`loving` and `world`/`there` in
+-the XOR corpus). Nothing enters from below (the arbitrariness of the sign).
+-At orders ≥ 1 meaning has two sources, composition from below (the
+-connectives over constituent meanings) and context from above; identity keeps
+-one (the fold). One conceptual space serves every order; order is a stamp on
+-the row (the fold-provenance record), and its one bearing on placement is
+-direction: identity from below, meaning from above, at every rung. Minting is
+-order's other role: the sigma fold makes the co-activating set one order
+-above its members; a narrowing stays at its order.
+-
+-**The connectives.** With zero as uncertainty the connectives over codes are
+-Kleene's: `∧ = min`, `∨ = max`, `not = −d` (the exchange of the two poles),
+-the meet and join of the towers' cube, which is a Kleene algebra under the
+-componentwise order; De Morgan is exact and no sign pools. The present
+-binding kernel (normalized Hadamard product of signed carriers) is VSA
+-binding whose sign is a phase, so `(−x)∘(−y) = x∘y`; it cannot host negation
+-and composes forms only in the interim. The connectives over meanings are
+-measured where meanings exist (MM_xor's field path); in the gate
+-configurations the concepts are empty, so the XOR table measures perception's
+-composition of forms, its inverse, one affine read shared with the sum
+-control, and one owner (the composition mechanism gate, 6.8 plan §12.1).
+-
+-**Readers and the two blocks (2026-10-05).** Identity reads stay on the form
+-block (the read-back's `percept_width`), similarity reads on the complement,
+-and the class reader and the pair search's residual read the full vector;
+-nothing that must recover *which* words reads the complement alone. In the
+-gate configurations the form is the whole content and the complement is
+-empty; in production the complement holds the detached context mean, which is
+-written there and read by no gate.
++**The concept.** Order-zero meaning is the detached recency-weighted mean
++of fixed sparse identity codes of containing REL_NONE sentence rows, using
++the existing leaf postings and references and excluding definitions. The mean
++fills the for pole; the against pole is zero. Absence is unknown. Each identity
++is generated from the sentence content key by a private generator; it is an
++index with no optimizer owner. Text content keys hash ordered, length-framed
++identified word bytes. Direct opaque rows use their initial form. Occurrence
++addresses remain separate provenance. The snapshot precedes both trial walks,
++and composed meanings are still stored as `o`.
++
++At higher orders, meaning also composes from below by the bilattice.
++Conjunction/intersection meet the for poles and join the against poles;
++disjunction/union join for and meet against. Sum averages both, and negation
++exchanges them. `(0,0)` is unknown and `(1,1)` is conflicting evidence.
++Thus `not a` has a's extent against and none for, and `a ∧ not b` has b's
++extent against and none for. The form keeps the existing binding kernels;
++the two blocks are never normalized together in composition.
++
++**Readers and the two blocks (round 4a).** Identity reads stay on form,
++similarity reads on meaning, and the class reader and pair-search residual
++read the paired vector. Both grammar gates have 64 pole pairs; BasicModel has
++448. A static certificate exhausts every word pair and stored corpus row.
++At corpus scale the sparse representation admits false memberships, reported
++as a diagnostic; exact membership is answered by postings. The predictor
++trains on the committed trial's row only. The adjacent-word centroid and
++co-activation priming remain outside 4a.
+ 
+ **Footprints.** Each operator declares what it reads and writes over form
+ (perceptual space), meaning (conceptual space) and the poles (the symbol's
+diff --git a/doc/FutureWork.md b/doc/FutureWork.md
+index d55b856e6..68170f343 100644
+--- a/doc/FutureWork.md
++++ b/doc/FutureWork.md
+@@ -1100,21 +1100,27 @@ Decided the same day and recorded in the 6.8 plan
+ and [Philosophy](Philosophy.md#the-sign-in-two-spaces-genera-are-not-located-2026-10-04).
+ Not in the 6.8 rounds; each names its home.
+ 
+-- **Kleene connectives over codes** (operators update): `∧ = min`, `∨ = max`,
+-  `not = −d`, replacing the product and probabilistic-sum kernels chosen in
+-  6.9 §22 for invertibility; the inverses are codebook searches either way.
++- **Meaning connectives — closed in round 4a:** the bipolar bilattice
++  supersedes the signed Kleene proposal. Conjunction/intersection take
++  `(min⁺, max⁻)`, disjunction/union `(max⁺, min⁻)`, and negation exchanges
++  poles. Form binding retains round 3a's kernels; inverses remain searches.
+   Catalogue [§3.8](specs/2026-09-29-operator-catalogue.md#38-what-was-decided-earlier-in-the-pass).
+ - **The fold composing forms above words** (operators update): the proposed
+   located word fold is superseded by round 3a's boundary pairs, exact length
+   thermometer and collision mints. A word remains a max over its parts;
+   anagrams need no general positional fold. Higher-order forms still use
+-  the binding kernels. Meanings and their connectives remain later work.
+-- **The complement's bootstrap** (operators update, the distributional item):
+-  the conceptual wholes' locations (sets, situation and document codes,
+-  properties as concepts), trained by co-activation, from which a new word's
+-  context mean can start; without them order-0 meanings stay at zero.
+-- **The `not` items** (operators update): `NonLayer` computes `1 − x`;
+-  `ConjunctionLayer` reads `max(c⁺, c⁻)`; the binding kernel pools signs.
++  the binding kernels; round 4a composes the separate meaning block by the bilattice.
++- **The complement's bootstrap — closed in round 4a:** containing sentence
++  rows contribute fixed sparse identities from their content keys. The detached
++  recency mean fills the for pole; the against pole starts at zero. It is an
++  index without a training owner. Bilattice composition and negative-activation
++  pole exchange are implemented; the semantic certificate is exact at gate
++  scale and diagnostic at corpus scale. The adjacent-word centroid (4b) and
++  co-activation priming remain separate work. See the
++  [round-4a receipt](benchmarks/2026-10-07-operators-round4a/README.md).
++- **The `not` items — closed across rounds 1–4a:** exclusion clears the
++  expressed evidence, conjunction reads explicit poles, and negation exchanges
++  the meaning poles while preserving form.
+ - **The negative image on the concept face** (item 2): the §2.6.1 mechanism
+   is implemented in the uncommitted round-2 candidate: gain, presence and
+   role attention gate the concept complement; storage retains the observed
+diff --git a/doc/GradientFlow.md b/doc/GradientFlow.md
+index 98cba65bd..f0b3f83c2 100644
+--- a/doc/GradientFlow.md
++++ b/doc/GradientFlow.md
+@@ -82,7 +82,7 @@ part, it does not scale it) and
+ The form is `L` (6.8 plan §15.2, implemented §16; `MereologicalCodes.derive`
+ writes `lower`); `U` bounds the form and does not enter it. The both corner belongs to attention and
+ never enters this derivation. Repeated addresses in a part group do not
+-multiply its evidence. The serial leaf is `[form × |activation| | meaning × activation]`.
++multiply its evidence. The serial leaf is `[form × |activation| | meaning × |activation|]`, with meaning poles exchanged for a negative activation.
+ Its detached pole pair carries the sign; occurrence coordinates are preserved.
+ Field-path dictionaries retain their existing ownership; `XOR_exact`'s
+ answer coefficients are unchanged.
+@@ -100,41 +100,42 @@ violation before and after the pass, without a tolerance hiding residuals.
+ The first block stores the symbol's perceptual position. Its content coordinates
+ carry the form `L`; its reserved location/time positions are zero for
+ a generally characterized type, not an occurrence stamp. The complement stores
+-the concept's conceptual position: at order zero, only the detached,
+-recency-weighted context mean of existing occurrence roots' meaning coordinates.
+-References and inverted
+-leaf postings supply occurrence membership; DEF rows are excluded. These
+-occurrence rows are context, not the property wholes that bound `U`. `1/(1+age)` supplies
+-recency, independently of the sentence's truth poles. Context is snapshotted
+-before a forward and shared by its greedy and explore walks. It never dilutes
+-the perceptual block and never carries a durable-row gradient.
+-
+-**Explicitly deferred by Alec, October 4:** property/situation bootstrap
+-learning and its co-activation objective belong to the operators update.
+-There is no new context optimizer or loss. A zero complement cannot bootstrap
+-itself from zero occurrence roots. XOR_grammar and MM_grammar have, since 6.8 §22,
+-22-dimensional PS events and paired representations: fourteen native form content
+-coordinates, the eight-coordinate address band, and an empty meaning complement
+-(context width 22 − 22 = 0).
+-The nonempty-complement mechanism check verifies isolated, detached reads;
+-these toy gates do not test learned distributional similarity.
+-
+-The XOR table therefore measures perception's composition of forms (the binding
+-kernel this round), its inverse, the affine read of the committed raw root, and one owner.
+-The concepts in these gate configurations are empty: identical contexts and
+-no bootstrap. Same-context concepts coinciding in conceptual space is correct;
+-it is not a collapse to repair. Connectives over meanings are measured where
+-meanings exist, as in MM_xor's field path. Form and root geometry remain useful
+-measurements of distinguishability for reconstruction.
+-
+-Identity comes from below through the fold of forms and meaning from above
+-through contexts at every order; at orders ≥ 1, composition of meanings also
+-joins from below. The form fold at all orders, Kleene meet/join on meanings,
+-bootstrap from conceptual wholes' locations and the `not` items were carried
+-to the operators update. Round 1 landed the pole corrections; round 2 installs
+-expectation's closing image on the concept face (item 2). The form fold,
+-meaning connectives and bootstrap remain later work. The present kernel still
+-composes the paired vector.
++the concept's conceptual position. In round 4a, every stored sentence row
++has a fixed sparse identity: `s` ones of `K`, generated privately from its
++content key. Identified word bytes define the text sentence's key; occurrence
++IDs remain provenance and never seed the code. Direct opaque rows use their
++initial form as a fallback content key. The content lookup retains all
++occurrences, including repeated presentations.
++
++Order-zero meaning is the detached, recency-weighted mean of those identities
++on the **for** pole, with zero on the **against** pole. The flat complement is
++`[for_0 … for_K−1 | against_0 … against_K−1]`. References and inverted leaf
++postings retain their membership; only REL_NONE rows contribute and DEF rows
++are excluded. `1/(1+age)` supplies recency independently of truth evidence.
++The snapshot still precedes the forward and is shared by both trials; a
++current closing becomes context on the next forward. Composed meanings remain
++stored as `o`, but no longer supply their own bootstrap.
++
++The bootstrap is resolved by an index, with no learning owner, parameter or
++new objective. Grammar gates have 64 pairs and three bits per identity
++(128 meaning floats after the unchanged 104-dimensional form event).
++BasicModel keeps 896 meaning floats: 448 pairs, six identity bits.
++
++Composition keeps the round-3a form kernels and their normalization. Meanings
++compose independently: conjunction/intersection `(min⁺, max⁻)`,
++disjunction/union `(max⁺, min⁻)`, sum the mean of each pole, and `not` the pole
++exchange. No normalization joins the blocks. Operators without a meaning
++write preserve that block. `(0,0)` is unknown, so `a ∧ not b` has no for
++evidence and has b's extent against; it does not assert a closed-world
++complement. Interpretation scales both faces by magnitude and exchanges
++meaning poles for negative activation.
++
++The static semantic certificate checks all word pairs against sentence
++postings, including negation. It is exact on the grammar vocabularies and a
++false-membership diagnostic on BasicModel's corpus. The sparse code carries
++composition and similarity; exact membership remains a posting query. Both
++connectives can support the XOR read, so mixed final operators are valid.
++Co-activation priming and the adjacent-word centroid remain later work.
+ The dictionary has no EMA refresh or contextual rotation. Ownership audits
+ distinguish absent gradients from zero ones and retain inactive weights.
+ 
+@@ -488,8 +489,8 @@ retains every gate outcome and remaining failure; writer separation is not
+ an acceptance claim or a guarantee that the objectives improve together.
+ The [§20.3 catalog](plans/2026-09-29-item-6-9-xor-grammar.md#203-catalog-set-aside-now-to-return-once-reconstruction-and-xor-hold)
+ records the historical deferred items. The sphere/norm-as-certainty proposal
+-is retired by §14; bootstrap co-activation learning and the operator split
+-remain deferred, along with the answer reach.
++is retired by §14. Round 4a resolves the bootstrap and the operator split;
++co-activation priming and the answer reach remain deferred.
+ 
+ No gradient projection, opposition streak, norm rebalance or persistent
+ conflict counter remains in training or the checkpoint. The stateless gradient
+@@ -521,9 +522,10 @@ constructed in the thought context. Prediction still minimizes its unchanged
+ all-role relative squared error and presence/kind BCE against detached targets;
+ the confidence gate changes comparison costs, not predictor training. Empty
+ roles have zero targets, not zero residuals. There is no new loss or owner.
+-XOR_grammar and MM_grammar have zero complement coordinates (22 total,
+-22 in the perceptual block, of which 14 carry form content): their image is
+-identically zero. The nonzero-complement mechanism is tested separately.
++At the round-2 landing, XOR_grammar and MM_grammar had zero complement coordinates (22 total,
++22 in the perceptual block, of which 14 carry form content). Round 4a adds
++bipolar meanings; these gates still have a zero image because no prior
++forecast is available. The predictor takes only the committed row as target.
+ 
+ 
+ ## Codes are perception's; the chooser is trained from the trial comparison (October 4)
+@@ -1000,3 +1002,15 @@ the comparison reader's preference. Three passing presented readers retain
+ late common-offset oscillations; their roots are identical to the other
+ runs. The receipt separates those trajectories from geometry and retains
+ the sum control at the affine floor. No commit or push has been made.
++
++## Operators update round 4a (October 7; awaiting review)
++
++[Round-4a receipt](benchmarks/2026-10-07-operators-round4a/README.md). The order-zero
++bootstrap and bilattice rules above supersede the empty/signed-complement
++statements in the historical round-2 sections. Sentence identity is fixed,
++recomputable and detached. The expectation predictor now takes one update
++on the committed trial's rows only, using the reconstruction keep mask;
++comparison costs still inspect both trials at the same parameter version.
++The two answer-reader rules from 2e are unchanged. A narrowing `not` can now
++change a root's meaning and earn credit through the answer term. The receipt
++reports that credit by action without requiring one final compose operator.
+diff --git a/doc/plans/2026-10-05-operators-update.md b/doc/plans/2026-10-05-operators-update.md
+index 832724e4d..2702fd4cc 100644
+--- a/doc/plans/2026-10-05-operators-update.md
++++ b/doc/plans/2026-10-05-operators-update.md
+@@ -1810,3 +1810,195 @@ findings of §27 and the singular values. Landing as for round 2 — the
+ commit includes the plan, the toys (`credit-loop`, `identity`) and all
+ uncommitted documents — then push and bump. Round 3b is folded into round
+ 4 (§28); the round-4 text follows its own fixed-point work.
++
++## 30. Round 4's fixed point (Claude, 2026-10-07): meanings by membership
++
++Worked before the text (`doc/benchmarks/2026-10-07-meaning-toy/`). The
++bootstrap problem (§3, §6: "a zero complement cannot bootstrap itself from
++zero occurrence roots") dissolves if the rows a word occurs in contribute
++their *identity* as wholes rather than their composed meaning: each stored
++sentence row gets a fixed sparse code in the meaning complement, seeded from
++its content key (no RNG, no parameter — 3a's construction one order up), and
++a word's order-0 meaning is the existing recency-weighted context mean over
++those codes. This is random indexing, and it is Alec's "co-activation flows
++from the shared-wholes representation" literally: words share meaning to the
++degree they share sentences. **It needs no owner** (§3 question 1): like the
++identity codes it is an index, not a trained parameter — "codes by
++distribution, maps by the objectives" (2026-09-21).
++
++Composition on the meaning block is extensional: conjunction = min (zero is
++false — a membership field, the catalogue's monotonic variant, not the
++silence-preserving meet of the form face), disjunction = max, sum = mean.
++On the XOR corpus the membership certificate is exact (the extent of `a∧b`
++is the sentences containing both, of `a∨b` those containing either); both
++operators' meaning roots are equally well conditioned, so the class gate
++still cannot choose the operator — the certificate is the operator's test,
++static, as the form audit is identity's; the sum control's mean stays at the
++floor. At corpus scale the code is a Bloom-like sketch (false memberships
++fall from ~10% at K = 64 to ~0.04% at K = 1024 for 400 sentences), so
++membership is answered through the index and the code carries similarity
++and composition.
++
++Round 4 splits: **4a, meanings exist** (this construction, the per-block
++composition, the certificate, expectation's target); **4b, the centroid**
++with membership wholes in the form space — which needs Alec's ruling first
++(§31 end); **4c** connectives' negation over meanings and the co-activation
++priming, after 4b.
++
++## 31. Round 4a hand-off to Codex (Claude, 2026-10-07)
++
++Start from the round-3a landing (`cce3a4f7b`). One change: order-0 meanings
++exist and compose extensionally. Specification: §6, §9.4, §13, §23 (the
++expectation note), §27–§28, §30; GradientFlow "The training step" and the
++context-mean paragraph; catalogue §4 (the monotonic membership variant).
++
++1. **Sentence identity codes.** Every stored sentence row (REL_NONE,
++   content-addressed) has a fixed sparse code in the meaning complement:
++   `s` ones of `K`, from a generator seeded by the row's content key (the
++   same key that content-addresses it; never the per-store occurrence
++   namespace), no global RNG, recomputable, not a parameter. `K` is the
++   configured complement width and `s` a configuration value: the grammar
++   gates get `K = 64`, `s = 3` (their complement is zero today); BasicModel
++   keeps its 896-wide complement with `s = 6`.
++2. **Order-0 meaning.** `occurrence_terms` keeps its membership (leaf
++   postings and references, DEF rows excluded), its recency weight and its
++   detachment, but each containing row contributes its identity code, not
++   its stored composed meaning. A word's meaning block is that mean; it is
++   snapshotted before the forward as now. Composed sentence meanings are
++   still stored as `o` and are what thought and expectation read.
++3. **Per-block composition.** The form block composes as in 3a (the fixed
++   projection, product / probabilistic sum of directions, normalized). The
++   meaning block composes by its own rule, never normalized with the form:
++   conjunction and intersection `min` (zero is false), disjunction `max`,
++   `sum` the mean; operators that do not declare a meaning write (round 1's
++   footprints) pass the meaning block through. Interpretation's
++   `[form × |a| | meaning × a]` is unchanged.
++4. **The semantic certificate (static, like the form audit).** For every
++   pair of words in each configuration's vocabulary and every stored
++   sentence row: code membership of the `min` root equals the index's
++   "both", of the `max` root the index's "either". Exact on the grammar
++   gates; on BasicModel's local corpus reported as a false-membership rate
++   at its width (diagnostic, not a gate), membership itself being answered
++   through the postings.
++5. **Expectation's target.** The predictor trains on the committed (kept)
++   trial's row only, not on both trials (§23). `E` remains zero in these
++   gates (no prior context); the focused test covers it.
++6. **Not this round.** The centroid and any form-space use of membership
++   wholes (4b); negation over meanings and co-activation priming (4c).
++7. **Expectations.** Meanings distinct for every gate word; the certificate
++   exact; reconstruction 10/10 (the `R ≡ 0` audit unchanged); class 10/10 at
++   zero; sum 10/10 at ¼ (the mean keeps the meaning block additive); MM_xor
++   unchanged but for RNG. Both operators now read equally well, so final
++   operators may be mixed and the compose credit near zero — correct, and
++   reported; the operator's semantics is the certificate's to show.
++
++Tests: identity codes fixed across runs and independent of the global RNG;
++the context mean nonzero after one presentation and equal to the mean of
++the containing rows' codes; per-block composition (min/max/mean on the
++meaning block, the form block unchanged, no cross-block normalization); the
++certificate on the gate vocabularies and on a synthetic fixture with a
++known false membership at small `K`; expectation trained on the kept row
++only. Documents: GradientFlow (the bootstrap resolved; no owner, an index),
++Architecture's two-spaces section, catalogue §12 (4a), FutureWork (the
++complement's bootstrap item closed). Receipt
++`doc/benchmarks/2026-10-07-operators-round4a/`; measurement protocol as
++before; stop for Claude's review before any commit.
++
++**For Alec before 4b** (not blocking 4a): (i) in form space, the sentences
++containing a word are its wholes only if a sentence's form is the join of its
++words' forms; then a word's ceiling is "what always accompanies it", and the
++centroid mixes co-occurrence into the form. Should the centroid's wholes be
++membership wholes in the form, or should co-occurrence stay in the meaning
++complement only (the form's centroid then remains `L`, §28)? (ii) Over
++meanings, is a zero "false" (closed world: the extent's complement, `1 − x`)
++or "unknown" (Kleene: `not = −x`)? It decides what `not` does to a meaning
++in 4c.
++
++## 32. Alec's rulings on §31's two questions (2026-10-07)
++
++1. **The wholes of a word contain its adjacent words; its parts its
++   constituents; both determine its context in mereological space.** So
++   co-occurrence enters the form through the ceiling, by design. Technical
++   consequence: a whole's form is the join of its constituents' forms (the
++   whole is greater than its parts by construction, no room rule); the
++   narrowest wholes are the adjacent-word pairs, so
++   `U(w) = L(w) ∨ ⋀ L(neighbour)`, and the centroid is `c = L + α(U − L)`.
++   Verified on the repository's documents (`meaning-toy/sim4b_adjacent_ceiling.py`):
++   37% of words move, no collapse (.468 → .475), identity recoverable as
++   `[c = 1]`, collocates drawn together, the containment projection
++   repairing every violation the centroid causes. This is round 4b; it
++   supersedes §28's conclusion that the centroid waits for membership
++   meanings — §28 was right about letter-defined wholes only.
++2. **Conceptual space is bipolar evidence.** `(0,0)` is complete unknown,
++   `(0,1)` false, `(1,0)` true, `(1,1)` both; perceptual zero is nothing
++   perceived. So the meaning block is a pole pair per coordinate (Belnap's
++   bilattice), not a signed value: a word's meaning has its context mean on
++   the *for* pole and nothing on the *against* pole (absence of evidence is
++   unknown); conjunction is `(min⁺, max⁻)`, disjunction `(max⁺, min⁻)` —
++   round 1's explicit-pole rule — and `not` exchanges the poles. 2c's
++   interpretation rule `meaning × a` becomes: a negative activation exchanges
++   the meaning's poles, scaled by `|a|`. This amends §31 items 1–4 (below)
++   and absorbs 4c's negation item.
++
++**§31 amended.** (1) `K` counts pole pairs: the gates' complement is
++`2 × 64`; BasicModel's 896 holds 448 pairs (`s = 6`). (2) The context mean
++fills the *for* pole; the *against* pole starts at zero. (3) The meaning
++block composes by the bilattice: conjunction/intersection `(min⁺, max⁻)`,
++disjunction `(max⁺, min⁻)`, `sum` the mean of each pole, `not` the pole
++exchange; interpretation exchanges the meaning's poles for a negative
++activation (form × `|a|` unchanged). (4) The certificate adds negation:
++`not a` has `a`'s extent on the *against* pole and nothing *for*; `a ∧ not b`
++has nothing *for* (open world) and `b`'s extent *against*. (7) A narrowing
++`not` now changes the root's meaning, so narrowing departures carry credit;
++with the 2e reader rule (kept root only on narrowing departures) the answer
++is expected to teach the policy not to negate asserted sentences — reported.
++
++## 33. Occurrence ids, content keys, and the store's growth (Codex's 4a question, 2026-10-07)
++
++**What occurrence ids are.** A stored row is an *occurrence*: one sentence
++read at one place in one document (Alec, 2026-09-30: an identity is nothing
++but its occurrences in LTM tied by references; 2026-10-03: a row's address
++is its own `.where`/`.when` bands, queried by content). The occurrence id
++(`occurrence_id`, a per-store counter under a random per-store namespace) is
++that episode's durable handle: references in slots, object permanence,
++estimate/observation pairs and thought history point at occurrences, and
++row indices move under compaction, so references cannot use them; the
++namespace keeps one store's references from aliasing another's. A content
++key is a different thing: what all occurrences of the same sentence share.
++Nothing before 4a needed it, which is why there was no API; Codex is adding
++it (`content_key`, `bind_sentence_content`, `rows_for_content`).
++
++**The growth.** Every presentation of a sentence appends a new occurrence.
++In the gates the same four sentences are re-stored every epoch until the
++store is full — every gate word shows 510 occurrences at the end of every
++campaign since 6.8, ~1,020 rows at the default capacity of 1,024 — after
++which `append` returns −1 and every later sentence is silently not stored.
++At that default, BasicModel's LTM stops recording after about a thousand
++sentences. The cause is that a re-reading of the same sentence at the same
++address (same document, same sentence index) is treated as a new episode,
++though by the 2026-10-03 rule it has the same address.
++
++**Proposed (Alec to confirm):** write by address — the store's write is an
++upsert keyed by (content key, document, `.when`): a re-reading re-witnesses
++the existing occurrence (recency and evidence refreshed), only a genuinely
++new occurrence appends; a full store never drops silently — it raises, and
++forgetting (sequence item 5) is the standing answer to a full store. For
++4a itself the meaning code is seeded by the content key, so duplicate
++occurrences do not fragment a meaning; the upsert is a correctness fix for
++the store, and goes in as its own step before 4a's measurement (it changes
++what the gates store, so it is measured on its own: four rows in the XOR
++gate instead of ~1,020, gates otherwise unchanged).
++
++## 34. Round 4a-0: the occurrence's address (Alec, 2026-10-07: "Yes, pull it forward")
++
++The relative `.when` of the 2026-10-03 ruling (scheduled with 5.5) is pulled
++forward as a prerequisite step before 4a. A stored sentence's identity is its
++address — its document, its index in that document, its content — so a
++re-reading is recognized and re-witnessed instead of appended; the counter
++occurrence id and the per-store namespace go away, replaced by an integer
++hash of the address that references use as its short name; a full store
++raises instead of dropping writes. Measured on its own (it changes what the
++gates store: four rows in the XOR gate instead of ~1,020), gates expected
++unchanged; then 4a resumes on top, its identity codes seeded by the
++sentence content key and its context means over one row per occurrence.
++The text is the hand-off below (also given in chat).
+diff --git a/doc/specs/2026-09-29-operator-catalogue.md b/doc/specs/2026-09-29-operator-catalogue.md
+index 5d16ec8d0..d14f9eefa 100644
+--- a/doc/specs/2026-09-29-operator-catalogue.md
++++ b/doc/specs/2026-09-29-operator-catalogue.md
+@@ -324,6 +324,16 @@ scalars."
+ 
+ ### 3.8 What was decided earlier in the pass
+ 
++**Round 4a amendment (Alec's ruling, 2026-10-07).** Conceptual meaning is
++bipolar evidence, one for/against pair per coordinate: unknown `(0,0)`,
++false `(0,1)`, true `(1,0)`, conflict `(1,1)`. This supersedes the signed-code
++Kleene description below on the meaning face. Conjunction/intersection are
++`(min⁺, max⁻)`; disjunction/union `(max⁺, min⁻)`; sum averages both poles;
++`not` exchanges them. Negative interpretation exchanges poles and scales by
++`|a|`, preserving form × `|a|`. Form kernels remain as in 3a, normalized
++separately. Order-zero context means fill for only; absent evidence stays
++unknown, so `a ∧ not b` has no for extent and b's extent against.
++
+ * **`not` and `non`** (2026-09-28). `not` exchanges the two poles and is
+   its own inverse. `non` sets the expressed pole to zero, is non-affirming,
+   and has no inverse. Both act at any order, on the pole a concept
+@@ -1660,3 +1670,26 @@ completed 5,289 cases with 5,003 passes, 285 skips, one XPASS and no failures;
+ the repeated MM bisection confirms the historical RNG-only path, and three
+ paired 200-epoch trajectories are identical to accepted round 2e. The
+ candidate and all measured results remain uncommitted for review.
++
++### 12.8 Operators update, round 4a (October 7; awaiting review)
++
++The complement bootstrap is a fixed sentence-identity index. Every REL_NONE
++row has a content key; identified text hashes its ordered word bytes, with
++an initial-form fallback for opaque rows. A private generator maps that same
++key to sparse evidence, independent of occurrence namespaces and global RNG.
++The unchanged postings/reference membership and recency weighting supply the
++order-zero mean on the for pole; against starts at zero. Composed meanings
++remain stored as `o`; the pre-forward snapshot remains detached.
++
++Grammar gates use 64 pole pairs with three active identity bits; BasicModel
++uses 448 pairs with six bits in its unchanged 896-float complement. The form
++kernels retain their round-3a behavior. The meaning rules are §3.8's bilattice,
++including negation; the blocks are not normalized together. The expectation
++predictor now trains once on the reconstruction-kept trial's rows only.
++Answer readers retain the 2e exposure rules. Narrowing departures can therefore
++receive nonzero credit, and mixed final compose operators are valid.
++
++The [receipt](../benchmarks/2026-10-07-operators-round4a/README.md) reports static
++certificates for all word pairs and sentence rows, corpus false membership,
++and the unchanged unseeded gates. No centroid or co-activation priming change
++is included. No commit is authorized before Claude's review.
+diff --git a/test/test_operators_round1.py b/test/test_operators_round1.py
+index 87cb148d6..981061623 100644
+--- a/test/test_operators_round1.py
++++ b/test/test_operators_round1.py
+@@ -134,7 +134,7 @@ def test_footprint_requires_a_declared_subsystem_writer(monkeypatch):
+     class Broken(NotLayer):
+         effect_writes = ('budget',)
+     monkeypatch.setitem(GRAMMAR_LAYER_CLASSES, 'broken', Broken)
+-    with pytest.raises(ValueError, match='footprint writes poles'):
++    with pytest.raises(ValueError, match='footprint writes meaning'):
+         Grammar()._fill_rule_list([], {'rule': 'S = broken.forward(S)'})
+ 
+ 
+@@ -179,8 +179,8 @@ def test_shipped_rule_footprints_and_alias_are_exhaustive():
+             OperatorEffects(rule.effect_reads, rule.effect_writes))
+     rules = []
+     grammar._fill_rule_list(rules, {'rule': dict(_='S = alias.forward(S)', implementation='not',
+-        footprintReads='poles', footprintWrites='poles')})
+-    assert rules[0].footprint_reads == rules[0].footprint_writes == ('poles',)
++        footprintReads='meaning,poles', footprintWrites='meaning,poles')})
++    assert rules[0].footprint_reads == rules[0].footprint_writes == ('meaning', 'poles')
+ 
+ 
+ @pytest.mark.parametrize('kind', ['verb', 'adverb'])
+diff --git a/test/test_operators_round2.py b/test/test_operators_round2.py
+index fca37075d..b8cbf3a09 100644
+--- a/test/test_operators_round2.py
++++ b/test/test_operators_round2.py
+@@ -148,18 +148,19 @@ def test_zero_complement_is_identically_zero_at_every_gain():
+ 
+ 
+ @pytest.mark.parametrize('config',['XOR_grammar','MM_grammar'])
+-def test_gate_grammars_have_no_image_complement(config):
++def test_gate_grammars_image_is_confined_to_bipolar_complement(config):
+     from test_mm_xor import _fresh_model
+     from Meaning import ClosingImage
+     model,_,_=_fresh_model('data/'+config+'.xml')
+     try:
+         derived=model._concept_owner().similarity_codebook.mereology
+-        assert derived.percept_width==96 and derived.code_width==104
+-        assert derived.context_width==0
++        assert derived.percept_width==96 and derived.code_width==232
++        assert derived.context_width==128
+         observed=torch.ones(3,derived.code_width)
+         image=ClosingImage.form(observed,observed,torch.ones(3),
+             form_width=model._image_form_width)
+-        assert image.concept_width==0 and image.image.eq(0).all()
++        assert image.concept_width==128 and image.image[:,:104].eq(0).all()
++        assert image.image[:,104:].eq(-1).all()
+     finally:
+         model.End();model.symbolSpace.soft_reset()
+ 
+@@ -193,11 +194,11 @@ def test_not_handoff_changes_pole_and_meaning_but_never_form(monkeypatch):
+     from Interpret import InterpretLayer
+     owner = SimpleNamespace(similarity_codebook=SimpleNamespace(mereology=SimpleNamespace(percept_event_width=1)))
+     interpret = InterpretLayer(conceptualSpace=owner)
+-    atoms = torch.tensor([[.8, .6]])
++    atoms = torch.tensor([[.8, .6, .2]])
+     positive_code = interpret.activate(atoms, greedy[3].reshape(-1))
+     negative_code = interpret.activate(atoms, explore[3].reshape(-1))
+     torch.testing.assert_close(positive_code[:, :1], negative_code[:, :1], rtol=0, atol=0)
+-    torch.testing.assert_close(positive_code[:, 1:], -negative_code[:, 1:], rtol=0, atol=0)
++    torch.testing.assert_close(positive_code[:, 1:], negative_code[:, 1:].flip(-1), rtol=0, atol=0)
+     assert (negative_code-positive_code).square().sum() > 0
+ 
+ 
+diff --git a/test/test_operators_round2c.py b/test/test_operators_round2c.py
+index 87294076e..9268a1508 100644
+--- a/test/test_operators_round2c.py
++++ b/test/test_operators_round2c.py
+@@ -11,7 +11,7 @@ def test_interpret_both_directions_preserve_form_and_occurrence_sign_only_meanin
+     atoms=torch.tensor([[.8,.4,.6,.2]],requires_grad=True)
+     activation=torch.tensor([-.5],requires_grad=True)
+     event=torch.tensor([[0.,0.,0.,0.,7.,9.]])
+-    expected=torch.tensor([[.4,.2,-.3,-.1,7.,9.]])
++    expected=torch.tensor([[.4,.2,.1,.3,7.,9.]])
+     torch.testing.assert_close(layer(event,object_atoms=atoms,activation=activation),expected)
+     torch.testing.assert_close(layer.reverse(event,word_atoms=atoms,activation=activation),expected)
+     owner.similarity_codebook.mereology.percept_event_width=4
+diff --git a/test/test_review13_subspaces.py b/test/test_review13_subspaces.py
+index 322ea81bf..a2a7a6eb6 100644
+--- a/test/test_review13_subspaces.py
++++ b/test/test_review13_subspaces.py
+@@ -69,7 +69,7 @@ def test_occurrence_mean_is_confined_to_detached_context_coordinates():
+     store._append_leaf_terms(row, ((a,b),(),()), (True,True,True))
+     codes = cb.lookup_rows(torch.tensor([a,b]))
+     torch.testing.assert_close(codes[:,:3], ps.W[[4,7]])
+-    torch.testing.assert_close(codes[:,3:], root.detach()[None,3:].expand(2,-1))
++    torch.testing.assert_close(codes[:,3:], torch.tensor([[1.,0.],[1.,0.]]))
+     assert not codes.requires_grad
+     assert root.grad is None and not store.slots.requires_grad
+     newer = store.append_meaning(ConceptualMeaning(roles*2, torch.tensor([True,False,False]),
+@@ -77,7 +77,7 @@ def test_occurrence_mean_is_confined_to_detached_context_coordinates():
+     store._append_leaf_terms(newer, ((a,b),(),()), (True,True,True))
+     mean = (root.detach()/2 + 2*root.detach())/1.5
+     torch.testing.assert_close(cb.lookup_rows(a)[:3], ps.W[4])
+-    torch.testing.assert_close(cb.lookup_rows(a)[3:], mean[3:])
++    torch.testing.assert_close(cb.lookup_rows(a)[3:], torch.tensor([1.,0.]))
+     assert len(store) == 2
+ 
+ 
+@@ -93,13 +93,13 @@ def test_support_reports_exact_zeros_and_minimum_absolute_coordinate():
+     assert report['minimum_nonzero_absolute_value'] == float(ps.W[4,1])
+ 
+ 
+-def test_actual_serial_code_uses_ninety_six_native_coordinates_and_no_context_bootstrap():
++def test_actual_serial_code_uses_ninety_six_native_coordinates_and_a_separate_bipolar_context():
+     from test_mm_xor import _fresh_model
+     model, _, _ = _fresh_model('data/XOR_grammar.xml')
+     model.forward(model.inputSpace.prepInput(['hello world', 'hello there']))
+     cb = model._concept_owner().similarity_codebook
+     assert cb.mereology.percept_width == 96
+-    assert cb.mereology.context_width == 0
++    assert cb.mereology.context_width == 128
+     assert not isinstance(cb.W, nn.Parameter) and list(cb.parameters()) == []
+     rows = model.inputSpace._ar_grammar_object_rows
+     atoms = model.inputSpace._ar_grammar_object_atoms
+diff --git a/test/test_review14_addendum.py b/test/test_review14_addendum.py
+index 71c7b4903..691a4d891 100644
+--- a/test/test_review14_addendum.py
++++ b/test/test_review14_addendum.py
+@@ -55,7 +55,7 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
+             assert owner._concept_source_order(cid) > 0
+             assert all(isinstance(part, tuple) and part[0] == 'sym'
+                        for part in owner.concept_parts(cid))
+-        assert cb.mereology.context_width == 0
++        assert cb.mereology.context_width == 128
+     finally:
+         model.End()
+         model.symbolSpace.soft_reset()

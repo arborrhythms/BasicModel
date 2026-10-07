@@ -1,0 +1,40 @@
+...............ss.................F..................................... [ 60%]
+....s................................s.......F.                          [100%]
+=================================== FAILURES ===================================
+_ test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write _
+test/test_selected_nested_meaning.py:108: in test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write
+    assert store.append_meaning(meaning, kind='observation') == -1
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9404: in append_meaning
+    meaning = self.bind_constituents(meaning, reserve=int(previous is None), stream=stream)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9344: in bind_constituents
+    raise OverflowError(f'LTM capacity {self.capacity} exhausted; forgetting is required')
+E   OverflowError: LTM capacity 1 exhausted; forgetting is required
+_______ test_mm_grammar_part_under_disjunction_closes_at_full_inventory ________
+test/test_sentence_identity.py:95: in test_mm_grammar_part_under_disjunction_closes_at_full_inventory
+    assert (f.store.refs[row] > 0).all()
+E   assert tensor(False)
+E    +  where tensor(False) = <built-in method all of Tensor object at 0x132c62710>()
+E    +    where <built-in method all of Tensor object at 0x132c62710> = tensor([-3402242389542991592,  3840753124094415749,                    6]) > 0.all
+=============================== warnings summary ===============================
+test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_runepoch_runtime_split_no_raise
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/basicmodel-round4a0/bin/Models.py:7194: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2881/test_first_and_later_words_kee0/tiny_chunk_model.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/basicmodel-round4a0/bin/Models.py:7194: RuntimeWarning: lossrev_band_clipped [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2881/test_first_and_later_words_kee0/tiny_chunk_model.xml]: lossRev width clip (rev 5 vs fwd 104) misaligns the trailing where/when band; the clipped event takes what_scale
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_selected_nested_meaning.py::test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write
+FAILED test/test_sentence_identity.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory
+2 failed, 113 passed, 4 skipped, 3 warnings in 13.78s

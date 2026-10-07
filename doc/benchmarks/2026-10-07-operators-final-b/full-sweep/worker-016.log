@@ -1,0 +1,25 @@
+........................................................................ [ 41%]
+...................................................F.................... [ 83%]
+.............................                                            [100%]
+=================================== FAILURES ===================================
+_____________ test_saved_review22_miss_has_exact_argmin_precedence _____________
+test/test_operators_round1.py:72: in test_saved_review22_miss_has_exact_argmin_precedence
+    recovered = torch.stack((rows[indices // 4], rows[indices % 4]), -1).sort(-1).values
+                             ^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: index 4 is out of bounds for dimension 0 with size 4
+=============================== warnings summary ===============================
+test/test_objective_ownership.py::test_named_concept_evidence_has_the_answer_as_its_only_writer
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_occurrence_coordinates.py::test_input_event_position_is_independent_of_the_subjective_clock
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7198: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3099/test_input_event_position_is_i0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operators_round1.py::test_saved_review22_miss_has_exact_argmin_precedence
+1 failed, 172 passed, 2 warnings in 27.04s

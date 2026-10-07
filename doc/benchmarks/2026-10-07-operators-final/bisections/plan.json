@@ -1,0 +1,45 @@
+{
+  "jobs": [
+    {
+      "kind": "sum",
+      "run": 8,
+      "part": "B",
+      "name": "sum-08-B-off"
+    },
+    {
+      "kind": "sum",
+      "run": 8,
+      "part": "C",
+      "name": "sum-08-C-off"
+    },
+    {
+      "kind": "sum",
+      "run": 8,
+      "part": "D",
+      "name": "sum-08-D-off"
+    },
+    {
+      "kind": "xor",
+      "run": 9,
+      "part": "B",
+      "name": "xor-09-B-off"
+    },
+    {
+      "kind": "xor",
+      "run": 9,
+      "part": "C",
+      "name": "xor-09-C-off"
+    },
+    {
+      "kind": "xor",
+      "run": 9,
+      "part": "D",
+      "name": "xor-09-D-off"
+    }
+  ],
+  "seed": null,
+  "retries": 0,
+  "replacements": 0,
+  "source": "recorded unseeded entry state of each failed standing run",
+  "count": 6
+}

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final-b/tetralemma-sweep/worker-004.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final-b/tetralemma-sweep/worker-004.json"
+  ],
+  "pid": 53928,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 796247792,
+  "elapsed_seconds": 32.89264079101849,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final-b/tetralemma-sweep/worker-004.log"
+}

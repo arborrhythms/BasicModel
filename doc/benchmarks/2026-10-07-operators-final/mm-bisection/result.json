@@ -1,0 +1,16 @@
+{
+  "plan": {
+    "seed": null,
+    "epochs": 200,
+    "retries": 0,
+    "replacements": 0,
+    "baseline": "cce3a4f7b",
+    "scope": "paired raw MM path; captured OS-initialized RNG state, all 200 epochs, no threshold early stop"
+  },
+  "construction_equal": true,
+  "all_trajectories_identical": false,
+  "identical_epochs": 0,
+  "first_different_epoch": 1,
+  "first_forward_equal": false,
+  "source_matched": true
+}

@@ -15,6 +15,16 @@
 
 ## 0. Revision of 2026-10-03: `.when` stays, and the address is content *(decided, Alec)*
 
+
+**Implementation note, operators round 4a-0 (2026-10-07; review pending).**
+The 10-03 relative `.when` value is implemented as `[i, i+1]` with the
+source sentence's document position. Stable document/content address hashes
+replace occurrence counters and random store namespaces. Re-reading
+re-witnesses the row; the absolute model clock is written to `timestamp`
+only, and full capacity raises. Source keys address the document here;
+the situation code in content and learned before/after remain item 5.5.
+[Receipt and reader inventory](../benchmarks/2026-10-07-operators-round4a0/).
+
 Alec, 2026-10-03: "I see it as a valuable value when stamped inside
 concepts, just as .where is currently stamped, so that concepts have
 information about temporal order that they would not otherwise have access

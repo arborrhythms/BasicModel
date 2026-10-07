@@ -1,0 +1,1061 @@
+......F....F.FF.F................F.......FFFFFF.....F.........           [100%]
+=================================== FAILURES ===================================
+_________ test_live_gate_reread_changes_clock_but_not_address_or_when __________
+
+    def test_live_gate_reread_changes_clock_but_not_address_or_when():
+        from test_mm_xor import _fresh_model
+        model, _, data = _fresh_model('data/XOR_grammar.xml')
+        try:
+            optimizer = model.getOptimizer(lr=.01)
+>           model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
+
+test/test_operators_round4a0.py:143: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:15868: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13772: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13910: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14289: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8879: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10377: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8564: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8344: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23600: in _forward_per_stage
+    sym_sub = self._publish_reading_symbols(body_sub)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11314: in _publish_reading_symbols
+    return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:14567: in forward_concept_to_symbol
+    object.__setattr__(leg, '_symbol_when', when.expand_as(band))
+                                            ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x123663860>
+func = <method 'expand_as' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[[[0.0015, 1.0000, 0.0123, 0.9998]]],
+
+
+         [[[0.0015, 1.0000, 0.0123, 0.9998]]],
+
+
+         [[[0.0015,...0.0000,  0.0000]],
+
+         [[ 0.0000,  0.0000,  0.0000,  0.0000],
+          [ 0.0000,  0.0000,  0.0000,  0.0000]]]]))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: expand(torch.FloatTensor{[1, 4, 1, 1, 4]}, size=[3, 4, 2, 4]): the number of sizes provided (4) must be greater or equal to the number of dimensions in the tensor (5)
+
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+____ TestProvisioning.test_provision_idempotent_count_via_runepoch_trigger _____
+
+self = <test_ltm_consolidation.TestProvisioning testMethod=test_provision_idempotent_count_via_runepoch_trigger>
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_provision_idempotent_count_via_runepoch_trigger(self):
+        # The lazy trigger at first runEpoch provisions exactly once (the
+        # _ltm_provisioned guard), then conversation appends continue past it.
+        m = _make_model(_SERIAL_CONFIG)
+        store = m.symbolSpace.ltm_store
+        self.assertEqual(len(store), 0)
+        opt = m.getOptimizer(lr=0.01)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+>           m.runEpoch(optimizer=opt, batchSize=1, split="train",
+                       max_batches=1)
+
+test/test_ltm_consolidation.py:185: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:15519: in runEpoch
+    self.provision_ltm()
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7024: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7059: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:13772: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13910: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14289: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8879: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10377: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8564: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8344: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23600: in _forward_per_stage
+    sym_sub = self._publish_reading_symbols(body_sub)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11314: in _publish_reading_symbols
+    return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:14567: in forward_concept_to_symbol
+    object.__setattr__(leg, '_symbol_when', when.expand_as(band))
+                                            ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x12364a630>
+func = <method 'expand_as' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[[[0.0123, 0.9998, 0.0123, 0.9998]]],
+
+
+         [[[0.0123, 0.9998, 0.0123, 0.9998]]]]]), tensor([[[-4.2756e...[ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00],
+         [ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: expand(torch.FloatTensor{[1, 2, 1, 1, 4]}, size=[4, 2, 4]): the number of sizes provided (3) must be greater or equal to the number of dimensions in the tensor (5)
+
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+__________ TestProvisioning.test_provisioned_rows_are_real_encodings ___________
+
+self = <test_ltm_consolidation.TestProvisioning testMethod=test_provisioned_rows_are_real_encodings>
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_provisioned_rows_are_real_encodings(self):
+>       m = _make_model_provisioned(_SERIAL_CONFIG)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_ltm_consolidation.py:168: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_ltm_consolidation.py:81: in _make_model_provisioned
+    m.provision_ltm()
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7024: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7059: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:13772: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13910: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14289: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8879: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10377: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8564: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8344: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23600: in _forward_per_stage
+    sym_sub = self._publish_reading_symbols(body_sub)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11314: in _publish_reading_symbols
+    return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:14567: in forward_concept_to_symbol
+    object.__setattr__(leg, '_symbol_when', when.expand_as(band))
+                                            ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x12364a630>
+func = <method 'expand_as' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[[[0.0123, 0.9998, 0.0123, 0.9998]]],
+
+
+         [[[0.0123, 0.9998, 0.0123, 0.9998]]]]]), tensor([[[-4.2756e...[ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00],
+         [ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: expand(torch.FloatTensor{[1, 2, 1, 1, 4]}, size=[4, 2, 4]): the number of sizes provided (3) must be greater or equal to the number of dimensions in the tensor (5)
+
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+_______ TestProvisioning.test_provisioned_trust_and_earliest_timestamps ________
+
+self = <test_ltm_consolidation.TestProvisioning testMethod=test_provisioned_trust_and_earliest_timestamps>
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_provisioned_trust_and_earliest_timestamps(self):
+>       m = _make_model_provisioned(_SERIAL_CONFIG)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_ltm_consolidation.py:149: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_ltm_consolidation.py:81: in _make_model_provisioned
+    m.provision_ltm()
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7024: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7059: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:13772: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13910: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14289: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8879: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10377: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8564: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8344: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23600: in _forward_per_stage
+    sym_sub = self._publish_reading_symbols(body_sub)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11314: in _publish_reading_symbols
+    return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:14567: in forward_concept_to_symbol
+    object.__setattr__(leg, '_symbol_when', when.expand_as(band))
+                                            ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x12364a630>
+func = <method 'expand_as' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[[[0.0123, 0.9998, 0.0123, 0.9998]]],
+
+
+         [[[0.0123, 0.9998, 0.0123, 0.9998]]]]]), tensor([[[-4.2756e...[ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00],
+         [ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: expand(torch.FloatTensor{[1, 2, 1, 1, 4]}, size=[4, 2, 4]): the number of sizes provided (3) must be greater or equal to the number of dimensions in the tensor (5)
+
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+__________ TestProvisioning.test_truthset_rows_land_via_real_forward ___________
+
+self = <test_ltm_consolidation.TestProvisioning testMethod=test_truthset_rows_land_via_real_forward>
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_truthset_rows_land_via_real_forward(self):
+        from Layers import TernaryTruthStore as T
+>       m = _make_model_provisioned(_SERIAL_CONFIG)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_ltm_consolidation.py:135: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_ltm_consolidation.py:81: in _make_model_provisioned
+    m.provision_ltm()
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7024: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7059: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:13772: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13910: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14289: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8879: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10377: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8564: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8344: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23600: in _forward_per_stage
+    sym_sub = self._publish_reading_symbols(body_sub)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11314: in _publish_reading_symbols
+    return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:14567: in forward_concept_to_symbol
+    object.__setattr__(leg, '_symbol_when', when.expand_as(band))
+                                            ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x12364a630>
+func = <method 'expand_as' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[[[0.0123, 0.9998, 0.0123, 0.9998]]],
+
+
+         [[[0.0123, 0.9998, 0.0123, 0.9998]]]]]), tensor([[[-4.2756e...[ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00],
+         [ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: expand(torch.FloatTensor{[1, 2, 1, 1, 4]}, size=[4, 2, 4]): the number of sizes provided (3) must be greater or equal to the number of dimensions in the tensor (5)
+
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+_ TestObserveSkipsDequeWhenConsolidated.test_observe_does_not_append_deque_but_runs_cycle _
+
+self = <test_ltm_consolidation.TestObserveSkipsDequeWhenConsolidated testMethod=test_observe_does_not_append_deque_but_runs_cycle>
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_observe_does_not_append_deque_but_runs_cycle(self):
+        # FU3: when consolidated, observe_stm_end_state does NOT append to the
+        # per-row deque (the store-append is the source), but STILL runs the
+        # predict/observe L_inter cycle.
+>       m = _make_model_provisioned(_SERIAL_CONFIG)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_ltm_consolidation.py:511: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_ltm_consolidation.py:81: in _make_model_provisioned
+    m.provision_ltm()
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7024: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7059: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:13772: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13910: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14289: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8879: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10377: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8564: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8344: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23600: in _forward_per_stage
+    sym_sub = self._publish_reading_symbols(body_sub)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11314: in _publish_reading_symbols
+    return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:14567: in forward_concept_to_symbol
+    object.__setattr__(leg, '_symbol_when', when.expand_as(band))
+                                            ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x12364a630>
+func = <method 'expand_as' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[[[0.0123, 0.9998, 0.0123, 0.9998]]],
+
+
+         [[[0.0123, 0.9998, 0.0123, 0.9998]]]]]), tensor([[[-4.2756e...[ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00],
+         [ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: expand(torch.FloatTensor{[1, 2, 1, 1, 4]}, size=[4, 2, 4]): the number of sizes provided (3) must be greater or equal to the number of dimensions in the tensor (5)
+
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+________ TestRuntimeUserIngestion.test_resubmit_replaces_user_rows_only ________
+
+self = <test_ltm_consolidation.TestRuntimeUserIngestion testMethod=test_resubmit_replaces_user_rows_only>
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_resubmit_replaces_user_rows_only(self):
+        from Layers import TernaryTruthStore as T
+        m, store, tl = self._fresh()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+>           m.store_truths([{"content": "hello world", "trust": 0.9},
+                            {"content": "loving there", "trust": -0.5}])
+
+test/test_ltm_consolidation.py:714: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6922: in store_truths
+    self._store_truths_into_ltm(ltm_store, truth_layer, texts, trusts, source_key=source_key)
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6968: in _store_truths_into_ltm
+    self.provision_ltm()
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7024: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7059: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:13772: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13910: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14289: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8879: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10377: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8564: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8344: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23600: in _forward_per_stage
+    sym_sub = self._publish_reading_symbols(body_sub)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11314: in _publish_reading_symbols
+    return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:14567: in forward_concept_to_symbol
+    object.__setattr__(leg, '_symbol_when', when.expand_as(band))
+                                            ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x12364a630>
+func = <method 'expand_as' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[[[0.0123, 0.9998, 0.0123, 0.9998]]],
+
+
+         [[[0.0123, 0.9998, 0.0123, 0.9998]]]]]), tensor([[[-4.2756e...[ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00],
+         [ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: expand(torch.FloatTensor{[1, 2, 1, 1, 4]}, size=[4, 2, 4]): the number of sizes provided (3) must be greater or equal to the number of dimensions in the tensor (5)
+
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+__ TestRuntimeUserIngestion.test_store_truths_after_load_does_not_reprovision __
+
+self = <test_ltm_consolidation.TestRuntimeUserIngestion testMethod=test_store_truths_after_load_does_not_reprovision>
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_store_truths_after_load_does_not_reprovision(self):
+        # A checkpoint provisioned before saving comes back with the
+        # transient _ltm_provisioned flag reset while its provisioned rows
+        # survive (the load-time revive keeps them). store_truths must NOT
+        # re-run provisioning then -- that would duplicate the XML truthSet.
+        # Simulate that post-load state by resetting the flag on an already-
+        # provisioned model (a raw state_dict round-trip can't be used here:
+        # real provisioning grows the dynamic vocab, so the production reload
+        # goes through load_weights' vocab restore, not bare load_state_dict).
+        from Layers import TernaryTruthStore as T
+>       m = _make_model_provisioned(_SERIAL_CONFIG)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_ltm_consolidation.py:740: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_ltm_consolidation.py:81: in _make_model_provisioned
+    m.provision_ltm()
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7024: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7059: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:13772: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13910: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14289: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8879: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10377: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8564: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8344: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23600: in _forward_per_stage
+    sym_sub = self._publish_reading_symbols(body_sub)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11314: in _publish_reading_symbols
+    return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:14567: in forward_concept_to_symbol
+    object.__setattr__(leg, '_symbol_when', when.expand_as(band))
+                                            ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x12364a630>
+func = <method 'expand_as' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[[[0.0123, 0.9998, 0.0123, 0.9998]]],
+
+
+         [[[0.0123, 0.9998, 0.0123, 0.9998]]]]]), tensor([[[-4.2756e...[ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00],
+         [ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: expand(torch.FloatTensor{[1, 2, 1, 1, 4]}, size=[4, 2, 4]): the number of sizes provided (3) must be greater or equal to the number of dimensions in the tensor (5)
+
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+_ TestRuntimeUserIngestion.test_unary_preference_still_ends_and_records_user_truth _
+
+self = <test_ltm_consolidation.TestRuntimeUserIngestion testMethod=test_unary_preference_still_ends_and_records_user_truth>
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_unary_preference_still_ends_and_records_user_truth(self):
+        from Layers import TernaryTruthStore as T
+        m, store, _ = self._fresh()
+>       m.provision_ltm()
+
+test/test_ltm_consolidation.py:639: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7024: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7059: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:13772: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13910: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14289: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8879: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10377: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8564: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8344: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23600: in _forward_per_stage
+    sym_sub = self._publish_reading_symbols(body_sub)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11314: in _publish_reading_symbols
+    return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:14567: in forward_concept_to_symbol
+    object.__setattr__(leg, '_symbol_when', when.expand_as(band))
+                                            ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x12364a630>
+func = <method 'expand_as' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[[[0.0123, 0.9998, 0.0123, 0.9998]]],
+
+
+         [[[0.0123, 0.9998, 0.0123, 0.9998]]]]]), tensor([[[-4.2756e...[ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00],
+         [ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: expand(torch.FloatTensor{[1, 2, 1, 1, 4]}, size=[4, 2, 4]): the number of sizes provided (3) must be greater or equal to the number of dimensions in the tensor (5)
+
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+____ TestRuntimeUserIngestion.test_user_rows_coexist_with_conversation_rows ____
+
+self = <test_ltm_consolidation.TestRuntimeUserIngestion testMethod=test_user_rows_coexist_with_conversation_rows>
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_user_rows_coexist_with_conversation_rows(self):
+        from Layers import TernaryTruthStore as T
+        m, store, tl = self._fresh()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+>           m.store_truths([{"content": "hello world", "trust": 0.9}])
+
+test/test_ltm_consolidation.py:760: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6922: in store_truths
+    self._store_truths_into_ltm(ltm_store, truth_layer, texts, trusts, source_key=source_key)
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6968: in _store_truths_into_ltm
+    self.provision_ltm()
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7024: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7059: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:13772: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13910: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14289: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8879: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10377: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8564: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8344: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23600: in _forward_per_stage
+    sym_sub = self._publish_reading_symbols(body_sub)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11314: in _publish_reading_symbols
+    return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:14567: in forward_concept_to_symbol
+    object.__setattr__(leg, '_symbol_when', when.expand_as(band))
+                                            ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x12364a630>
+func = <method 'expand_as' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[[[0.0123, 0.9998, 0.0123, 0.9998]]],
+
+
+         [[[0.0123, 0.9998, 0.0123, 0.9998]]]]]), tensor([[[-4.2756e...[ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00],
+         [ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: expand(torch.FloatTensor{[1, 2, 1, 1, 4]}, size=[4, 2, 4]): the number of sizes provided (3) must be greater or equal to the number of dimensions in the tensor (5)
+
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+______ TestRuntimeUserIngestion.test_user_rows_land_alongside_provisioned ______
+
+self = <test_ltm_consolidation.TestRuntimeUserIngestion testMethod=test_user_rows_land_alongside_provisioned>
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_user_rows_land_alongside_provisioned(self):
+        from Layers import TernaryTruthStore as T
+        m, store, tl = self._fresh()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+>           m.store_truths([{"content": "hello world", "trust": 0.9},
+                            {"content": "loving there", "trust": -0.5}])
+
+test/test_ltm_consolidation.py:662: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6922: in store_truths
+    self._store_truths_into_ltm(ltm_store, truth_layer, texts, trusts, source_key=source_key)
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6968: in _store_truths_into_ltm
+    self.provision_ltm()
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7024: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7059: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:13772: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13910: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14289: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8879: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10377: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8564: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8344: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23600: in _forward_per_stage
+    sym_sub = self._publish_reading_symbols(body_sub)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11314: in _publish_reading_symbols
+    return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:14567: in forward_concept_to_symbol
+    object.__setattr__(leg, '_symbol_when', when.expand_as(band))
+                                            ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x12364a630>
+func = <method 'expand_as' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[[[0.0123, 0.9998, 0.0123, 0.9998]]],
+
+
+         [[[0.0123, 0.9998, 0.0123, 0.9998]]]]]), tensor([[[-4.2756e...[ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00],
+         [ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: expand(torch.FloatTensor{[1, 2, 1, 1, 4]}, size=[4, 2, 4]): the number of sizes provided (3) must be greater or equal to the number of dimensions in the tensor (5)
+
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+__ TestRuntimeUserIngestion.test_view_and_serve_surface_read_ltm_backed_data ___
+
+self = <test_ltm_consolidation.TestRuntimeUserIngestion testMethod=test_view_and_serve_surface_read_ltm_backed_data>
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_view_and_serve_surface_read_ltm_backed_data(self):
+        m, store, tl = self._fresh()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+>           m.store_truths([{"content": "hello world", "trust": 0.9},
+                            {"content": "loving there", "trust": -0.5}])
+
+test/test_ltm_consolidation.py:686: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:6922: in store_truths
+    self._store_truths_into_ltm(ltm_store, truth_layer, texts, trusts, source_key=source_key)
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6968: in _store_truths_into_ltm
+    self.provision_ltm()
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7024: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7059: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:13772: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13910: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14289: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8879: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10377: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8564: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8344: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23600: in _forward_per_stage
+    sym_sub = self._publish_reading_symbols(body_sub)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11314: in _publish_reading_symbols
+    return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:14567: in forward_concept_to_symbol
+    object.__setattr__(leg, '_symbol_when', when.expand_as(band))
+                                            ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x12364a630>
+func = <method 'expand_as' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[[[0.0123, 0.9998, 0.0123, 0.9998]]],
+
+
+         [[[0.0123, 0.9998, 0.0123, 0.9998]]]]]), tensor([[[-4.2756e...[ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00],
+         [ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: expand(torch.FloatTensor{[1, 2, 1, 1, 4]}, size=[4, 2, 4]): the number of sizes provided (3) must be greater or equal to the number of dimensions in the tensor (5)
+
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+_______ TestSerialForwardAppendsStore.test_forward_grows_store_not_deque _______
+
+self = <test_ltm_consolidation.TestSerialForwardAppendsStore testMethod=test_forward_grows_store_not_deque>
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_forward_grows_store_not_deque(self):
+        # Change 1 + FU3: a serial discourse+consolidation forward grows the
+        # store and leaves the deque empty, running the predict->observe cycle
+        # without error.
+        m = _make_model(_SERIAL_CONFIG)
+        store = m.symbolSpace.ltm_store
+        disc = m.symbolSpace.expectation
+        opt = m.getOptimizer(lr=0.01)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+>           m.runEpoch(optimizer=opt, batchSize=1, split="train",
+                       max_batches=3)
+
+test/test_ltm_consolidation.py:884: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:15519: in runEpoch
+    self.provision_ltm()
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7024: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7059: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:13772: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13910: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14289: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8879: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10377: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8564: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8344: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23600: in _forward_per_stage
+    sym_sub = self._publish_reading_symbols(body_sub)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:11314: in _publish_reading_symbols
+    return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:14567: in forward_concept_to_symbol
+    object.__setattr__(leg, '_symbol_when', when.expand_as(band))
+                                            ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x12364a630>
+func = <method 'expand_as' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[[[[0.0123, 0.9998, 0.0123, 0.9998]]],
+
+
+         [[[0.0123, 0.9998, 0.0123, 0.9998]]]]]), tensor([[[-4.2756e...[ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00],
+         [ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: expand(torch.FloatTensor{[1, 2, 1, 1, 4]}, size=[4, 2, 4]): the number of sizes provided (3) must be greater or equal to the number of dimensions in the tensor (5)
+
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+=============================== warnings summary ===============================
+test/test_operators_round4a0.py::test_live_gate_reread_changes_clock_but_not_address_or_when
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operators_round4a0.py::test_live_gate_reread_changes_clock_but_not_address_or_when
+FAILED test/test_ltm_consolidation.py::TestProvisioning::test_provision_idempotent_count_via_runepoch_trigger
+FAILED test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_rows_are_real_encodings
+FAILED test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+FAILED test/test_ltm_consolidation.py::TestProvisioning::test_truthset_rows_land_via_real_forward
+FAILED test/test_ltm_consolidation.py::TestObserveSkipsDequeWhenConsolidated::test_observe_does_not_append_deque_but_runs_cycle
+FAILED test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_resubmit_replaces_user_rows_only
+FAILED test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_store_truths_after_load_does_not_reprovision
+FAILED test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_unary_preference_still_ends_and_records_user_truth
+FAILED test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_user_rows_coexist_with_conversation_rows
+FAILED test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_user_rows_land_alongside_provisioned
+FAILED test/test_ltm_consolidation.py::TestRuntimeUserIngestion::test_view_and_serve_surface_read_ltm_backed_data
+FAILED test/test_ltm_consolidation.py::TestSerialForwardAppendsStore::test_forward_grows_store_not_deque
+13 failed, 49 passed, 1 warning in 22.77s

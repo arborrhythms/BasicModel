@@ -1,0 +1,40 @@
+{
+  "part": "B",
+  "key": "meaningWidth",
+  "value": 0,
+  "loads": [
+    {
+      "source": "existing singleton",
+      "actual": 0
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/data/model.xml",
+      "actual": 0
+    },
+    {
+      "source": "data/XOR_grammar.xml",
+      "actual": 0
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/data/model.xml",
+      "actual": 0
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml",
+      "actual": 0
+    }
+  ],
+  "instances": [
+    {
+      "meaning_width": 0,
+      "centroid": true,
+      "membership_priming": true
+    },
+    {
+      "meaning_width": 0,
+      "centroid": true,
+      "membership_priming": true
+    }
+  ],
+  "verified": true
+}

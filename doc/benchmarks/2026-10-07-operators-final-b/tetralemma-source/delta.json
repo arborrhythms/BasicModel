@@ -1,0 +1,29 @@
+{
+  "changed_files": [
+    "bin/ClauseJournal.py",
+    "bin/DecompositionChooser.py",
+    "bin/Interpret.py",
+    "bin/Language.py",
+    "bin/MeaningCodes.py",
+    "bin/ModelAttention.py",
+    "bin/Models.py",
+    "bin/SentenceUnderstanding.py",
+    "bin/Spaces.py",
+    "data/model.xml",
+    "data/model.xsd",
+    "test/test_bounded_stm_fold.py",
+    "test/test_compiled_word_chunk.py",
+    "test/test_doc_links.py",
+    "test/test_operators_final_b.py",
+    "test/test_operators_round2.py",
+    "test/test_operators_round2b.py",
+    "test/test_operators_round2c.py",
+    "test/test_operators_round4a.py",
+    "test/test_priming_energy.py",
+    "test/test_tetralemma_leaf.py",
+    "test/test_word_interpretation.py",
+    "test/tetralemma_audit.py"
+  ],
+  "baseline": "measured combined source",
+  "seed": null
+}

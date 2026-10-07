@@ -1,0 +1,49 @@
+F....F                                                                   [100%]
+=================================== FAILURES ===================================
+_____ test_both_symbols_are_shortlisted_per_word_and_teacher_marginalizes ______
+
+    def test_both_symbols_are_shortlisted_per_word_and_teacher_marginalizes():
+        from Language import LanguageSpace, DisjunctionLayer
+        from MeaningCodes import opposite_symbol
+        from DecompositionChooser import DecompositionChooser
+        op = DisjunctionLayer(); op.meaning_layout = (2, 6)
+        codes = torch.tensor([[[1., 0., 1., 0., 0., 0.], [0., 1., 0., 1., 0., 0.]]])
+        parent = op.compose(opposite_symbol(codes[:, 0], 2), codes[:, 1])
+        flag = torch.zeros(1, dtype=torch.bool)
+        left, right, ready, details = LanguageSpace._bounded_binary_reconstruction(
+            op, parent, torch.zeros_like(parent), flag, flag, codes,
+            torch.ones(1, 2, dtype=torch.bool), 2, chooser=DecompositionChooser(), return_details=True)
+        assert ready.all() and details['left_indices'].shape == (1, 4)
+        torch.testing.assert_close(op.compose(left, right), parent, rtol=0, atol=0)
+        rows = torch.tensor([[4, 5]])
+        loss, present, picked = DecompositionChooser.teacher_loss(details, rows, rows, rows)
+>       assert present.all() and picked.all() and loss.isfinite().all()
+E       assert (tensor(True) and tensor(False))
+E        +  where tensor(True) = <built-in method all of Tensor object at 0x11f6693b0>()
+E        +    where <built-in method all of Tensor object at 0x11f6693b0> = tensor([True]).all
+E        +  and   tensor(False) = <built-in method all of Tensor object at 0x11f669310>()
+E        +    where <built-in method all of Tensor object at 0x11f669310> = tensor([False]).all
+
+test/test_operators_final_b.py:26: AssertionError
+___________ test_forced_not_and_or_descend_and_snapshot_certificate ____________
+
+    def test_forced_not_and_or_descend_and_snapshot_certificate():
+        report = forced_prefix_certificate()
+>       assert report['snapshots'] == 2
+E       assert 4 == 2
+
+test/test_operators_final_b.py:138: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=0.236s)
+=============================== warnings summary ===============================
+test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operators_final_b.py::test_both_symbols_are_shortlisted_per_word_and_teacher_marginalizes
+FAILED test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate
+2 failed, 4 passed, 1 warning in 3.12s

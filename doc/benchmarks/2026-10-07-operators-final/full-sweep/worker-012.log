@@ -1,0 +1,56 @@
+.s...........ss..................s...................F.................. [ 37%]
+.......................................................F................ [ 74%]
+.................................................                        [100%]
+=================================== FAILURES ===================================
+___________________ test_grammar_signatures_lift_rule_fields ___________________
+test/test_knowledge_artifact_writer.py:62: in test_grammar_signatures_lift_rule_fields
+    assert s['order_delta'] == 1
+E   assert 0 == 1
+__________ test_native_progress_and_trained_artifact_evaluation_path ___________
+test/test_learning_readiness.py:179: in test_native_progress_and_trained_artifact_evaluation_path
+    loaded = load_model(tmp_path/'tiny_chunk_model.xml', path, minimum_sentences=3)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/eval_fineweb_learning.py:40: in load_model
+    if not model.load_weights(str(checkpoint), strict=True, require_match=True):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5133: in load_weights
+    raise ValueError("\n".join(lines))
+E   ValueError: [BasicModel] Weight file mismatch -- cannot load /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3056/test_native_progress_and_train0/small-native.ckpt
+E     Shape mismatches:
+E       symbolSpace.subspace.layers.2._ltm_store.adjacent_left  saved=[3]  model=[0]
+E       symbolSpace.subspace.layers.2._ltm_store.adjacent_right  saved=[3]  model=[0]
+E       symbolSpace.subspace.layers.2._ltm_store.adjacent_address  saved=[3]  model=[0]
+E       symbolSpace.subspace.layers.2._ltm_store.adjacent_position  saved=[3]  model=[0]
+E       symbolSpace.subspace.ltm_store.adjacent_left        saved=[3]  model=[0]
+E       symbolSpace.subspace.ltm_store.adjacent_right       saved=[3]  model=[0]
+E       symbolSpace.subspace.ltm_store.adjacent_address     saved=[3]  model=[0]
+E       symbolSpace.subspace.ltm_store.adjacent_position    saved=[3]  model=[0]
+E       symbolSpace.subspace.expectation._ltm_store.adjacent_left  saved=[3]  model=[0]
+E       symbolSpace.subspace.expectation._ltm_store.adjacent_right  saved=[3]  model=[0]
+E       ... and 2 more
+E     The model config likely changed since this checkpoint was saved.
+E     To fix: correct the model XML to match the saved weights,
+E             or delete/move /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3056/test_native_progress_and_train0/small-native.ckpt to start fresh.
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 0 (Δ=0.153s)
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3056/test_native_progress_and_train0/small-native.ckpt
+=============================== warnings summary ===============================
+test/test_ir_only_refactor.py::TestIrForwardShape::test_ir_forward_returns_b_n_d
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_ir_only_refactor.py::TestReconstructConceptsLoss::test_reconstruction_is_unconditionally_from_concepts
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7195: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_ir_only_refactor.py::TestArmaPredictAndObserve::test_observe_accumulates_nonzero_loss
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_knowledge_artifact_writer.py::test_grammar_signatures_lift_rule_fields
+FAILED test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path
+2 failed, 187 passed, 4 skipped, 3 warnings in 12.97s

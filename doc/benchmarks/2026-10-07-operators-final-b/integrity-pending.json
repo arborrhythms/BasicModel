@@ -1,0 +1,10 @@
+{
+  "prior_receipt_files": 2119,
+  "prior_receipt_changed": [],
+  "after_sweep_source_matches": true,
+  "source_sha256": "df6ea744c0ec603a73e9567be36bf3d90d7bb0bfc546a99018f590f0e5af518c",
+  "standing_trainings_started": 0,
+  "green_full_sweep": false,
+  "approval": "pending additional full sweep",
+  "commit": false
+}

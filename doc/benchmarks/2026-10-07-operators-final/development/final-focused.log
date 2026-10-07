@@ -1,0 +1,943 @@
+.F.F..F.F....................FF......................................... [ 36%]
+.....................F......F...FFF...........F....F.............F.F.... [ 72%]
+..F..F...F...FF..F.F.F..F.......................FF...F.                  [100%]
+=================================== FAILURES ===================================
+____________ test_adjacent_wholes_rewitness_compact_and_checkpoint _____________
+
+    def test_adjacent_wholes_rewitness_compact_and_checkpoint():
+        from Layers import TernaryTruthStore
+        from Meaning import ConceptualMeaning
+        store = TernaryTruthStore(4, capacity=4)
+        value = ConceptualMeaning.from_description(torch.ones(4))
+>       discarded = store.append_meaning(value, document_key='gone', origin=store.ORIGIN_USER)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_operators_final.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (TernaryTruthStore(), ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind=None))
+kwargs = {'document_key': 'gone', 'origin': 2}
+
+    @functools.wraps(func)
+    def decorate_context(*args, **kwargs):
+        # pyrefly: ignore [bad-context-manager]
+        with ctx_factory():
+>           return func(*args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: TernaryTruthStore.append_meaning() got an unexpected keyword argument 'origin'
+
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: TypeError
+_________________ test_bilattice_rule_survives_operator_rename _________________
+
+    def test_bilattice_rule_survives_operator_rename():
+        from Language import ConjunctionLayer, DisjunctionLayer, NotLayer
+        for cls in (ConjunctionLayer, DisjunctionLayer):
+            op = cls(); op.meaning_layout = (2, 6)
+            a = torch.tensor([[.4, .6, .1, .3, .5, .8]])
+            b = a.flip(-1)
+            expected = op.compose(a, b)
+            op.rule_name = 'opaque'
+>           torch.testing.assert_close(op.compose(a, b), expected)
+E           AssertionError: Tensor-likes are not close!
+E           
+E           Mismatched elements: 6 / 6 (100.0%)
+E           Greatest absolute difference: 0.2853415608406067 at index (0, 5) (up to 1e-05 allowed)
+E           Greatest relative difference: 0.5175077319145203 at index (0, 2) (up to 1.3e-06 allowed)
+
+test/test_operators_final.py:80: AssertionError
+______ test_determiner_mints_distinct_occurrence_and_universal_stays_high ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x122fd2d80>
+
+    def test_determiner_mints_distinct_occurrence_and_universal_stays_high(monkeypatch):
+        from test_clause_acceptance import SentenceFixture
+        f = SentenceFixture(monkeypatch)
+        clause = f.clause(('lift', ('lower', 'a', 'cat'), 'sleeps'))
+        a = f.store.write_clause(clause, document_key='first', sentence_index=1)
+        b = f.store.write_clause(clause, document_key='second', sentence_index=1)
+>       assert f.store.refs[a, 0] != f.store.refs[b, 0]
+E       assert tensor(4) != tensor(4)
+
+test/test_operators_final.py:134: AssertionError
+__ test_definition_sentence_joins_identities_beside_the_interpret_definition ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1230db4a0>
+
+    def test_definition_sentence_joins_identities_beside_the_interpret_definition(monkeypatch):
+        from test_clause_acceptance import SentenceFixture
+        from ClauseRow import predicate_identity
+        f = SentenceFixture(monkeypatch)
+        clause = f.clause(('equal', 'bachelor', 'unmarried-man'))
+        first = f.store.write_clause(clause, document_key='definition', sentence_index=1)
+        assert len(f.store) == 2 and f.store.refs[0].tolist() == f.store.refs[1, [2, 1, 0]].tolist()
+        assert int(f.store.refs[first, 1]) == predicate_identity('part')
+        assert f.noun('bachelor') != f.noun('unmarried-man')
+        assert f.cs.definitions.objects(f.words['bachelor'][0]) == (f.noun('bachelor'),)
+>       assert f.registry.operation_spec('equal').predicate_identity == 'operation:equal'
+E       AssertionError: assert 'surface' == 'operation:equal'
+E         
+E         - operation:equal
+E         + surface
+
+test/test_operators_final.py:166: AssertionError
+_ test_equality_question_uses_a_declared_formula_identity_without_an_inventory_row _
+
+    def test_equality_question_uses_a_declared_formula_identity_without_an_inventory_row():
+        from test_grammatical_query_vps import _world
+        from ClauseRow import predicate_identity, predicate_point
+        cs,registry,a,b,_context=_world()
+        question=registry.form('equal',a,b)
+        descriptor=registry.descriptors['equal']
+        assert descriptor.predicate_name == 'operation:equal'
+        assert descriptor.relation_directions == ((0,2),(2,0))
+>       assert question.role_refs[1] == ('sym',predicate_identity(descriptor.predicate_name))
+E       AssertionError: assert ('sym', 3908240892941116971) == ('sym', 4258523568460969855)
+E         
+E         At index 1 diff: 3908240892941116971 != 4258523568460969855
+E         Use -v to get more diff
+
+test/test_operator_catalogue.py:260: AssertionError
+________ test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10bda9580>
+
+    def test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse(monkeypatch):
+        f = SentenceFixture(monkeypatch)
+        clause = f.clause(('lift', ('lower', 'the', 'cat'), ('verb', 'chased', ('lower', 'the', 'mouse'))))
+        row = f.store.write_clause(clause, trust=.7)
+        assert len(f.store) == 3 and f.store.rel_type[row] == f.store.REL_NONE
+>       assert f.store.refs[row, 0] == f.store.row_ids[0]
+E       assert tensor(4) == tensor(6178692028070983788)
+
+test/test_clause_acceptance.py:94: AssertionError
+____________ test_review17_measurement_wiring_on_one_ordinary_batch ____________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3038/test_review17_measurement_wiri0')
+
+    def test_review17_measurement_wiring_on_one_ordinary_batch(tmp_path):
+        import json, os, sys
+        from pathlib import Path
+        from bounded_tests import run_guarded, GIB
+        root=Path(__file__).resolve().parents[1]
+        receipt=root/'doc/benchmarks/2026-10-07-operators-final'
+        prior=root/'doc/benchmarks/2026-10-03-operators-attention'
+        env=os.environ.copy()
+        env.update(PYTEST_PLUGINS='operators_gate_observer', MODEL_COMPILE='none',
+            OWNERSHIP_OBSERVER_OUTPUT=str(tmp_path/'ownership'),
+            ITEM7_XOR_MEASUREMENTS=str(tmp_path/'observations.jsonl'), ITEM7_XOR_GATE='5',
+            REVIEW17_REPORTS=str(tmp_path/'reports.jsonl'),
+            PYTHONPATH=os.pathsep.join(map(str,(receipt,prior,root/'bin',root/'test'))))
+        result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'observer_probe.py')],
+            cwd=root,env=env,log_path=tmp_path/'observer.log',memory_bytes=8*GIB,timeout=1800)
+>       assert result['exit_code']==0,(tmp_path/'observer.log').read_text()
+E       AssertionError: F                                                                        [100%]
+E         =================================== FAILURES ===================================
+E         ___________ test_margin_and_ownership_observe_the_same_actual_steps ____________
+E         
+E             def test_margin_and_ownership_observe_the_same_actual_steps():
+E                 from test_mm_xor import _fresh_model
+E                 import operators_gate_observer
+E                 model, _, data = _fresh_model('data/XOR_grammar.xml')
+E                 optimizer = model.getOptimizer(lr=.01)
+E                 owners=model.objective_parameter_groups(optimizer)
+E                 assert 'compose_preference' not in owners
+E                 preference=owners['reconstruction']
+E                 assert any(p is model.languageSpace.decomposition_chooser.weight for p in preference)
+E                 operation=model.languageSpace._tree_layer(2)
+E                 assert all(any(p is anchor for p in preference) for anchor in
+E                            (operation.stop_anchor,operation.reduce_anchor,operation.apply_anchor))
+E                 raw, target = next(iter(data.data_loader(split='train', num_streams=4)))
+E                 batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)
+E                 from operators_run_audit import observe_run, json_value
+E                 with observe_run() as run_audit:
+E                     model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
+E                     model.runBatch(train=False,optimizer=None,batchSize=4,split='test',batch_override=batch)
+E                 decomposition=run_audit['decomposition_chooser']
+E                 assert decomposition['start']['weights'] == [1., 0., 0., 0., 0.]
+E                 assert decomposition['start']['undos'] > 0
+E                 assert decomposition['start']['true_pair_in_shortlist_rate'] == 1.
+E                 assert decomposition['end']['undos'] > 0
+E                 steps=run_audit['compose_score_function_steps']
+E                 assert len(steps)==4
+E                 assert all(row['sampling_scale']==row['W']*row['R_walk']*row['K'] for row in steps)
+E                 assert all(row['W']==2 for row in steps)
+E                 assert run_audit['chooser_logit_ranges']['1']['calls']>0
+E                 assert all(row.get('gradient_max_error',0.)<2e-6 for row in steps)
+E                 assert all(row.get('finite_difference',{}).get('error',0.)<2e-6 for row in steps)
+E                 assert len(run_audit['reader_weights']) == 1
+E                 assert run_audit['storage_after_training']['sentence_rows'] == 4
+E                 assert run_audit['storage_after_training']['witness_counts'] == [1] * 4
+E                 assert len(set(run_audit['storage_after_training']['content_keys'])) == 4
+E                 assert run_audit['storage']['sentence_rows'] == 4
+E                 assert run_audit['storage']['rows_used'] < run_audit['storage']['capacity']
+E                 assert run_audit['reader_weights'][0]['reader_updates'] == 1
+E                 assert set(run_audit['reader_weights'][0]['optimizer_steps'].values()) == {1.}
+E                 assert len(run_audit['reader_training_rows']) == 1
+E                 assert len(run_audit['comparison_reader_weights']) == 1
+E                 assert run_audit['comparison_reader_weights'][0]['reader_updates'] == 1
+E                 assert set(run_audit['comparison_reader_weights'][0]['optimizer_steps'].values()) == {1.}
+E                 assert len(run_audit['reader_mse']) == 1
+E                 assert all(sum(w)==1 and set(w)<={0.,1.} for w in run_audit['reader_training_rows'][0]['weights'])
+E                 assert all(all(row['rows']) for row in run_audit['reader_training_rows'])
+E                 assert run_audit['pole_consumers']['_attention_sentence_payload'] > 0
+E                 assert run_audit['pole_consumers']['commit_word_reference_slab:per_word'] > 0
+E                 assert all(book['containment']['after']['largest']==0 for phase in ('start','end') for book in run_audit[phase]['codes'])
+E                 assert len(run_audit['before_learning_readback']['texts']) == 4
+E                 assert all(row['nonzero']==0 for row in run_audit['sentence_gradients'].values())
+E                 assert all(phase in run_audit for phase in ('start','end'))
+E                 for phase in ('start','end'):
+E                     identity = run_audit[phase]['identity']
+E                     assert identity['collisions'] == identity['reconstruction_errors'] == 0
+E                     assert identity['rung0']['errors'] == 0
+E                     assert identity['containment_violations'] == 0
+E                 assert run_audit['start']['identity']['projection_sha256'] == run_audit['end']['identity']['projection_sha256']
+E                 assert all(phase in run_audit['centroid'] for phase in ('start','end'))
+E                 (Path(os.environ['OWNERSHIP_OBSERVER_OUTPUT'])/'run-audit.json').write_text(json.dumps(run_audit,default=json_value,indent=2))
+E                 operators_gate_observer.save_ownership(model)
+E                 folder = Path(os.environ['OWNERSHIP_OBSERVER_OUTPUT'])
+E                 events = [json.loads(line) for line in (folder/'events.jsonl').read_text().splitlines()]
+E                 first = [event for event in events if event['kind'] == 'decoder_first_logits']
+E                 steps = [event for event in events if event['kind'] == 'decoder_margin_step']
+E                 assert len(first) >= 2
+E                 assert {row['path'] for row in first} == {'greedy', 'explore'}
+E                 assert len(steps) == 2
+E                 assert not any(step['walks'] for step in steps)
+E                 assert 'attention_score_function_steps' not in run_audit
+E                 assert len([r for r in run_audit['sentence_trials'] if r['training']]) == 1
+E         >       assert all(v==0 for v in run_audit['closing_image']['concept_widths'].values())
+E         E       assert False
+E         E        +  where False = all(<generator object test_margin_and_ownership_observe_the_same_actual_steps.<locals>.<genexpr> at 0x131678c70>)
+E         
+E         doc/benchmarks/2026-10-07-operators-final/observer_probe.py:77: AssertionError
+E         ----------------------------- Captured stdout call -----------------------------
+E         [AMP] off (fp32, MODEL_AMP unset or =off)
+E         batch = 0 (warm-up, 100.00%)
+E         Training throughput: 1 batches in 0.678s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+E         batch = 0 (Δ=0.221s)
+E         =============================== warnings summary ===============================
+E         doc/benchmarks/2026-10-07-operators-final/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E           /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E             @pytest.mark.slow
+E         
+E         doc/benchmarks/2026-10-07-operators-final/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E           /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E             @pytest.mark.slow
+E         
+E         doc/benchmarks/2026-10-07-operators-final/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E           /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E             @pytest.mark.slow
+E         
+E         doc/benchmarks/2026-10-07-operators-final/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E           /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+E             return func(*args, **kwargs)
+E         
+E         -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+E         =========================== short test summary info ============================
+E         FAILED doc/benchmarks/2026-10-07-operators-final/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E         1 failed, 4 warnings in 1.21s
+E         
+E       assert 1 == 0
+
+test/test_review14_contracts.py:154: AssertionError
+______ test_compose_query_and_converse_faces_share_the_same_canonical_vp _______
+
+    def test_compose_query_and_converse_faces_share_the_same_canonical_vp():
+        from ClauseRow import predicate_identity
+        from References import symbol_code
+        cs, registry, a, b, context = _world()
+        assertion = registry.form('part', a, b, mode='assertive')
+        question = registry.form('part', a, b)
+        converse = registry.form('whole', b, a)
+        assert isinstance(question, ConceptualMeaning)
+        assert question.mode == 'interrogative' and assertion.mode == 'assertive'
+        assert question.role_mask.tolist() == [True, True, True]
+        assert question.role_refs[0] == a and question.role_refs[2] == b
+        assert question.role_refs == assertion.role_refs == converse.role_refs
+        torch.testing.assert_close(question.roles, assertion.roles)
+        torch.testing.assert_close(question.roles, converse.roles)
+        vp = question.role_refs[1]
+        assert vp[0] == 'sym'
+>       assert vp[1] == predicate_identity('part')
+E       AssertionError: assert 3908240892941116971 == 4010033338316264258
+E        +  where 4010033338316264258 = <function predicate_identity at 0x111039a80>('part')
+
+test/test_grammatical_query_vps.py:46: AssertionError
+______ test_forming_candidates_does_not_mint_or_write_memory_after_setup _______
+
+    def test_forming_candidates_does_not_mint_or_write_memory_after_setup():
+        cs, registry, a, b, context = _world()
+        placement = dict(cs._concept_allocator.placement)
+>       named = dict(cs._frozen_named)
+                     ^^^^^^^^^^^^^^^^
+
+test/test_grammatical_query_vps.py:90: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+name = '_frozen_named'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_frozen_named'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____ test_unary_query_keeps_full_description_through_an_existing_occurrence ____
+
+    def test_unary_query_keeps_full_description_through_an_existing_occurrence():
+        cs, registry, a, b, _ = _world()
+        store = TernaryTruthStore(8)
+        description = ConceptualMeaning(torch.eye(8)[:3], torch.ones(3, dtype=torch.bool),
+                                       scope={'place': 'workshop'})
+        store.configure_leaf_index(unfold=lambda idea, limit, **kw: ((7,), 1, True))
+        index = store.append_meaning(description, trust=0.75)
+        context = _context(cs, store=store)
+        reference = store.occurrence_of(index)
+        question = registry.form('what', reference, context=context)
+        assert question.role_refs[0] == reference
+        assert question.role_mask.tolist() == [True, True, False]
+>       result = registry.execute(question, context)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_grammatical_query_vps.py:112: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Queries.py:2157: in execute
+    signature = self.signature_for(meaning, work=context.work)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x147f1a7b0>
+meaning = ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('ltm', 'address-v1', 6299363199204429134), ('sym', 3908240892941116971), None), bindings=(), scope=(), sentence_kind=None)
+work = <QueryWork.QueryWorkBudget object at 0x122e371d0>
+verify_reference = True
+
+    def signature_for(self, meaning, *, work=None, verify_reference=True):
+        """Recover one checked operation from a canonical VP and role mask."""
+        if (not isinstance(meaning, ConceptualMeaning)
+                or meaning.mode != 'interrogative'):
+            raise ValueError('thought execution requires a completed interrogative meaning')
+        if not bool(meaning.role_mask[1]):
+            raise ValueError('thought meaning has no grammatical VP')
+        reference = concept_reference(meaning.role_refs[1])
+        identity = next((identity for identity in self.identities
+                         if self._identifier(identity) == reference[1]), None)
+        if identity is None:
+            raise ValueError('thought VP is not a registered grammatical operation')
+        if verify_reference:
+            self._reference(identity, work=work)
+        semantic_id = identity[1]
+        operation = self.operation_spec(semantic_id)
+        occupied = tuple(
+            role for role in operation.operand_roles
+            if bool(meaning.role_mask[self._slot_for_operand(role)]))
+        allowed_slots = {1} | {self._slot_for_operand(role)
+                              for role in operation.operand_roles}
+        if any(bool(meaning.role_mask[index]) and index not in allowed_slots
+               for index in range(len(meaning.role_mask))):
+            raise ValueError('thought meaning has occupancy outside its structural role contract')
+        signature = ThoughtSignature(operation, self.descriptors[semantic_id], occupied)
+        if signature.open_roles and any(
+                not (isinstance(meaning.role_refs[self._slot_for_operand(role)], tuple)
+                     and meaning.role_refs[self._slot_for_operand(role)][0] == 'sym')
+                for role in occupied):
+>           raise ValueError('open taxonomy operand requires a native concept reference')
+E           ValueError: open taxonomy operand requires a native concept reference
+
+bin/Queries.py:2131: ValueError
+_____ test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation _____
+
+    def test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation():
+        cs, registry, a, b, context = _world()
+        question = registry.form('quantize', a)
+        # Named VPs do not retire through the normal frozen-concept lifecycle.
+        # Simulate a missing native record in an incomplete structural restore.
+        cs._concept_allocator.drop(question.role_refs[1][1])
+        placement = dict(cs._concept_allocator.placement)
+>       with pytest.raises(ValueError, match='unavailable|retired|VP'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_grammatical_query_vps.py:141: Failed
+___________________ test_lift_rule_has_order_delta_plus_one ____________________
+
+    def test_lift_rule_has_order_delta_plus_one():
+        """``S4 = lift(NP3, VP1)`` parses with ``order_delta == +1`` and fully
+        explicit constant order annotations on every category."""
+        from Language import Grammar
+        g = Grammar()
+        rule = g._parse_rule("S4", "lift(NP3, VP1)", space_role='SS')
+        sig = g._rule_order_signature(rule)
+>       assert sig.order_delta == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = RuleOrderSignature(lhs_category='S', lhs_order_expr=OrderExpr(kind='constant', delta=4), rhs_categories=('NP', 'VP'), rhs_order_exprs=(OrderExpr(kind='constant', delta=3), OrderExpr(kind='constant', delta=1)), op_name='lift', order_delta=0).order_delta
+
+test/test_grammar_order_typing.py:153: AssertionError
+___________________________ test_modal_sentence_lift ___________________________
+
+    def test_modal_sentence_lift():
+        """``S5 = lift(S4, MP1)`` — modal phrase (MP) raises a sentence into
+        a 5D modal-probability space. Confirms the lift pattern works for
+        sentence-level modal embedding, not just NP/VP construction."""
+        from Language import Grammar
+        g = Grammar()
+        rule = g._parse_rule("S5", "lift(S4, MP1)", space_role='SS')
+        sig = g._rule_order_signature(rule)
+        assert sig.lhs_category == "S"
+        assert sig.lhs_order_expr.delta == 5
+        assert sig.rhs_categories == ("S", "MP")
+        assert sig.rhs_order_exprs[0].delta == 4
+        assert sig.rhs_order_exprs[1].delta == 1
+        assert sig.op_name == "lift"
+>       assert sig.order_delta == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = RuleOrderSignature(lhs_category='S', lhs_order_expr=OrderExpr(kind='constant', delta=5), rhs_categories=('S', 'MP'), rhs_order_exprs=(OrderExpr(kind='constant', delta=4), OrderExpr(kind='constant', delta=1)), op_name='lift', order_delta=0).order_delta
+
+test/test_grammar_order_typing.py:243: AssertionError
+_______ TestLiftLowerForwardReverseShape.test_lower_reverse_returns_pair _______
+
+self = <test_lift_lower_binary_grammar_ops.TestLiftLowerForwardReverseShape testMethod=test_lower_reverse_returns_pair>
+
+    def test_lower_reverse_returns_pair(self):
+        """LowerLayer.reverse(parent) returns a 2-tuple ``(left, right)``."""
+        D = 4
+        lower = self._make_lower(D)
+        torch.manual_seed(3)
+        a = torch.rand(2, 5, D) * 1.8 - 0.9
+        b = torch.rand(2, 5, D) * 1.8 - 0.9
+        with torch.no_grad():
+            parent = lower.forward(a, b)
+>           split = lower.reverse(parent)
+                    ^^^^^^^^^^^^^^^^^^^^^
+
+test/test_lift_lower_binary_grammar_ops.py:169: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Language.py:3803: in reverse
+    self.raise_no_inverse('a determiner reverses by selecting a kind and marker from references')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LowerLayer()
+why = 'a determiner reverses by selecting a kind and marker from references'
+
+    def raise_no_inverse(self, why=""):
+        """Serial-derivation fail-loud contract (2026-07-04 plan, Task 1):
+        a rule with no faithful reverse RAISES instead of fabricating an
+        identity/pseudo split -- the error inventory is the Gate-S1
+        decision procedure (write a real reverse() or remove the rule)."""
+        detail = f" [{why}]" if why else ""
+>       raise NotImplementedError(
+            f"{type(self).__name__} rule '{self.rule_name}' "
+            f"(arity {self.arity}, space_role {self.space_role}): no "
+            f"faithful reverse(){detail} -- write a real reverse() or "
+            f"remove the rule from the grammar "
+            f"(serial-derivation plan 2026-07-04, Gate S1 inventory).")
+E       NotImplementedError: LowerLayer rule 'lower' (arity 2, space_role CS): no faithful reverse() [a determiner reverses by selecting a kind and marker from references] -- write a real reverse() or remove the rule from the grammar (serial-derivation plan 2026-07-04, Gate S1 inventory).
+
+bin/Layers.py:2494: NotImplementedError
+___________ TestLiftLowerRoundTrip.test_lower_round_trip_consistent ____________
+
+self = <test_lift_lower_binary_grammar_ops.TestLiftLowerRoundTrip testMethod=test_lower_round_trip_consistent>
+
+    def test_lower_round_trip_consistent(self):
+        """A second compose on the split should reproduce the parent."""
+        D = 4
+        lower = LowerLayer(nInput=D, nOutput=D)
+        torch.manual_seed(5)
+        a = torch.rand(2, 3, D) * 1.8 - 0.9
+        b = torch.rand(2, 3, D) * 1.8 - 0.9
+        with torch.no_grad():
+            parent = lower.forward(a, b)
+>           left, right = lower.reverse(parent)
+                          ^^^^^^^^^^^^^^^^^^^^^
+
+test/test_lift_lower_binary_grammar_ops.py:220: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Language.py:3803: in reverse
+    self.raise_no_inverse('a determiner reverses by selecting a kind and marker from references')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LowerLayer()
+why = 'a determiner reverses by selecting a kind and marker from references'
+
+    def raise_no_inverse(self, why=""):
+        """Serial-derivation fail-loud contract (2026-07-04 plan, Task 1):
+        a rule with no faithful reverse RAISES instead of fabricating an
+        identity/pseudo split -- the error inventory is the Gate-S1
+        decision procedure (write a real reverse() or remove the rule)."""
+        detail = f" [{why}]" if why else ""
+>       raise NotImplementedError(
+            f"{type(self).__name__} rule '{self.rule_name}' "
+            f"(arity {self.arity}, space_role {self.space_role}): no "
+            f"faithful reverse(){detail} -- write a real reverse() or "
+            f"remove the rule from the grammar "
+            f"(serial-derivation plan 2026-07-04, Gate S1 inventory).")
+E       NotImplementedError: LowerLayer rule 'lower' (arity 2, space_role CS): no faithful reverse() [a determiner reverses by selecting a kind and marker from references] -- write a real reverse() or remove the rule from the grammar (serial-derivation plan 2026-07-04, Gate S1 inventory).
+
+bin/Layers.py:2494: NotImplementedError
+_________ TestLiftLowerHasInternalSubstrate.test_lower_has_internal_pi _________
+
+self = <test_lift_lower_binary_grammar_ops.TestLiftLowerHasInternalSubstrate testMethod=test_lower_has_internal_pi>
+
+    def test_lower_has_internal_pi(self):
+        """LowerLayer owns an internal PiLayer for the binary fold."""
+        from Layers import PiLayer
+        lower = LowerLayer(nInput=4, nOutput=4)
+        params = [p for p in lower.parameters() if p.requires_grad]
+>       self.assertGreater(len(params), 0)
+E       AssertionError: 0 not greater than 0
+
+test/test_lift_lower_binary_grammar_ops.py:337: AssertionError
+___ TestLiftLowerRecommender.test_lower_reverse_uses_recommender_with_basis ____
+
+self = <test_lift_lower_recommender.TestLiftLowerRecommender testMethod=test_lower_reverse_uses_recommender_with_basis>
+
+    def test_lower_reverse_uses_recommender_with_basis(self):
+        lower = LowerLayer(nInput=self.D)
+        lower.eval()
+>       self._check(lower)
+
+test/test_lift_lower_recommender.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_lift_lower_recommender.py:46: in _check
+    l, r = layer.reverse(parent, basis=basis)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3803: in reverse
+    self.raise_no_inverse('a determiner reverses by selecting a kind and marker from references')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LowerLayer()
+why = 'a determiner reverses by selecting a kind and marker from references'
+
+    def raise_no_inverse(self, why=""):
+        """Serial-derivation fail-loud contract (2026-07-04 plan, Task 1):
+        a rule with no faithful reverse RAISES instead of fabricating an
+        identity/pseudo split -- the error inventory is the Gate-S1
+        decision procedure (write a real reverse() or remove the rule)."""
+        detail = f" [{why}]" if why else ""
+>       raise NotImplementedError(
+            f"{type(self).__name__} rule '{self.rule_name}' "
+            f"(arity {self.arity}, space_role {self.space_role}): no "
+            f"faithful reverse(){detail} -- write a real reverse() or "
+            f"remove the rule from the grammar "
+            f"(serial-derivation plan 2026-07-04, Gate S1 inventory).")
+E       NotImplementedError: LowerLayer rule 'lower' (arity 2, space_role CS): no faithful reverse() [a determiner reverses by selecting a kind and marker from references] -- write a real reverse() or remove the rule from the grammar (serial-derivation plan 2026-07-04, Gate S1 inventory).
+
+bin/Layers.py:2494: NotImplementedError
+_ TestLiftLowerFactorization.test_different_ADJs_give_different_lower_outputs __
+
+self = <test_lift_lower_factorization.TestLiftLowerFactorization testMethod=test_different_ADJs_give_different_lower_outputs>
+
+    def test_different_ADJs_give_different_lower_outputs(self):
+        """Different ADJ bivectors -> different gates -> different lower outputs."""
+        lower = self._make_lower()
+        B, V_S, D = self._bivec_for_test()
+        NP = _random_bivec((B, V_S, D), seed=51)
+        ADJ_a = _random_bivec((B, V_S, D), seed=52)
+        ADJ_b = _random_bivec((B, V_S, D), seed=53)
+        with torch.no_grad():
+            out_a = lower.forward(ADJ_a, NP)
+            out_b = lower.forward(ADJ_b, NP)
+>       self.assertFalse(torch.allclose(out_a, out_b, atol=1e-6),
+                         "Different ADJ gates must produce different "
+                         "lower outputs for the same NP -- ADJ-IS-the-mask.")
+E       AssertionError: True is not false : Different ADJ gates must produce different lower outputs for the same NP -- ADJ-IS-the-mask.
+
+test/test_lift_lower_factorization.py:171: AssertionError
+___ TestLiftLowerFactorization.test_lift_vs_lower_differ_after_perturbation ____
+
+self = <test_lift_lower_factorization.TestLiftLowerFactorization testMethod=test_lift_vs_lower_differ_after_perturbation>
+
+    def test_lift_vs_lower_differ_after_perturbation(self):
+        """Same (gate, NP) -> lift and lower differ once their internal
+        sigma / pi diverge from identity init.
+    
+        Phase 3 design note: at fresh construction, both ``_sigma``
+        (SigmaLayer) and ``_pi`` (PiLayer) initialize with the
+        identity LDU (``W=I, bias=0``).  The underlying numerical
+        kernels then collapse to identity at init -- so day-0
+        outputs are numerically indistinguishable.  The asymmetry
+        between additive sigma and multiplicative pi materialises
+        once training (or any explicit weight perturbation) takes
+        the diagonals away from 1.  The test perturbs one
+        diagonal element of each layer with *different* signs and
+        verifies the outputs then diverge -- proving the
+        sigma-vs-pi post-gate transforms are structurally
+        independent learnable maps.
+        """
+        lift = self._make_lift()
+        lower = self._make_lower()
+        # Perturb the LDU diagonals so the two layers move off
+        # identity in different directions; this is the smallest
+        # change that proves the structural asymmetry without
+        # depending on a full training step.
+        with torch.no_grad():
+            for p in lift._sigma.parameters():
+                if p.dim() == 1 and p.shape[0] > 0:
+                    p.add_(0.25)
+                    break
+>           for p in lower._pi.parameters():
+                     ^^^^^^^^^
+
+test/test_lift_lower_factorization.py:203: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LowerLayer(), name = '_pi'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'LowerLayer' object has no attribute '_pi'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_______ TestLiftLowerFactorization.test_lower_has_internal_pi_trainable ________
+
+self = <test_lift_lower_factorization.TestLiftLowerFactorization testMethod=test_lower_has_internal_pi_trainable>
+
+    def test_lower_has_internal_pi_trainable(self):
+        """Wired LowerLayer owns an internal ``_pi`` with trainable params."""
+        lower = self._make_lower()
+>       self.assertIsNotNone(lower._pi,
+                             ^^^^^^^^^
+                             "Wired LowerLayer must own an internal PiLayer.")
+
+test/test_lift_lower_factorization.py:236: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LowerLayer(), name = '_pi'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'LowerLayer' object has no attribute '_pi'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____ test_two_verbs_distinct_with_masks_on_ablated_identical[LowerLayer] ______
+
+cls_name = 'LowerLayer'
+
+    @pytest.mark.parametrize("cls_name", ["LiftLayer", "LowerLayer"])
+    def test_two_verbs_distinct_with_masks_on_ablated_identical(cls_name):
+        """One shared matrix, two verbs: distinct with masks on; with masks
+        ablated the verbs are indistinguishable and the path is the
+        unchanged baseline."""
+        op = _op(cls_name)
+        torch.manual_seed(13)
+        walk = torch.rand(_D) * 2 - 1
+        run = torch.rand(_D) * 2 - 1
+        a, b = _operands()
+    
+>       g_walk = op.lexical_gate(walk)
+                 ^^^^^^^^^^^^^^^
+
+test/test_lexical_gate_lift_lower.py:66: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LowerLayer(), name = 'lexical_gate'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'LowerLayer' object has no attribute 'lexical_gate'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_________________ test_gate_none_code_passthrough[LowerLayer] __________________
+
+cls_name = 'LowerLayer'
+
+    @pytest.mark.parametrize("cls_name", ["LiftLayer", "LowerLayer"])
+    def test_gate_none_code_passthrough(cls_name):
+        """lexical_gate(None) is None, so call sites can thread the result
+        unconditionally; a zero-width layer also produces None."""
+        import Language
+        op = _op(cls_name)
+>       assert op.lexical_gate(None) is None
+               ^^^^^^^^^^^^^^^
+
+test/test_lexical_gate_lift_lower.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LowerLayer(), name = 'lexical_gate'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'LowerLayer' object has no attribute 'lexical_gate'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_____ test_projection_trains_end_to_end_with_composition_loss[LowerLayer] ______
+
+cls_name = 'LowerLayer'
+
+    @pytest.mark.parametrize("cls_name", ["LiftLayer", "LowerLayer"])
+    def test_projection_trains_end_to_end_with_composition_loss(cls_name):
+        """End-to-end training (DECIDED 2026-06-11): the embedding->gate map
+        learns from the composition loss alone -- no separate mask
+        objective -- and the per-verb gates move apart."""
+        op = _op(cls_name)
+        torch.manual_seed(17)
+        walk = torch.rand(_D) * 2 - 1
+        run = torch.rand(_D) * 2 - 1
+        a, b = _operands(seed=19)
+        t_walk = torch.rand(2, _D) * 1.2 - 0.6
+        t_run = torch.rand(2, _D) * 1.2 - 0.6
+    
+        def loss_fn():
+            c_w = op.forward(a, b, gate=op.lexical_gate(walk))
+            c_r = op.forward(a, b, gate=op.lexical_gate(run))
+            return ((c_w - t_walk) ** 2).mean() + ((c_r - t_run) ** 2).mean()
+    
+        with torch.no_grad():
+>           gap0 = (op.lexical_gate(walk) - op.lexical_gate(run)).abs().sum()
+                    ^^^^^^^^^^^^^^^
+
+test/test_lexical_gate_lift_lower.py:116: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LowerLayer(), name = 'lexical_gate'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'LowerLayer' object has no attribute 'lexical_gate'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+________________ test_signed_kernel_gated_roundtrip[LowerLayer] ________________
+
+cls_name = 'LowerLayer'
+
+    @pytest.mark.parametrize("cls_name", ["LiftLayer", "LowerLayer"])
+    def test_signed_kernel_gated_roundtrip(cls_name):
+        """The gate-slicing surface keeps working on the signed kernels
+        (§3): the gated forward/reverse round-trip of the legacy folds is
+        self-consistent -- forward(*reverse(y, g), g) == y."""
+        op = _op(cls_name)
+        a, b = _operands(seed=29)
+        g = torch.tanh(torch.rand(_D) + 0.5)         # tanh-bounded, nonzero
+        with torch.no_grad():
+            y = op.forward(a, b, gate=g)
+>           l, r = op.reverse(y, gate=g)
+                   ^^^^^^^^^^^^^^^^^^^^^
+
+test/test_lexical_gate_lift_lower.py:175: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Language.py:3803: in reverse
+    self.raise_no_inverse('a determiner reverses by selecting a kind and marker from references')
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LowerLayer()
+why = 'a determiner reverses by selecting a kind and marker from references'
+
+    def raise_no_inverse(self, why=""):
+        """Serial-derivation fail-loud contract (2026-07-04 plan, Task 1):
+        a rule with no faithful reverse RAISES instead of fabricating an
+        identity/pseudo split -- the error inventory is the Gate-S1
+        decision procedure (write a real reverse() or remove the rule)."""
+        detail = f" [{why}]" if why else ""
+>       raise NotImplementedError(
+            f"{type(self).__name__} rule '{self.rule_name}' "
+            f"(arity {self.arity}, space_role {self.space_role}): no "
+            f"faithful reverse(){detail} -- write a real reverse() or "
+            f"remove the rule from the grammar "
+            f"(serial-derivation plan 2026-07-04, Gate S1 inventory).")
+E       NotImplementedError: LowerLayer rule 'lower' (arity 2, space_role CS): no faithful reverse() [a determiner reverses by selecting a kind and marker from references] -- write a real reverse() or remove the rule from the grammar (serial-derivation plan 2026-07-04, Gate S1 inventory).
+
+bin/Layers.py:2494: NotImplementedError
+_______ TestLiftLowerButterflyDelegation.test_lower_butterfly_constructs _______
+
+self = <test_grammar_layer_butterfly.TestLiftLowerButterflyDelegation testMethod=test_lower_butterfly_constructs>
+
+    def test_lower_butterfly_constructs(self):
+        N_slots, D = 8, 3
+        N = N_slots * D
+        layer = LowerLayer(nInput=D, nOutput=D, invertible=True,
+                           butterfly=True, N=N)
+>       self.assertTrue(layer.butterfly)
+E       AssertionError: False is not true
+
+test/test_grammar_layer_butterfly.py:347: AssertionError
+_____ TestLiftLowerButterflyDelegation.test_lower_butterfly_identity_init ______
+
+self = <test_grammar_layer_butterfly.TestLiftLowerButterflyDelegation testMethod=test_lower_butterfly_identity_init>
+
+    def test_lower_butterfly_identity_init(self):
+        torch.manual_seed(8)
+        N_slots, D = 8, 3
+        N = N_slots * D
+        B = 2
+        layer = LowerLayer(nInput=D, nOutput=D, invertible=True,
+                           butterfly=True, N=N)
+        x = torch.tanh(torch.randn(B, N_slots, D) * 0.1)
+>       y = layer.forward_butterfly(x)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_grammar_layer_butterfly.py:357: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LowerLayer(), name = 'forward_butterfly'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'LowerLayer' object has no attribute 'forward_butterfly'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____________________ test_lift_lower_stay_invertible_cs_ops ____________________
+
+    def test_lift_lower_stay_invertible_cs_ops():
+        """Task 7 (per user directive, 2026-06-05): lift/lower remain ordinary
+        CS-space_role (CS-internal) invertible sigma/pi ops returning non-quantized
+        results -- they are NOT re-expressed as SS codebook round-trips (which
+        would be lossy and break invertibility; codebook queries to SS are
+        always quantized, but lift/lower must not be). The CS/SS space_role delta was
+        already removed in Task 5; the only remaining lift/lower delta is the
+        conceptual-ORDER signature, not a space_role move.
+        """
+        for cls in (Language.LiftLayer, Language.LowerLayer):
+            assert cls.space_role == 'CS', f"{cls.__name__} must stay an ordinary CS-space_role op"
+>           assert cls.invertible is True, (
+                f"{cls.__name__} must stay invertible (non-quantized result)")
+E           AssertionError: LowerLayer must stay invertible (non-quantized result)
+E           assert False is True
+E            +  where False = <class 'Language.LowerLayer'>.invertible
+
+test/test_bounded_stm_fold.py:76: AssertionError
+=============================== warnings summary ===============================
+test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_lift_lower_recommender.py::TestLiftLowerRecommender::test_lift_reverse_uses_recommender_with_basis
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operators_final.py::test_adjacent_wholes_rewitness_compact_and_checkpoint
+FAILED test/test_operators_final.py::test_bilattice_rule_survives_operator_rename
+FAILED test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high
+FAILED test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition
+FAILED test/test_operator_catalogue.py::test_equality_question_uses_a_declared_formula_identity_without_an_inventory_row
+FAILED test/test_clause_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse
+FAILED test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch
+FAILED test/test_grammatical_query_vps.py::test_compose_query_and_converse_faces_share_the_same_canonical_vp
+FAILED test/test_grammatical_query_vps.py::test_forming_candidates_does_not_mint_or_write_memory_after_setup
+FAILED test/test_grammatical_query_vps.py::test_unary_query_keeps_full_description_through_an_existing_occurrence
+FAILED test/test_grammatical_query_vps.py::test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation
+FAILED test/test_grammar_order_typing.py::test_lift_rule_has_order_delta_plus_one
+FAILED test/test_grammar_order_typing.py::test_modal_sentence_lift - Assertio...
+FAILED test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lower_reverse_returns_pair
+FAILED test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerRoundTrip::test_lower_round_trip_consistent
+FAILED test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerHasInternalSubstrate::test_lower_has_internal_pi
+FAILED test/test_lift_lower_recommender.py::TestLiftLowerRecommender::test_lower_reverse_uses_recommender_with_basis
+FAILED test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_different_ADJs_give_different_lower_outputs
+FAILED test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lift_vs_lower_differ_after_perturbation
+FAILED test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lower_has_internal_pi_trainable
+FAILED test/test_lexical_gate_lift_lower.py::test_two_verbs_distinct_with_masks_on_ablated_identical[LowerLayer]
+FAILED test/test_lexical_gate_lift_lower.py::test_gate_none_code_passthrough[LowerLayer]
+FAILED test/test_lexical_gate_lift_lower.py::test_projection_trains_end_to_end_with_composition_loss[LowerLayer]
+FAILED test/test_lexical_gate_lift_lower.py::test_signed_kernel_gated_roundtrip[LowerLayer]
+FAILED test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lower_butterfly_constructs
+FAILED test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lower_butterfly_identity_init
+FAILED test/test_bounded_stm_fold.py::test_lift_lower_stay_invertible_cs_ops
+27 failed, 172 passed, 2 warnings in 15.40s

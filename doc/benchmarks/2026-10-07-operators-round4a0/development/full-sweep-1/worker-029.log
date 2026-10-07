@@ -1,0 +1,29 @@
+................................................ssssssssssssssss........ [ 40%]
+..FFF................................................................... [ 80%]
+................................ss                                       [100%]
+=================================== FAILURES ===================================
+_______ test_typed_result_checkpoint_rehydrates_nested_meaning_evidence ________
+test/test_thought_history_boundaries.py:115: in test_typed_result_checkpoint_rehydrates_nested_meaning_evidence
+    assert memory.thought_extras()["version"] == 3
+E   assert 4 == 3
+__ test_v1_thought_history_checkpoint_remains_loadable_without_a_result_field __
+test/test_thought_history_boundaries.py:145: in test_v1_thought_history_checkpoint_remains_loadable_without_a_result_field
+    target.load_thought_extras(legacy)
+bin/Thoughts.py:708: in load_thought_extras
+    raise ValueError('invalid thought occurrence namespace')
+E   ValueError: invalid thought occurrence namespace
+___ test_v2_thought_history_checkpoint_remains_loadable_with_a_typed_result ____
+test/test_thought_history_boundaries.py:171: in test_v2_thought_history_checkpoint_remains_loadable_with_a_typed_result
+    assert legacy["version"] == 3
+E   assert 4 == 3
+=============================== warnings summary ===============================
+test/test_thought_answer_adapters.py::test_code_answer_uses_the_checked_atom_and_keeps_its_reference
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_thought_history_boundaries.py::test_typed_result_checkpoint_rehydrates_nested_meaning_evidence
+FAILED test/test_thought_history_boundaries.py::test_v1_thought_history_checkpoint_remains_loadable_without_a_result_field
+FAILED test/test_thought_history_boundaries.py::test_v2_thought_history_checkpoint_remains_loadable_with_a_typed_result
+3 failed, 157 passed, 18 skipped, 1 warning in 30.81s

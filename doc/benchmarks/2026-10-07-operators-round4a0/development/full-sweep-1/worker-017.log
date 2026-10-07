@@ -1,0 +1,59 @@
+........................................................sss.s.sssssss.s. [ 34%]
+s.s.s..............................................................s.sss [ 68%]
+.................................................................        [100%]
+=============================== warnings summary ===============================
+test/test_order0_attended_field.py::test_inventory_outlives_the_eight_attended_rows
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_order0_percept_definitions.py::test_witnesses_write_alternatives_without_conjoining_their_literals
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+  /Users/arogers/github/basicmodel-round4a0/test/../bin/Models.py:7194: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpcdbijm09/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted
+  /Users/arogers/github/basicmodel-round4a0/test/../bin/Models.py:7194: RuntimeWarning: reconstruction_identity [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2874/cfg0/MM_xor_synth.xml]: input reconstruction is an exact unmasked identity: zero cost carries no learning signal (mask or degrade the input to create one)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]
+  /Users/arogers/github/basicmodel-round4a0/test/../bin/Models.py:7194: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp56a2q52i/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder
+  /Users/arogers/github/basicmodel-round4a0/test/../bin/Models.py:7194: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpbta4_6l8/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit
+  /Users/arogers/github/basicmodel-round4a0/test/../bin/Models.py:7194: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpywmfxnnp/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/basicmodel-round4a0/test/../bin/Models.py:7194: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp7c9hoyf8/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_partition_pos_codebook.py::test_pos_codebook_shape
+test/test_partition_pos_codebook.py::test_pos_codebook_lookup_deterministic
+test/test_partition_pos_codebook.py::test_category_stack_push_pop_roundtrip
+test/test_partition_pos_codebook.py::test_category_stack_depth_matches_push_count
+test/test_partition_pos_codebook.py::test_category_stack_flatten_shape
+test/test_partition_reconstruction_stack.py::test_reconstruction_stack_records_rule_and_word
+test/test_partition_reconstruction_stack.py::test_reconstruction_stack_roundtrip
+  /Users/arogers/github/basicmodel-round4a0/test/../bin/Spaces.py:1257: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_partition_pos_codebook.py::test_pos_codebook_shape
+test/test_partition_pos_codebook.py::test_pos_codebook_lookup_deterministic
+test/test_partition_pos_codebook.py::test_category_stack_push_pop_roundtrip
+test/test_partition_pos_codebook.py::test_category_stack_depth_matches_push_count
+test/test_partition_pos_codebook.py::test_category_stack_flatten_shape
+test/test_partition_reconstruction_stack.py::test_reconstruction_stack_records_rule_and_word
+test/test_partition_reconstruction_stack.py::test_reconstruction_stack_roundtrip
+  /Users/arogers/github/basicmodel-round4a0/test/../bin/Spaces.py:1257: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+190 passed, 19 skipped, 22 warnings in 112.28s (0:01:52)

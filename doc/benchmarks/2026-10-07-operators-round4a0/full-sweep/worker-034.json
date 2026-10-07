@@ -1,0 +1,95 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_config_loads",
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_grammar_has_not_conjunction_disjunction",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_has_three_rules",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rule_arities",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rules_at_symbolic_space_role",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_chart_router_kind_is_signal",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_has_grammar_ops_attached",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_rule_ids_match_grammar"
+  ],
+  "completed": [
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_config_loads",
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_grammar_has_not_conjunction_disjunction",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_has_three_rules",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rule_arities",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rules_at_symbolic_space_role",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_chart_router_kind_is_signal",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_has_grammar_ops_attached",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_rule_ids_match_grammar"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_config_loads",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003889170475304127,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_grammar_has_not_conjunction_disjunction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011258292943239212,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_has_three_rules",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011495791841298342,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rule_arities",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010362500324845314,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rules_at_symbolic_space_role",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001045420067384839,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_chart_router_kind_is_signal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015429197810590267,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_has_grammar_ops_attached",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011029199231415987,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_rule_ids_match_grammar",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010304106399416924,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

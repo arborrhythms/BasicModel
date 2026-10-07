@@ -1,0 +1,350 @@
+{
+  "sites": [
+    {
+      "file": "bin/ModelAttention.py",
+      "site": "read_poles",
+      "line": 13,
+      "end_line": 18,
+      "pair_sources": [
+        "pair"
+      ],
+      "sha256": "7f28f528f30756082f87529da6ae42b1aa921ecf10f0e4b09eef6326762eac66",
+      "violations": 0
+    },
+    {
+      "file": "bin/ModelAttention.py",
+      "site": "reference_evidence",
+      "line": 21,
+      "end_line": 27,
+      "pair_sources": [
+        "pair"
+      ],
+      "sha256": "1ecfcaea227514059c679854d4048e68816e7b90cf40e22088c611d2a7945ff5",
+      "violations": 0
+    },
+    {
+      "file": "bin/ModelAttention.py",
+      "site": "handoff",
+      "line": 247,
+      "end_line": 271,
+      "pair_sources": [
+        "native"
+      ],
+      "sha256": "bb50f36c46027778b88bd9ae62830d2423c93722d68c205f8e146e31ea4b8ff0",
+      "violations": 0
+    },
+    {
+      "file": "bin/ModelAttention.py",
+      "site": "stage_input",
+      "line": 124,
+      "end_line": 244,
+      "pair_sources": [],
+      "sha256": "d009ed03f2e855c12000f12a164bb0c28322293d8ec9492adc4d72c2ef6c6e50",
+      "violations": 0
+    },
+    {
+      "file": "bin/Models.py",
+      "site": "BasicModel._attention_sentence_payload",
+      "line": 19775,
+      "end_line": 19792,
+      "pair_sources": [
+        "pair",
+        "evidence"
+      ],
+      "sha256": "985da3903c9f314d5c3fb65578d6f804039c25d7550e3fab21f55013ba116323",
+      "violations": 0
+    },
+    {
+      "file": "bin/Models.py",
+      "site": "BasicModel._pushed_word_slab",
+      "line": 12020,
+      "end_line": 12066,
+      "pair_sources": [
+        "pair",
+        "evidence"
+      ],
+      "sha256": "74e95d9b4f9e961f68b87feedc98d8433eb69081726416c76213d8f512bae73d",
+      "violations": 0
+    },
+    {
+      "file": "bin/Models.py",
+      "site": "BasicModel._answer_leaf_slab",
+      "line": 12655,
+      "end_line": 12698,
+      "pair_sources": [
+        "evidence"
+      ],
+      "sha256": "e459934c1c749c171dd6e3363c4f9eadf12d7641a815aa89f55578a787d774d3",
+      "violations": 0
+    },
+    {
+      "file": "bin/Models.py",
+      "site": "BasicModel._capture_reading_programs",
+      "line": 12894,
+      "end_line": 12962,
+      "pair_sources": [],
+      "sha256": "176da808f0f407cb003dbf464958b288800c515a4b2f4926b3634b351fa9d064",
+      "violations": 0
+    },
+    {
+      "file": "bin/Models.py",
+      "site": "BasicModel._program_entries",
+      "line": 12964,
+      "end_line": 13034,
+      "pair_sources": [],
+      "sha256": "8b322e9b2acf25d171a87cfffd627fe8941f5a8d8abb93795ed89cd02a9b3b15",
+      "violations": 0
+    },
+    {
+      "file": "bin/Models.py",
+      "site": "BasicModel._publish_sentence_scratch",
+      "line": 19876,
+      "end_line": 19919,
+      "pair_sources": [],
+      "sha256": "a2be3ca62f8c580e599a5c229cda329a3c4826166be96923abba0ebbdadf52fe",
+      "violations": 0
+    },
+    {
+      "file": "bin/Models.py",
+      "site": "BasicModel._run_sentence_word_bricks",
+      "line": 20605,
+      "end_line": 20905,
+      "pair_sources": [],
+      "sha256": "b8b329b8e786c48e8fc8bc2fa37d16c3db0eb0d9014ba94ba1d273e0bc330dfd",
+      "violations": 0
+    },
+    {
+      "file": "bin/Models.py",
+      "site": "BasicModel._run_tensor_peer_word_pipeline",
+      "line": 20907,
+      "end_line": 21864,
+      "pair_sources": [
+        "leaf_evidence"
+      ],
+      "sha256": "e5cfa1cd0ee2b55cefe7ead31d57d0da347500acbeb07447dba5c05606ae7c75",
+      "violations": 0
+    },
+    {
+      "file": "bin/Interpret.py",
+      "site": "positive_evidence",
+      "line": 7,
+      "end_line": 9,
+      "pair_sources": [],
+      "sha256": "713b5f0f628d655f7bea7050ce0c5936d1cf0589046808ba7ee047b32e97c688",
+      "violations": 0
+    },
+    {
+      "file": "bin/Interpret.py",
+      "site": "activate_code",
+      "line": 12,
+      "end_line": 25,
+      "pair_sources": [
+        "evidence"
+      ],
+      "sha256": "8be42558291d3c608a93ea4d17448ddf83816ea83eab2e14957851e5f73c1de3",
+      "violations": 0
+    },
+    {
+      "file": "bin/Interpret.py",
+      "site": "InterpretLayer.activate",
+      "line": 279,
+      "end_line": 284,
+      "pair_sources": [
+        "evidence"
+      ],
+      "sha256": "c1212d3325276e5f9ca169fae640a59207323b63f680735bec8f4ceac7f5d376",
+      "violations": 0
+    },
+    {
+      "file": "bin/Interpret.py",
+      "site": "InterpretLayer.forward",
+      "line": 286,
+      "end_line": 348,
+      "pair_sources": [
+        "evidence"
+      ],
+      "sha256": "08ad02244478e93ec91392c567b81cbbf8c2d176df540e58b4f7745106c800a5",
+      "violations": 0
+    },
+    {
+      "file": "bin/Interpret.py",
+      "site": "InterpretLayer.reverse",
+      "line": 377,
+      "end_line": 386,
+      "pair_sources": [
+        "evidence"
+      ],
+      "sha256": "031a698111287338651c6977b0fcae648d183de457ff1beb4c3b8386f1a48e68",
+      "violations": 0
+    },
+    {
+      "file": "bin/Language.py",
+      "site": "SymbolSpace.commit_word_reference_slab",
+      "line": 14336,
+      "end_line": 14389,
+      "pair_sources": [
+        "evidence"
+      ],
+      "sha256": "071978adf741e289dacf30b7c2c1e4e7b826ee7a8e9a2706fcc1af1b4e63f9f2",
+      "violations": 0
+    },
+    {
+      "file": "bin/ClauseJournal.py",
+      "site": "finish_clause",
+      "line": 15,
+      "end_line": 434,
+      "pair_sources": [
+        "pair",
+        "evidence"
+      ],
+      "sha256": "08111cb7b83c6e8ceafcc88a68cb0f9ed25ccec8662b779489e725cfad964c5e",
+      "violations": 0
+    },
+    {
+      "file": "bin/ClauseRow.py",
+      "site": "ClauseRows.write_clause",
+      "line": 229,
+      "end_line": 515,
+      "pair_sources": [
+        "evidence"
+      ],
+      "sha256": "1e1e431c1590bd9c17c4c90f2cbfaed179defecea4968211c2ee81aaf4e88150",
+      "violations": 0
+    },
+    {
+      "file": "bin/Understanding.py",
+      "site": "AnswerProgram.__post_init__",
+      "line": 75,
+      "end_line": 142,
+      "pair_sources": [],
+      "sha256": "2e0f54af2444b50ea8736c326e50680ca87ca92fe279300e7abd2fd40a4fe887",
+      "violations": 0
+    },
+    {
+      "file": "bin/Layers.py",
+      "site": "TernaryTruthStore.append_meaning",
+      "line": 9414,
+      "end_line": 9504,
+      "pair_sources": [
+        "evidence"
+      ],
+      "sha256": "e22aa638289691c87660524526e295a100b76557ffc34f748c14bd0584c4d6b5",
+      "violations": 0
+    },
+    {
+      "file": "bin/MeaningCodes.py",
+      "site": "exchange",
+      "line": 16,
+      "end_line": 20,
+      "pair_sources": [],
+      "sha256": "c2411611ab8703f97a0d4aef02843393aef437097571a572debc112fe565724a",
+      "violations": 0
+    },
+    {
+      "file": "bin/MeaningCodes.py",
+      "site": "compose",
+      "line": 84,
+      "end_line": 100,
+      "pair_sources": [],
+      "sha256": "2fe279fa4bcd05b976090ae2eedf1829009a7d1c92e11d6884764a8ff4ea6447",
+      "violations": 0
+    }
+  ],
+  "direct_accesses": [
+    {
+      "file": "bin/ClauseJournal.py",
+      "line": 45,
+      "field": "leaf_evidence",
+      "audited_by": [
+        "finish_clause"
+      ]
+    },
+    {
+      "file": "bin/ModelAttention.py",
+      "line": 17,
+      "field": "_attention_poles",
+      "audited_by": [
+        "read_poles"
+      ]
+    },
+    {
+      "file": "bin/ModelAttention.py",
+      "line": 135,
+      "field": "_attention_poles",
+      "audited_by": [
+        "stage_input"
+      ]
+    },
+    {
+      "file": "bin/ModelAttention.py",
+      "line": 256,
+      "field": "_attention_poles",
+      "audited_by": [
+        "handoff"
+      ]
+    },
+    {
+      "file": "bin/Models.py",
+      "line": 12691,
+      "field": "_word_reference_evidence",
+      "audited_by": [
+        "BasicModel._answer_leaf_slab"
+      ]
+    },
+    {
+      "file": "bin/Models.py",
+      "line": 13020,
+      "field": "_word_reference_evidence",
+      "audited_by": [
+        "BasicModel._program_entries"
+      ]
+    },
+    {
+      "file": "bin/Understanding.py",
+      "line": 119,
+      "field": "leaf_evidence",
+      "audited_by": [
+        "AnswerProgram.__post_init__"
+      ]
+    },
+    {
+      "file": "bin/Understanding.py",
+      "line": 119,
+      "field": "leaf_evidence",
+      "audited_by": [
+        "AnswerProgram.__post_init__"
+      ]
+    },
+    {
+      "file": "bin/Understanding.py",
+      "line": 120,
+      "field": "leaf_evidence",
+      "audited_by": [
+        "AnswerProgram.__post_init__"
+      ]
+    },
+    {
+      "file": "bin/Understanding.py",
+      "line": 121,
+      "field": "leaf_evidence",
+      "audited_by": [
+        "AnswerProgram.__post_init__"
+      ]
+    },
+    {
+      "file": "bin/Understanding.py",
+      "line": 121,
+      "field": "leaf_evidence",
+      "audited_by": [
+        "AnswerProgram.__post_init__"
+      ]
+    }
+  ],
+  "violations": [],
+  "rule": "no cross-lane arithmetic/comparison, sign, or lane-axis reduction on the declared walk-to-row path",
+  "boundary": "source authority and downstream signed testimony views are separate from identification evidence",
+  "zero_rules": {
+    "evidence": "min over nonzero contributions per pole",
+    "extent_code": "coordinatewise min including zero"
+  }
+}

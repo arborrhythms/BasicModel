@@ -1,0 +1,29 @@
+........................................................................ [ 28%]
+..........................F.F........................................... [ 56%]
+..........ssssssssssssss..ssss.ssssssss................................. [ 84%]
+........................................                                 [100%]
+=================================== FAILURES ===================================
+_ test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-final/mm-bisection/round3a-source/README.md] _
+test/test_doc_links.py:51: in test_relative_links_resolve
+    assert not missing, f"{path.relative_to(_ROOT)}: unresolved {missing}"
+E   AssertionError: doc/benchmarks/2026-10-07-operators-final/mm-bisection/round3a-source/README.md: unresolved ['doc/Philosophy.md', 'doc/Architecture.md', 'doc/Componentization.md', 'doc/Spaces.md', 'doc/STM.md', 'doc/Ergodic.md', 'doc/Training.md', 'doc/specs/2026-07-27-teaching-modes-and-next-iteration.md', 'doc/WhatSpacetimeDesign.md', 'doc/specs/2026-09-11-sentence-boundary-thinking.md', 'doc/specs/2026-09-09-mathematical-thinking.md', 'doc/plans/2026-09-10-meronomy-fold-ladder.md', 'doc/plans/2026-09-12-compiled-reverse-loops.md', 'doc/plans/2026-09-09-mathematical-thinking.md', 'doc/benchmarks/2026-09-09-math-thinking-pilot.md', 'doc/Params.md', 'doc/BasicModel.md', 'doc/Language.md', 'doc/Mereology.md', 'doc/Logic.md', 'doc/Reasoning.md', 'doc/Philosophy.md', 'doc/MachineMinds.md', 'doc/Lexicon.md', 'doc/SymbolFirewall.md', 'doc/Installation.md', 'doc/Architecture.md', 'doc/Language.md', 'doc/Architecture.md', 'doc/Componentization.md', 'doc/Params.md', 'doc/Training.md', 'doc/Installation.md', 'doc/Params.md']
+E   assert not ['doc/Philosophy.md', 'doc/Architecture.md', 'doc/Componentization.md', 'doc/Spaces.md', 'doc/STM.md', 'doc/Ergodic.md', ...]
+_ test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-final-b/diagnosis/frozen/README.md] _
+test/test_doc_links.py:51: in test_relative_links_resolve
+    assert not missing, f"{path.relative_to(_ROOT)}: unresolved {missing}"
+E   AssertionError: doc/benchmarks/2026-10-07-operators-final-b/diagnosis/frozen/README.md: unresolved ['doc/Philosophy.md', 'doc/Architecture.md', 'doc/Componentization.md', 'doc/Spaces.md', 'doc/STM.md', 'doc/Ergodic.md', 'doc/Training.md', 'doc/specs/2026-07-27-teaching-modes-and-next-iteration.md', 'doc/WhatSpacetimeDesign.md', 'doc/specs/2026-09-11-sentence-boundary-thinking.md', 'doc/specs/2026-09-09-mathematical-thinking.md', 'doc/plans/2026-09-10-meronomy-fold-ladder.md', 'doc/plans/2026-09-12-compiled-reverse-loops.md', 'doc/plans/2026-09-09-mathematical-thinking.md', 'doc/benchmarks/2026-09-09-math-thinking-pilot.md', 'doc/Params.md', 'doc/BasicModel.md', 'doc/Language.md', 'doc/Mereology.md', 'doc/Logic.md', 'doc/Reasoning.md', 'doc/Philosophy.md', 'doc/MachineMinds.md', 'doc/Lexicon.md', 'doc/SymbolFirewall.md', 'doc/Installation.md', 'doc/Architecture.md', 'doc/Language.md', 'doc/Architecture.md', 'doc/Componentization.md', 'doc/Params.md', 'doc/Training.md', 'doc/Installation.md', 'doc/Params.md']
+E   assert not ['doc/Philosophy.md', 'doc/Architecture.md', 'doc/Componentization.md', 'doc/Spaces.md', 'doc/STM.md', 'doc/Ergodic.md', ...]
+=============================== warnings summary ===============================
+test/test_ensure_microbatch_cascade.py::test_inputspace_forward_triggers_ensure_microbatch
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_existence_metadata.py::test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:2593: UserWarning: Legacy LTM rows have unknown order; decoding requires an explicit order stamp.
+    module._load_from_state_dict(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-final/mm-bisection/round3a-source/README.md]
+FAILED test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-final-b/diagnosis/frozen/README.md]
+2 failed, 228 passed, 26 skipped, 2 warnings in 22.69s

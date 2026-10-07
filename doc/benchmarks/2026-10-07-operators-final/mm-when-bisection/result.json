@@ -1,0 +1,31 @@
+{
+  "seed": null,
+  "training_steps": 0,
+  "construction_rng_equal": true,
+  "prepared_input_equal": true,
+  "before_rng_equal": true,
+  "after_rng_equal": true,
+  "ir_mask_equal": true,
+  "relative_changes_first_forward": true,
+  "old_band_restores_prediction": true,
+  "old_band_restores_rng": true,
+  "old_band_restores_mask": true,
+  "when_readers": [
+    "Interpret.py:define",
+    "Interpret.py:forward",
+    "Layers.py:append_meaning",
+    "Models.py:_forward_per_stage",
+    "Models.py:_lex_embed_stem",
+    "Models.py:_publish_reading_symbols",
+    "Models.py:_stage_reading_word_concepts",
+    "Models.py:forward",
+    "PerceptField.py:read_percepts",
+    "Spaces.py:_embed_ladder",
+    "Spaces.py:_embed_radix",
+    "Spaces.py:_lex_and_embed",
+    "Spaces.py:cs_read_memberships",
+    "Spaces.py:embed_stem",
+    "Spaces.py:forward"
+  ],
+  "script_sha256": "813e1a5038cd528aeda36c235aae8e794b0075d4d08f15b68fcc3e726fe6b12f"
+}

@@ -1,0 +1,28 @@
+........................................F............................... [ 97%]
+..                                                                       [100%]
+=================================== FAILURES ===================================
+__________ test_occurrence_reads_are_row_local_and_keep_live_payloads __________
+test/test_thought_history_boundaries.py:248: in test_occurrence_reads_are_row_local_and_keep_live_payloads
+    value, cost = memory.resolve_thought(occurrence, max_records=1)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Thoughts.py:415: in resolve_thought
+    raise ValueError(
+E   ValueError: thought occurrence is unavailable within this row and read limit
+=============================== warnings summary ===============================
+test/test_operators_round4a0.py::test_live_gate_reread_changes_clock_but_not_address_or_when
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_definition_rows.py::test_32_head_meta_checkpoint_migrates_to_definitions
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_occurrence_coordinates.py::test_input_event_position_is_independent_of_the_subjective_clock
+  /Users/arogers/github/basicmodel-round4a0/bin/Models.py:7194: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2890/test_input_event_position_is_i0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_thought_history_boundaries.py::test_occurrence_reads_are_row_local_and_keep_live_payloads
+1 failed, 73 passed, 3 warnings in 9.85s

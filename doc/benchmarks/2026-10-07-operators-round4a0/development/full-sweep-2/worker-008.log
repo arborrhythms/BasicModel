@@ -1,0 +1,220 @@
+............................FFsF..............ssssss...................s [ 70%]
+s.......s.....................                                           [100%]
+=================================== FAILURES ===================================
+______ test_native_runtime_reports_pairs_without_accumulating_or_updating ______
+test/test_expectation_defaults.py:126: in test_native_runtime_reports_pairs_without_accumulating_or_updating
+    result, _ = model.runBatch(
+bin/Models.py:13775: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13913: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14293: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8884: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10382: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8569: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8349: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23581: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17392: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22116: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21669: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20850: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20456: in _commit_sentence
+    row = _append_observed_meaning(store, clause,
+bin/Models.py:162: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:365: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:329: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:218: in point_of_row
+    point = resolve(int(reference))
+            ^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:138: in concept_point
+    return _basis(owner)[_existing_row(owner, ('sym', cid))]
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:483: in _existing_row
+    ref = concept_reference(reference)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Taxonomy.py:15: in concept_reference
+    raise TypeError("taxonomy operands require a ('sym', positive concept id) reference")
+E   TypeError: taxonomy operands require a ('sym', positive concept id) reference
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+____ test_native_future_and_other_row_changes_do_not_change_first_estimate _____
+test/test_expectation_defaults.py:165: in test_native_future_and_other_row_changes_do_not_change_first_estimate
+    model.runBatch(train=False, batchSize=2, split="runtime",
+bin/Models.py:13775: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13913: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14293: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8884: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10382: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8569: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8349: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23581: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17392: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22116: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21669: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20850: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20456: in _commit_sentence
+    row = _append_observed_meaning(store, clause,
+bin/Models.py:162: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:365: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:329: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:218: in point_of_row
+    point = resolve(int(reference))
+            ^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:138: in concept_point
+    return _basis(owner)[_existing_row(owner, ('sym', cid))]
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:483: in _existing_row
+    ref = concept_reference(reference)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Taxonomy.py:15: in concept_reference
+    raise TypeError("taxonomy operands require a ('sym', positive concept id) reference")
+E   TypeError: taxonomy operands require a ('sym', positive concept id) reference
+__________ test_expectation_off_keeps_every_packed_observation_in_ltm __________
+test/test_expectation_defaults.py:235: in test_expectation_off_keeps_every_packed_observation_in_ltm
+    model.runBatch(train=False, batchSize=1, split="runtime",
+bin/Models.py:13775: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13913: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14293: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8884: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10382: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8569: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8349: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23581: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17392: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22116: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21669: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20850: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20456: in _commit_sentence
+    row = _append_observed_meaning(store, clause,
+bin/Models.py:162: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:365: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:329: in preflight
+    else self.point_of_row(ref))
+         ^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:218: in point_of_row
+    point = resolve(int(reference))
+            ^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:138: in concept_point
+    return _basis(owner)[_existing_row(owner, ('sym', cid))]
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:483: in _existing_row
+    ref = concept_reference(reference)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Taxonomy.py:15: in concept_reference
+    raise TypeError("taxonomy operands require a ('sym', positive concept id) reference")
+E   TypeError: taxonomy operands require a ('sym', positive concept id) reference
+=============================== warnings summary ===============================
+test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_field_binding.py::test_vector_head_selects_symbols_without_truncating_knowing
+  /Users/arogers/github/basicmodel-round4a0/bin/Spaces.py:16765: RuntimeWarning: concept pool order 1 exhausted: cannot reserve 4 provisional rows
+    warnings.warn(f"concept pool order {order} exhausted: cannot reserve {self.concept_pool_size} provisional rows", RuntimeWarning)
+
+test/test_field_learning.py::test_sentence_boundary_writes_present_percepts_at_the_negative_pole
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_expectation_defaults.py::test_native_runtime_reports_pairs_without_accumulating_or_updating
+FAILED test/test_expectation_defaults.py::test_native_future_and_other_row_changes_do_not_change_first_estimate
+FAILED test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_observation_in_ltm
+3 failed, 89 passed, 10 skipped, 3 warnings in 13.66s

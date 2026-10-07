@@ -1,0 +1,1251 @@
+.........FF.FFFF.....F...........F..FF.......F...............F.......... [ 86%]
+...........                                                              [100%]
+=================================== FAILURES ===================================
+___________ test_forced_not_and_or_descend_and_snapshot_certificate ____________
+
+    def test_forced_not_and_or_descend_and_snapshot_certificate():
+>       report = forced_prefix_certificate()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_operators_final_b.py:145: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_operators_final_b.py:135: in forced_prefix_certificate
+    model.runBatch(train=False,optimizer=None,batchSize=4,split='test',batch_override=batch)
+bin/Models.py:13792: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13931: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14313: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8897: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10395: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8582: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8360: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23606: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17414: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22141: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21694: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20795: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20709: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21393: in stage_cs_lang
+    object_idea = interpretation.forward(
+bin/Interpret.py:292: in forward
+    return torch.cat((self.activate(self.binding_atoms(object_atoms), presence,
+bin/Interpret.py:284: in activate
+    return activate_code(atoms, presence, width, evidence=evidence)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+atoms = tensor([[ 0.1787,  0.0870,  1.0051,  0.4865, -0.1184,  1.4288,  0.0933,  0.6546,
+          0.6195, -0.1809,  0.7554,  ...  0.0000,  0.0000,  0.0000,  0.0000,
+          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000]])
+presence = tensor([1., 1., 1., 1.]), form_width = 104
+evidence = tensor([[False],
+        [False],
+        [False],
+        [False]])
+
+    def activate_code(atoms, presence, form_width, *, evidence):
+        """One signless code, two independent positive evidence lanes.
+    
+        Identification presence belongs only to form. The dictionary's for block
+        is the concept's signless context code; its two occurrences have their own
+        magnitudes. In particular both never becomes neither.
+        """
+        if evidence.shape != (*atoms.shape[:-1], 2):
+>           raise ValueError('interpretation requires an aligned evidence pair')
+E           ValueError: interpretation requires an aligned evidence pair
+
+bin/Interpret.py:20: ValueError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+______________ test_both_training_trials_share_bootstrap_snapshot ______________
+
+    def test_both_training_trials_share_bootstrap_snapshot():
+        from test_mm_xor import _fresh_model
+        model, _, data = _fresh_model('data/XOR_grammar.xml')
+        try:
+            optimizer = model.getOptimizer(lr=.01)
+            for _ in range(3):
+>               model.runEpoch(optimizer=optimizer, batchSize=4, split='train', max_batches=1)
+
+test/test_operators_final_b.py:159: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:15892: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13792: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13931: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14313: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8897: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10395: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8582: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8360: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23606: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17414: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22141: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21694: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20795: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20709: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21353: in stage_cs_lang
+    prediction, loss_sum, loss_weight = FunctionalPeerSTM.predict(
+bin/Models.py:1401: in predict
+    valid = routing_valid.reshape(B, 1).to(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x10f304ef0>
+func = <method 'reshape' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[0., 0., 0., 0., 0., 0., 0., 0.],
+        [0., 0., 0., 0., 0., 0., 0., 0.],
+        [0., 0., 0., 0., 0., 0., 0., 0.],
+        [0., 0., 0., 0., 0., 0., 0., 0.]]), 4, 1)
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: shape '[4, 1]' is invalid for input of size 32
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+___ test_zero_meaning_departures_and_one_reader_step[narrowing-XOR_grammar] ____
+
+config = 'XOR_grammar', walk = 'narrowing'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1469e08f0>
+
+    @pytest.mark.parametrize('config',['XOR_grammar','MM_grammar'])
+    @pytest.mark.parametrize('walk',['narrowing','compose'])
+    def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch):
+        from test_mm_xor import _fresh_model
+        from Language import OperationSelectionLayer
+        import SentenceCredit
+        model,_,data=_fresh_model('data/'+config+'.xml')
+        original_attend=OperationSelectionLayer.attend
+        original_forward=OperationSelectionLayer.forward
+        original_departure=SentenceCredit.departure
+        def depart(narrowing,compose,**kwargs):
+            draw=original_departure(narrowing,compose,**kwargs)
+            if walk=='narrowing':
+                draw.update(round=torch.zeros_like(draw['round']),narrowing=torch.ones_like(draw['narrowing']),
+                            attention_round=torch.zeros_like(draw['round']),compose_round=torch.full_like(draw['round'],-1))
+            else:
+                chosen=compose.long().argmax(-1)
+                draw.update(round=chosen+narrowing.alternatives.shape[1],narrowing=torch.zeros_like(draw['narrowing']),
+                            attention_round=torch.full_like(chosen,-1),compose_round=chosen)
+            draw['walk']=torch.full_like(draw['round'],0 if walk=='narrowing' else 1)
+            draw['walk_rounds']=(narrowing.alternatives if walk=='narrowing' else compose).sum(-1)
+            return draw
+        def attend(module,keys,legal,space,**kwargs):
+            available=legal.flatten(1)
+            action=torch.full((len(keys),),available.shape[1],dtype=torch.long)
+            for op in (0,2,1):
+                slots=legal[:,:,op]
+                action=torch.where(slots.any(-1),slots.long().argmax(-1)*6+op,action)
+            mask=kwargs.get('masked_action')
+            if mask is not None:
+                action=torch.where(mask>=0,torch.full_like(action,5),action)
+            kwargs['replay_action']=action
+            return original_attend(module,keys,legal,space,**kwargs)
+        def disjunction(module,x,**kwargs):
+            stop=(x.shape[1]-1)*module.r_reduce+x.shape[1]*module.r_apply
+            depth=kwargs.get('depth',torch.full((len(x),),x.shape[1]))
+            op=torch.ones_like(depth)
+            if walk=='compose' and kwargs.get('masked_action') is not None:
+                op=torch.where(kwargs['masked_action']>=0,0,op)
+            kwargs['replay_action']=torch.where(depth>1,op,stop)
+            return original_forward(module,x,**kwargs)
+        monkeypatch.setattr(SentenceCredit,'departure',depart)
+        monkeypatch.setattr(OperationSelectionLayer,'attend',attend)
+        monkeypatch.setattr(OperationSelectionLayer,'forward',disjunction)
+        snapshots=[]
+        original=model._sentence_path_cost
+        def cost(state,*args,**kwargs):
+            result=original(state,*args,**kwargs)
+            snapshots.append(dict(root=state[1][9].detach().clone(),
+                activation=state[1][0].detach().clone(), meanings=result[2]['meanings'], entries=result[2]['entries']))
+            return result
+        monkeypatch.setattr(model,'_sentence_path_cost',cost)
+        try:
+            optimizer=model.getOptimizer(lr=.01)
+>           model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
+
+test/test_operators_round2c.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:15892: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13792: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13931: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14313: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8897: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10395: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8582: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8360: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23606: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17414: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22141: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21694: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20795: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20709: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21353: in stage_cs_lang
+    prediction, loss_sum, loss_weight = FunctionalPeerSTM.predict(
+bin/Models.py:1401: in predict
+    valid = routing_valid.reshape(B, 1).to(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x1469c90a0>
+func = <method 'reshape' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[0., 0., 0., 0., 0., 0., 0., 0.],
+        [0., 0., 0., 0., 0., 0., 0., 0.],
+        [0., 0., 0., 0., 0., 0., 0., 0.],
+        [0., 0., 0., 0., 0., 0., 0., 0.]]), 4, 1)
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: shape '[4, 1]' is invalid for input of size 32
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+____ test_zero_meaning_departures_and_one_reader_step[narrowing-MM_grammar] ____
+
+config = 'MM_grammar', walk = 'narrowing'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1469cb290>
+
+    @pytest.mark.parametrize('config',['XOR_grammar','MM_grammar'])
+    @pytest.mark.parametrize('walk',['narrowing','compose'])
+    def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch):
+        from test_mm_xor import _fresh_model
+        from Language import OperationSelectionLayer
+        import SentenceCredit
+        model,_,data=_fresh_model('data/'+config+'.xml')
+        original_attend=OperationSelectionLayer.attend
+        original_forward=OperationSelectionLayer.forward
+        original_departure=SentenceCredit.departure
+        def depart(narrowing,compose,**kwargs):
+            draw=original_departure(narrowing,compose,**kwargs)
+            if walk=='narrowing':
+                draw.update(round=torch.zeros_like(draw['round']),narrowing=torch.ones_like(draw['narrowing']),
+                            attention_round=torch.zeros_like(draw['round']),compose_round=torch.full_like(draw['round'],-1))
+            else:
+                chosen=compose.long().argmax(-1)
+                draw.update(round=chosen+narrowing.alternatives.shape[1],narrowing=torch.zeros_like(draw['narrowing']),
+                            attention_round=torch.full_like(chosen,-1),compose_round=chosen)
+            draw['walk']=torch.full_like(draw['round'],0 if walk=='narrowing' else 1)
+            draw['walk_rounds']=(narrowing.alternatives if walk=='narrowing' else compose).sum(-1)
+            return draw
+        def attend(module,keys,legal,space,**kwargs):
+            available=legal.flatten(1)
+            action=torch.full((len(keys),),available.shape[1],dtype=torch.long)
+            for op in (0,2,1):
+                slots=legal[:,:,op]
+                action=torch.where(slots.any(-1),slots.long().argmax(-1)*6+op,action)
+            mask=kwargs.get('masked_action')
+            if mask is not None:
+                action=torch.where(mask>=0,torch.full_like(action,5),action)
+            kwargs['replay_action']=action
+            return original_attend(module,keys,legal,space,**kwargs)
+        def disjunction(module,x,**kwargs):
+            stop=(x.shape[1]-1)*module.r_reduce+x.shape[1]*module.r_apply
+            depth=kwargs.get('depth',torch.full((len(x),),x.shape[1]))
+            op=torch.ones_like(depth)
+            if walk=='compose' and kwargs.get('masked_action') is not None:
+                op=torch.where(kwargs['masked_action']>=0,0,op)
+            kwargs['replay_action']=torch.where(depth>1,op,stop)
+            return original_forward(module,x,**kwargs)
+        monkeypatch.setattr(SentenceCredit,'departure',depart)
+        monkeypatch.setattr(OperationSelectionLayer,'attend',attend)
+        monkeypatch.setattr(OperationSelectionLayer,'forward',disjunction)
+        snapshots=[]
+        original=model._sentence_path_cost
+        def cost(state,*args,**kwargs):
+            result=original(state,*args,**kwargs)
+            snapshots.append(dict(root=state[1][9].detach().clone(),
+                activation=state[1][0].detach().clone(), meanings=result[2]['meanings'], entries=result[2]['entries']))
+            return result
+        monkeypatch.setattr(model,'_sentence_path_cost',cost)
+        try:
+            optimizer=model.getOptimizer(lr=.01)
+>           model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
+
+test/test_operators_round2c.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:15892: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13792: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13931: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14313: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8897: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10395: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8582: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8360: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23606: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17414: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22141: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21694: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20795: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20709: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21353: in stage_cs_lang
+    prediction, loss_sum, loss_weight = FunctionalPeerSTM.predict(
+bin/Models.py:1401: in predict
+    valid = routing_valid.reshape(B, 1).to(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x1469c90a0>
+func = <method 'reshape' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+         0.,..., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+         0., 0., 0., 0.]]), 4, 1)
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: shape '[4, 1]' is invalid for input of size 112
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+____ test_zero_meaning_departures_and_one_reader_step[compose-XOR_grammar] _____
+
+config = 'XOR_grammar', walk = 'compose'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x121bb05c0>
+
+    @pytest.mark.parametrize('config',['XOR_grammar','MM_grammar'])
+    @pytest.mark.parametrize('walk',['narrowing','compose'])
+    def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch):
+        from test_mm_xor import _fresh_model
+        from Language import OperationSelectionLayer
+        import SentenceCredit
+        model,_,data=_fresh_model('data/'+config+'.xml')
+        original_attend=OperationSelectionLayer.attend
+        original_forward=OperationSelectionLayer.forward
+        original_departure=SentenceCredit.departure
+        def depart(narrowing,compose,**kwargs):
+            draw=original_departure(narrowing,compose,**kwargs)
+            if walk=='narrowing':
+                draw.update(round=torch.zeros_like(draw['round']),narrowing=torch.ones_like(draw['narrowing']),
+                            attention_round=torch.zeros_like(draw['round']),compose_round=torch.full_like(draw['round'],-1))
+            else:
+                chosen=compose.long().argmax(-1)
+                draw.update(round=chosen+narrowing.alternatives.shape[1],narrowing=torch.zeros_like(draw['narrowing']),
+                            attention_round=torch.full_like(chosen,-1),compose_round=chosen)
+            draw['walk']=torch.full_like(draw['round'],0 if walk=='narrowing' else 1)
+            draw['walk_rounds']=(narrowing.alternatives if walk=='narrowing' else compose).sum(-1)
+            return draw
+        def attend(module,keys,legal,space,**kwargs):
+            available=legal.flatten(1)
+            action=torch.full((len(keys),),available.shape[1],dtype=torch.long)
+            for op in (0,2,1):
+                slots=legal[:,:,op]
+                action=torch.where(slots.any(-1),slots.long().argmax(-1)*6+op,action)
+            mask=kwargs.get('masked_action')
+            if mask is not None:
+                action=torch.where(mask>=0,torch.full_like(action,5),action)
+            kwargs['replay_action']=action
+            return original_attend(module,keys,legal,space,**kwargs)
+        def disjunction(module,x,**kwargs):
+            stop=(x.shape[1]-1)*module.r_reduce+x.shape[1]*module.r_apply
+            depth=kwargs.get('depth',torch.full((len(x),),x.shape[1]))
+            op=torch.ones_like(depth)
+            if walk=='compose' and kwargs.get('masked_action') is not None:
+                op=torch.where(kwargs['masked_action']>=0,0,op)
+            kwargs['replay_action']=torch.where(depth>1,op,stop)
+            return original_forward(module,x,**kwargs)
+        monkeypatch.setattr(SentenceCredit,'departure',depart)
+        monkeypatch.setattr(OperationSelectionLayer,'attend',attend)
+        monkeypatch.setattr(OperationSelectionLayer,'forward',disjunction)
+        snapshots=[]
+        original=model._sentence_path_cost
+        def cost(state,*args,**kwargs):
+            result=original(state,*args,**kwargs)
+            snapshots.append(dict(root=state[1][9].detach().clone(),
+                activation=state[1][0].detach().clone(), meanings=result[2]['meanings'], entries=result[2]['entries']))
+            return result
+        monkeypatch.setattr(model,'_sentence_path_cost',cost)
+        try:
+            optimizer=model.getOptimizer(lr=.01)
+>           model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
+
+test/test_operators_round2c.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:15892: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13792: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13931: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14313: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8897: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10395: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8582: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8360: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23606: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17414: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22141: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21694: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20795: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20709: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21353: in stage_cs_lang
+    prediction, loss_sum, loss_weight = FunctionalPeerSTM.predict(
+bin/Models.py:1401: in predict
+    valid = routing_valid.reshape(B, 1).to(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x1469c90a0>
+func = <method 'reshape' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[0., 0., 0., 0., 0., 0., 0., 0.],
+        [0., 0., 0., 0., 0., 0., 0., 0.],
+        [0., 0., 0., 0., 0., 0., 0., 0.],
+        [0., 0., 0., 0., 0., 0., 0., 0.]]), 4, 1)
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: shape '[4, 1]' is invalid for input of size 32
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+_____ test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar] _____
+
+config = 'MM_grammar', walk = 'compose'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x149854bc0>
+
+    @pytest.mark.parametrize('config',['XOR_grammar','MM_grammar'])
+    @pytest.mark.parametrize('walk',['narrowing','compose'])
+    def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch):
+        from test_mm_xor import _fresh_model
+        from Language import OperationSelectionLayer
+        import SentenceCredit
+        model,_,data=_fresh_model('data/'+config+'.xml')
+        original_attend=OperationSelectionLayer.attend
+        original_forward=OperationSelectionLayer.forward
+        original_departure=SentenceCredit.departure
+        def depart(narrowing,compose,**kwargs):
+            draw=original_departure(narrowing,compose,**kwargs)
+            if walk=='narrowing':
+                draw.update(round=torch.zeros_like(draw['round']),narrowing=torch.ones_like(draw['narrowing']),
+                            attention_round=torch.zeros_like(draw['round']),compose_round=torch.full_like(draw['round'],-1))
+            else:
+                chosen=compose.long().argmax(-1)
+                draw.update(round=chosen+narrowing.alternatives.shape[1],narrowing=torch.zeros_like(draw['narrowing']),
+                            attention_round=torch.full_like(chosen,-1),compose_round=chosen)
+            draw['walk']=torch.full_like(draw['round'],0 if walk=='narrowing' else 1)
+            draw['walk_rounds']=(narrowing.alternatives if walk=='narrowing' else compose).sum(-1)
+            return draw
+        def attend(module,keys,legal,space,**kwargs):
+            available=legal.flatten(1)
+            action=torch.full((len(keys),),available.shape[1],dtype=torch.long)
+            for op in (0,2,1):
+                slots=legal[:,:,op]
+                action=torch.where(slots.any(-1),slots.long().argmax(-1)*6+op,action)
+            mask=kwargs.get('masked_action')
+            if mask is not None:
+                action=torch.where(mask>=0,torch.full_like(action,5),action)
+            kwargs['replay_action']=action
+            return original_attend(module,keys,legal,space,**kwargs)
+        def disjunction(module,x,**kwargs):
+            stop=(x.shape[1]-1)*module.r_reduce+x.shape[1]*module.r_apply
+            depth=kwargs.get('depth',torch.full((len(x),),x.shape[1]))
+            op=torch.ones_like(depth)
+            if walk=='compose' and kwargs.get('masked_action') is not None:
+                op=torch.where(kwargs['masked_action']>=0,0,op)
+            kwargs['replay_action']=torch.where(depth>1,op,stop)
+            return original_forward(module,x,**kwargs)
+        monkeypatch.setattr(SentenceCredit,'departure',depart)
+        monkeypatch.setattr(OperationSelectionLayer,'attend',attend)
+        monkeypatch.setattr(OperationSelectionLayer,'forward',disjunction)
+        snapshots=[]
+        original=model._sentence_path_cost
+        def cost(state,*args,**kwargs):
+            result=original(state,*args,**kwargs)
+            snapshots.append(dict(root=state[1][9].detach().clone(),
+                activation=state[1][0].detach().clone(), meanings=result[2]['meanings'], entries=result[2]['entries']))
+            return result
+        monkeypatch.setattr(model,'_sentence_path_cost',cost)
+        try:
+            optimizer=model.getOptimizer(lr=.01)
+>           model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
+
+test/test_operators_round2c.py:77: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:15892: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13792: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13931: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14313: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8897: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10395: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8582: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8360: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23606: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17414: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22141: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21694: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20795: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20709: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21353: in stage_cs_lang
+    prediction, loss_sum, loss_weight = FunctionalPeerSTM.predict(
+bin/Models.py:1401: in predict
+    valid = routing_valid.reshape(B, 1).to(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x1469c90a0>
+func = <method 'reshape' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+         0.,..., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+         0., 0., 0., 0.]]), 4, 1)
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: shape '[4, 1]' is invalid for input of size 112
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+_ test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate _
+
+    def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate():
+        configuration = 'XOR_grammar'
+        from test_mm_xor import _fresh_model
+        from MereologicalCodes import occurrence_memberships
+        from MeaningCodes import identity_code, certificate
+        model, _, _ = _fresh_model(f'data/{configuration}.xml')
+        try:
+            with torch.no_grad():
+>               model.forward(model.inputSpace.prepInput(['hello world','hello there','loving world','loving there']))
+
+test/test_operators_round4a.py:61: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8360: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23606: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17414: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22141: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21694: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20795: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20709: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21393: in stage_cs_lang
+    object_idea = interpretation.forward(
+bin/Interpret.py:292: in forward
+    return torch.cat((self.activate(self.binding_atoms(object_atoms), presence,
+bin/Interpret.py:284: in activate
+    return activate_code(atoms, presence, width, evidence=evidence)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+atoms = tensor([[ 0.1787,  0.0870,  1.0051,  0.4865, -0.1184,  1.4288,  0.0933,  0.6546,
+          0.6195, -0.1809,  0.7554,  ...  0.0000,  0.0000,  0.0000,  0.0000,
+          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000]])
+presence = tensor([1., 1., 1., 1.]), form_width = 104
+evidence = tensor([[False],
+        [False],
+        [False],
+        [False]])
+
+    def activate_code(atoms, presence, form_width, *, evidence):
+        """One signless code, two independent positive evidence lanes.
+    
+        Identification presence belongs only to form. The dictionary's for block
+        is the concept's signless context code; its two occurrences have their own
+        magnitudes. In particular both never becomes neither.
+        """
+        if evidence.shape != (*atoms.shape[:-1], 2):
+>           raise ValueError('interpretation requires an aligned evidence pair')
+E           ValueError: interpretation requires an aligned evidence pair
+
+bin/Interpret.py:20: ValueError
+______________ test_live_trial_predictor_has_one_kept_target_step ______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x146779010>
+
+    def test_live_trial_predictor_has_one_kept_target_step(monkeypatch):
+        from test_mm_xor import _fresh_model
+        model,_,_=_fresh_model('data/XOR_grammar.xml')
+        parameter=torch.nn.Parameter(torch.tensor(1.))
+        model.register_parameter('round4a_prediction_probe',parameter)
+        groups=model.objective_parameter_groups
+        def owned(optimizer):
+            result=groups(optimizer)
+            result['expectation']=(*result['expectation'],parameter)
+            return result
+        monkeypatch.setattr(model,'objective_parameter_groups',owned)
+        score=model._sentence_path_cost
+        targets=[]
+        def cost(*args,**kwargs):
+            result=score(*args,**kwargs)
+            target=parameter.new_tensor([2.,3.,4.,5.] if not targets else [8.,9.,10.,11.])
+            targets.append(target)
+            model._sentence_cost_registry.error('expectation.kept_probe',
+                (parameter-target).square(),1.,category='expectation')
+            return result
+        monkeypatch.setattr(model,'_sentence_path_cost',cost)
+        try:
+            optimizer=model.getOptimizer(lr=.01)
+>           model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
+
+test/test_operators_round4a.py:211: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:15892: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13792: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13931: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14313: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8897: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10395: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8582: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8360: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23606: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17414: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22141: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21694: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20795: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20709: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21353: in stage_cs_lang
+    prediction, loss_sum, loss_weight = FunctionalPeerSTM.predict(
+bin/Models.py:1401: in predict
+    valid = routing_valid.reshape(B, 1).to(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x14987a360>
+func = <method 'reshape' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[0., 0., 0., 0., 0., 0., 0., 0.],
+        [0., 0., 0., 0., 0., 0., 0., 0.],
+        [0., 0., 0., 0., 0., 0., 0., 0.],
+        [0., 0., 0., 0., 0., 0., 0., 0.]]), 4, 1)
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: shape '[4, 1]' is invalid for input of size 32
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+________ test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml] ________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3118/test_every_read_word_has_a_con1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14678e3f0>
+configuration = 'XOR_grammar.xml'
+
+    @pytest.mark.parametrize('configuration', ['MM_xor.xml', 'XOR_grammar.xml', 'aligned'])
+    def test_every_read_word_has_a_concept_and_symbol(tmp_path, monkeypatch, configuration):
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        if configuration == 'aligned':
+            from test_compiled_word_chunk import _tiny_canonical_model
+            model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8')
+            model.reconstruct_in_loop = False
+            model.loss.reconstruction_scale = 0.
+            model._tensor_peer_while_eager = True
+            model._chart_compose_per_word = lambda: None
+        else:
+            from test_mm_xor import _fresh_model
+            model, _, _ = _fresh_model(str(Path(__file__).resolve().parents[1] / 'data' / configuration))
+        model.eval()
+        sentences = ['hi no', 'hi go', 'we no', 'we go']
+        try:
+            inputs = model.inputSpace.prepInput(sentences)
+            with torch.no_grad():
+>               _, symbols, _, _ = model(inputs)
+                                   ^^^^^^^^^^^^^
+
+test/test_word_interpretation.py:27: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8360: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23606: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17414: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22141: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21694: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20795: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20709: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21393: in stage_cs_lang
+    object_idea = interpretation.forward(
+bin/Interpret.py:292: in forward
+    return torch.cat((self.activate(self.binding_atoms(object_atoms), presence,
+bin/Interpret.py:284: in activate
+    return activate_code(atoms, presence, width, evidence=evidence)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+atoms = tensor([[ 0.2871,  0.9273,  0.1674,  0.2918,  0.2150,  0.6127, -0.3799,  0.0182,
+          0.4958, -0.1273,  0.1672, -...  0.0000,  0.0000,  0.0000,  0.0000,
+          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000]])
+presence = tensor([1., 1., 1., 1.]), form_width = 104
+evidence = tensor([[False],
+        [False],
+        [False],
+        [False]])
+
+    def activate_code(atoms, presence, form_width, *, evidence):
+        """One signless code, two independent positive evidence lanes.
+    
+        Identification presence belongs only to form. The dictionary's for block
+        is the concept's signless context code; its two occurrences have their own
+        magnitudes. In particular both never becomes neither.
+        """
+        if evidence.shape != (*atoms.shape[:-1], 2):
+>           raise ValueError('interpretation requires an aligned evidence pair')
+E           ValueError: interpretation requires an aligned evidence pair
+
+bin/Interpret.py:20: ValueError
+____________ test_every_read_word_has_a_concept_and_symbol[aligned] ____________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3118/test_every_read_word_has_a_con2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14677b6b0>
+configuration = 'aligned'
+
+    @pytest.mark.parametrize('configuration', ['MM_xor.xml', 'XOR_grammar.xml', 'aligned'])
+    def test_every_read_word_has_a_concept_and_symbol(tmp_path, monkeypatch, configuration):
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        if configuration == 'aligned':
+            from test_compiled_word_chunk import _tiny_canonical_model
+            model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8')
+            model.reconstruct_in_loop = False
+            model.loss.reconstruction_scale = 0.
+            model._tensor_peer_while_eager = True
+            model._chart_compose_per_word = lambda: None
+        else:
+            from test_mm_xor import _fresh_model
+            model, _, _ = _fresh_model(str(Path(__file__).resolve().parents[1] / 'data' / configuration))
+        model.eval()
+        sentences = ['hi no', 'hi go', 'we no', 'we go']
+        try:
+            inputs = model.inputSpace.prepInput(sentences)
+            with torch.no_grad():
+>               _, symbols, _, _ = model(inputs)
+                                   ^^^^^^^^^^^^^
+
+test/test_word_interpretation.py:27: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8360: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23606: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17414: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22141: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21694: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20795: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20709: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21393: in stage_cs_lang
+    object_idea = interpretation.forward(
+bin/Interpret.py:292: in forward
+    return torch.cat((self.activate(self.binding_atoms(object_atoms), presence,
+bin/Interpret.py:284: in activate
+    return activate_code(atoms, presence, width, evidence=evidence)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+atoms = tensor([[ 0.2871,  0.9273,  0.1674,  0.2918,  0.2150,  0.6127, -0.3799,  0.0182,
+          0.4958, -0.1273,  0.1672, -...  0.0000,  0.0000,  0.0000,  0.0000,
+          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000]])
+presence = tensor([0.9581, 0.9581, 0.9581, 0.9581]), form_width = 104
+evidence = tensor([[False],
+        [False],
+        [False],
+        [False]])
+
+    def activate_code(atoms, presence, form_width, *, evidence):
+        """One signless code, two independent positive evidence lanes.
+    
+        Identification presence belongs only to form. The dictionary's for block
+        is the concept's signless context code; its two occurrences have their own
+        magnitudes. In particular both never becomes neither.
+        """
+        if evidence.shape != (*atoms.shape[:-1], 2):
+>           raise ValueError('interpretation requires an aligned evidence pair')
+E           ValueError: interpretation requires an aligned evidence pair
+
+bin/Interpret.py:20: ValueError
+___________ test_every_serial_word_runs_interpret_before_composition ___________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3118/test_every_serial_word_runs_in0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1463b3ce0>
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_every_serial_word_runs_interpret_before_composition(tmp_path, monkeypatch):
+        from test_packed_reconstruction_parity import build_model
+        model = build_model(tmp_path, word_capacity=8)
+        owner = model._concept_owner()
+        operator = owner.interpret
+        calls = []
+        # Run the identical recurrence bodies eagerly so instrumentation can
+        # observe ordering. The normal compiled schedule has separate parity tests.
+        def eager_loop(cond, body, carries):
+            while bool(cond(*carries)):
+                carries = body(*carries)
+            return carries
+        monkeypatch.setattr(torch, 'while_loop', eager_loop)
+        for space in model.conceptualSpaces:
+            forward = space.interpret.forward
+            def observed(word, _forward=forward, **kwargs):
+                result = _forward(word, **kwargs)
+                if torch.is_tensor(word):
+                    calls.append(result.detach().clone())
+                return result
+            monkeypatch.setattr(space.interpret, 'forward', observed)
+        choose = model.languageSpace.choose_operation
+        def composition(*args, **kwargs):
+            assert calls, 'composition ran before the mandatory interpretation'
+            return choose(*args, **kwargs)
+        monkeypatch.setattr(model.languageSpace, 'choose_operation', composition)
+        with torch.no_grad():
+>           model.understand(model.inputSpace.prepInput(['the wug sat']))
+
+test/test_word_interpretation.py:198: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:8586: in understand
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8582: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8360: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23606: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17414: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22141: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21694: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20795: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20709: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21393: in stage_cs_lang
+    object_idea = interpretation.forward(
+test/test_word_interpretation.py:187: in observed
+    result = _forward(word, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:292: in forward
+    return torch.cat((self.activate(self.binding_atoms(object_atoms), presence,
+bin/Interpret.py:284: in activate
+    return activate_code(atoms, presence, width, evidence=evidence)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+atoms = tensor([[-0.4935, -0.0441,  0.7924,  0.6285,  0.1185,  0.6786, -0.6679,  0.9097,
+          0.6289, -0.6820,  0.5773,  ...  0.0000,  0.0000,  0.0000,  0.0000,
+          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000]])
+presence = tensor([0.9832]), form_width = 104, evidence = tensor([[False]])
+
+    def activate_code(atoms, presence, form_width, *, evidence):
+        """One signless code, two independent positive evidence lanes.
+    
+        Identification presence belongs only to form. The dictionary's for block
+        is the concept's signless context code; its two occurrences have their own
+        magnitudes. In particular both never becomes neither.
+        """
+        if evidence.shape != (*atoms.shape[:-1], 2):
+>           raise ValueError('interpretation requires an aligned evidence pair')
+E           ValueError: interpretation requires an aligned evidence pair
+
+bin/Interpret.py:20: ValueError
+________ test_native_sentence_carries_paired_identification_to_its_row _________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3118/test_native_sentence_carries_p0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1216c2090>
+
+    def test_native_sentence_carries_paired_identification_to_its_row(tmp_path, monkeypatch):
+        import util
+        from Language import SymbolSpace
+        from test_meronomy_ladder import _build_ladder_variant
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model = _build_ladder_variant(tmp_path, 'row_schema', [
+            ('<architecture>', '<architecture><ltmConsolidation>true</ltmConsolidation>')])
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model._install_unit_span_fn()
+        model.reconstruct_in_loop = False
+        model.loss.reconstruction_scale = 0.
+        commit = SymbolSpace.commit_word_reference_slab
+        calls = []
+        def paired(owner, rows, activations, active, **kwargs):
+            calls.append(rows.shape)
+            kwargs['evidence'] = activations.new_tensor([.8, .6]).expand(*rows.shape, 2)
+            return commit(owner, rows, activations, active, **kwargs)
+        monkeypatch.setattr(SymbolSpace, 'commit_word_reference_slab', paired)
+        try:
+            inputs = model.inputSpace.prepPackedInput([['1 plus 2']])
+>           model.runBatch(train=False, batchSize=1, split='runtime',
+                           batch_override=(inputs, torch.zeros(1, 1, 0)))
+
+test/test_identification_evidence.py:201: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13792: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13931: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14313: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8897: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10395: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8582: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8360: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23606: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17414: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22141: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21694: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20795: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20709: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21393: in stage_cs_lang
+    object_idea = interpretation.forward(
+bin/Interpret.py:292: in forward
+    return torch.cat((self.activate(self.binding_atoms(object_atoms), presence,
+bin/Interpret.py:284: in activate
+    return activate_code(atoms, presence, width, evidence=evidence)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+atoms = tensor([[-0.3727, -0.4634,  0.6153,  0.2952,  0.3025, -0.3148, -0.4232,  0.1060,
+         -0.0247, -0.5721,  0.4594,  ...  0.0000,  0.0000,  0.0000,  0.0000,
+          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000]])
+presence = tensor([0.3215]), form_width = 104, evidence = tensor([[False]])
+
+    def activate_code(atoms, presence, form_width, *, evidence):
+        """One signless code, two independent positive evidence lanes.
+    
+        Identification presence belongs only to form. The dictionary's for block
+        is the concept's signless context code; its two occurrences have their own
+        magnitudes. In particular both never becomes neither.
+        """
+        if evidence.shape != (*atoms.shape[:-1], 2):
+>           raise ValueError('interpretation requires an aligned evidence pair')
+E           ValueError: interpretation requires an aligned evidence pair
+
+bin/Interpret.py:20: ValueError
+=============================== warnings summary ===============================
+test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate
+FAILED test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot
+FAILED test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[narrowing-XOR_grammar]
+FAILED test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[narrowing-MM_grammar]
+FAILED test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-XOR_grammar]
+FAILED test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]
+FAILED test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate
+FAILED test/test_operators_round4a.py::test_live_trial_predictor_has_one_kept_target_step
+FAILED test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]
+FAILED test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]
+FAILED test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition
+FAILED test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row
+12 failed, 71 passed, 2 warnings in 18.71s

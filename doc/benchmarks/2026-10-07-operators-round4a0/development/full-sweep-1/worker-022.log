@@ -1,0 +1,61 @@
+...sssss.s..s..ssss.s.s.....................................s........... [ 66%]
+........FFFF...FF...................                                     [100%]
+=================================== FAILURES ===================================
+_ test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1] _
+test/test_relation_closing.py:35: in test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent
+    assert (f.store.refs[f.store.relations()] > 0).all()
+E   assert tensor(False)
+E    +  where tensor(False) = <built-in method all of Tensor object at 0x147aef6b0>()
+E    +    where <built-in method all of Tensor object at 0x147aef6b0> = tensor([[                   5,  4010033338316264258, -5875173907734066941]]) > 0.all
+_ test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2] _
+test/test_relation_closing.py:35: in test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent
+    assert (f.store.refs[f.store.relations()] > 0).all()
+E   assert tensor(False)
+E    +  where tensor(False) = <built-in method all of Tensor object at 0x147184b90>()
+E    +    where <built-in method all of Tensor object at 0x147184b90> = tensor([[-825688588661811201, 4010033338316264258, 5653805504548723841]]) > 0.all
+_ test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0] _
+test/test_relation_closing.py:35: in test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent
+    assert (f.store.refs[f.store.relations()] > 0).all()
+E   assert tensor(False)
+E    +  where tensor(False) = <built-in method all of Tensor object at 0x1485214f0>()
+E    +    where <built-in method all of Tensor object at 0x1485214f0> = tensor([[-7171183229637167597,  4010033338316264258,                    7],\n        [ 6831663812991445612,  4010033338316264258,                    9]]) > 0.all
+_ test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1] _
+test/test_relation_closing.py:35: in test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent
+    assert (f.store.refs[f.store.relations()] > 0).all()
+E   assert tensor(False)
+E    +  where tensor(False) = <built-in method all of Tensor object at 0x1493f6da0>()
+E    +    where <built-in method all of Tensor object at 0x1493f6da0> = tensor([[                   5,  4010033338316264258, -8371529800282956279],\n        [-2001567803882633163,  4010033338316264258,                    9]]) > 0.all
+____ test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference _____
+test/test_relation_references.py:16: in test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference
+    assert (f.store.refs[f.store.relations()] > 0).all()
+E   assert tensor(False)
+E    +  where tensor(False) = <built-in method all of Tensor object at 0x147fac9b0>()
+E    +    where <built-in method all of Tensor object at 0x147fac9b0> = tensor([[ 2166413487281248985,  4010033338316264258, -2405127396369654043],\n        [-4282178441889837166, -7510566102048028149,  2570460209600147441]]) > 0.all
+__________ test_nested_relation_forest_keeps_its_unindexed_predicate ___________
+test/test_relation_references.py:32: in test_nested_relation_forest_keeps_its_unindexed_predicate
+    assert (f.store.refs[f.store.relations()] > 0).all()
+E   assert tensor(False)
+E    +  where tensor(False) = <built-in method all of Tensor object at 0x147facb90>()
+E    +    where <built-in method all of Tensor object at 0x147facb90> = tensor([[                   9,  4010033338316264258,                   11],\n        [                   5,  2611817686999855428, -3093052116541189549]]) > 0.all
+=============================== warnings summary ===============================
+test/test_reconstruction_momentum.py::test_sparse_momentum_matches_dense_sgd_on_selected_rows_and_roundtrips
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/basicmodel-round4a0/bin/Models.py:7194: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/basicmodel-round4a0/data/idempotent.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 10, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction
+  /Users/arogers/github/basicmodel-round4a0/bin/Models.py:7194: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2879/test_missing_packed_sentence_d0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]
+FAILED test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]
+FAILED test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]
+FAILED test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]
+FAILED test/test_relation_references.py::test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference
+FAILED test/test_relation_references.py::test_nested_relation_forest_keeps_its_unindexed_predicate
+6 failed, 88 passed, 14 skipped, 3 warnings in 20.14s

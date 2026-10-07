@@ -1,0 +1,39 @@
+.........................F.............................................. [ 52%]
+.................................................................        [100%]
+=================================== FAILURES ===================================
+________________ test_live_grammar_already_collapsed_is_a_noop _________________
+test/test_category_collapse.py:55: in test_live_grammar_already_collapsed_is_a_noop
+    assert len(set(collapse.values())) == len(collapse)
+E   AssertionError: assert 71 == 75
+E    +  where 71 = len({0, 1, 2, 3, 4, 5, ...})
+E    +    where {0, 1, 2, 3, 4, 5, ...} = set(dict_values([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,...3, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 13, 14, 62, 63, 64, 65, 66, 67, 68, 69, 70]))
+E    +      where dict_values([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,...3, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 13, 14, 62, 63, 64, 65, 66, 67, 68, 69, 70]) = <built-in method values of dict object at 0x1263bb000>()
+E    +        where <built-in method values of dict object at 0x1263bb000> = {'F': 0, 'adverb_I1': 1, 'adverb_I2': 2, 'adverb_O1': 3, ...}.values
+E    +  and   75 = len({'F': 0, 'adverb_I1': 1, 'adverb_I2': 2, 'adverb_O1': 3, ...})
+=============================== warnings summary ===============================
+test/test_category_codebook_retirement.py::test_category_embedding_replaces_codebook
+test/test_category_codebook_retirement.py::test_category_embedding_weight_shape
+test/test_category_codebook_retirement.py::test_category_lookup_returns_embedding_row
+test/test_category_codebook_retirement.py::test_category_lookup_by_int_index
+test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector
+test/test_category_codebook_retirement.py::test_category_embedding_registered_as_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1253: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_category_codebook_retirement.py::test_category_embedding_replaces_codebook
+test/test_category_codebook_retirement.py::test_category_embedding_weight_shape
+test/test_category_codebook_retirement.py::test_category_lookup_returns_embedding_row
+test/test_category_codebook_retirement.py::test_category_lookup_by_int_index
+test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector
+test/test_category_codebook_retirement.py::test_category_embedding_registered_as_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1253: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_category_collapse.py::test_consumption_is_clean_noop_in_serial_mode_on_live_grammar
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_category_collapse.py::test_live_grammar_already_collapsed_is_a_noop
+1 failed, 136 passed, 13 warnings in 29.02s

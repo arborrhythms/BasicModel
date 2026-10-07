@@ -1,0 +1,75 @@
+{
+  "baseline": "cce3a4f7b6e72fab4a9a27fd70d3fa7602553814",
+  "review_source_matched": true,
+  "measured_executable_ast_unchanged": true,
+  "byte_delta_after_measurement": [
+    "test/test_bounded_stm_fold.py"
+  ],
+  "frozen_helpers_matched": 189,
+  "full_sweep": {
+    "cases": 5341,
+    "outcomes": {
+      "passed": 5035,
+      "skipped": 285,
+      "failed": 20,
+      "xpassed": 1
+    },
+    "extra_subtest_reports": 3
+  },
+  "focused_repairs": {
+    "cases": 268,
+    "outcomes": {
+      "passed": 250,
+      "skipped": 18
+    },
+    "extra_subtest_reports": 0
+  },
+  "counts": {
+    "class_pass": 10,
+    "reconstruction_pass": 9,
+    "joint": 9,
+    "mm_pass": 10,
+    "sum_pass": 10,
+    "sum_floor_pass": 9,
+    "xor_bands": {
+      "at 0": 10,
+      "at 1/4": 0,
+      "between": 0,
+      "above 1/4": 0
+    },
+    "sum_bands": {
+      "at 0": 0,
+      "at 1/4": 9,
+      "between": 0,
+      "above 1/4": 1
+    }
+  },
+  "store_checks_passed": true,
+  "verified_bisections": 6,
+  "invalid_diagnostic_full_runs_retained": 6,
+  "invalid_diagnostic_prefixes_retained": 3,
+  "standing_trainings": 30,
+  "standing_retries": 0,
+  "standing_replacements": 0,
+  "review_findings": [
+    "Reconstruction 9/10",
+    "Sum at quarter 9/10",
+    "Absolute R and XOR delta R are nonzero",
+    "Raw MM numerical path changes through relative when, beyond RNG",
+    "Full sweep initially failed; focused repairs precede trainings",
+    "Initial diagnostic overrides were no-ops; retained and invalidated"
+  ],
+  "whitespace_check": "passed",
+  "receipt_links": "passed",
+  "committed": false,
+  "additional_reporting_scripts": {
+    "verified_bisections.py": "09bf941abadbb5aacf9dd8e7bc27909e608bc1675d14ca39e45cd1406fa55d3a",
+    "bootstrap_cost_bisection.py": "d69169906e2227676752a9271a8bbc146aa3e5280a0946302fef9633578b2f67",
+    "final_integrity.py": "57edb9ed02394b4d16710bdcf20c7244eb1eb9d3acb7839c7778671189fc77cb",
+    "mm_when_readers.py": "1680f726685d9872a1d8891fc6d7767f13f4a2e95d59e4194879acd4d25ecfe5",
+    "cost_and_priming_audit.py": "8033bae538095e74418350c9b7feba1b14b8a4a0f3e6064bcd05ab2c1ea85649",
+    "bisection_report.py": "37f3e07bbe781051f0500441f4d582b44a295959df9a5e8965efe6ce4daad6e6",
+    "mm_when_bisection.py": "813e1a5038cd528aeda36c235aae8e794b0075d4d08f15b68fcc3e726fe6b12f"
+  },
+  "script_sha256": "57edb9ed02394b4d16710bdcf20c7244eb1eb9d3acb7839c7778671189fc77cb"
+}

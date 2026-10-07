@@ -1,0 +1,27 @@
+........................................................................ [ 61%]
+.Fsssssss....................................                            [100%]
+=================================== FAILURES ===================================
+_____________________ test_zero_spread_is_pure_decay_bump ______________________
+
+    def test_zero_spread_is_pure_decay_bump():
+        """spread=0 keeps the original decay+bump law byte-identical."""
+        cs, _rA, _rB = _chain_cs()
+        object.__setattr__(cs, "_priming_spread", 0.0)
+        b = cs.prime_seen(torch.tensor([3, 5]), bump=1.0, decay=0.5)
+        assert float(b[0, 3]) == 2.0 and float(b[0, 0]) == 1.0
+        b = cs.prime_seen(torch.tensor([5]), bump=1.0, decay=0.5)
+>       assert abs(float(b[0, 3]) - 1.5) < 1e-6
+E       assert 0.16666662693023682 < 1e-06
+E        +  where 0.16666662693023682 = abs((1.3333333730697632 - 1.5))
+E        +    where 1.3333333730697632 = float(tensor(1.3333))
+
+test/test_priming_energy.py:95: AssertionError
+=============================== warnings summary ===============================
+test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_priming_energy.py::test_zero_spread_is_pure_decay_bump - ass...
+1 failed, 109 passed, 7 skipped, 1 warning in 29.39s

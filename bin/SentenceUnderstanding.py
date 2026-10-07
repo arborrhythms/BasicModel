@@ -5,7 +5,7 @@ from torch import nn
 from torch.nn import functional as F
 
 
-def readback_scores(leaf, codes, priming, *, percept_width=None):
+def readback_scores(leaf, codes, priming, *, percept_width=None, meaning_start=None):
     """Read native surface identity by scale-free perceptual cosine and priming.
 
     Generic field callers without a perceptual band retain their signed
@@ -14,6 +14,10 @@ def readback_scores(leaf, codes, priming, *, percept_width=None):
     an excluded word's identity without assuming a unit code. A zero code has
     no direction and scores zero. The codes and the recovered leaf stay live.
     """
+    if meaning_start is not None:
+        # Both positive symbols share one signless form. Neither lane is
+        # evidence about which word this is, and both/neither are not aliases.
+        percept_width = meaning_start if percept_width is None else percept_width
     if percept_width is not None:
         # The sign is the leaf's activation, not its surface identity. On
         # native nonnegative percepts, absolute cosine reads either pole of
@@ -35,9 +39,9 @@ def readback_decisions(words, counts, bank, active):
     result = []
     for position in range(words.shape[1]):
         code = readback_scores(words[:, position], bank.codes, torch.ones_like(bank.weights),
-                               percept_width=bank.percept_width)
+                               percept_width=bank.percept_width, meaning_start=bank.meaning_start)
         weighted = readback_scores(words[:, position], bank.codes, bank.weights,
-                                   percept_width=bank.percept_width)
+                                   percept_width=bank.percept_width, meaning_start=bank.meaning_start)
         code = code.masked_fill(~valid, -torch.inf)
         weighted = weighted.masked_fill(~valid, -torch.inf)
         for b in range(words.shape[0]):
@@ -68,10 +72,29 @@ class PrimedSymbols:
     case_bank: object = None
     percept_width: int | None = None
     forms: torch.Tensor | None = None
+    meaning_start: int | None = None
+    normalize_reader: bool = False
 
     @property
     def valid(self):
         return self.rows >= 0
+
+    def reader_value(self, value, *, reference=None):
+        """Shared snapshot scales retain an affine read, including the sum control.
+
+        Each block uses one maximum norm over the frozen bank (all streams).
+        Never normalize each composed root: that would make a mean nonlinear.
+        """
+        if not self.normalize_reader or self.meaning_start is None:
+            return value
+        reference = self.codes * self.valid[..., None] if reference is None else reference
+        boundary = self.meaning_start
+        result = []
+        for start, end in ((0, boundary), (boundary, value.shape[-1])):
+            block = reference[..., start:end].detach()
+            scale = block.norm(dim=-1).amax().clamp_min(1.)
+            result.append(value[..., start:end] / scale)
+        return torch.cat(result, -1)
 
 
 @dataclass(frozen=True)
@@ -99,7 +122,9 @@ class SentenceUnderstanding:
                 * self.primed.valid[..., None]).sum(1)
         positions = torch.arange(self.end_slots.shape[1], device=self.root.device)
         end = self.end_slots * (positions[None] < self.end_depth[:, None])[..., None]
-        root = self.root
+        root = self.primed.reader_value(self.root)
+        end = self.primed.reader_value(end)
+        bank = self.primed.reader_value(bank, reference=bank)
         return torch.cat((root, end.flatten(1), bank), -1).detach()
 
     def detached(self):

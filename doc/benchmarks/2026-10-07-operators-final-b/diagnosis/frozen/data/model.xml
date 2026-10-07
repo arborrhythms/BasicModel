@@ -1,0 +1,569 @@
+<?xml version="1.0" ?>
+<!--
+  model.xml — canonical defaults for BasicModel.
+
+  Every parameter that create_from_config() reads must appear here.
+  Model-specific XML files (XOR_exact.xml, BasicModel.xml, …) override
+  individual values; anything they omit inherits from this file.
+
+  Sentinels:
+    nInput=0   InputSpace: derive from TheData; other spaces: derive
+               from the previous space's outputShape[0].
+    nOutput=0  Same as nInput for this space (passthrough count).
+    nVectors=0 Same as nOutput (used for non-codebook spaces).
+-->
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <architecture>
+    <!-- The data tier (embedding | numeric) is set under <data> as
+         <dataType>; this defaults file uses numeric (see <data> below). -->
+
+    <!-- Iteration depth of the P→C→S pipeline.  order > 1 partitions
+         the symbolic codebook geometrically (see Reasoning.md). -->
+    <bindingDepth>1</bindingDepth>
+
+    <!-- Stage 1.E (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+         <serial> selects the per-word grammatical body. It is omitted here
+         so legacy configs keep deriving the mode from symbolicOrder > 0.
+         New configs should set  explicitly. -->
+    <!--  -->
+
+    <!-- Hard compose sampling only; zero selects exact-logit argmax.
+         Both training derivations use this temperature. Model softmax
+         probabilities used for gradient credit remain untempered. -->
+    <composeTemperature>0</composeTemperature>
+    <!-- Fixed binary-logit load prior; its probabilities also carry credit.
+         Deadlines force the required reductions independently of this weight. -->
+    <reducePressure>1.0</reducePressure>
+
+    <!-- symbolicOrder is the symbolic / relational loop budget, not the
+         primary mode selector. Omitted here so legacy configs inherit the
+         grammar-derived default: 1 when the XML enables a non-substrate rule
+         (useGrammar != 'none'), else 0. Concrete configs should set this
+         explicitly when they need a symbolic loop limit. -->
+    <!-- <conceptLayers>1</conceptLayers> -->
+
+    <!-- Concept rows compose by union; the optional conjunctive pass
+         discovers co-present wholes. Pool participation is an EWMA of use. -->
+    <attentionPromotion>false</attentionPromotion>
+    <conceptualPi>false</conceptualPi>
+    <conceptPoolSize>1</conceptPoolSize>
+    <conceptUseEWMA>0.9</conceptUseEWMA>
+    <conceptUseFloor>0.5</conceptUseFloor>
+    <conceptMintThreshold>0.8</conceptMintThreshold>
+    <conceptRecycleThreshold>0.2</conceptRecycleThreshold>
+    <conceptMatchCos>0.8</conceptMatchCos>
+    <conceptPartFloor>0.001</conceptPartFloor>
+
+    <!-- Task 4 (doc/plans/2026-05-29-stm-serial-parallel-modes.md §4):
+         per-word router-fire gating for serial mode.
+           per-word  = fire symbolSpace.compose once per word in the
+                       serial per-word loop (the intra-predictor's
+                       routing context); boundary fire OFF.
+           boundary  = fire only at the sentence boundary
+                       (_chart_compose_at_C / _chart_generate_from_stm);
+                       the inter-sentence predictor's routing snapshot.
+           both      = (DEFAULT) per-word during training so the
+                       intra-predictor sees routing context, AND boundary
+                       still fires for the inter-sentence predictor.
+           off       = neither fires.
+         Default ``both`` preserves the pre-existing boundary-fire
+         behaviour. -->
+    <routerWireSerial>both</routerWireSerial>
+
+    <!-- Chooser capacity, independent of parsing/episode iteration budgets.
+         Grammar hidden=0 derives max(8, grammar feature width). Depth is the
+         number of hidden Linear/GELU blocks before the scalar score. -->
+    <transformChooserHidden>0</transformChooserHidden>
+    <transformChooserDepth>1</transformChooserDepth>
+    <whatThinkingHidden>16</whatThinkingHidden>
+    <whatThinkingDepth>1</whatThinkingDepth>
+    <!-- One completed selected grammatical question owns this many shared
+         controller/query-work units. Policy sampling remains separately off. -->
+    <attentionBudget>32</attentionBudget>
+
+    <!-- Reverse from the idea rather than replaying the forward grammar trace.
+         When true, reverse() clears current_rules/generate_rules and the
+         router's last route, then asks SymbolSpace.generate() to infer a fresh
+         reverse rule path from the supplied idea snapshot. -->
+    <reconstructFromIdea>false</reconstructFromIdea>
+
+    <!-- Construct answers through the separate output() path (resolve ->
+         conceptual synthesis -> perceptual synthesis -> OutputSpace adapter)
+         rather than the direct symbol projection. Off until the temporal /
+         supervised curriculum trains the synthesis adapter. -->
+    <answerSynthesis>false</answerSynthesis>
+    <synthesisBindings>0</synthesisBindings>
+    <whatCurriculum>none</whatCurriculum>
+    <whatCurriculumDistance>1</whatCurriculumDistance>
+    <whatCurriculumRatio>0.25</whatCurriculumRatio>
+
+    <!-- Apply extra symbolic processing steps after Sigma. -->
+    <processSymbols>false</processSymbols>
+
+    <!-- Meronomy (MeronomySpec, doc/plans/): "on" binds the meronymic
+         slots (PS.sigma / WS.pi) to the membership kernels
+         (SigmaLayer2 / PiLayer2 via the membership-native adapter), enables the
+         interface factoring at the callosum, the reference-half
+         pole-quotient lookup, and the word/object binding table.
+         Stage 9 cutover flipped this default to "on" (2026-06-11);
+         set "off" per model to keep the legacy odds-path slots.
+         dMaxStable bounds the complete learned fold's inverse gain. -->
+    <meronomy dMaxStable="4.0">on</meronomy>
+
+    <!-- Constrain invertible Sigma / Pi to W ≥ 0 so the lift / lower
+         chain is order-preserving on the parthood cone (Spaces.md). -->
+    <monotonic>false</monotonic>
+
+    <!-- Ergodic exploration: every Layer uses
+         W_eff = bias * W + temp * noise. -->
+    <ergodic>false</ergodic>
+
+    <!-- Materialise W_eff densely in InvertibleLinearLayer (slower;
+         debugging only).  False uses sequential L/D/U triangular solves. -->
+    <naive>false</naive>
+
+    <!-- Positional / temporal encoding dimensions appended to each
+         vector.  > 0 enables PositionalEncoding / TemporalEncoding
+         across the whole model. -->
+
+    <!-- gensim KeyedVectors path; empty disables embedding load. -->
+    <embeddingPath></embeddingPath>
+    <!-- Checkpoint path for the neural model weights. -->
+    <weightsPath></weightsPath>
+
+    <!-- Inference token budget (characters / bytes / tokens).  Caps
+         output alongside InputSpace.nActive. -->
+    <maxResponseLength>4096</maxResponseLength>
+
+    <!-- AMP autocast mode: off | fp16 | bf16. -->
+    <amp>off</amp>
+
+    <!-- TruthLayer integration (see Reasoning.md, Ethics.md).
+         truthBiasScale: luminosity bias on concept input during forward.
+         LuminosityWeight: multiplicative loss penalty for incoherent truths.
+         UniversalityWeight: multiplicative loss penalty for unkind props. -->
+    <truthBiasScale>0.1</truthBiasScale>
+    <LuminosityWeight>0.1</LuminosityWeight>
+    <UniversalityWeight>0.1</UniversalityWeight>
+
+    <!-- Quaternary-corner balance (catuskoti / tetralemma).
+         allowExcludedMiddle:  1=permit NEITHER (default), -1=classical LEM
+         allowContradiction:   0=forbid BOTH (default), 1=paraconsistent
+         See Philosophy.md for the 4-valued truth semantics. -->
+    <allowExcludedMiddle>1</allowExcludedMiddle>
+    <allowContradiction>0</allowContradiction>
+
+    <!-- L1 sparsity penalty on lift / lower gates.  Opt-in; 0 disables. -->
+    <gateL1Lambda>0.0</gateL1Lambda>
+
+    <!-- Sparse-MoE load-balance loss weight (Shazeer et al. 2017).
+         Originally active only when SymbolSpace.chartTopK > 0; chart
+         retired Stage 3 and the knob now stands by for any future
+         signal-router rule load-balancing. -->
+    <loadBalanceWeight>0.0</loadBalanceWeight>
+
+    <!-- Architecture-wide L1 / discontinuity penalties (legacy hooks).
+         Most configs leave these at 0 and use WholeSpace.l1Lambda. -->
+    <l1Lambda>0.0</l1Lambda>
+    <discontinuityLambda>0.0</discontinuityLambda>
+
+    <!-- Passes allowed to retarget perception: all, off, or indices 1..T-1. -->
+
+    <!-- Completed learning updates without improved local both evidence,
+         before discontiguous support may raise conceptual order. -->
+    <mereologyRefinePatience>3</mereologyRefinePatience>
+    <maxActivePerLayer>8</maxActivePerLayer>
+    <!-- Role-participation category codebook for the role-collapsed grammar.
+         Unsettled MetaSymbols accumulate bounded temporary role evidence, then
+         commit to one role-space category id used by all transform choosers. -->
+    <categoryCodebook>true</categoryCodebook>
+    <!-- Experimental overlapping PS/WS .where lattice. Requires
+         mereologyRaise=true; stays false until its corpus gates pass. -->
+    <codebookRetire>false</codebookRetire>
+
+    <!-- Model-level trust multiplier for incoming assertions/testimony.
+         Effective signed DoT = <trust> * incoming trust. Default 1.0 keeps
+         configured/runtime trust values literal. -->
+    <trust>1.0</trust>
+
+    <!-- Runtime symbol-learning hooks. Disabled by default. -->
+    <symbolLearning>
+      <enabled>false</enabled>
+    </symbolLearning>
+
+
+    <data>
+      <dataType>numeric</dataType>
+      <!-- Dataset key: xor | mnist | tomatoes | text | inline.
+           Omit for inference-only models. -->
+      <dataset>xor</dataset>
+      <!-- Optional primitive/name teaching examples for concept-id outputs. -->
+      <conceptLessons></conceptLessons>
+      <!-- Shard count and per-shard document cap (streaming datasets). -->
+      <numShards>1</numShards>
+      <maxDocs>10000</maxDocs>
+      <!-- Directory containing text shards (e.g. data/fineweb). -->
+      <shardDir></shardDir>
+      <!-- Vocabulary admission threshold (fraction of corpus).
+           0.0 admits all words immediately. -->
+      <minFrequency>0.0</minFrequency>
+      <!-- Optional bounds for classification-accuracy reporting. -->
+      <classificationMin></classificationMin>
+      <classificationMax></classificationMax>
+    </data>
+
+    <training>
+      <!-- Number of independent training runs per invocation. -->
+      <numTrials>1</numTrials>
+      <!-- Training epochs per trial. -->
+      <numEpochs>3</numEpochs>
+      <!-- Contiguous streams through the dataset; each row b receives
+           the next item from stream b so context stays coherent. -->
+      <batchSize>64</batchSize>
+      <!-- DataLoader prefetch workers; 0 = synchronous in-process. -->
+      <numWorkers>0</numWorkers>
+      <!-- Adam learning rate. -->
+      <learningRate>0.001</learningRate>
+      <!-- Teacher owns clean reconstruction lessons when enabled. -->
+      <teacherReconstruction>false</teacherReconstruction>
+      <!-- Supplied grammar annotations train the existing grammar MLPs.
+           Unlabelled corpora have no grammar-lesson objective. -->
+      <grammarLessonWeight>1.0</grammarLessonWeight>
+      <!-- Independent priority of each relative reconstruction term.
+           Answer terms retain their own event-band priorities. -->
+      <reconstructionScale>0.5</reconstructionScale>
+      <!-- Per-channel triple loss scales (what / where / when). -->
+      <whatScale>0.7</whatScale>
+      <whereScale>0.2</whereScale>
+      <whenScale>0.1</whenScale>
+      <!-- Negative samples per positive for CBOW / SBOW training. -->
+      <negSamples>64</negSamples>
+      <!-- Additive penalty for propositions contradicting the TruthSet;
+           uses union-norm reduction.  0 disables. -->
+      <TruthLoss>0.0</TruthLoss>
+
+      <!-- Within-sentence training is IR-only (masked-LM at the P-tier).
+           IR-mode Bernoulli probability that a percept is replaced by
+           NULL_PERCEPT.  Range [0,1]; BERT default 0.15. -->
+      <maskRate>0.15</maskRate>
+
+      <!-- Embedding update mode:
+           NONE | CBOW | SBOW | BACKPROP | BOTH | JOINT. -->
+      <trainEmbedding>NONE</trainEmbedding>
+      <!-- Embedding co-occurrence loss weight λ in JOINT mode. -->
+      <embeddingScale>0.25</embeddingScale>
+      <!-- Inactive settings of the retired contextual rotation. The
+           reconstruction-only law uses neither situation nor expectation
+           to update dictionary rows outside its gradient. -->
+      <conceptualContextSituationWeight>0</conceptualContextSituationWeight>
+      <conceptualContextSituationAnchors>8</conceptualContextSituationAnchors>
+      <conceptualContextExpectationWeight>0</conceptualContextExpectationWeight>
+
+      <!-- Load weights from weightsPath at construction. Training configs
+           default to true so runs resume from existing checkpoints; stale
+           incompatible checkpoints fail fast and should be moved/deleted
+           or regenerated. -->
+      <autoload>true</autoload>
+      <!-- Persist weights when training completes. -->
+      <autosave>false</autosave>
+      <!-- Mid-training checkpoint cadence (optimizer steps).  0 disables. -->
+      <checkpointEveryBatches>0</checkpointEveryBatches>
+      <!-- cProfile the training loop. -->
+      <profile>false</profile>
+      <!-- Per-neuron certainty tracking in ergodic layers. -->
+      <certainty>false</certainty>
+
+      <!-- Expect the next external sentence from preceding meaning in the
+           same stream. Enabled by default. The older ARMA loss is a
+           separate objective whose weight remains zero. -->
+      <sentenceExpectation>true</sentenceExpectation>
+      <!-- Complete occupied local roles; root selects the old benchmark. -->
+      <sentenceExpectationScope>structured</sentenceExpectationScope>
+      <sentenceExpectationArmaScale>0.0</sentenceExpectationArmaScale>
+      <!-- Per-role negative image at the closing; zero is beginner's mind. -->
+      <expectationGain>1</expectationGain>
+      <!-- Residual credit for prior-only queries through the ordinary chooser. -->
+      <expectationPolicyWeight>0</expectationPolicyWeight>
+      <expectationQueryBudget>64</expectationQueryBudget>
+
+      <!-- In-STM autoregressive prediction (IntraSentenceLayer, STM
+           serial/parallel modes plan).  Loss weight on the per-word
+           L_intra = MSE(predicted idea, observed idea) added to the
+           IR-loss path.  The PI-then-Sigma predictor itself is owned by
+           ConceptualSpace; this scales its contribution to the total
+           loss. -->
+      <intraLossWeight>0.1</intraLossWeight>
+
+      <!-- Inter-sentence prediction: all-role MSE plus presence
+           loss in structured scope, root MSE in the historical baseline.
+           The predictor reads a bounded row/document observation view;
+           targets and durable history are detached, current-step source
+           representations may learn under the reconstruction budget. -->
+      <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
+      <sentenceExpectationContrastiveWeight>0.0</sentenceExpectationContrastiveWeight>
+      <interContrastiveTemp>0.1</interContrastiveTemp>
+      <!-- Hard normal grammatical-thought choices use their own explicit
+           REINFORCE credit; zero preserves the deterministic safe baseline. -->
+      <selectedThoughtPolicyWeight>0.0</selectedThoughtPolicyWeight>
+    </training>
+
+    <server>
+      <!-- HTTP serve.py bind address. -->
+      <host>127.0.0.1</host>
+      <!-- HTTP serve.py port (override per model to run in parallel). -->
+      <port>8001</port>
+      <!-- Per-request timeout in seconds. -->
+      <timeout>120</timeout>
+    </server>
+
+  </architecture>
+
+  <SymbolSpace>
+    <!-- SyntacticLayer MLP hidden size (prev hardcoded 64..256). -->
+    <syntacticHiddenDim>64</syntacticHiddenDim>
+
+    <!-- Truth memory capacity (TruthLayer is owned by SymbolSpace). -->
+    <truthMaxEntries>1024</truthMaxEntries>
+
+    <!-- Long-term-memory (LTM) chain capacity (InterSentenceLayer):
+         bounds the per-row chain of STM end-states (the AR sequence
+         used for inter-sentence prediction).  Separate from
+         <truthMaxEntries>.  Default 1024. -->
+    <ltmCapacity>1024</ltmCapacity>
+
+    <!-- Stage 3 cleanup (2026-05-27): the chart and STM shift-reduce
+         parsers retired in favour of the signal router (LanguageLayer).
+         The retired knobs (parserBackend, routerKind, chartTau,
+         chartTopK, chartNoiseEps) raise a loud ValueError at
+         config load time. See
+         Language._assert_retired_chart_knobs_absent. -->
+
+    <!-- Soft-superposition output collapse mode; preserved for the
+         signal router's root-state writeback contract. -->
+    <chartCollapse>root</chartCollapse>
+
+    <!-- Per-word P->C loop count before parser/body composition. -->
+    <iterationsPerWord>1</iterationsPerWord>
+
+    <!-- Phase D: emit a codebook head via SymbolSpace.reconstruct().
+         false = forward() does not populate ``_predicted_head``. -->
+    <downwardGeneration>false</downwardGeneration>
+
+    <language>
+      <grammar>
+        <!-- Default grammar: trivial unary pi / sigma folds at every
+             tier.  PiLayer and SigmaLayer are first-class arity=1
+             GrammarLayer subclasses; their forward(x) is the
+             always-on multiplicative AND-fold (concepts) and OR-fold
+             (percepts / symbols) respectively.
+
+             A grammar containing only these unary rules is the
+             "default-only" case: SymbolSpace.compose detects it and
+             skips parser selection entirely.
+
+             Per the 2026-05-07 rollback, the grammar XML is the sole
+             source of truth for which rule fires at each tier.  There
+             is no ``default_rule`` code-level fallback.  SymbolSpace
+             populates ``current_rules`` / ``generate_rules`` from the
+             rules listed below in the default-only fast path so per-space SyntacticLayer
+             dispatch resolves to the PiLayer / SigmaLayer registered
+             at space construction.  End-to-end cost matches the legacy
+             y = self.pi(x) call site.
+
+             Configs that need real grammar (constituency / negation /
+             min-max ops) override this entire block via
+             _NON_MERGING_PATHS (util.py); their grammar block fully
+             replaces this one.  Configs that previously relied on the
+             default_rule code-level fallback for sigma / pi at any
+             tier need explicit ``S = sigma(S)``, ``C = pi(C)``,
+             ``P = sigma(P)`` (and matching ``.reverse`` rules)
+             listed; otherwise the per-tier dispatch is a no-op. -->
+        <compose>
+      <!-- Typed attention candidates; no predefined surface or generate face. -->
+      <rule operands="field">F = divide.forward(F)</rule>
+      <rule operands="field">F = descend.forward(F)</rule>
+      <rule operands="field">F = gloss.forward(F)</rule>
+      <rule operands="field">F = and.forward(F)</rule>
+      <rule operands="field">F = or.forward(F)</rule>
+
+          <percepts>
+            <rule>P = sigma(P)</rule>
+          </percepts>
+          <concepts>
+            <rule>C = pi(C)</rule>
+          </concepts>
+          <symbols>
+            <rule>S = sigma(S)</rule>
+          </symbols>
+        </compose>
+        <generate>
+          <percepts>
+            <rule>P = sigma.reverse(P)</rule>
+          </percepts>
+          <concepts>
+            <rule>C = pi.reverse(C)</rule>
+          </concepts>
+          <symbols>
+            <rule>S = sigma.reverse(S)</rule>
+          </symbols>
+        </generate>
+      </grammar>
+      <!-- Soft-interpolation weight between forward and generation. -->
+      <interpretation>0.5</interpretation>
+    </language>
+  </SymbolSpace>
+
+
+  <InputSpace>
+    <!-- Sequence-length sentinels; create_from_config() resolves
+         nOutput=0 -> data-derived; nInput=0 -> data-derived. -->
+    <nInput>0</nInput>
+    <nOutput>0</nOutput>
+    <!-- Per-vector EVENT width (it embraces the .where/.when band: content
+         nWhat = nDim - nWhere - nWhen). Muxed tier default 9 = 1 content + 4
+         .where + 4 .when. -->
+    <nDim>9</nDim>
+    <!-- Raw data dims; 0 = use the loader's native dim. -->
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
+    <!-- Codebook size; 0 means defer to nOutput. -->
+    <nVectors>0</nVectors>
+    <!-- Discrete (codebook) input values. -->
+    <codebook>none</codebook>
+    <!-- Tokenization for text inputs: word | sentence | byte. -->
+    <!-- raw: InputSpace emits the unanalyzed [B,1,N] byte buffer; the
+         meronymic analyzer (chunking=analyse, the default) owns all
+         tokenization. Non-analyse models (radix/bpe/lexicon) pin their own
+         lexer (byte/word) so they keep the pre-lexed buffer. -->
+  </InputSpace>
+
+  <PartSpace>
+    <identityByParts>true</identityByParts>
+    <identityPairDim>64</identityPairDim>
+    <identityOnes>3</identityOnes>
+    <identityLengthDim>32</identityLengthDim>
+    <identityBindingDim>64</identityBindingDim>
+    <nInput>0</nInput>
+    <nOutput>0</nOutput>
+    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 8. -->
+    <nDim>9</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
+    <nVectors>0</nVectors>
+    <!-- Attention reweighting of percepts before the Pi fold. -->
+    <hasAttention>false</hasAttention>
+    <!-- Shared invertible PiLayer (vs separate pi1 / pi2). -->
+    <invertible>false</invertible>
+    <!-- Tanh-bound the output to [-1, 1]. -->
+    <nonlinear>true</nonlinear>
+    <!-- PartSpace is subsymbolic: the <codebook> element was retired
+         (2026-06-09, asymmetric-VQ plan §7 task 7). PS is hardwired to "none"
+         (continuous .event passthrough; percept prototypes live on the .what
+         Embedding). Only WholeSpace carries a <codebook>. -->
+    <!-- Synthesis (bottom-up union) strategy: lexicon | bpe | mphf | byte/none | radix | meronomy.
+         Phase 4b default: lexicon (word resolution through the word
+         codebook - the closest surviving mode to the retired PS analyse;
+         the meronymic analyzer is ANALYSIS and lives on WholeSpace as
+         <analysis>meronomy). -->
+    <synthesis>meronomy</synthesis>
+    <!-- BPE merges per chunking pass (lexicon mode ignores this). -->
+    <wordLearning>2</wordLearning>
+  </PartSpace>
+
+  <ModalSpace>
+    <nInput>0</nInput>
+    <nOutput>0</nOutput>
+    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 8. -->
+    <nDim>9</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
+    <nVectors>0</nVectors>
+    <!-- Modal-channel attention. -->
+    <hasAttention>false</hasAttention>
+    <!-- Shared invertible layer for the modal mux / demux. -->
+    <invertible>false</invertible>
+    <!-- Codebook quantization on the modal output. -->
+    <codebook>none</codebook>
+  </ModalSpace>
+
+  <ConceptualSpace>
+    <!-- Active bipolar complement. Zero disables meaning; storage geometry stays fixed. -->
+    <meaningWidth>128</meaningWidth>
+    <symbolCentroid>true</symbolCentroid>
+    <membershipPriming>true</membershipPriming>
+    <!-- Deterministic room between the part and property-whole bounds. -->
+    <latticeMargin>0</latticeMargin>
+    <nInput>0</nInput>
+    <nOutput>0</nOutput>
+    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 8. -->
+    <nDim>9</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
+    <nVectors>0</nVectors>
+    <!-- Attention on ConceptualSpace violates position locality
+         required by serial_mode; keep false unless a config opts in. -->
+    <hasAttention>false</hasAttention>
+    <!-- Shared invertible SigmaLayer (vs separate sigma1 / sigma2). -->
+    <invertible>false</invertible>
+    <!-- Tanh-bound the output to [-1, 1]. -->
+    <nonlinear>true</nonlinear>
+    <!-- Codebook quantization of concept directions. -->
+    <codebook>none</codebook>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <analysis>meronomy</analysis>
+    <!-- The WholeSpace cut is <analysis> (the unified knob; raw is the
+         resolve_lexer default when unset). <lexer>/<analyzer> are deprecated. -->
+    <nInput>0</nInput>
+    <nOutput>0</nOutput>
+    <!-- symbol_dim must equal concept_dim under the ownership rule
+         (WholeSpace owns no SigmaLayer/PiLayer). nDim=0 means
+         "inherit from ConceptualSpace.nDim". Concrete configs may set
+         a positive value, but it must match ConceptualSpace.nDim. -->
+    <nDim>0</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
+    <nVectors>0</nVectors>
+    <!-- Tanh-bound the symbolic activation. -->
+    <nonlinear>true</nonlinear>
+    <!-- Discrete symbol prototypes (required for the full symbolic
+         pipeline). Mandatory in the converged modality architecture
+         (WholeSpace is a MANDATORY_CODEBOOK_TIER). -->
+    <codebook>quantize</codebook>
+    <!-- Bitonic-sort regularizer on the codebook ordering. -->
+    <sortNetwork>false</sortNetwork>
+    <!-- Sort-network depth; 0 disables. -->
+    <sortPasses>0</sortPasses>
+    <!-- L1 sparsity penalty on the symbolic activation. -->
+    <l1Lambda>0.01</l1Lambda>
+    <!-- Symbol-residual injection scales (legacy mereology hooks). -->
+    <symbolResidualScale>1.0</symbolResidualScale>
+    <outputSymbolResidualScale>0.0</outputSymbolResidualScale>
+    <commitmentBeta>0.25</commitmentBeta>
+    <!-- Enable VQ-VAE-style quantization rather than EMA codebook. -->
+    <!-- ImpenetrableLayer regularizers (decorrelation / spectral
+         flatness on codebook rows).  0 disables. -->
+    <decorrelationWeight>0.0</decorrelationWeight>
+    <spectralFlatnessWeight>0.0</spectralFlatnessWeight>
+  </WholeSpace>
+
+  <OutputSpace>
+    <!-- Space-separated persistent concept ids; each reads its positive pole. -->
+    <conceptIds></conceptIds>
+    <nInput>0</nInput>
+    <nOutput>0</nOutput>
+    <nDim>1</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
+    <nVectors>0</nVectors>
+    <!-- Invertible projection (rarely set on OutputSpace). -->
+    <invertible>false</invertible>
+    <!-- Codebook quantization of the output. -->
+    <codebook>none</codebook>
+    <!-- Linear (no tanh) output; OutputSpace rescales via Data.denormalize. -->
+    <nonlinear>false</nonlinear>
+  </OutputSpace>
+
+</model>

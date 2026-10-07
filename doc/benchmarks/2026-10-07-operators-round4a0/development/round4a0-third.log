@@ -1,0 +1,137 @@
+................................................................F....... [ 69%]
+........F.F.................FF.                                          [100%]
+=================================== FAILURES ===================================
+_______ TestProvisioning.test_provisioned_trust_and_earliest_timestamps ________
+
+self = <test_ltm_consolidation.TestProvisioning testMethod=test_provisioned_trust_and_earliest_timestamps>
+
+    @pytest.mark.usefixtures('eager_reading')
+    def test_provisioned_trust_and_earliest_timestamps(self):
+        m = _make_model_provisioned(_SERIAL_CONFIG)
+        store = m.symbolSpace.ltm_store
+        rows = store.rows_of_origin(store.ORIGIN_PROVISIONED).tolist()
+        self.assertEqual(len(rows), 3)
+        # Each row's trust is OVERWRITTEN with the XML trust.
+        self.assertAlmostEqual(store.row(rows[0])["trust"], 0.9, places=5)
+        self.assertAlmostEqual(store.row(rows[1])["trust"], 0.8, places=5)
+        self.assertAlmostEqual(store.row(rows[2])["trust"], 0.7, places=5)
+        # Definitions and assertions share one clock. Provisioning preserves
+        # assertion order even though DEF rows occupy intervening ticks.
+        stamps = [store.row(i)["timestamp"] for i in rows]
+        self.assertEqual(stamps, sorted(set(stamps)))
+        next_tick = float(store._next_ts)
+        self.assertGreater(next_tick, max(stamps))
+        nxt = store.append_idea(torch.ones(store.nDim))
+>       self.assertEqual(store.row(nxt)["timestamp"], next_tick)
+E       AssertionError: 3.0 != 4.0
+
+test/test_ltm_consolidation.py:164: AssertionError
+______ TestStoreBackedChain.test_get_stm_chain_reads_recent_oldest_first _______
+
+self = <test_ltm_consolidation.TestStoreBackedChain testMethod=test_get_stm_chain_reads_recent_oldest_first>
+
+    def test_get_stm_chain_reads_recent_oldest_first(self):
+        # FU3: get_stm_chain reconstructs rows from store.recent() in
+        # OLDEST-FIRST time order (recent() is descending timestamp).
+        from Layers import TernaryTruthStore as T
+        m = _make_model(_SERIAL_CONFIG)
+        store = m.symbolSpace.ltm_store
+        disc = m.symbolSpace.expectation
+        store.reset()
+        D = store.nDim
+        a = torch.zeros(D); a[0] = 1.0           # oldest (ts 0)
+        b = torch.zeros(D); b[1] = 1.0           # newest (ts 1)
+        store.append_idea(a, trust=0.5)
+        store.append_idea(b, trust=0.6)
+        chain = disc.get_stm_chain()
+        self.assertEqual(len(chain), 2)
+        # oldest-first: chain[0] is 'a', chain[-1] is 'b'.
+        d0, p0, t0 = chain[0]
+        d1, p1, t1 = chain[-1]
+        self.assertEqual(d0, 1)
+>       self.assertAlmostEqual(float(p0[0, 0]), 1.0, places=5)
+E       AssertionError: 0.0 != 1.0 within 5 places (1.0 difference)
+
+test/test_ltm_consolidation.py:459: AssertionError
+__________ TestStoreBackedChain.test_get_stm_chain_respects_n_window ___________
+
+self = <test_ltm_consolidation.TestStoreBackedChain testMethod=test_get_stm_chain_respects_n_window>
+
+    def test_get_stm_chain_respects_n_window(self):
+        m = _make_model(_SERIAL_CONFIG)
+        store = m.symbolSpace.ltm_store
+        disc = m.symbolSpace.expectation
+        store.reset()
+        D = store.nDim
+        for i in range(5):
+            v = torch.zeros(D); v[i % D] = 1.0
+            store.append_idea(v, trust=0.1 * i)
+        chain = disc.get_stm_chain(n=2)
+        self.assertEqual(len(chain), 2)
+        # The two MOST RECENT, oldest-first: rows 3 then 4.
+>       self.assertAlmostEqual(chain[-1][2], 0.4, places=5)
+E       AssertionError: 0.0 != 0.4 within 5 places (0.4 difference)
+
+test/test_ltm_consolidation.py:501: AssertionError
+____________ TestStatelessRevive.test_stateful_load_keeps_user_rows ____________
+
+self = <test_ltm_consolidation.TestStatelessRevive testMethod=test_stateful_load_keeps_user_rows>
+
+    def test_stateful_load_keeps_user_rows(self):
+        from Layers import TernaryTruthStore as T
+        m = _make_model(_ON_CONFIG, stateless=False)
+        self._seed(m)
+        sd = m.state_dict()
+        m2 = _make_model(_ON_CONFIG, stateless=False)        # stateful
+        m2.load_state_dict(sd, strict=False)
+        store = m2.symbolSpace.ltm_store
+        # every row survives; the user row is durable state.
+>       self.assertEqual(store.rows_of_origin(T.ORIGIN_USER).tolist(), [1])
+E       AssertionError: Lists differ: [] != [1]
+E       
+E       Second list contains 1 additional elements.
+E       First extra element 0:
+E       1
+E       
+E       - []
+E       + [1]
+E       ?  +
+
+test/test_ltm_consolidation.py:848: AssertionError
+_ TestStatelessRevive.test_stateless_load_prunes_only_after_structural_owners_are_restored _
+
+self = <test_ltm_consolidation.TestStatelessRevive testMethod=test_stateless_load_prunes_only_after_structural_owners_are_restored>
+
+    def test_stateless_load_prunes_only_after_structural_owners_are_restored(self):
+        from Layers import TernaryTruthStore as T
+        m = _make_model(_ON_CONFIG)
+        self._seed(m)
+        sd = m.state_dict()
+        m2 = _make_model(_ON_CONFIG)              # stateless (default)
+        m2.load_state_dict(sd, strict=False)
+        store = m2.symbolSpace.ltm_store
+        # Tensor-only restore cannot prove that another owner does not retain
+        # this request-scoped occurrence.  It withdraws fact authority now,
+        # then prunes after the semantic sidecar / thought owners are restored.
+>       self.assertEqual(len(store), 3)
+E       AssertionError: 1 != 3
+
+test/test_ltm_consolidation.py:824: AssertionError
+=============================== warnings summary ===============================
+test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_ltm_consolidation.py::TestProvisioning::test_provisioned_trust_and_earliest_timestamps
+FAILED test/test_ltm_consolidation.py::TestStoreBackedChain::test_get_stm_chain_reads_recent_oldest_first
+FAILED test/test_ltm_consolidation.py::TestStoreBackedChain::test_get_stm_chain_respects_n_window
+FAILED test/test_ltm_consolidation.py::TestStatelessRevive::test_stateful_load_keeps_user_rows
+FAILED test/test_ltm_consolidation.py::TestStatelessRevive::test_stateless_load_prunes_only_after_structural_owners_are_restored
+5 failed, 98 passed, 2 warnings in 12.65s

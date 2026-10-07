@@ -532,14 +532,14 @@ def test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owne
 
     # CSLang keeps continuous concepts only in CS's fixed eight-slot STM.
     # Its word-aligned handoff to SymbolSpace is the quantized sparse
-    # reference: row identity plus one signed activation, never a duplicate
+    # reference: row identity, form presence and an evidence pair, never a duplicate
     # [B,W,D_c] concept history.
     stm_buffer = tensor_loop.conceptualSpace.stm._buffer
     assert tuple(stm_buffer.shape[1:]) == (
         tensor_loop.conceptualSpace.stm.capacity,
         tensor_loop.conceptualSpace.stm.concept_dim)
     symbol_activations = (
-        tensor_loop.symbolSpace._word_reference_activations)
+        tensor_loop.symbolSpace._word_reference_presences)
     symbol_rows = tensor_loop.symbolSpace._word_reference_rows
     active = tensor_loop.inputSpace._word_active_mask
     assert tuple(symbol_activations.shape) == (*active.shape, 1)

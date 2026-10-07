@@ -1,0 +1,99 @@
+...............s.......s...............................................F [ 30%]
+.............F.......................................................... [ 60%]
+........................................................................ [ 90%]
+......................                                                   [100%]
+=================================== FAILURES ===================================
+________________ test_checkpoint_has_no_pending_attention_queue ________________
+test/test_interleave_lifecycle.py:52: in test_checkpoint_has_no_pending_attention_queue
+    assert restored.load_weights(checkpoint,strict=True,require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5133: in load_weights
+    raise ValueError("\n".join(lines))
+E   ValueError: [BasicModel] Weight file mismatch -- cannot load /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3055/test_checkpoint_has_no_pending0/attention.ckpt
+E     Shape mismatches:
+E       symbolSpace.subspace.layers.2._ltm_store.adjacent_left  saved=[2]  model=[0]
+E       symbolSpace.subspace.layers.2._ltm_store.adjacent_right  saved=[2]  model=[0]
+E       symbolSpace.subspace.layers.2._ltm_store.adjacent_address  saved=[2]  model=[0]
+E       symbolSpace.subspace.layers.2._ltm_store.adjacent_position  saved=[2]  model=[0]
+E       symbolSpace.subspace.ltm_store.adjacent_left        saved=[2]  model=[0]
+E       symbolSpace.subspace.ltm_store.adjacent_right       saved=[2]  model=[0]
+E       symbolSpace.subspace.ltm_store.adjacent_address     saved=[2]  model=[0]
+E       symbolSpace.subspace.ltm_store.adjacent_position    saved=[2]  model=[0]
+E       symbolSpace.subspace.expectation._ltm_store.adjacent_left  saved=[2]  model=[0]
+E       symbolSpace.subspace.expectation._ltm_store.adjacent_right  saved=[2]  model=[0]
+E       ... and 2 more
+E     The model config likely changed since this checkpoint was saved.
+E     To fix: correct the model XML to match the saved weights,
+E             or delete/move /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3055/test_checkpoint_has_no_pending0/attention.ckpt to start fresh.
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3055/test_checkpoint_has_no_pending0/attention.ckpt
+_______________ test_one_native_read_retains_shared_owner[True] ________________
+test/test_interleave_schedule.py:39: in test_one_native_read_retains_shared_owner
+    model.runBatch(train=training,optimizer=opt,batchNum=step,batchSize=1,
+bin/Models.py:13776: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13914: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14294: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8885: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10383: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8570: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8350: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23584: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17391: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22119: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21672: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20851: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20453: in _commit_sentence
+    row = _append_observed_meaning(store, clause,
+bin/Models.py:162: in _append_observed_meaning
+    return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:365: in write_clause
+    preflight(clause)
+bin/ClauseRow.py:331: in preflight
+    raise ValueError('a clause over a relation cannot fuse')
+E   ValueError: a clause over a relation cannot fuse
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_math]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_grad_reaches_unary_and_binary_anchors_bare_router
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_interleave_lifecycle.py::test_checkpoint_has_no_pending_attention_queue
+FAILED test/test_interleave_schedule.py::test_one_native_read_retains_shared_owner[True]
+2 failed, 234 passed, 2 skipped, 2 warnings in 30.92s

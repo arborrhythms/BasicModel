@@ -1,0 +1,565 @@
+--- measured-combined/bin/DecompositionChooser.py
++++ operators-final-b/bin/DecompositionChooser.py
+@@ -1,7 +1,6 @@
+ """Reconstruction's supervised choice among detached candidate pairs."""
+ import torch
+ from torch import nn
+-from torch.nn import functional as F
+ 
+ 
+ class DecompositionChooser(nn.Module):
+@@ -31,8 +30,11 @@
+                    & (targets >= 0).all(-1)[:, None, None]
+                    & details['allowed']).flatten(1)
+         present = matches.any(-1)
+-        target = matches.long().argmax(-1)
+         selected_true = matches.gather(1, details['selected'][:, None]).squeeze(1)
+-        loss = F.cross_entropy(details['logits'], target, reduction='none')
++        # The target is a word pair, independent of either symbol's polarity.
++        # Marginalize all of its legal symbols instead of teaching the first.
++        logits = details['logits']
++        accepted = matches | ~present[:, None]
++        loss = logits.logsumexp(-1) - logits.masked_fill(~accepted, -torch.inf).logsumexp(-1)
+         loss = torch.where(present, loss, torch.zeros_like(loss))
+         return loss, present, selected_true
+--- measured-combined/bin/Language.py
++++ operators-final-b/bin/Language.py
+@@ -12768,7 +12768,7 @@
+             exact = []
+             for i in range(n):
+                 scores = readback_scores(window[:, i].detach(), bank.codes.detach(),
+-                    bank.weights.detach(), percept_width=bank.percept_width)
++                    bank.weights.detach(), percept_width=bank.percept_width, meaning_start=bank.meaning_start)
+                 scores = scores.masked_fill(~(bank.valid & bank.byte_valid.any(-1)), -torch.inf)
+                 winner = scores.argmax(-1, keepdim=True)
+                 exact.append((identities[:, i] >= 0)
+@@ -13567,7 +13567,8 @@
+                                        chooser=None, return_details=False):
+         """Reconstruction-owned hard pair, initially least residual; no straight-through search gradient.
+ 
+-        At most K prototypes per side and K squared pairs, K=candidate_limit.
++        At most K words per side, each with both meaning polarities when present.
++        The search has at most (2K) squared pairs, K=candidate_limit.
+         Retrieval indices and any supplied reference are detached. Dictionary
+         candidates are detached constants. Residuals are relative to the
+         parent's mean square. The trial comparison trains the compose chooser.
+@@ -13581,11 +13582,14 @@
+             return torch.zeros_like(parent), torch.zeros_like(parent), absent
+         K = min(max(1, int(candidate_limit)), int(basis.shape[1]))
+         from SentenceUnderstanding import readback_scores
++        layout = getattr(op, 'meaning_layout', None)
++        form_width = layout[0] if layout is not None else None
+         def shortlist(valid, priming, candidates):
+             candidates = (basis if candidates is None else candidates).detach()
+             valid = basis_valid if valid is None else basis_valid & valid
+             priming = torch.ones_like(valid, dtype=parent.dtype) if priming is None else priming
+-            scores = readback_scores(parent.detach(), candidates, priming)
++            scores = readback_scores(parent.detach(), candidates, priming,
++                                     meaning_start=form_width)
+             indices = scores.masked_fill(~valid, -torch.inf).topk(K, dim=-1).indices
+             # Top-k chooses the search set, not operand order. Preserve bank
+             # order for equal-residual pairs (commutative operations otherwise
+@@ -13593,9 +13597,16 @@
+             indices = indices.sort(dim=-1).values
+             candidates = candidates.gather(1, indices[:, :, None].expand(B, K, D))
+             active = valid.gather(1, indices)
++            # Shortlist words, then offer both symbols of every selected word.
++            # One polarity must never crowd its partner out of the search.
++            if form_width is not None:
++                from MeaningCodes import polarity_bank
++                candidates, active = polarity_bank(candidates, active, form_width)
++                indices = torch.cat((indices, indices), 1)
+             return torch.where(active[:, :, None], candidates, 0.), active, indices
+         left_candidates, left_active, left_indices = shortlist(left_valid, left_priming, left_basis)
+         right_candidates, right_active, right_indices = shortlist(right_valid, right_priming, right_basis)
++        K = left_candidates.shape[1]
+         older = left_candidates[:, :, None, :].expand(B, K, K, D)
+         newer = right_candidates[:, None, :, :].expand(B, K, K, D)
+         reference = reference.detach()
+@@ -13680,6 +13691,12 @@
+         bank = basis.detach()
+         value = parent.detach()
+         valid = basis_valid & bank.square().sum(-1).gt(0)
++        layout = next((getattr(getattr(op, 'gl', op), 'meaning_layout', None)
++                       for op in binary_ops
++                       if getattr(getattr(op, 'gl', op), 'meaning_layout', None) is not None), None)
++        if layout is not None:
++            from MeaningCodes import polarity_bank
++            bank, valid = polarity_bank(bank, valid, layout[0])
+         denominator = bank.square().sum(-1).clamp_min(torch.finfo(bank.dtype).tiny)
+         activation = (value[:, None] * bank).sum(-1) / denominator
+         residual = (value[:, None] - activation[..., None] * bank).square().mean(-1)
+--- measured-combined/bin/MeaningCodes.py
++++ operators-final-b/bin/MeaningCodes.py
+@@ -18,6 +18,18 @@
+         raise ValueError('meaning requires an even number of pole coordinates')
+     positive, negative = value.chunk(2, -1)
+     return torch.cat((negative, positive), -1)
++
++
++def opposite_symbol(value, form_width):
++    """The other symbol of the same word: identical form, exchanged poles."""
++    return torch.cat((value[..., :form_width], exchange(value[..., form_width:])), -1)
++
++
++def polarity_bank(codes, valid, form_width):
++    """Both symbols, with coincident unknown-meaning aliases counted once."""
++    opposite = opposite_symbol(codes, form_width)
++    return (torch.cat((codes, opposite), 1),
++            torch.cat((valid, valid & opposite.ne(codes).any(-1)), 1))
+ 
+ 
+ def compose(name, left, right=None):
+--- measured-combined/bin/Models.py
++++ operators-final-b/bin/Models.py
+@@ -6895,7 +6895,9 @@
+             case_bank = stage_case_bank(owner, native, limit=self.reconstruction_basis_limit)
+         self._sentence_primed_bank = PrimedSymbols(selected, codes, weights, own,
+             data.to(rows.device), byte_valid.to(rows.device), case_bank,
+-            getattr(self, '_readback_percept_width', None), sparse_forms if identity is not None else None)
++            getattr(self, '_readback_percept_width', None), sparse_forms if identity is not None else None,
++            getattr(getattr(owner.similarity_codebook, 'mereology', None), 'percept_event_width', None),
++            bool(TheXMLConfig.space('ConceptualSpace', 'readerBlockNormalization', True)))
+         self._sentence_priming_written = True
+ 
+     def store_truths(self, entries, *, source_key='user-truths'):
+@@ -8325,6 +8327,19 @@
+                 space.Start()
+         self._spaces_started_for_forward = True
+ 
++    def _snapshot_sentence_codes(self):
++        """Freeze meanings and centroids before the first lexical bank is staged."""
++        if getattr(self, '_sentence_codes_snapshotted', False):
++            return
++        seen_books = set()
++        for cs in getattr(self, 'conceptualSpaces', ()):
++            cb = cs.similarity_codebook
++            derived = getattr(cb, 'mereology', None)
++            if derived is not None and id(cb) not in seen_books:
++                derived.begin_forward()
++                seen_books.add(id(cb))
++        self._sentence_codes_snapshotted = True
++
+     @_sentence_query_mask
+     def forward(self, inputData):
+         """Read through the common sentence driver; raw calls never optimize."""
+@@ -8334,13 +8349,7 @@
+             split, prepared = source if source is not None else ('train', None)
+             stage_sources(self, split, prepared, inputData)
+             self._advance_when_time()
+-        seen_books = set()
+-        for cs in getattr(self, 'conceptualSpaces', ()):
+-            cb = cs.similarity_codebook
+-            derived = getattr(cb, 'mereology', None)
+-            if derived is not None and id(cb) not in seen_books:
+-                derived.begin_forward()
+-                seen_books.add(id(cb))
++        self._snapshot_sentence_codes()
+         own_context = self.word_brackets and not getattr(self, '_sentence_run_active', False)
+         context = self._sentence_run(training=False) if own_context else nullcontext()
+         with context:
+@@ -8351,6 +8360,8 @@
+                 return self._forward_per_stage(inputData)
+             finally:
+                 self._spaces_started_for_forward = False
++                if own_context or not getattr(self, '_sentence_run_active', False):
++                    self._sentence_codes_snapshotted = False
+ 
+     def _what_memory(self):
+         """Return SymbolSpace's one interaction owner and apply its credit mode."""
+@@ -12338,7 +12349,7 @@
+             record.root, record.end_slots, record.end_depth, bank.codes, bank.valid, bank.weights,
+             **({} if bank.case_bank is None else {"case_bank": bank.case_bank}))
+         scores = torch.stack([readback_scores(words[:,w], bank.codes, bank.weights,
+-                              percept_width=bank.percept_width)
++                              percept_width=bank.percept_width, meaning_start=bank.meaning_start)
+                               for w in range(words.shape[1])], 1)
+         valid = bank.valid & bank.byte_valid.any(-1)
+         self._last_readback_decisions = readback_decisions(words, count, bank, active)
+@@ -13392,6 +13403,7 @@
+             depth = getattr(stm, "_depth", None) if stm is not None else None
+             if torch.is_tensor(depth) and depth.numel():
+                 stm._max_depth_host = int(depth.max().item())
++        self._sentence_codes_snapshotted = False
+         self._staged_in_sub = None
+         self._staged_concepts_in = None
+         self._active_compiled_step = None
+@@ -13686,7 +13698,7 @@
+             from SentenceUnderstanding import readback_scores
+             valid = bank.valid & bank.byte_valid.any(-1)
+             scores = torch.stack([readback_scores(words[:,w], bank.codes, bank.weights,
+-                                  percept_width=bank.percept_width)
++                                  percept_width=bank.percept_width, meaning_start=bank.meaning_start)
+                                   for w in range(words.shape[1])], 1)
+             chosen = scores.masked_fill(~valid[:, None], -torch.inf).argmax(-1).cpu().tolist()
+             rows = bank.rows.cpu().tolist()
+@@ -13900,6 +13912,7 @@
+             self._sentence_answer_questions = ()
+             self._sentence_answer_cost = None
+             self._sentence_run_active = False
++            self._sentence_codes_snapshotted = False
+             self._open_sentence_slot = None
+             self.languageSpace._reference_bank = None
+             self.languageSpace._compose_primed_bank = None
+@@ -14097,6 +14110,8 @@
+         # Per-batch Space.Start cascade (moved out of forward() so sliding
+         # buffers can persist across forward() calls within a stream).
+         self._start_spaces_for_forward()
++
++        self._snapshot_sentence_codes()
+ 
+         # AMP: torch.autocast wrapper from util.amp_context() honors
+         # MODEL_AMP env var (hydrated from XML <architecture><amp> in
+@@ -17244,7 +17259,11 @@
+             width = int(shape[0]) * int(shape[1])
+             torch._assert_async((occupied * D <= width).all(),
+                 'the answer map cannot hold the concluded understanding')
+-            value = slots.detach().reshape(B, 3 * D)
++            record = understanding if understanding is not None else getattr(self, '_last_sentence_understanding', None)
++            value = slots.detach()
++            if record is not None:
++                value = record.primed.reader_value(value)
++            value = value.reshape(B, 3 * D)
+             value = F.pad(value, (0, max(0, width - 3 * D)))[:, :width]
+             sub = SubSpace.from_tensor(value.reshape(B, *shape),
+                 inputShape=shape, outputShape=shape,
+--- measured-combined/bin/SentenceUnderstanding.py
++++ operators-final-b/bin/SentenceUnderstanding.py
+@@ -5,7 +5,7 @@
+ from torch.nn import functional as F
+ 
+ 
+-def readback_scores(leaf, codes, priming, *, percept_width=None):
++def readback_scores(leaf, codes, priming, *, percept_width=None, meaning_start=None):
+     """Read native surface identity by scale-free perceptual cosine and priming.
+ 
+     Generic field callers without a perceptual band retain their signed
+@@ -14,6 +14,13 @@
+     an excluded word's identity without assuming a unit code. A zero code has
+     no direction and scores zero. The codes and the recovered leaf stay live.
+     """
++    if meaning_start is not None:
++        from MeaningCodes import opposite_symbol
++        positive = readback_scores(leaf, codes, priming, percept_width=percept_width)
++        negative = readback_scores(leaf, opposite_symbol(codes, meaning_start), priming,
++                                   percept_width=percept_width)
++        # Symbols are alternatives for one identity, not two votes or ties.
++        return torch.maximum(positive, negative)
+     if percept_width is not None:
+         # The sign is the leaf's activation, not its surface identity. On
+         # native nonnegative percepts, absolute cosine reads either pole of
+@@ -35,9 +42,9 @@
+     result = []
+     for position in range(words.shape[1]):
+         code = readback_scores(words[:, position], bank.codes, torch.ones_like(bank.weights),
+-                               percept_width=bank.percept_width)
++                               percept_width=bank.percept_width, meaning_start=bank.meaning_start)
+         weighted = readback_scores(words[:, position], bank.codes, bank.weights,
+-                                   percept_width=bank.percept_width)
++                                   percept_width=bank.percept_width, meaning_start=bank.meaning_start)
+         code = code.masked_fill(~valid, -torch.inf)
+         weighted = weighted.masked_fill(~valid, -torch.inf)
+         for b in range(words.shape[0]):
+@@ -68,10 +75,29 @@
+     case_bank: object = None
+     percept_width: int | None = None
+     forms: torch.Tensor | None = None
++    meaning_start: int | None = None
++    normalize_reader: bool = False
+ 
+     @property
+     def valid(self):
+         return self.rows >= 0
++
++    def reader_value(self, value, *, reference=None):
++        """Shared snapshot scales retain an affine read, including the sum control.
++
++        Each block uses one maximum norm over the frozen bank (all streams).
++        Never normalize each composed root: that would make a mean nonlinear.
++        """
++        if not self.normalize_reader or self.meaning_start is None:
++            return value
++        reference = self.codes * self.valid[..., None] if reference is None else reference
++        boundary = self.meaning_start
++        result = []
++        for start, end in ((0, boundary), (boundary, value.shape[-1])):
++            block = reference[..., start:end].detach()
++            scale = block.norm(dim=-1).amax().clamp_min(1.)
++            result.append(value[..., start:end] / scale)
++        return torch.cat(result, -1)
+ 
+ 
+ @dataclass(frozen=True)
+@@ -99,7 +125,9 @@
+                 * self.primed.valid[..., None]).sum(1)
+         positions = torch.arange(self.end_slots.shape[1], device=self.root.device)
+         end = self.end_slots * (positions[None] < self.end_depth[:, None])[..., None]
+-        root = self.root
++        root = self.primed.reader_value(self.root)
++        end = self.primed.reader_value(end)
++        bank = self.primed.reader_value(bank, reference=bank)
+         return torch.cat((root, end.flatten(1), bank), -1).detach()
+ 
+     def detached(self):
+--- measured-combined/bin/Spaces.py
++++ operators-final-b/bin/Spaces.py
+@@ -8151,7 +8151,7 @@
+         valid = (rows >= 0) & (rows < V) & active[:, None]
+         surface.scatter_add_(1, rows.long().clamp(0, V-1), valid.to(surface) * float(bump))
+         surface.clamp_(min=0.)
+-        return surface
++        return self._bounded_priming(surface)
+ 
+     @torch.no_grad()
+     def prime_desire(self, rows, valence=1.0, bump=1.0):
+@@ -8168,12 +8168,30 @@
+         surface.scatter_add_(1, rows.long().clamp(0, V-1),
+                              valid.to(surface) * float(valence) * float(bump))
+         surface.clamp_(min=0.)
+-        return surface
++        return self._bounded_priming(surface)
++
++    def _bounded_priming(self, surface):
++        """Normalize positive energy for retrieval; neutral is always one.
++
++        Diffusion keeps its degree-normalized energy ledger. Only the detached
++        consumer boost is bounded, so normalization cannot create graph energy.
++        """
++        from util import TheXMLConfig
++        if surface is None or not hasattr(self, '_closed_clause_store'):
++            return surface
++        maximum = float(TheXMLConfig.space('ConceptualSpace', 'primingMaxBoost', 2.))
++        if maximum < 1 or not math.isfinite(maximum):
++            raise ValueError('primingMaxBoost must be finite and at least one')
++        excess = surface.detach() - 1
++        scale = excess.clamp_min(0).amax(-1, keepdim=True).clamp_min(1.)
++        positive = excess.clamp_min(0) / scale * (maximum - 1)
++        return 1 + positive + excess.clamp_max(0)
+ 
+     def priming_weights(self):
+         """The per-stream quadratic priming surface ``[B, V]`` over the CANONICAL
+         codebook rows (neutral 1.0), or ``None`` when never written."""
+-        return getattr(self._priming_target(), "_priming_boosts", None)
++        target = self._priming_target()
++        return target._bounded_priming(getattr(target, "_priming_boosts", None))
+ 
+     def relevance_weights(self):
+         """This tower's relevance IS its priming surface (Architecture
+--- measured-combined/data/model.xml
++++ operators-final-b/data/model.xml
+@@ -492,6 +492,8 @@
+     <meaningWidth>128</meaningWidth>
+     <symbolCentroid>true</symbolCentroid>
+     <membershipPriming>true</membershipPriming>
++    <primingMaxBoost>2.0</primingMaxBoost>
++    <readerBlockNormalization>true</readerBlockNormalization>
+     <!-- Deterministic room between the part and property-whole bounds. -->
+     <latticeMargin>0</latticeMargin>
+     <nInput>0</nInput>
+--- measured-combined/data/model.xsd
++++ operators-final-b/data/model.xsd
+@@ -1124,6 +1124,8 @@
+       <xs:element name="meaningWidth" type="xs:nonNegativeInteger" minOccurs="0"/>
+       <xs:element name="symbolCentroid" type="xs:boolean" minOccurs="0"/>
+       <xs:element name="membershipPriming" type="xs:boolean" minOccurs="0"/>
++      <xs:element name="primingMaxBoost" type="nonNegativeFloat" minOccurs="0"/>
++      <xs:element name="readerBlockNormalization" type="xs:boolean" minOccurs="0"/>
+       <xs:element name="latticeMargin" type="nonNegativeFloat" minOccurs="0"/>
+       <!-- Incoming-connection L1 for the indexed conceptsFromPercepts Sigma.
+            0 disables; BasicModel opts into weak 0.01. Not activation shrink. -->
+--- measured-combined/test/test_bounded_stm_fold.py
++++ operators-final-b/test/test_bounded_stm_fold.py
+@@ -66,7 +66,7 @@
+     assert Language.LiftLayer.space_role == Language.LowerLayer.space_role == 'CS'
+     assert Language.LiftLayer.invertible
+     assert not Language.LowerLayer.invertible
+-    assert Language.LowerLayer.inverse_kind == 'right' 
++    assert Language.LowerLayer.inverse_kind == 'right'
+ 
+ 
+ def test_closing_budget_is_fixed_even_when_unary_choices_do_not_shrink(monkeypatch):
+--- measured-combined/test/test_operators_final_b.py
++++ operators-final-b/test/test_operators_final_b.py
+@@ -0,0 +1,160 @@
++"""Repair certificates: polarity, one forward snapshot, bounded affine reads."""
++from pathlib import Path
++from types import SimpleNamespace
++from unittest.mock import patch
++
++import pytest
++import torch
++
++
++def test_both_symbols_are_shortlisted_per_word_and_teacher_marginalizes():
++    from Language import LanguageSpace, DisjunctionLayer
++    from MeaningCodes import opposite_symbol
++    from DecompositionChooser import DecompositionChooser
++    op = DisjunctionLayer(); op.meaning_layout = (2, 6)
++    codes = torch.tensor([[[1., 0., 1., 0., 0., 0.], [0., 1., 0., 1., 0., 0.]]])
++    parent = op.compose(opposite_symbol(codes[:, 0], 2), codes[:, 1])
++    flag = torch.zeros(1, dtype=torch.bool)
++    left, right, ready, details = LanguageSpace._bounded_binary_reconstruction(
++        op, parent, torch.zeros_like(parent), flag, flag, codes,
++        torch.ones(1, 2, dtype=torch.bool), 2, chooser=DecompositionChooser(), return_details=True)
++    assert ready.all() and details['left_indices'].shape == (1, 4)
++    torch.testing.assert_close(op.compose(left, right), parent, rtol=0, atol=0)
++    rows = torch.tensor([[4, 5]])
++    selected = int(details['selected'][0])
++    n = details['right_indices'].shape[1]
++    target = torch.stack((rows[0, details['left_indices'][0, selected//n]],
++                          rows[0, details['right_indices'][0, selected%n]]))[None]
++    loss, present, picked = DecompositionChooser.teacher_loss(details, rows, rows, target)
++    assert present.all() and picked.all() and loss.isfinite().all()
++    loss.sum().backward()
++    assert details['relative_residual'].min() == 0
++
++
++def test_unknown_alias_does_not_destroy_single_symbol_stop():
++    from Language import LanguageSpace, DisjunctionLayer
++    op = DisjunctionLayer(); op.meaning_layout = (2, 6)
++    code = torch.tensor([[1., 0., 0., 0., 0., 0.]])
++    eligible = LanguageSpace.decoder_eligibility(code, [code], [code], torch.ones(1, 2, dtype=torch.bool),
++        [op], code[:, None], torch.ones(1, 1, dtype=torch.bool))
++    assert eligible[0, -1]
++
++
++def test_readback_polarity_is_an_alias_not_a_second_word():
++    from SentenceUnderstanding import readback_scores
++    from MeaningCodes import opposite_symbol
++    codes = torch.tensor([[[1., 0., 1., 0., 0., 0.], [0., 1., 0., 1., 0., 0.]]])
++    scores = readback_scores(opposite_symbol(codes[:, 0], 2), codes, torch.ones(1, 2), meaning_start=2)
++    assert scores.argmax(-1).item() == 0 and scores.shape == (1, 2)
++
++
++def test_reader_block_scales_are_shared_and_preserve_additivity():
++    from SentenceUnderstanding import PrimedSymbols, SentenceUnderstanding
++    codes = torch.tensor([[[4., 0., 2., 0., 0., 0.], [0., 3., 0., 2., 0., 0.]],
++                          [[4., 0., 2., 0., 0., 0.], [0., 3., 0., 2., 0., 0.]]])
++    bank = PrimedSymbols(torch.tensor([[0,1],[0,1]]), codes, torch.ones(2,2)*2,
++        torch.ones(2,2,dtype=torch.bool), torch.ones(2,2,1,dtype=torch.long),
++        torch.ones(2,2,1,dtype=torch.bool), meaning_start=2, normalize_reader=True)
++    a, b = codes[:,0], codes[:,1]
++    torch.testing.assert_close(bank.reader_value((a+b)/2), (bank.reader_value(a)+bank.reader_value(b))/2)
++    assert bank.reader_value(a)[:,:2].norm(dim=-1).max() <= 1
++    assert bank.reader_value(a)[:,2:].norm(dim=-1).max() <= 1
++    assert torch.equal(bank.reader_value(a)[:,:2], bank.reader_value(a*torch.tensor([1.,1.,100.,100.,100.,100.]))[:,:2])
++
++
++def test_priming_has_neutral_one_and_configured_ceiling(monkeypatch):
++    from Spaces import Space
++    from util import TheXMLConfig
++    monkeypatch.setitem(TheXMLConfig.data.setdefault('ConceptualSpace', {}), 'primingMaxBoost', 2.)
++    owner = SimpleNamespace(_closed_clause_store=lambda: None)
++    raw = torch.tensor([[1., 11., 6., .5], [1., 3., 2., 0.]], requires_grad=True)
++    got = Space._bounded_priming(owner, raw)
++    torch.testing.assert_close(got, torch.tensor([[1., 2., 1.5, .5], [1., 2., 1.5, 0.]]))
++    assert not got.requires_grad
++    monkeypatch.setitem(TheXMLConfig.data['ConceptualSpace'], 'primingMaxBoost', 1.25)
++    assert Space._bounded_priming(owner, raw).max() == 1.25
++
++
++def forced_prefix_certificate():
++    """No training: the frozen 2c fixture, two readings, B and C enabled."""
++    from Models import BasicModel
++    from Language import OperationSelectionLayer, LanguageSpace
++    from test_mm_xor import _fresh_model
++    from MereologicalCodes import MereologicalCodes
++    path = Path(__file__).resolve().parents[1] / 'doc/benchmarks/2026-10-06-operators-round2c/disjunction-initial-rng.pt'
++    original_forward, original_attend = OperationSelectionLayer.forward, OperationSelectionLayer.attend
++    commit, begin = BasicModel._commit_sentence, MereologicalCodes.begin_forward
++    reads, snapshots = [], []
++    def snapshot(derived):
++        snapshots.append(id(derived))
++        return begin(derived)
++    def disjunction(module, x, **kw):
++        stop=(x.shape[1]-1)*module.r_reduce+x.shape[1]*module.r_apply
++        depth=kw.get('depth',torch.full((len(x),),x.shape[1]))
++        kw['replay_action']=torch.where(depth>1,1,stop)
++        return original_forward(module,x,**kw)
++    def narrowing(module,keys,legal,space,**kw):
++        action=legal.flatten(1).long().argmax(-1)
++        for op in (0,2,1,4,3,5):
++            slots=legal[:,:,op]
++            action=torch.where(slots.any(-1),slots.long().argmax(-1)*legal.shape[-1]+op,action)
++        kw['replay_action']=action
++        return original_attend(module,keys,legal,space,**kw)
++    def capture(m,state,sid,active,*args):
++        texts,unavailable=m.reconstruct_grammar_sentence(state,sid,active)
++        bank=m._sentence_primed_bank; root=state[1][9][:,sid]
++        op=next(getattr(op,'gl',op) for op in m._stm_reducer().ops
++                if getattr(getattr(op,'gl',op),'rule_name','')=='disjunction')
++        flag=torch.zeros(len(root),dtype=torch.bool)
++        left,right,valid=LanguageSpace._bounded_binary_reconstruction(op,root,
++            torch.zeros_like(root),flag,flag,bank.codes,bank.valid,16)
++        reads.append(dict(texts=texts, unavailable=unavailable.tolist(),
++            residual=(op.compose(left,right)-root).square().sum(-1).tolist(),
++            R=m._last_sentence_credit['components'][:,0,0].tolist(),
++            actions=m._attention_words.actions.tolist(),
++            meaning_norm=bank.codes[...,104:].norm().item(),
++            form_snapshot=id(m._concept_owner().similarity_codebook.mereology._form_context)))
++        return commit(m,state,sid,active,*args)
++    with torch.random.fork_rng(), patch.object(OperationSelectionLayer,'forward',disjunction), \
++         patch.object(OperationSelectionLayer,'attend',narrowing), patch.object(BasicModel,'_commit_sentence',capture), \
++         patch.object(MereologicalCodes,'begin_forward',snapshot):
++        torch.set_rng_state(torch.load(path, weights_only=True))
++        model,_,data=_fresh_model('data/XOR_grammar.xml')
++        try:
++            derived=model._concept_owner().similarity_codebook.mereology
++            assert derived.context_width == 128 and derived.symbol_centroid
++            raw,target=next(iter(data.data_loader(split='test',num_streams=4)))
++            batch=model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)
++            inputs=[model._bytes_to_text(x).rstrip(chr(0)) for x in raw]
++            for _ in range(2):
++                with torch.no_grad():
++                    model.runBatch(train=False,optimizer=None,batchSize=4,split='test',batch_override=batch)
++            for read in reads:
++                read['multisets']=sum(sorted(a.split())==sorted(b.split()) for a,b in zip(inputs,read['texts']))
++            from collections import Counter
++            return dict(reads=reads, snapshots=len(snapshots), snapshot_counts=sorted(Counter(snapshots).values()), inputs=inputs)
++        finally:
++            model.End();model.symbolSpace.soft_reset()
++
++
++def test_forced_not_and_or_descend_and_snapshot_certificate():
++    report = forced_prefix_certificate()
++    assert report['snapshot_counts'] == [2, 2]
++    assert len(report['reads']) == 2
++    assert report['reads'][1]['meaning_norm'] > 0
++    for read in report['reads']:
++        assert read['multisets'] == 4 and read['residual'] == [0.]*4 and read['R'] == [0.]*4
++
++
++def test_both_training_trials_share_bootstrap_snapshot():
++    from test_mm_xor import _fresh_model
++    model, _, data = _fresh_model('data/XOR_grammar.xml')
++    try:
++        optimizer = model.getOptimizer(lr=.01)
++        for _ in range(3):
++            model.runEpoch(optimizer=optimizer, batchSize=4, split='train', max_batches=1)
++            for audit in model._sentence_credit_audits:
++                assert not audit['components'][..., 0].any()
++        assert model._concept_owner().similarity_codebook.mereology.context_audit()
++    finally:
++        model.End(); model.symbolSpace.soft_reset()
+--- measured-combined/test/test_priming_energy.py
++++ operators-final-b/test/test_priming_energy.py
+@@ -86,14 +86,16 @@
+ 
+ 
+ def test_zero_spread_is_pure_decay_bump():
+-    """spread=0 keeps the original decay+bump law byte-identical."""
++    """The energy ledger keeps decay+bump; retrieval normalizes its boosts."""
+     cs, _rA, _rB = _chain_cs()
+     object.__setattr__(cs, "_priming_spread", 0.0)
+     b = cs.prime_seen(torch.tensor([3, 5]), bump=1.0, decay=0.5)
+     assert float(b[0, 3]) == 2.0 and float(b[0, 0]) == 1.0
+     b = cs.prime_seen(torch.tensor([5]), bump=1.0, decay=0.5)
+-    assert abs(float(b[0, 3]) - 1.5) < 1e-6
+-    assert abs(float(b[0, 5]) - 2.5) < 1e-6
++    assert abs(float(cs._priming_boosts[0, 3]) - 1.5) < 1e-6
++    assert abs(float(cs._priming_boosts[0, 5]) - 2.5) < 1e-6
++    assert abs(float(b[0, 3]) - (1 + .5/1.5)) < 1e-6
++    assert float(b[0, 5]) == 2.
+ 
+ 
+ @pytest.mark.slow

@@ -408,21 +408,17 @@ NanoChat's order on the same machine; parity is not claimed.
 
 ## `.when` is redundant across the elements of one input (noted 2026-09-26)
 
-`.when` is the incrementing sinusoid of the model's subjective step
-counter. Every element of one input — its positions, percept events and
-symbol occurrences — carries the same value, and the value differs only
-across LTM rows, where it addresses the chain. Within a field the band is
-therefore pure redundancy (Alec, 2026-09-26): it costs band width on every
-element and, if scored per element, distorts reconstruction objectives, as
-the item 9b bisection showed. Candidate simplification: carry `.when` once
-per field beside the field's bracket, stamp it on elements only when they
-leave the field (a ended row, a captured program, a symbol occurrence
-that thought produces), and keep the exact clock side-band as now. This is
-future work: the current grammar still transports the temporal band on every
-element, with that shared band excluded from per-word reconstruction. Any
-carrier change must preserve the grammar's temporal operations. The
-`.where` band keeps the start only; a part's end follows from its byte
-length, a whole's does not — a known limitation of start-only stamping.
+The relative `.when` value and stable sentence address were pulled forward
+from item 5.5 into the [accepted operators update](benchmarks/2026-10-07-operators-final-b/)
+(Alec, October 7; plan §45). Each sentence uses its document
+position `[i, i+1]`; absolute model time is retained only in `timestamp`.
+Re-reading re-witnesses one row, and full capacity raises. That correctness
+item is closed in the accepted landing.
+
+The separate carrier simplification remains open: carrying one shared bracket
+per sentence could avoid repeating it on every element. It must preserve
+located binding and the captured program. Situation codes in content and
+learned before/after operators remain in item 5.5.
 
 ## Global coordinate transport through learned operators
 
@@ -567,7 +563,8 @@ after item 6."
   aspect "need more work before they are included in any grammar". None of
   the four changes a value today (catalogue §9). *Taken up (Alec,
   2026-09-30)* as todo item 5.5, with the preposition and the meaning of
-  `.where` and `.when`
+  `.where` and the remaining temporal operators; the relative `.when` value
+  and address write moved to the final operators update
   ([5.5 spec](specs/2026-09-30-occurrence-tense-aspect.md)); `lift` and
   `lower` stay here.
 
@@ -1088,7 +1085,7 @@ conceptual space and the remaining catalogue. Item 6.8 owns the open read and
 MM_xor's word-level XOR proof. Surface markers own operand-order recovery.
 The standing XOR rule is no regression against the [closing record](benchmarks/2026-10-03-item6-9-closing/README.md),
 including its explicit red gates; this is not a claim that every gate is green.
-Next: the [operators update](plans/2026-10-05-operators-update.md), then 6.5 (6.8 accepted; no conference freeze; Alec, 2026-10-05).
+Next: item 6.5, with [operators plan §44](plans/2026-10-05-operators-update.md#44-the-two-zeros-resolved-by-magnitude-alec-2026-10-07) first. The operators update is accepted under §45 (Alec, October 7).
 
 ## Carried from the 6.8 §13–§15 rounds (2026-10-04)
 
@@ -1100,21 +1097,35 @@ Decided the same day and recorded in the 6.8 plan
 and [Philosophy](Philosophy.md#the-sign-in-two-spaces-genera-are-not-located-2026-10-04).
 Not in the 6.8 rounds; each names its home.
 
-- **Kleene connectives over codes** (operators update): `∧ = min`, `∨ = max`,
-  `not = −d`, replacing the product and probabilistic-sum kernels chosen in
-  6.9 §22 for invertibility; the inverses are codebook searches either way.
+- **Meaning connectives — closed in the final operators candidate:** the bipolar bilattice
+  supersedes the signed Kleene proposal. Conjunction/intersection take
+  `(min⁺, max⁻)`, disjunction/union `(max⁺, min⁻)`, and negation exchanges
+  poles. Form binding retains round 3a's kernels; inverses remain searches.
   Catalogue [§3.8](specs/2026-09-29-operator-catalogue.md#38-what-was-decided-earlier-in-the-pass).
 - **The fold composing forms above words** (operators update): the proposed
   located word fold is superseded by round 3a's boundary pairs, exact length
   thermometer and collision mints. A word remains a max over its parts;
   anagrams need no general positional fold. Higher-order forms still use
-  the binding kernels. Meanings and their connectives remain later work.
-- **The complement's bootstrap** (operators update, the distributional item):
-  the conceptual wholes' locations (sets, situation and document codes,
-  properties as concepts), trained by co-activation, from which a new word's
-  context mean can start; without them order-0 meanings stay at zero.
-- **The `not` items** (operators update): `NonLayer` computes `1 − x`;
-  `ConjunctionLayer` reads `max(c⁺, c⁻)`; the binding kernel pools signs.
+  the binding kernels; round 4a composes the separate meaning block by the bilattice.
+- **The complement's bootstrap — closed in the accepted operators landing:** containing sentence
+  rows contribute fixed sparse identities from their content keys. The detached
+  recency mean fills the for pole; the against pole starts at zero. It is an
+  index without a training owner. Bilattice composition and independent
+  evidence lanes are implemented; the semantic certificate is exact at gate
+  scale and diagnostic at corpus scale. The adjacent-word centroid and
+  degree-normalized membership priming are included in the same landing.
+  The room pass is retired; the containment cap preserves identity. See the
+  [combined receipt](benchmarks/2026-10-07-operators-final/) and
+  [repair receipt](benchmarks/2026-10-07-operators-final-b/). The repair
+  freezes both code blocks before lexical staging, identifies inverse words
+  by form, carries independent for/against lanes through the leaf and row,
+  bounds retrieval priming and scales the affine reader blocks.
+  The repair's exact source has a green 5,500-case sweep, all thirty standing
+  trainings pass, and R and E are identically zero. Alec accepted the repair
+  under plan §45 on October 7; magnitude as definedness (§44) follows in 6.5.
+- **The `not` items — closed across rounds 1–4a:** exclusion clears the
+  expressed evidence, conjunction reads explicit poles, and negation exchanges
+  the meaning poles while preserving form.
 - **The negative image on the concept face** (item 2): the §2.6.1 mechanism
   is implemented in the uncommitted round-2 candidate: gain, presence and
   role attention gate the concept complement; storage retains the observed
@@ -1182,7 +1193,8 @@ pairs plus length as the parts (anagrams separate without position), the
 content width, the has-a wholes and the narrowing-weighted centroid. Round
 4: the complement's bootstrap (membership as properties, co-activation
 through shared wholes), the Kleene connectives over meanings, expectation
-and targets by inversion. Round 5: the attention filter. The dense chooser
+and targets by inversion. (A "round 5 attention filter" was withdrawn on
+2026-10-07: attention is the `.where` mask the narrowing walk already is.) The dense chooser
 signal is not wanted: the forward stays a tree (plan §12.2); sparse
 presences are subsumed by round 3's sparse superposition.
 

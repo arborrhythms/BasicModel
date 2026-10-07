@@ -1,0 +1,25 @@
+ssssss.sssssssss........................................................ [ 50%]
+.........................................................FF...........   [100%]
+=================================== FAILURES ===================================
+_ TestInsertIdea.test_completed_point_gets_a_positive_native_address_without_changing_earlier_rows _
+test/test_two_codebook_meta_taxonomy.py:90: in test_completed_point_gets_a_positive_native_address_without_changing_earlier_rows
+    self.assertGreater(pos, 0)
+E   AssertionError: -6774945870548386317 not greater than 0
+_______ TestInsertIdea.test_distinct_occurrences_get_distinct_addresses ________
+test/test_two_codebook_meta_taxonomy.py:103: in test_distinct_occurrences_get_distinct_addresses
+    self.assertNotEqual(int(store.row_ids[first]), int(store.row_ids[second]))
+E   AssertionError: -2743722588940834483 == -2743722588940834483
+=============================== warnings summary ===============================
+test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_momentum_by_name
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_truth_layer_record_many.py::test_record_batch_matches_record_loop_high_trust
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [3] contradicts existing truth [0] (cosine similarity -0.795)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_two_codebook_meta_taxonomy.py::TestInsertIdea::test_completed_point_gets_a_positive_native_address_without_changing_earlier_rows
+FAILED test/test_two_codebook_meta_taxonomy.py::TestInsertIdea::test_distinct_occurrences_get_distinct_addresses
+2 failed, 125 passed, 15 skipped, 2 warnings in 113.40s (0:01:53)

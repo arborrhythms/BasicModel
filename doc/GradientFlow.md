@@ -75,68 +75,77 @@ the recovered leaf and root stay live so sentence reconstruction trains the
 choosers through the root. The affine answer has its own owner and cannot
 write these sources.
 
-For net evidence `d = relu(e_for - e_against)`, the content bounds are
-`L = max_parts(part_code)` over the parts with `d > 0` (evidence selects a
-part, it does not scale it) and
-`U = min_property_wholes(1 - d * (1 - whole_code))` (default `U = 1`).
-The form is `L` (6.8 plan §15.2, implemented §16; `MereologicalCodes.derive`
-writes `lower`); `U` bounds the form and does not enter it. The both corner belongs to attention and
-never enters this derivation. Repeated addresses in a part group do not
-multiply its evidence. The serial leaf is `[form × |activation| | meaning × activation]`.
-Its detached pole pair carries the sign; occurrence coordinates are preserved.
-Field-path dictionaries retain their existing ownership; `XOR_exact`'s
-answer coefficients are unchanged.
+A native word's lower bound is `L = max_parts(part_code)` over present
+parts. Its wholes are adjacent-word pairs witnessed in addressed sentence
+rows. Their joins give `U(w) = L(w) ∨ ⋀ L(neighbour)`. The detached placement
+is `c = L + α(U−L)`, with `α = W_U/(W_P+W_U)`: `W_P` counts native part
+atoms (including length and collision atoms), and `W_U` counts distinct
+`(sentence address, pair position)` witnesses. Re-reading does not increase it.
 
-After the existing owner step and [0,1] projection, the deterministic room
-pass visits concept rows and coordinates in order. For `v = relu(L-U+m)`,
-only the minimal property whole moves, up by the full `v`, clamped to [0,1];
-parts never shrink to fit their types (`project_room`). Missing towers retain
-their fixed lattice boundary.
-`ConceptualSpace.latticeMargin` defaults to zero. This is a projection, not
-a new objective. Fractional evidence, clipping and floating-point arithmetic
-can leave violations; the audit reports the exact positive count and largest
-violation before and after the pass, without a tolerance hiding residuals.
+In decreasing part count, containment caps each word by all its containers,
+never below `L`; equal part sets are capped together. The index recovers
+`L = [c == 1]`; binding projects `c` through round 3a's fixed matrix. The
+room pass is retired. Placement is a detached index computation with no
+optimizer owner. The audit records movement, all-pair cosine, identity, and
+containment before and after the cap.
+
+The serial leaf is `[form × |activation| | meaning × |activation|]`, with
+meaning poles exchanged for negative activation. Location bands remain with
+the occurrence. Field-path dictionaries retain their existing ownership;
+`XOR_exact`'s answer coefficients are unchanged.
 
 The first block stores the symbol's perceptual position. Its content coordinates
-carry the form `L`; its reserved location/time positions are zero for
+carry the placed form `c`; its reserved location/time positions are zero for
 a generally characterized type, not an occurrence stamp. The complement stores
-the concept's conceptual position: at order zero, only the detached,
-recency-weighted context mean of existing occurrence roots' meaning coordinates.
-References and inverted
-leaf postings supply occurrence membership; DEF rows are excluded. These
-occurrence rows are context, not the property wholes that bound `U`. `1/(1+age)` supplies
-recency, independently of the sentence's truth poles. Context is snapshotted
-before a forward and shared by its greedy and explore walks. It never dilutes
-the perceptual block and never carries a durable-row gradient.
+the concept's conceptual position. In the final operators update, every stored sentence row
+has a fixed sparse identity: `s` ones of `K`, generated privately from its
+content key. Identified word bytes define the text sentence's key; occurrence
+addresses remain provenance and never seed the code. Direct opaque rows use
+native roles and metadata as a fallback content key. The content lookup retains all
+distinct occurrences; repeated presentations re-witness one addressed row.
 
-**Explicitly deferred by Alec, October 4:** property/situation bootstrap
-learning and its co-activation objective belong to the operators update.
-There is no new context optimizer or loss. A zero complement cannot bootstrap
-itself from zero occurrence roots. XOR_grammar and MM_grammar have, since 6.8 §22,
-22-dimensional PS events and paired representations: fourteen native form content
-coordinates, the eight-coordinate address band, and an empty meaning complement
-(context width 22 − 22 = 0).
-The nonempty-complement mechanism check verifies isolated, detached reads;
-these toy gates do not test learned distributional similarity.
+Order-zero meaning is the detached, recency-weighted mean of those identities
+on the **for** pole, with zero on the **against** pole. The flat complement is
+`[for_0 … for_K−1 | against_0 … against_K−1]`. References and inverted leaf
+postings retain their membership; only REL_NONE rows contribute and DEF rows
+are excluded. `1/(1+age)` supplies recency independently of truth evidence.
+One snapshot of meanings and centroids precedes lexical staging, including
+the eager staging used by compiled forwards. Composition, inverse search and
+readback share it across both trials. It is not refreshed until committed
+writes finish; a current closing becomes context on the next forward. Composed meanings remain
+stored as `o`, but no longer supply their own bootstrap.
 
-The XOR table therefore measures perception's composition of forms (the binding
-kernel this round), its inverse, the affine read of the committed raw root, and one owner.
-The concepts in these gate configurations are empty: identical contexts and
-no bootstrap. Same-context concepts coinciding in conceptual space is correct;
-it is not a collapse to repair. Connectives over meanings are measured where
-meanings exist, as in MM_xor's field path. Form and root geometry remain useful
-measurements of distinguishability for reconstruction.
+The bootstrap is resolved by an index, with no learning owner, parameter or
+new objective. Grammar gates have 64 pairs and three bits per identity
+(128 meaning floats after the unchanged 104-dimensional form event).
+BasicModel keeps 896 meaning floats: 448 pairs, six identity bits.
 
-Identity comes from below through the fold of forms and meaning from above
-through contexts at every order; at orders ≥ 1, composition of meanings also
-joins from below. The form fold at all orders, Kleene meet/join on meanings,
-bootstrap from conceptual wholes' locations and the `not` items were carried
-to the operators update. Round 1 landed the pole corrections; round 2 installs
-expectation's closing image on the concept face (item 2). The form fold,
-meaning connectives and bootstrap remain later work. The present kernel still
-composes the paired vector.
+Composition keeps the round-3a form kernels and their normalization. Meanings
+compose independently: conjunction/intersection `(min⁺, max⁻)`,
+disjunction/union `(max⁺, min⁻)`, sum the mean of each pole, and `not` the pole
+exchange. No normalization joins the blocks. Operators without a meaning
+write preserve that block. `(0,0)` is unknown, so `a ∧ not b` has no for
+evidence and has b's extent against; it does not assert a closed-world
+complement. Interpretation applies signless identification presence to form
+and the independent evidence magnitudes to two copies of the context code:
+`[form × presence | code × c⁺ | code × c⁻]`. `non` clears only the for lane.
+
+The static semantic certificate checks all word pairs against sentence
+postings, including negation. It is exact on the grammar vocabularies and a
+false-membership diagnostic on BasicModel's corpus. The sparse code carries
+composition and similarity; exact membership remains a posting query. Both
+connectives can support the XOR read, so mixed final operators are valid.
+Membership priming and the adjacent-word centroid are included in the combined step.
 The dictionary has no EMA refresh or contextual rotation. Ownership audits
 distinguish absent gradients from zero ones and retain inactive weights.
+
+The inverse identifies each word by its signless form: one bank entry per
+word, form-only shortlists, pair residuals and STOP eligibility. After word
+selection it reads each evidence lane independently against that word's
+frozen context code. For each lane, the min inverse chooses the least compatible operand magnitudes and the max inverse the greatest.
+A mean uses a nonnegative two-code solve. An ambiguous inverse recovers a compatible
+reading, without consulting the input derivation. Readback uses the form,
+including when both lanes are full or empty.
 
 ## One understanding record, two consumers
 
@@ -162,13 +171,23 @@ incidence and existing `primingSpread`, without new rows or cross-batch flow.
 The audit records activated competitors. Serial reading also diffuses; there is no
 4,096-edge cap and no cross-row priming. A row at neutral sends no energy.
 Symbols with surfaces are byte candidates; all valid rows enter answer context
-with their priming weights.
+with their priming weights. The degree-normalized energy ledger is retained.
+Retrieval reads detached positive excess divided by its per-stream maximum
+(clamped below by one), then scaled to `primingMaxBoost - 1`. Neutral remains
+one; the default maximum is two. Signed inhibition below neutral is preserved.
 
 The numeric head reads detached end slots plus an answer-owned, zero-initialized
 linear reader of the root (D), three masked end slots (3D), and the echoic
 priming-weighted code sum (D). Its extra width is 5D. There are no rule
 histograms or original per-word features. The linear reader preserves additive
-evidence for the sum-only control. Generated answers detach the same conceptual
+evidence for the sum-only control. With `readerBlockNormalization=true`,
+each form and meaning block is divided by the maximum norm of that block
+in the shared code snapshot, clamped below by one. The echoic bank uses its
+own shared block scales. These scales are common to all trial roots and
+streams; a composed root is never normalized by its own norm. Thus the
+reader remains affine and the sum control remains additive. This scaling
+is a reader operation and never changes composition or stored meanings.
+Generated answers detach the same conceptual
 state and bank before the question conditioner; no extra record reader rewrites
 that answer. The focused test checks that both consumers receive the same object.
 
@@ -208,8 +227,8 @@ bank order. A missing shortlist cannot manufacture a balanced binary split.
 
 Under §11.6, STOP versus a supported binary undo is eligibility. For each top,
 the decoder compares the selected pair's existing squared recomposition residual
-with the best one-code least-squares explanation (the signed activation used by
-`readback_scores`). Both children must be nonzero valid shortlist codes, neither
+with the best one-code least-squares explanation on the form block.
+Both children must be nonzero valid shortlist forms, neither
 may repeat the parent, and the pair must explain it at least as well as the
 single code. Equal fits prefer the two readable parts, including when the bank
 also holds a code for the larger chunk. If such a pair exists, STOP and unary
@@ -488,8 +507,8 @@ retains every gate outcome and remaining failure; writer separation is not
 an acceptance claim or a guarantee that the objectives improve together.
 The [§20.3 catalog](plans/2026-09-29-item-6-9-xor-grammar.md#203-catalog-set-aside-now-to-return-once-reconstruction-and-xor-hold)
 records the historical deferred items. The sphere/norm-as-certainty proposal
-is retired by §14; bootstrap co-activation learning and the operator split
-remain deferred, along with the answer reach.
+is retired by §14. Round 4a resolves the bootstrap and the operator split;
+co-activation priming and the answer reach remain deferred.
 
 No gradient projection, opposition streak, norm rebalance or persistent
 conflict counter remains in training or the checkpoint. The stateless gradient
@@ -521,9 +540,10 @@ constructed in the thought context. Prediction still minimizes its unchanged
 all-role relative squared error and presence/kind BCE against detached targets;
 the confidence gate changes comparison costs, not predictor training. Empty
 roles have zero targets, not zero residuals. There is no new loss or owner.
-XOR_grammar and MM_grammar have zero complement coordinates (22 total,
-22 in the perceptual block, of which 14 carry form content): their image is
-identically zero. The nonzero-complement mechanism is tested separately.
+At the round-2 landing, XOR_grammar and MM_grammar had zero complement coordinates (22 total,
+22 in the perceptual block, of which 14 carry form content). Round 4a adds
+bipolar meanings; these gates still have a zero image because no prior
+forecast is available. The predictor takes only the committed row as target.
 
 
 ## Codes are perception's; the chooser is trained from the trial comparison (October 4)
@@ -702,10 +722,12 @@ corrected by round 2b in §16, round 2c in §18 and round 2d in §20.
   collapse, which an invertible path cannot do. Reconstruction retires to an
   audit wherever the transformation is exactly invertible and stays a loss
   where it is not.
-- **The attention filter (round 5).** A weight per word on detached percepts,
-  trained pathwise by the cost factored into attended and unattended regions,
-  with a graded budget; perception's codes receive gradient only from the
-  unattended region and their own objective.
+- **Attention is a mask over `.where`** (Alec, 2026-10-07), not a relevance
+  filter: the narrowing walk from the sentence's global scope to each word,
+  every word visited. Its loss is what the mask leaves out of the target,
+  charged by the owner-step trial cost and credited to the walk's choices by
+  the score-function term (round 2); the region inside the mask pays the
+  percept/concept chain's cost. No per-word relevance weight is trained.
 - **Unchanged throughout.** Perception's codes have one writer; the forward is
   a tree; the committed root is what the readers see at test and what the
   class bar measures; no straight-through, no mixed forward.
@@ -1000,3 +1022,121 @@ the comparison reader's preference. Three passing presented readers retain
 late common-offset oscillations; their roots are identical to the other
 runs. The receipt separates those trajectories from geometry and retains
 the sum control at the affine floor. No commit or push has been made.
+
+## Operators update round 4a (October 7; superseded by the combined step)
+
+[Round-4a receipt](benchmarks/2026-10-07-operators-round4a/README.md). The order-zero
+bootstrap and bilattice rules above supersede the empty/signed-complement
+statements in the historical round-2 sections. Sentence identity is fixed,
+recomputable and detached. The expectation predictor now takes one update
+on the committed trial's rows only, using the reconstruction keep mask;
+comparison costs still inspect both trials at the same parameter version.
+The two answer-reader rules from 2e are unchanged. A narrowing `not` can now
+change a root's meaning and earn credit through the answer term. The receipt
+reports that credit by action without requiring one final compose operator.
+
+## Operators update round 4a-0: the occurrence's address (October 7; isolated historical measurement)
+
+Sentence identity is a source address, not a presentation counter. The writer
+hashes the document key, sentence index and content key into a full 64-bit
+address, stored as an int64 bit pattern. Content identity hashes the identified
+word bytes in order; it excludes document, model clock, composed vectors and
+random state. `refs`, predictor pairs, object references and thought provenance
+retain addresses while the derived address-to-row index follows compaction.
+Definitions use `(DEF, word, object)`; produced thoughts use their source turn
+and ordinal. The retired occurrence counter and random store namespace have
+no role in new writes.
+
+The `.when` band is the source-relative unit bracket `[i, i+1]`, encoded by
+an endpoint sum on the two spatial-scale quadrature rungs. The exact model
+clock goes to `timestamp` only; recency still reads that column. The complete
+[reader inventory](benchmarks/2026-10-07-operators-round4a0/when-readers.md)
+and its test fixture distinguish value readers from carriers and Teacher's
+separate objective-address API.
+
+A repeated address replaces the detached committed vectors, refreshes the
+clock timestamp, and combines each evidence pole by maximum. It cannot add a
+second occurrence or keep obsolete leaf postings. Only a new address appends;
+capacity exhaustion raises and requires forgetting. No optimizer, reader,
+trial choice or gradient boundary changes in this step. Meanings and E remain
+empty/zero on the 3a gate configuration. The separate 4a meaning implementation
+is preserved pending this review. The [receipt](benchmarks/2026-10-07-operators-round4a0/)
+contains the regression sweep and the thirty declared unseeded trainings.
+
+The isolated 4a-0 measurement retains four sentence rows throughout all 400
+sum/XOR epochs (8/1,024 rows including DEFs). Reconstruction and raw MM pass
+10/10; class passes 9/10. The additive sum control passes 10/10, with 9/10
+within the final ¼ band. The two MSE misses show late common-offset reader
+errors; the receipt does not establish a causal `.when`-reader attribution.
+All forty final XOR roots are conjunction, R/E comparison differences remain
+zero, and narrowing carries no advantage while meanings remain empty. The
+raw MM path retains four DEFs and has no completed sentence closing. These
+deviations are held for Claude's review; there is no retry, replacement or
+commit.
+
+## Final operators update (October 7; uncommitted review candidate)
+
+The [combined receipt](benchmarks/2026-10-07-operators-final/) supersedes the
+separate 4a and 4a-0 handoffs. The source address is mandatory. The model.xml
+switches `meaningWidth` (zero disables bootstrap), `symbolCentroid`, and
+`membershipPriming` default on; disabling bootstrap preserves the reserved
+vector layout so attribution does not silently change the model's parameters.
+
+Membership priming joins the existing concept edges in one degree-normalized
+outflow budget. Word energy reaches containing sentence nodes and returns to
+their words, detached and forward-only, through the existing retrieval prior.
+It adds no per-word relevance weight. Attention remains the 6.8 `.where` mask
+walk; its omitted target cost remains in the owner-step comparison.
+
+The expectation predictor learns only from the committed trial's row. Trial
+comparison still reads both costs before updating. Form normalization and
+meaning composition are separate, including for parameterized structural
+maps: their form input has a zero complement, and an undeclared meaning write
+passes the designated operand's meaning through. The receipt retains every
+trial cost, narrowing credit by action, store census and static certificate.
+
+The combined measurement has class 10/10, reconstruction 9/10, additive sum
+10/10 with 9/10 at ¼, and MM 10/10. Both grammar semantic certificates are
+exact; one passing XOR run finishes with mixed connectives. Every sum/XOR
+training stores four sentence rows, each witnessed 400 times, plus four DEFs.
+The full sweep initially had 20 failures; the retained focused repairs pass
+250 cases with 18 skips before the thirty trainings. There is no replacement
+sweep or standing training.
+
+R is not identically zero: XOR has 1,221 nonzero reconstruction-cost
+differences on narrowing departures. The last twenty epochs' 47 `not`
+departures all receive credit against the departure, with contributions from
+both R and the answer. E stays zero. On the failed XOR-09 entry, switching
+meanings or the centroid off restores reconstruction; switching priming off
+does not. All three individual controls restore sum-08 to the ¼ band. The
+paired MM comparison also changes beyond RNG: the relative band stamped by
+`PartSpace._embed_radix` changes its first forward. These are review findings,
+with verified controls and the invalid initial override diagnostics retained
+in the receipt. No commit is made; item 6.5 awaits review.
+
+The first repair sweep completed 5,354 cases with three failures, retained
+in the receipt. The authorized §42 repair now has a green 5,500-case sweep
+on its exact measured source, followed by 10/10 sum at ¼, 10/10 XOR class
+at zero, 10/10 reconstruction and 10/10 MM_xor. R and E are identically zero
+on all 64,000 grammar training trial rows. Final XOR operators are 36
+conjunction and 4 disjunction. All narrowing credit is from the answer;
+`not` receives credit against 753 departures, for 289, and ties on 57.
+Priming remains in [1,2]; every grammar store ends training with four
+sentence rows and four DEF rows out of 1,024. See the
+[repair receipt](benchmarks/2026-10-07-operators-final-b/) for all costs,
+certificates, the preserved incomplete sweeps and integrity checks. Alec
+accepted the repair as the operators-update landing under plan §45 on October 7.
+Item 6.5 follows, with §44's magnitude as definedness first.
+
+## The lanes at the leaf (Alec, 2026-10-07)
+
+The combined step's interpretation rule — the form takes `|a|`, the meaning
+takes `|a|` with its poles exchanged when `a < 0` — and `pole_activation`'s
+`net = pair⁺ − pair⁻` collapse the walk's pole pair into one signed scalar,
+which cannot distinguish *both* from *neither* (two-truths §1.1). The repair
+pass carries the pair to the leaf: `[form × presence | code × c⁺ | code ×
+c⁻]`; the for lane receives `c⁺`, the against lane `c⁻`; no difference or
+sign is formed anywhere between the walk and the stored row; the inverse
+identifies a word by its signless form and reads both lanes with the
+leaf's pair. The row's `(c⁺, c⁻)` is the spec's required-evidence read: min
+over nonzero contributions on each pole independently.

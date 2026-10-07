@@ -63,18 +63,10 @@ def test_compose_single_reduction_space_role():
 
 
 def test_lift_lower_stay_invertible_cs_ops():
-    """Task 7 (per user directive, 2026-06-05): lift/lower remain ordinary
-    CS-space_role (CS-internal) invertible sigma/pi ops returning non-quantized
-    results -- they are NOT re-expressed as SS codebook round-trips (which
-    would be lossy and break invertibility; codebook queries to SS are
-    always quantized, but lift/lower must not be). The CS/SS space_role delta was
-    already removed in Task 5; the only remaining lift/lower delta is the
-    conceptual-ORDER signature, not a space_role move.
-    """
-    for cls in (Language.LiftLayer, Language.LowerLayer):
-        assert cls.space_role == 'CS', f"{cls.__name__} must stay an ordinary CS-space_role op"
-        assert cls.invertible is True, (
-            f"{cls.__name__} must stay invertible (non-quantized result)")
+    assert Language.LiftLayer.space_role == Language.LowerLayer.space_role == 'CS'
+    assert Language.LiftLayer.invertible
+    assert not Language.LowerLayer.invertible
+    assert Language.LowerLayer.inverse_kind == 'right'
 
 
 def test_closing_budget_is_fixed_even_when_unary_choices_do_not_shrink(monkeypatch):

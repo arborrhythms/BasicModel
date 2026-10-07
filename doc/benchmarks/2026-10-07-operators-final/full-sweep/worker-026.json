@@ -1,0 +1,1162 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
+    "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_grammar_block_parses_disjunction",
+    "test/test_sigmapi.py::TestPiLayerForward::test_2d_input_shape",
+    "test/test_sigmapi.py::TestPiLayerForward::test_3d_input_shape",
+    "test/test_sigmapi.py::TestPiLayerForward::test_gradient_flows",
+    "test/test_sigmapi.py::TestSigmaLayerForward::test_3d_input_shape",
+    "test/test_sigmapi.py::TestSigmaLayerForward::test_gradient_flows",
+    "test/test_sigmapi.py::TestSigmaLayerForward::test_output_bounded_by_tanh",
+    "test/test_sigmapi.py::TestPiSigmaChartComposition::test_hidden_tanh_is_cancelled_by_the_next_chart",
+    "test/test_sigmapi.py::TestTanhFreePiSigmaXORTestpoint::test_mm_xor_solves_in_10_epochs_without_tanh",
+    "test/test_signal_router_layer.py::test_layer_forward_shapes",
+    "test/test_signal_router_layer.py::test_chosen_operator_has_full_gradient_and_separate_probability_credit",
+    "test/test_signal_router_layer.py::test_layer_n_one_stops_without_unary_ops",
+    "test/test_signal_router_scorer.py::test_unified_anchor_shapes",
+    "test/test_signal_router_scorer.py::test_scores_and_probabilities_match_explicit_enumeration",
+    "test/test_signal_router_unary.py::test_unary_output_shape_and_one_global_softmax",
+    "test/test_signal_router_unary.py::test_exactly_one_unary_position_changes",
+    "test/test_signal_router_unary.py::test_unary_and_stop_anchors_receive_only_score_function_credit",
+    "test/test_signal_router_wordspace.py::test_language_layer_constructs_without_ops",
+    "test/test_signal_router_wordspace.py::test_language_layer_compose_without_ops_raises",
+    "test/test_signal_router_wordspace.py::test_language_layer_generate_emits_rules_dict_after_compose",
+    "test/test_signal_router_wordspace.py::test_language_layer_compose_populates_current_rules",
+    "test/test_signal_router_xor_grammar.py::test_xor_router_emits_per_space_role_rule_dict",
+    "test/test_signal_router_xor_grammar.py::test_xor_router_gradients_reach_all_three_ops",
+    "test/test_smoothing_regularizer.py::test_disabled_returns_zero",
+    "test/test_smoothing_regularizer.py::test_zero_lambda_returns_zero",
+    "test/test_smoothing_regularizer.py::test_constant_symbol_vector_is_free",
+    "test/test_smoothing_regularizer.py::test_alternating_concept_vector_is_penalised",
+    "test/test_smoothing_regularizer.py::test_bivector_paired_poles_are_safe",
+    "test/test_smoothing_regularizer.py::test_odd_last_dim_falls_back_to_raw_axis",
+    "test/test_smoothing_regularizer.py::test_penalty_scales_linearly_with_lambda",
+    "test/test_smoothing_regularizer.py::test_symbolic_space_reads_discontinuity_lambda_from_config",
+    "test/test_space_carrier_bridge.py::test_executor_advances_bound_space_version_and_invalidates_replicas",
+    "test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners",
+    "test/test_sparse_compile_boundary.py::test_dynamo_eager_island_preserves_sparse_gradient_and_row_local_step",
+    "test/test_sparse_compile_boundary.py::test_staged_sentence_bank_is_fullgraph_clean_and_gradient_equivalent",
+    "test/test_sparse_compile_boundary.py::test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook[False-False-True]",
+    "test/test_sparse_compile_boundary.py::test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook[True-False-False]",
+    "test/test_sparse_compile_boundary.py::test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook[True-True-True]",
+    "test/test_sparse_compile_boundary.py::test_compile_none_preserves_legacy_sentence_loop",
+    "test/test_sparse_concept_activation_boundary.py::test_sparse_decode_gathers_exact_known_rows_and_preserves_band",
+    "test/test_sparse_concept_activation_boundary.py::test_unknown_row_is_zero_what_and_never_aliases_row_zero",
+    "test/test_sparse_concept_activation_boundary.py::test_six_fold_scalars_all_receive_gradient_without_coordinate_projection",
+    "test/test_sparse_concept_activation_boundary.py::test_sparse_decode_cost_tracks_selected_rows_not_inventory_width",
+    "test/test_sparse_concept_activation_boundary.py::test_code_specific_evidence_distinguishes_equal_energy_patterns",
+    "test/test_sparse_concept_activation_boundary.py::test_membership_activations_decode_to_signed_bounded_concepts",
+    "test/test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row",
+    "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
+    "test/test_sparse_concept_e2e.py::test_population_inactive_is_noop",
+    "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
+    "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+    "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+    "test/test_sparse_concept_e2e.py::test_getparameters_includes_csw_after_population",
+    "test/test_sparse_concept_e2e.py::test_getparameters_byte_identical_when_inactive",
+    "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+    "test/test_sparse_concept_e2e.py::test_distributional_code_cost_is_off_in_reconstruction_round",
+    "test/test_sparse_concept_e2e.py::test_csw_weights_update_under_optimizer_step",
+    "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+    "test/test_sparse_layer.py::test_add_edge_idempotent_and_grows_values",
+    "test/test_sparse_layer.py::test_forward_matches_dense_tanh",
+    "test/test_sparse_layer.py::test_forward_linear_no_tanh_and_1d_squeeze",
+    "test/test_sparse_layer.py::test_empty_layer_returns_zeros",
+    "test/test_sparse_layer.py::test_grow_preserves_trained_values",
+    "test/test_sparse_layer.py::test_forward_differentiable_in_values_and_input",
+    "test/test_sparse_layer.py::test_reverse_matches_dense_transpose_tanh",
+    "test/test_sparse_layer.py::test_remove_edges_compacts_and_preserves_survivors",
+    "test/test_sparse_layer.py::test_spmm_kernel_parity",
+    "test/test_sparse_layer.py::test_self_edge_forbidden_when_flagged",
+    "test/test_sparse_layer.py::test_self_edge_allowed_by_default",
+    "test/test_sparse_layer.py::test_conceptual_attention_layer_is_square_and_forbids_self_edges",
+    "test/test_sparse_layer.py::test_conceptual_attention_union_uses_presence_chart",
+    "test/test_sparse_layer.py::test_conceptual_attention_empty_union_is_absent",
+    "test/test_sparse_layer.py::test_concept_store_embed_pair_and_identity",
+    "test/test_sparse_layer.py::test_concept_store_assign_row_and_hebbian",
+    "test/test_sparse_pipeline.py::test_carrier_is_frozen_slotted_and_not_a_module",
+    "test/test_sparse_pipeline.py::test_selected_materialization_is_pure_sparse_and_differentiable",
+    "test/test_sparse_pipeline.py::test_reader_lookup_lowers_through_torch_compile",
+    "test/test_sparse_pipeline.py::test_selected_what_retains_factored_where_and_when",
+    "test/test_sparse_pipeline.py::test_factored_materialization_has_no_cache_and_validates_leading_shape",
+    "test/test_sparse_pipeline.py::test_sparse_empty_check_does_not_lookup_rows",
+    "test/test_sparse_pipeline.py::test_reader_is_a_capability_without_mutation_or_storage_surface",
+    "test/test_sparse_pipeline.py::test_nearest_honors_allowed_rows",
+    "test/test_sparse_pipeline.py::test_reader_identity_is_live_but_replica_resolution_is_version_exact",
+    "test/test_sparse_pipeline.py::test_inference_boundary_rebinds_exact_replica_without_densifying",
+    "test/test_sparse_pipeline.py::test_training_boundary_materializes_on_owner_and_preserves_gradient",
+    "test/test_sparse_pipeline.py::test_executor_interleaves_stages_and_reassembles_microbatch_order",
+    "test/test_sparse_pipeline.py::test_executor_rejects_a_stage_that_returns_its_input_carrier",
+    "test/test_sparse_pipeline.py::test_executor_sorts_unsorted_inputs_and_accepts_equal_cloned_stream_ids",
+    "test/test_sparse_pipeline.py::test_executor_enforces_parameter_and_stream_versions",
+    "test/test_sparse_pipeline.py::test_parameter_version_cannot_advance_before_pipeline_drain",
+    "test/test_sparse_pipeline.py::test_reverse_uses_each_carriers_own_lifo_trace",
+    "test/test_sparse_pipeline.py::test_deferred_mutations_commit_in_address_order_after_drain",
+    "test/test_sparse_pipeline.py::test_missing_mutation_owner_is_detected_before_any_commit",
+    "test/test_sparse_pipeline.py::test_mutations_validate_as_a_batch_before_any_commit",
+    "test/test_sparse_pipeline.py::test_failure_cancels_execution_and_does_not_commit_mutations",
+    "test/test_sparse_pipeline.py::test_cooperative_cancellation_waits_for_stage_release_and_returns_no_run",
+    "test/test_sparse_pipeline.py::test_training_step_aggregates_losses_then_advances_one_version",
+    "test/test_sparsity_regularizer.py::test_identity_when_lambda_zero",
+    "test/test_sparsity_regularizer.py::test_soft_threshold_shrinks_small_values",
+    "test/test_sparsity_regularizer.py::test_gated_off_when_enabled_false",
+    "test/test_sparsity_regularizer.py::test_preserves_grad",
+    "test/test_stage_3_parser_cleanup.py::test_chart_inside_helpers_gone",
+    "test/test_stage_3_parser_cleanup.py::test_word_subspace_has_language_layer_attribute",
+    "test/test_stage_3_parser_cleanup.py::test_rule_probability_returns_float_in_unit_interval",
+    "test/test_stage_3_parser_cleanup.py::test_rule_probability_learned_override_in_unit_interval",
+    "test/test_stage_3_parser_cleanup.py::test_rule_probability_fired_bodies_blocks_resfire",
+    "test/test_stage_3_parser_cleanup.py::test_retired_xml_knobs_raise_on_load[parserBackend]",
+    "test/test_stage_3_parser_cleanup.py::test_retired_xml_knobs_raise_on_load[routerKind]",
+    "test/test_stage_3_parser_cleanup.py::test_retired_xml_knobs_raise_on_load[chartTau]",
+    "test/test_stage_3_parser_cleanup.py::test_retired_xml_knobs_raise_on_load[chartTopK]",
+    "test/test_stage_3_parser_cleanup.py::test_retired_xml_knobs_raise_on_load[chartNoiseEps]"
+  ],
+  "completed": [
+    "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
+    "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_grammar_block_parses_disjunction",
+    "test/test_sigmapi.py::TestPiLayerForward::test_2d_input_shape",
+    "test/test_sigmapi.py::TestPiLayerForward::test_3d_input_shape",
+    "test/test_sigmapi.py::TestPiLayerForward::test_gradient_flows",
+    "test/test_sigmapi.py::TestSigmaLayerForward::test_3d_input_shape",
+    "test/test_sigmapi.py::TestSigmaLayerForward::test_gradient_flows",
+    "test/test_sigmapi.py::TestSigmaLayerForward::test_output_bounded_by_tanh",
+    "test/test_sigmapi.py::TestPiSigmaChartComposition::test_hidden_tanh_is_cancelled_by_the_next_chart",
+    "test/test_sigmapi.py::TestTanhFreePiSigmaXORTestpoint::test_mm_xor_solves_in_10_epochs_without_tanh",
+    "test/test_signal_router_layer.py::test_layer_forward_shapes",
+    "test/test_signal_router_layer.py::test_chosen_operator_has_full_gradient_and_separate_probability_credit",
+    "test/test_signal_router_layer.py::test_layer_n_one_stops_without_unary_ops",
+    "test/test_signal_router_scorer.py::test_unified_anchor_shapes",
+    "test/test_signal_router_scorer.py::test_scores_and_probabilities_match_explicit_enumeration",
+    "test/test_signal_router_unary.py::test_unary_output_shape_and_one_global_softmax",
+    "test/test_signal_router_unary.py::test_exactly_one_unary_position_changes",
+    "test/test_signal_router_unary.py::test_unary_and_stop_anchors_receive_only_score_function_credit",
+    "test/test_signal_router_wordspace.py::test_language_layer_constructs_without_ops",
+    "test/test_signal_router_wordspace.py::test_language_layer_compose_without_ops_raises",
+    "test/test_signal_router_wordspace.py::test_language_layer_generate_emits_rules_dict_after_compose",
+    "test/test_signal_router_wordspace.py::test_language_layer_compose_populates_current_rules",
+    "test/test_signal_router_xor_grammar.py::test_xor_router_emits_per_space_role_rule_dict",
+    "test/test_signal_router_xor_grammar.py::test_xor_router_gradients_reach_all_three_ops",
+    "test/test_smoothing_regularizer.py::test_disabled_returns_zero",
+    "test/test_smoothing_regularizer.py::test_zero_lambda_returns_zero",
+    "test/test_smoothing_regularizer.py::test_constant_symbol_vector_is_free",
+    "test/test_smoothing_regularizer.py::test_alternating_concept_vector_is_penalised",
+    "test/test_smoothing_regularizer.py::test_bivector_paired_poles_are_safe",
+    "test/test_smoothing_regularizer.py::test_odd_last_dim_falls_back_to_raw_axis",
+    "test/test_smoothing_regularizer.py::test_penalty_scales_linearly_with_lambda",
+    "test/test_smoothing_regularizer.py::test_symbolic_space_reads_discontinuity_lambda_from_config",
+    "test/test_space_carrier_bridge.py::test_executor_advances_bound_space_version_and_invalidates_replicas",
+    "test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners",
+    "test/test_sparse_compile_boundary.py::test_dynamo_eager_island_preserves_sparse_gradient_and_row_local_step",
+    "test/test_sparse_compile_boundary.py::test_staged_sentence_bank_is_fullgraph_clean_and_gradient_equivalent",
+    "test/test_sparse_compile_boundary.py::test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook[False-False-True]",
+    "test/test_sparse_compile_boundary.py::test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook[True-False-False]",
+    "test/test_sparse_compile_boundary.py::test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook[True-True-True]",
+    "test/test_sparse_compile_boundary.py::test_compile_none_preserves_legacy_sentence_loop",
+    "test/test_sparse_concept_activation_boundary.py::test_sparse_decode_gathers_exact_known_rows_and_preserves_band",
+    "test/test_sparse_concept_activation_boundary.py::test_unknown_row_is_zero_what_and_never_aliases_row_zero",
+    "test/test_sparse_concept_activation_boundary.py::test_six_fold_scalars_all_receive_gradient_without_coordinate_projection",
+    "test/test_sparse_concept_activation_boundary.py::test_sparse_decode_cost_tracks_selected_rows_not_inventory_width",
+    "test/test_sparse_concept_activation_boundary.py::test_code_specific_evidence_distinguishes_equal_energy_patterns",
+    "test/test_sparse_concept_activation_boundary.py::test_membership_activations_decode_to_signed_bounded_concepts",
+    "test/test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row",
+    "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
+    "test/test_sparse_concept_e2e.py::test_population_inactive_is_noop",
+    "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
+    "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+    "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+    "test/test_sparse_concept_e2e.py::test_getparameters_includes_csw_after_population",
+    "test/test_sparse_concept_e2e.py::test_getparameters_byte_identical_when_inactive",
+    "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+    "test/test_sparse_concept_e2e.py::test_distributional_code_cost_is_off_in_reconstruction_round",
+    "test/test_sparse_concept_e2e.py::test_csw_weights_update_under_optimizer_step",
+    "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+    "test/test_sparse_layer.py::test_add_edge_idempotent_and_grows_values",
+    "test/test_sparse_layer.py::test_forward_matches_dense_tanh",
+    "test/test_sparse_layer.py::test_forward_linear_no_tanh_and_1d_squeeze",
+    "test/test_sparse_layer.py::test_empty_layer_returns_zeros",
+    "test/test_sparse_layer.py::test_grow_preserves_trained_values",
+    "test/test_sparse_layer.py::test_forward_differentiable_in_values_and_input",
+    "test/test_sparse_layer.py::test_reverse_matches_dense_transpose_tanh",
+    "test/test_sparse_layer.py::test_remove_edges_compacts_and_preserves_survivors",
+    "test/test_sparse_layer.py::test_spmm_kernel_parity",
+    "test/test_sparse_layer.py::test_self_edge_forbidden_when_flagged",
+    "test/test_sparse_layer.py::test_self_edge_allowed_by_default",
+    "test/test_sparse_layer.py::test_conceptual_attention_layer_is_square_and_forbids_self_edges",
+    "test/test_sparse_layer.py::test_conceptual_attention_union_uses_presence_chart",
+    "test/test_sparse_layer.py::test_conceptual_attention_empty_union_is_absent",
+    "test/test_sparse_layer.py::test_concept_store_embed_pair_and_identity",
+    "test/test_sparse_layer.py::test_concept_store_assign_row_and_hebbian",
+    "test/test_sparse_pipeline.py::test_carrier_is_frozen_slotted_and_not_a_module",
+    "test/test_sparse_pipeline.py::test_selected_materialization_is_pure_sparse_and_differentiable",
+    "test/test_sparse_pipeline.py::test_reader_lookup_lowers_through_torch_compile",
+    "test/test_sparse_pipeline.py::test_selected_what_retains_factored_where_and_when",
+    "test/test_sparse_pipeline.py::test_factored_materialization_has_no_cache_and_validates_leading_shape",
+    "test/test_sparse_pipeline.py::test_sparse_empty_check_does_not_lookup_rows",
+    "test/test_sparse_pipeline.py::test_reader_is_a_capability_without_mutation_or_storage_surface",
+    "test/test_sparse_pipeline.py::test_nearest_honors_allowed_rows",
+    "test/test_sparse_pipeline.py::test_reader_identity_is_live_but_replica_resolution_is_version_exact",
+    "test/test_sparse_pipeline.py::test_inference_boundary_rebinds_exact_replica_without_densifying",
+    "test/test_sparse_pipeline.py::test_training_boundary_materializes_on_owner_and_preserves_gradient",
+    "test/test_sparse_pipeline.py::test_executor_interleaves_stages_and_reassembles_microbatch_order",
+    "test/test_sparse_pipeline.py::test_executor_rejects_a_stage_that_returns_its_input_carrier",
+    "test/test_sparse_pipeline.py::test_executor_sorts_unsorted_inputs_and_accepts_equal_cloned_stream_ids",
+    "test/test_sparse_pipeline.py::test_executor_enforces_parameter_and_stream_versions",
+    "test/test_sparse_pipeline.py::test_parameter_version_cannot_advance_before_pipeline_drain",
+    "test/test_sparse_pipeline.py::test_reverse_uses_each_carriers_own_lifo_trace",
+    "test/test_sparse_pipeline.py::test_deferred_mutations_commit_in_address_order_after_drain",
+    "test/test_sparse_pipeline.py::test_missing_mutation_owner_is_detected_before_any_commit",
+    "test/test_sparse_pipeline.py::test_mutations_validate_as_a_batch_before_any_commit",
+    "test/test_sparse_pipeline.py::test_failure_cancels_execution_and_does_not_commit_mutations",
+    "test/test_sparse_pipeline.py::test_cooperative_cancellation_waits_for_stage_release_and_returns_no_run",
+    "test/test_sparse_pipeline.py::test_training_step_aggregates_losses_then_advances_one_version",
+    "test/test_sparsity_regularizer.py::test_identity_when_lambda_zero",
+    "test/test_sparsity_regularizer.py::test_soft_threshold_shrinks_small_values",
+    "test/test_sparsity_regularizer.py::test_gated_off_when_enabled_false",
+    "test/test_sparsity_regularizer.py::test_preserves_grad",
+    "test/test_stage_3_parser_cleanup.py::test_chart_inside_helpers_gone",
+    "test/test_stage_3_parser_cleanup.py::test_word_subspace_has_language_layer_attribute",
+    "test/test_stage_3_parser_cleanup.py::test_rule_probability_returns_float_in_unit_interval",
+    "test/test_stage_3_parser_cleanup.py::test_rule_probability_learned_override_in_unit_interval",
+    "test/test_stage_3_parser_cleanup.py::test_rule_probability_fired_bodies_blocks_resfire",
+    "test/test_stage_3_parser_cleanup.py::test_retired_xml_knobs_raise_on_load[parserBackend]",
+    "test/test_stage_3_parser_cleanup.py::test_retired_xml_knobs_raise_on_load[routerKind]",
+    "test/test_stage_3_parser_cleanup.py::test_retired_xml_knobs_raise_on_load[chartTau]",
+    "test/test_stage_3_parser_cleanup.py::test_retired_xml_knobs_raise_on_load[chartTopK]",
+    "test/test_stage_3_parser_cleanup.py::test_retired_xml_knobs_raise_on_load[chartNoiseEps]"
+  ],
+  "slow_selected": [
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+    "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+    "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+    "test/test_sparse_concept_e2e.py::test_distributional_code_cost_is_off_in_reconstruction_round",
+    "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+    "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03966279199812561,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_grammar_block_parses_disjunction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02150862489361316,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sigmapi.py::TestPiLayerForward::test_2d_input_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000406875042244792,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sigmapi.py::TestPiLayerForward::test_3d_input_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003540420439094305,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sigmapi.py::TestPiLayerForward::test_gradient_flows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00054191704839468,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sigmapi.py::TestSigmaLayerForward::test_3d_input_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025579100474715233,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sigmapi.py::TestSigmaLayerForward::test_gradient_flows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036691699642688036,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sigmapi.py::TestSigmaLayerForward::test_output_bounded_by_tanh",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024495902471244335,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sigmapi.py::TestPiSigmaChartComposition::test_hidden_tanh_is_cancelled_by_the_next_chart",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001108249998651445,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sigmapi.py::TestTanhFreePiSigmaXORTestpoint::test_mm_xor_solves_in_10_epochs_without_tanh",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006630791933275759,
+      "message": "",
+      "stdout": "\n  tanh-free MM_xor loss=0.00000000, pred=[5.185604095458984e-06, 0.9999990463256836, 1.000016689300537, -1.1444091796875e-05]\n"
+    },
+    {
+      "nodeid": "test/test_signal_router_layer.py::test_layer_forward_shapes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001228208071552217,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_layer.py::test_chosen_operator_has_full_gradient_and_separate_probability_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001226042048074305,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_layer.py::test_layer_n_one_stops_without_unary_ops",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008145419415086508,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_scorer.py::test_unified_anchor_shapes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002770000137388706,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_scorer.py::test_scores_and_probabilities_match_explicit_enumeration",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010950419818982482,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_unary.py::test_unary_output_shape_and_one_global_softmax",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001173791941255331,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_unary.py::test_exactly_one_unary_position_changes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007576249772682786,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_unary.py::test_unary_and_stop_anchors_receive_only_score_function_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009359170217067003,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_wordspace.py::test_language_layer_constructs_without_ops",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013641593977808952,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_wordspace.py::test_language_layer_compose_without_ops_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019995903130620718,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_wordspace.py::test_language_layer_generate_emits_rules_dict_after_compose",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005134666105732322,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_wordspace.py::test_language_layer_compose_populates_current_rules",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004502041032537818,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_xor_grammar.py::test_xor_router_emits_per_space_role_rule_dict",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005343375029042363,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_signal_router_xor_grammar.py::test_xor_router_gradients_reach_all_three_ops",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006578000029549003,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_smoothing_regularizer.py::test_disabled_returns_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001567919971421361,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_smoothing_regularizer.py::test_zero_lambda_returns_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011158292181789875,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_smoothing_regularizer.py::test_constant_symbol_vector_is_free",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001681250287219882,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_smoothing_regularizer.py::test_alternating_concept_vector_is_penalised",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016391696408391,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_smoothing_regularizer.py::test_bivector_paired_poles_are_safe",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001300419680774212,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_smoothing_regularizer.py::test_odd_last_dim_falls_back_to_raw_axis",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001514580799266696,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_smoothing_regularizer.py::test_penalty_scales_linearly_with_lambda",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015791691839694977,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_smoothing_regularizer.py::test_symbolic_space_reads_discontinuity_lambda_from_config",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012697916012257338,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_space_carrier_bridge.py::test_executor_advances_bound_space_version_and_invalidates_replicas",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003237919881939888,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_space_carrier_bridge.py::test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23364291596226394,
+      "message": "",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3070/test_legacy_duplicate_checkpoi0/legacy-ownership.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3070/test_legacy_duplicate_checkpoi0/legacy-ownership.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_sparse_compile_boundary.py::test_dynamo_eager_island_preserves_sparse_gradient_and_row_local_step",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2272425419650972,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_compile_boundary.py::test_staged_sentence_bank_is_fullgraph_clean_and_gradient_equivalent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06206462497357279,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_compile_boundary.py::test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook[False-False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024183397181332111,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_compile_boundary.py::test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook[True-False-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019195792265236378,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_compile_boundary.py::test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook[True-True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018570804968476295,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_compile_boundary.py::test_compile_none_preserves_legacy_sentence_loop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017741695046424866,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_activation_boundary.py::test_sparse_decode_gathers_exact_known_rows_and_preserves_band",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003744160057976842,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_activation_boundary.py::test_unknown_row_is_zero_what_and_never_aliases_row_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025166699197143316,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_activation_boundary.py::test_six_fold_scalars_all_receive_gradient_without_coordinate_projection",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003595419693738222,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_activation_boundary.py::test_sparse_decode_cost_tracks_selected_rows_not_inventory_width",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020243750186637044,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_activation_boundary.py::test_code_specific_evidence_distinguishes_equal_energy_patterns",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00042604096233844757,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_activation_boundary.py::test_membership_activations_decode_to_signed_bounded_concepts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006546250078827143,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0040462499018758535,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0025742080761119723,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_population_inactive_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0030265829991549253,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0027558329747989774,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010605583083815873,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023954170756042004,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_sparse_concept_config_builds_and_stamps",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011695805005729198,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_sparse_concept_e2e.py', 142, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_sparse_concept_forward_smoke",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.504100307822227e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_sparse_concept_e2e.py', 157, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_getparameters_includes_csw_after_population",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003438709070906043,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_getparameters_byte_identical_when_inactive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0028122500516474247,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_model_optimizer_picks_up_csw_weights",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001092089805752039,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_sparse_concept_e2e.py', 197, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_distributional_code_cost_is_off_in_reconstruction_round",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.904196485877037e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_sparse_concept_e2e.py', 216, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_csw_weights_update_under_optimizer_step",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0036675420124083757,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_demux_feedback_is_views_of_the_mixed_carrier",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010820804163813591,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_sparse_concept_e2e.py', 244, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_concept_e2e.py::test_two_phase_forward_cutover_stamps_terminal_activations",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010687496978789568,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_sparse_concept_e2e.py', 276, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_layer.py::test_add_edge_idempotent_and_grows_values",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003002079902216792,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_layer.py::test_forward_matches_dense_tanh",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007960419170558453,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_layer.py::test_forward_linear_no_tanh_and_1d_squeeze",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001895830500870943,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_layer.py::test_empty_layer_returns_zeros",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001457909820601344,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_layer.py::test_grow_preserves_trained_values",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018737500067800283,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_layer.py::test_forward_differentiable_in_values_and_input",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003213339950889349,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_layer.py::test_reverse_matches_dense_transpose_tanh",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005861250683665276,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_layer.py::test_remove_edges_compacts_and_preserves_survivors",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028416700661182404,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_layer.py::test_spmm_kernel_parity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019192920299246907,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_layer.py::test_self_edge_forbidden_when_flagged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025558401830494404,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_layer.py::test_self_edge_allowed_by_default",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013483292423188686,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_layer.py::test_conceptual_attention_layer_is_square_and_forbids_self_edges",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002305411035194993,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_layer.py::test_conceptual_attention_union_uses_presence_chart",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005364589160308242,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_layer.py::test_conceptual_attention_empty_union_is_absent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002488750033080578,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_layer.py::test_concept_store_embed_pair_and_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002483749995008111,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_layer.py::test_concept_store_assign_row_and_hebbian",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000256291008554399,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_carrier_is_frozen_slotted_and_not_a_module",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015537498984485865,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_selected_materialization_is_pure_sparse_and_differentiable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003964169882237911,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_reader_lookup_lowers_through_torch_compile",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01771400007419288,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_selected_what_retains_factored_where_and_when",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002482080599293113,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_factored_materialization_has_no_cache_and_validates_leading_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001990839373320341,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_sparse_empty_check_does_not_lookup_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013524992391467094,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_reader_is_a_capability_without_mutation_or_storage_surface",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001455830642953515,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_nearest_honors_allowed_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029312504921108484,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_reader_identity_is_live_but_replica_resolution_is_version_exact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001965840347111225,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_inference_boundary_rebinds_exact_replica_without_densifying",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002034578938037157,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_training_boundary_materializes_on_owner_and_preserves_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002649170346558094,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_executor_interleaves_stages_and_reassembles_microbatch_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004758330760523677,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_executor_rejects_a_stage_that_returns_its_input_carrier",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023445801343768835,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_executor_sorts_unsorted_inputs_and_accepts_equal_cloned_stream_ids",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026279198937118053,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_executor_enforces_parameter_and_stream_versions",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019450008403509855,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_parameter_version_cannot_advance_before_pipeline_drain",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034954200964421034,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_reverse_uses_each_carriers_own_lifo_trace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005517079262062907,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_deferred_mutations_commit_in_address_order_after_drain",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013929209671914577,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_missing_mutation_owner_is_detected_before_any_commit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001539579825475812,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_mutations_validate_as_a_batch_before_any_commit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001521250233054161,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_failure_cancels_execution_and_does_not_commit_mutations",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030445901211351156,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_cooperative_cancellation_waits_for_stage_release_and_returns_no_run",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003064170014113188,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparse_pipeline.py::test_training_step_aggregates_losses_then_advances_one_version",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006869169883430004,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparsity_regularizer.py::test_identity_when_lambda_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018087495118379593,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparsity_regularizer.py::test_soft_threshold_shrinks_small_values",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001830830005928874,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparsity_regularizer.py::test_gated_off_when_enabled_false",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001207499299198389,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sparsity_regularizer.py::test_preserves_grad",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022766704205423594,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stage_3_parser_cleanup.py::test_chart_inside_helpers_gone",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001027500256896019,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stage_3_parser_cleanup.py::test_word_subspace_has_language_layer_attribute",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014283298514783382,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stage_3_parser_cleanup.py::test_rule_probability_returns_float_in_unit_interval",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010195805225521326,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stage_3_parser_cleanup.py::test_rule_probability_learned_override_in_unit_interval",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010195898357778788,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stage_3_parser_cleanup.py::test_rule_probability_fired_bodies_blocks_resfire",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.362504351884127e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stage_3_parser_cleanup.py::test_retired_xml_knobs_raise_on_load[parserBackend]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001467500114813447,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stage_3_parser_cleanup.py::test_retired_xml_knobs_raise_on_load[routerKind]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010774994734674692,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stage_3_parser_cleanup.py::test_retired_xml_knobs_raise_on_load[chartTau]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010666600428521633,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stage_3_parser_cleanup.py::test_retired_xml_knobs_raise_on_load[chartTopK]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010837498120963573,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stage_3_parser_cleanup.py::test_retired_xml_knobs_raise_on_load[chartNoiseEps]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010416691657155752,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

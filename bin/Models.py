@@ -2713,7 +2713,8 @@ class BaseModel(Mereology, nn.Module):
         reader = getattr(self, '_sentence_reader_costs', None) if sentence else None
         rows = getattr(self, '_sentence_reader_rows', None) if sentence else None
         costs = registry_costs(registry, reader_rows=(
-            torch.zeros_like(registry.row_mask) if reader is not None else rows))
+            torch.zeros_like(registry.row_mask) if reader is not None else rows),
+            expectation_rows=(torch.zeros_like(registry.row_mask) if reader is not None else None))
         if reader is not None:
             costs.update(reader)
         owners = self.objective_parameter_groups(optimizer)
@@ -4466,6 +4467,9 @@ class BaseModel(Mereology, nn.Module):
             memory = getattr(getattr(self, "symbolSpace", None), "what_memory", None)
             if memory is None:
                 raise ValueError("checkpoint thought history has no interaction memory owner")
+            for module in modules.values():
+                if isinstance(module, TernaryTruthStore):
+                    what_history = module.remap_legacy_references(what_history)
             memory.load_thought_extras(what_history)
 
         # The state_dict post-hook can only withdraw request authority: this is
@@ -5079,7 +5083,8 @@ class BaseModel(Mereology, nn.Module):
         index_owners = [name for name, module in self.named_modules(remove_duplicate=False)
                         if isinstance(module, TernaryTruthStore)]
         variable_leaf_columns = {name + '.' + column for name in index_owners
-            for column in ('posting_codes', 'posting_roles', 'posting_rows')}
+            for column in ('posting_codes', 'posting_roles', 'posting_rows',
+                           'adjacent_left', 'adjacent_right', 'adjacent_address', 'adjacent_position')}
         retired_leaf_columns = {name + '.' + column for name in index_owners
                                 for column in ('leaf_codes', 'leaf_offsets')}
         mismatches = [
@@ -6890,10 +6895,12 @@ class BasicModel(BaseModel):
             case_bank = stage_case_bank(owner, native, limit=self.reconstruction_basis_limit)
         self._sentence_primed_bank = PrimedSymbols(selected, codes, weights, own,
             data.to(rows.device), byte_valid.to(rows.device), case_bank,
-            getattr(self, '_readback_percept_width', None), sparse_forms if identity is not None else None)
+            getattr(self, '_readback_percept_width', None), sparse_forms if identity is not None else None,
+            getattr(getattr(owner.similarity_codebook, 'mereology', None), 'percept_event_width', None),
+            bool(TheXMLConfig.space('ConceptualSpace', 'readerBlockNormalization', True)))
         self._sentence_priming_written = True
 
-    def store_truths(self, entries):
+    def store_truths(self, entries, *, source_key='user-truths'):
         """Parse externally trusted user assertions through the clause closing."""
         truth_layer = getattr(self.symbolSpace, 'truth_layer', None) if self.symbolSpace is not None else None
         if truth_layer is None:
@@ -6916,7 +6923,7 @@ class BasicModel(BaseModel):
         ltm_store = getattr(self.symbolSpace, 'ltm_store', None)
         if ltm_store is None:
             raise RuntimeError('TruthSet ingestion requires the clause row store')
-        self._store_truths_into_ltm(ltm_store, truth_layer, texts, trusts)
+        self._store_truths_into_ltm(ltm_store, truth_layer, texts, trusts, source_key=source_key)
 
         # 5. Run the consistency report and cache any clarification
         # messages on the model for the serve layer to expose.
@@ -6942,7 +6949,7 @@ class BasicModel(BaseModel):
             self._last_truth_assessment = None
 
     @torch.no_grad()
-    def _store_truths_into_ltm(self, store, truth_layer, texts, trusts):
+    def _store_truths_into_ltm(self, store, truth_layer, texts, trusts, *, source_key='user-truths'):
         """``store_truths``' consolidated arm: land the user TruthSet in
         the unified LTM and rebuild the TruthLayer view.
 
@@ -6964,11 +6971,16 @@ class BasicModel(BaseModel):
             if not already:
                 self.provision_ltm()
         memory = getattr(getattr(self, 'symbolSpace', None), 'what_memory', None)
-        namespace = bytes(store._occurrence_namespace.tolist()).hex()
+        namespace = store.address_domain
         roots = (memory.retained_ltm_occurrences(namespace)
                  if memory is not None else ())
-        store.clear_origin(store.ORIGIN_USER, retained_occurrences=roots)
-        self._ltm_ingest_truth_texts(store, texts, trusts=trusts, origin=store.ORIGIN_USER)
+        from Occurrence import document_digest
+        incoming = {(document_digest(('ingestion', source_key, index)), text)
+                    for index, text in enumerate(texts)}
+        preserve = [int(store.address_keys[row]) for row in range(len(store))
+                    if (bytes(store.document_keys[row].tolist()), store.text_of(row)) in incoming]
+        store.clear_origin(store.ORIGIN_USER, retained_occurrences=roots, preserve_addresses=preserve)
+        self._ltm_ingest_truth_texts(store, texts, trusts=trusts, origin=store.ORIGIN_USER, source_key=source_key)
         truth_layer.sync_from_ltm()
 
     # -- LTM consolidation: XML TruthSet provisioning ------------------
@@ -7028,7 +7040,7 @@ class BasicModel(BaseModel):
                 memory.Reset(hard=True)
         return max(0, len(store) - n_before)
 
-    def _ltm_ingest_truth_texts(self, store, texts, *, trusts=None, origin=None):
+    def _ltm_ingest_truth_texts(self, store, texts, *, trusts=None, origin=None, source_key='configured-truths'):
         """Understand each external assertion through the ordinary sentence closing.
 
         Registration writes child clauses without assertion authority. Only
@@ -7048,13 +7060,13 @@ class BasicModel(BaseModel):
         if interaction is not None and texts:
             interaction.Reset(hard=True)
         with sequence:
-            for text, trust in zip(texts, trusts):
+            for source_index, (text, trust) in enumerate(zip(texts, trusts)):
                 with store.clause_assertions(trust=trust, origin=origin, text=text) as rows:
-                    with torch.no_grad(), self._runtime_batch([text]):
+                    with torch.no_grad(), self._runtime_batch([text], document_keys=[('ingestion', source_key, source_index)]):
                         from What import What
                         inp = self.inputSpace.prepInput(list(self.data.train_input))
                         self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
-                            batch_override=(inp, torch.empty(1, 0, device=inp.device)),
+                            batch_override=(inp, torch.empty(1, 0, device=inp.device)), source_rows=[0],
                             questions=(What.present(0, split='runtime'),))
                     if not rows:
                         raise ValueError('TruthSet input did not produce a selected grammatical closing')
@@ -7065,7 +7077,7 @@ class BasicModel(BaseModel):
                         cs.Reset(hard=True)
         return per_text_rows
 
-    def infer(self, text, max_length=None, mode='IR'):
+    def infer(self, text, max_length=None, mode='IR', *, document_key=None):
         """IR-mode infill inference.
 
         Lexes the input, embeds it, applies ``mask_rate`` random
@@ -7089,9 +7101,9 @@ class BasicModel(BaseModel):
                 "training/inference is IR-only; for sentence-level "
                 "generation use BasicModel.generate_sentence (Phase 4)."
             )
-        return self._infer_ir(text)
+        return self._infer_ir(text, document_key=document_key)
 
-    def _infer_ir(self, text):
+    def _infer_ir(self, text, *, document_key=None):
         """IR-mode parallel-infill inference.
 
         Runs one forward pass under no_grad and reads the body's
@@ -7102,7 +7114,7 @@ class BasicModel(BaseModel):
         self.eval()
         self.set_sigma(0)
 
-        with torch.no_grad(), self._runtime_batch([text]):
+        with torch.no_grad(), self._runtime_batch([text], document_keys=None if document_key is None else [document_key]):
             inputTensor = self.inputSpace.prepInput(
                 list(self.data.train_input))
             execution = self.forward(inputTensor)
@@ -8315,9 +8327,10 @@ class BasicModel(BaseModel):
                 space.Start()
         self._spaces_started_for_forward = True
 
-    @_sentence_query_mask
-    def forward(self, inputData):
-        """Read through the common sentence driver; raw calls never optimize."""
+    def _snapshot_sentence_codes(self):
+        """Freeze meanings and centroids before the first lexical bank is staged."""
+        if getattr(self, '_sentence_codes_snapshotted', False):
+            return
         seen_books = set()
         for cs in getattr(self, 'conceptualSpaces', ()):
             cb = cs.similarity_codebook
@@ -8325,6 +8338,18 @@ class BasicModel(BaseModel):
             if derived is not None and id(cb) not in seen_books:
                 derived.begin_forward()
                 seen_books.add(id(cb))
+        self._sentence_codes_snapshotted = True
+
+    @_sentence_query_mask
+    def forward(self, inputData):
+        """Read through the common sentence driver; raw calls never optimize."""
+        if not getattr(self, '_sentence_run_active', False) and hasattr(self, 'inputSpace'):
+            from Occurrence import stage_sources
+            source = getattr(inputData, '_sentence_source', None)
+            split, prepared = source if source is not None else ('train', None)
+            stage_sources(self, split, prepared, inputData)
+            self._advance_when_time()
+        self._snapshot_sentence_codes()
         own_context = self.word_brackets and not getattr(self, '_sentence_run_active', False)
         context = self._sentence_run(training=False) if own_context else nullcontext()
         with context:
@@ -8335,6 +8360,8 @@ class BasicModel(BaseModel):
                 return self._forward_per_stage(inputData)
             finally:
                 self._spaces_started_for_forward = False
+                if own_context or not getattr(self, '_sentence_run_active', False):
+                    self._sentence_codes_snapshotted = False
 
     def _what_memory(self):
         """Return SymbolSpace's one interaction owner and apply its credit mode."""
@@ -10068,13 +10095,13 @@ class BasicModel(BaseModel):
             split=split, batch_size=batch_size, training=training,
             clean_input=clean_input)
 
-    def _runtime_batch(self, inputs, outputs=None, *, context=None):
+    def _runtime_batch(self, inputs, outputs=None, *, context=None, document_keys=None):
         """Stage interactive data; through the Teacher adapter when attached
         (it also installs the interactive context), else directly on Data."""
         teacher = getattr(self, "teacher", None)
         if teacher is not None:
-            return teacher.runtime_batch(inputs, outputs, context=context)
-        return self.data.runtime_batch(inputs, outputs, context=context)
+            return teacher.runtime_batch(inputs, outputs, context=context, document_keys=document_keys)
+        return self.data.runtime_batch(inputs, outputs, context=context, document_keys=document_keys)
 
     def _what_report_state(self):
         return self.__dict__.setdefault("_what_report", {
@@ -11532,8 +11559,9 @@ class BasicModel(BaseModel):
                 raise RuntimeError('input word occurrences require their byte starts')
             starts = torch.where(object_rows >= 0, offsets[:, :, 0], -1)
             isp._ar_word_symbol_where = registry.encode('input', starts)
-            tick = self.when_time.to(device=rows.device)
-            isp._ar_word_symbol_when = self.when_encoding.encode(tick).expand(B, W, -1)
+            from Occurrence import relative_positions
+            positions = relative_positions(self, isp._packed_sentence_ids.to(rows.device))
+            isp._ar_word_symbol_when = self.when_encoding.encode(positions)
             isp._ar_word_symbol_when = torch.where((rows >= 0)[..., None],
                                                     isp._ar_word_symbol_when, 0.)
         codes = torch.tensor(reference_codes, dtype=torch.long, device=part_ids.device)
@@ -11993,7 +12021,7 @@ class BasicModel(BaseModel):
         """``[B, W, D]`` retained constituent references: the leaves the
         forward pushed, each word's symbol row's dictionary atom (its
         object concept's where it has one, else its word concept's) scaled
-        by activation magnitude on form and signed activation on meaning,
+        by identification presence on form and two evidence magnitudes on meaning,
         channels (zeros elsewhere and where a word has no row)."""
         if getattr(self, '_attention_pole_representation', False):
             from ModelAttention import read_poles
@@ -12028,7 +12056,9 @@ class BasicModel(BaseModel):
         if torch.is_tensor(activations) and int(activations.numel()) >= B * k:
             act = activations.reshape(B, -1)[:, :k].to(
                 device=like.device, dtype=like.dtype).unsqueeze(-1)
-            content = self._concept_owner().interpret.activate(content, act.squeeze(-1))
+            from ModelAttention import reference_evidence
+            evidence = reference_evidence(self, activations, '_pushed_word_slab:poles')[:, :k].to(content)
+            content = self._concept_owner().interpret.activate(content, act.squeeze(-1), evidence=evidence)
         present = (rows[:, :k] >= 0).to(device=like.device, dtype=like.dtype).unsqueeze(-1)
         content = content * present
         return torch.cat(
@@ -12321,7 +12351,7 @@ class BasicModel(BaseModel):
             record.root, record.end_slots, record.end_depth, bank.codes, bank.valid, bank.weights,
             **({} if bank.case_bank is None else {"case_bank": bank.case_bank}))
         scores = torch.stack([readback_scores(words[:,w], bank.codes, bank.weights,
-                              percept_width=bank.percept_width)
+                              percept_width=bank.percept_width, meaning_start=bank.meaning_start)
                               for w in range(words.shape[1])], 1)
         valid = bank.valid & bank.byte_valid.any(-1)
         self._last_readback_decisions = readback_decisions(words, count, bank, active)
@@ -12652,13 +12682,14 @@ class BasicModel(BaseModel):
         da = min(int(atoms.shape[-1]), D)
         indexed = (rows >= 0).reshape(B, W, 1).to(device=reference.device)
         atoms = atoms[..., :da].to(device=reference.device, dtype=reference.dtype)
-        # Match the interpreted leaf: sign belongs only to the meaning face.
-        acts = getattr(getattr(self, "symbolSpace", None), "_word_reference_activations", None)
+        # Match the interpreted leaf without compressing its two magnitudes.
+        acts = getattr(getattr(self, "symbolSpace", None), "_word_reference_presences", None)
         if torch.is_tensor(acts) and int(acts.numel()) == B * W:
             from Interpret import activate_code
             derived = getattr(cb, 'mereology', None)
             width = da if derived is None else derived.percept_event_width
-            atoms = activate_code(atoms, acts.reshape(B, W).to(atoms), width)
+            evidence = self.symbolSpace._word_reference_evidence.to(atoms)
+            atoms = activate_code(atoms, acts.reshape(B, W).to(atoms), width, evidence=evidence)
         content = torch.where(indexed, atoms, reference[..., :da])
         if da < D:
             band = torch.where(indexed, torch.zeros_like(reference[..., da:]),
@@ -12886,7 +12917,7 @@ class BasicModel(BaseModel):
         concept_ids = self._word_symbol_concept_ids()
         if not torch.is_tensor(concept_ids) or concept_ids.shape != rows.shape:
             concept_ids = torch.full_like(rows, -1)
-        activations = getattr(self.symbolSpace, "_word_reference_activations", None)
+        activations = getattr(self.symbolSpace, "_word_reference_presences", None)
         if not torch.is_tensor(activations) or activations.numel() != B * W:
             activations = reference.new_ones(B, W)
         else:
@@ -13375,6 +13406,7 @@ class BasicModel(BaseModel):
             depth = getattr(stm, "_depth", None) if stm is not None else None
             if torch.is_tensor(depth) and depth.numel():
                 stm._max_depth_host = int(depth.max().item())
+        self._sentence_codes_snapshotted = False
         self._staged_in_sub = None
         self._staged_concepts_in = None
         self._active_compiled_step = None
@@ -13550,23 +13582,13 @@ class BasicModel(BaseModel):
 
         0-initialized; ``runBatch`` advances it by 1 per processed batch on
         BOTH train and inference. It is the authoritative absolute-time
-        record (the .when sinusoid only carries local angular resolution)."""
+        record; event .when bands carry document positions independently."""
         return int(self.when_time)
 
     def _advance_when_time(self):
-        """Advance the on-device clock once per processed batch, then give
-        the shared time ladder an owned tensor stamp. Every event in this
-        field uses that stamp; no scalar device-to-host read is needed."""
+        """Advance recency time once per batch; event bands do not read it."""
         # In-place so the registered buffer (and its device) is preserved.
         self.when_time += 1
-        t_now = self.when_time.detach().clone()
-        for sp in getattr(self, "spaces", []) or []:
-            sub = getattr(sp, "subspace", None)
-            enc = getattr(sub, "whenEncoding", None) if sub is not None else None
-            # Only the enabled (nDim > 0) range encoders carry a stampable .t;
-            # the disabled (nWhen == 0) carrier is a no-op either way.
-            if enc is not None and getattr(enc, "nDim", 0) > 0:
-                enc.t = t_now
 
     def _curriculum_questions(self, step, *, split, batch_size, sentence_index,
                               source_rows=None, training=True):
@@ -13679,7 +13701,7 @@ class BasicModel(BaseModel):
             from SentenceUnderstanding import readback_scores
             valid = bank.valid & bank.byte_valid.any(-1)
             scores = torch.stack([readback_scores(words[:,w], bank.codes, bank.weights,
-                                  percept_width=bank.percept_width)
+                                  percept_width=bank.percept_width, meaning_start=bank.meaning_start)
                                   for w in range(words.shape[1])], 1)
             chosen = scores.masked_fill(~valid[:, None], -torch.inf).argmax(-1).cpu().tolist()
             rows = bank.rows.cpu().tolist()
@@ -13893,6 +13915,7 @@ class BasicModel(BaseModel):
             self._sentence_answer_questions = ()
             self._sentence_answer_cost = None
             self._sentence_run_active = False
+            self._sentence_codes_snapshotted = False
             self._open_sentence_slot = None
             self.languageSpace._reference_bank = None
             self.languageSpace._compose_primed_bank = None
@@ -13911,7 +13934,7 @@ class BasicModel(BaseModel):
                  optimizer=None, batch_override=None, progress=None,
                  exploration_trial=False,
                  trial_mode="reconstruct", questions=None,
-                 source_rows=None, attach_outputs=False):
+                 source_rows=None, attach_outputs=False, document_keys=None):
         """Run a single batch: forward pass, loss, and (if training) backward + step.
 
         Sentence trials are completed by the eager closing driver during forward.
@@ -14011,6 +14034,12 @@ class BasicModel(BaseModel):
         inputTensor, outputTensor = batch
         if train and trial_mode != 'predict':
             self._sentence_supplied_answers = outputTensor
+        from Occurrence import stage_sources
+        if split == 'runtime' and source_rows is None and 'runtime' in self.inputSpace.data.source_addresses:
+            source_rows = list(range(len(inputTensor)))
+        source = getattr(inputTensor, '_sentence_source', None) if source_rows is None else None
+        address_split, address_rows = source if source is not None else (split, source_rows)
+        stage_sources(self, address_split, address_rows, inputTensor, document_keys)
         self._stage_expectation_documents(
             split, source_rows, int(inputTensor.shape[0])
             if isinstance(inputTensor, torch.Tensor) else len(inputTensor))
@@ -14030,9 +14059,8 @@ class BasicModel(BaseModel):
         # Advance the serialized model clock once per PROCESSED batch (this
         # point is past the no-batch early raise, so it ticks exactly once on
         # BOTH the train and inference paths regardless of which return fires
-        # below). Done here, in eager Python before the forward, so the live
-        # WhenRangeEncoding(s) the forward stamps already carry the advanced
-        # absolute time (``.t == present()``). See ``_advance_when_time``.
+        # below). The timestamp writer reads this clock; source positions
+        # have already been staged independently for event .when bands.
         # The mode schedule's internal context read does not consume an
         # external batch. Compose's sentence trials run inside this one tick.
         if not exploration_trial:
@@ -14085,6 +14113,8 @@ class BasicModel(BaseModel):
         # Per-batch Space.Start cascade (moved out of forward() so sliding
         # buffers can persist across forward() calls within a stream).
         self._start_spaces_for_forward()
+
+        self._snapshot_sentence_codes()
 
         # AMP: torch.autocast wrapper from util.amp_context() honors
         # MODEL_AMP env var (hydrated from XML <architecture><amp> in
@@ -16021,8 +16051,7 @@ class BasicModel(BaseModel):
         # encoding.md): a 0-initialized ``long`` that increments once per
         # processed batch (train AND inference) in ``runBatch`` and rides
         # ``state_dict()`` through save/load. It is the AUTHORITATIVE absolute
-        # time; ``runBatch`` propagates it to each live ``WhenRangeEncoding``'s
-        # ``.t`` so a default-stamped .when carries the absolute model time.
+        # time for row timestamps; event .when bands carry source positions.
         # Guarded so a re-entrant build does not re-register the buffer.
         if "when_time" not in self._buffers:
             self.register_buffer(
@@ -16814,8 +16843,7 @@ class BasicModel(BaseModel):
                                  default=False)) and terminal_ss is not None:
             _sl = getattr(terminal_ss, 'syntacticLayer', None)
             for _h in (getattr(_sl, '_by_name', {}) or {}).values():
-                if getattr(_h, 'rule_name', '') in ('conjunction',
-                                                    'disjunction'):
+                if getattr(_h, 'uses_operand_activation', False):
                     object.__setattr__(_h, 'radial', True)
 
         # The conceptual basis honours the ``architecture.monotonic``
@@ -17234,7 +17262,11 @@ class BasicModel(BaseModel):
             width = int(shape[0]) * int(shape[1])
             torch._assert_async((occupied * D <= width).all(),
                 'the answer map cannot hold the concluded understanding')
-            value = slots.detach().reshape(B, 3 * D)
+            record = understanding if understanding is not None else getattr(self, '_last_sentence_understanding', None)
+            value = slots.detach()
+            if record is not None:
+                value = record.primed.reader_value(value)
+            value = value.reshape(B, 3 * D)
             value = F.pad(value, (0, max(0, width - 3 * D)))[:, :width]
             sub = SubSpace.from_tensor(value.reshape(B, *shape),
                 inputShape=shape, outputShape=shape,
@@ -18131,6 +18163,7 @@ class BasicModel(BaseModel):
         scope = self.languageSpace.clause_scope
         stm._clause_state, closing_kind = scope.apply(stm.ensure_clause_state(), choice,
             torch.as_tensor(0 if trace_slot is None else trace_slot, device=state[0].device))
+        next_state = scope.publish_name(next_state, stm._clause_state, closing_kind)
         (stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
          stm._concept_rows, stm._concept_activations) = next_state
         self._record_operation_choice(trace_slot, choice, state)
@@ -19738,36 +19771,25 @@ class BasicModel(BaseModel):
                         layer.project_parts()
         self._clamp_symbolic_codebook()
         self._normalize_perceptual_embedding()
-        margin = float(TheXMLConfig.space("ConceptualSpace", "latticeMargin", 0.))
-        seen = set()
-        for cs in self.conceptualSpaces:
-            derived = getattr(cs.similarity_codebook, "mereology", None)
-            if derived is not None and id(derived) not in seen:
-                seen.add(id(derived))
-                derived.project_room(margin)
 
     def _attention_sentence_payload(self, payload, index):
-        """Field operations change the pole, preserving form and magnitude."""
+        """Carry both field magnitudes beside the independent form presence."""
         reading = getattr(self, '_attention_words', None)
         if reading is None:
             return payload
-        event, orders, row, activation, obj, obj_order, atom, gate, commit, routing, valid = payload
+        event, orders, row, presence, obj, obj_order, atom, gate, commit, routing, valid, evidence = payload
         w = index.clamp(0,reading.accepted.shape[1]-1)
         B = event.shape[0]
-        from ModelAttention import read_poles, pole_activation
+        from ModelAttention import read_poles
         pair = read_poles(self, '_attention_sentence_payload').gather(
             1,w.reshape(1,1,1).expand(B,1,2)).squeeze(1)
-        changed = reading.pole_changes.gather(1,w.reshape(1,1).expand(B,1))
-        activation = pole_activation(activation, pair, changed)
-        # interpret resolves atom * activation; multiplying atom would apply
-        # the evidence twice and turn a negative witness positive again.
         pole_representation = getattr(self, '_attention_pole_representation', False)
         if pole_representation:
             event = pair[:,None].to(event)
             atom = pair.to(atom)
-            activation = torch.ones_like(activation)
-        return (event,orders,row,activation,obj,obj_order,atom,gate,
-                commit & reading.accepted.gather(1,w.reshape(1,1).expand(B,1)).reshape_as(commit),routing,valid)
+            presence = torch.ones_like(presence)
+        return (event,orders,row,presence,obj,obj_order,atom,gate,
+                commit & reading.accepted.gather(1,w.reshape(1,1).expand(B,1)).reshape_as(commit),routing,valid,pair)
 
     def _compose_score_function_loss(self, path, costs):
         """§16.3: p(departure) times its detached paired cost difference.
@@ -20420,11 +20442,39 @@ class BasicModel(BaseModel):
                 if payload is None:
                     continue
                 comparison = (disc.last_expectation_comparison(b) if retain else None)
-                row = _append_observed_meaning(store, view['clauses'][b],
-                    trust=self.conceptualSpace._incoming_trust_multiplier(),
-                    expectation=comparison, stream=b)
+                from Occurrence import source_at, sentence_key, native_content_key
+                document, position = source_at(self, b, sid)
+                # The scored reading owns the resolved word identities. The
+                # legacy WORD lane may be empty on the mixing grammar path;
+                # hashing it would give every sentence the empty content key.
+                record = chosen[b].get('record')
+                word_rows = getattr(record, 'word_rows', None)
+                word_valid = getattr(record, 'word_valid', None)
+                identified_codes = []
+                if torch.is_tensor(word_rows) and torch.is_tensor(word_valid):
+                    owner = self._concept_owner()
+                    # Unresolved or clipped slots are not identified words.
+                    # Do not substitute target text or composed coordinates.
+                    identified_codes = [int(code) for code in word_rows[b][word_valid[b]].tolist()
+                                        if code >= 0 and isinstance(owner.word_surface_for_row(int(code)), bytes)]
+                    words = [owner.word_surface_for_row(code) for code in identified_codes]
+                    content = sentence_key(words)
+                else:
+                    content = native_content_key(view['clauses'][b].meaning)
+                clause = view['clauses'][b]
+                encoding = getattr(self, 'when_encoding', None)
+                if encoding is not None:
+                    clause = replace(clause, eternal=False,
+                                     when=encoding.encode(position).to(clause.meaning.roles))
+                    view['clauses'][b] = clause
+                with store.at_address(document, position, content,
+                                      timestamp=float(getattr(self, 'when_time', store._next_ts))):
+                    row = _append_observed_meaning(store, clause,
+                        trust=self.conceptualSpace._incoming_trust_multiplier(),
+                        expectation=comparison, stream=b)
                 if row >= 0:
                     row_ids[b] = int(store.row_ids[row])
+                    store.witness_adjacency(row, identified_codes)
                 if row >= 0 and retain:
                     disc.bind_observation_occurrence(b, store.row(row)['occurrence'])
         fields = []
@@ -20433,7 +20483,7 @@ class BasicModel(BaseModel):
             if clause is None:
                 fields.append(None)
                 continue
-            index = None if store is None or row_ids[b] < 1 else store.index_of_row(row_ids[b])
+            index = None if store is None or row_ids[b] in (-1, 0) else store.index_of_row(row_ids[b])
             if index is not None:
                 meaning = store.meaning_of(index)
                 refs = tuple(store.refs[index].tolist())
@@ -20442,7 +20492,7 @@ class BasicModel(BaseModel):
                            replace(ConceptualMeaning.from_description(clause.point),
                                    mode=clause.meaning.mode, polarity=clause.meaning.polarity,
                                    sentence_kind='idea'))
-                refs = tuple(ref if type(ref) is int and ref > 0 else -1 for ref in clause.refs)
+                refs = tuple(ref if type(ref) is int and ref not in (-1, 0) else -1 for ref in clause.refs)
             query = (self.languageSpace.program_meaning(entries[b], registry)
                      if clause.meaning.mode == 'interrogative' and registry is not None else None)
             fields.append(SentenceEndState(meaning, refs, row_ids[b], clause.where, clause.when, query,
@@ -20566,6 +20616,8 @@ class BasicModel(BaseModel):
             present = slots[:, sid].to(torch.bool)
             if not bool(present.any()):
                 continue
+            from Occurrence import stage_position
+            stage_position(self, sid, B, device=words.device)
             disc = getattr(self.symbolSpace, 'expectation', None)
             if disc is not None:
                 disc._prepare_expectation_documents(self._expectation_documents_for_slot(sid, B), present, B)
@@ -20653,7 +20705,7 @@ class BasicModel(BaseModel):
                     # Grammar feedback changes with this derivation, while
                     # the cached pre-compose word representation stays fixed.
                     payload = self._attention_sentence_payload(payload,index)
-                    payload = (*payload[:-2], *latches[0])
+                    payload = (*payload[:9], *latches[0], payload[11])
                     current_lang, current_stm, current_feedback = compose_word(
                         payload, index, None, current_lang, current_stm)
                     latches = [latches[1], current_feedback]
@@ -20704,7 +20756,7 @@ class BasicModel(BaseModel):
                 trial, pullback, path, registry, decomposition_loss, walk_loss = pending_steps.pop(0)
                 self._sentence_trial, self._sentence_pullback = trial, pullback
                 self._sentence_cost_registry = registry
-                from SentenceCredit import reader_weights, reader_costs
+                from SentenceCredit import reader_weights, reader_costs, expectation_costs
                 self._sentence_comparison_reader_weights = reader_weights(
                     torch.stack(cost_parts, 1), present, self._sentence_departure)
                 self._sentence_reader_weights = reader_weights(
@@ -20713,6 +20765,9 @@ class BasicModel(BaseModel):
                 self._sentence_reader_costs = (reader_costs(reader_registries,
                     self._sentence_reader_weights) if trial == 'explore' else {})
                 presented_step = any(v.requires_grad for v in self._sentence_reader_costs.values())
+                if trial == 'explore':
+                    self._sentence_reader_costs.update(expectation_costs(
+                        reader_registries, self._sentence_reader_weights))
                 comparison_costs = (reader_costs(comparison_registries,
                     self._sentence_comparison_reader_weights) if trial == 'explore' else {})
                 for name, value in comparison_costs.items():
@@ -20934,6 +20989,7 @@ class BasicModel(BaseModel):
         reducer = self._stm_reducer()
         predictor = cs.intraSentenceLayer
         interpretation = self._concept_owner().interpret
+        from Interpret import positive_evidence
         language = self.languageSpace
         n_rules = int(language._n_rules)
         trace = self._reconstruction_stack()
@@ -21132,6 +21188,7 @@ class BasicModel(BaseModel):
             torch.zeros(B, 1, dtype=torch.bool, device=words.device),
             words.new_zeros(B, n_rules),
             torch.zeros(B, 1, dtype=torch.bool, device=words.device),
+            words.new_zeros(B, 2),  # independent for/against leaf magnitudes
         )
         empty_feedback = (
             words.new_zeros(B, n_rules),
@@ -21259,9 +21316,10 @@ class BasicModel(BaseModel):
             routed_valid = torch.logical_and(
                 feedback[1], same_sentence.reshape(B, 1))
             payload = (
-                symbolic_event, symbolic_orders, row, activation,
+                symbolic_event, symbolic_orders, row, activation.abs(),
                 object_row, object_order, object_atom, row_gate, commit,
-                routed_feedback, routed_valid)
+                routed_feedback, routed_valid,
+                positive_evidence(activation.reshape(B).abs()))
             if not sentence_transactions:
                 payload=self._attention_sentence_payload(payload,index)
             return payload, (next_sym,)
@@ -21287,7 +21345,7 @@ class BasicModel(BaseModel):
             del _live
             (symbolic_event, symbolic_orders, row, activation,
              object_row, object_order, object_atom, row_gate, commit,
-             routing, routing_valid) = cs_sym_payload
+             routing, routing_valid, leaf_evidence) = cs_sym_payload
             word_idea = symbolic_event[:, 0, :]
             if torch.is_tensor(grammar_leaf_mask) and not sentence_transactions:
                 commit = commit & _gather_word(grammar_leaf_mask, index).reshape_as(commit)
@@ -21332,10 +21390,10 @@ class BasicModel(BaseModel):
 
             # Treating the deposited word concept as a reference resolves its
             # paired object concept before Language observes the stack.  The
-            # reference keeps the word's signed activation; concepts are full codes.
+            # reference keeps form presence and both conceptual magnitudes.
             object_idea = interpretation.forward(
                 word_idea, object_atoms=object_atom,
-                activation=activation.reshape(B))
+                presence=activation.reshape(B), evidence=leaf_evidence)
             object_gate = torch.logical_and(
                 commit.reshape(B), object_row >= 0)
             resolved = FunctionalPeerSTM.resolve_top_reference(
@@ -21430,6 +21488,7 @@ class BasicModel(BaseModel):
                         reference_relations, journal_slot, relative, choice.applied)
                 final_stm = cs.apply_language_choice(before, choice)
                 clause_state, ended = scope.apply(clause_state, choice, slot)
+                final_stm = scope.publish_name(final_stm, clause_state, ended)
                 closing_events = record_clause_end(closing_events, slot, ended)
                 binary = choice.applied & (choice.kind == 1)
                 unary_chosen = choice.applied & (choice.kind == 2)
@@ -21513,6 +21572,7 @@ class BasicModel(BaseModel):
                         reference_relations, journal_slot, relative, choice.applied)
                 end_stm = cs.apply_language_choice(pre_closing, choice)
                 clause_state, ended = scope.apply(clause_state, choice, slot)
+                end_stm = scope.publish_name(end_stm, clause_state, ended)
                 closing_events = record_clause_end(closing_events, slot, ended)
                 binary = choice.applied & (choice.kind == 1)
                 (wholes, phrase, chunk_slab, chunk_count) = self._chunk_reduce_provenance(
@@ -21622,8 +21682,9 @@ class BasicModel(BaseModel):
                 prior = self._per_word_contributions[p]
                 prior = torch.zeros_like(event[:, 0]) if prior is None else prior
                 self._per_word_contributions[p] = torch.where(gate, event[:, 0], prior)
-                payload = (event, orders, row, activation, obj, obj_order,
-                           atom, gate, gate, *empty_feedback)
+                payload = (event, orders, row, activation.abs(), obj, obj_order,
+                           atom, gate, gate, *empty_feedback,
+                           positive_evidence(activation.reshape(B).abs()))
                 percept = ps.subspace.materialize()[:, 0]
                 slab = self._tensor_write_word_column(current_sub[1], index, percept)
                 return payload, (event, slab, *current_sub[2:])
@@ -21728,7 +21789,7 @@ class BasicModel(BaseModel):
             cs._intra_loss_weight_accum = None
             cs._intra_loss_count = 0
         # The W-wide CSLang result is symbolic, not another conceptual event:
-        # one row identity plus one signed activation per word.  SymbolSpace
+        # one row identity, form presence and two evidence magnitudes per word. SymbolSpace
         # owns that quantized slab; CS continues to own the full eight-slot
         # non-quantized STM installed above.
         symbol_rows = torch.where(
@@ -24354,7 +24415,14 @@ class ModelFactory:
             and _cs_input_dim == cs_dim_e
             and ps_dim == ws_dim
             and 0 < ps_dim < cs_dim)
-        if (is_embedding_mode and not (ps_slab == cs_slab)
+        # A declared sentence-identity complement is an indexed extension of
+        # each word's unchanged form, also on the small grammar fixtures'
+        # mixing path. It does not reshape the perceptual slab.
+        _meaning_extension = (
+            is_embedding_mode and int(cfg.get('ConceptualSpace', {}).get('meaningWidth', 128)) >= 0
+            and ps_n == cs_n == _cs_input_n and _cs_input_dim == ps_dim_e
+            and cs_dim_e > ps_dim_e and (cs_dim_e-ps_dim_e) % 2 == 0)
+        if (is_embedding_mode and not (ps_slab == cs_slab or _meaning_extension)
                 and not _sparse_activation_boundary):
             errors.append(
                 f"flat-slab invariant violated: PS.nOutput*content "

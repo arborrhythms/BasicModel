@@ -1,0 +1,1536 @@
+{
+  "counts": {
+    "class_pass": 10,
+    "reconstruction_pass": 10,
+    "joint": 10,
+    "mm_pass": 10,
+    "sum_pass": 10,
+    "sum_floor_pass": 10,
+    "xor_bands": {
+      "at 0": 10,
+      "at 1/4": 0,
+      "between": 0,
+      "above 1/4": 0
+    },
+    "sum_bands": {
+      "at 0": 0,
+      "at 1/4": 10,
+      "between": 0,
+      "above 1/4": 0
+    }
+  },
+  "sweep": {
+    "result": "passed",
+    "exit_code": 0,
+    "cases": 5500,
+    "counts": {
+      "passed": 5214,
+      "skipped": 285,
+      "xpassed": 1
+    },
+    "seconds": 410.63126383302733,
+    "non_strict_xpass": [
+      "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
+    ],
+    "source": "measured-source/source.json"
+  },
+  "training_trial_rows": 64000,
+  "evaluation_trial_rows": 160,
+  "absolute_components": {
+    "R": {
+      "minimum": 0.0,
+      "maximum": 0.0,
+      "nonzero": 0
+    },
+    "E": {
+      "minimum": 0.0,
+      "maximum": 0.0,
+      "nonzero": 0
+    },
+    "A": {
+      "minimum": 0.0,
+      "maximum": 2.997239112854004,
+      "nonzero": 64000
+    }
+  },
+  "priming_range": {
+    "minimum": 1.0,
+    "maximum": 2.0,
+    "neutral": 1.0
+  },
+  "priming_per_word": {
+    "b'hello'": {
+      "received": [
+        1.3897035121917725,
+        1.3897035121917725,
+        0.8602921962738037,
+        0.8602921962738037
+      ],
+      "weight": [
+        2.0,
+        2.0,
+        1.3599995374679565,
+        1.3599995374679565
+      ]
+    },
+    "b'world'": {
+      "received": [
+        1.3897035121917725,
+        0.8602921962738037,
+        1.3897035121917725,
+        0.8602921962738037
+      ],
+      "weight": [
+        2.0,
+        1.3599995374679565,
+        2.0,
+        1.3599995374679565
+      ]
+    },
+    "b'there'": {
+      "received": [
+        0.8602921962738037,
+        1.3897035121917725,
+        0.8602921962738037,
+        1.3897035121917725
+      ],
+      "weight": [
+        1.3599995374679565,
+        2.0,
+        1.3599995374679565,
+        2.0
+      ]
+    },
+    "b'loving'": {
+      "received": [
+        0.8602921962738037,
+        0.8602921962738037,
+        1.3897035121917725,
+        1.3897035121917725
+      ],
+      "weight": [
+        1.3599995374679565,
+        1.3599995374679565,
+        2.0,
+        2.0
+      ]
+    }
+  },
+  "priming_identical": true,
+  "narrowing_credit": {
+    "sum/descend": {
+      "selected": 30,
+      "departed": 30,
+      "nonzero_credit": 0,
+      "reward_explore": 0,
+      "reward_greedy": 0,
+      "advantage_sum": 0.0,
+      "delta_R_sum": 0.0,
+      "delta_E_sum": 0.0,
+      "delta_A_sum": 0.0
+    },
+    "sum/and": {
+      "selected": 4029,
+      "departed": 4029,
+      "nonzero_credit": 0,
+      "reward_explore": 0,
+      "reward_greedy": 0,
+      "advantage_sum": 0.0,
+      "delta_R_sum": 0.0,
+      "delta_E_sum": 0.0,
+      "delta_A_sum": 0.0,
+      "last20_selected": 209,
+      "last20_nonzero_credit": 0,
+      "last20_reward_explore": 0,
+      "last20_reward_greedy": 0
+    },
+    "sum/gloss": {
+      "selected": 8023,
+      "departed": 8023,
+      "nonzero_credit": 0,
+      "reward_explore": 0,
+      "reward_greedy": 0,
+      "advantage_sum": 0.0,
+      "delta_R_sum": 0.0,
+      "delta_E_sum": 0.0,
+      "delta_A_sum": 0.0,
+      "last20_selected": 425,
+      "last20_nonzero_credit": 0,
+      "last20_reward_explore": 0,
+      "last20_reward_greedy": 0
+    },
+    "sum/or": {
+      "selected": 3918,
+      "departed": 3918,
+      "nonzero_credit": 0,
+      "reward_explore": 0,
+      "reward_greedy": 0,
+      "advantage_sum": 0.0,
+      "delta_R_sum": 0.0,
+      "delta_E_sum": 0.0,
+      "delta_A_sum": 0.0,
+      "last20_selected": 166,
+      "last20_nonzero_credit": 0,
+      "last20_reward_explore": 0,
+      "last20_reward_greedy": 0
+    },
+    "xor/and": {
+      "selected": 1165,
+      "departed": 1165,
+      "nonzero_credit": 11,
+      "reward_explore": 2,
+      "reward_greedy": 9,
+      "advantage_sum": 0.15469145489259972,
+      "delta_R_sum": 0.0,
+      "delta_E_sum": 0.0,
+      "delta_A_sum": 0.15469145489259972,
+      "last20_selected": 68,
+      "last20_nonzero_credit": 1,
+      "last20_reward_explore": 1,
+      "last20_reward_greedy": 0
+    },
+    "xor/or": {
+      "selected": 1382,
+      "departed": 1382,
+      "nonzero_credit": 0,
+      "reward_explore": 0,
+      "reward_greedy": 0,
+      "advantage_sum": 0.0,
+      "delta_R_sum": 0.0,
+      "delta_E_sum": 0.0,
+      "delta_A_sum": 0.0,
+      "last20_selected": 62,
+      "last20_nonzero_credit": 0,
+      "last20_reward_explore": 0,
+      "last20_reward_greedy": 0
+    },
+    "xor/not": {
+      "selected": 1099,
+      "departed": 1099,
+      "nonzero_credit": 1042,
+      "reward_explore": 289,
+      "reward_greedy": 753,
+      "advantage_sum": 214.0312400453913,
+      "delta_R_sum": 0.0,
+      "delta_E_sum": 0.0,
+      "delta_A_sum": 214.0312400453913,
+      "last20_selected": 63,
+      "last20_nonzero_credit": 55,
+      "last20_reward_explore": 15,
+      "last20_reward_greedy": 40
+    },
+    "xor/gloss": {
+      "selected": 3417,
+      "departed": 3417,
+      "nonzero_credit": 0,
+      "reward_explore": 0,
+      "reward_greedy": 0,
+      "advantage_sum": 0.0,
+      "delta_R_sum": 0.0,
+      "delta_E_sum": 0.0,
+      "delta_A_sum": 0.0,
+      "last20_selected": 171,
+      "last20_nonzero_credit": 0,
+      "last20_reward_explore": 0,
+      "last20_reward_greedy": 0
+    },
+    "xor/descend": {
+      "selected": 943,
+      "departed": 943,
+      "nonzero_credit": 293,
+      "reward_explore": 62,
+      "reward_greedy": 231,
+      "advantage_sum": 75.014595983871,
+      "delta_R_sum": 0.0,
+      "delta_E_sum": 0.0,
+      "delta_A_sum": 75.014595983871,
+      "last20_selected": 52,
+      "last20_nonzero_credit": 22,
+      "last20_reward_explore": 6,
+      "last20_reward_greedy": 16
+    }
+  },
+  "operators": {
+    "conjunction": 36,
+    "disjunction": 4
+  },
+  "operator_runs": {
+    "1": [
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ]
+    ],
+    "2": [
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ]
+    ],
+    "3": [
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ]
+    ],
+    "4": [
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ]
+    ],
+    "5": [
+      [
+        "disjunction"
+      ],
+      [
+        "disjunction"
+      ],
+      [
+        "disjunction"
+      ],
+      [
+        "disjunction"
+      ]
+    ],
+    "6": [
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ]
+    ],
+    "7": [
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ]
+    ],
+    "8": [
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ]
+    ],
+    "9": [
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ]
+    ],
+    "10": [
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ],
+      [
+        "conjunction"
+      ]
+    ]
+  },
+  "stores": [
+    {
+      "name": "sum-01",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "sum-02",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "sum-03",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "sum-04",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "sum-05",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "sum-06",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "sum-07",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "sum-08",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "sum-09",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "sum-10",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "xor-01",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "xor-02",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "xor-03",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "xor-04",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "xor-05",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "xor-06",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "xor-07",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "xor-08",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "xor-09",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "xor-10",
+      "rows_used": 8,
+      "capacity": 1024,
+      "sentence_rows": 4,
+      "definition_rows": 4,
+      "addresses": [
+        -6736319402935933635,
+        -2164899334207564249,
+        -2449234306209964231,
+        -8600101167942099913
+      ],
+      "sentence_indices": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "content_keys": [
+        "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+        "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+        "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+        "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+      ],
+      "witness_counts": [
+        400,
+        400,
+        400,
+        400
+      ],
+      "timestamps": [
+        400.0,
+        400.0,
+        400.0,
+        400.0
+      ],
+      "all_witness_counts": [
+        800,
+        800,
+        800,
+        800,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    {
+      "name": "mm-01",
+      "rows_used": 4,
+      "capacity": 1024,
+      "sentence_rows": 0,
+      "definition_rows": 4,
+      "addresses": [],
+      "sentence_indices": [],
+      "content_keys": [],
+      "witness_counts": [],
+      "timestamps": [],
+      "all_witness_counts": [
+        166,
+        166,
+        166,
+        166
+      ]
+    },
+    {
+      "name": "mm-02",
+      "rows_used": 4,
+      "capacity": 1024,
+      "sentence_rows": 0,
+      "definition_rows": 4,
+      "addresses": [],
+      "sentence_indices": [],
+      "content_keys": [],
+      "witness_counts": [],
+      "timestamps": [],
+      "all_witness_counts": [
+        70,
+        70,
+        70,
+        70
+      ]
+    },
+    {
+      "name": "mm-03",
+      "rows_used": 4,
+      "capacity": 1024,
+      "sentence_rows": 0,
+      "definition_rows": 4,
+      "addresses": [],
+      "sentence_indices": [],
+      "content_keys": [],
+      "witness_counts": [],
+      "timestamps": [],
+      "all_witness_counts": [
+        80,
+        80,
+        80,
+        80
+      ]
+    },
+    {
+      "name": "mm-04",
+      "rows_used": 4,
+      "capacity": 1024,
+      "sentence_rows": 0,
+      "definition_rows": 4,
+      "addresses": [],
+      "sentence_indices": [],
+      "content_keys": [],
+      "witness_counts": [],
+      "timestamps": [],
+      "all_witness_counts": [
+        92,
+        92,
+        92,
+        92
+      ]
+    },
+    {
+      "name": "mm-05",
+      "rows_used": 4,
+      "capacity": 1024,
+      "sentence_rows": 0,
+      "definition_rows": 4,
+      "addresses": [],
+      "sentence_indices": [],
+      "content_keys": [],
+      "witness_counts": [],
+      "timestamps": [],
+      "all_witness_counts": [
+        148,
+        148,
+        148,
+        148
+      ]
+    },
+    {
+      "name": "mm-06",
+      "rows_used": 4,
+      "capacity": 1024,
+      "sentence_rows": 0,
+      "definition_rows": 4,
+      "addresses": [],
+      "sentence_indices": [],
+      "content_keys": [],
+      "witness_counts": [],
+      "timestamps": [],
+      "all_witness_counts": [
+        144,
+        144,
+        144,
+        144
+      ]
+    },
+    {
+      "name": "mm-07",
+      "rows_used": 4,
+      "capacity": 1024,
+      "sentence_rows": 0,
+      "definition_rows": 4,
+      "addresses": [],
+      "sentence_indices": [],
+      "content_keys": [],
+      "witness_counts": [],
+      "timestamps": [],
+      "all_witness_counts": [
+        64,
+        64,
+        64,
+        64
+      ]
+    },
+    {
+      "name": "mm-08",
+      "rows_used": 4,
+      "capacity": 1024,
+      "sentence_rows": 0,
+      "definition_rows": 4,
+      "addresses": [],
+      "sentence_indices": [],
+      "content_keys": [],
+      "witness_counts": [],
+      "timestamps": [],
+      "all_witness_counts": [
+        164,
+        164,
+        164,
+        164
+      ]
+    },
+    {
+      "name": "mm-09",
+      "rows_used": 4,
+      "capacity": 1024,
+      "sentence_rows": 0,
+      "definition_rows": 4,
+      "addresses": [],
+      "sentence_indices": [],
+      "content_keys": [],
+      "witness_counts": [],
+      "timestamps": [],
+      "all_witness_counts": [
+        90,
+        90,
+        90,
+        90
+      ]
+    },
+    {
+      "name": "mm-10",
+      "rows_used": 4,
+      "capacity": 1024,
+      "sentence_rows": 0,
+      "definition_rows": 4,
+      "addresses": [],
+      "sentence_indices": [],
+      "content_keys": [],
+      "witness_counts": [],
+      "timestamps": [],
+      "all_witness_counts": [
+        80,
+        80,
+        80,
+        80
+      ]
+    }
+  ],
+  "mm_store_scope": "Numeric raw-forward gate creates four DEF rows and no sentence-closing rows.",
+  "ownership_conflicts": 0,
+  "original_receipt_files": 2119,
+  "original_receipt_unchanged": true,
+  "source_matched": true,
+  "source_files": 716,
+  "measurement_helpers_matched": 189,
+  "training_runs": 30,
+  "seeds": null,
+  "retries": 0,
+  "replacements": 0,
+  "missed_counts": [],
+  "bisections": "None required: every standing count met its expectation.",
+  "review": "Held for Claude review; no commit or item 6.5.",
+  "postprocessor_sha256": "31e614a2f1d550c06220c9fa85324eb5ac84613ff03c2447f5346badc9555778"
+}

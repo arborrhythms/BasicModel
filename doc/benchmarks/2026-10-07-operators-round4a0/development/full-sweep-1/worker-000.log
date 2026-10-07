@@ -1,0 +1,67 @@
+.............F...FF..F..........F....................................... [ 53%]
+.........................s.........F..........................           [100%]
+=================================== FAILURES ===================================
+______ test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe ______
+test/test_accessible_mind.py:38: in test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe
+    assert len(pointers) <= 5, "append must not copy the entire leaf history"
+E   AssertionError: append must not copy the entire leaf history
+E   assert 97 <= 5
+E    +  where 97 = len({4411630400, 4411630528, 4411635840, 4412035072, 4412037504, 4412068672, ...})
+___________ test_cue_fan_is_charged_and_scope_filters_before_ranking ___________
+test/test_accessible_mind.py:123: in test_cue_fan_is_charged_and_scope_filters_before_ranking
+    assert [row['index'] for row in result['value']] == [2, 3]
+E   assert [] == [2, 3]
+E     
+E     Right contains 2 more items, first extra item: 2
+E     Use -v to get more diff
+___ test_priming_adds_code_disjoint_rows_and_contiguity_breaks_equal_matches ___
+test/test_accessible_mind.py:137: in test_priming_adds_code_disjoint_rows_and_contiguity_breaks_equal_matches
+    assert [row['index'] for row in found] == [first, third]
+E   assert [0] == [0, 0]
+E     
+E     Right contains one more item: 0
+E     Use -v to get more diff
+_____ test_query_retrieves_every_old_cued_frame_without_an_implicit_write ______
+test/test_accessible_mind.py:190: in test_query_retrieves_every_old_cued_frame_without_an_implicit_write
+    assert len(found['frames']) == 2
+E   AssertionError: assert 1 == 2
+E    +  where 1 = len((mappingproxy({'np1': tensor([1., 0., 0., 0., 0., 0., 0., 0.]), 'vp': tensor([0., 0., 0., 0., 0., 0., 0., 0.]), 'np2':...on': None, 'metadata_complete': True, 'index': 0, 'match': 1.0, 'contiguous': False, 'leaf_codes': ((0,), (), (1,))}),))
+_______ test_rows_written_before_owner_binding_never_index_allocator_ids _______
+test/test_accessible_mind.py:411: in test_rows_written_before_owner_binding_never_index_allocator_ids
+    assert store.leaf_terms(0, 0) == ()
+E   assert (3, 7) == ()
+E     
+E     Left contains 2 more items, first extra item: 3
+E     Use -v to get more diff
+________ test_provisioning_retains_completed_fields_and_shared_row_ids _________
+test/test_assertion_provenance.py:20: in test_provisioning_retains_completed_fields_and_shared_row_ids
+    assert int(store.row_ids[row]) > 0
+E   assert -853327928301233010 > 0
+E    +  where -853327928301233010 = int(tensor(-853327928301233010))
+=============================== warnings summary ===============================
+test/test_abstraction_order_canonical.py::test_forward_keeps_the_property_basis_without_a_word_analysis_dictionary
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes
+  /Users/arogers/github/basicmodel-round4a0/bin/Models.py:7194: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2858/test_supervised_update_cannot_0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_attention_promotion.py::test_registered_pool_checkpoint_has_one_sidecar_restore
+  /Users/arogers/github/basicmodel-round4a0/test/test_attention_promotion.py:231: UserWarning: Space ownership migration: removed 102 duplicate alias checkpoint keys.
+    assert target.load_weights(path, require_match=True)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_accessible_mind.py::test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe
+FAILED test/test_accessible_mind.py::test_cue_fan_is_charged_and_scope_filters_before_ranking
+FAILED test/test_accessible_mind.py::test_priming_adds_code_disjoint_rows_and_contiguity_breaks_equal_matches
+FAILED test/test_accessible_mind.py::test_query_retrieves_every_old_cued_frame_without_an_implicit_write
+FAILED test/test_accessible_mind.py::test_rows_written_before_owner_binding_never_index_allocator_ids
+FAILED test/test_assertion_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+6 failed, 127 passed, 1 skipped, 4 warnings in 9.84s

@@ -1810,3 +1810,611 @@ findings of §27 and the singular values. Landing as for round 2 — the
 commit includes the plan, the toys (`credit-loop`, `identity`) and all
 uncommitted documents — then push and bump. Round 3b is folded into round
 4 (§28); the round-4 text follows its own fixed-point work.
+
+## 30. Round 4's fixed point (Claude, 2026-10-07): meanings by membership
+
+Worked before the text (`doc/benchmarks/2026-10-07-meaning-toy/`). The
+bootstrap problem (§3, §6: "a zero complement cannot bootstrap itself from
+zero occurrence roots") dissolves if the rows a word occurs in contribute
+their *identity* as wholes rather than their composed meaning: each stored
+sentence row gets a fixed sparse code in the meaning complement, seeded from
+its content key (no RNG, no parameter — 3a's construction one order up), and
+a word's order-0 meaning is the existing recency-weighted context mean over
+those codes. This is random indexing, and it is Alec's "co-activation flows
+from the shared-wholes representation" literally: words share meaning to the
+degree they share sentences. **It needs no owner** (§3 question 1): like the
+identity codes it is an index, not a trained parameter — "codes by
+distribution, maps by the objectives" (2026-09-21).
+
+Composition on the meaning block is extensional: conjunction = min (zero is
+false — a membership field, the catalogue's monotonic variant, not the
+silence-preserving meet of the form face), disjunction = max, sum = mean.
+On the XOR corpus the membership certificate is exact (the extent of `a∧b`
+is the sentences containing both, of `a∨b` those containing either); both
+operators' meaning roots are equally well conditioned, so the class gate
+still cannot choose the operator — the certificate is the operator's test,
+static, as the form audit is identity's; the sum control's mean stays at the
+floor. At corpus scale the code is a Bloom-like sketch (false memberships
+fall from ~10% at K = 64 to ~0.04% at K = 1024 for 400 sentences), so
+membership is answered through the index and the code carries similarity
+and composition.
+
+Round 4 splits: **4a, meanings exist** (this construction, the per-block
+composition, the certificate, expectation's target); **4b, the centroid**
+with membership wholes in the form space — which needs Alec's ruling first
+(§31 end); **4c** connectives' negation over meanings and the co-activation
+priming, after 4b.
+
+## 31. Round 4a hand-off to Codex (Claude, 2026-10-07)
+
+Start from the round-3a landing (`cce3a4f7b`). One change: order-0 meanings
+exist and compose extensionally. Specification: §6, §9.4, §13, §23 (the
+expectation note), §27–§28, §30; GradientFlow "The training step" and the
+context-mean paragraph; catalogue §4 (the monotonic membership variant).
+
+1. **Sentence identity codes.** Every stored sentence row (REL_NONE,
+   content-addressed) has a fixed sparse code in the meaning complement:
+   `s` ones of `K`, from a generator seeded by the row's content key (the
+   same key that content-addresses it; never the per-store occurrence
+   namespace), no global RNG, recomputable, not a parameter. `K` is the
+   configured complement width and `s` a configuration value: the grammar
+   gates get `K = 64`, `s = 3` (their complement is zero today); BasicModel
+   keeps its 896-wide complement with `s = 6`.
+2. **Order-0 meaning.** `occurrence_terms` keeps its membership (leaf
+   postings and references, DEF rows excluded), its recency weight and its
+   detachment, but each containing row contributes its identity code, not
+   its stored composed meaning. A word's meaning block is that mean; it is
+   snapshotted before the forward as now. Composed sentence meanings are
+   still stored as `o` and are what thought and expectation read.
+3. **Per-block composition.** The form block composes as in 3a (the fixed
+   projection, product / probabilistic sum of directions, normalized). The
+   meaning block composes by its own rule, never normalized with the form:
+   conjunction and intersection `min` (zero is false), disjunction `max`,
+   `sum` the mean; operators that do not declare a meaning write (round 1's
+   footprints) pass the meaning block through. Interpretation's
+   `[form × |a| | meaning × a]` is unchanged.
+4. **The semantic certificate (static, like the form audit).** For every
+   pair of words in each configuration's vocabulary and every stored
+   sentence row: code membership of the `min` root equals the index's
+   "both", of the `max` root the index's "either". Exact on the grammar
+   gates; on BasicModel's local corpus reported as a false-membership rate
+   at its width (diagnostic, not a gate), membership itself being answered
+   through the postings.
+5. **Expectation's target.** The predictor trains on the committed (kept)
+   trial's row only, not on both trials (§23). `E` remains zero in these
+   gates (no prior context); the focused test covers it.
+6. **Not this round.** The centroid and any form-space use of membership
+   wholes (4b); negation over meanings and co-activation priming (4c).
+7. **Expectations.** Meanings distinct for every gate word; the certificate
+   exact; reconstruction 10/10 (the `R ≡ 0` audit unchanged); class 10/10 at
+   zero; sum 10/10 at ¼ (the mean keeps the meaning block additive); MM_xor
+   unchanged but for RNG. Both operators now read equally well, so final
+   operators may be mixed and the compose credit near zero — correct, and
+   reported; the operator's semantics is the certificate's to show.
+
+Tests: identity codes fixed across runs and independent of the global RNG;
+the context mean nonzero after one presentation and equal to the mean of
+the containing rows' codes; per-block composition (min/max/mean on the
+meaning block, the form block unchanged, no cross-block normalization); the
+certificate on the gate vocabularies and on a synthetic fixture with a
+known false membership at small `K`; expectation trained on the kept row
+only. Documents: GradientFlow (the bootstrap resolved; no owner, an index),
+Architecture's two-spaces section, catalogue §12 (4a), FutureWork (the
+complement's bootstrap item closed). Receipt
+`doc/benchmarks/2026-10-07-operators-round4a/`; measurement protocol as
+before; stop for Claude's review before any commit.
+
+**For Alec before 4b** (not blocking 4a): (i) in form space, the sentences
+containing a word are its wholes only if a sentence's form is the join of its
+words' forms; then a word's ceiling is "what always accompanies it", and the
+centroid mixes co-occurrence into the form. Should the centroid's wholes be
+membership wholes in the form, or should co-occurrence stay in the meaning
+complement only (the form's centroid then remains `L`, §28)? (ii) Over
+meanings, is a zero "false" (closed world: the extent's complement, `1 − x`)
+or "unknown" (Kleene: `not = −x`)? It decides what `not` does to a meaning
+in 4c.
+
+## 32. Alec's rulings on §31's two questions (2026-10-07)
+
+1. **The wholes of a word contain its adjacent words; its parts its
+   constituents; both determine its context in mereological space.** So
+   co-occurrence enters the form through the ceiling, by design. Technical
+   consequence: a whole's form is the join of its constituents' forms (the
+   whole is greater than its parts by construction, no room rule); the
+   narrowest wholes are the adjacent-word pairs, so
+   `U(w) = L(w) ∨ ⋀ L(neighbour)`, and the centroid is `c = L + α(U − L)`.
+   Verified on the repository's documents (`meaning-toy/sim4b_adjacent_ceiling.py`):
+   37% of words move, no collapse (.468 → .475), identity recoverable as
+   `[c = 1]`, collocates drawn together, the containment projection
+   repairing every violation the centroid causes. This is round 4b; it
+   supersedes §28's conclusion that the centroid waits for membership
+   meanings — §28 was right about letter-defined wholes only.
+2. **Conceptual space is bipolar evidence.** `(0,0)` is complete unknown,
+   `(0,1)` false, `(1,0)` true, `(1,1)` both; perceptual zero is nothing
+   perceived. So the meaning block is a pole pair per coordinate (Belnap's
+   bilattice), not a signed value: a word's meaning has its context mean on
+   the *for* pole and nothing on the *against* pole (absence of evidence is
+   unknown); conjunction is `(min⁺, max⁻)`, disjunction `(max⁺, min⁻)` —
+   round 1's explicit-pole rule — and `not` exchanges the poles. 2c's
+   interpretation rule `meaning × a` becomes: a negative activation exchanges
+   the meaning's poles, scaled by `|a|`. This amends §31 items 1–4 (below)
+   and absorbs 4c's negation item.
+
+**§31 amended.** (1) `K` counts pole pairs: the gates' complement is
+`2 × 64`; BasicModel's 896 holds 448 pairs (`s = 6`). (2) The context mean
+fills the *for* pole; the *against* pole starts at zero. (3) The meaning
+block composes by the bilattice: conjunction/intersection `(min⁺, max⁻)`,
+disjunction `(max⁺, min⁻)`, `sum` the mean of each pole, `not` the pole
+exchange; interpretation exchanges the meaning's poles for a negative
+activation (form × `|a|` unchanged). (4) The certificate adds negation:
+`not a` has `a`'s extent on the *against* pole and nothing *for*; `a ∧ not b`
+has nothing *for* (open world) and `b`'s extent *against*. (7) A narrowing
+`not` now changes the root's meaning, so narrowing departures carry credit;
+with the 2e reader rule (kept root only on narrowing departures) the answer
+is expected to teach the policy not to negate asserted sentences — reported.
+
+## 33. Occurrence ids, content keys, and the store's growth (Codex's 4a question, 2026-10-07)
+
+**What occurrence ids are.** A stored row is an *occurrence*: one sentence
+read at one place in one document (Alec, 2026-09-30: an identity is nothing
+but its occurrences in LTM tied by references; 2026-10-03: a row's address
+is its own `.where`/`.when` bands, queried by content). The occurrence id
+(`occurrence_id`, a per-store counter under a random per-store namespace) is
+that episode's durable handle: references in slots, object permanence,
+estimate/observation pairs and thought history point at occurrences, and
+row indices move under compaction, so references cannot use them; the
+namespace keeps one store's references from aliasing another's. A content
+key is a different thing: what all occurrences of the same sentence share.
+Nothing before 4a needed it, which is why there was no API; Codex is adding
+it (`content_key`, `bind_sentence_content`, `rows_for_content`).
+
+**The growth.** Every presentation of a sentence appends a new occurrence.
+In the gates the same four sentences are re-stored every epoch until the
+store is full — every gate word shows 510 occurrences at the end of every
+campaign since 6.8, ~1,020 rows at the default capacity of 1,024 — after
+which `append` returns −1 and every later sentence is silently not stored.
+At that default, BasicModel's LTM stops recording after about a thousand
+sentences. The cause is that a re-reading of the same sentence at the same
+address (same document, same sentence index) is treated as a new episode,
+though by the 2026-10-03 rule it has the same address.
+
+**Proposed (Alec to confirm):** write by address — the store's write is an
+upsert keyed by (content key, document, `.when`): a re-reading re-witnesses
+the existing occurrence (recency and evidence refreshed), only a genuinely
+new occurrence appends; a full store never drops silently — it raises, and
+forgetting (sequence item 5) is the standing answer to a full store. For
+4a itself the meaning code is seeded by the content key, so duplicate
+occurrences do not fragment a meaning; the upsert is a correctness fix for
+the store, and goes in as its own step before 4a's measurement (it changes
+what the gates store, so it is measured on its own: four rows in the XOR
+gate instead of ~1,020, gates otherwise unchanged).
+
+## 34. Round 4a-0: the occurrence's address (Alec, 2026-10-07: "Yes, pull it forward")
+
+The relative `.when` of the 2026-10-03 ruling (scheduled with 5.5) is pulled
+forward as a prerequisite step before 4a. A stored sentence's identity is its
+address — its document, its index in that document, its content — so a
+re-reading is recognized and re-witnessed instead of appended; the counter
+occurrence id and the per-store namespace go away, replaced by an integer
+hash of the address that references use as its short name; a full store
+raises instead of dropping writes. Measured on its own (it changes what the
+gates store: four rows in the XOR gate instead of ~1,020), gates expected
+unchanged; then 4a resumes on top, its identity codes seeded by the
+sentence content key and its context means over one row per occurrence.
+The text is the hand-off below (also given in chat).
+
+## 35. One combined step to the end of the update (Alec, 2026-10-07)
+
+Alec: combine the remaining rounds into a single step — "more work, [or]
+testing overwhelms the implementation rate" — finish to round 6, then 6.5.
+So 4a-0, 4a, 4b, the priming, round 5 and round 6 are one hand-off with one
+measurement. Attribution is kept by three means instead of separate
+campaigns: every part that can move a gate is a model.xml parameter (on by
+default) so a miss can be bisected by switching parts off; every part has a
+static certificate or focused test that holds or fails on its own; and the
+cost records of 2c–2e stay in the receipt.
+
+Round 5's fixed point (`doc/benchmarks/2026-10-07-filter-toy/`): the soft
+filter has a degenerate fixed point — started undecided with the budget on,
+it switches every word off before the reader can read and nothing pushes
+back. Started from the hard mask's present behaviour (attend everything)
+with a small budget (λ = .001), it keeps the content pair, removes the
+fillers, and its hard choice at test agrees with the soft one (top-2 = the
+content pair on every held-out sentence; accuracy 1.0 against .86 with
+every word attended). With identity by construction an unattended word
+costs perception nothing, so §8.1's factored cost reduces to the answer
+and expectation through the root, plus the budget. The round-5 gate is that
+toy's task in the model: `XOR_filler`, the XOR content pairs among filler
+words.
+
+## 36. The combined hand-off to Codex: the rest of the operators update (Claude, 2026-10-07)
+
+One step, one measurement (§35). It supersedes the separate measurements of
+4a-0 (§34) and 4a (§31–§32); their specifications stand and are parts A and
+B. Start from the round-3a landing plus the uncommitted 4a/4a-0 work.
+
+**A. The occurrence's address** — §34's text as given: relative `.when`
+(the sentence's index in its document, absolute time in the timestamp
+column only), document keys, the address key replacing the occurrence
+counter and namespace, the write as an upsert by address (re-reading
+re-witnesses), a full store raises. Not optional.
+
+**B. Meanings** — §31 as amended by §32: sentence identity codes seeded by
+the content key; order-0 meaning = the context mean of the containing rows'
+codes on the *for* pole; the meaning block bipolar, composing by the
+bilattice (`∧ = (min⁺, max⁻)`, `∨ = (max⁺, min⁻)`, `sum` = per-pole mean,
+`not` = pole exchange); interpretation exchanges the meaning's poles for a
+negative activation; the semantic certificate with its negation cases;
+expectation trained on the kept row. Parameter: the meaning width
+(`0` switches B off).
+
+**C. The centroid** — §32 item 1, verified on text
+(`meaning-toy/sim4b_adjacent_ceiling.py`): a whole's form is the join of
+its constituents' forms; a word's wholes are the adjacent-word pairs it
+occurs in (distinct occurrences, from the address-keyed rows); the ceiling
+`U(w) = L(w) ∨ ⋀ L(neighbour)`; the symbol `c = L + α(U − L)` with
+`α = W_U/(W_P + W_U)`, `W_P` the word's part atoms and `W_U` its distinct
+adjacent occurrences; after placement the containment projection (cap each
+contained word by its containers in decreasing part count; never below `L`,
+§16 item 7); the binding kernels take the projection of `c`; the index keys
+`L = [c = 1]`; the room pass is retired. Certificate (static): the share of
+words moved, mean pairwise cosine before and after (no collapse), identity
+recovered from `c`, containment violations before and after the projection
+(zero after). Parameter: `symbolCentroid`.
+
+**D. Priming through shared wholes.** The existing priming diffusion
+(concept-store edges, `primingSpread`) gains the membership edges — word ↔
+the address-keyed sentence rows containing it — with each node's outflow
+normalized by its degree so frequent words do not dominate. Forward-only,
+detached, as priming is now; it reaches the attention walk through the
+existing codebook-retrieval prior. Report the priming mass on content and
+filler words in the filler gate. Parameter: `membershipPriming`.
+
+**E. The attention filter** (§8.1; fixed point §35,
+`doc/benchmarks/2026-10-07-filter-toy/`). A weight per word,
+`m = σ(head(detached word code) + prior)`, **initialized to attend
+everything** (bias such that `m ≈ .95`; the hard mask's present behaviour —
+started undecided, the filter collapses to attending nothing). The walk's
+structural and field actions are unchanged; the filter replaces the hard
+`accepted` decision in training. An unattended word drops out of
+composition by interpolating its leaf toward the operation's identity:
+the form block's product toward the all-ones direction, the meaning
+block's `∧` toward `(1, 0)` and `∨` toward `(0, 1)`, `sum` by weight. The
+filter trains pathwise on the owner-step cost through the root (answer and
+expectation; reconstruction is exact and contributes nothing) plus a graded
+budget `λ Σ m`, `λ = .001` relative to the answer's relative error (a
+parameter); the hard `QueryWorkBudget` allowance stays for the walk's
+rounds. At test the filter is hard: `m > ½` admits a word, with the budget's
+top-k as a cap when configured. Parameter: `attentionFilter`.
+**The gate, `XOR_filler.xml`:** XOR_grammar's four content pairs embedded
+among two to four filler words drawn from a fixed eight-word filler
+vocabulary, in random positions; training and held-out arrangements
+generated deterministically from the dataset definition; bars: class 4/4
+correct and MSE < .05 on held-out arrangements with the hard filter, and
+the two highest-weighted words equal to the content pair on ≥ 95% of
+held-out sentences.
+
+**F. The catalogue's remaining sections** (catalogue §5–§6; plan §2 round
+4): `lower` as the determiner — `a` mints a referent, `the` binds to an
+earlier occurrence by its address key (A), `every` stays high-order —
+`generic`, `lift` (§5.2–§5.6); the relations and the sentence that states a
+definition as an `equal`/DEF row (§6.2–§6.3); operators tested by name
+(about 140 places) become declared properties; the item-7 residue
+(predicate identity as a rule property; `GrammaticalQueryRegistry`
+retired). `surface`, tense, morphology, aspect and `null` stay 5.5's.
+Focused tests per catalogue section; no gate parameter.
+
+**G. Measurement.** One full sweep; then the thirty standing trainings
+(sum, XOR class and reconstruction, MM_xor) and ten `XOR_filler`
+trainings; the static certificates (form audit, semantic certificate,
+centroid and containment audit, consumer census) and the store report (rows
+used against capacity; the XOR gate's four rows). Expectations: class 10/10
+at zero; reconstruction 10/10 (`R ≡ 0`); sum 10/10 at ¼ (every part keeps
+the control additive); MM_xor 10/10 (path RNG-only, bisection repeated);
+the filler gate at its bars. If a count misses, bisect by switching B–E off
+one at a time on the failing gate and report which part moved it, with the
+cost records. Receipt `doc/benchmarks/2026-10-07-operators-final/`; no seed,
+retry or replacement; stop for Claude's review before any commit. Then item
+6.5.
+
+
+## 37. Attention is a mask over `.where`, not a filter (Alec, 2026-10-07); §36 part E withdrawn
+
+Alec: "Attention is not a soft filter, it is a mask that operates on the
+`.where`. It moves from an initial global scope per sentence to a mask on
+each word, allowing serial processing (and various non-parallel grammar
+operations) to process a word at a time. It incurs a loss in so far as it
+filters out parts of the target; the part of the input that is not masked
+has a similar cost function that is applied to the percept/concept chain."
+
+My "soft filter" (§8.1 as I recorded it, §11 item 7, §35, §36 part E) was a
+per-word *relevance* weight trained to drop words the answer does not need;
+that is not attention. Attention is the narrowing walk that exists (6.8):
+the open bracket over the sentence, divide/descend/gloss to each word, the
+scope handed to conceptual space, every word visited (the walk reserves its
+rounds). Its loss is what its mask leaves out of the target — under identity
+by construction, a word missing from the reconstruction — which the
+owner-step trial cost already charges and credits to the walk's choices
+(round 2). **§36 part E and the `XOR_filler` gate are withdrawn**; §8.1's
+"decided in direction" and §11 item 7 are superseded; the filter toy stays
+as a record of the withdrawn design. Part D (priming) stays: it is the
+walk's prior. Architecture, GradientFlow and FutureWork corrected the same
+day.
+
+## 38. The combined hand-off as amended (Claude, 2026-10-07)
+
+§36 with part E and the `XOR_filler` gate removed (§37), parts A and B
+written out in full so the text stands alone. Given to Alec for Codex the
+same day; the chat text is the hand-off.
+
+## 39. Review of the combined step (Claude, 2026-10-07): not accepted; three repairs
+
+Receipt `doc/benchmarks/2026-10-07-operators-final/`. Delivered as specified
+and documented with unusual care (including an invalid first bisection
+harness, caught and replaced by verified switches). Results: class **10/10**
+at zero; reconstruction **9/10**; sum additive 10/10 but at ¼ **9/10**;
+MM_xor **10/10**; store 8/1,024 rows per grammar run (4 sentences re-witnessed
+400 times, 4 DEF), addresses identical across runs; the semantic certificate
+exact on the gates (BasicModel diagnostic: `a ∧ b` .03%, `a ∨ b` 3.7% false
+membership, no false negatives); the centroid moves 44.7% of BasicModel's
+words with no collapse (.467 → .472) and containment 3,114 → 0; no
+name-dispatch left (72 rules, 46 sites). Not accepted, for these reasons:
+
+1. **Negation reaches reconstruction again, now through the meaning block.**
+   XOR-09's final greedy walk applies `not`, `and`, `or` over the two-word
+   bracket before descending — 2b's signature — its `R` is .018 on every
+   epoch, and its readback is one word per sentence. XOR-wide, 1,146 `not`
+   departures change `R`. 2c kept negation off the form (`|a|`), but B
+   exchanges a negated leaf's meaning poles, and the inverse searches a bank
+   holding each word's positive meaning only, so a negated leaf cannot be
+   recomposed. The inverse must offer both of a word's symbols — "every
+   concept has two symbols; they differ only in sign" (Alec, 2026-09-23) —
+   the stored meaning and its pole exchange, form identical. Reconstruction
+   is then blind to polarity, as it must be; the answer alone judges `not`.
+2. **A bootstrap inconsistency.** Every grammar and sum run has
+   `R = .018` on both trials at epoch 2 and zero afterwards (C-off removes
+   it): the first epoch at which meanings and centroids become nonzero. The
+   composition, the inverse and the readback within one forward must read
+   the same snapshot of codes; a code that moves between composing and
+   inverting is reconstructed wrongly once.
+3. **Sum-08's reader stalls at a common offset** (predictions .006–.008,
+   MSE .49 instead of ¼, contrast 3e-8): the control stays additive but the
+   presented reader never learns the mean. Each single switch-off passes,
+   which shows trajectory sensitivity, not a cause. Needed: an all-on replay
+   of sum-08 from its saved entry state (determinism), with the root's
+   per-block norms and the reader's pre-activations, outputs and gradient
+   norms over training, to say why the affine read cannot reach the mean.
+4. **No green sweep on the measured source.** The one sweep ran on the
+   pre-repair source (20 failures, repaired, focused contracts green); the
+   measured source needs its own full sweep.
+
+**MM_xor.** The bisection is decisive and honest: the path is not RNG-only —
+the relative `.when` band enters the raw numeric forward through
+`PartSpace._embed_radix`; restoring the old band at that one site restores
+the landing's output. That is A working as specified (a numeric row is its
+own document; its band is now constant where the absolute clock varied).
+The gate counts as live, and holds at 10/10.
+
+**Observation.** Membership priming produces boosts of 8.35 and 3.65 against
+a neutral 1.0; final word reads are code winners without a priming
+tie-break, so no effect is shown, but the boost's range should be bounded
+(normalized to the neutral 1.0) before priming meets a corpus where it can
+decide reads.
+
+## 40. Repair pass for the combined step (Claude, 2026-10-07)
+
+Start from the measured combined source
+(`doc/benchmarks/2026-10-07-operators-final/delivered-source/`). Four
+repairs, then the same measurement once.
+
+1. **Polarity-blind inverse** (as restated in §41). The pair search, the
+   decomposition chooser's shortlist and the readback identify each word by
+   its signless form alone; the word's meaning is then read with the
+   polarity its leaf carries. One bank entry per word. A negated leaf
+   recomposes exactly and reads back as its word. Certificate
+   before the trainings: the forced `not/and/or/descend` prefix on the
+   frozen fixture, with B and C on, recovers 4/4 multisets at zero pair
+   residual and `R = 0`; the narrowing `not` departures then tie on `R`,
+   and the answer term alone credits them.
+2. **One snapshot per forward.** The meaning context means and the
+   centroids are snapshotted once before the forward, and composition,
+   inverse search and readback all read that snapshot; nothing refreshes
+   them until the forward's writes are committed. Expected: `R ≡ 0` on every
+   trial of every run from epoch 1, including epoch 2.
+3. **Sum-08 diagnosed.** Replay sum-08 all-on from its saved entry state
+   (it must reproduce .4929), recording per epoch the root's form and
+   meaning norms, the reader's pre-activation, output and gradient norms;
+   state the cause. If it is a scale or saturation of the reader's input,
+   fix it (per-block normalization of what the reader reads); if it is
+   neither, report it without a fix.
+4. **Bounded priming boosts.** Membership priming's boosts are normalized so
+   the neutral boost is 1.0 and the largest is at most 2.0 (a parameter);
+   report the resulting range.
+
+Then one full sweep on the delivered source (must be green), the thirty
+standing trainings, and the certificates and store report as before;
+expectations as §38 (class 10/10, reconstruction 10/10 with `R ≡ 0`, sum
+10/10 at ¼, MM_xor 10/10 live). Receipt
+`doc/benchmarks/2026-10-07-operators-final-b/`; the first receipt preserved
+intact; stop for Claude's review before any commit.
+
+## 41. The order alternation and the "two symbols" (Alec and Claude, 2026-10-07)
+
+Alec: every concept has positive and negative evidence (accounting for its
+magnitude when composed of several concepts); the original tower alternated
+perceptual parts/wholes → concept → two symbols → concepts over the field of
+symbols; since 10-04 a zeroth-order concept's symbol is its location in
+perceptual (mereological) space, leaving no subsequent symbol — is there a
+reason to add one? Following perceptual parts/wholes with a symbol would not
+respect the perceptual/conceptual alternation.
+
+Claude's reading (for Alec's confirmation): symbols are perceptual objects
+(forms, signifiers), concepts conceptual ones, and the alternation holds:
+percepts (perceptual) → zeroth-order concept, the aggregation of parts and
+wholes (conceptual) → its symbol, the resulting location (perceptual) →
+first-order concept, composition over symbols (conceptual) → its symbol, the
+sentence's location as the whole of its words (perceptual) → … No symbol
+is added after the location; a second one would be perceptual after
+perceptual. "Two symbols differing only in sign" (2026-09-23) does not
+survive: perception has no sign, so a concept has one signless symbol; the
+two signs belong to its evidence (for, against), which is conceptual.
+
+Consequence for §40 item 1: the inverse identifies each word by its
+signless form alone (the pair search and the decomposition shortlist on the
+form block), then reads the word's meaning with the polarity its leaf
+carries — polarity-blind by construction, one bank entry per word. If Alec
+confirms, the 2026-09-23 wording in the accessible-mind spec (§2.6.2
+amendment) and Philosophy is amended to: one signless symbol per concept, in
+perceptual space; two evidence poles on its meaning, in conceptual space.
+
+## 42. The tetralemma at the leaf (Alec, 2026-10-07); §41's reading retracted; repair item 0
+
+Alec: "This does not respect the tetralemma. There is positive and negative
+evidence, and they live in different swim lanes. Each contributes to one
+positively-valued symbol." Two-truths §1.1 (from his 11c decision,
+2026-09-24) already says so: every concept keeps `(c⁺, c⁻) ∈ [0,1]²`, two
+positive symbols sharing one identity and one code; store the pair, never a
+signed collapse, which loses *both* from *neither*. §41's "one signless
+symbol, evidence as its magnitude" is withdrawn; the alternation it defended
+holds without it: the zeroth-order concept's symbols are its location at
+two magnitudes, perceptual; no further symbol follows.
+
+**Where the code collapses the pair.** `ModelAttention.pole_activation`
+forms `net = pair⁺ − pair⁻` and keeps only its sign on a single
+"signed activation"; interpretation then scales the meaning by that scalar
+(2c's `meaning × a`, the combined step's "poles exchanged when `a < 0`").
+The attention walk itself is two-lane (`field_reduce`: and `(min⁺, max⁻)`,
+or `(max⁺, min⁻)`, not = exchange; `narrowing_mask` reads pure/both/neither)
+and the stored row keeps `(c_plus, c_minus)` by the spec's rule (min over
+nonzero contributions per pole, `ClauseJournal.metadata`); the collapse is
+confined to the handoff and the leaf.
+
+**Repair item 0 (before §40's items).** The pair is carried to the leaf:
+`[form × presence | code × c⁺ | code × c⁻]` — the form at its identification
+presence (signless), the for lane at `c⁺`, the against lane at `c⁻`;
+`pole_activation`'s net and sign and the single signed activation are
+retired; interpretation applies the two magnitudes to the two lanes;
+`_pushed_word_slab`, the reference slab and the closing read the pair.
+Operators act lane by lane (catalogue §3.8, restated). Certificate: the
+four corners at a leaf — `(1,0)` fills the for lane with the code, `(0,1)`
+the against lane, `(1,1)` both, `(0,0)` neither; conjunction and
+disjunction of corner pairs by the lane rules; the row's pair by the
+required-evidence read (A-true and B-false gives both); and an AST audit
+that no site between the walk's poles and the stored row subtracts the
+lanes or takes a sign. §40 item 1 (the inverse identifies by the signless
+form, then reads both lanes with the leaf's pair) stands and follows.
+
+**One ruling still needed: the two zeros.** The spec's evidence pair treats
+a zero pole as unknown ("never a veto": required evidence is min over
+*nonzero* contributions). The meaning *code* of part B is an extent over
+the read corpus, where a zero bit is a known absence (the corpus is complete
+knowledge of what was read), so its conjunction is min over *all* bits
+(the membership certificate). Both rules are stated; Alec to confirm that
+the extent code's zero is a known absence while the evidence pair's zero is
+unknown — or that the code too is min over nonzero, in which case `a ∧ b`'s
+extent cannot be read from codes, only from postings.
+
+
+## 43. Attention and the corners (Alec, 2026-10-07)
+
+Alec: attention over a wide field generally accumulates *both*; narrowed to
+a homogeneous object (or a symbol), the unipolar concept pervades it.
+Confirmed, and already the walk's law: `narrowing_mask` reads the bracket's
+pair — both permits divide, pure permits gloss, neither permits descend —
+so the walk divides at both until each bracket is pure. The handed-off pair
+of an identified word is therefore unipolar (or neither); *both* re-arises
+by composition at the row (A-true and B-false), which is why the lanes must
+reach the leaf. Union (max over an extent's positions) and pervasion (min)
+coincide exactly on a pure extent. Recorded in Architecture's attention
+paragraph.
+
+Alec, same day: "So heterogeneity is a cue to narrow attention, or to learn
+more." Yes, at two timescales: within a reading, *both* over a bracket cues
+division until the parts are pure (the walk, now); across occurrences, a
+*both* that persists at the narrowest extent cues refinement of the concept
+into parts where the predicate is uniform (2026-09-23; at order 0 a
+distinguishing mint or a property split, above it a sub-concept); *neither*
+cues witnessing. The policy for the second cue — when to stop dividing the
+reading and refine the concept instead — remains FutureWork's "four corners
+as prompts".
+
+## 44. The two zeros resolved by magnitude (Alec, 2026-10-07)
+
+Alec: `(0,0)` is ignorance, but it may occur on a well-defined concept, where
+it means the concept's absence; whether a concept has been seen before is
+its vector's magnitude — which the 9-21 rule normalized so that a dot product
+yields the input's uncertainty — so let the concept grow in magnitude as it
+is learned, until it reaches 1.
+
+Three quantities, kept apart: the **direction** (identity, on the sphere),
+the **magnitude** (definedness, 0 → 1 with learning) and the **pair**
+`(c⁺, c⁻)` (evidence in this reading). A read is `|input| × m × cos`; a
+conjunction with an ill-defined concept is small, not false; `min` over all
+coordinates stands; the membership certificate holds exactly at `m = 1`;
+`(0,0)` is absence at `m = 1` and ignorance near `m = 0`, decided by nothing
+but `m`. §42's open ruling is closed.
+
+**Rule (Claude, for Codex unless Alec objects):** `m = n/(n + k)` with `n`
+the concept's witnessed occurrences (a word's containing rows; a row's
+re-witness count) and `k` the recurrence threshold already used for
+admission (4). The meaning code used in composition and reads is
+`m × unit(direction)`; a stored row's identity code likewise carries its
+`m`. Forms stay at full presence (identity by construction). The pair and
+the user's trust are evidence and are untouched. Certificate: `m` grows
+monotonically with witnesses and reaches 1 to within `1/(n+k)`; a conjunction
+with a concept at `m = ε` has for-lane mass at most `ε`; the membership
+certificate is exact at `m = 1`.
+
+## 45. Review of the repair pass (Claude, 2026-10-07): accepted as the operators-update landing
+
+**Alec accepted, 2026-10-07.** Commit, push and the WikiOracle submodule bump
+are authorized as one landing from round 3a. The [acceptance record](../benchmarks/2026-10-07-operators-final-b/acceptance.json)
+preserves the measured source and labels the first combined receipt rejected.
+
+Receipt `doc/benchmarks/2026-10-07-operators-final-b/` (measured source 716
+files, matching the working tree). Sweep green on the measured source
+(5,500 cases: 5,214 passed, 285 skipped, one non-strict XPASS). Thirty
+trainings: class **10/10** at zero (MSE ≤ 1.3e-8), reconstruction
+**10/10**, sum **10/10** at ¼ (.249999985–.25), MM_xor **10/10** (live; its
+`.when` path intentional). **`R` and `E` identically zero on all 64,000
+grammar trial rows**, including epoch 1 and the first nonzero-meaning
+snapshot. No seed, retry, replacement or bisection. At review, the first
+receipt's 2,119 files were unchanged; acceptance adds only its README status.
+
+Against §39–§42: (0) the pair reaches the leaf — `[form × presence |
+code × c⁺ | code × c⁻]` — with `pole_activation`'s net and sign gone;
+the corner certificate is right at every corner, including *true ∧ both =
+both*, *true ∧ neither = neither*, *true ∨ neither = true*, and A-true with
+B-false stored as *both* by the required-evidence read; the AST census
+lists 24 path sites and 11 direct accesses with zero cross-lane arithmetic,
+sign or lane reduction, and mutation tests reject injected ones. (1) The
+inverse identifies by the signless form, one entry per word, and reads the
+lanes independently; the frozen `not/and/or/descend` prefix recovers 4/4 at
+zero residual with B and C on. (2) One snapshot per forward, taken before
+lexical staging: the epoch-2 artifact is gone. (3) Sum-08 reproduced to the
+digit (.49290955) and explained: the reader had reached the mean by epoch
+380 and then diverged as the record feature norm grew from ~16 to ~90 with
+accumulating priming (reader gradient norm .097 → 57.7); the two fixes —
+`readerBlockNormalization` (common per-block snapshot scales, affine in the
+root, never the root's own norm) and `primingMaxBoost = 2.0` — hold the
+control at ¼ in 10/10. (4) Priming bounded to [1.0, 2.0]; the four gate words
+show 2.0 for a present word and 1.36 otherwise.
+
+Also delivered: the `non` footprint corrected to declare its meaning write;
+a legacy-width guard; the documentation census excluding executable
+snapshot copies. Two earlier sweeps (three failures; one stopped by the
+source guard) are retained and superseded by the green one.
+
+**Observations, not blockers.** (a) `min`/`max` lose operand evidence by
+construction; the inverse "recovers compatible magnitudes" — a choice among
+the compatible ones, to be stated in GradientFlow. (b) One run ends
+all-disjunction, reading correctly: with both operators separable on
+meanings this is the indifference §27 predicted; the certificate, not the
+gate, carries the operator's semantics. (c) The corpus diagnostic's 3.7%
+false membership for `∨` at BasicModel's width is the sketch's limit;
+postings answer exactly.
+
+**Verdict.** Accept. Land as the operators-update landing (one commit over
+rounds 4a-0 to final-b with the plan, the toys, the specs and the documents),
+push, bump. §44 (magnitude as definedness) is the first item of the next
+step, merged into 6.5's text per Alec.

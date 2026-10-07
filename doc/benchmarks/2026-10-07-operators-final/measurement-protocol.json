@@ -1,0 +1,28 @@
+{
+  "round": "operators final",
+  "baseline": "cce3a4f7b6e72fab4a9a27fd70d3fa7602553814",
+  "scope": "Combined A\u2013E; source address mandatory, meanings/centroid/membership priming on by default",
+  "seed": null,
+  "retries": 0,
+  "replacement_runs": 0,
+  "trainings": 30,
+  "xor_shared_class_and_reconstruction": 10,
+  "sum_control": 10,
+  "mm_xor": 10,
+  "epochs": {
+    "xor": 400,
+    "sum": 400,
+    "mm_maximum": 200
+  },
+  "switches": {
+    "B": "ConceptualSpace.meaningWidth=0",
+    "C": "ConceptualSpace.symbolCentroid=false",
+    "D": "ConceptualSpace.membershipPriming=false"
+  },
+  "bisections": "Every failed standing gate gets B, C, D disabled separately, replaying its recorded unseeded entry RNG state. Separate results never replace a standing run. MM gets an unseeded paired raw-path comparison with the round-3a landing.",
+  "source": "delivered-source/source.zip",
+  "fixture": "test/fixtures/when-readers-round4a0.json",
+  "sweep": "One complete sweep retained with all failures (5341 cases); focused repairs and their source deltas are separately retained before the thirty trainings. No replacement sweep.",
+  "review": "Stop for Claude review; no commit and no item 6.5 yet",
+  "storage": "Each run reports capacity, sentence and DEF rows, address keys, witness counts. Numeric MM raw forward has no sentence closing; its store census is reported as observed."
+}

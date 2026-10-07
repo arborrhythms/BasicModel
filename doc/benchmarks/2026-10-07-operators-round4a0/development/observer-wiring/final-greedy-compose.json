@@ -1,0 +1,106 @@
+[
+  {
+    "batch_row": 0,
+    "sentence_slot": 0,
+    "word_rows": [
+      0,
+      1
+    ],
+    "sequence": [
+      {
+        "arity": 2,
+        "rule_id": 2,
+        "rule_name": "disjunction",
+        "surface_name": "disjunction",
+        "position": 1
+      }
+    ],
+    "cost_components": {
+      "reconstruction": 0.0,
+      "expectation": 0.15135252475738525,
+      "answer": 0.0
+    },
+    "selected_cost": 0.0,
+    "credit_total": 0.15135252475738525,
+    "decision": "tie:greedy",
+    "trial": "greedy"
+  },
+  {
+    "batch_row": 1,
+    "sentence_slot": 0,
+    "word_rows": [
+      0,
+      2
+    ],
+    "sequence": [
+      {
+        "arity": 2,
+        "rule_id": 2,
+        "rule_name": "disjunction",
+        "surface_name": "disjunction",
+        "position": 1
+      }
+    ],
+    "cost_components": {
+      "reconstruction": 0.0,
+      "expectation": 0.15935707092285156,
+      "answer": 0.0
+    },
+    "selected_cost": 0.0,
+    "credit_total": 0.15935707092285156,
+    "decision": "tie:greedy",
+    "trial": "greedy"
+  },
+  {
+    "batch_row": 2,
+    "sentence_slot": 0,
+    "word_rows": [
+      4,
+      1
+    ],
+    "sequence": [
+      {
+        "arity": 2,
+        "rule_id": 1,
+        "rule_name": "conjunction",
+        "surface_name": "conjunction",
+        "position": 1
+      }
+    ],
+    "cost_components": {
+      "reconstruction": 0.0,
+      "expectation": 0.1490594893693924,
+      "answer": 0.0
+    },
+    "selected_cost": 0.0,
+    "credit_total": 0.1490594893693924,
+    "decision": "tie:greedy",
+    "trial": "greedy"
+  },
+  {
+    "batch_row": 3,
+    "sentence_slot": 0,
+    "word_rows": [
+      4,
+      2
+    ],
+    "sequence": [
+      {
+        "arity": 2,
+        "rule_id": 2,
+        "rule_name": "disjunction",
+        "surface_name": "disjunction",
+        "position": 1
+      }
+    ],
+    "cost_components": {
+      "reconstruction": 0.0,
+      "expectation": 0.1569102257490158,
+      "answer": 0.0
+    },
+    "selected_cost": 0.0,
+    "credit_total": 0.1569102257490158,
+    "decision": "tie:greedy",
+    "trial": "greedy"
+  }
+]

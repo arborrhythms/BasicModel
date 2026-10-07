@@ -1,0 +1,254 @@
+{
+  "bin/ClauseJournal.py": {
+    "before": "195b7cfb13c9c68b7c5ec7ed4c70b87829fb8758b6ad03130de9a3909944568f",
+    "after": "2a987bd6a222b31d6d047bf9945a979a2d4453782e8f0f6c792d6fe17a7a27d1"
+  },
+  "bin/ClauseRow.py": {
+    "before": "5f2d9291897633824e65ed2eb73a1f924eb948b2a7e6f0192f28a3475e8de05f",
+    "after": "2558a4d6f29df4bfcb4e4146c03fc472e8c552a9113c8695500c747a75cf6efb"
+  },
+  "bin/ClauseScope.py": {
+    "before": "0017ed9d4b022d9b17026dc6eafb98f0aa3b227780bfe88cffe19e4c9121862b",
+    "after": "ea51465e9a020f252c64f1d132e643ae0d75dd9601536a3f817fc10ab599447e"
+  },
+  "bin/Definitions.py": {
+    "before": "4cd54a1178ea6d484ca13550d93c76f374422476b48f385682201d701803dee4",
+    "after": "4cb3afb103669eec2f7330b1f34c92214669951d13c6d99eef31ee38e0d6fe57"
+  },
+  "bin/Interpret.py": {
+    "before": "25724a27dced9f2587116ddf2ba6260951605b0e146d41d9e8406270ecdbb777",
+    "after": "e49c0e98417da3574e5134d32711daf03c37d7e0f918d9d2c15bec494260a24a"
+  },
+  "bin/Language.py": {
+    "before": "b699ddc5013a08b5894526b36693c5e160b2351c9670dde982a9f4656eda4166",
+    "after": "7107f60214ddb1d0c0d367fe9ee2f4aff06d6e9c6c63cab091192bc721ef7157"
+  },
+  "bin/Layers.py": {
+    "before": "6a17500ce455a00509c5a217da77e1e9ecc34023d486c8f2e75eaccc2057902b",
+    "after": "3abc2455c86a2669ba2c463a29193671eb8c368c9ea5905fe58d38bb4d1c60bb"
+  },
+  "bin/MemoryIndex.py": {
+    "before": "dac750b9089f00cd22816e027563d7d24549383cc2f292f9b0f40ceffe3a8a20",
+    "after": "3d9e3a62710a6e45428dae5fd1c8b21d4e1f64094d96a00de65db62426537db6"
+  },
+  "bin/Models.py": {
+    "before": "0f34e831760c131be551ce691daffc08ab3ef246732f190ae18e528a6ffe7465",
+    "after": "ae58acd7540b93a18f8e1c418d9d9f020942500502df9931026561d825bb94b1"
+  },
+  "bin/Occurrence.py": {
+    "before": null,
+    "after": "683ec127cc1d5890b45701094c342140aada8fe93e27fd41227b9067cb287e70"
+  },
+  "bin/Queries.py": {
+    "before": "a610cdba3fbf196b45fd1231b4ff40783dab7cd81eea4011929a2d8d5d7e44ec",
+    "after": "944d62bc731cb703d9ba7bbdd2cf752ffc9678309fa54977ae625d763295b59e"
+  },
+  "bin/ReferenceContext.py": {
+    "before": "97d5dcd40e69d4608b1b99bad89eb15cfd0018405dbd53e5a0645360112d754e",
+    "after": "2f40fa13c1b0361b0b70cff812f770856f0a7b96744a02bf75d2006a79cc9d0b"
+  },
+  "bin/Spaces.py": {
+    "before": "2dab4184bbc5171d2aa60a8616fc61439ddc3360e0b77299e1eb678d961832f5",
+    "after": "c0e0042e823cedfd13ca6f8bff3bc653daa4a6d7f9fe69d09f79cf86adf71128"
+  },
+  "bin/Teacher.py": {
+    "before": "264b9c19093982470d69f604611eaa9d99837452d58618390488038b13b6a110",
+    "after": "5cba9e5730f1be8ad26cebac94d2cdff529f357d54129621ff0e79455feed5aa"
+  },
+  "bin/Thoughts.py": {
+    "before": "d2bcc8afbc04d60991ee16b4b83511a3e2065aac1ff21779dfa287071d7a82f1",
+    "after": "81c93cd9332ea65ae3aa9a567ab11d7c245a4a7089e67fc1fd7c24bb3dddc2a0"
+  },
+  "bin/Understanding.py": {
+    "before": "eb8fc67260b33b6f6636008e2e2cecfd30ca2561b9b2553c45221c36363cb540",
+    "after": "3be4ace031ad39f0533bc5938dab014963546575557fd764940cd9b8e868c2be"
+  },
+  "bin/WhereRegistry.py": {
+    "before": "f15fe575adb87ca913ab9e8d71bb98934cb4c92c7e71f03e2239a6dd4ea3305c",
+    "after": "a919b6f7312938900b71fd08f0da4077092acd257379cafa9d8e4682eeece5d2"
+  },
+  "bin/data.py": {
+    "before": "b705d8c99e93c823a53aae20c74cc85addbf81db0a2ae4eddd7a705f7b089d30",
+    "after": "a9cb8a68de7187fe254152da4b3dbc1b63ddd8a597f689389c8536e1d2cbe96f"
+  },
+  "bin/serve.py": {
+    "before": "65409257ad34bc9781405f6b409e90ac9fb1ab0e5850219e84983cb8a83003b5",
+    "after": "8ef005624a3eab16f9018286556a5a0a08b153585649dadff406d71820309acf"
+  },
+  "data/BasicModel.xml": {
+    "before": "fc58b02e517c54651ae0ae344117b8348b69b2d0ce69bfbf77938f11be77fe0f",
+    "after": "8e87660158eec8e21af19b25c8f5e2751d7883616a33a5c8be44047e94348975"
+  },
+  "data/MM_grammar.xml": {
+    "before": "3979a4b13087ce0c4848cfa477a7f9b770b82c7ad90421bca86a850114a53406",
+    "after": "6a2f5b81ecca3ca01f3a7c414e5e49f06270530a404d9b4b006e106df4013791"
+  },
+  "data/MM_xor.xml": {
+    "before": "b7f863777fa1b1903ebe1c8595576125943244198c2c47788e8f97cb978902b7",
+    "after": "3317e67a3687cf9f267873e9ab749c986bee31e3429a0c911cdbba397937ad94"
+  },
+  "data/XOR_grammar.xml": {
+    "before": "8ccdfbc254d38149ca9755da4415f8385756d6dede2b051ad18e63b4ea507317",
+    "after": "9c09371c6c27cd8300f81b522ec09633f2b59f3b761111ee90cc71c33471f458"
+  },
+  "doc/Architecture.md": {
+    "before": "03df311a203c269d14305be299ae216ab40964876346b18da6c0d1ae5214df35",
+    "after": "54ba2aed52a8855b6c260ef1dd66da0b91dfa6686af578c2ca86f45a90eee00d"
+  },
+  "doc/FutureWork.md": {
+    "before": "9972a81e67d8d60abaa4d01af614dbe8375a8d9933e0ba6650cb5e42fb64bfb2",
+    "after": "fe7aee3354afc7a0361eaafcbee5bdb3c9e02662b30a20e5b5d2ee35cee8a130"
+  },
+  "doc/GradientFlow.md": {
+    "before": "2084e0e75cc0caeb2881128ce65ce15f99ce17d92bc07d4ce52f9d20b05af3d9",
+    "after": "eafe7a676f2bba9589f3931cedfb37a845e6d6eef81570390cbdbaa4fb9c49c9"
+  },
+  "doc/specs/2026-09-20-accessible-mind-subsystems.md": {
+    "before": "bf087be26bee09c6046b70685bcb79bdc9c68347dffd22cd85a2d47ed95532ab",
+    "after": "a43654cad58e24fb1a5403dd75796020db94ecdce31ea80f46cc584907635f79"
+  },
+  "doc/specs/2026-09-30-occurrence-tense-aspect.md": {
+    "before": "d2074b2165f01cbe0d9d47652e018c4e38ba4706b133756f2904cdceccf1d827",
+    "after": "92a93919b12ad5b0c41bae6eedd4016242726292bdf89a2f8d86af6933ba3241"
+  },
+  "test/fixtures/when-readers-round4a0.json": {
+    "before": null,
+    "after": "b5240e63d63cfde8f9e436a6d60ae1b7c35b5c8ec3d2d00ca5ceb0bc913b6940"
+  },
+  "test/index_fixtures.py": {
+    "before": "e898dd778f5e24b24f8cba161945f2e77cab5fda6c4dd7269c47f9482ea95d47",
+    "after": "e5988d22ed8a818d8b4be5431002f3d7a714e1b2d81befb437c5819d6d70e930"
+  },
+  "test/test_accessible_mind.py": {
+    "before": "7047b239c6397b53383dcf2cab6ac3ac257a6ef1d5263db275b8e58fd5d3f155",
+    "after": "b3434d23fd4f0e6701d52822043173c7b1825a70884edf4cad19a0999c6ef578"
+  },
+  "test/test_assertion_provenance.py": {
+    "before": "a5d6853375b26c813c336fa311adfa6d29377eacb8a999d767c81eae746a798f",
+    "after": "ad2bc21efbb86e2a18b533e71296a916685bccb54b91b5a7e2ba218d35cc5065"
+  },
+  "test/test_clause_storage.py": {
+    "before": "0794ac89744190f2c311cf80d8a28642e984fcbee63dd194a6f0d74a48a92674",
+    "after": "0744c6fa3645fbd31708834167b0f26f6875fb8f1f3b3984b2002f27f763ad47"
+  },
+  "test/test_concept_capacity_policy.py": {
+    "before": "baf1466450b4eacddb2c578e1c4895a19dd22be1e0a95d6600bf47cf76948462",
+    "after": "2f1740c7762ad3df3fbdfebe0cfec8186d9542ad4afc77230be0c689964d275f"
+  },
+  "test/test_definition_integrity.py": {
+    "before": "f67104025516bc246568f38a1286d292555bc54c8c248fb05822c86620ec6625",
+    "after": "5e99f84c56c395fa6730685818ee954d50c239e1330ba6ef76afdb48a7a608bd"
+  },
+  "test/test_definition_rows.py": {
+    "before": "1556f78a65877d52b67999bcfc526f3d747ae6d0af5e22f02d0f24404781a23c",
+    "after": "7f88897e7fa3c264d9e943b03129742171a821195d2d21e350fff3256b2e18a7"
+  },
+  "test/test_definition_taxonomy.py": {
+    "before": "fb53e8cb6a1d822dee7c705b56fd5054df91d4a84d2ec535d532e731d358e424",
+    "after": "325f2a632859f096e37e6b8e2d830d7264bd7a957f8765332b8609198b217edf"
+  },
+  "test/test_existence_evidence.py": {
+    "before": "6da6c3a093faa1f6f0d7823ac904ac9193c18f256abff57fad8fdfd89a527636",
+    "after": "129e16da7ea2a70bc9d9b48a4a71bcbcd26e2ecde0fe7cb1174fb1d44b23758b"
+  },
+  "test/test_existence_metadata.py": {
+    "before": "5fa48b3da80cee0797850904bf377f500ed94a6e82863dd960beb6ab908edded",
+    "after": "6ea077ca4e81eb4c056922d218014c90883e7fc7a219c63b96bb4ee5a6e9016f"
+  },
+  "test/test_existence_provenance.py": {
+    "before": "b004b6d7c81a6de860f4ec8ad40bb1849485f98afc6ffdf98342fb21fa179086",
+    "after": "af7e407d64a34a8c262739df226a550ac76ccec57f09d7376c4bf02bdb6863eb"
+  },
+  "test/test_existence_sidecar.py": {
+    "before": "6906fb85cc6f6d30bda1f1f99838b81313effc2e17b29baeaac63a2d92daad73",
+    "after": "e9fd0699eb920ea6bfff31cbbe81049342e456f9875ade9ba4675d40acde3a19"
+  },
+  "test/test_expectation_retention.py": {
+    "before": "5bfffc76a7bcedeb373ebb20d03499dd62dc4d7b99a96fae6e6a740ce823ec3c",
+    "after": "2652d5e9097df56958d0204e6a5fc082d5b3c70e54b754cfc9fd02a2c72f1e7e"
+  },
+  "test/test_identification_evidence.py": {
+    "before": "043f56cc2e826f71a9fba88fc9721f34a58de2b9e5bfe242c7ef3c3d8de3f02e",
+    "after": "1094ba8d67bd3f79edcce66dd000c84de637636dd762012994a2394b3d012bd0"
+  },
+  "test/test_ltm_consolidation.py": {
+    "before": "8ff9be5a59efb4a11d944ccbd163c07f6d12ef8293526ea880550047f68272c7",
+    "after": "a370af7eedececcb43643e6452a8d6a369bbdc2183fa432a70064b9af22d58fe"
+  },
+  "test/test_model_time_when.py": {
+    "before": "be38040cde65156563db1e08033f9a9261924376581201e59efbdf3bc8b19baf",
+    "after": "f117cf67085e96c2042d9abb7ed5cf293aec34ec745f3e4e763983ebbb3885ea"
+  },
+  "test/test_negative_expectation.py": {
+    "before": "89a9483bab46a4990a79baf2511d1ee9bc64de6c97b64636b09f38b895ce23f4",
+    "after": "cc1f1bf17dbc81aec1dad38531acbd647c4c5ee491b72cfcff54adfa2badecd3"
+  },
+  "test/test_nested_retention.py": {
+    "before": "0ec9295270884204c11e1e1c7967491995889a8f7b3d69d223f83cd91f1a46bb",
+    "after": "84ca66850c2a5dd062ca1649c621209a265f008fe5af7e5abef517d7da4c7235"
+  },
+  "test/test_occurrence_coordinates.py": {
+    "before": "68ed40d8a1872a41ecd68215f4d9dc5adaa2c3920f91adb5651c82a440ea8f1e",
+    "after": "20b25491ca1b8411d3ebdb71028727f5a08c0ddf642b55be5af7c6f45d8f20e1"
+  },
+  "test/test_operators_round4a0.py": {
+    "before": null,
+    "after": "6e6484f421d6073bb2872cce3dc27c934a9ddf537d9fdfb46921eff5468a11b9"
+  },
+  "test/test_positive_int_taxonomy.py": {
+    "before": "e11b5e36e6d70296434f88823994b58477a18933f7c0f4fd3a68a1072274c945",
+    "after": "ec10cc48fbc6c11cf5c2dc63c273a02a987051b7218e6ed86de98a778ea05c0e"
+  },
+  "test/test_query_contract_boundaries.py": {
+    "before": "3b1e8794391f3aa4f5af262aee7e1f7eb1c2be81b97773809207d03e2b17cae9",
+    "after": "e29ae788d0aae8ea919a10104b0eaf4e6a0f84cc2f9c965793ee1235116942d2"
+  },
+  "test/test_query_executors.py": {
+    "before": "afb3cafab3c8a6fabab4d061f33473f3c66d1a41d938359a7347dd279bb58fe0",
+    "after": "5bbcbc298a8fa96c357580fef303171cad778a30214fbea686204aba7275c019"
+  },
+  "test/test_query_vp_boundaries.py": {
+    "before": "47daa385e860a9b44743358a04de0057db013a8ba68351f704c947c62a5c28ed",
+    "after": "0077096df54eb95366382f185b5bff5bd49772be3b2ad667c85bd257ef724523"
+  },
+  "test/test_relation_closing.py": {
+    "before": "a113184d4c1587d7d536c4ce4fb4220ad98a2a764636fcccf5477c4db2f13845",
+    "after": "fcc322d1c2e209ee952da6548e6f44c797957b018de032747cdcf7a9ca2f4b77"
+  },
+  "test/test_relation_references.py": {
+    "before": "6eb046d10c4741db39365bbe2166faf72bebd8984313a36f8a2dc4ae286654f5",
+    "after": "e82bd81454f141d2b8a03eb45cb9af1a02ccd0673c2f5e7ef130c28cd9f01897"
+  },
+  "test/test_selected_nested_meaning.py": {
+    "before": "03516679186c60d2c90b9bf89d47e07890700e91a53b40d521692ffa719e5f71",
+    "after": "1032870ca46722a80b27bf20443f782c5868f07e6645ac5e0b0adca317868643"
+  },
+  "test/test_sentence_identity.py": {
+    "before": "28764f6e87bc5ffdff809e74db6444dcba965308d700ae25d7b25c2f4deb0476",
+    "after": "c1a38282a848283b93f1e09fb68ae0cb881bb2216ef0061124f81826b7b06035"
+  },
+  "test/test_sentence_retention.py": {
+    "before": "4e15d3d5e903ce3febe6ae0979152f592f6cb1924526549040941d1540005ba9",
+    "after": "6c23933cbf7ae642085bc8e6cc24312ff09adff060069dcacfc8421ebed03efe"
+  },
+  "test/test_ternary_truth_store.py": {
+    "before": "bc127154324c418026d1079ac822befb879646cbcb4a2b6b302708b15782d996",
+    "after": "b31fd290c412b73dca607d14dfe1d3758cdaba02a9ded54f56f51c7304ab2494"
+  },
+  "test/test_thought_history_boundaries.py": {
+    "before": "574218a7b686dd8d0c6300ec3a74ba262f587d3ab1336442761af3718f49bdfb",
+    "after": "cebf6d72f2e5c4c62bc8a225c645d2bf6b26a5223c3695c2f468852a15245d94"
+  },
+  "test/test_two_codebook_meta_taxonomy.py": {
+    "before": "aae83e04e163a1a52d955a1226af6bc33c1456a7a04e75777c4caef9ca49899a",
+    "after": "60c5117f5ec8de675ad57e898cafadc0adfc588567e03da448a787c5c994947f"
+  },
+  "test/test_when_grammar_rules.py": {
+    "before": "7be6bf578c3cb0dc9622563f5b7891a4207985ff57f669feb3906bc9eaa5e55a",
+    "after": "f3fd8ce6640788f6da4ecac9aa1970fef2fa86105d6c613236315bb2287d5c41"
+  },
+  "todo.md": {
+    "before": "52c2a5bf51dd21332cf830af703d17500e673d3864d869992a067fce78ea7b51",
+    "after": "d167ba8e7ce6bd7375272b3396315a03c544f20fdbab606a8cd8f5888296413c"
+  }
+}

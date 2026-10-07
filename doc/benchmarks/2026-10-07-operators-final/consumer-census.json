@@ -1,0 +1,3081 @@
+{
+  "rules": [
+    {
+      "canonical": "S -> S",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "F -> divide.forward(F)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": true,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "poles"
+      ],
+      "footprint_writes": []
+    },
+    {
+      "canonical": "F -> descend.forward(F)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": true,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "poles"
+      ],
+      "footprint_writes": []
+    },
+    {
+      "canonical": "F -> gloss.forward(F)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": true,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "poles"
+      ],
+      "footprint_writes": []
+    },
+    {
+      "canonical": "F -> and.forward(F)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": true,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "poles"
+      ],
+      "footprint_writes": []
+    },
+    {
+      "canonical": "F -> or.forward(F)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": true,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "poles"
+      ],
+      "footprint_writes": []
+    },
+    {
+      "canonical": "interpret_O1 -> interpret.forward(interpret_I1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": true,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "part_O1 -> part.forward(part_I1, part_I2)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": "part",
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "part",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "whole_O1 -> whole.forward(whole_I1, whole_I2)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": "whole",
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "part",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "equal_O1 -> equal.forward(equal_I1, equal_I2)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": "equal",
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "equal",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "implies_O1 -> implies.forward(implies_I1, implies_I2)",
+      "clause_form": "implies",
+      "head_role": 0,
+      "relation_kind": "implies",
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "implies",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "generic_O1 -> generic.forward(generic_I1)",
+      "clause_form": null,
+      "head_role": 1,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "part",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "what_O1 -> what.forward(what_I1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": true,
+      "polarity_effect": null,
+      "meaning_mode": "interrogative",
+      "same_reference_idempotent": false,
+      "predicate_identity": "what",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "not_O1 -> not.forward(not_I1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": true,
+      "polarity_effect": "invert",
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "not",
+      "field_eligible": true,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "meaning",
+        "poles"
+      ]
+    },
+    {
+      "canonical": "non_O1 -> non.forward(non_I1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": true,
+      "polarity_effect": "exclude",
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "non",
+      "field_eligible": true,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "poles"
+      ],
+      "footprint_writes": [
+        "poles"
+      ]
+    },
+    {
+      "canonical": "conjunction_O1 -> conjunction.forward(conjunction_I1, conjunction_I2)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": true,
+      "predicate_identity": "conjunction",
+      "field_eligible": true,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning",
+        "poles"
+      ]
+    },
+    {
+      "canonical": "disjunction_O1 -> disjunction.forward(disjunction_I1, disjunction_I2)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "disjunction",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "intersection_O1 -> intersection.forward(intersection_I1, intersection_I2)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "intersection",
+      "field_eligible": true,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "union_O1 -> union.forward(union_I1, union_I2)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "union",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "sum_O1 -> sum.forward(sum_I1, sum_I2)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "sum",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "product_O1 -> product.forward(product_I1, product_I2)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "product",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "lift_O1 -> lift.forward(lift_I1, lift_I2)",
+      "clause_form": "S",
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "lift",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "verb_O1 -> verb.forward(verb_I1, verb_I2)",
+      "clause_form": "VP",
+      "head_role": 1,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "verb",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "compound_O1 -> compound.forward(compound_I1, compound_I2)",
+      "clause_form": null,
+      "head_role": 2,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "compound",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 2,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "adverb_O1 -> adverb.forward(adverb_I1, adverb_I2)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "adverb",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "lower_O1 -> lower.forward(lower_I1, lower_I2)",
+      "clause_form": null,
+      "head_role": 2,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "lower",
+      "field_eligible": false,
+      "order_delta": -1,
+      "case_head_role": 0,
+      "determiner_mode": "mint",
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "definite_O1 -> definite.forward(definite_I1, definite_I2)",
+      "clause_form": null,
+      "head_role": 2,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "lower",
+      "field_eligible": false,
+      "order_delta": -1,
+      "case_head_role": 0,
+      "determiner_mode": "bind",
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "universal_O1 -> universal.forward(universal_I1, universal_I2)",
+      "clause_form": null,
+      "head_role": 2,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "lower",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": "kind",
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "preposition_O1 -> preposition.forward(preposition_I1, preposition_I2)",
+      "clause_form": null,
+      "head_role": 2,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "preposition",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "bind_O1 -> bind.forward(bind_I1, bind_I2)",
+      "clause_form": null,
+      "head_role": 2,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "bind",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "tense_O1 -> tense.forward(tense_I1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": true,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "tense",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [],
+      "footprint_writes": []
+    },
+    {
+      "canonical": "morphology_O1 -> morphology.forward(morphology_I1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": true,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "morphology",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "surface_O1 -> surface.forward(surface_I1, surface_I2)",
+      "clause_form": null,
+      "head_role": 2,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "surface",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "interpret_I1 -> interpret.reverse(interpret_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": true,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "part_I1,part_I2 -> part.reverse(part_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": "part",
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "part",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "whole_I1,whole_I2 -> whole.reverse(whole_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": "whole",
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "part",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "equal_I1,equal_I2 -> equal.reverse(equal_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": "equal",
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "equal",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "implies_I1,implies_I2 -> implies.reverse(implies_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": "implies",
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "implies",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "generic_I1 -> generic.reverse(generic_O1)",
+      "clause_form": null,
+      "head_role": 1,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "part",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "what_I1 -> what.reverse(what_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": true,
+      "polarity_effect": null,
+      "meaning_mode": "interrogative",
+      "same_reference_idempotent": false,
+      "predicate_identity": "what",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "not_I1 -> not.reverse(not_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": true,
+      "polarity_effect": "invert",
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "not",
+      "field_eligible": true,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "meaning",
+        "poles"
+      ]
+    },
+    {
+      "canonical": "non_I1 -> non.reverse(non_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": true,
+      "polarity_effect": "exclude",
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "non",
+      "field_eligible": true,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "poles"
+      ],
+      "footprint_writes": [
+        "poles"
+      ]
+    },
+    {
+      "canonical": "conjunction_I1,conjunction_I2 -> conjunction.reverse(conjunction_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": true,
+      "predicate_identity": "conjunction",
+      "field_eligible": true,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning",
+        "poles"
+      ]
+    },
+    {
+      "canonical": "disjunction_I1,disjunction_I2 -> disjunction.reverse(disjunction_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "disjunction",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "intersection_I1,intersection_I2 -> intersection.reverse(intersection_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "intersection",
+      "field_eligible": true,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "union_I1,union_I2 -> union.reverse(union_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "union",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "sum_I1,sum_I2 -> sum.reverse(sum_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "sum",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "product_I1,product_I2 -> product.reverse(product_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "product",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "lift_I1,lift_I2 -> lift.reverse(lift_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "lift",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "verb_I1,verb_I2 -> verb.reverse(verb_O1)",
+      "clause_form": "VP",
+      "head_role": 1,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "verb",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "compound_I1,compound_I2 -> compound.reverse(compound_O1)",
+      "clause_form": null,
+      "head_role": 2,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "compound",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 2,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "adverb_I1,adverb_I2 -> adverb.reverse(adverb_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "adverb",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "lower_I1,lower_I2 -> lower.reverse(lower_O1)",
+      "clause_form": null,
+      "head_role": 2,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "lower",
+      "field_eligible": false,
+      "order_delta": -1,
+      "case_head_role": 0,
+      "determiner_mode": "mint",
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "preposition_I1,preposition_I2 -> preposition.reverse(preposition_O1)",
+      "clause_form": null,
+      "head_role": 2,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "preposition",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "bind_I1,bind_I2 -> bind.reverse(bind_O1)",
+      "clause_form": null,
+      "head_role": 2,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "bind",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "tense_I1 -> tense.reverse(tense_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": true,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "tense",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [],
+      "footprint_writes": []
+    },
+    {
+      "canonical": "morphology_I1 -> morphology.reverse(morphology_O1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": true,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "morphology",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "surface_I1,surface_I2 -> surface.reverse(surface_O1)",
+      "clause_form": null,
+      "head_role": 2,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "surface",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "part_O1 -> part.thought(part_I1, part_I2)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": "part",
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "part",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "whole_O1 -> whole.thought(whole_I1, whole_I2)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": "whole",
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "part",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "equal_O1 -> equal.thought(equal_I1, equal_I2)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": "equal",
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "operation:equal",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "quantize_O1 -> quantize.thought(quantize_I1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "arma_O1 -> arma.thought(arma_I1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "what_O1 -> what.thought(what_I1)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": true,
+      "polarity_effect": null,
+      "meaning_mode": "interrogative",
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "U -> stop.forward(U)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "U -> boundary.forward(U, U)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "U -> uniform.forward(U, U)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "U -> chunk.forward(U, U)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "chunk",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "U -> stop.reverse(U)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "U,U -> boundary.reverse(U)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "U,U -> uniform.reverse(U)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": null,
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    },
+    {
+      "canonical": "U,U -> chunk.reverse(U)",
+      "clause_form": null,
+      "head_role": 0,
+      "relation_kind": null,
+      "scope_transparent": false,
+      "polarity_effect": null,
+      "meaning_mode": null,
+      "same_reference_idempotent": false,
+      "predicate_identity": "chunk",
+      "field_eligible": false,
+      "order_delta": 0,
+      "case_head_role": 0,
+      "determiner_mode": null,
+      "substrate": false,
+      "mandatory": false,
+      "footprint_reads": [
+        "form",
+        "meaning",
+        "poles"
+      ],
+      "footprint_writes": [
+        "form",
+        "meaning"
+      ]
+    }
+  ],
+  "declared_rules": 72,
+  "runtime_semantic_name_tests": [],
+  "nonsemantic_name_comparisons": [
+    {
+      "file": "bin/participation.py",
+      "line": 39,
+      "expression": "getattr(r, 'method_name', None) is None"
+    },
+    {
+      "file": "bin/participation.py",
+      "line": 137,
+      "expression": "getattr(r, 'method_name', None) is None"
+    }
+  ],
+  "consumers": [
+    {
+      "file": "bin/CaseSelection.py",
+      "line": 92,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Interpret.py",
+      "line": 273,
+      "consumer": "activate_code"
+    },
+    {
+      "file": "bin/Interpret.py",
+      "line": 223,
+      "consumer": "binding"
+    },
+    {
+      "file": "bin/Language.py",
+      "line": 2644,
+      "consumer": "compose_blocks"
+    },
+    {
+      "file": "bin/Language.py",
+      "line": 2718,
+      "consumer": "compose_blocks"
+    },
+    {
+      "file": "bin/Language.py",
+      "line": 2800,
+      "consumer": "compose_blocks"
+    },
+    {
+      "file": "bin/Language.py",
+      "line": 2860,
+      "consumer": "compose_blocks"
+    },
+    {
+      "file": "bin/Language.py",
+      "line": 3668,
+      "consumer": "compose_blocks"
+    },
+    {
+      "file": "bin/Language.py",
+      "line": 5127,
+      "consumer": "compose_blocks"
+    },
+    {
+      "file": "bin/Language.py",
+      "line": 5140,
+      "consumer": "compose_blocks"
+    },
+    {
+      "file": "bin/Language.py",
+      "line": 5186,
+      "consumer": "compose_blocks"
+    },
+    {
+      "file": "bin/Language.py",
+      "line": 2518,
+      "consumer": "compose_blocks"
+    },
+    {
+      "file": "bin/Language.py",
+      "line": 4097,
+      "consumer": "compose_blocks"
+    },
+    {
+      "file": "bin/Layers.py",
+      "line": 2488,
+      "consumer": "compose_blocks"
+    },
+    {
+      "file": "bin/Layers.py",
+      "line": 13591,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Layers.py",
+      "line": 13602,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Layers.py",
+      "line": 13830,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Layers.py",
+      "line": 13825,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Layers.py",
+      "line": 13836,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Layers.py",
+      "line": 13942,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/MereologicalCodes.py",
+      "line": 58,
+      "consumer": "centroid_forms"
+    },
+    {
+      "file": "bin/MereologicalCodes.py",
+      "line": 73,
+      "consumer": "occurrence_memberships"
+    },
+    {
+      "file": "bin/MereologicalCodes.py",
+      "line": 93,
+      "consumer": "occurrence_terms"
+    },
+    {
+      "file": "bin/MereologicalCodes.py",
+      "line": 94,
+      "consumer": "centroid_forms"
+    },
+    {
+      "file": "bin/MereologicalCodes.py",
+      "line": 104,
+      "consumer": "occurrence_terms"
+    },
+    {
+      "file": "bin/MereologicalCodes.py",
+      "line": 235,
+      "consumer": "occurrence_terms"
+    },
+    {
+      "file": "bin/MereologicalCodes.py",
+      "line": 101,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/MereologicalCodes.py",
+      "line": 228,
+      "consumer": "centroid_forms"
+    },
+    {
+      "file": "bin/MereologicalCodes.py",
+      "line": 160,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/MereologicalCodes.py",
+      "line": 282,
+      "consumer": "occurrence_memberships"
+    },
+    {
+      "file": "bin/Models.py",
+      "line": 11283,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Models.py",
+      "line": 11563,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Models.py",
+      "line": 11564,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Models.py",
+      "line": 12678,
+      "consumer": "activate_code"
+    },
+    {
+      "file": "bin/Models.py",
+      "line": 6864,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Models.py",
+      "line": 13735,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Models.py",
+      "line": 13714,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Models.py",
+      "line": 20540,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Spaces.py",
+      "line": 2656,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Spaces.py",
+      "line": 2689,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Spaces.py",
+      "line": 8137,
+      "consumer": "diffuse_memberships"
+    },
+    {
+      "file": "bin/Spaces.py",
+      "line": 10959,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Spaces.py",
+      "line": 11686,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Spaces.py",
+      "line": 2410,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Spaces.py",
+      "line": 17235,
+      "consumer": "lookup_rows"
+    },
+    {
+      "file": "bin/Spaces.py",
+      "line": 11361,
+      "consumer": "lookup_rows"
+    }
+  ],
+  "consumer_counts": {
+    "lookup_rows": 23,
+    "activate_code": 2,
+    "binding": 1,
+    "compose_blocks": 11,
+    "centroid_forms": 3,
+    "occurrence_memberships": 2,
+    "occurrence_terms": 3,
+    "diffuse_memberships": 1
+  },
+  "when_inventory": {
+    "version": 1,
+    "coverage": "All named band attributes/getattr readers, literal when/whenEncoding/when_encoding dispatches, and explicitly listed dynamic tail/clock helpers.",
+    "attributes": [
+      "_WHEN_WIDTH",
+      "_ar_word_symbol_when",
+      "_cs_field_when",
+      "_when_encoding",
+      "nWhen",
+      "n_when",
+      "percept_when",
+      "symbol_when",
+      "when",
+      "whenEncoding",
+      "when_band",
+      "when_encoding"
+    ],
+    "readers": [
+      {
+        "file": "bin/ClauseJournal.py",
+        "function": "finish_clause",
+        "attributes": [
+          "symbol_when"
+        ],
+        "role": "binding/closing reader",
+        "previous_absolute_time": true,
+        "now": "Closing inherits its first leaf band; the sentence writer fixes the source bracket."
+      },
+      {
+        "file": "bin/ClauseRow.py",
+        "function": "Clause.__post_init__",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Interpret.py",
+        "function": "InterpretLayer.define",
+        "attributes": [
+          "when"
+        ],
+        "role": "writer",
+        "previous_absolute_time": true,
+        "now": "Definitions are unlocated; their when band is zero."
+      },
+      {
+        "file": "bin/Language.py",
+        "function": "_WhenOpMixin._when_encoding",
+        "attributes": [
+          "_WHEN_WIDTH"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Language.py",
+        "function": "_WhenOpMixin._split_when",
+        "attributes": [
+          "_WHEN_WIDTH"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Language.py",
+        "function": "SymbolSubSpace.forwardSymbols",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Language.py",
+        "function": "SymbolSpace._publish_symbol_snapshot",
+        "attributes": [
+          "whenEncoding"
+        ],
+        "role": "unlocated dictionary writer",
+        "previous_absolute_time": true,
+        "now": "Dictionary poles have zero when; located occurrences retain their source bracket."
+      },
+      {
+        "file": "bin/Layers.py",
+        "function": "TernaryTruthStore.append_meaning",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Layers.py",
+        "function": "TernaryTruthStore.row",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Layers.py",
+        "function": "TernaryTruthStore.reset",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Layers.py",
+        "function": "ModelLoss.compute",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Layers.py",
+        "function": "ModelLoss.compute_masked",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Layers.py",
+        "function": "ModelLoss.register",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Layers.py",
+        "function": "ModelLoss.compute_piecewise",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Models.py",
+        "function": "BasicModel._reverse_event_loss",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "loss/layout reader",
+        "previous_absolute_time": true,
+        "now": "Sentence reconstruction excludes the shared when tail; general event comparison may score relative brackets. The scoring rule is unchanged."
+      },
+      {
+        "file": "bin/Models.py",
+        "function": "BasicModel._masked_event_loss",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Models.py",
+        "function": "BasicModel._publish_reading_symbols",
+        "attributes": [
+          "_cs_field_when"
+        ],
+        "role": "binding/closing reader",
+        "previous_absolute_time": true,
+        "now": "Location matching and concept/percept binding read the relative interval."
+      },
+      {
+        "file": "bin/Models.py",
+        "function": "BasicModel._stage_serial_concept_rows",
+        "attributes": [
+          "_ar_word_symbol_when",
+          "when_encoding"
+        ],
+        "role": "binding/closing reader",
+        "previous_absolute_time": true,
+        "now": "Each word is stamped at its containing source sentence position."
+      },
+      {
+        "file": "bin/Models.py",
+        "function": "BasicModel._program_entries",
+        "attributes": [
+          "_ar_word_symbol_when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Models.py",
+        "function": "BasicModel._commit_sentence",
+        "attributes": [
+          "when",
+          "when_encoding"
+        ],
+        "role": "binding/closing reader",
+        "previous_absolute_time": true,
+        "now": "The selected closing writes the source unit bracket; timestamp alone receives model time."
+      },
+      {
+        "file": "bin/Models.py",
+        "function": "BasicModel._leaf_distill_loss",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "loss/layout reader",
+        "previous_absolute_time": true,
+        "now": "Sentence reconstruction excludes the shared when tail; general event comparison may score relative brackets. The scoring rule is unchanged."
+      },
+      {
+        "file": "bin/PerceptField.py",
+        "function": "PerceptField.select",
+        "attributes": [
+          "when",
+          "when_band"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "EventEncoding.__init__",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "EventEncoding.set_band",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "Embedding.decode_reverse_meta",
+        "attributes": [
+          "whenEncoding"
+        ],
+        "role": "binding/closing reader",
+        "previous_absolute_time": true,
+        "now": "Returns encoded address bands with recovered lexical metadata, without interpreting absolute time."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.__init__",
+        "attributes": [
+          "nWhen",
+          "whenEncoding"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.storage_versions",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.carrier_like",
+        "attributes": [
+          "when",
+          "whenEncoding"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.set_demuxed",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace._compute_active",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace._coerce_basis",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.Start",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.End",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.set_when",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.demux",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.set_activation_from_event",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.mux",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.materialize",
+        "attributes": [
+          "nWhen",
+          "when",
+          "whenEncoding"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.select",
+        "attributes": [
+          "nWhen",
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.put",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.encode",
+        "attributes": [
+          "nWhen",
+          "whenEncoding"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.decode",
+        "attributes": [
+          "nWhen",
+          "whenEncoding"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.pad",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.slice",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "Space.reverseBegin",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "Space.set_sigma",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "InputSpace._lex_and_embed",
+        "attributes": [
+          "nWhen",
+          "when",
+          "whenEncoding"
+        ],
+        "role": "writer",
+        "previous_absolute_time": true,
+        "now": "Stamps source-relative sentence positions; no model-clock input."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "PartSpace.__init__",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "PartSpace._radix_part_events",
+        "attributes": [
+          "nWhen",
+          "whenEncoding"
+        ],
+        "role": "writer",
+        "previous_absolute_time": true,
+        "now": "Stamps source-relative sentence positions; no model-clock input."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "PartSpace._embed_radix",
+        "attributes": [
+          "nWhen",
+          "whenEncoding"
+        ],
+        "role": "writer",
+        "previous_absolute_time": true,
+        "now": "Stamps source-relative sentence positions; no model-clock input."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "PartSpace.reverse",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "ModalSpace.__init__",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "ModalSpace.forward",
+        "attributes": [
+          "nWhen",
+          "when",
+          "whenEncoding"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "ModalSpace.reverse",
+        "attributes": [
+          "nWhen",
+          "whenEncoding"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "ConceptualSpace._clear_percept_field",
+        "attributes": [
+          "when",
+          "when_band"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "ConceptualSpace._commit_autobind_from_stash",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "ConceptualSpace.cs_read_memberships",
+        "attributes": [
+          "when",
+          "when_encoding"
+        ],
+        "role": "binding/closing reader",
+        "previous_absolute_time": true,
+        "now": "Percept fields carry the current sentence unit interval for located binding."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "ConceptualSpace.decode_sparse_concept_rows",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "ConceptualSpace.decode_prior_stm_tensors",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "WholeSpace.compute_stage0_carrier",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "WholeSpace.compute_stage0_unity_event",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "WholeSpace.compute_word_property_event",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "WholeSpace._stage0_unity_forward",
+        "attributes": [
+          "nWhen"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/Teacher.py",
+        "function": "Teacher.What",
+        "attributes": [
+          "when"
+        ],
+        "role": "separate objective-address API",
+        "previous_absolute_time": false,
+        "now": "Teacher.when is corpus/source metadata, not the event band; unchanged."
+      },
+      {
+        "file": "bin/Teacher.py",
+        "function": "Teacher._resolve_staged_sources",
+        "attributes": [
+          "when"
+        ],
+        "role": "separate objective-address API",
+        "previous_absolute_time": false,
+        "now": "Teacher.when is corpus/source metadata, not the event band; unchanged."
+      },
+      {
+        "file": "bin/Understanding.py",
+        "function": "SentenceEndState.detached",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/WhereRegistry.py",
+        "function": "install_where_registry",
+        "attributes": [
+          "_when_encoding",
+          "when_encoding"
+        ],
+        "role": "encoder owner",
+        "previous_absolute_time": false,
+        "now": "Selects a fixed coarse/fine period above both LTM capacity and the loaded document bound."
+      },
+      {
+        "file": "bin/pipeline.py",
+        "function": "SubSpaceSchema.__post_init__",
+        "attributes": [
+          "n_when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/pipeline.py",
+        "function": "SubSpaceSchema.event_width",
+        "attributes": [
+          "n_when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/pipeline.py",
+        "function": "_parts_for_factored",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/pipeline.py",
+        "function": "SubSpace._selected_parts",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/pipeline.py",
+        "function": "SubSpace.materialize",
+        "attributes": [
+          "n_when",
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/pipeline.py",
+        "function": "_payload_bytes",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/pipeline.py",
+        "function": "_payload_transfer_bytes",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      },
+      {
+        "file": "bin/pipeline.py",
+        "function": "BoundaryAdapter.adapt",
+        "attributes": [
+          "when"
+        ],
+        "role": "carrier",
+        "previous_absolute_time": false,
+        "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      }
+    ],
+    "dynamic_readers": [
+      {
+        "file": "bin/Language.py",
+        "function": "_event_split",
+        "previous_absolute_time": true,
+        "now": "Separates when tail; its value is now relative."
+      },
+      {
+        "file": "bin/Language.py",
+        "function": "_lift_when",
+        "previous_absolute_time": true,
+        "now": "The standalone symbolic helper shifts a relative bracket by one; conceptual lift is opaque."
+      },
+      {
+        "file": "bin/Language.py",
+        "function": "_lower_when",
+        "previous_absolute_time": true,
+        "now": "The standalone symbolic helper shifts a relative bracket by minus one; conceptual lower is opaque."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "DocumentWhenEncoding",
+        "previous_absolute_time": true,
+        "now": "Encodes/decodes [i,i+1] with two endpoint-sum rungs; shift_time is a relative rotation."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "WhenRangeEncoding / WhenStartDurationEncoding",
+        "previous_absolute_time": true,
+        "now": "Legacy standalone codecs retained for explicit old encodings; the model uses DocumentWhenEncoding."
+      },
+      {
+        "file": "bin/Layers.py",
+        "function": "TernaryTruthStore.recent",
+        "previous_absolute_time": false,
+        "now": "Reads the timestamp column (absolute model time), never the when band."
+      },
+      {
+        "file": "bin/MereologicalCodes.py",
+        "function": "MereologicalCodes.occurrence_terms",
+        "previous_absolute_time": false,
+        "now": "Recency still reads timestamp; meanings remain empty in the 4a-0 gate configuration."
+      },
+      {
+        "file": "bin/AccessibleMind.py",
+        "function": "apply_thought_effect",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/ClauseRow.py",
+        "function": "ClauseRows.write_clause",
+        "previous_absolute_time": false,
+        "now": "Copies the completed clause band and writes its address; external input closings supply the document-relative bracket."
+      },
+      {
+        "file": "bin/Language.py",
+        "function": "LanguageLayer.reduce",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Language.py",
+        "function": "SymbolSpace.forward_concept_to_symbol",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Layers.py",
+        "function": "TernaryTruthStore.__init__",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Layers.py",
+        "function": "TernaryTruthStore._load_from_state_dict",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Layers.py",
+        "function": "TernaryTruthStore.clear_origin",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/MemoryIndex.py",
+        "function": "LeafCodeIndex._scope_contains",
+        "previous_absolute_time": false,
+        "now": "Compares explicit conceptual scope intervals named when; this is separate from the event band and remains unchanged."
+      },
+      {
+        "file": "bin/Models.py",
+        "function": "BaseModel._collect_structural_extras",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Models.py",
+        "function": "BaseModel._restore_structural_extras",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Models.py",
+        "function": "BaseModel.load_weights",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Models.py",
+        "function": "BasicModel._synthesis_state_objects",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Models.py",
+        "function": "BasicModel._forward_body",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Occurrence.py",
+        "function": "OccurrenceRows._resize_checkpoint_rows",
+        "previous_absolute_time": true,
+        "now": "Migration/resize reconstructs unit brackets from saved relative positions or explicit legacy ordinals; timestamps are preserved separately."
+      },
+      {
+        "file": "bin/Occurrence.py",
+        "function": "OccurrenceRows._migrate_address_tensors",
+        "previous_absolute_time": true,
+        "now": "Migration/resize reconstructs unit brackets from saved relative positions or explicit legacy ordinals; timestamps are preserved separately."
+      },
+      {
+        "file": "bin/PerceptField.py",
+        "function": "PerceptField.clone",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.normalize",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace._apply_normalization",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace._apply_reverse_normalization",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "SubSpace.denormalize",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "Space.__init__",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "Space._adopt_subspace_modules",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Spaces.py",
+        "function": "ConceptualSpace.forward",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/Understanding.py",
+        "function": "SentenceEndState.__post_init__",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      },
+      {
+        "file": "bin/space_carrier.py",
+        "function": "SpaceCarrierMixin._carrier_basis",
+        "previous_absolute_time": false,
+        "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      }
+    ]
+  },
+  "attention": "unchanged 6.8 where-mask walk; no relevance weight or soft filter",
+  "meanings": "content-key codes -> detached occurrence means -> independent bilattice -> kept sentence row",
+  "priming": "combined concept/membership degree budget -> detached codebook retrieval prior",
+  "form": "native lower bound -> adjacent ceiling -> containment projection -> fixed binding projection; index uses c == 1"
+}

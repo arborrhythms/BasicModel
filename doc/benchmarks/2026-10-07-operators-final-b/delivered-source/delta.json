@@ -1,0 +1,17 @@
+{
+  "changed_files": [
+    "bin/DecompositionChooser.py",
+    "bin/Language.py",
+    "bin/MeaningCodes.py",
+    "bin/Models.py",
+    "bin/SentenceUnderstanding.py",
+    "bin/Spaces.py",
+    "data/model.xml",
+    "data/model.xsd",
+    "test/test_bounded_stm_fold.py",
+    "test/test_operators_final_b.py",
+    "test/test_priming_energy.py"
+  ],
+  "baseline": "measured combined source",
+  "seed": null
+}

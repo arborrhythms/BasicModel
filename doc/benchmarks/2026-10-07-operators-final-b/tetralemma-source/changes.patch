@@ -1,0 +1,1613 @@
+--- measured-combined/bin/ClauseJournal.py
++++ operators-final-b/bin/ClauseJournal.py
+@@ -193,8 +193,9 @@
+                  and getattr(node['rule'], 'clause_form', None) != 'VP'))
+ 
+     def recover(root, *, top=False):
+-        pair = metadata(root['leaves'])['evidence']
+-        polarity = pair[0] >= pair[1]
++        # Syntactic assertion polarity is a grammar property. Identification
++        # evidence remains a pair, including both and neither, through storage.
++        polarity = True
+         excluded = False
+         mode = 'assertive'
+         node = head(root, clause=True)
+@@ -363,7 +364,7 @@
+         evidence['order'] = node_order(root)
+         if excluded:
+             support = evidence['evidence']
+-            evidence['evidence'] = (0., support[1]) if polarity else (support[0], 0.)
++            evidence['evidence'] = (0., support[1])
+         field = Clause(described, point=None if relation else (
+             program.end_state[0] if top else value(root)), relation=relation,
+             refs=references, children=tuple(children),
+--- measured-combined/bin/DecompositionChooser.py
++++ operators-final-b/bin/DecompositionChooser.py
+@@ -1,7 +1,6 @@
+ """Reconstruction's supervised choice among detached candidate pairs."""
+ import torch
+ from torch import nn
+-from torch.nn import functional as F
+ 
+ 
+ class DecompositionChooser(nn.Module):
+@@ -31,8 +30,11 @@
+                    & (targets >= 0).all(-1)[:, None, None]
+                    & details['allowed']).flatten(1)
+         present = matches.any(-1)
+-        target = matches.long().argmax(-1)
+         selected_true = matches.gather(1, details['selected'][:, None]).squeeze(1)
+-        loss = F.cross_entropy(details['logits'], target, reduction='none')
++        # The target is a word pair, independent of either symbol's polarity.
++        # Marginalize all of its legal symbols instead of teaching the first.
++        logits = details['logits']
++        accepted = matches | ~present[:, None]
++        loss = logits.logsumexp(-1) - logits.masked_fill(~accepted, -torch.inf).logsumexp(-1)
+         loss = torch.where(present, loss, torch.zeros_like(loss))
+         return loss, present, selected_true
+--- measured-combined/bin/Interpret.py
++++ operators-final-b/bin/Interpret.py
+@@ -4,14 +4,25 @@
+ from Definitions import form_key
+ 
+ 
+-def activate_code(atoms, activation, form_width):
+-    """Scale both blocks by magnitude; negative evidence exchanges meaning poles."""
+-    from MeaningCodes import exchange
+-    value = activation.unsqueeze(-1)
+-    meaning = atoms[..., form_width:]
+-    meaning = torch.where(value < 0, exchange(meaning), meaning)
+-    return torch.cat((atoms[..., :form_width] * value.abs(),
+-                      meaning * value.abs()), -1)
++def positive_evidence(presence):
++    """A native positive identification, before any conceptual pole operation."""
++    return torch.stack((presence.clamp(0, 1), torch.zeros_like(presence)), -1)
++
++
++def activate_code(atoms, presence, form_width, *, evidence):
++    """One signless code, two independent positive evidence lanes.
++
++    Identification presence belongs only to form. The dictionary's for block
++    is the concept's signless context code; its two occurrences have their own
++    magnitudes. In particular both never becomes neither.
++    """
++    if evidence.shape != (*atoms.shape[:-1], 2):
++        raise ValueError('interpretation requires an aligned evidence pair')
++    torch._assert_async((presence >= 0).all(), 'identification presence must be nonnegative')
++    width = (atoms.shape[-1] - form_width) // 2
++    code = atoms[..., form_width:form_width + width]
++    return torch.cat((atoms[..., :form_width] * presence.unsqueeze(-1),
++                      code * evidence[..., :1], code * evidence[..., 1:2]), -1)
+ 
+ 
+ class InterpretLayer(GrammarLayer):
+@@ -265,20 +276,21 @@
+         self._field_pending.discard(word)
+         return row
+ 
+-    def activate(self, atoms, activation):
+-        """Magnitude on form and meaning; sign selects the meaning poles."""
++    def activate(self, atoms, presence, *, evidence):
++        """Identify the form and carry both conceptual magnitudes intact."""
+         bank = getattr(self.owner, 'similarity_codebook', None)
+         derived = getattr(bank, 'mereology', None)
+         width = atoms.shape[-1] if derived is None else derived.percept_event_width
+-        return activate_code(atoms, activation, width)
++        return activate_code(atoms, presence, width, evidence=evidence)
+ 
+     def forward(self, word, *, order=None, occurrence=None, selected=None,
+-                object_atoms=None, activation=None):
++                object_atoms=None, presence=None, evidence=None):
+         if torch.is_tensor(word):
+-            if object_atoms is None or activation is None:
++            if object_atoms is None or presence is None or evidence is None:
+                 raise ValueError('interpret tensor face requires the resolved object bank')
+             width = object_atoms.shape[-1]
+-            return torch.cat((self.activate(self.binding_atoms(object_atoms), activation), word[..., width:]), -1)
++            return torch.cat((self.activate(self.binding_atoms(object_atoms), presence,
++                                           evidence=evidence), word[..., width:]), -1)
+         from Spaces import _concept_alloc_of
+         cs, word = self.owner, int(word)
+         alloc, index = _concept_alloc_of(cs), cs.definitions
+@@ -362,12 +374,12 @@
+ 
+     compose = forward
+ 
+-    def reverse(self, obj, *, word_atoms=None, activation=None):
++    def reverse(self, obj, *, word_atoms=None, presence=None, evidence=None):
+         if torch.is_tensor(obj):
+-            if word_atoms is None or activation is None:
++            if word_atoms is None or presence is None or evidence is None:
+                 raise ValueError('interpret reverse requires the owned word bank')
+             width = word_atoms.shape[-1]
+-            return torch.cat((self.activate(word_atoms, activation), obj[..., width:]), -1)
++            return torch.cat((self.activate(word_atoms, presence, evidence=evidence), obj[..., width:]), -1)
+         words = self.owner.definitions.words(int(obj))
+         if len(words) != 1:
+             raise ValueError('object requires a lexical selection')
+--- measured-combined/bin/Language.py
++++ operators-final-b/bin/Language.py
+@@ -2534,6 +2534,7 @@
+     polarity_effect = 'exclude'
+     field_eligible = True
+     rule_name  = "non"
++    meaning_rule = 'non'
+     predicate_identity = 'non'
+     arity      = 1
+     invertible = False
+@@ -2551,7 +2552,7 @@
+     def forward(self, x):
+         """Remove the expressed concept without asserting its opposite."""
+         if self.representation == 'code':
+-            return x
++            return self.compose_blocks(lambda form: form, x)
+         self._check_bivector_shape(x)
+         return torch.cat((x[..., :1]*0, x[..., 1:]), dim=-1)
+ 
+@@ -7504,8 +7505,11 @@
+                     and getattr(getattr(op, 'gl', op), 'same_reference_idempotent', False)):
+                 refs = reference_data['binary_refs'][:, :, i]
+                 same = (refs[..., 0] == refs[..., 1]) & (refs[..., 0] != -1) & (refs[..., 0] != 0)
+-                repeated = (Ops._presence(left, None if activations is None else activations[:, :-1])
+-                            * Ops._code_direction(left))
++                from MeaningCodes import repeated_symbol
++                layout = getattr(implementation, 'meaning_layout', None)
++                width = layout[0] if layout is not None and layout[1] == left.shape[-1] else None
++                repeated = repeated_symbol(left, width,
++                    None if activations is None else activations[:, :-1])
+                 value = torch.where(same[..., None], repeated, value)
+             result.append(value)
+         return torch.stack(result, 2)
+@@ -12768,7 +12772,7 @@
+             exact = []
+             for i in range(n):
+                 scores = readback_scores(window[:, i].detach(), bank.codes.detach(),
+-                    bank.weights.detach(), percept_width=bank.percept_width)
++                    bank.weights.detach(), percept_width=bank.percept_width, meaning_start=bank.meaning_start)
+                 scores = scores.masked_fill(~(bank.valid & bank.byte_valid.any(-1)), -torch.inf)
+                 winner = scores.argmax(-1, keepdim=True)
+                 exact.append((identities[:, i] >= 0)
+@@ -13567,7 +13571,9 @@
+                                        chooser=None, return_details=False):
+         """Reconstruction-owned hard pair, initially least residual; no straight-through search gradient.
+ 
+-        At most K prototypes per side and K squared pairs, K=candidate_limit.
++        At most K words per side, one signless form per word. The search has
++        at most K squared pairs, K=candidate_limit. Both evidence lanes are
++        read independently only after the form has identified the words.
+         Retrieval indices and any supplied reference are detached. Dictionary
+         candidates are detached constants. Residuals are relative to the
+         parent's mean square. The trial comparison trains the compose chooser.
+@@ -13581,11 +13587,14 @@
+             return torch.zeros_like(parent), torch.zeros_like(parent), absent
+         K = min(max(1, int(candidate_limit)), int(basis.shape[1]))
+         from SentenceUnderstanding import readback_scores
++        layout = getattr(op, 'meaning_layout', None)
++        form_width = layout[0] if layout is not None and layout[1] == D else None
+         def shortlist(valid, priming, candidates):
+             candidates = (basis if candidates is None else candidates).detach()
+             valid = basis_valid if valid is None else basis_valid & valid
+             priming = torch.ones_like(valid, dtype=parent.dtype) if priming is None else priming
+-            scores = readback_scores(parent.detach(), candidates, priming)
++            scores = readback_scores(parent.detach(), candidates, priming,
++                                     meaning_start=form_width)
+             indices = scores.masked_fill(~valid, -torch.inf).topk(K, dim=-1).indices
+             # Top-k chooses the search set, not operand order. Preserve bank
+             # order for equal-residual pairs (commutative operations otherwise
+@@ -13596,6 +13605,7 @@
+             return torch.where(active[:, :, None], candidates, 0.), active, indices
+         left_candidates, left_active, left_indices = shortlist(left_valid, left_priming, left_basis)
+         right_candidates, right_active, right_indices = shortlist(right_valid, right_priming, right_basis)
++        K = left_candidates.shape[1]
+         older = left_candidates[:, :, None, :].expand(B, K, K, D)
+         newer = right_candidates[:, None, :, :].expand(B, K, K, D)
+         reference = reference.detach()
+@@ -13609,17 +13619,21 @@
+             same = left_indices[:, :, None] == right_indices[:, None, :]
+             # A known occurrence is not identified by an unrelated basis row.
+             same = same & ~known[:, None, None] & (older == newer).all(-1)
+-            folded = torch.where(same[..., None], Ops._code_direction(older), folded)
+-        residual = (folded - parent[:, None, None, :]).square().mean(-1)
+-        energy = parent.square().mean(-1)[:, None, None]
++            from MeaningCodes import repeated_symbol
++            folded = torch.where(same[..., None], repeated_symbol(older, form_width), folded)
++        form = parent if form_width is None else parent[..., :form_width]
++        folded_form = folded if form_width is None else folded[..., :form_width]
++        residual = (folded_form - form[:, None, None, :]).square().mean(-1)
++        energy = form.square().mean(-1)[:, None, None]
+         # Exact zero origins use the existing Error squared-penalty convention;
+         # no floor changes any positive parent scale.
+         residual = residual / torch.where(energy > 0, energy, torch.ones_like(energy))
+         # The shortlist and eligibility are unchanged. Context learns only
+         # through the separate teacher loss, never through candidate codes.
+         def candidate_features(candidates, indices, priming, active):
++            candidates = candidates if form_width is None else candidates[..., :form_width]
+             energy = candidates.square().sum(-1)
+-            activation = (parent.detach()[:, None] * candidates).sum(-1) / torch.where(
++            activation = (form.detach()[:, None] * candidates).sum(-1) / torch.where(
+                 energy > 0, energy, torch.ones_like(energy))
+             count = active.sum(-1, keepdim=True).clamp_min(1)
+             mean = torch.where(active, activation, 0.).sum(-1, keepdim=True) / count
+@@ -13650,6 +13664,10 @@
+         gather = selected[:, None, None].expand(B, 1, D)
+         hard_left = older.reshape(B, K * K, D).gather(1, gather).squeeze(1)
+         hard_right = newer.reshape(B, K * K, D).gather(1, gather).squeeze(1)
++        if form_width is not None:
++            from MeaningCodes import recover_lanes
++            hard_left, hard_right = recover_lanes(getattr(op, 'meaning_rule', None),
++                parent.detach(), hard_left, hard_right, form_width)
+         available = left_active.any(-1) & right_active.any(-1)
+         hard_left = torch.where(available[:, None], hard_left, 0.)
+         hard_right = torch.where(available[:, None], hard_right, 0.)
+@@ -13679,6 +13697,12 @@
+             return torch.zeros_like(available)
+         bank = basis.detach()
+         value = parent.detach()
++        layout = next((getattr(getattr(op, 'gl', op), 'meaning_layout', None)
++                       for op in binary_ops
++                       if getattr(getattr(op, 'gl', op), 'meaning_layout', None) is not None), None)
++        form_width = layout[0] if layout is not None and layout[1] == bank.shape[-1] else None
++        if form_width is not None:
++            bank, value = bank[..., :form_width], value[..., :form_width]
+         valid = basis_valid & bank.square().sum(-1).gt(0)
+         denominator = bank.square().sum(-1).clamp_min(torch.finfo(bank.dtype).tiny)
+         activation = (value[:, None] * bank).sum(-1) / denominator
+@@ -13689,9 +13713,11 @@
+         for index, wrapped in enumerate(binary_ops):
+             op = getattr(wrapped, 'gl', wrapped)
+             left, right = lefts[index].detach(), rights[index].detach()
+-            left_readable = (valid & (bank == left[:, None]).all(-1)).any(-1)
+-            right_readable = (valid & (bank == right[:, None]).all(-1)).any(-1)
+-            progress = left.ne(value).any(-1) & right.ne(value).any(-1)
++            lf = left if form_width is None else left[..., :form_width]
++            rf = right if form_width is None else right[..., :form_width]
++            left_readable = (valid & (bank == lf[:, None]).all(-1)).any(-1)
++            right_readable = (valid & (bank == rf[:, None]).all(-1)).any(-1)
++            progress = lf.ne(value).any(-1) & rf.ne(value).any(-1)
+             if getattr(op, 'inverse_kind', None) == 'case_search':
+                 if case_bank is None:
+                     pair_masks.append(torch.zeros_like(singular))
+@@ -13703,7 +13729,10 @@
+             else:
+                 folded = left if getattr(op, 'reconstructs_left', False) else op.compose(left, right)
+                 if getattr(op, 'same_reference_idempotent', False):
+-                    folded = torch.where(left.eq(right).all(-1)[:, None], Ops._code_direction(left), folded)
++                    from MeaningCodes import repeated_symbol
++                    folded = torch.where(left.eq(right).all(-1)[:, None],
++                                         repeated_symbol(left, form_width), folded)
++            folded = folded if form_width is None else folded[..., :form_width]
+             pair_error = (folded.detach() - value).square().mean(-1)
+             pair_masks.append(available[:, index] & left_readable & right_readable
+                               & progress & (pair_error <= best))
+@@ -14305,42 +14334,43 @@
+         return rows, activations, bands, orders, valid
+ 
+     def commit_word_reference_slab(
+-            self, rows, activations, active_rows, *, orders=None, evidence=None):
++            self, rows, presences, active_rows, *, orders=None, evidence=None):
+         """Own the word-aligned, quantized CSLang -> SymbolSpace handoff.
+ 
+         ConceptualSpace retains continuous ideas only in its eight-slot STM.
+         A completed word crosses into SymbolSpace as a sparse reference:
+-        identity ``rows`` plus one signed activation.  Keeping this owner API
++        identity ``rows``, signless form presence and an evidence pair. Keeping this owner API
+         explicit prevents callers from replacing that compact representation
+         with a duplicate ``[B,W,concept_dim]`` concept history.
+         """
+         if (not torch.is_tensor(rows) or rows.dim() != 2
+-                or not torch.is_tensor(activations)
+-                or activations.dim() != 3
+-                or int(activations.shape[-1]) != 1
+-                or tuple(rows.shape) != tuple(activations.shape[:2])
++                or not torch.is_tensor(presences)
++                or presences.dim() != 3
++                or int(presences.shape[-1]) != 1
++                or tuple(rows.shape) != tuple(presences.shape[:2])
+                 or not torch.is_tensor(active_rows)
+                 or tuple(active_rows.shape) != tuple(rows.shape)):
+             raise ValueError(
+-                "word references require rows [B,W], activations [B,W,1], "
++                "word references require rows [B,W], presences [B,W,1], "
+                 "and an aligned activity mask")
+         valid = active_rows.to(device=rows.device, dtype=torch.bool)
+         valid = torch.logical_and(valid, rows >= 0)
+         committed_rows = torch.where(
+             valid, rows, torch.full_like(rows, -1))
+-        committed_activations = torch.where(
+-            valid.unsqueeze(-1), activations,
+-            torch.zeros_like(activations))
++        torch._assert_async((presences >= 0).all(), 'word form presence must be nonnegative')
++        committed_presences = torch.where(
++            valid.unsqueeze(-1), presences,
++            torch.zeros_like(presences))
+         object.__setattr__(
+             self, "_word_reference_rows", committed_rows)
+         object.__setattr__(
+-            self, "_word_reference_activations", committed_activations)
++            self, "_word_reference_presences", committed_presences)
+         object.__setattr__(self, "_word_reference_mask", valid)
+-        # Keep a supplied pair intact. A scalar-only serial reference has
+-        # support on its expressed pole; it cannot manufacture a both value.
++        # Keep both lanes intact. Without a conceptual walk, native positive
++        # identification supplies the initial pair before any pole operation.
+         if evidence is None:
+-            signed = committed_activations.squeeze(-1)
+-            evidence = torch.stack((signed.clamp(0, 1), (-signed).clamp(0, 1)), -1)
++            from Interpret import positive_evidence
++            evidence = positive_evidence(committed_presences.squeeze(-1))
+         if not torch.is_tensor(evidence) or evidence.shape != (*rows.shape, 2):
+             raise ValueError('word reference evidence requires an aligned pair')
+         torch._assert_async((torch.isfinite(evidence) & (evidence >= 0) & (evidence <= 1)).all(),
+@@ -14356,7 +14386,7 @@
+                 self, "_word_reference_orders",
+                 torch.where(
+                     valid, orders, torch.full_like(orders, -1)))
+-        return committed_activations
++        return committed_presences
+ 
+     def _publish_symbol_snapshot(self, event, source=None, *,
+                                  prior_symbolic=None, language_plan=None):
+--- measured-combined/bin/MeaningCodes.py
++++ operators-final-b/bin/MeaningCodes.py
+@@ -20,9 +20,73 @@
+     return torch.cat((negative, positive), -1)
+ 
+ 
++def recover_lanes(name, parent, left, right, form_width):
++    """Recover compatible leaf magnitudes after identifying the two forms.
++
++    Each lane is solved independently against the frozen signless codes.
++    Min/max are not injective: choose the least min operands and greatest
++    max operands consistent with the root. This recovers a reading, not the
++    lost derivation. A mean has the two-code nonnegative least-squares read.
++    No evidence from the opposite lane enters a lane's inverse.
++    """
++    width = (parent.shape[-1] - form_width) // 2
++    a = left[..., form_width:form_width + width]
++    b = right[..., form_width:form_width + width]
++    positive, negative = parent[..., form_width:].chunk(2, -1)
++
++    def read(y, rule):
++        def ratio(code):
++            nonzero = code > 0
++            values = y / torch.where(nonzero, code, 1.)
++            if rule == 'min':
++                return torch.where(nonzero, values, 0.).amax(-1, keepdim=True)
++            result = torch.where(nonzero, values, torch.inf).amin(-1, keepdim=True)
++            return torch.where(nonzero.any(-1, keepdim=True), result, 0.)
++        if rule != 'mean':
++            return a * ratio(a), b * ratio(b)
++        aa, ab, bb = (a*a).sum(-1, keepdim=True), (a*b).sum(-1, keepdim=True), (b*b).sum(-1, keepdim=True)
++        ay, by = (a*y*2).sum(-1, keepdim=True), (b*y*2).sum(-1, keepdim=True)
++        det = aa * bb - ab.square()
++        independent = det > torch.finfo(y.dtype).eps * aa * bb
++        denominator = torch.where(independent, det, 1.)
++        u, v = (ay * bb - by * ab) / denominator, (by * aa - ay * ab) / denominator
++        norm = (aa + bb).clamp_min(torch.finfo(y.dtype).tiny)
++        u, v = torch.where(independent, u, ay / norm), torch.where(independent, v, by / norm)
++        # Boundary solution if numerical noise or an inexact root placed the
++        # unconstrained solution outside the nonnegative cone.
++        u0, v0 = u, v
++        u = torch.where(v0 < 0, ay / aa.clamp_min(torch.finfo(y.dtype).tiny), u0).clamp_min(0)
++        v = torch.where(u0 < 0, by / bb.clamp_min(torch.finfo(y.dtype).tiny), v0).clamp_min(0)
++        return a * u, b * v
++
++    if name in ('conjunction', 'intersection'):
++        rules = 'min', 'max'
++    elif name in ('disjunction', 'union'):
++        rules = 'max', 'min'
++    elif name == 'sum':
++        rules = 'mean', 'mean'
++    else:
++        return left, right
++    lp, rp = read(positive, rules[0])
++    ln, rn = read(negative, rules[1])
++    return (torch.cat((left[..., :form_width], lp, ln), -1),
++            torch.cat((right[..., :form_width], rp, rn), -1))
++
++
++def repeated_symbol(value, form_width, presence=None):
++    """Idempotent form read without normalizing the evidence complement."""
++    from Layers import Ops
++    form = value if form_width is None else value[..., :form_width]
++    form = Ops._presence(form, presence) * Ops._code_direction(form)
++    return form if form_width is None else torch.cat((form, value[..., form_width:]), -1)
++
++
+ def compose(name, left, right=None):
+     if name == 'not':
+         return exchange(left)
++    if name == 'non':
++        positive, negative = left.chunk(2, -1)
++        return torch.cat((torch.zeros_like(positive), negative), -1)
+     if name == 'sum':
+         return (left + right) * .5
+     positive, negative = left.chunk(2, -1)
+--- measured-combined/bin/ModelAttention.py
++++ operators-final-b/bin/ModelAttention.py
+@@ -18,22 +18,13 @@
+     return None if pair is None else pair.detach()
+ 
+ 
+-def pole_activation(activation, pair, changed):
+-    """A reached field chooses sign only; tied poles retain the prior sign."""
+-    net = (pair[..., 0]-pair[..., 1]).reshape_as(activation)
+-    changed = changed.reshape_as(activation)
+-    return torch.where(changed & net.ne(0), activation.abs()*net.sign(), activation)
+-
+-
+-def reference_evidence(model, activations, consumer):
++def reference_evidence(model, presences, consumer):
++    """Reference provenance is the walk's pair, never a scalar reconstruction."""
+     pair = read_poles(model, consumer)
+     if pair is None:
+-        return None
+-    reading = model._attention_words
+-    signed = pole_activation(activations, pair, reading.pole_changes).squeeze(-1)
+-    # Match Language.commit_word_reference_slab's native scalar conversion
+-    # exactly, including its saturation. No field means the landing's pair.
+-    return torch.stack((signed.clamp(0, 1), (-signed).clamp(0, 1)), -1).detach()
++        from Interpret import positive_evidence
++        return positive_evidence(presences.squeeze(-1)).detach()
++    return pair
+ 
+ 
+ def canonical_native_events(model, ids, positions, brackets):
+@@ -141,6 +132,7 @@
+     slab=getattr(isp,'_ar_embedded_N',None)
+     active=getattr(isp,'_word_active_mask',None)
+     model._attention_words=None
++    model._attention_poles=None
+     model._attention_grammar_mask=None
+     model._attention_read=None
+     model._word_expectation=None
+--- measured-combined/bin/Models.py
++++ operators-final-b/bin/Models.py
+@@ -6895,7 +6895,9 @@
+             case_bank = stage_case_bank(owner, native, limit=self.reconstruction_basis_limit)
+         self._sentence_primed_bank = PrimedSymbols(selected, codes, weights, own,
+             data.to(rows.device), byte_valid.to(rows.device), case_bank,
+-            getattr(self, '_readback_percept_width', None), sparse_forms if identity is not None else None)
++            getattr(self, '_readback_percept_width', None), sparse_forms if identity is not None else None,
++            getattr(getattr(owner.similarity_codebook, 'mereology', None), 'percept_event_width', None),
++            bool(TheXMLConfig.space('ConceptualSpace', 'readerBlockNormalization', True)))
+         self._sentence_priming_written = True
+ 
+     def store_truths(self, entries, *, source_key='user-truths'):
+@@ -8325,6 +8327,19 @@
+                 space.Start()
+         self._spaces_started_for_forward = True
+ 
++    def _snapshot_sentence_codes(self):
++        """Freeze meanings and centroids before the first lexical bank is staged."""
++        if getattr(self, '_sentence_codes_snapshotted', False):
++            return
++        seen_books = set()
++        for cs in getattr(self, 'conceptualSpaces', ()):
++            cb = cs.similarity_codebook
++            derived = getattr(cb, 'mereology', None)
++            if derived is not None and id(cb) not in seen_books:
++                derived.begin_forward()
++                seen_books.add(id(cb))
++        self._sentence_codes_snapshotted = True
++
+     @_sentence_query_mask
+     def forward(self, inputData):
+         """Read through the common sentence driver; raw calls never optimize."""
+@@ -8334,13 +8349,7 @@
+             split, prepared = source if source is not None else ('train', None)
+             stage_sources(self, split, prepared, inputData)
+             self._advance_when_time()
+-        seen_books = set()
+-        for cs in getattr(self, 'conceptualSpaces', ()):
+-            cb = cs.similarity_codebook
+-            derived = getattr(cb, 'mereology', None)
+-            if derived is not None and id(cb) not in seen_books:
+-                derived.begin_forward()
+-                seen_books.add(id(cb))
++        self._snapshot_sentence_codes()
+         own_context = self.word_brackets and not getattr(self, '_sentence_run_active', False)
+         context = self._sentence_run(training=False) if own_context else nullcontext()
+         with context:
+@@ -8351,6 +8360,8 @@
+                 return self._forward_per_stage(inputData)
+             finally:
+                 self._spaces_started_for_forward = False
++                if own_context or not getattr(self, '_sentence_run_active', False):
++                    self._sentence_codes_snapshotted = False
+ 
+     def _what_memory(self):
+         """Return SymbolSpace's one interaction owner and apply its credit mode."""
+@@ -12010,7 +12021,7 @@
+         """``[B, W, D]`` retained constituent references: the leaves the
+         forward pushed, each word's symbol row's dictionary atom (its
+         object concept's where it has one, else its word concept's) scaled
+-        by activation magnitude on form and signed activation on meaning,
++        by identification presence on form and two evidence magnitudes on meaning,
+         channels (zeros elsewhere and where a word has no row)."""
+         if getattr(self, '_attention_pole_representation', False):
+             from ModelAttention import read_poles
+@@ -12045,7 +12056,9 @@
+         if torch.is_tensor(activations) and int(activations.numel()) >= B * k:
+             act = activations.reshape(B, -1)[:, :k].to(
+                 device=like.device, dtype=like.dtype).unsqueeze(-1)
+-            content = self._concept_owner().interpret.activate(content, act.squeeze(-1))
++            from ModelAttention import reference_evidence
++            evidence = reference_evidence(self, activations, '_pushed_word_slab:poles')[:, :k].to(content)
++            content = self._concept_owner().interpret.activate(content, act.squeeze(-1), evidence=evidence)
+         present = (rows[:, :k] >= 0).to(device=like.device, dtype=like.dtype).unsqueeze(-1)
+         content = content * present
+         return torch.cat(
+@@ -12338,7 +12351,7 @@
+             record.root, record.end_slots, record.end_depth, bank.codes, bank.valid, bank.weights,
+             **({} if bank.case_bank is None else {"case_bank": bank.case_bank}))
+         scores = torch.stack([readback_scores(words[:,w], bank.codes, bank.weights,
+-                              percept_width=bank.percept_width)
++                              percept_width=bank.percept_width, meaning_start=bank.meaning_start)
+                               for w in range(words.shape[1])], 1)
+         valid = bank.valid & bank.byte_valid.any(-1)
+         self._last_readback_decisions = readback_decisions(words, count, bank, active)
+@@ -12669,13 +12682,14 @@
+         da = min(int(atoms.shape[-1]), D)
+         indexed = (rows >= 0).reshape(B, W, 1).to(device=reference.device)
+         atoms = atoms[..., :da].to(device=reference.device, dtype=reference.dtype)
+-        # Match the interpreted leaf: sign belongs only to the meaning face.
+-        acts = getattr(getattr(self, "symbolSpace", None), "_word_reference_activations", None)
++        # Match the interpreted leaf without compressing its two magnitudes.
++        acts = getattr(getattr(self, "symbolSpace", None), "_word_reference_presences", None)
+         if torch.is_tensor(acts) and int(acts.numel()) == B * W:
+             from Interpret import activate_code
+             derived = getattr(cb, 'mereology', None)
+             width = da if derived is None else derived.percept_event_width
+-            atoms = activate_code(atoms, acts.reshape(B, W).to(atoms), width)
++            evidence = self.symbolSpace._word_reference_evidence.to(atoms)
++            atoms = activate_code(atoms, acts.reshape(B, W).to(atoms), width, evidence=evidence)
+         content = torch.where(indexed, atoms, reference[..., :da])
+         if da < D:
+             band = torch.where(indexed, torch.zeros_like(reference[..., da:]),
+@@ -12903,7 +12917,7 @@
+         concept_ids = self._word_symbol_concept_ids()
+         if not torch.is_tensor(concept_ids) or concept_ids.shape != rows.shape:
+             concept_ids = torch.full_like(rows, -1)
+-        activations = getattr(self.symbolSpace, "_word_reference_activations", None)
++        activations = getattr(self.symbolSpace, "_word_reference_presences", None)
+         if not torch.is_tensor(activations) or activations.numel() != B * W:
+             activations = reference.new_ones(B, W)
+         else:
+@@ -13392,6 +13406,7 @@
+             depth = getattr(stm, "_depth", None) if stm is not None else None
+             if torch.is_tensor(depth) and depth.numel():
+                 stm._max_depth_host = int(depth.max().item())
++        self._sentence_codes_snapshotted = False
+         self._staged_in_sub = None
+         self._staged_concepts_in = None
+         self._active_compiled_step = None
+@@ -13686,7 +13701,7 @@
+             from SentenceUnderstanding import readback_scores
+             valid = bank.valid & bank.byte_valid.any(-1)
+             scores = torch.stack([readback_scores(words[:,w], bank.codes, bank.weights,
+-                                  percept_width=bank.percept_width)
++                                  percept_width=bank.percept_width, meaning_start=bank.meaning_start)
+                                   for w in range(words.shape[1])], 1)
+             chosen = scores.masked_fill(~valid[:, None], -torch.inf).argmax(-1).cpu().tolist()
+             rows = bank.rows.cpu().tolist()
+@@ -13900,6 +13915,7 @@
+             self._sentence_answer_questions = ()
+             self._sentence_answer_cost = None
+             self._sentence_run_active = False
++            self._sentence_codes_snapshotted = False
+             self._open_sentence_slot = None
+             self.languageSpace._reference_bank = None
+             self.languageSpace._compose_primed_bank = None
+@@ -14097,6 +14113,8 @@
+         # Per-batch Space.Start cascade (moved out of forward() so sliding
+         # buffers can persist across forward() calls within a stream).
+         self._start_spaces_for_forward()
++
++        self._snapshot_sentence_codes()
+ 
+         # AMP: torch.autocast wrapper from util.amp_context() honors
+         # MODEL_AMP env var (hydrated from XML <architecture><amp> in
+@@ -17244,7 +17262,11 @@
+             width = int(shape[0]) * int(shape[1])
+             torch._assert_async((occupied * D <= width).all(),
+                 'the answer map cannot hold the concluded understanding')
+-            value = slots.detach().reshape(B, 3 * D)
++            record = understanding if understanding is not None else getattr(self, '_last_sentence_understanding', None)
++            value = slots.detach()
++            if record is not None:
++                value = record.primed.reader_value(value)
++            value = value.reshape(B, 3 * D)
+             value = F.pad(value, (0, max(0, width - 3 * D)))[:, :width]
+             sub = SubSpace.from_tensor(value.reshape(B, *shape),
+                 inputShape=shape, outputShape=shape,
+@@ -19751,27 +19773,23 @@
+         self._normalize_perceptual_embedding()
+ 
+     def _attention_sentence_payload(self, payload, index):
+-        """Field operations change the pole, preserving form and magnitude."""
++        """Carry both field magnitudes beside the independent form presence."""
+         reading = getattr(self, '_attention_words', None)
+         if reading is None:
+             return payload
+-        event, orders, row, activation, obj, obj_order, atom, gate, commit, routing, valid = payload
++        event, orders, row, presence, obj, obj_order, atom, gate, commit, routing, valid, evidence = payload
+         w = index.clamp(0,reading.accepted.shape[1]-1)
+         B = event.shape[0]
+-        from ModelAttention import read_poles, pole_activation
++        from ModelAttention import read_poles
+         pair = read_poles(self, '_attention_sentence_payload').gather(
+             1,w.reshape(1,1,1).expand(B,1,2)).squeeze(1)
+-        changed = reading.pole_changes.gather(1,w.reshape(1,1).expand(B,1))
+-        activation = pole_activation(activation, pair, changed)
+-        # interpret resolves atom * activation; multiplying atom would apply
+-        # the evidence twice and turn a negative witness positive again.
+         pole_representation = getattr(self, '_attention_pole_representation', False)
+         if pole_representation:
+             event = pair[:,None].to(event)
+             atom = pair.to(atom)
+-            activation = torch.ones_like(activation)
+-        return (event,orders,row,activation,obj,obj_order,atom,gate,
+-                commit & reading.accepted.gather(1,w.reshape(1,1).expand(B,1)).reshape_as(commit),routing,valid)
++            presence = torch.ones_like(presence)
++        return (event,orders,row,presence,obj,obj_order,atom,gate,
++                commit & reading.accepted.gather(1,w.reshape(1,1).expand(B,1)).reshape_as(commit),routing,valid,pair)
+ 
+     def _compose_score_function_loss(self, path, costs):
+         """§16.3: p(departure) times its detached paired cost difference.
+@@ -20687,7 +20705,7 @@
+                     # Grammar feedback changes with this derivation, while
+                     # the cached pre-compose word representation stays fixed.
+                     payload = self._attention_sentence_payload(payload,index)
+-                    payload = (*payload[:-2], *latches[0])
++                    payload = (*payload[:9], *latches[0], payload[11])
+                     current_lang, current_stm, current_feedback = compose_word(
+                         payload, index, None, current_lang, current_stm)
+                     latches = [latches[1], current_feedback]
+@@ -20971,6 +20989,7 @@
+         reducer = self._stm_reducer()
+         predictor = cs.intraSentenceLayer
+         interpretation = self._concept_owner().interpret
++        from Interpret import positive_evidence
+         language = self.languageSpace
+         n_rules = int(language._n_rules)
+         trace = self._reconstruction_stack()
+@@ -21169,6 +21188,7 @@
+             torch.zeros(B, 1, dtype=torch.bool, device=words.device),
+             words.new_zeros(B, n_rules),
+             torch.zeros(B, 1, dtype=torch.bool, device=words.device),
++            words.new_zeros(B, 2),  # independent for/against leaf magnitudes
+         )
+         empty_feedback = (
+             words.new_zeros(B, n_rules),
+@@ -21296,9 +21316,10 @@
+             routed_valid = torch.logical_and(
+                 feedback[1], same_sentence.reshape(B, 1))
+             payload = (
+-                symbolic_event, symbolic_orders, row, activation,
++                symbolic_event, symbolic_orders, row, activation.abs(),
+                 object_row, object_order, object_atom, row_gate, commit,
+-                routed_feedback, routed_valid)
++                routed_feedback, routed_valid,
++                positive_evidence(activation.reshape(B).abs()))
+             if not sentence_transactions:
+                 payload=self._attention_sentence_payload(payload,index)
+             return payload, (next_sym,)
+@@ -21324,7 +21345,7 @@
+             del _live
+             (symbolic_event, symbolic_orders, row, activation,
+              object_row, object_order, object_atom, row_gate, commit,
+-             routing, routing_valid) = cs_sym_payload
++             routing, routing_valid, leaf_evidence) = cs_sym_payload
+             word_idea = symbolic_event[:, 0, :]
+             if torch.is_tensor(grammar_leaf_mask) and not sentence_transactions:
+                 commit = commit & _gather_word(grammar_leaf_mask, index).reshape_as(commit)
+@@ -21369,10 +21390,10 @@
+ 
+             # Treating the deposited word concept as a reference resolves its
+             # paired object concept before Language observes the stack.  The
+-            # reference keeps the word's signed activation; concepts are full codes.
++            # reference keeps form presence and both conceptual magnitudes.
+             object_idea = interpretation.forward(
+                 word_idea, object_atoms=object_atom,
+-                activation=activation.reshape(B))
++                presence=activation.reshape(B), evidence=leaf_evidence)
+             object_gate = torch.logical_and(
+                 commit.reshape(B), object_row >= 0)
+             resolved = FunctionalPeerSTM.resolve_top_reference(
+@@ -21661,8 +21682,9 @@
+                 prior = self._per_word_contributions[p]
+                 prior = torch.zeros_like(event[:, 0]) if prior is None else prior
+                 self._per_word_contributions[p] = torch.where(gate, event[:, 0], prior)
+-                payload = (event, orders, row, activation, obj, obj_order,
+-                           atom, gate, gate, *empty_feedback)
++                payload = (event, orders, row, activation.abs(), obj, obj_order,
++                           atom, gate, gate, *empty_feedback,
++                           positive_evidence(activation.reshape(B).abs()))
+                 percept = ps.subspace.materialize()[:, 0]
+                 slab = self._tensor_write_word_column(current_sub[1], index, percept)
+                 return payload, (event, slab, *current_sub[2:])
+@@ -21767,7 +21789,7 @@
+             cs._intra_loss_weight_accum = None
+             cs._intra_loss_count = 0
+         # The W-wide CSLang result is symbolic, not another conceptual event:
+-        # one row identity plus one signed activation per word.  SymbolSpace
++        # one row identity, form presence and two evidence magnitudes per word. SymbolSpace
+         # owns that quantized slab; CS continues to own the full eight-slot
+         # non-quantized STM installed above.
+         symbol_rows = torch.where(
+--- measured-combined/bin/SentenceUnderstanding.py
++++ operators-final-b/bin/SentenceUnderstanding.py
+@@ -5,7 +5,7 @@
+ from torch.nn import functional as F
+ 
+ 
+-def readback_scores(leaf, codes, priming, *, percept_width=None):
++def readback_scores(leaf, codes, priming, *, percept_width=None, meaning_start=None):
+     """Read native surface identity by scale-free perceptual cosine and priming.
+ 
+     Generic field callers without a perceptual band retain their signed
+@@ -14,6 +14,10 @@
+     an excluded word's identity without assuming a unit code. A zero code has
+     no direction and scores zero. The codes and the recovered leaf stay live.
+     """
++    if meaning_start is not None:
++        # Both positive symbols share one signless form. Neither lane is
++        # evidence about which word this is, and both/neither are not aliases.
++        percept_width = meaning_start if percept_width is None else percept_width
+     if percept_width is not None:
+         # The sign is the leaf's activation, not its surface identity. On
+         # native nonnegative percepts, absolute cosine reads either pole of
+@@ -35,9 +39,9 @@
+     result = []
+     for position in range(words.shape[1]):
+         code = readback_scores(words[:, position], bank.codes, torch.ones_like(bank.weights),
+-                               percept_width=bank.percept_width)
++                               percept_width=bank.percept_width, meaning_start=bank.meaning_start)
+         weighted = readback_scores(words[:, position], bank.codes, bank.weights,
+-                                   percept_width=bank.percept_width)
++                                   percept_width=bank.percept_width, meaning_start=bank.meaning_start)
+         code = code.masked_fill(~valid, -torch.inf)
+         weighted = weighted.masked_fill(~valid, -torch.inf)
+         for b in range(words.shape[0]):
+@@ -68,10 +72,29 @@
+     case_bank: object = None
+     percept_width: int | None = None
+     forms: torch.Tensor | None = None
++    meaning_start: int | None = None
++    normalize_reader: bool = False
+ 
+     @property
+     def valid(self):
+         return self.rows >= 0
++
++    def reader_value(self, value, *, reference=None):
++        """Shared snapshot scales retain an affine read, including the sum control.
++
++        Each block uses one maximum norm over the frozen bank (all streams).
++        Never normalize each composed root: that would make a mean nonlinear.
++        """
++        if not self.normalize_reader or self.meaning_start is None:
++            return value
++        reference = self.codes * self.valid[..., None] if reference is None else reference
++        boundary = self.meaning_start
++        result = []
++        for start, end in ((0, boundary), (boundary, value.shape[-1])):
++            block = reference[..., start:end].detach()
++            scale = block.norm(dim=-1).amax().clamp_min(1.)
++            result.append(value[..., start:end] / scale)
++        return torch.cat(result, -1)
+ 
+ 
+ @dataclass(frozen=True)
+@@ -99,7 +122,9 @@
+                 * self.primed.valid[..., None]).sum(1)
+         positions = torch.arange(self.end_slots.shape[1], device=self.root.device)
+         end = self.end_slots * (positions[None] < self.end_depth[:, None])[..., None]
+-        root = self.root
++        root = self.primed.reader_value(self.root)
++        end = self.primed.reader_value(end)
++        bank = self.primed.reader_value(bank, reference=bank)
+         return torch.cat((root, end.flatten(1), bank), -1).detach()
+ 
+     def detached(self):
+--- measured-combined/bin/Spaces.py
++++ operators-final-b/bin/Spaces.py
+@@ -8151,7 +8151,7 @@
+         valid = (rows >= 0) & (rows < V) & active[:, None]
+         surface.scatter_add_(1, rows.long().clamp(0, V-1), valid.to(surface) * float(bump))
+         surface.clamp_(min=0.)
+-        return surface
++        return self._bounded_priming(surface)
+ 
+     @torch.no_grad()
+     def prime_desire(self, rows, valence=1.0, bump=1.0):
+@@ -8168,12 +8168,30 @@
+         surface.scatter_add_(1, rows.long().clamp(0, V-1),
+                              valid.to(surface) * float(valence) * float(bump))
+         surface.clamp_(min=0.)
+-        return surface
++        return self._bounded_priming(surface)
++
++    def _bounded_priming(self, surface):
++        """Normalize positive energy for retrieval; neutral is always one.
++
++        Diffusion keeps its degree-normalized energy ledger. Only the detached
++        consumer boost is bounded, so normalization cannot create graph energy.
++        """
++        from util import TheXMLConfig
++        if surface is None or not hasattr(self, '_closed_clause_store'):
++            return surface
++        maximum = float(TheXMLConfig.space('ConceptualSpace', 'primingMaxBoost', 2.))
++        if maximum < 1 or not math.isfinite(maximum):
++            raise ValueError('primingMaxBoost must be finite and at least one')
++        excess = surface.detach() - 1
++        scale = excess.clamp_min(0).amax(-1, keepdim=True).clamp_min(1.)
++        positive = excess.clamp_min(0) / scale * (maximum - 1)
++        return 1 + positive + excess.clamp_max(0)
+ 
+     def priming_weights(self):
+         """The per-stream quadratic priming surface ``[B, V]`` over the CANONICAL
+         codebook rows (neutral 1.0), or ``None`` when never written."""
+-        return getattr(self._priming_target(), "_priming_boosts", None)
++        target = self._priming_target()
++        return target._bounded_priming(getattr(target, "_priming_boosts", None))
+ 
+     def relevance_weights(self):
+         """This tower's relevance IS its priming surface (Architecture
+--- measured-combined/data/model.xml
++++ operators-final-b/data/model.xml
+@@ -492,6 +492,8 @@
+     <meaningWidth>128</meaningWidth>
+     <symbolCentroid>true</symbolCentroid>
+     <membershipPriming>true</membershipPriming>
++    <primingMaxBoost>2.0</primingMaxBoost>
++    <readerBlockNormalization>true</readerBlockNormalization>
+     <!-- Deterministic room between the part and property-whole bounds. -->
+     <latticeMargin>0</latticeMargin>
+     <nInput>0</nInput>
+--- measured-combined/data/model.xsd
++++ operators-final-b/data/model.xsd
+@@ -1124,6 +1124,8 @@
+       <xs:element name="meaningWidth" type="xs:nonNegativeInteger" minOccurs="0"/>
+       <xs:element name="symbolCentroid" type="xs:boolean" minOccurs="0"/>
+       <xs:element name="membershipPriming" type="xs:boolean" minOccurs="0"/>
++      <xs:element name="primingMaxBoost" type="nonNegativeFloat" minOccurs="0"/>
++      <xs:element name="readerBlockNormalization" type="xs:boolean" minOccurs="0"/>
+       <xs:element name="latticeMargin" type="nonNegativeFloat" minOccurs="0"/>
+       <!-- Incoming-connection L1 for the indexed conceptsFromPercepts Sigma.
+            0 disables; BasicModel opts into weak 0.01. Not activation shrink. -->
+--- measured-combined/test/test_bounded_stm_fold.py
++++ operators-final-b/test/test_bounded_stm_fold.py
+@@ -66,7 +66,7 @@
+     assert Language.LiftLayer.space_role == Language.LowerLayer.space_role == 'CS'
+     assert Language.LiftLayer.invertible
+     assert not Language.LowerLayer.invertible
+-    assert Language.LowerLayer.inverse_kind == 'right' 
++    assert Language.LowerLayer.inverse_kind == 'right'
+ 
+ 
+ def test_closing_budget_is_fixed_even_when_unary_choices_do_not_shrink(monkeypatch):
+--- measured-combined/test/test_compiled_word_chunk.py
++++ operators-final-b/test/test_compiled_word_chunk.py
+@@ -532,14 +532,14 @@
+ 
+     # CSLang keeps continuous concepts only in CS's fixed eight-slot STM.
+     # Its word-aligned handoff to SymbolSpace is the quantized sparse
+-    # reference: row identity plus one signed activation, never a duplicate
++    # reference: row identity, form presence and an evidence pair, never a duplicate
+     # [B,W,D_c] concept history.
+     stm_buffer = tensor_loop.conceptualSpace.stm._buffer
+     assert tuple(stm_buffer.shape[1:]) == (
+         tensor_loop.conceptualSpace.stm.capacity,
+         tensor_loop.conceptualSpace.stm.concept_dim)
+     symbol_activations = (
+-        tensor_loop.symbolSpace._word_reference_activations)
++        tensor_loop.symbolSpace._word_reference_presences)
+     symbol_rows = tensor_loop.symbolSpace._word_reference_rows
+     active = tensor_loop.inputSpace._word_active_mask
+     assert tuple(symbol_activations.shape) == (*active.shape, 1)
+--- measured-combined/test/test_doc_links.py
++++ operators-final-b/test/test_doc_links.py
+@@ -15,7 +15,14 @@
+ 
+ 
+ def _markdown_files():
+-    files = sorted((_ROOT / "doc").rglob("*.md"))
++    doc = _ROOT / "doc"
++    # Receipts retain extracted executable snapshots as historical evidence.
++    # Their copied root README refers to a documentation tree deliberately
++    # absent from the source archive. Audit receipt prose, not those copies.
++    files = sorted(path for path in doc.rglob("*.md")
++                   if not any((parent / "bin/Models.py").is_file()
++                              and (parent / "data/model.xml").is_file()
++                              for parent in path.parents if doc in parent.parents))
+     for name in ("README.md", "todo.md"):
+         path = _ROOT / name
+         if path.exists():
+--- measured-combined/test/test_operators_final_b.py
++++ operators-final-b/test/test_operators_final_b.py
+@@ -0,0 +1,164 @@
++"""Repair certificates: polarity, one forward snapshot, bounded affine reads."""
++from pathlib import Path
++from types import SimpleNamespace
++from unittest.mock import patch
++
++import pytest
++import torch
++
++
++def test_one_signless_form_per_word_and_two_independent_recovered_lanes():
++    from Language import LanguageSpace, DisjunctionLayer
++    from Interpret import activate_code
++    from DecompositionChooser import DecompositionChooser
++    op = DisjunctionLayer(); op.meaning_layout = (2, 6)
++    codes = torch.tensor([[[1., 0., 1., 0., 0., 0.], [0., 1., 0., 1., 0., 0.]]])
++    left_input = activate_code(codes[:, 0], torch.ones(1), 2, evidence=torch.tensor([[.7, .8]]))
++    right_input = activate_code(codes[:, 1], torch.ones(1), 2, evidence=torch.tensor([[.3, .9]]))
++    parent = op.compose(left_input, right_input)
++    flag = torch.zeros(1, dtype=torch.bool)
++    left, right, ready, details = LanguageSpace._bounded_binary_reconstruction(
++        op, parent, torch.zeros_like(parent), flag, flag, codes,
++        torch.ones(1, 2, dtype=torch.bool), 2, chooser=DecompositionChooser(), return_details=True)
++    assert ready.all() and details['left_indices'].shape == (1, 2)
++    torch.testing.assert_close(op.compose(left, right), parent, rtol=0, atol=0)
++    rows = torch.tensor([[4, 5]])
++    selected = int(details['selected'][0])
++    n = details['right_indices'].shape[1]
++    target = torch.stack((rows[0, details['left_indices'][0, selected//n]],
++                          rows[0, details['right_indices'][0, selected%n]]))[None]
++    loss, present, picked = DecompositionChooser.teacher_loss(details, rows, rows, target)
++    assert present.all() and picked.all() and loss.isfinite().all()
++    loss.sum().backward()
++    assert details['relative_residual'].min() == 0
++
++
++def test_unknown_alias_does_not_destroy_single_symbol_stop():
++    from Language import LanguageSpace, DisjunctionLayer
++    op = DisjunctionLayer(); op.meaning_layout = (2, 6)
++    code = torch.tensor([[1., 0., 0., 0., 0., 0.]])
++    eligible = LanguageSpace.decoder_eligibility(code, [code], [code], torch.ones(1, 2, dtype=torch.bool),
++        [op], code[:, None], torch.ones(1, 1, dtype=torch.bool))
++    assert eligible[0, -1]
++
++
++@pytest.mark.parametrize('pair', [(1., 0.), (0., 1.), (1., 1.), (0., 0.), (.7, .8)])
++def test_readback_identifies_form_independently_of_both_evidence_lanes(pair):
++    from SentenceUnderstanding import readback_scores
++    from Interpret import activate_code
++    codes = torch.tensor([[[1., 0., 1., 0., 0., 0.], [0., 1., 0., 1., 0., 0.]]])
++    leaf = activate_code(codes[:, 0], torch.ones(1), 2, evidence=torch.tensor([pair]))
++    scores = readback_scores(leaf, codes, torch.ones(1, 2), meaning_start=2)
++    assert scores.argmax(-1).item() == 0 and scores.shape == (1, 2)
++
++
++def test_reader_block_scales_are_shared_and_preserve_additivity():
++    from SentenceUnderstanding import PrimedSymbols, SentenceUnderstanding
++    codes = torch.tensor([[[4., 0., 2., 0., 0., 0.], [0., 3., 0., 2., 0., 0.]],
++                          [[4., 0., 2., 0., 0., 0.], [0., 3., 0., 2., 0., 0.]]])
++    bank = PrimedSymbols(torch.tensor([[0,1],[0,1]]), codes, torch.ones(2,2)*2,
++        torch.ones(2,2,dtype=torch.bool), torch.ones(2,2,1,dtype=torch.long),
++        torch.ones(2,2,1,dtype=torch.bool), meaning_start=2, normalize_reader=True)
++    a, b = codes[:,0], codes[:,1]
++    torch.testing.assert_close(bank.reader_value((a+b)/2), (bank.reader_value(a)+bank.reader_value(b))/2)
++    assert bank.reader_value(a)[:,:2].norm(dim=-1).max() <= 1
++    assert bank.reader_value(a)[:,2:].norm(dim=-1).max() <= 1
++    assert torch.equal(bank.reader_value(a)[:,:2], bank.reader_value(a*torch.tensor([1.,1.,100.,100.,100.,100.]))[:,:2])
++
++
++def test_priming_has_neutral_one_and_configured_ceiling(monkeypatch):
++    from Spaces import Space
++    from util import TheXMLConfig
++    monkeypatch.setitem(TheXMLConfig.data.setdefault('ConceptualSpace', {}), 'primingMaxBoost', 2.)
++    owner = SimpleNamespace(_closed_clause_store=lambda: None)
++    raw = torch.tensor([[1., 11., 6., .5], [1., 3., 2., 0.]], requires_grad=True)
++    got = Space._bounded_priming(owner, raw)
++    torch.testing.assert_close(got, torch.tensor([[1., 2., 1.5, .5], [1., 2., 1.5, 0.]]))
++    assert not got.requires_grad
++    monkeypatch.setitem(TheXMLConfig.data['ConceptualSpace'], 'primingMaxBoost', 1.25)
++    assert Space._bounded_priming(owner, raw).max() == 1.25
++
++
++def forced_prefix_certificate():
++    """No training: the frozen 2c fixture, two readings, B and C enabled."""
++    from Models import BasicModel
++    from Language import OperationSelectionLayer, LanguageSpace
++    from test_mm_xor import _fresh_model
++    from MereologicalCodes import MereologicalCodes
++    path = Path(__file__).resolve().parents[1] / 'doc/benchmarks/2026-10-06-operators-round2c/disjunction-initial-rng.pt'
++    original_forward, original_attend = OperationSelectionLayer.forward, OperationSelectionLayer.attend
++    commit, begin = BasicModel._commit_sentence, MereologicalCodes.begin_forward
++    reads, snapshots = [], []
++    def snapshot(derived):
++        snapshots.append(id(derived))
++        return begin(derived)
++    def disjunction(module, x, **kw):
++        stop=(x.shape[1]-1)*module.r_reduce+x.shape[1]*module.r_apply
++        depth=kw.get('depth',torch.full((len(x),),x.shape[1]))
++        kw['replay_action']=torch.where(depth>1,1,stop)
++        return original_forward(module,x,**kw)
++    def narrowing(module,keys,legal,space,**kw):
++        action=legal.flatten(1).long().argmax(-1)
++        for op in (0,2,1,4,3,5):
++            slots=legal[:,:,op]
++            action=torch.where(slots.any(-1),slots.long().argmax(-1)*legal.shape[-1]+op,action)
++        kw['replay_action']=action
++        return original_attend(module,keys,legal,space,**kw)
++    def capture(m,state,sid,active,*args):
++        texts,unavailable=m.reconstruct_grammar_sentence(state,sid,active)
++        bank=m._sentence_primed_bank; root=state[1][9][:,sid]
++        op=next(getattr(op,'gl',op) for op in m._stm_reducer().ops
++                if getattr(getattr(op,'gl',op),'rule_name','')=='disjunction')
++        flag=torch.zeros(len(root),dtype=torch.bool)
++        left,right,valid=LanguageSpace._bounded_binary_reconstruction(op,root,
++            torch.zeros_like(root),flag,flag,bank.codes,bank.valid,16)
++        reads.append(dict(texts=texts, unavailable=unavailable.tolist(),
++            residual=(op.compose(left,right)-root).square().sum(-1).tolist(),
++            R=m._last_sentence_credit['components'][:,0,0].tolist(),
++            actions=m._attention_words.actions.tolist(),
++            meaning_norm=bank.codes[...,104:].norm().item(),
++            form_snapshot=id(m._concept_owner().similarity_codebook.mereology._form_context)))
++        return commit(m,state,sid,active,*args)
++    with torch.random.fork_rng(), patch.object(OperationSelectionLayer,'forward',disjunction), \
++         patch.object(OperationSelectionLayer,'attend',narrowing), patch.object(BasicModel,'_commit_sentence',capture), \
++         patch.object(MereologicalCodes,'begin_forward',snapshot):
++        torch.set_rng_state(torch.load(path, weights_only=True))
++        model,_,data=_fresh_model('data/XOR_grammar.xml')
++        try:
++            derived=model._concept_owner().similarity_codebook.mereology
++            assert derived.context_width == 128 and derived.symbol_centroid
++            raw,target=next(iter(data.data_loader(split='test',num_streams=4)))
++            batch=model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)
++            inputs=[model._bytes_to_text(x).rstrip(chr(0)) for x in raw]
++            for _ in range(2):
++                with torch.no_grad():
++                    model.runBatch(train=False,optimizer=None,batchSize=4,split='test',batch_override=batch)
++            for read in reads:
++                read['multisets']=sum(sorted(a.split())==sorted(b.split()) for a,b in zip(inputs,read['texts']))
++            from collections import Counter
++            return dict(reads=reads, snapshots=len(snapshots), snapshot_counts=sorted(Counter(snapshots).values()), inputs=inputs)
++        finally:
++            model.End();model.symbolSpace.soft_reset()
++
++
++def test_forced_not_and_or_descend_and_snapshot_certificate():
++    report = forced_prefix_certificate()
++    assert report['snapshot_counts'] == [2, 2]
++    assert len(report['reads']) == 2
++    assert report['reads'][1]['meaning_norm'] > 0
++    for read in report['reads']:
++        assert read['multisets'] == 4 and read['residual'] == [0.]*4 and read['R'] == [0.]*4
++
++
++def test_both_training_trials_share_bootstrap_snapshot():
++    from test_mm_xor import _fresh_model
++    model, _, data = _fresh_model('data/XOR_grammar.xml')
++    try:
++        optimizer = model.getOptimizer(lr=.01)
++        for _ in range(3):
++            model.runEpoch(optimizer=optimizer, batchSize=4, split='train', max_batches=1)
++            for audit in model._sentence_credit_audits:
++                assert not audit['components'][..., 0].any()
++        assert model._concept_owner().similarity_codebook.mereology.context_audit()
++    finally:
++        model.End(); model.symbolSpace.soft_reset()
+--- measured-combined/test/test_operators_round2.py
++++ operators-final-b/test/test_operators_round2.py
+@@ -179,7 +179,7 @@
+     event=code[None].requires_grad_()
+     payload=(event,torch.zeros(1,1),torch.zeros(1,dtype=torch.long),torch.ones(1,1),
+         torch.zeros(1,dtype=torch.long),torch.zeros(1,dtype=torch.long),code,
+-        torch.ones(1,1,dtype=torch.bool),torch.ones(1,1,dtype=torch.bool),None,None)
++        torch.ones(1,1,dtype=torch.bool),torch.ones(1,1,dtype=torch.bool),None,None,torch.tensor([[1.,0.]]))
+     reading=SimpleNamespace(accepted=torch.ones(1,1,dtype=torch.bool),
+                             pole_changes=torch.ones(1,1,dtype=torch.bool))
+     model=SimpleNamespace(_attention_words=reading,_attention_poles=torch.tensor([[[1.,0.]]]))
+@@ -187,16 +187,18 @@
+     model._attention_poles=model._attention_poles.flip(-1)
+     explore=BasicModel._attention_sentence_payload(model,payload,torch.tensor(0))
+     torch.testing.assert_close(explore[0],greedy[0],rtol=0,atol=0)
+-    assert explore[3].item()==-1 and greedy[3].item()==1
++    assert explore[3].item()==greedy[3].item()==1
++    torch.testing.assert_close(explore[-1], greedy[-1].flip(-1))
+     positive=finish_reading(language,replace(leaf,leaf_evidence=torch.tensor([[1.,0.]])),registry=registry)
+     negative=finish_reading(language,replace(leaf,leaf_evidence=torch.tensor([[0.,1.]])),registry=registry)
+-    assert positive.meaning.polarity and not negative.meaning.polarity
++    assert positive.meaning.polarity and negative.meaning.polarity
++    assert positive.evidence == (1.,0.) and negative.evidence == (0.,1.)
+     from Interpret import InterpretLayer
+     owner = SimpleNamespace(similarity_codebook=SimpleNamespace(mereology=SimpleNamespace(percept_event_width=1)))
+     interpret = InterpretLayer(conceptualSpace=owner)
+     atoms = torch.tensor([[.8, .6, .2]])
+-    positive_code = interpret.activate(atoms, greedy[3].reshape(-1))
+-    negative_code = interpret.activate(atoms, explore[3].reshape(-1))
++    positive_code = interpret.activate(atoms, greedy[3].reshape(-1), evidence=greedy[-1])
++    negative_code = interpret.activate(atoms, explore[3].reshape(-1), evidence=explore[-1])
+     torch.testing.assert_close(positive_code[:, :1], negative_code[:, :1], rtol=0, atol=0)
+     torch.testing.assert_close(positive_code[:, 1:], negative_code[:, 1:].flip(-1), rtol=0, atol=0)
+     assert (negative_code-positive_code).square().sum() > 0
+--- measured-combined/test/test_operators_round2b.py
++++ operators-final-b/test/test_operators_round2b.py
+@@ -34,23 +34,20 @@
+     assert all(root.grad is None for root in roots)
+ 
+ 
+-def test_pole_only_handoff_preserves_magnitude_and_native_reference_evidence():
+-    from ModelAttention import pole_activation, reference_evidence
+-    activation = torch.tensor([[[.3], [-.6], [.8], [-.4]]], requires_grad=True)
++def test_pole_handoff_preserves_both_magnitudes_independently_of_presence():
++    from ModelAttention import reference_evidence
++    presence = torch.tensor([[[.3], [.6], [.8], [.4]]], requires_grad=True)
+     pair = torch.tensor([[[0., 1.], [1., 0.], [.5, .5], [1., 0.]]])
+     changed = torch.tensor([[True, True, True, False]])
+-    actual = pole_activation(activation, pair, changed)
+-    torch.testing.assert_close(actual, torch.tensor([[[-.3], [.6], [.8], [-.4]]]))
+-    torch.testing.assert_close(actual.abs(), activation.abs(), rtol=0, atol=0)
+     model = SimpleNamespace(_attention_poles=pair,
+                             _attention_words=SimpleNamespace(pole_changes=changed))
+-    evidence = reference_evidence(model, activation, 'commit_word_reference_slab:whole_slab')
+-    torch.testing.assert_close(evidence, torch.tensor([[[0., .3], [.6, 0.], [.8, 0.], [0., .4]]]))
++    evidence = reference_evidence(model, presence, 'commit_word_reference_slab:whole_slab')
++    torch.testing.assert_close(evidence, pair, rtol=0, atol=0)
+     assert not evidence.requires_grad
+-    model._attention_words.pole_changes.zero_()
+-    native = torch.stack((activation.squeeze(-1).clamp(0, 1),
+-                         (-activation.squeeze(-1)).clamp(0, 1)), -1)
+-    torch.testing.assert_close(reference_evidence(model, activation,
++    model._attention_poles = None
++    native = torch.stack((presence.squeeze(-1).clamp(0, 1),
++                         torch.zeros_like(presence.squeeze(-1))), -1)
++    torch.testing.assert_close(reference_evidence(model, presence,
+         'commit_word_reference_slab:per_word'), native, rtol=0, atol=0)
+ 
+ 
+--- measured-combined/test/test_operators_round2c.py
++++ operators-final-b/test/test_operators_round2c.py
+@@ -4,19 +4,20 @@
+ import torch
+ 
+ 
+-def test_interpret_both_directions_preserve_form_and_occurrence_sign_only_meaning():
++def test_interpret_both_directions_preserve_form_presence_and_both_lanes():
+     from Interpret import InterpretLayer
+     owner=SimpleNamespace(similarity_codebook=SimpleNamespace(mereology=SimpleNamespace(percept_event_width=2)))
+     layer=InterpretLayer(conceptualSpace=owner)
+-    atoms=torch.tensor([[.8,.4,.6,.2]],requires_grad=True)
+-    activation=torch.tensor([-.5],requires_grad=True)
++    atoms=torch.tensor([[.8,.4,.6,0.]],requires_grad=True)
++    presence=torch.tensor([.5],requires_grad=True)
++    evidence=torch.tensor([[.2,.5]])
+     event=torch.tensor([[0.,0.,0.,0.,7.,9.]])
+-    expected=torch.tensor([[.4,.2,.1,.3,7.,9.]])
+-    torch.testing.assert_close(layer(event,object_atoms=atoms,activation=activation),expected)
+-    torch.testing.assert_close(layer.reverse(event,word_atoms=atoms,activation=activation),expected)
++    expected=torch.tensor([[.4,.2,.12,.3,7.,9.]])
++    torch.testing.assert_close(layer(event,object_atoms=atoms,presence=presence,evidence=evidence),expected)
++    torch.testing.assert_close(layer.reverse(event,word_atoms=atoms,presence=presence,evidence=evidence),expected)
+     owner.similarity_codebook.mereology.percept_event_width=4
+-    torch.testing.assert_close(layer(event,object_atoms=atoms,activation=activation),
+-                              layer(event,object_atoms=atoms,activation=-activation),rtol=0,atol=0)
++    torch.testing.assert_close(layer(event,object_atoms=atoms,presence=presence,evidence=evidence),
++                              layer(event,object_atoms=atoms,presence=presence,evidence=evidence.flip(-1)),rtol=0,atol=0)
+ 
+ 
+ @pytest.mark.parametrize('config',['XOR_grammar','MM_grammar'])
+@@ -78,9 +79,11 @@
+         first,second=snapshots
+         audit=model._last_sentence_credit
+         if walk=='narrowing':
+-            assert (first['activation']>0).any() and (second['activation']<0).any()
++            torch.testing.assert_close(first['activation'],second['activation'],rtol=0,atol=0)
+             torch.testing.assert_close(first['root'],second['root'],rtol=0,atol=0)
+-            assert all(a.polarity and not b.polarity for a,b in zip(first['meanings'],second['meanings']))
++            assert all(a.polarity and b.polarity for a,b in zip(first['meanings'],second['meanings']))
++            for a,b in zip(first['entries'],second['entries']):
++                torch.testing.assert_close(a.leaf_evidence, b.leaf_evidence.flip(-1))
+             torch.testing.assert_close(audit['components'][:,0],audit['components'][:,1],rtol=0,atol=0)
+             assert audit['advantage'].eq(0).all() and not audit['wins'].any()
+             assert model._sentence_reader_weights.tolist()==[[1.,0.]]*4
+--- measured-combined/test/test_operators_round4a.py
++++ operators-final-b/test/test_operators_round4a.py
+@@ -102,7 +102,7 @@
+     torch.testing.assert_close(doubled[3:],output[3:]*2,rtol=0,atol=0)
+ 
+ 
+-def test_not_and_negative_interpretation_exchange_both_poles():
++def test_not_exchanges_poles_and_interpretation_keeps_the_pair():
+     from Interpret import activate_code
+     from Language import NotLayer
+     layer=NotLayer(); layer.meaning_layout=(2,6)
+@@ -110,8 +110,12 @@
+     flipped=torch.tensor([[.2,.6,.4,.1,.3,.9]])
+     torch.testing.assert_close(layer.forward(value),flipped)
+     torch.testing.assert_close(layer.reverse(flipped),value)
+-    torch.testing.assert_close(activate_code(value,torch.tensor([-.5]),2),flipped*.5)
+-    torch.testing.assert_close(activate_code(value,torch.tensor([.5]),2),value*.5)
++    expected = torch.tensor([[.1,.3,0.,0.,.15,.45]])
++    torch.testing.assert_close(activate_code(value,torch.tensor([.5]),2,
++        evidence=torch.tensor([[0.,.5]])),expected)
++    expected = torch.tensor([[.1,.3,.15,.45,.3,.9]])
++    torch.testing.assert_close(activate_code(value,torch.tensor([.5]),2,
++        evidence=torch.tensor([[.5,1.]])),expected)
+ 
+ 
+ def test_small_width_false_membership_certificate_matches_literal_all_pairs():
+--- measured-combined/test/test_priming_energy.py
++++ operators-final-b/test/test_priming_energy.py
+@@ -86,14 +86,16 @@
+ 
+ 
+ def test_zero_spread_is_pure_decay_bump():
+-    """spread=0 keeps the original decay+bump law byte-identical."""
++    """The energy ledger keeps decay+bump; retrieval normalizes its boosts."""
+     cs, _rA, _rB = _chain_cs()
+     object.__setattr__(cs, "_priming_spread", 0.0)
+     b = cs.prime_seen(torch.tensor([3, 5]), bump=1.0, decay=0.5)
+     assert float(b[0, 3]) == 2.0 and float(b[0, 0]) == 1.0
+     b = cs.prime_seen(torch.tensor([5]), bump=1.0, decay=0.5)
+-    assert abs(float(b[0, 3]) - 1.5) < 1e-6
+-    assert abs(float(b[0, 5]) - 2.5) < 1e-6
++    assert abs(float(cs._priming_boosts[0, 3]) - 1.5) < 1e-6
++    assert abs(float(cs._priming_boosts[0, 5]) - 2.5) < 1e-6
++    assert abs(float(b[0, 3]) - (1 + .5/1.5)) < 1e-6
++    assert float(b[0, 5]) == 2.
+ 
+ 
+ @pytest.mark.slow
+--- measured-combined/test/test_tetralemma_leaf.py
++++ operators-final-b/test/test_tetralemma_leaf.py
+@@ -0,0 +1,135 @@
++"""Plan §42: two positive symbols, one identity, four independent corners."""
++from dataclasses import replace
++from itertools import product
++from types import SimpleNamespace
++
++import pytest
++import torch
++
++CORNERS = ((1., 0.), (0., 1.), (1., 1.), (0., 0.))
++
++
++@pytest.mark.parametrize('corner', CORNERS + ((.35, .8),))
++def test_walk_to_leaf_reference_and_stored_row(corner, monkeypatch):
++    from Models import BasicModel
++    from Interpret import InterpretLayer
++    from ModelAttention import reference_evidence
++    from Language import SymbolSpace
++    from reading_fixtures import finish_reading
++    from test_clause_acceptance import SentenceFixture
++
++    # Non-unit presence proves that the conceptual pair is not encoded in it.
++    presence = torch.tensor([[.4]])
++    pair = torch.tensor([[corner]])
++    atoms = torch.tensor([[.6, .8, 1., .5, .25, 0., 0., 0.]])
++    owner = SimpleNamespace(similarity_codebook=SimpleNamespace(
++        mereology=SimpleNamespace(percept_event_width=2)))
++    owner.interpret = InterpretLayer(conceptualSpace=owner)
++    model = SimpleNamespace(_attention_words=SimpleNamespace(
++        accepted=torch.ones(1, 1, dtype=torch.bool)), _attention_poles=pair,
++        _concept_owner=lambda: owner, _word_symbol_rows=lambda: torch.tensor([[0]]),
++        inputSpace=SimpleNamespace(_ar_word_concept_atoms=atoms[:, None]))
++    event = torch.zeros(1, 1, 8)
++    payload = (event, torch.zeros(1, 1), torch.tensor([0]), presence,
++        torch.tensor([0]), torch.tensor([0]), atoms,
++        torch.ones(1, 1, dtype=torch.bool), torch.ones(1, 1, dtype=torch.bool),
++        None, None, torch.zeros(1, 2))
++    handed = BasicModel._attention_sentence_payload(model, payload, torch.tensor(0))
++    leaf = owner.interpret(event[:, 0], object_atoms=atoms,
++        presence=handed[3].reshape(1), evidence=handed[-1])
++    expected = torch.cat((atoms[:, :2] * .4,
++        atoms[:, 2:5] * corner[0], atoms[:, 2:5] * corner[1]), -1)
++    torch.testing.assert_close(leaf, expected, rtol=0, atol=0)
++    pushed = BasicModel._pushed_word_slab(model, 1, 1, 8, event, presence[:, None])
++    torch.testing.assert_close(pushed[:, 0], expected, rtol=0, atol=0)
++    symbol = SimpleNamespace()
++    SymbolSpace.commit_word_reference_slab(symbol, torch.tensor([[0]]), presence[:, None],
++        torch.ones(1, 1, dtype=torch.bool), evidence=reference_evidence(model,
++            presence[:, None], 'commit_word_reference_slab:whole_slab'))
++    torch.testing.assert_close(symbol._word_reference_evidence, pair, rtol=0, atol=0)
++    fixture = SentenceFixture(monkeypatch)
++    program = replace(fixture.program('A'), leaves=leaf,
++        leaf_evidence=symbol._word_reference_evidence[0])
++    clause = finish_reading(fixture.language, program, registry=fixture.registry)
++    row = fixture.store.write_clause(clause)
++    assert fixture.store.row(row)['evidence'] == pytest.approx(corner)
++    assert clause.meaning.polarity  # no Boolean is inferred from the pair
++
++
++@pytest.mark.parametrize('left_pair,right_pair', tuple(product(CORNERS, repeat=2)))
++@pytest.mark.parametrize('name', ['conjunction', 'disjunction', 'sum'])
++def test_corner_composition_lane_rules_and_form_unchanged(name, left_pair, right_pair):
++    from Interpret import activate_code
++    from Language import GRAMMAR_LAYER_CLASSES
++    code = torch.tensor([[1., .5, .25]])
++    a = torch.cat((torch.tensor([[.8, .6]]), code, code * 0), -1)
++    b = torch.cat((torch.tensor([[.3, .9]]), code, code * 0), -1)
++    left = activate_code(a, torch.ones(1), 2, evidence=torch.tensor([left_pair]))
++    right = activate_code(b, torch.ones(1), 2, evidence=torch.tensor([right_pair]))
++    op = GRAMMAR_LAYER_CLASSES[name](); op.meaning_layout = (2, 8)
++    result = op.compose(left, right)
++    pair = ((min(left_pair[0], right_pair[0]), max(left_pair[1], right_pair[1]))
++            if name == 'conjunction' else
++            (max(left_pair[0], right_pair[0]), min(left_pair[1], right_pair[1]))
++            if name == 'disjunction' else
++            ((left_pair[0] + right_pair[0]) / 2, (left_pair[1] + right_pair[1]) / 2))
++    torch.testing.assert_close(result[:, :2], op.compose(a[:, :2], b[:, :2]), rtol=0, atol=0)
++    torch.testing.assert_close(result[:, 2:], torch.cat((code * pair[0], code * pair[1]), -1), rtol=0, atol=0)
++
++
++@pytest.mark.parametrize('pair', CORNERS)
++def test_not_exchange_and_non_withdrawal(pair):
++    from Language import NotLayer, NonLayer
++    value = torch.tensor([[.8, .6, pair[0], pair[0], pair[1], pair[1]]])
++    negation, withdrawal = NotLayer(), NonLayer()
++    negation.meaning_layout = withdrawal.meaning_layout = (2, 6)
++    torch.testing.assert_close(negation(value), value[:, [0, 1, 4, 5, 2, 3]], rtol=0, atol=0)
++    expected = value.clone(); expected[:, 2:4] = 0
++    torch.testing.assert_close(withdrawal(value), expected, rtol=0, atol=0)
++
++
++def test_required_evidence_read_of_true_and_false_is_both(monkeypatch):
++    from test_clause_acceptance import SentenceFixture
++    from reading_fixtures import finish_reading
++    fixture = SentenceFixture(monkeypatch)
++    program = replace(fixture.program(('sum', 'A', 'B')),
++        leaf_evidence=torch.tensor([[1., 0.], [0., 1.]]))
++    clause = finish_reading(fixture.language, program, registry=fixture.registry)
++    row = fixture.store.write_clause(clause)
++    assert clause.evidence == fixture.store.row(row)['evidence'] == (1., 1.)
++
++
++@pytest.mark.parametrize('left_pair,right_pair', tuple(product(CORNERS + ((.2, .7),), repeat=2)))
++@pytest.mark.parametrize('name', ['conjunction', 'disjunction', 'sum'])
++def test_inverse_recovers_each_lane_after_signless_identity(name, left_pair, right_pair):
++    from MeaningCodes import compose, recover_lanes
++    from Interpret import activate_code
++    # Overlapping codes and a shared coordinate exercise min/max inverse
++    # ambiguities and the two-column mean solve, without an input trace.
++    a = torch.tensor([[.8, .6, 1., .5, 0., 0., 0., 0.]])
++    b = torch.tensor([[.3, .9, 1., 0., .25, 0., 0., 0.]])
++    left = activate_code(a, torch.ones(1), 2, evidence=torch.tensor([left_pair]))
++    right = activate_code(b, torch.ones(1), 2, evidence=torch.tensor([right_pair]))
++    parent = torch.cat((a[:, :2], compose(name, left[:, 2:], right[:, 2:])), -1)
++    recovered = recover_lanes(name, parent, a, b, 2)
++    torch.testing.assert_close(compose(name, recovered[0][:, 2:], recovered[1][:, 2:]), parent[:, 2:])
++    assert all((v[:, 2:] >= 0).all() for v in recovered)
++
++
++def test_path_ast_has_no_pole_collapse():
++    from tetralemma_audit import audit
++    report = audit()
++    assert report['sites'] and not report['violations']
++
++
++@pytest.mark.parametrize('expression', [
++    'pair[..., 0] - pair[..., 1]', 'pair[:, 0].sign()',
++    'pair.sum(-1)', 'pair.mean(dim=-1)', 'pair.argmax(-1)',
++    'pair.sum(1)', 'pair.sum(dim=2)',
++    'pair[0] >= pair[1]', 'torch.linalg.vector_norm(pair, dim=-1)',
++])
++def test_path_ast_rejects_injected_collapses(expression):
++    import ast
++    from tetralemma_audit import inspect_site
++    node = ast.parse('def bad(pair):\n    result = ' + expression).body[0]
++    assert inspect_site(node, {'pair'})
+--- measured-combined/test/test_word_interpretation.py
++++ operators-final-b/test/test_word_interpretation.py
+@@ -150,7 +150,8 @@
+     word = torch.tensor([[1., 2., 3., 4., 8., 9.]])
+     obj = torch.tensor([[5., 6., 7., 8.]])
+     activation = torch.tensor([.5])
+-    result = interpret.forward(word, object_atoms=obj, activation=activation)
++    result = interpret.forward(word, object_atoms=obj, presence=activation,
++                               evidence=torch.tensor([[.5,0.]]))
+     torch.testing.assert_close(result, torch.tensor([[2.5, 3., 3.5, 4., 8., 9.]]))
+ 
+ 
+--- measured-combined/test/tetralemma_audit.py
++++ operators-final-b/test/tetralemma_audit.py
+@@ -0,0 +1,204 @@
++"""AST census of the declared attention-to-row evidence path (plan §42).
++
++The inventory is explicit and reviewed. The checker follows local aliases of
++the pair and rejects cross-pole arithmetic/comparison, sign, and reductions
++over its lane axis. Scalar source authority enters separately and is not a
++collapse of identification evidence. Mutation tests exercise the guard.
++"""
++import ast
++import hashlib
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++PAIR_FIELDS = {'_attention_poles', '_attention_native_poles', 'poles',
++               '_word_reference_evidence', 'leaf_evidence', 'evidence'}
++SITES = {
++    'bin/ModelAttention.py': {
++        'read_poles': ['pair'], 'reference_evidence': ['pair'],
++        'handoff': ['native'], 'stage_input': [],
++    },
++    'bin/Models.py': {
++        'BasicModel._attention_sentence_payload': ['pair', 'evidence'],
++        'BasicModel._pushed_word_slab': ['pair', 'evidence'],
++        'BasicModel._answer_leaf_slab': ['evidence'],
++        'BasicModel._capture_reading_programs': [],
++        'BasicModel._program_entries': [],
++        'BasicModel._publish_sentence_scratch': [],
++        'BasicModel._run_sentence_word_bricks': [],
++        'BasicModel._run_tensor_peer_word_pipeline': ['leaf_evidence'],
++    },
++    'bin/Interpret.py': {
++        'positive_evidence': [], 'activate_code': ['evidence'],
++        'InterpretLayer.activate': ['evidence'],
++        'InterpretLayer.forward': ['evidence'], 'InterpretLayer.reverse': ['evidence'],
++    },
++    'bin/Language.py': {'SymbolSpace.commit_word_reference_slab': ['evidence']},
++    'bin/ClauseJournal.py': {'finish_clause': ['pair', 'evidence']},
++    'bin/ClauseRow.py': {'ClauseRows.write_clause': ['evidence']},
++    'bin/Understanding.py': {'AnswerProgram.__post_init__': []},
++    'bin/Layers.py': {'TernaryTruthStore.append_meaning': ['evidence']},
++    'bin/MeaningCodes.py': {'exchange': [], 'compose': []},
++}
++
++
++def inspect_site(node, sources):
++    both = frozenset(('for', 'against'))
++    aliases = {name: both for name in sources}
++
++    def tags(value):
++        if isinstance(value, ast.Name):
++            return aliases.get(value.id, frozenset())
++        if isinstance(value, ast.Attribute):
++            if value.attr in PAIR_FIELDS:
++                return both
++            if value.attr in ('c_plus', 'c_minus'):
++                return frozenset(('for' if value.attr == 'c_plus' else 'against',))
++            return tags(value.value)
++        if isinstance(value, ast.Subscript):
++            found = tags(value.value)
++            index = value.slice.elts[-1] if isinstance(value.slice, ast.Tuple) else value.slice
++            if isinstance(index, ast.Constant) and isinstance(index.value, str) and index.value != 'evidence':
++                return frozenset()
++            if isinstance(index, ast.Constant) and index.value in (0, 1) and found == both:
++                return frozenset(('for' if index.value == 0 else 'against',))
++            if isinstance(index, ast.Slice) and isinstance(index.upper, ast.Constant):
++                if index.upper.value == 1 and found == both:
++                    return frozenset(('for',))
++                if index.upper.value == 2 and isinstance(index.lower, ast.Constant) and index.lower.value == 1 and found == both:
++                    return frozenset(('against',))
++            return found
++        # Elementwise validation predicates do not produce evidence magnitudes.
++        if isinstance(value, (ast.Compare, ast.BoolOp)):
++            return frozenset()
++        if isinstance(value, ast.Call):
++            name = getattr(value.func, 'attr', getattr(value.func, 'id', ''))
++            if name in ('isfinite', 'is_tensor', 'len', 'any', 'all'):
++                return frozenset()
++            if name in ('read_poles', 'reference_evidence', 'positive_evidence'):
++                return both
++            if name not in ('detach', 'to', 'clone', 'gather', 'index_select', 'reshape',
++                            'reshape_as', 'expand', 'expand_as', 'flip', 'clamp',
++                            'clamp_min', 'where', 'stack', 'tensor', 'new_tensor',
++                            'tuple', 'map', 'float', 'amin', 'amax', 'minimum', 'maximum',
++                            'min', 'max', 'sum', 'mean', 'prod', 'tolist'):
++                return frozenset()
++        if isinstance(value, (ast.Tuple, ast.List)) and len(value.elts) != 2:
++            # A payload containing a pair is not itself a pole pair. Its
++            # receiving evidence field is an explicit interprocedural seam.
++            return frozenset()
++        return frozenset().union(*(tags(child) for child in ast.iter_child_nodes(value)))
++
++    def local_nodes(root):
++        yield root
++        for child in ast.iter_child_nodes(root):
++            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
++                continue
++            yield from local_nodes(child)
++
++    # Alias propagation is intentionally local; the explicit inventory defines
++    # the interprocedural seams instead of guessing from unrelated numerics.
++    for _ in range(12):
++        previous = dict(aliases)
++        for child in local_nodes(node):
++            if isinstance(child, (ast.Assign, ast.AnnAssign)):
++                value = child.value
++                if value is None:
++                    continue
++                targets = child.targets if isinstance(child, ast.Assign) else [child.target]
++                for target in targets:
++                    if isinstance(target, ast.Name):
++                        aliases[target.id] = aliases.get(target.id, frozenset()) | tags(value)
++        if aliases == previous:
++            break
++    failures = []
++    def fail(child, reason):
++        failures.append(dict(line=child.lineno, reason=reason, expression=ast.unparse(child)))
++    for child in local_nodes(node):
++        if isinstance(child, ast.BinOp) and isinstance(child.op, (ast.Sub, ast.Add, ast.Div, ast.Mult)):
++            left, right = tags(child.left), tags(child.right)
++            if left and right and left != both and right != both and left != right:
++                fail(child, 'arithmetic combines different evidence lanes')
++        if isinstance(child, ast.Compare):
++            values = [tags(v) for v in (child.left, *child.comparators)]
++            if frozenset(('for',)) in values and frozenset(('against',)) in values:
++                fail(child, 'comparison collapses different evidence lanes')
++        if isinstance(child, ast.Call):
++            name = getattr(child.func, 'attr', getattr(child.func, 'id', ''))
++            receiver = tags(child.func.value) if isinstance(child.func, ast.Attribute) else frozenset()
++            arguments = frozenset().union(*(tags(arg) for arg in child.args))
++            if name in ('sign', 'signbit', 'sgn', 'copysign') and (receiver or arguments):
++                fail(child, 'takes an evidence sign')
++            if name in ('sum', 'mean', 'prod', 'amin', 'amax', 'min', 'max', 'argmin', 'argmax', 'norm', 'vector_norm'):
++                method = receiver == both
++                pair_argument = bool(child.args) and tags(child.args[0]) == both
++                if not method and not pair_argument:
++                    continue
++                dims = [k.value for k in child.keywords if k.arg in ('dim', 'axis')]
++                position = 0 if method else 1
++                if not dims and len(child.args) > position:
++                    dims = [child.args[position]]
++                # The required-evidence read reduces contributions on axis 0,
++                # retaining the final pair axis. Explicit per-pole max is safe.
++                if not dims or name not in ('amin', 'amax', 'min', 'max') or any(ast.unparse(dim) != '0' for dim in dims):
++                    fail(child, 'reduces the evidence lane axis')
++    for child in ast.walk(node):
++        if child is not node and isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
++            # Nested scopes get their own aliases; e.g. metadata's selected
++            # evidence must not taint determined_order's selected orders.
++            failures.extend(inspect_site(child, sources))
++    unique = {(p['line'], p['reason'], p['expression']): p for p in failures}
++    return list(unique.values())
++
++
++def definitions(tree):
++    found = {}
++    def walk(node, prefix=''):
++        for child in ast.iter_child_nodes(node):
++            if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
++                name = prefix + child.name
++                found[name] = child
++                walk(child, name + '.')
++            else:
++                walk(child, prefix)
++    walk(tree)
++    return found
++
++
++def audit():
++    sites, violations = [], []
++    for filename, entries in SITES.items():
++        source = (ROOT / filename).read_text()
++        tree = ast.parse(source)
++        found = definitions(tree)
++        for name, sources in entries.items():
++            node = found[name]
++            problems = inspect_site(node, set(sources))
++            violations.extend(dict(file=filename, site=name, **p) for p in problems)
++            sites.append(dict(file=filename, site=name, line=node.lineno,
++                end_line=node.end_lineno, pair_sources=sources,
++                sha256=hashlib.sha256(ast.get_source_segment(source, node).encode()).hexdigest(),
++                violations=len(problems)))
++    # The retired scalar seam cannot silently reappear under its old name.
++    for filename in ('bin/ModelAttention.py', 'bin/Models.py', 'bin/Interpret.py', 'bin/Language.py'):
++        for token in ('pole_activation', '_word_reference_activations'):
++            if token in (ROOT / filename).read_text():
++                violations.append(dict(file=filename, reason='retired scalar seam', expression=token))
++    direct_accesses = []
++    fields = {'_attention_poles', '_word_reference_evidence', 'leaf_evidence'}
++    for path in sorted((ROOT / 'bin').glob('*.py')):
++        filename = str(path.relative_to(ROOT))
++        for node in ast.walk(ast.parse(path.read_text())):
++            field = node.attr if isinstance(node, ast.Attribute) else None
++            if isinstance(node, ast.Call) and getattr(node.func, 'id', '') in ('getattr', 'setattr') and len(node.args) > 1:
++                field = node.args[1].value if isinstance(node.args[1], ast.Constant) else None
++            if field not in fields:
++                continue
++            owners = [site['site'] for site in sites if site['file'] == filename
++                      and site['line'] <= node.lineno <= site['end_line']]
++            direct_accesses.append(dict(file=filename, line=node.lineno, field=field, audited_by=owners))
++            if not owners:
++                violations.append(dict(file=filename, line=node.lineno, reason='unlisted evidence consumer', expression=ast.unparse(node)))
++    return dict(sites=sites, direct_accesses=direct_accesses, violations=violations,
++        rule='no cross-lane arithmetic/comparison, sign, or lane-axis reduction on the declared walk-to-row path',
++        boundary='source authority and downstream signed testimony views are separate from identification evidence',
++        zero_rules=dict(evidence='min over nonzero contributions per pole', extent_code='coordinatewise min including zero'))

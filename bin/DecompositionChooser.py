@@ -1,7 +1,6 @@
 """Reconstruction's supervised choice among detached candidate pairs."""
 import torch
 from torch import nn
-from torch.nn import functional as F
 
 
 class DecompositionChooser(nn.Module):
@@ -31,8 +30,11 @@ class DecompositionChooser(nn.Module):
                    & (targets >= 0).all(-1)[:, None, None]
                    & details['allowed']).flatten(1)
         present = matches.any(-1)
-        target = matches.long().argmax(-1)
         selected_true = matches.gather(1, details['selected'][:, None]).squeeze(1)
-        loss = F.cross_entropy(details['logits'], target, reduction='none')
+        # The target is a word pair, independent of either symbol's polarity.
+        # Marginalize all of its legal symbols instead of teaching the first.
+        logits = details['logits']
+        accepted = matches | ~present[:, None]
+        loss = logits.logsumexp(-1) - logits.masked_fill(~accepted, -torch.inf).logsumexp(-1)
         loss = torch.where(present, loss, torch.zeros_like(loss))
         return loss, present, selected_true

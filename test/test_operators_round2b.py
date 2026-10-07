@@ -34,23 +34,20 @@ def test_reader_mean_for_compose_kept_for_narrowing_and_one_owned_step():
     assert all(root.grad is None for root in roots)
 
 
-def test_pole_only_handoff_preserves_magnitude_and_native_reference_evidence():
-    from ModelAttention import pole_activation, reference_evidence
-    activation = torch.tensor([[[.3], [-.6], [.8], [-.4]]], requires_grad=True)
+def test_pole_handoff_preserves_both_magnitudes_independently_of_presence():
+    from ModelAttention import reference_evidence
+    presence = torch.tensor([[[.3], [.6], [.8], [.4]]], requires_grad=True)
     pair = torch.tensor([[[0., 1.], [1., 0.], [.5, .5], [1., 0.]]])
     changed = torch.tensor([[True, True, True, False]])
-    actual = pole_activation(activation, pair, changed)
-    torch.testing.assert_close(actual, torch.tensor([[[-.3], [.6], [.8], [-.4]]]))
-    torch.testing.assert_close(actual.abs(), activation.abs(), rtol=0, atol=0)
     model = SimpleNamespace(_attention_poles=pair,
                             _attention_words=SimpleNamespace(pole_changes=changed))
-    evidence = reference_evidence(model, activation, 'commit_word_reference_slab:whole_slab')
-    torch.testing.assert_close(evidence, torch.tensor([[[0., .3], [.6, 0.], [.8, 0.], [0., .4]]]))
+    evidence = reference_evidence(model, presence, 'commit_word_reference_slab:whole_slab')
+    torch.testing.assert_close(evidence, pair, rtol=0, atol=0)
     assert not evidence.requires_grad
-    model._attention_words.pole_changes.zero_()
-    native = torch.stack((activation.squeeze(-1).clamp(0, 1),
-                         (-activation.squeeze(-1)).clamp(0, 1)), -1)
-    torch.testing.assert_close(reference_evidence(model, activation,
+    model._attention_poles = None
+    native = torch.stack((presence.squeeze(-1).clamp(0, 1),
+                         torch.zeros_like(presence.squeeze(-1))), -1)
+    torch.testing.assert_close(reference_evidence(model, presence,
         'commit_word_reference_slab:per_word'), native, rtol=0, atol=0)
 
 

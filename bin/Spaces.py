@@ -686,7 +686,10 @@ class WhereEncoding(QuadratureEncoding):
         print(f"Positions decoded: {offsets}")
 
 
-# .when endpoint-sum BRACKET scheme (2026-06-16 redesign).
+# Historical standalone codecs (2026-06-16 and v2).
+# Live event bands use DocumentWhenEncoding below: relative [i, i+1].
+# These legacy codecs retain explicit caller-owned t; the model no longer
+# propagates when_time into any event encoder.
 #
 # ``.when`` is now the same endpoint-sum bracket as ``.where`` (see
 # ``_bracket_encode``), keyed on a span of model TIME ``[start, end]`` measured
@@ -728,9 +731,8 @@ class WhenRangeEncoding(QuadratureEncoding):
 
       ``.when = 0.5 * [sin(s*dt)+sin(e*dt), cos(s*dt)+cos(e*dt)]``, dt=2*pi/period
 
-      * the ANGLE decodes the event-time CENTER (``self.t`` is the live clock,
-        synced from the serialized ``BasicModel.when_time``; the long-int clock
-        owns the EXACT time, the angle is the coarse / folded feature).
+      * the ANGLE decodes the event-time CENTER (``self.t`` is supplied by a legacy caller;
+        the angle is a coarse / folded feature).
       * the MAGNITUDE decodes the event DURATION (extent). An INSTANT event
         (start == end == t) collapses to ``[sin(t*dt), cos(t*dt)]`` (magnitude
         1), the default stamp.
@@ -752,10 +754,7 @@ class WhenRangeEncoding(QuadratureEncoding):
             Encoding.__init__(self, [], 1)
             self.div_term = 2 * math.pi / max(1, maxT)
             self.nDim = 0
-        # ``now`` -- the model clock origin the tense relation is measured
-        # against. The live BasicModel clock (``when_time``) propagates here once
-        # per batch (see BasicModel._advance_when_time) so a default-stamped
-        # .when is an INSTANT at the absolute model time.
+        # Standalone legacy origin; no live model clock is copied here.
         self.t = 0
 
     def encode(self, start, end=None):
@@ -822,9 +821,7 @@ class WhenRangeEncoding(QuadratureEncoding):
         return y
 
     def increment(self, batch):
-        """No-op: the absolute clock lives on ``BasicModel.when_time`` and is
-        propagated to ``self.t`` once per batch (see BasicModel._advance_when_time);
-        this encoding does not self-count."""
+        """No-op: the caller owns the legacy origin; this codec does not count."""
         return
 
     @staticmethod
@@ -852,7 +849,7 @@ class WhenStartDurationEncoding(Encoding):
     atan2 per pair + HF branch resolution by LF (exact once the LF
     estimate localizes within half an HF period). The band carries the field
     address within the chain's capacity. The exact long-int clock remains
-    alongside it (``BasicModel.when_time`` -> the synced ``self.t``).
+    alongside it (the standalone caller-owned ``self.t``).
     DURATION is REMOVED from the band (write-only in v1:
     ``decode_span`` had zero callers, tense rotates the center only,
     aspect is retired) -- exact extents belong to the record store when
@@ -875,8 +872,7 @@ class WhenStartDurationEncoding(Encoding):
         self.rung_ratio = int(rung_ratio)
         self.div_lf = 2 * math.pi / max(1, int(maxT))
         self.div_hf = self.div_lf * self.rung_ratio
-        # ``now`` -- synced once per batch from BasicModel.when_time
-        # (_advance_when_time); the encoding owns NO clock state.
+        # Standalone legacy origin; the live model never updates it.
         self.t = 0
 
     @property
@@ -985,14 +981,38 @@ def event_when_encoding(n_when):
     model-owned encoding, including the tense operators.
     """
     capacity = int(TheXMLConfig.space("SymbolSpace", "ltmCapacity", default=1024) or 1024)
-    return WhenStartDurationEncoding(n_when=n_when).set_capacity(capacity)
+    return WhenEncoding(n_when=n_when).set_capacity(capacity)
 
 
 # ``WhenEncoding`` resolves to the v2 start ladder (2026-07-04 encoding
 # pass). The 2026-06-16 endpoint-sum bracket (WhenRangeEncoding) is retired
 # from the event tail: duration was write-only there (decode_span had zero
 # callers) and the exact clock owns absolute time (Option-C hybrid).
-WhenEncoding = WhenStartDurationEncoding
+class DocumentWhenEncoding(WhenStartDurationEncoding):
+    """Document-relative unit bracket [sentence, sentence + 1], in two rungs.
+
+    The endpoint sum uses the spatial ladder's frequencies and scale. ``t``
+    is a relative position supplied by the source, never the model clock.
+    Historical onset encoders remain available to decode old standalone data.
+    """
+    def encode(self, start, end=None):
+        start = torch.as_tensor(start, device=TheDevice.get()) if not torch.is_tensor(start) else start
+        end = start + 1 if end is None else end
+        return (super().encode(start) + super().encode(end)) * .5
+
+    def decode_index(self, encoded):
+        centered = self.shift_time(encoded, -.5)
+        return super().decode_index(centered)
+
+    def decode(self, encoded):
+        return super().decode(self.shift_time(encoded, -.5))
+
+    def decode_span(self, encoded):
+        start, _ = self.decode(encoded)
+        return start, start + 1
+
+
+WhenEncoding = DocumentWhenEncoding
 class WordEncoding(Encoding):
     """Word encoding: each word is a (batch, vector, rule, order) 4-tuple.
 
@@ -8113,7 +8133,9 @@ class Space(SpaceCarrierMixin, nn.Module):
         surface.copy_(torch.where(active[:, None], surface * d + 1 - d, surface))
         spread = float(getattr(self, '_priming_spread', 0.) or 0.)
         edges = self._priming_edges() if spread > 0 else None
-        if edges is not None:
+        from MereologicalCodes import diffuse_memberships
+        shared_wholes = diffuse_memberships(self, surface, edges, spread, active)
+        if edges is not None and not shared_wholes:
             src, dst, weight = (value.to(surface.device) for value in edges)
             valid = (src >= 0) & (src < V) & (dst >= 0) & (dst < V)
             src, dst, weight = src[valid], dst[valid], weight[valid].to(surface.dtype)
@@ -8129,7 +8151,7 @@ class Space(SpaceCarrierMixin, nn.Module):
         valid = (rows >= 0) & (rows < V) & active[:, None]
         surface.scatter_add_(1, rows.long().clamp(0, V-1), valid.to(surface) * float(bump))
         surface.clamp_(min=0.)
-        return surface
+        return self._bounded_priming(surface)
 
     @torch.no_grad()
     def prime_desire(self, rows, valence=1.0, bump=1.0):
@@ -8146,12 +8168,30 @@ class Space(SpaceCarrierMixin, nn.Module):
         surface.scatter_add_(1, rows.long().clamp(0, V-1),
                              valid.to(surface) * float(valence) * float(bump))
         surface.clamp_(min=0.)
-        return surface
+        return self._bounded_priming(surface)
+
+    def _bounded_priming(self, surface):
+        """Normalize positive energy for retrieval; neutral is always one.
+
+        Diffusion keeps its degree-normalized energy ledger. Only the detached
+        consumer boost is bounded, so normalization cannot create graph energy.
+        """
+        from util import TheXMLConfig
+        if surface is None or not hasattr(self, '_closed_clause_store'):
+            return surface
+        maximum = float(TheXMLConfig.space('ConceptualSpace', 'primingMaxBoost', 2.))
+        if maximum < 1 or not math.isfinite(maximum):
+            raise ValueError('primingMaxBoost must be finite and at least one')
+        excess = surface.detach() - 1
+        scale = excess.clamp_min(0).amax(-1, keepdim=True).clamp_min(1.)
+        positive = excess.clamp_min(0) / scale * (maximum - 1)
+        return 1 + positive + excess.clamp_max(0)
 
     def priming_weights(self):
         """The per-stream quadratic priming surface ``[B, V]`` over the CANONICAL
         codebook rows (neutral 1.0), or ``None`` when never written."""
-        return getattr(self._priming_target(), "_priming_boosts", None)
+        target = self._priming_target()
+        return target._bounded_priming(getattr(target, "_priming_boosts", None))
 
     def relevance_weights(self):
         """This tower's relevance IS its priming surface (Architecture
@@ -9085,7 +9125,14 @@ class InputSpace(Space):
         
         See class docstring for the operation contract.
         """
+        from Occurrence import prepared_input
         self._clear_sentence_pack()
+        cursor = getattr(self.data, '_address_cursor', None)
+        self._prepared_source_rows = getattr(cursor, 'last_source_indices', None)
+        self._prepared_source_split = getattr(self.data, '_address_split', 'train')
+        if 'runtime' in getattr(self.data, 'source_addresses', {}):
+            self._prepared_source_split = 'runtime'
+            self._prepared_source_rows = list(range(len(inputBatch)))
         if (isinstance(inputBatch, list) and inputBatch
                 and isinstance(inputBatch[0], str)):
             self._last_sentences = list(inputBatch)
@@ -9108,14 +9155,14 @@ class InputSpace(Space):
             # the NaN source; see memory / pinmem guide. Eliminating
             # this sync from the captured region is the job of the
             # compile-scoped-to-model architecture, not async tricks.)
-            return host.to(TheDevice.get())
+            return prepared_input(self, inputBatch, host.to(TheDevice.get()))
         self._host_input_slab = None  # no host origin -> device fallback
         if self.model_type != 'embedding' and torch.is_tensor(inputBatch):
             # Numeric datasets expose scalar pixels as [B, D, 1], while a
             # configured input may present the same values as [B, 1, D].
             # Respect the declared layout without changing their order.
-            return inputBatch.reshape(inputBatch.shape[0], *self.inputShape)
-        return inputBatch
+            return prepared_input(self, inputBatch, inputBatch.reshape(inputBatch.shape[0], *self.inputShape))
+        return prepared_input(self, inputBatch, inputBatch)
 
     def _clear_sentence_pack(self):
         """Drop request-scoped packed-sentence metadata."""
@@ -10242,7 +10289,8 @@ class InputSpace(Space):
             located = hasattr(self.subspace.whereEncoding, 'capacity')
             self.subspace.where.setW(self.subspace.whereEncoding.encode(where_idx)
                                     if located else where_idx)
-            when_idx = torch.zeros_like(when_idx) + self.subspace.whenEncoding.t
+            from Occurrence import event_positions
+            when_idx = event_positions(self, when_idx.shape, device=when_idx.device)
             self.subspace.when.setW(self.subspace.whenEncoding.encode(when_idx)
                                    if located else when_idx)
             # R3-live (C): in analyse mode InputSpace is NOT the lexer -- it
@@ -10279,7 +10327,8 @@ class InputSpace(Space):
             positions = torch.arange(nIdeas, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
             self.subspace.set_where(self.subspace.whereEncoding.encode(positions))
         if self.nWhen > 0:
-            timesteps = torch.zeros((batch, nIdeas), dtype=torch.long, device=dev) + self.subspace.whenEncoding.t
+            from Occurrence import event_positions
+            timesteps = event_positions(self, (batch, nIdeas), device=dev)
             self.subspace.set_when(self.subspace.whenEncoding.encode(timesteps))
         self.input = self.subspace.materialize()
         self.subspace.normalize("input", target="what", normalize=True)
@@ -10957,8 +11006,9 @@ class PartSpace(Space):
                 stamp = stamp * (offsets >= 0).unsqueeze(-1).to(stamp.dtype)
                 event[..., w_idx] = stamp
         if self.subspace.nWhen:
+            from Occurrence import event_positions
             event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(
-                self.subspace.whenEncoding.t).to(event)
+                event_positions(self, event.shape[:-1], device=event.device)).to(event)
         return event
 
     def synthesize_word_parts(self, part_ids, part_mask, part_offsets=None):
@@ -11679,8 +11729,9 @@ class PartSpace(Space):
                     _stamp.dtype)
                 what_event[..., _w_idx] = _stamp
         if self.subspace.nWhen:
+            from Occurrence import event_positions
             what_event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(
-                self.subspace.whenEncoding.t).to(what_event)
+                event_positions(self, what_event.shape[:-1], device=what_event.device)).to(what_event)
         self.subspace.whereEncoding.p = 0
         self.subspace.set_event(what_event)
         # The percept ``.where`` belongs on ``subspace.where`` -- the SubSpace
@@ -15396,9 +15447,9 @@ class ConceptualSpace(Space):
                 for row, col in zip(matrix._rows, matrix._cols)]
         model = getattr(self, '_model', None)
         native = getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None)
-        tick = getattr(model, 'when_time', 0)
-        when = torch.zeros_like(extents) + torch.as_tensor(tick, device=extents.device, dtype=extents.dtype)
-        when[..., 1] += 1
+        from Occurrence import event_positions
+        positions = event_positions(self, extents.shape[:2], device=extents.device)
+        when = torch.stack((positions, positions + 1), -1).to(extents)
         perception = read_percepts(percepts, extents, keys,
             part_reader=PartSpace.part_memberships, native=native,
             dtype=self.similarity_codebook.getW().dtype, when=when,
@@ -16269,13 +16320,6 @@ class ConceptualSpace(Space):
         """The CS surface spans the concept inventory (the similarity
         codebook rows), not a subspace codebook (pure-event)."""
         return int(self.nVectors)
-
-    def prime_seen(self, rows, bump=1.0, decay=None, *, active_rows=None):
-        surface = super().prime_seen(rows, bump=bump, decay=decay, active_rows=active_rows)
-        if surface is not None and self._priming_target() is self:
-            from MereologicalCodes import conduct_occurrences
-            surface = conduct_occurrences(self, surface, active_rows=active_rows)
-        return surface
 
     def freeze_concept(self, concept_id):
         """FREEZE a concept's relational structure (Alec 2026-07-11): no

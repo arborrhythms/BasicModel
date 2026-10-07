@@ -1,0 +1,27 @@
+..............ss..............................................s..sss.... [ 55%]
+.....................F..................s.................               [100%]
+=================================== FAILURES ===================================
+_ TestMentalModelWhenEnabled.test_when_enabled_at_width_four_with_start_ladder _
+test/test_when_grammar_rules.py:153: in test_when_enabled_at_width_four_with_start_ladder
+    self.assertEqual(type(we).__name__, "WhenStartDurationEncoding", name)
+E   AssertionError: 'DocumentWhenEncoding' != 'WhenStartDurationEncoding'
+E   - DocumentWhenEncoding
+E   + WhenStartDurationEncoding
+E    : inputSpace.subspace
+=============================== warnings summary ===============================
+test/test_walk_trials.py::test_thought_pair_keeps_one_episode_and_costs_before_policy_backward
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space
+  /Users/arogers/github/basicmodel-round4a0/bin/Models.py:7194: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2924/cfg2/MM_xor_synth_discourse.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds
+  /Users/arogers/github/basicmodel-round4a0/bin/Models.py:7194: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/basicmodel-round4a0/data/MM_xor_fixture.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_when_grammar_rules.py::TestMentalModelWhenEnabled::test_when_enabled_at_width_four_with_start_ladder
+1 failed, 122 passed, 7 skipped, 3 warnings in 7.16s

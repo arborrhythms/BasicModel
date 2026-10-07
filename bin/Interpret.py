@@ -4,11 +4,25 @@ from Layers import GrammarLayer
 from Definitions import form_key
 
 
-def activate_code(atoms, activation, form_width):
-    """Interpret signed evidence without an additive inverse on the form."""
-    value = activation.unsqueeze(-1)
-    return torch.cat((atoms[..., :form_width] * value.abs(),
-                      atoms[..., form_width:] * value), -1)
+def positive_evidence(presence):
+    """A native positive identification, before any conceptual pole operation."""
+    return torch.stack((presence.clamp(0, 1), torch.zeros_like(presence)), -1)
+
+
+def activate_code(atoms, presence, form_width, *, evidence):
+    """One signless code, two independent positive evidence lanes.
+
+    Identification presence belongs only to form. The dictionary's for block
+    is the concept's signless context code; its two occurrences have their own
+    magnitudes. In particular both never becomes neither.
+    """
+    if evidence.shape != (*atoms.shape[:-1], 2):
+        raise ValueError('interpretation requires an aligned evidence pair')
+    torch._assert_async((presence >= 0).all(), 'identification presence must be nonnegative')
+    width = (atoms.shape[-1] - form_width) // 2
+    code = atoms[..., form_width:form_width + width]
+    return torch.cat((atoms[..., :form_width] * presence.unsqueeze(-1),
+                      code * evidence[..., :1], code * evidence[..., 1:2]), -1)
 
 
 class InterpretLayer(GrammarLayer):
@@ -106,7 +120,7 @@ class InterpretLayer(GrammarLayer):
             for candidate in index.objects(word):
                 row = index.row(word, candidate)
                 store = index._store()
-                store._definition_rows[int(store.occurrence_id[row])] = value
+                store._definition_rows[int(store.address_keys[row])] = value
                 store._update_semantic_fingerprint(row)
                 index.add(row)
             return word
@@ -202,7 +216,7 @@ class InterpretLayer(GrammarLayer):
                 cs._populate_concept_weights(obj, witness=(parts, old['wholes']), word_reading=True)
                 row = index.row(word, obj)
                 store = index._store()
-                store._definition_rows[int(store.occurrence_id[row])] = value
+                store._definition_rows[int(store.address_keys[row])] = value
                 store._update_semantic_fingerprint(row)
         index.rebuild()
         self._identity_revision = identity.revision
@@ -225,6 +239,7 @@ class InterpretLayer(GrammarLayer):
         from Spaces import _concept_alloc_of
         from Meaning import ConceptualMeaning
         from References import symbol_code
+        from Occurrence import definition_key, sentence_key
         cs, word, obj = self.owner, int(word), int(obj)
         alloc, index = _concept_alloc_of(cs), cs.definitions
         store = index._store()
@@ -234,8 +249,8 @@ class InterpretLayer(GrammarLayer):
             raise ValueError('DEF requires distinct, live native identities')
         row = index.row(word, obj)
         if row is not None:
-            store.timestamp[row] = float(store._next_ts)
-            store._next_ts.add_(1)
+            store.write_timestamp(row)
+            store.witness_count[row] += 1
             return row
         self._preflight(inventory=False, word=word)
         description = description or self._pending.get(word) or index.description(word)
@@ -248,37 +263,34 @@ class InterpretLayer(GrammarLayer):
         meaning = ConceptualMeaning(roles, torch.ones(3, dtype=torch.bool, device=roles.device),
             mode='assertive', sentence_kind='relation', role_refs=(('sym', word), None, ('sym', obj)))
         row = store.append_meaning(meaning, kind='unverified', rel_type=store.REL_DEF,
-                                   trust=0., evidence=(0., 0.), order=cs._concept_source_order(obj))
+                                   trust=0., evidence=(0., 0.), order=cs._concept_source_order(obj),
+                                   document_key=('DEF', word, obj), content_key=sentence_key(()),
+                                   address=definition_key(word, obj))
         store.refs[row] = store.refs.new_tensor([word, -1, obj])
-        # Occurrence addresses have a disjoint tag; definitions need no third
-        # concept identity merely to address the row in the recency buffer.
-        store.row_ids[row] = (1 << 62) + int(store.occurrence_id[row])
-        model = getattr(cs, '_model', None)
-        if getattr(model, 'when_encoding', None) is not None:
-            store.when[row].copy_(model.when_encoding.encode(model.when_time).reshape(-1)[:4])
-        else:
-            store.when[row, 0] = float(store.timestamp[row]) + 1.
-        store._definition_rows[int(store.occurrence_id[row])] = description
+        store.row_ids[row] = int(store.address_keys[row])
+        store.when[row].zero_()  # Definitions are unlocated, never clock-stamped.
+        store._definition_rows[int(store.address_keys[row])] = description
         store._update_semantic_fingerprint(row)
         index.add(row)
         self._pending.pop(word, None)
         self._field_pending.discard(word)
         return row
 
-    def activate(self, atoms, activation):
-        """Magnitude on form; signed evidence on the contextual complement."""
+    def activate(self, atoms, presence, *, evidence):
+        """Identify the form and carry both conceptual magnitudes intact."""
         bank = getattr(self.owner, 'similarity_codebook', None)
         derived = getattr(bank, 'mereology', None)
         width = atoms.shape[-1] if derived is None else derived.percept_event_width
-        return activate_code(atoms, activation, width)
+        return activate_code(atoms, presence, width, evidence=evidence)
 
     def forward(self, word, *, order=None, occurrence=None, selected=None,
-                object_atoms=None, activation=None):
+                object_atoms=None, presence=None, evidence=None):
         if torch.is_tensor(word):
-            if object_atoms is None or activation is None:
+            if object_atoms is None or presence is None or evidence is None:
                 raise ValueError('interpret tensor face requires the resolved object bank')
             width = object_atoms.shape[-1]
-            return torch.cat((self.activate(self.binding_atoms(object_atoms), activation), word[..., width:]), -1)
+            return torch.cat((self.activate(self.binding_atoms(object_atoms), presence,
+                                           evidence=evidence), word[..., width:]), -1)
         from Spaces import _concept_alloc_of
         cs, word = self.owner, int(word)
         alloc, index = _concept_alloc_of(cs), cs.definitions
@@ -362,12 +374,12 @@ class InterpretLayer(GrammarLayer):
 
     compose = forward
 
-    def reverse(self, obj, *, word_atoms=None, activation=None):
+    def reverse(self, obj, *, word_atoms=None, presence=None, evidence=None):
         if torch.is_tensor(obj):
-            if word_atoms is None or activation is None:
+            if word_atoms is None or presence is None or evidence is None:
                 raise ValueError('interpret reverse requires the owned word bank')
             width = word_atoms.shape[-1]
-            return torch.cat((self.activate(word_atoms, activation), obj[..., width:]), -1)
+            return torch.cat((self.activate(word_atoms, presence, evidence=evidence), obj[..., width:]), -1)
         words = self.owner.definitions.words(int(obj))
         if len(words) != 1:
             raise ValueError('object requires a lexical selection')

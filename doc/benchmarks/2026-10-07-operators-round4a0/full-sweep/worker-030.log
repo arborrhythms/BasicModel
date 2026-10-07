@@ -1,0 +1,13 @@
+ssssss.sssssssss........................................................ [ 50%]
+......................................................................   [100%]
+=============================== warnings summary ===============================
+test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_momentum_by_name
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_truth_layer_record_many.py::test_record_batch_matches_record_loop_high_trust
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [3] contradicts existing truth [0] (cosine similarity -0.795)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+127 passed, 15 skipped, 2 warnings in 112.80s (0:01:52)

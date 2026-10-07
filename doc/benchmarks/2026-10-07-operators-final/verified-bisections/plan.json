@@ -1,0 +1,46 @@
+{
+  "jobs": [
+    {
+      "kind": "sum",
+      "run": 8,
+      "part": "B",
+      "name": "sum-08-B-off"
+    },
+    {
+      "kind": "sum",
+      "run": 8,
+      "part": "C",
+      "name": "sum-08-C-off"
+    },
+    {
+      "kind": "sum",
+      "run": 8,
+      "part": "D",
+      "name": "sum-08-D-off"
+    },
+    {
+      "kind": "xor",
+      "run": 9,
+      "part": "B",
+      "name": "xor-09-B-off"
+    },
+    {
+      "kind": "xor",
+      "run": 9,
+      "part": "C",
+      "name": "xor-09-C-off"
+    },
+    {
+      "kind": "xor",
+      "run": 9,
+      "part": "D",
+      "name": "xor-09-D-off"
+    }
+  ],
+  "source": "Same original failed standing entries, with effective XML settings asserted",
+  "seed": null,
+  "standing_retries": 0,
+  "standing_replacements": 0,
+  "prior_diagnostics": "bisections/: invalid, constructor patch never reached live singleton; all remained on",
+  "script_sha256": "09bf941abadbb5aacf9dd8e7bc27909e608bc1675d14ca39e45cd1406fa55d3a"
+}

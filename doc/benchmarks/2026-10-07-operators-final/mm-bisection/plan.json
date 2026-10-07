@@ -1,0 +1,8 @@
+{
+  "seed": null,
+  "epochs": 200,
+  "retries": 0,
+  "replacements": 0,
+  "baseline": "cce3a4f7b",
+  "scope": "paired raw MM path; captured OS-initialized RNG state, all 200 epochs, no threshold early stop"
+}

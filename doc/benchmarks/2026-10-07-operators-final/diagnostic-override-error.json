@@ -1,0 +1,14 @@
+{
+  "valid_attribution": false,
+  "reason": "rng_replay.switches patches XMLConfig.__init__, but the live singleton was already constructed and loaded through load/overlay. No requested parameter was changed. Constructor also addressed config.data rather than its public setter; that branch was not executed.",
+  "effect": "These are all-on replays of the original captured entries, not B/C/D-off experiments. Standing campaign had no disable request and is unaffected.",
+  "invalid_results": [
+    "bisections",
+    "bootstrap-cost-bisection/B",
+    "bootstrap-cost-bisection/C",
+    "bootstrap-cost-bisection/D"
+  ],
+  "retained_on_prefix": "bootstrap-cost-bisection/on reproduces the original sum-01 prefix; its all-on interpretation remains valid.",
+  "new_controls": "verified-bisections, uses the public setter and verifies model construction",
+  "helper_sha256": "fd2ec60753d8647cd3062fe7e1c37c5c044cdb686bde404155b87861cb125094"
+}

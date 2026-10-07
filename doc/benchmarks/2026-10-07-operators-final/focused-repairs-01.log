@@ -1,0 +1,8 @@
+[collect] 22 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 4.6s; peak 0.47 GiB
+[worker-000] 189 selectors; limit 1800s, 8.0 GiB
+[worker-001] 79 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 0; 37.3s; peak 3.14 GiB
+[worker-001] exit 0; 105.2s; peak 2.01 GiB
+Result: passed, exit 0; 268/268 cases completed.
+doc/benchmarks/2026-10-07-operators-final/focused-repairs-01/result.json

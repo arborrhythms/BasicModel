@@ -1,0 +1,55 @@
+........................................................................ [ 28%]
+....................................................................ssss [ 56%]
+ssssssssss..ssss.ssssssss............................................... [ 84%]
+..........F........F.......F.......FF...                                 [100%]
+=================================== FAILURES ===================================
+________________ test_exist_preserves_conflicting_fact_support _________________
+test/test_existence_evidence.py:41: in test_exist_preserves_conflicting_fact_support
+    assert result["posture"] == BOTH
+E   AssertionError: assert 'UNKNOWN' == 'BOTH'
+E     
+E     - BOTH
+E     + UNKNOWN
+___ test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows ___
+test/test_existence_metadata.py:53: in test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows
+    assert len(restored) == 1
+E   assert 0 == 1
+E    +  where 0 = len(TernaryTruthStore())
+___ test_conflict_degrees_and_stable_provenance_survive_compaction_and_reset ___
+test/test_existence_metadata.py:107: in test_conflict_degrees_and_stable_provenance_survive_compaction_and_reset
+    assert result["posture"] == BOTH
+E   AssertionError: assert 'UNKNOWN' == 'BOTH'
+E     
+E     - BOTH
+E     + UNKNOWN
+____________ test_checked_reader_keeps_both_sides_of_exist_evidence ____________
+test/test_existence_metadata.py:213: in test_checked_reader_keeps_both_sides_of_exist_evidence
+    assert result['posture'] == 'BOTH'
+E   AssertionError: assert 'UNKNOWN' == 'BOTH'
+E     
+E     - BOTH
+E     + UNKNOWN
+____ test_checked_result_retains_matching_fact_occurrences_and_both_degrees ____
+test/test_existence_provenance.py:33: in test_checked_result_retains_matching_fact_occurrences_and_both_degrees
+    assert result['posture'] == CONFLICTING
+E   AssertionError: assert 'UNKNOWN' == 'BOTH'
+E     
+E     - BOTH
+E     + UNKNOWN
+=============================== warnings summary ===============================
+test/test_ensure_microbatch_cascade.py::test_inputspace_forward_triggers_ensure_microbatch
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_existence_metadata.py::test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:2593: UserWarning: Legacy LTM rows have unknown order; decoding requires an explicit order stamp.
+    module._load_from_state_dict(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_existence_evidence.py::test_exist_preserves_conflicting_fact_support
+FAILED test/test_existence_metadata.py::test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows
+FAILED test/test_existence_metadata.py::test_conflict_degrees_and_stable_provenance_survive_compaction_and_reset
+FAILED test/test_existence_metadata.py::test_checked_reader_keeps_both_sides_of_exist_evidence
+FAILED test/test_existence_provenance.py::test_checked_result_retains_matching_fact_occurrences_and_both_degrees
+5 failed, 225 passed, 26 skipped, 2 warnings in 18.55s

@@ -1,0 +1,10 @@
+{
+  "reason": "NonLayer cleared the for meaning lane but its declared footprint still listed only poles. Add meaning to read/write footprint and assert it in the corner test.",
+  "sources": [
+    "bin/Language.py",
+    "test/test_tetralemma_leaf.py"
+  ],
+  "measurement_started": false,
+  "sweep_record": "tetralemma-sweep",
+  "authorization": "User authorized a sweep in conjunction with the repair pass; preserve in-progress evidence and require a complete green sweep on the final frozen source."
+}

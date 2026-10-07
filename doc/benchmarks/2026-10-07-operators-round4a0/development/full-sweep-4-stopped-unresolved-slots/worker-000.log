@@ -1,0 +1,79 @@
+........................................................................ [ 53%]
+.........................s.........F..........................           [100%]
+=================================== FAILURES ===================================
+________ test_provisioning_retains_completed_fields_and_shared_row_ids _________
+test/test_assertion_provenance.py:10: in test_provisioning_retains_completed_fields_and_shared_row_ids
+    model = _make_model_provisioned(_SERIAL_CONFIG)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_ltm_consolidation.py:81: in _make_model_provisioned
+    m.provision_ltm()
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:7029: in provision_ltm
+    self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
+bin/Models.py:7064: in _ltm_ingest_truth_texts
+    self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+bin/Models.py:13775: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13913: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14293: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8884: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10382: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8569: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8349: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23582: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17391: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22117: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21670: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20851: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20445: in _commit_sentence
+    raise ValueError('sentence address requires identified word surfaces')
+E   ValueError: sentence address requires identified word surfaces
+=============================== warnings summary ===============================
+test/test_abstraction_order_canonical.py::test_forward_keeps_the_property_basis_without_a_word_analysis_dictionary
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes
+  /Users/arogers/github/basicmodel-round4a0/bin/Models.py:7194: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2951/test_supervised_update_cannot_0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_attention_promotion.py::test_registered_pool_checkpoint_has_one_sidecar_restore
+  /Users/arogers/github/basicmodel-round4a0/test/test_attention_promotion.py:231: UserWarning: Space ownership migration: removed 102 duplicate alias checkpoint keys.
+    assert target.load_weights(path, require_match=True)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_assertion_provenance.py::test_provisioning_retains_completed_fields_and_shared_row_ids
+1 failed, 132 passed, 1 skipped, 4 warnings in 10.94s

@@ -1,0 +1,47 @@
+{
+  "seed": null,
+  "training_steps": 0,
+  "variants": [
+    {
+      "variant": "input",
+      "exit_code": 0,
+      "restores_landing": false,
+      "changes_candidate": false,
+      "rng_equal": true,
+      "mask_equal": true
+    },
+    {
+      "variant": "percept",
+      "exit_code": 0,
+      "restores_landing": true,
+      "changes_candidate": true,
+      "rng_equal": true,
+      "mask_equal": true
+    },
+    {
+      "variant": "attention",
+      "exit_code": 0,
+      "restores_landing": false,
+      "changes_candidate": false,
+      "rng_equal": true,
+      "mask_equal": true
+    },
+    {
+      "variant": "definitions",
+      "exit_code": 0,
+      "restores_landing": false,
+      "changes_candidate": false,
+      "rng_equal": true,
+      "mask_equal": true
+    },
+    {
+      "variant": "input_percept",
+      "exit_code": 0,
+      "restores_landing": true,
+      "changes_candidate": true,
+      "rng_equal": true,
+      "mask_equal": true
+    }
+  ],
+  "script_sha256": "1680f726685d9872a1d8891fc6d7767f13f4a2e95d59e4194879acd4d25ecfe5"
+}

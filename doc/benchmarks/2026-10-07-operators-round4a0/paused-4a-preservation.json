@@ -1,0 +1,14 @@
+{
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "archive": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-round4a/development/paused-for-4a0/paused-source.zip",
+  "archived_files": 24,
+  "mismatches": [],
+  "preserved": true,
+  "final_verification": {
+    "implementation_files_unchanged": true,
+    "changed_elsewhere": [
+      "doc/plans/2026-10-05-operators-update.md"
+    ],
+    "note": "The original workspace plan changed during the isolated run. This step did not write it; the updated plan is preserved. The earlier specification input snapshot remains identified by its hash."
+  }
+}

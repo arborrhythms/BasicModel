@@ -1,0 +1,22 @@
+Device: cpu
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+Peer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture
+
+
+==== BasicModel ====
+
+Trial [1/1]
+Baseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.
+Epoch [1/400]
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 0.724s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.4512, reconstruction=0.0000
+Epoch [2/400]
+batch = 0 (Δ=0.443s, 100.00%)
+Training throughput: 1 batches in 0.440s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1962, reconstruction=1.0000
+Epoch [3/400]
+batch = 0 (Δ=0.351s, 100.00%)
+Training throughput: 1 batches in 0.349s; word units 100.0% of 8 words (letters-only 100.0% of 8).

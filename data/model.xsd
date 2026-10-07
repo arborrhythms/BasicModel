@@ -1121,6 +1121,11 @@
 
   <xs:complexType name="conceptualSpaceType">
     <xs:all>
+      <xs:element name="meaningWidth" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="symbolCentroid" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="membershipPriming" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="primingMaxBoost" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="readerBlockNormalization" type="xs:boolean" minOccurs="0"/>
       <xs:element name="latticeMargin" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Incoming-connection L1 for the indexed conceptsFromPercepts Sigma.
            0 disables; BasicModel opts into weak 0.01. Not activation shrink. -->

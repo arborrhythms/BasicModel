@@ -1,0 +1,46 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <architecture>
+    <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
+         dispatch via _forward_per_stage's body. -->
+    <conceptLayers>1</conceptLayers>
+    <ergodic>true</ergodic>
+
+    <data>
+      <dataset>mnist</dataset>
+    </data>
+
+    <training>
+      <numEpochs>10</numEpochs>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>784</nOutput>
+    <nVectors>784</nVectors>
+  </InputSpace>
+
+  <PartSpace>
+    <nOutput>784</nOutput>
+    <nVectors>784</nVectors>
+  </PartSpace>
+
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): SimpleModel (no
+       embedding modelType); validator doesn't fire. Original shape. -->
+  <ConceptualSpace>
+    <nOutput>20</nOutput>
+    <nVectors>20</nVectors>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <nOutput>20</nOutput>
+    <nDim>0</nDim>
+    <nVectors>20</nVectors>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nOutput>10</nOutput>
+    <nVectors>10</nVectors>
+  </OutputSpace>
+</model>

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/verified_bisections.py",
+    "sum",
+    "B",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/verified-bisections/sum-08-B-off"
+  ],
+  "pid": 45305,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 815842840,
+  "elapsed_seconds": 147.34453395800665,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/verified-bisections/sum-08-B-off/run.log"
+}

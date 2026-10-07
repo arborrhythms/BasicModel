@@ -1,0 +1,170 @@
+..FF........                                                             [100%]
+=================================== FAILURES ===================================
+_ test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate[XOR_grammar] _
+
+configuration = 'XOR_grammar'
+
+    @pytest.mark.parametrize('configuration', ['XOR_grammar', 'MM_grammar'])
+    def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate(configuration):
+        from test_mm_xor import _fresh_model
+        from MereologicalCodes import occurrence_memberships
+        from MeaningCodes import identity_code, certificate
+>       model, _, _ = _fresh_model(f'data/{configuration}.xml')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_operators_round4a.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_mm_xor.py:35: in _fresh_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+xml_path = 'data/XOR_grammar.xml'
+
+    @staticmethod
+    def _validate_against_schema(xml_path):
+        """Validate ``xml_path`` against the ``model.xsd`` schema.
+    
+        This is the precursor gate for model creation:
+        ``create_from_config`` -> ``init_config`` -> ``load``/``overlay``
+        parse every config through here, so an invalid config raises
+        BEFORE any Space is constructed.
+    
+        Schema resolution prefers a ``model.xsd`` sibling of the XML, then
+        falls back to the canonical ``<project>/data/model.xsd`` -- so temp
+        / variant configs written outside ``data/`` still validate against
+        the real schema.
+    
+        Hard-fails (raises ``ValueError``) on a schema violation. The check
+        is skipped only when no validator backend is available (neither the
+        ``lxml`` package nor the ``xmllint`` CLI); that case emits a
+        one-time warning rather than silently passing, and does not block
+        loading on missing tooling.
+        """
+        if not xml_path or not os.path.exists(xml_path):
+            return
+        sibling = os.path.join(
+            os.path.dirname(os.path.abspath(xml_path)), "model.xsd")
+        canonical = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "data", "model.xsd")
+        xsd_path = sibling if os.path.exists(sibling) else (
+            canonical if os.path.exists(canonical) else None)
+        if xsd_path is None:
+            return
+        abspath = os.path.abspath(xml_path)
+        try:
+            mtime = os.path.getmtime(abspath)
+        except OSError:
+            mtime = None
+        if (mtime is not None
+                and XMLConfig._SCHEMA_VALIDATION_CACHE.get(abspath) == mtime):
+            return
+        errors = XMLConfig._run_schema_validation(xsd_path, abspath)
+        if errors is None:
+            return  # no validator backend; already warned once
+        if errors:
+>           raise ValueError(
+                f"XML schema validation failed for {xml_path}\n"
+                f"  (schema: {xsd_path})\n{errors}\n"
+                f"Fix the config, or update data/model.xsd if this is a "
+                f"new config element.")
+E           ValueError: XML schema validation failed for data/XOR_grammar.xml
+E             (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E           /Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml:78: element meaningOnes: Schemas validity error : Element 'meaningOnes': This element is not expected.
+E           /Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml fails to validate
+E           Fix the config, or update data/model.xsd if this is a new config element.
+
+bin/util.py:1937: ValueError
+_ test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate[MM_grammar] _
+
+configuration = 'MM_grammar'
+
+    @pytest.mark.parametrize('configuration', ['XOR_grammar', 'MM_grammar'])
+    def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate(configuration):
+        from test_mm_xor import _fresh_model
+        from MereologicalCodes import occurrence_memberships
+        from MeaningCodes import identity_code, certificate
+>       model, _, _ = _fresh_model(f'data/{configuration}.xml')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_operators_round4a.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_mm_xor.py:35: in _fresh_model
+    init_config(
+bin/util.py:2033: in init_config
+    TheXMLConfig.overlay(path)
+bin/util.py:1475: in overlay
+    over = self._parse_xml(path)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1881: in _parse_xml
+    XMLConfig._validate_against_schema(path)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+xml_path = 'data/MM_grammar.xml'
+
+    @staticmethod
+    def _validate_against_schema(xml_path):
+        """Validate ``xml_path`` against the ``model.xsd`` schema.
+    
+        This is the precursor gate for model creation:
+        ``create_from_config`` -> ``init_config`` -> ``load``/``overlay``
+        parse every config through here, so an invalid config raises
+        BEFORE any Space is constructed.
+    
+        Schema resolution prefers a ``model.xsd`` sibling of the XML, then
+        falls back to the canonical ``<project>/data/model.xsd`` -- so temp
+        / variant configs written outside ``data/`` still validate against
+        the real schema.
+    
+        Hard-fails (raises ``ValueError``) on a schema violation. The check
+        is skipped only when no validator backend is available (neither the
+        ``lxml`` package nor the ``xmllint`` CLI); that case emits a
+        one-time warning rather than silently passing, and does not block
+        loading on missing tooling.
+        """
+        if not xml_path or not os.path.exists(xml_path):
+            return
+        sibling = os.path.join(
+            os.path.dirname(os.path.abspath(xml_path)), "model.xsd")
+        canonical = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "data", "model.xsd")
+        xsd_path = sibling if os.path.exists(sibling) else (
+            canonical if os.path.exists(canonical) else None)
+        if xsd_path is None:
+            return
+        abspath = os.path.abspath(xml_path)
+        try:
+            mtime = os.path.getmtime(abspath)
+        except OSError:
+            mtime = None
+        if (mtime is not None
+                and XMLConfig._SCHEMA_VALIDATION_CACHE.get(abspath) == mtime):
+            return
+        errors = XMLConfig._run_schema_validation(xsd_path, abspath)
+        if errors is None:
+            return  # no validator backend; already warned once
+        if errors:
+>           raise ValueError(
+                f"XML schema validation failed for {xml_path}\n"
+                f"  (schema: {xsd_path})\n{errors}\n"
+                f"Fix the config, or update data/model.xsd if this is a "
+                f"new config element.")
+E           ValueError: XML schema validation failed for data/MM_grammar.xml
+E             (schema: /Users/arogers/github/WikiOracle/basicmodel/data/model.xsd)
+E           /Users/arogers/github/WikiOracle/basicmodel/data/MM_grammar.xml:49: element meaningOnes: Schemas validity error : Element 'meaningOnes': This element is not expected.
+E           /Users/arogers/github/WikiOracle/basicmodel/data/MM_grammar.xml fails to validate
+E           Fix the config, or update data/model.xsd if this is a new config element.
+
+bin/util.py:1937: ValueError
+=========================== short test summary info ============================
+FAILED test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate[XOR_grammar]
+FAILED test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate[MM_grammar]
+2 failed, 10 passed in 2.77s

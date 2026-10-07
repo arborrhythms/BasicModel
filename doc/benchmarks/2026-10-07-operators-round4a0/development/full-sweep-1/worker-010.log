@@ -1,0 +1,32 @@
+........................................................................ [ 66%]
+.........F.F........................                                     [100%]
+=================================== FAILURES ===================================
+_____ test_pair_retains_both_and_neither_until_explicit_signed_reassertion _____
+test/test_identification_evidence.py:34: in test_pair_retains_both_and_neither_until_explicit_signed_reassertion
+    assert store.row(neither)['evidence'] == (0., 0.)
+E   assert (0.6000000238...0000238418579) == (0.0, 0.0)
+E     
+E     At index 0 diff: 0.6000000238418579 != 0.0
+E     Use -v to get more diff
+______________ test_row_compaction_preserves_each_order_and_pole _______________
+test/test_identification_evidence.py:64: in test_row_compaction_preserves_each_order_and_pole
+    assert store.clear_origin(store.ORIGIN_USER) == 1
+E   assert 0 == 1
+E    +  where 0 = clear_origin(2)
+E    +    where clear_origin = TernaryTruthStore().clear_origin
+E    +    and   2 = TernaryTruthStore().ORIGIN_USER
+=============================== warnings summary ===============================
+test/test_grammar_reconstruction_gate.py::test_grammar_reconstruction_reads_the_concluded_state_before_trace_disposal
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_grounded_xor.py::test_native_unseeded_xor[0-4]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_identification_evidence.py::test_pair_retains_both_and_neither_until_explicit_signed_reassertion
+FAILED test/test_identification_evidence.py::test_row_compaction_preserves_each_order_and_pole
+2 failed, 106 passed, 2 warnings in 51.01s

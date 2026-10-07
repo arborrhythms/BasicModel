@@ -1,0 +1,32 @@
+{
+  "selected": 5354,
+  "completed": 5354,
+  "counts": {
+    "passed": 5065,
+    "skipped": 285,
+    "failed": 3,
+    "xpassed": 1
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-final/mm-bisection/round3a-source/README.md]",
+      "messages": [
+        "test/test_doc_links.py:51: in test_relative_links_resolve\n    assert not missing, f\"{path.relative_to(_ROOT)}: unresolved {missing}\"\nE   AssertionError: doc/benchmarks/2026-10-07-operators-final/mm-bisection/round3a-source/README.md: unresolved ['doc/Philosophy.md', 'doc/Architecture.md', 'doc/Componentization.md', 'doc/Spaces.md', 'doc/STM.md', 'doc/Ergodic.md', 'doc/Training.md', 'doc/specs/2026-07-27-teaching-modes-and-next-iteration.md', 'doc/WhatSpacetimeDesign.md', 'doc/specs/2026-09-11-sentence-boundary-thinking.md', 'doc/specs/2026-09-09-mathematical-thinking.md', 'doc/plans/2026-09-10-meronomy-fold-ladder.md', 'doc/plans/2026-09-12-compiled-reverse-loops.md', 'doc/plans/2026-09-09-mathematical-thinking.md', 'doc/benchmarks/2026-09-09-math-thinking-pilot.md', 'doc/Params.md', 'doc/BasicModel.md', 'doc/Language.md', 'doc/Mereology.md', 'doc/Logic.md', 'doc/Reasoning.md', 'doc/Philosophy.md', 'doc/MachineMinds.md', 'doc/Lexicon.md', 'doc/SymbolFirewall.md', 'doc/Installation.md', 'doc/Architecture.md', 'doc/Language.md', 'doc/Architecture.md', 'doc/Componentization.md', 'doc/Params.md', 'doc/Training.md', 'doc/Installation.md', 'doc/Params.md']\nE   assert not ['doc/Philosophy.md', 'doc/Architecture.md', 'doc/Componentization.md', 'doc/Spaces.md', 'doc/STM.md', 'doc/Ergodic.md', ...]"
+      ]
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-07-operators-final-b/diagnosis/frozen/README.md]",
+      "messages": [
+        "test/test_doc_links.py:51: in test_relative_links_resolve\n    assert not missing, f\"{path.relative_to(_ROOT)}: unresolved {missing}\"\nE   AssertionError: doc/benchmarks/2026-10-07-operators-final-b/diagnosis/frozen/README.md: unresolved ['doc/Philosophy.md', 'doc/Architecture.md', 'doc/Componentization.md', 'doc/Spaces.md', 'doc/STM.md', 'doc/Ergodic.md', 'doc/Training.md', 'doc/specs/2026-07-27-teaching-modes-and-next-iteration.md', 'doc/WhatSpacetimeDesign.md', 'doc/specs/2026-09-11-sentence-boundary-thinking.md', 'doc/specs/2026-09-09-mathematical-thinking.md', 'doc/plans/2026-09-10-meronomy-fold-ladder.md', 'doc/plans/2026-09-12-compiled-reverse-loops.md', 'doc/plans/2026-09-09-mathematical-thinking.md', 'doc/benchmarks/2026-09-09-math-thinking-pilot.md', 'doc/Params.md', 'doc/BasicModel.md', 'doc/Language.md', 'doc/Mereology.md', 'doc/Logic.md', 'doc/Reasoning.md', 'doc/Philosophy.md', 'doc/MachineMinds.md', 'doc/Lexicon.md', 'doc/SymbolFirewall.md', 'doc/Installation.md', 'doc/Architecture.md', 'doc/Language.md', 'doc/Architecture.md', 'doc/Componentization.md', 'doc/Params.md', 'doc/Training.md', 'doc/Installation.md', 'doc/Params.md']\nE   assert not ['doc/Philosophy.md', 'doc/Architecture.md', 'doc/Componentization.md', 'doc/Spaces.md', 'doc/STM.md', 'doc/Ergodic.md', ...]"
+      ]
+    },
+    {
+      "nodeid": "test/test_operators_round1.py::test_saved_review22_miss_has_exact_argmin_precedence",
+      "messages": [
+        "test/test_operators_round1.py:72: in test_saved_review22_miss_has_exact_argmin_precedence\n    recovered = torch.stack((rows[indices // 4], rows[indices % 4]), -1).sort(-1).values\n                             ^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   IndexError: index 4 is out of bounds for dimension 0 with size 4"
+      ]
+    }
+  ],
+  "exit_code": 1,
+  "elapsed_seconds": 426.0154509160202
+}

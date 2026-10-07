@@ -1,0 +1,278 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!--
+    BasicModel
+
+    A Mac-sized, from-scratch language-learning pilot derived from
+    MM_20M_fineweb.xml.  Its comparison target is NanoChat depth 4, not the
+    misleading historical "20M" filename: the live MM_20M_fineweb graph has
+    about 118M parameters, while NanoChat d4 has about 36.7M at vocab 32768.
+
+    Design budget:
+      * PartSpace and WholeSpace WHAT are 96-D (104-D events including the
+        fixed 8-D band), while ConceptualSpace retains its 896-D meaning complement after the 104-D form event.
+        Input fans one word view to independent PS and WS folds; each fold's
+        sparse sigma/codebook read emits a 1000-D concept activation before CS.
+        The codebook read owns the dimension increase. There is no PS->WS edge
+        and CS receives conceptual-width events rather than projecting them.
+        Across words, that perceptual leg overlaps the prior word's conceptual
+        leg. Within the conceptual leg, one CS->SS->CS read promotes the
+        selected symbol before CS commits the word/object reference and
+        Language tree plan. Attention bounds percept operations separately.
+        32768-row physical part dictionary admits words without resizing.
+        Conceptual folds share one physical 65536-row high-D dictionary
+        (32768 initially active) rather than allocating
+        one table per fold. Its indexed-only path omits the unused VQ EMA
+        mirror. The native word form is fixed by boundary pairs and the length
+        thermometer; its meaning complement retains the existing derivation.
+        Its sparse optimizer stores moments only for touched rows.
+      * bindingDepth=4 constructs the four binding layers; conceptLayers=5
+        reserves orders zero through four. Neither is an attention work
+        allowance; attentionBudget meters percepts and symbol attention.
+      * W=256 is a storage capacity, not a fixed execution length. One
+         fullgraph torch.while_loop runs only through the longest live sentence
+         in the batch and then drains the final conceptual word and both grammar
+         latches; per-row masks make shorter sentences exact no-ops. Consecutive
+         complete sentences pack into each row with a row-local soft reset, so
+         the capacity is used without clipping or reordering the corpus. This
+         also avoids one compiled graph per 16/32/64/128/256 bucket. PS, WS,
+         CS, and STM retain their
+        configured 8-wide instantaneous fields/workspace; grammar reductions
+        make that bounded workspace sufficient.
+      * The grammar budget includes the contextual MLP transform chooser.  The
+        soft tiling DP rescales unusually large finite chooser scores without
+        changing their ordering, so this learned router remains stable at the
+        configured loop widths.
+
+    The initial corpus gate is 2,000 documents from FineWeb-Edu shard 0
+    (document-disjoint 8/1/1 train/validation/test split).  That is about
+    1.5M whitespace words before the split on the currently downloaded shard.
+    It is a language-acquisition gate, not a compute-optimal pretraining run.
+  -->
+  <architecture>
+    <!-- Keep traversal separate from the symbolic iteration budget. -->
+
+    <bindingDepth>4</bindingDepth>
+    <!-- Four native perceptual passes retain part and property codes in one
+         cube. CS guides later attention through membership attribution;
+         perceptual towers contain no learned fold layers. Aligned serial
+         binding retains the native PS and WS sources for reconstruction. -->
+    <conceptBinding>aligned</conceptBinding>
+    <conceptLayers>5</conceptLayers>
+    <!-- Let sentence length, rather than an arbitrary cap, determine parse
+         depth during the pilot.  This knob adds no parameters. -->
+    <syntacticOrder>0</syntacticOrder>
+
+    <mereologyRaise>true</mereologyRaise>
+    <!-- One generous word-axis storage capacity. The compiled tensor while
+         loop stops at the batch's last live column, so short batches do not
+         execute 256 word folds; using one shape also avoids bucket recompiles.
+         STM remains independently configurable at 8. -->
+    <serialObjectMeta>true</serialObjectMeta>
+    <!-- The historical whole-sentence prelude sends native PS/WS events
+         directly through the generic CS compatibility path. Keep it dark for
+         this model until it uses the same sparse concept-codebook activation
+         seam as the word recursion; otherwise it would reintroduce a hidden
+         136 -> 1000 coordinate pad before the aligned loop begins. -->
+    <sentenceProtocol>false</sentenceProtocol>
+    <serialWordCapacity>256</serialWordCapacity>
+    <serialWordBuckets>256</serialWordBuckets>
+    <!-- Fixed compiler input extent; words remain complete and PS still
+         reduces them into its configured eight live locations. P64 means at
+         most 64 radix/subword integer IDs per cold spelling, not 64 dense byte
+         vectors. As the trie learns longer chunks, the live masked count
+         contracts without changing this compiler shape. -->
+    <serialResidualPartCapacity>64</serialResidualPartCapacity>
+    <sigmaPi>butterfly</sigmaPi>
+    <l1Lambda>0.01</l1Lambda>
+
+    <!-- Allocate explicit capacity to contextual grammar routing. -->
+    <transformChooser>mlp</transformChooser>
+    <!-- Capacity is explicit without changing the existing architecture:
+         grammar width follows its feature width; thought-step width is 16.
+         Depth counts hidden layers, not thought iterations. These settings
+         do not enable thinking or change its policy-loss weight. -->
+    <transformChooserHidden>0</transformChooserHidden>
+    <transformChooserDepth>1</transformChooserDepth>
+    <whatThinkingHidden>16</whatThinkingHidden>
+    <whatThinkingDepth>1</whatThinkingDepth>
+    <!-- Resolve an owned answer before producing its words through the
+         declared generate grammar (outputInLoop below), the tied perceptual
+         inverse and OutputSpace. The curriculum selects questions; it never
+         supplies a surface interpreter or a word-to-operator dictionary. -->
+    <answerSynthesis>true</answerSynthesis>
+    <synthesisBindings>4</synthesisBindings>
+    <whatCurriculum>full</whatCurriculum>
+    <whatCurriculumDistance>1</whatCurriculumDistance>
+    <whatCurriculumRatio>0.25</whatCurriculumRatio>
+    <categoryCodebook>true</categoryCodebook>
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>text</dataset>
+      <shardDir>data/fineweb</shardDir>
+      <!-- Objective source-address scope. It conditions Teacher lessons but
+           never replaces the model's subjective .where/.when bands. -->
+      <contextWhole>FineWeb-Edu 100B shuffle</contextWhole>
+      <numShards>1</numShards>
+      <maxDocs>2000</maxDocs>
+      <!-- W256 is the protected-memory B28 operating point on the 36 GB MPS
+           host.
+           Exclude (never clip) the rare longer splitter records so every
+           admitted training example remains one complete sentence. -->
+      <maxSentenceWords>256</maxSentenceWords>
+    </data>
+
+    <training>
+      <numEpochs>1</numEpochs>
+      <seed>42</seed>
+      <!-- Each of 28 contiguous corpus streams packs consecutive complete
+           sentences into a W256 brick. Sentences remain chronological within
+           a row, and row-local soft reset endings every sentence boundary. -->
+      <batchSize>28</batchSize>
+      <packSentences>true</packSentences>
+      <!-- One CPU producer thread with a two-tick in-flight budget: one tick
+           consumed by the model while the next is buffered. -->
+      <numWorkers>2</numWorkers>
+      <learningRate>0.0005</learningRate>
+
+      <!-- The shared concept dictionary is an unconstrained parameter,
+           trained only by reconstruction; contextual rotation is retired. -->
+      <conceptualContextLearningRate>0</conceptualContextLearningRate>
+      <conceptualContextNegatives>4</conceptualContextNegatives>
+
+      <!-- FineWeb is unlabeled. Completed input sentences reconstruct once
+           through the identified compose derivation and shared transforms.
+           The rung-zero byte term audits exact indexed identity. Higher inverse
+           costs retain detached targets and witness addresses and live candidate codes.
+           The output head receives no fabricated answer labels. -->
+      <reconstructionScale>1.0</reconstructionScale>
+      <!-- Read-only agreement of weighted objectives per shared operator.
+           Output begins at a detached conclusion; tied weights still learn.
+           Three consecutive negative samples are named, never projected. -->
+      <branchDiagnosticsEvery>100</branchDiagnosticsEvery>
+      <teacherReconstruction>true</teacherReconstruction>
+      <reconstructInLoop>true</reconstructInLoop>
+      <reconstructionPlacement>compiled</reconstructionPlacement>
+      <reconstructionBasisLimit>16</reconstructionBasisLimit>
+      <!-- Production wording belongs to <generate>. Its ordinary policy
+           learns only when a separately supplied desired answer is present;
+           unlabeled FineWeb supplies reconstruction, not fabricated answers. -->
+      <outputInLoop>true</outputInLoop>
+      <outputPolicyWeight>1.0</outputPolicyWeight>
+      <leafDistillWeight>0.0</leafDistillWeight>
+      <!-- Keep the bounded local chooser objective available but outside this
+           production run for now. Its extra candidate re-score is paid on
+           every live fold; benchmark that pressure separately before
+           assigning a nonzero weight here. Reverse indices are constants;
+           the forward chooser retains its existing straight-through credit. -->
+
+      <!-- Joint input reconstruction and structured sentence expectation.
+           Each external observation supplies its own detached concept target;
+           the older ARMA, intra and contrastive objectives stay disabled. -->
+      <sentenceExpectation>true</sentenceExpectation>
+      <sentenceExpectationArmaScale>0.0</sentenceExpectationArmaScale>
+      <intraLossWeight>0.0</intraLossWeight>
+      <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
+      <sentenceExpectationContrastiveWeight>0.0</sentenceExpectationContrastiveWeight>
+      <interContrastiveTemp>0.1</interContrastiveTemp>
+
+      <autoload>false</autoload>
+      <autosave>true</autosave>
+      <checkpointEveryBatches>100</checkpointEveryBatches>
+    </training>
+    <!-- Geometry changes always start fresh. Keep the canonical checkpoint
+         beside this model file so XML and weights have the same stem/path. -->
+    <weightsPath>BasicModel.ckpt</weightsPath>
+  </architecture>
+
+  <!-- Raw UTF-8/byte surface.  The parameter budget is controlled by D and
+       the percept capacity; the 8192-byte ceiling is retained for compatibility
+       and is not a learned 8192 x D table. -->
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>512</nDim>
+  </InputSpace>
+
+  <!-- Eight instantaneous part percepts. WHAT is deliberately compact (128);
+       the trailing 8 event coordinates are the fixed where/when band.
+       Arbitrary cold-word constituents synthesize inside the word iteration
+       before entering this field. -->
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>512</nInputDim>
+    <nVectors>32768</nVectors>
+    <!-- Fixed physical reserve. Recurrence activates rows without replacing
+         the parameter or its optimizer state; exhaustion names nVectors. -->
+    <nDim>104</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>104</nOutputDim>
+
+    <invertible>true</invertible>
+    <synthesis>meronomy</synthesis>
+    <chunkPromotionThreshold>2</chunkPromotionThreshold>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <!-- Weak lasso on admitted Sigma input connections, not concept/percept
+         activations or biases. Applied once by row-local proximal Adam. -->
+    <conceptReadoutL1>0.01</conceptReadoutL1>
+    <nInput>8</nInput>
+    <!-- PS/WS sigma folds have already emitted conceptual codebook
+         activations here. The CS boundary itself is width-preserving. -->
+    <nInputDim>1000</nInputDim>
+    <!-- Concept and downstream symbol-reference inventory. This is independent
+         of PartSpace's allocated prefix, WholeSpace's small property basis,
+         and the eight simultaneously live CS/WS locations. All four aligned
+         subsymbolic folds address this one shared physical dictionary. -->
+    <nVectors>65536</nVectors>
+    <!-- Only this prefix participates in VQ initially.  The remaining rows
+         are an optimizer-owned reserve activated in power-of-two steps. -->
+    <activeVectors>32768</activeVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1000</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1000</nOutputDim>
+
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <!-- WholeSpace is the independent upstream analysis/property peer. It
+       begins with a small ASCII-oriented property basis and contains no
+       concept, META, or symbol rows. Its 1000-D input is recurrent conceptual
+       context; its native output remains 136-D and does not receive PS.
+       Dynamic property discovery may grow this inventory later at an explicit
+       optimizer/compiled-graph reset boundary. -->
+  <WholeSpace>
+    <analysis>meronomy</analysis>
+    <!-- Per-vector invertible membership coupling. This is not the optional
+         parallel CS mixing matrix and never mixes word/location slots. -->
+    <butterfly>true</butterfly>
+    <nInput>8</nInput>
+    <nInputDim>1000</nInputDim>
+    <nVectors>9</nVectors>
+    <nDim>104</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>104</nOutputDim>
+
+    <invertible>true</invertible>
+  </WholeSpace>
+
+  <!-- Structural only for unlabeled FineWeb. The terminal head consumes CS
+       directly; WholeSpace is not an intermediate output producer. -->
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>1000</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+  <SymbolSpace>
+    <language>
+      <grammar>complete.grammar</grammar>
+    </language>
+  </SymbolSpace>
+</model>

@@ -1,0 +1,142 @@
+# BasicModel
+
+## Basic Model of Cognition
+
+*The basic model of cognition relies on conceptual hyperplanes and perceptual prototypes to synthesize and analyze the input space. It uses a high-dimensional embedding to characterize mental space and integrates symbolic computation. Its three major operations are intersection (analysis: the top-down division of the presented unity into symbolic generalities), union (synthesis: the bottom-up aggregation of atoms into perceptual particulars), and equality (where symbols are elements that map across perceptual and conceptual domains). See [Philosophy](doc/Philosophy.md) for the analytic/synthetic orientation.*
+
+## Documentation
+
+| Document | Description |
+|---|---|
+| [Architecture](doc/Architecture.md) | Pipeline design, layer types, invertible LDU factorisation |
+| [Runtime architecture](doc/Componentization.md) | Live ownership map, non-modular mechanisms, and componentization sequence |
+| [Spaces](doc/Spaces.md) | Runtime spaces: Input, Part/Perceptual, Modal, Conceptual, Whole/Symbolic, Output, and SymbolSpace |
+| [STM](doc/STM.md) | Short-term memory: shift/reduce slots, routing conditioning, ltmConsolidation |
+| [Ergodic](doc/Ergodic.md) | Gradient energy sensor, adaptive exploration, factor-level noise injection |
+| [Training](doc/Training.md) | Two-phase training, SBOW embeddings, masked prediction modes |
+| [What specification](doc/specs/2026-07-27-teaching-modes-and-next-iteration.md) | `Data.what()` / `Model.what()`, the two downward paths, LTM parity thinking, joint losses, and the deferred concept/verb roadmap |
+| [What and spacetime design](doc/WhatSpacetimeDesign.md) | One understanding, reconstruction vs output synthesis, queryable spacetime, thinking stack, and grammar-chooser context |
+| [Sentence-boundary thinking specification](doc/specs/2026-09-11-sentence-boundary-thinking.md) | Target: separate sentence/thought controllers, typed queries, nested semantic references, depth-labelled thought contexts without Q/A pairing, and acceptance tests |
+| [Mathematical thinking specification](doc/specs/2026-09-09-mathematical-thinking.md) | Earlier thinking milestone, episode credit and pilot gates; exact arithmetic is evaluation-only, and the lexical thought policy is superseded by the sentence-boundary target |
+| [Meronomy as the fold ladder (plan)](doc/plans/2026-09-10-meronomy-fold-ladder.md) | Synthesis and analysis as two mereological towers, joining upward from nothing and dividing downward from everything, meeting at the basic level; the radix trie and the other front ends move to Legacy. |
+| [Compiled reverse loops (plan)](doc/plans/2026-09-12-compiled-reverse-loops.md) | One bounded compiled traversal of the completed sentence with tied inverse transforms; `reverseOutput` as the second compiled loop with its own generate policy; one compiled segment for forward, reconstruct and output; migration off the detached reverse student. |
+| [Mathematical thinking plan](doc/plans/2026-09-09-mathematical-thinking.md) | Phase-ordered execution plan for the thinking specification |
+| [Mathematical thinking pilot](doc/benchmarks/2026-09-09-math-thinking-pilot.md) | Mechanism evidence and the (unmet) learning gates on the `MM_math` fixture |
+| [Params](doc/Params.md) | XML configuration reference and migration notes |
+| [BasicModel](doc/BasicModel.md) | Cognitive science foundations |
+| [Language](doc/Language.md) | Grammar layers, signal routing, category codebook, and syntax output |
+| [Mereology](doc/Mereology.md) | Parthood as the fundamental operation, the five mereological relations, ImpenetrableLayer |
+| [Logic](doc/Logic.md) | Subsymbolic and symbolic logic operations |
+| [Reasoning](doc/Reasoning.md) | Truth methods, bidirectional reasoning, contemplative awareness stubs |
+| [Philosophy](doc/Philosophy.md) | Kant's analysis/synthesis, Ramsey's theoretical roles, Buddhist epistemology (pramana, tetralemma) |
+| [MachineMinds](doc/MachineMinds.md) | What machine minds are, feel, and know |
+| [Lexicon](doc/Lexicon.md) | Word-vector store: surface forms, codebook binding, LBG splitting |
+| [SymbolFirewall](doc/SymbolFirewall.md) | Governing principle: the boundary between subsymbolic and symbolic computation |
+| [Installation](doc/Installation.md) | Setup, Makefile targets, environment variables |
+
+## Overview
+
+BasicModel is a parameterized neural architecture that answers the question "what is the truest thing we can say of this experience?".
+
+
+Model configurations are specified in XML. See [doc/Architecture.md](doc/Architecture.md) for the full mathematical treatment.
+
+Compose fires one operation per round from a joint operation/location softmax.
+At each sentence closing, exploit and explore take separate optimizer steps from
+the same cached word vectors. Each row retains the strictly lower sentence
+loss, with ties to exploit, before the next sentence begins. Batch-end answer
+loss keeps its own backward and does not choose the sentence winner.
+`architecture.composeTemperature` defaults to `0` (argmax) and controls both
+training draws. Model credit remains untempered. Evaluation runs exploit alone
+with deterministic logit argmax. `architecture.reducePressure` defaults to `1`
+and raises binary logits as occupancy and deadline urgency grow. Hard deadlines
+reserve a slot for the next word and finish each sentence within its one-slot
+absolute or three-slot relative row. See [Language](doc/Language.md#one-operation-per-round-item-75).
+
+## Files
+
+| File | Description |
+|------|-------------|
+| [bin/train.py](bin/train.py) | Two-phase training orchestrator: embeddings (Phase 1) then model (Phase 2), local or remote via SSH |
+| [bin/Models.py](bin/Models.py) | Main entry point: model factory, training loop, `--compare`, optional `--report` |
+| [bin/Layers.py](bin/Layers.py) | Layer library: SigmaLayer, PiLayer, ErgodicLayer, LinearLayer, TruthLayer |
+| [bin/Spaces.py](bin/Spaces.py) | Space classes: InputSpace, PartSpace, ModalSpace, ConceptualSpace, WholeSpace, OutputSpace |
+| [bin/Language.py](bin/Language.py) | Grammar layers and SymbolSpace: parsing, composition, category codebook |
+| [bin/embed.py](bin/embed.py) | Word vector training: CBOW/SBOW with negative sampling, `WordVectors` (gensim-compatible `.kv`) |
+| [bin/serve.py](bin/serve.py) | HTTP server: OpenAI-compatible `/chat/completions` endpoint for WikiOracle integration |
+| [data/](data/) | XML model configurations |
+| [doc/Architecture.md](doc/Architecture.md) | Algorithm details: Sigma/Pi layers, ergodic exploration, gradient energy sensor |
+| [doc/Componentization.md](doc/Componentization.md) | Software ownership, consolidation targets, and extraction gates |
+| [doc/Params.md](doc/Params.md) | Full XML parameter reference |
+| [doc/Training.md](doc/Training.md) | Embedding pretraining, CBOW/SBOW, masked prediction, `<trainEmbedding>` modes |
+| [doc/Installation.md](doc/Installation.md) | Setup, Makefile targets, train.py options, remote training |
+| [test/](test/) | Unit tests |
+
+## Quick Start
+
+```bash
+# Set up virtual environment
+make install
+
+# Run a single model
+make mnist          # data/simple.xml
+make ergodic         # data/ergodic.xml
+
+# Compare two models side-by-side
+make compare         # defaults: data/simple.xml vs data/ergodic-only.xml
+make compare XML1=data/mnist.xml XML2=data/XOR_exact.xml
+
+# Run tests
+make test
+
+# Generate PDF documentation
+make doc
+```
+
+## XML Configuration
+
+Models are configured via XML files in `data/`. Training and data parameters live in nested sub-elements:
+
+```xml
+<model>
+  <architecture>
+    <ergodic>false</ergodic>
+    <weightsPath>output/BasicModel.ckpt</weightsPath>
+
+    <data>
+      <dataset>xor</dataset>        <!-- xor | phrases | mnist | tomatoes | text | inline -->
+      <dataType>numeric</dataType>  <!-- embedding | numeric -->
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>20</numEpochs>
+      <batchSize>10</batchSize>
+      <learningRate>0.001</learningRate>
+      <certainty>false</certainty>
+      <autoload>true</autoload>
+      <autosave>false</autosave>
+    </training>
+  </architecture>
+
+  <InputSpace> ... </InputSpace>
+  <PartSpace> ... </PartSpace>
+  <ConceptualSpace> ... </ConceptualSpace>
+  <WholeSpace> ... </WholeSpace>
+  <OutputSpace> ... </OutputSpace>
+</model>
+```
+
+See [doc/Params.md](doc/Params.md) for the full parameter reference.
+
+## Output
+
+Runs produce an HTML report only when `Models.py` is invoked with `--report`
+(the `make compare` target does this). Reports are timestamped under `output/`
+and may include:
+
+- **Error per Epoch** -- training and test loss curves
+- **Accuracy per Digit** -- per-class breakdown for digit/classification configs
+
+In compare mode, overlay plots show combined loss and accuracy across models
+when report generation is enabled.

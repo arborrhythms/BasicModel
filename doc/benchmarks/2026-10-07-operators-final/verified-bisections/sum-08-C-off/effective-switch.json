@@ -1,0 +1,40 @@
+{
+  "part": "C",
+  "key": "symbolCentroid",
+  "value": false,
+  "loads": [
+    {
+      "source": "existing singleton",
+      "actual": false
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/data/model.xml",
+      "actual": false
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/measurements/XOR_grammar_sum_control.xml",
+      "actual": false
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/data/model.xml",
+      "actual": false
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/measurements/XOR_grammar_sum_control.xml",
+      "actual": false
+    }
+  ],
+  "instances": [
+    {
+      "meaning_width": 128,
+      "centroid": false,
+      "membership_priming": true
+    },
+    {
+      "meaning_width": 128,
+      "centroid": false,
+      "membership_priming": true
+    }
+  ],
+  "verified": true
+}

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/verified_bisections.py",
+    "xor",
+    "D",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/verified-bisections/xor-09-D-off"
+  ],
+  "pid": 45828,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 744179320,
+  "elapsed_seconds": 153.31749712501187,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/verified-bisections/xor-09-D-off/run.log"
+}

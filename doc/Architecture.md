@@ -379,14 +379,15 @@ DEF atom. Learning either concept's code cannot redirect the definition.
 Word and object operands belong to the grammar registry's ConceptualSpace,
 including bodies with independent stage dictionaries; another stage's allocator
 cannot supply their identities. The DEF utterance and each ended clause have
-LTM occurrence identities. A grammar predicate has one identity per operation,
+stable LTM source-address keys. A grammar predicate has one identity per operation,
 tied by the relation slots in which it occurs, without an inventory row. A
 referenced phrase likewise keeps its point in its LTM row. An identity-to-row
 cache locates these occurrences. A full inventory refuses optional
 symbolization atomically and the reading continues.
 Only `interpret` writes definitions; only the closing writes what a sentence
-asserts. A definition has its own `.when`, remains in recency, and may be
-forgotten. Re-reading refreshes its timestamp without moving its `.when`.
+asserts. A definition is keyed by `(DEF, word, object)`, has an unlocated zero
+`.when` band, remains in recency, and may be forgotten. Re-reading refreshes
+its timestamp without changing its address.
 
 The taxonomy is the native concept hierarchy, read by sigma union. A part
 row between object concepts places the parent one order above its child;
@@ -613,12 +614,14 @@ address can be decoded when needed.
 
 Codebook identity remains the row index within its owning codebook. The
 registry adds a distinct location range for each owner; it does not replace
-that identity. An LTM row's address is its `.when`; its `.where` records what
-it was looking at. One shared temporal ladder covers the LTM allocation, and
-everything observed in an input receives the same advancing subjective
-`when_time` stamp. The exact long-integer clock remains alongside this band.
-Per-word reconstruction excludes this shared timestamp. Item 7's closing adds the field
-coordinates to the LTM row schema. See [Spaces.md](Spaces.md) for the encodings.
+that identity. An LTM sentence is addressed by a 64-bit hash of its source
+document key, sentence index and content key. `.when` carries the relative
+unit bracket `[i, i+1]`; `.where` retains the input/percept location. The
+model's absolute `when_time` is written only to the row's `timestamp`, which
+recency reads. Re-reading the same address updates its committed vectors,
+timestamp and per-pole maximum evidence in place. A full store raises.
+The [4a-0 receipt](benchmarks/2026-10-07-operators-round4a0/) inventories every
+reader and records storage use against capacity.
 
 The spatial band records a start, not an extent. A part's byte length gives
 its end from that start. A whole's end cannot be recovered from the start
@@ -1187,42 +1190,33 @@ overwritten from the derivation each forward. Perception reconstruction alone
 trains native PS/WS prototypes and 11b evidence; the sentence reading detaches
 both. Its root remains live to train the sentence choosers.
 
-A word symbol's position in perceptual space is the join of its parts.
-Net evidence is `d = relu(e_for-e_against)`; the attention-only both corner is
-excluded. Parts with `d > 0` give `L = max(part_code)` (evidence selects a
-part; it does not scale it), and `L` is the form. WS property wholes give
-`U = min(1-d_whole*(1-whole_code))`, or one with no wholes; `U` bounds the
-form and does not enter it. A deterministic post-step room projection moves
-only the minimal whole, up by the full positive `L-U+m` violation, clamped to
-[0,1]; parts never shrink to fit their types; `m` defaults to zero. The exact
-remaining violations are measured, not assumed absent. (6.8 plan §15.2: the
-midpoint of the interval blended each word with its type, since the only
-wholes a word had — the alphabet cuts — were common to every word of a type.)
+A word's native lower bound is the join `L` of its parts. Its form is now
+`c = L + α(U−L)`, where `U = L ∨ ⋀ L(neighbour)` over its adjacent-word
+wholes. Each pair's form is the join of its constituents. `W_P` counts native
+part atoms; `W_U` counts distinct addressed pair occurrences, and
+`α = W_U/(W_P+W_U)`. The containment projection caps contained words by their
+containers in decreasing part count, never below `L`. Equal part sets share
+the cap. The index key is `[c == 1]`; binding projects `c` with the fixed
+round-3a matrix. This replaces the room pass and the older alphabet-whole
+ceiling (operators plan §§32–38).
 
 The round-2 closing image acts only after the complete perceptual block:
 its form content and reserved coordinates are untouched. Interpretation and
-retained leaves multiply form by activation magnitude and meaning by signed
-activation; poles carry the sign into the closing (operators round 2c). With a zero-width
-concept complement (XOR_grammar and MM_grammar), the image is exactly zero;
-thought reads the conceived complement while storage keeps the observation.
+retained leaves multiply both blocks by activation magnitude and exchange
+meaning poles for a negative activation (round 4a). The two grammar gates now
+have a 128-coordinate bipolar complement. The image remains zero without a
+prior forecast; thought reads the conceived complement while storage keeps the observation.
 
-The midpoint returns under the scheme confirmed on 2026-10-06 (operators
-update plan §12–§13): the wholes that bound a word are the alphabet cuts
-together with the has-a concepts one order up (for each part `p`, the things
-containing `p`, by the sigma fold over `p`'s occurrences), each whole weighing
-in `U` in proportion to how much it narrows the domain, `d_w · s_w` with
-`s_w = 1 - |extent(w)| / |domain|`; a whole that excludes nothing bounds
-nothing. The symbol is then the evidence-weighted centroid between `L` and
-`U`. It is informative only in a wide sparse content block, so it arrives with
-the pairs and the width of round 3.
+Generally characterized codes have zero location/time coordinates. Sentence
+occurrences carry source-relative brackets and addressed provenance. The same
+postings provide a word's meaning: the detached, recency-weighted mean of fixed
+sentence content identities, on the for pole with a zero against pole.
 
-Generally characterized codes have zero location/time coordinates in the
-native perceptual event block. Occurrences carry their own bracket and time.
-Occurrence rows are not the WS types used for the upper bound. They supply the
-concept's position in conceptual space: the detached, recency-weighted context
-mean on the complement of the form block. Existing references and leaf postings give the two-way
-lookup. A word primes its occurrence rows, and a primed row its constituents;
-this conduction admits no new row.
+Membership priming adds word ↔ addressed sentence edges to the existing concept
+graph. Each word's concept and membership edges share one degree-normalized
+outflow budget; a sentence distributes received energy among its member words.
+This detached forward diffusion reaches the attention walk through the existing
+codebook-retrieval prior. Attention's mask and visits are unchanged.
 
 At every order, identity comes from below through the fold of forms and meaning
 comes from above through contexts. At orders ≥ 1, composition of meanings also
@@ -1232,19 +1226,17 @@ Their symbols can have different forms. Max/min folds of forms can coincide,
 and product composition preserves partner differences only on the other
 operand's support; form support and root geometry are measured at both endpoints.
 
-Composition still applies the current binding kernel across the paired vector;
-its normalization can couple block magnitudes. The fold composing forms at all
-orders, Kleene meet and join on meanings, bootstrap of the complement from the
-conceptual wholes' locations, the catalogue's `not` items, and expectation's
-negative image acting on the concept face only (item 2) remain for the operators
-update. No bootstrap or co-activation objective is added here.
+The final operators update composes each block independently. The form retains round 3a's
+binding kernel and normalization. The meaning complement is bipolar evidence:
+conjunction/intersection `(min⁺, max⁻)`, disjunction/union `(max⁺, min⁻)`,
+sum the mean of each pole, and `not` the pole exchange. Operators without a
+meaning write pass it through. Form normalization never rescales meaning.
 
-XOR_grammar and MM_grammar have 22-dimensional native events and paired
-representations since 6.8 §22: fourteen form content coordinates, the
-eight-coordinate address band, and an empty meaning complement. Their concepts are empty: identical contexts with no bootstrap.
-The XOR class and reconstruction table measures perception's composition of
-forms, its inverse, the affine read at unit norm, and one owner. The connectives
-over meanings are measured where meanings exist, as in MM_xor's field path.
+XOR_grammar and MM_grammar retain 104-dimensional native form events and add
+128 meaning coordinates (64 pole pairs, three identity bits per sentence).
+BasicModel's existing 896-coordinate complement holds 448 pairs with six
+identity bits. The static membership certificate, including negation, is the
+semantic test; the XOR class gate may finish with mixed connectives.
 
 `canonical_shape("ConceptualSpace")` remains `(0,0)`. Lexical identity is read
 by scale-free perceptual cosine and retains either activation pole's spelling.
@@ -1270,7 +1262,7 @@ reading definitions and includes every supported identity, replacing the
 
 | Thing | `.where` | `.when` | `.what` |
 |---|---|---|---|
-| a percept event, a symbol occurrence | its own bracket | its own time | one code |
+| a percept event, a symbol occurrence | its own bracket | its sentence's document-relative bracket | one code |
 | a **field** — a reading; an LTM row is a ended field | **one** convex bracket | **one** interval | **many** codes: the parts and wholes inside the bracket |
 | a **concept row** in the store | none | none | its definition over percept poles |
 
@@ -1334,16 +1326,13 @@ is the reading that prompts the division. Attribution still reaches
 their events carry the brackets, so the refine-before-raise run count
 moves to perception's side.
 
-**When.** The current input's time is the model's advancing subjective
-`when_time`, encoded with a sinusoidal ladder and retained as an exact integer
-alongside it. Every element of that input shares the stamp. It distinguishes
-successive observations; scoring it again for each word adds no per-word
-information. The item 7 closing will retain the field's coordinates in LTM, so a
-recalled row can enter thought with its own location and time. An interval
-wider than one row is an episode. Tense is the
-relation between the field's interval and the utterance's, a relation
-between two brackets, never a property of a concept row; `lift` extends a
-thing into a process by widening the interval the field reads.
+**When (final operators update).** Each event carries the index of its sentence within
+its source document as the endpoint-sum bracket `[i, i+1]`. Both rungs use
+the spatial encoding's scale; the long period exceeds the document bound
+and the fine rung resolves adjacent positions. Re-reading yields the same
+band. Absolute model time is separate and appears only in the LTM timestamp
+column. The situation code in content, and learned before/after operators,
+remain item 5.5 work.
 
 **Consequently (Alec, 2026-09-25): every LTM row carries a `.where` and a
 `.when`**, the field's pair, written once by the closing (item 7). **`.where`
@@ -1363,12 +1352,10 @@ spaces. Its long period covers the entire fixed registry; its short period
 resolves adjacent locations. Captured programs retain these bands, and an
 integer location is decoded from them when needed. There is no second saved
 integer address and no separately configured 8192-byte period. `.when` uses
-one shared ladder sized for the LTM chain: everything in one input has the
-same subjective time. The exact clock side-band remains available. Per-word
-objectives exclude the shared time, while grammar still transports its band.
-LTM is the exception: **a row's address is its
-`.when` alone**, and its `.where` records what it was looking at, so rows
-may share a `.where`.
+one shared bracket encoder; every word of a sentence receives the same
+relative index. Per-word objectives exclude that shared band. Sentence
+addresses include source document, relative index and identified content;
+`.when` alone does not distinguish documents.
 
 **Open and focused readings share one structure.** The order-0 rows,
 definitions, symbol pairs and memberships belong to one inventory. The open
@@ -1489,7 +1476,7 @@ owned value; `TernaryTruthStore` remains the durable evidence owner.
 [store](../bin/Layers.py#L8674).
 
 The existing checkpoint sidecar now retains semantic context and source text,
-bound to stable occurrence IDs and tensor fingerprints. Required metadata
+bound to stable source-address keys and tensor fingerprints. Required metadata
 missing on restore makes the corresponding evidence unavailable. This
 foundation does not complete grammatical VP dispatch or levelled thought
 history. Conceptual-taxonomy evidence is implemented separately below. See [Existence evidence](ExistenceEvidence.md)
@@ -2630,14 +2617,19 @@ Evidence selects a part; it does not scale it. Certainty is the leaf's
 activation (the projection coefficient `(leaf·c)/(c·c)`), not the code's
 magnitude: full-presence codes replace the earlier unit-length constraint,
 and the 6.9 catalogue's "magnitude = certainty" row returns in this form. The
-wholes (the WS types read off the input) contain the form and do not enter
-its position: the room rule `L + m ≤ U`, `U = ∧` over the wholes, is enforced
-on the wholes only (a type grows to hold its members; a form does not shrink
-to fit). A higher-order symbol is the fold of its constituents' forms; until
-the operators update the binding kernel does this. The address bands
+adjacent-word wholes set the ceiling `U = L ∨ ⋀ L(neighbour)`. Their distinct
+address witnesses set the centroid weight. The containment cap preserves the
+native order and never lowers a coordinate below `L`; the room pass is retired.
+A higher-order form continues to use its declared binding kernel. The address bands
 (`.where`, `.when`) are zero in a code: the particular lives in its
 occurrence row, the type in the codebook, and the mereological structure of a
 genus is its structure (typed parts, arranged), not a location.
+
+**One forward snapshot.** Meaning means and centroid forms are frozen before
+lexical staging. Both trials, the inverse and readback use that snapshot until
+the committed writes finish. Pair search shortlists words, then offers each
+word's two symbols: unchanged form with either meaning-pole orientation.
+Readback merges the two aliases into the same word identity.
 
 **Codes are perception's.** In the conceptual derivation the percept
 prototypes and the 11b evidence are detached: no gradient from the sentence
@@ -2647,40 +2639,33 @@ atom's bit stream. Other percept prototypes retain perception's reconstruction
 owner. Identified words read their exact bytes from the indexed row; their
 rung-zero reconstruction term is an audit, with zero expected error.
 
-**The concept.** An order-0 concept's position in conceptual space is
-context, entirely: the mean of its occurrence rows' roots on the conceptual
-coordinates and the conceptual wholes it belongs to (sets one order up,
-situation and document codes, properties as concepts), by co-activation;
-zero before it has any; shared by concepts with the same contexts, which is
-correct (a concept is its contexts; `hello`/`loving` and `world`/`there` in
-the XOR corpus). Nothing enters from below (the arbitrariness of the sign).
-At orders ≥ 1 meaning has two sources, composition from below (the
-connectives over constituent meanings) and context from above; identity keeps
-one (the fold). One conceptual space serves every order; order is a stamp on
-the row (the fold-provenance record), and its one bearing on placement is
-direction: identity from below, meaning from above, at every rung. Minting is
-order's other role: the sigma fold makes the co-activating set one order
-above its members; a narrowing stays at its order.
+**The concept.** Order-zero meaning is the detached recency-weighted mean
+of fixed sparse identity codes of containing REL_NONE sentence rows, using
+the existing leaf postings and references and excluding definitions. The mean
+fills the for pole; the against pole is zero. Absence is unknown. Each identity
+is generated from the sentence content key by a private generator; it is an
+index with no optimizer owner. Text content keys hash ordered, length-framed
+identified word bytes. Direct opaque rows use their initial form. Occurrence
+addresses remain separate provenance. The snapshot precedes both trial walks,
+and composed meanings are still stored as `o`.
 
-**The connectives.** With zero as uncertainty the connectives over codes are
-Kleene's: `∧ = min`, `∨ = max`, `not = −d` (the exchange of the two poles),
-the meet and join of the towers' cube, which is a Kleene algebra under the
-componentwise order; De Morgan is exact and no sign pools. The present
-binding kernel (normalized Hadamard product of signed carriers) is VSA
-binding whose sign is a phase, so `(−x)∘(−y) = x∘y`; it cannot host negation
-and composes forms only in the interim. The connectives over meanings are
-measured where meanings exist (MM_xor's field path); in the gate
-configurations the concepts are empty, so the XOR table measures perception's
-composition of forms, its inverse, one affine read shared with the sum
-control, and one owner (the composition mechanism gate, 6.8 plan §12.1).
+At higher orders, meaning also composes from below by the bilattice.
+Conjunction/intersection meet the for poles and join the against poles;
+disjunction/union join for and meet against. Sum averages both, and negation
+exchanges them. `(0,0)` is unknown and `(1,1)` is conflicting evidence.
+Thus `not a` has a's extent against and none for, and `a ∧ not b` has b's
+extent against and none for. The form keeps the existing binding kernels;
+the two blocks are never normalized together in composition.
 
-**Readers and the two blocks (2026-10-05).** Identity reads stay on the form
-block (the read-back's `percept_width`), similarity reads on the complement,
-and the class reader and the pair search's residual read the full vector;
-nothing that must recover *which* words reads the complement alone. In the
-gate configurations the form is the whole content and the complement is
-empty; in production the complement holds the detached context mean, which is
-written there and read by no gate.
+**Readers and the two blocks (final operators update).** Identity reads stay on form,
+similarity reads on meaning, and the class reader and pair-search residual
+read the paired vector. Both grammar gates have 64 pole pairs; BasicModel has
+448. A static certificate exhausts every word pair and stored corpus row.
+At corpus scale the sparse representation admits false memberships, reported
+as a diagnostic; exact membership is answered by postings. The predictor
+trains on the committed trial's row only. The centroid and membership
+priming are included, controlled by `symbolCentroid` and `membershipPriming`.
+`meaningWidth=0` disables the context bootstrap without resizing storage.
 
 **Footprints.** Each operator declares what it reads and writes over form
 (perceptual space), meaning (conceptual space) and the poles (the symbol's
@@ -2714,13 +2699,39 @@ derivation is one parallel join over the slab rather than a serial walk;
 the same rule serves the sentence rung with adjacent word pairs. The
 content block must hold the inventory as a sparse superposition (round 3).
 
-**Attention is a filter.** A weight per word on detached percepts, trained
-pathwise by the owner-step cost factored into attended and unattended
-regions — `C = Σ m_i·C_i^S + (1 − m_i)·C_i^P`, so a word is attended where
-the sentence path explains it better than perception alone — with a graded
-budget; soft in training, hard at test; the field's `and`/`or`/`not` are
-continuous in the poles (round 5). Until then the narrowing walk's poles are
-handed off with the scope (round 2).
+**Attention is a mask over `.where`** (Alec, 2026-10-07). It starts as the
+sentence's global scope and narrows to a mask on each word in turn, so the
+serial grammar and the other non-parallel operations process one word at a
+time. It does not decide which words matter; every word is visited. Its
+loss is what its mask leaves out of the target; the region inside the mask
+pays the percept/concept chain's cost. Over a wide scope the field is
+heterogeneous and the pair accumulates *both*; the walk's answer to both is
+to divide (`narrowing_mask`: both permits divide, pure permits gloss,
+neither permits descend) until each bracket is homogeneous, where the
+concept is unipolar and pervades the object — union and pervasion coincide
+on a pure extent (Alec, 2026-10-07). *Both* therefore never enters a leaf
+from an identified word; it re-arises by composition, as two-truths §1.1
+says it must. This is the narrowing walk of 6.8
+(the open bracket, divide/descend/gloss to each word, the scope handed to
+conceptual space). Under identity by construction a word left out of the
+mask is a word missing from the reconstruction, which the owner-step trial
+cost charges and credits to the walk's choices (round 2). The walk's poles
+are handed off with the scope (round 2), and priming through shared wholes
+supplies its prior.
+
+**Two lanes, two positive symbols** (two-truths §1.1; restated by Alec,
+2026-10-07). Evidence for and evidence against a concept are separate
+quantities in separate lanes, and each lane is the magnitude of its own
+positively-valued symbol — the concept's one code, signless, in perceptual
+space. A leaf is `[form × presence | code × c⁺ | code × c⁻]`; the attention
+walk's poles are that pair; operators act lane by lane; the stored row keeps
+the pair as `(c⁺, c⁻)`. Nothing on the path forms the pair's difference or
+sign: a single signed activation cannot tell *both* `(1,1)` from *neither*
+`(0,0)`. The order alternation is then intact without a second symbol after
+a zeroth-order concept's location: percepts (perceptual) → the concept, an
+aggregation of parts and wholes (conceptual) → its symbols, the location
+at two magnitudes (perceptual) → the first-order concept, composition over
+symbols (conceptual) → the sentence's location (perceptual) → …
 
 **Two hard derivations as expectation and surprise.** The forward is always
 a tree. The greedy derivation is what the model expects of itself; one
@@ -2777,3 +2788,70 @@ existing output objective sums their independently reduced losses, giving
 each reader one update. The strict reconstruction keep, walk-first proposal,
 score-function correction, and detached understanding boundary are unchanged.
 The candidate is held for Claude's review before any commit.
+
+
+### Address checkpoint migration (final operators update)
+
+The store has no occurrence counter or random owner namespace. Its short keys
+use all 64 hash bits, including the sign bit of the int64 storage column;
+`-1` remains the absent-reference sentinel. Typed references use the shared
+`address-v1` format tag. A store resolves a key only if it retains that address.
+Full document/content digests and the position detect a short-key collision
+before any row can be merged. The derived `_index_occurrences` maps address
+keys to current physical rows and is rebuilt after load and compaction.
+
+Legacy checkpoints cannot recover source documents from an absolute clock.
+Their rows are migrated into an explicitly marked legacy document, retaining
+the original occurrence ordinal. Native refs, typed semantic references,
+expectation pairs and references in thought history are rekeyed together.
+The old metadata fingerprint is checked before edges are rewritten. Existing
+timestamps and evidence survive; loaded rows acquire relative bands. New
+reads use their real source addresses. No migration claims to recover
+identified words from an old composed vector.
+
+### Determiners and relation declarations (final operators update)
+
+`lower` projects a description; its marker contributes no content. A rule's
+`determiner_mode` chooses mint, bind, or kind. Mint creates an unasserted
+addressed member only when the selected reading closes; it does not mint a
+dictionary concept. Bind chooses an earlier occurrence by address. Kind and
+`generic` retain the high-order description. A sentence `lift` inherits its
+subject's order; dimensional lift remains with 5.5. Reverse lower uses the
+existing bounded candidate lookup or a supplied marker witness.
+
+A relation closes as a row and publishes its name in STM; its two operands
+remain references. Equality states both directed PART rows, while lexical
+interpretation remains a separate DEF edge. Predicate identity is a grammar
+rule property, including the thought equality predicate. Runtime behavior
+reads declared properties, independent of a rule's spelling. The obsolete
+GrammaticalQueryRegistry remains retired.
+
+The [combined receipt](benchmarks/2026-10-07-operators-final/) contains the
+single sweep and thirty standing trainings, plus separately labelled
+bisections. Plan §39 rejects that candidate; the accepted repair follows.
+
+### Combined operators repair (October 7; accepted landing)
+
+The [repair receipt](benchmarks/2026-10-07-operators-final-b/) follows plan
+§40. Consumer priming is bounded by `ConceptualSpace.primingMaxBoost`
+(default 2.0), with neutral 1.0; diffusion retains its energy ledger.
+`readerBlockNormalization` defaults on. The numeric reader uses one form
+scale and one meaning scale from its shared snapshot, plus separate scales
+for the echoic bank. Common scales preserve affine reading of composed
+roots, including the sum control. No reader scaling is written into the
+composition or LTM. The relative `.when` path through
+`PartSpace._embed_radix` is intentional and MM_xor is a live gate.
+
+The first repair sweep completed 5,354 cases with three failures, retained
+in the receipt. The user authorized a further sweep with the §42 tetralemma
+repair. The inverse now identifies words by form alone and recovers each
+lane independently. Closing retains required evidence per pole, without
+inferring Boolean assertion polarity from their relative magnitudes. The
+final measured source completed a green 5,500-case sweep (5,214 passed,
+285 skipped, one non-strict XPASS), then all thirty trainings: sum 10/10 at
+¼, XOR class and reconstruction each 10/10, MM_xor 10/10. R is identically
+zero, priming stays in [1,2], and every grammar training uses four sentence
+rows plus four DEF rows out of 1,024. The source and per-trial costs remain
+in the receipt. Alec accepted the repair under plan §45 on October 7 and
+authorized commit, push and the WikiOracle bump. Item 6.5 is next, with §44's
+magnitude as definedness first.

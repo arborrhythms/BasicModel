@@ -25,6 +25,19 @@ Diagram: [grammar_operators.svg](../diagrams/grammar_operators.svg), generated b
 `python doc/diagrams/gen_diagrams.py grammar_operators.svg` from the data block
 `GO_*` in that script; edit the data, not the SVG.
 
+## 0. Occurrence address implementation
+
+**Implementation note, final operators update (2026-10-07; review pending).**
+The 10-03 relative `.when` value is implemented as `[i, i+1]` with the
+source sentence's document position. Stable document/content address hashes
+replace occurrence counters and random store namespaces. Re-reading
+re-witnesses the row; the absolute model clock is written to `timestamp`
+only, and full capacity raises. Source keys address the document here;
+the situation code in content and learned before/after remain item 5.5.
+[Receipt and reader inventory](../benchmarks/2026-10-07-operators-final/).
+
+The governing 10-03 revision is [the occurrence spec §0](2026-09-30-occurrence-tense-aspect.md#0-revision-of-2026-10-03-when-stays-and-the-address-is-content-decided-alec).
+
 ## 1. Principle
 
 Operators have no return values. An operator of any of the three grammars
@@ -672,7 +685,17 @@ in this field, `c⁺` for the concept present and `c⁻` for its negation
 present, both presences, sharing one concept row (`i ↔ (i⁺, i⁻)`; the
 concept's code is stored once). Negation is itself a presence, so the field
 still carries no sign, and the four corners of the tetralemma — true,
-false, **both**, neither — are read from the pair. Both is a compositional
+false, **both**, neither — are read from the pair. *Restated (Alec,
+2026-10-07, after an implementation collapsed the pair into a signed
+scalar):* the two kinds of evidence live in **different lanes**, for and
+against, and each lane contributes to its own **positively-valued symbol**
+— the concept's code at the magnitude of that lane's evidence. No step on
+the path from the attention walk's poles to the stored row may form their
+difference, their sign, or any other single number from the pair; a
+*both* word and a *neither* word both net to zero, and the tetralemma is
+lost at that step. The leaf is therefore `[form × presence | code × c⁺ |
+code × c⁻]`: the form is the identity, signless; the two symbols share it.
+Composition acts on each lane separately (two-truths §1.1). Both is a compositional
 fact, a whole whose parts differ under a predicate, and objects are not
 symbols
 ([two truths §1.1](2026-09-16-two-truths-ideas-and-relations.md#11-both-is-a-compositional-fact-decided-alec-2026-09-23)).

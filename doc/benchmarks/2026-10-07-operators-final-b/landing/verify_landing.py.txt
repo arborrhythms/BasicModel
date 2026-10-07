@@ -1,0 +1,88 @@
+"""Verify acceptance against saved evidence without repeating measurements."""
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import sys
+
+HERE = Path(__file__).resolve().parent.parent
+ROOT = HERE.parents[2]
+sys.path.insert(0, str(ROOT / 'test'))
+sys.path.insert(0, str(HERE))
+from bounded_tests import source_snapshot
+from verification import validate
+
+
+def read(path):
+    return json.loads(path.read_text())
+
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+source = source_snapshot(ROOT)
+measured = read(HERE / 'measured-source/source.json')
+assert source == measured == read(HERE / 'measurements/source.json')
+validate(source)
+helpers = read(HERE / 'measured-source/measurement-helpers.json')
+assert all(sha(ROOT / name) == digest for name, digest in helpers.items())
+
+original = HERE.parent / '2026-10-07-operators-final'
+before = read(HERE / 'prior-receipt-manifest.json')
+after = {str(p.relative_to(original)): sha(p) for p in original.rglob('*')
+         if p.is_file() and '__pycache__' not in p.parts}
+assert before.keys() == after.keys()
+changed_original = [name for name in before if before[name] != after[name]]
+assert changed_original == ['README.md'], changed_original
+
+documents = read(HERE / 'landing/before.json')
+for name, digest in documents.items():
+    assert sha(HERE / 'landing/before' / (name + '.txt')) == digest
+summary = read(HERE / 'receipt-summary.json')
+assert summary['training_runs'] == 30
+assert all(summary['counts'][key] == 10 for key in
+           ('class_pass', 'reconstruction_pass', 'sum_floor_pass', 'mm_pass'))
+assert all(summary['absolute_components'][key]['nonzero'] == 0 for key in ('R', 'E'))
+
+record = {
+    'status': 'Accepted by Alec as the operators-update landing; commit, push and WikiOracle submodule bump authorized',
+    'date': '2026-10-07',
+    'authority': 'Alec acceptance conveyed in the 2026-10-07 Operators update — landing instruction; plan §45',
+    'candidate_base_commit': 'cce3a4f7b6e72fab4a9a27fd70d3fa7602553814',
+    'scope': 'One BasicModel commit for rounds 4a-0, 4a, combined and repair; source, tests, configurations, all October 7 receipts and toys, plan and specification/document edits',
+    'runtime_source': 'measured-source/source.json',
+    'runtime_source_manifest_sha256': sha(HERE / 'measured-source/source.json'),
+    'runtime_source_files': len(source),
+    'runtime_source_unchanged': True,
+    'measurement_helpers_matched': len(helpers),
+    'measurement_helper_manifest_sha256': sha(HERE / 'measured-source/measurement-helpers.json'),
+    'measurements_repeated': False,
+    'measurement_summary_sha256': sha(HERE / 'receipt-summary.json'),
+    'basis': {'counts': summary['counts'], 'sweep': summary['sweep'],
+              'training_trial_rows': summary['training_trial_rows'],
+              'R_identically_zero': True, 'E_identically_zero': True},
+    'acceptance_document_changes': [
+        {'path': name, 'at_review_sha256': digest, 'accepted_sha256': sha(ROOT / name)}
+        for name, digest in documents.items()
+    ],
+    'original_combined_receipt': {
+        'status': 'Rejected candidate under plan §39, superseded by this accepted repair',
+        'files': len(before),
+        'unchanged_evidence_files': len(before) - len(changed_original),
+        'changed_paths': changed_original,
+        'change': 'README rejection/acceptance status only; no source or measurement changes',
+        'before_manifest_sha256': sha(HERE / 'prior-receipt-manifest.json'),
+        'readme_at_review_sha256': before['README.md'],
+        'readme_at_acceptance_sha256': after['README.md'],
+    },
+    'inverse_rule': 'Each lane independently: min chooses the least compatible operand magnitudes; max chooses the greatest',
+    'next': 'Item 6.5, with plan §44 magnitude as definedness first; not started',
+    'historical_reports': 'receipt-summary.json and prior-receipt-integrity.json retain the pre-acceptance review state; this record supplies the acceptance and documentary delta',
+    'verification_script_sha256': sha(Path(__file__)),
+}
+(HERE / 'acceptance.json').write_text(json.dumps(record, indent=2, ensure_ascii=False) + '\n')
+print(json.dumps({key: record[key] for key in
+                  ('runtime_source_files', 'runtime_source_unchanged',
+                   'measurement_helpers_matched', 'measurements_repeated',
+                   'original_combined_receipt')}, indent=2))

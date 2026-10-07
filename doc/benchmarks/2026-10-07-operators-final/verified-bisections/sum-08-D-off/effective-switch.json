@@ -1,0 +1,40 @@
+{
+  "part": "D",
+  "key": "membershipPriming",
+  "value": false,
+  "loads": [
+    {
+      "source": "existing singleton",
+      "actual": false
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/data/model.xml",
+      "actual": false
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/measurements/XOR_grammar_sum_control.xml",
+      "actual": false
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/data/model.xml",
+      "actual": false
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/measurements/XOR_grammar_sum_control.xml",
+      "actual": false
+    }
+  ],
+  "instances": [
+    {
+      "meaning_width": 128,
+      "centroid": true,
+      "membership_priming": false
+    },
+    {
+      "meaning_width": 128,
+      "centroid": true,
+      "membership_priming": false
+    }
+  ],
+  "verified": true
+}

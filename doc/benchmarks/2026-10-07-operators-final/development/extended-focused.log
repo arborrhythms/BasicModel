@@ -1,0 +1,227 @@
+........................................................................ [  6%]
+......................................................................ss [ 13%]
+........................................................................ [ 20%]
+........................................s...............s............... [ 26%]
+........................................................................ [ 33%]
+........................................................................ [ 40%]
+........................................................................ [ 46%]
+........................................................................ [ 53%]
+.............................F..F....................................... [ 60%]
+........................................................................ [ 66%]
+............................................s........................... [ 73%]
+..................................s..................................... [ 80%]
+..............................................................F......... [ 86%]
+....................................F.F.............................s... [ 93%]
+.......................................................................  [100%]
+=================================== FAILURES ===================================
+_____________ test_order_change_is_declared_and_survives_an_alias ______________
+
+    def test_order_change_is_declared_and_survives_an_alias():
+        from Language import Grammar
+        grammar=Grammar();rules=[]
+        grammar._fill_rule_list(rules, {'rule': {'_':'S2 = renamed.forward(N1, V1)', 'implementation':'lift'}})
+        rule=rules[0]._replace(method_name='no_semantic_spelling')
+>       assert grammar._rule_order_signature(rule).order_delta == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = RuleOrderSignature(lhs_category='S', lhs_order_expr=OrderExpr(kind='constant', delta=2), rhs_categories=('N', 'V'), rh...derExpr(kind='constant', delta=1), OrderExpr(kind='constant', delta=1)), op_name='no_semantic_spelling', order_delta=0).order_delta
+E        +    where RuleOrderSignature(lhs_category='S', lhs_order_expr=OrderExpr(kind='constant', delta=2), rhs_categories=('N', 'V'), rh...derExpr(kind='constant', delta=1), OrderExpr(kind='constant', delta=1)), op_name='no_semantic_spelling', order_delta=0) = _rule_order_signature(RuleDef(space_role='SS', canonical='S2 -> renamed.forward(N1, V1)', arity=2, method_name='no_semantic_spelling', lhs='...rm', 'meaning', 'poles'), footprint_writes=('form', 'meaning'), determiner_mode=None, substrate=False, mandatory=False))
+E        +      where _rule_order_signature = <Language.Grammar object at 0x145f27350>._rule_order_signature
+
+test/test_operator_effects.py:70: AssertionError
+___________ test_saved_old_new_pole_bodies_and_current_source_agree ____________
+
+    def test_saved_old_new_pole_bodies_and_current_source_agree():
+        import Language
+        root = Path(__file__).resolve().parents[1]
+        saved = json.loads((root/'doc/benchmarks/2026-10-05-operators-update/pole-bodies.json').read_text())
+        source = (root/'bin/Language.py').read_text()
+        current = {node.name: ast.get_source_segment(source, node)
+                   for node in ast.parse(source).body if isinstance(node, ast.ClassDef)}
+        poles = torch.tensor([[.8, .1], [.1, .8], [.5, .5], [0., 0.]])
+        other = torch.tensor([[.3, .6], [.3, .6], [.3, .6], [.3, .6]])
+        implementations = {}
+        for phase, bodies in saved.items():
+            namespace = dict(Language.__dict__)
+            for name, body in bodies.items():
+                if phase == 'new':
+>                   assert body == current[name], 'refresh the saved body when production changes'
+E                   AssertionError: refresh the saved body when production changes
+E                   assert 'class NotLay...lf.forward(y)' == 'class NotLay...lf.forward(y)'
+E                     
+E                     Skipping 63 identical leading characters in diff, use -v to show
+E                     - rites = ('meaning', 'poles')
+E                     ?          -----------
+E                     + rites = ('poles',)
+E                     ?                 +
+E                           field_only = True...
+E                     
+E                     ...Full output truncated (38 lines hidden), use '-vv' to show
+
+test/test_operator_pole_bodies.py:22: AssertionError
+__ test_tiny_concept_inventory_keeps_thought_families_structural_not_partial ___
+
+    def test_tiny_concept_inventory_keeps_thought_families_structural_not_partial():
+        """Inventory VP setup stays all-or-nothing beside the row-free relation predicates."""
+        from Queries import GrammaticalThoughtRegistry
+    
+        space = _cs()
+        # IDs start at one, so quantize and what do not fit a two-row inventory.
+        # Part and the equality formula are grammar predicates, not inventory rows.
+        # The underlying fixture basis stays intact; this owns only the allocator's
+        # physical-capacity boundary used by setup preflight.
+        space.nVectors = 2
+        grammar = Grammar()
+        grammar.configure({"compose": {"rule": [
+            "part_O1 = part.forward(part_I1, part_I2)",
+            "equal_O1 = equal.forward(equal_I1, equal_I2)",
+    
+        ]}, "thought": {"rule": [
+            "part_O1 = part.thought(part_I1, part_I2)",
+            "equal_O1 = equal.thought(equal_I1, equal_I2)",
+            "quantize_O1 = quantize.thought(quantize_I1)",
+            "what_O1 = what.thought(what_I1)",
+        ]}})
+    
+        registry = GrammaticalThoughtRegistry.install(space, grammar)
+    
+        assert tuple(item.semantic_id for item in registry.operations) == (
+            "part", "equal", "quantize", "what")
+>       assert registry.executable_operation_ids == ("part", "equal")
+E       AssertionError: assert ('part', 'equ...tize', 'what') == ('part', 'equal')
+E         
+E         Left contains 2 more items, first extra item: 'quantize'
+E         Use -v to get more diff
+
+test/test_thought_operation_catalog.py:229: AssertionError
+________ test_tied_affine_inverse_uses_the_retained_operand[left-lower] ________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3041/test_tied_affine_inverse_uses_1')
+name = 'lower', side = 'left'
+
+    @pytest.mark.parametrize("name", ["lift", "lower"])
+    @pytest.mark.parametrize("side", ["left", "right"])
+    def test_tied_affine_inverse_uses_the_retained_operand(tmp_path, name, side):
+        model = _model(tmp_path)
+        try:
+            language = model.languageSpace
+            binary = language._tree_layer(2)
+            index = list(binary.op_names).index(name)
+            op = getattr(binary.ops[index], "gl", binary.ops[index])
+>           inner = op._sigma if name == "lift" else op._pi
+                                                     ^^^^^^
+
+test/test_tied_operator_reconstruction.py:127: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LowerLayer(), name = '_pi'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'LowerLayer' object has no attribute '_pi'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_______ test_tied_affine_inverse_uses_the_retained_operand[right-lower] ________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3041/test_tied_affine_inverse_uses_3')
+name = 'lower', side = 'right'
+
+    @pytest.mark.parametrize("name", ["lift", "lower"])
+    @pytest.mark.parametrize("side", ["left", "right"])
+    def test_tied_affine_inverse_uses_the_retained_operand(tmp_path, name, side):
+        model = _model(tmp_path)
+        try:
+            language = model.languageSpace
+            binary = language._tree_layer(2)
+            index = list(binary.op_names).index(name)
+            op = getattr(binary.ops[index], "gl", binary.ops[index])
+>           inner = op._sigma if name == "lift" else op._pi
+                                                     ^^^^^^
+
+test/test_tied_operator_reconstruction.py:127: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = LowerLayer(), name = '_pi'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'LowerLayer' object has no attribute '_pi'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+=============================== warnings summary ===============================
+test/test_accessible_mind.py::test_thought_effect_uses_cached_row_identity
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_category_codebook_retirement.py: 6 warnings
+test/test_partition_pos_codebook.py: 5 warnings
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1253: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_category_codebook_retirement.py: 6 warnings
+test/test_partition_pos_codebook.py: 5 warnings
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1253: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_existence_metadata.py::test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:2593: UserWarning: Legacy LTM rows have unknown order; decoding requires an explicit order stamp.
+    module._load_from_state_dict(
+
+test/test_mereology_raise.py::test_run_structure_over_word_spans_counts_words
+test/test_mereology_raise.py::test_run_structure_single_blob_is_singleton
+test/test_mereology_raise.py::test_stage_analysis_spans_is_structural_only
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1253: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_model_time_when.py::test_clock_increments_once_per_inference_batch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7195: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_occurrence_coordinates.py::test_input_event_position_is_independent_of_the_subjective_clock
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7195: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3041/test_input_event_position_is_i0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7195: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp9f68r5_r/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operator_effects.py::test_order_change_is_declared_and_survives_an_alias
+FAILED test/test_operator_pole_bodies.py::test_saved_old_new_pole_bodies_and_current_source_agree
+FAILED test/test_thought_operation_catalog.py::test_tiny_concept_inventory_keeps_thought_families_structural_not_partial
+FAILED test/test_tied_operator_reconstruction.py::test_tied_affine_inverse_uses_the_retained_operand[left-lower]
+FAILED test/test_tied_operator_reconstruction.py::test_tied_affine_inverse_uses_the_retained_operand[right-lower]
+5 failed, 1067 passed, 7 skipped, 31 warnings in 217.12s (0:03:37)

@@ -1,0 +1,139 @@
+.............................................ss......................... [ 58%]
+..................................s..............FF                      [100%]
+=================================== FAILURES ===================================
+____ test_deep_clause_retains_exact_values_references_and_gradients[False] _____
+test/test_sentence_end_state.py:252: in test_deep_clause_retains_exact_values_references_and_gradients
+    result=finish_clause(language,program)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:422: in finish_clause
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:352: in recover
+    evidence['order'] = node_order(root)
+                        ^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in <genexpr>
+    value = max(node_order(child) for child in item['children'])
+                ^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in <genexpr>
+    value = max(node_order(child) for child in item['children'])
+                ^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in <genexpr>
+    value = max(node_order(child) for child in item['children'])
+                ^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in <genexpr>
+    value = max(node_order(child) for child in item['children'])
+                ^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in <genexpr>
+    value = max(node_order(child) for child in item['children'])
+                ^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in <genexpr>
+    value = max(node_order(child) for child in item['children'])
+                ^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in <genexpr>
+    value = max(node_order(child) for child in item['children'])
+                ^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in <genexpr>
+    value = max(node_order(child) for child in item['children'])
+                ^^^^^^^^^^^^^^^^^
+E   RecursionError: maximum recursion depth exceeded
+!!! Recursion error detected, but an error occurred locating the origin of recursion.
+  The following exception happened when comparing locals in the stack frame:
+    RuntimeError: Boolean value of Tensor with more than one value is ambiguous
+  Displaying first and last 10 stack frames out of 969.
+_____ test_deep_clause_retains_exact_values_references_and_gradients[True] _____
+test/test_sentence_end_state.py:252: in test_deep_clause_retains_exact_values_references_and_gradients
+    result=finish_clause(language,program)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:422: in finish_clause
+    return recover(stack[0], top=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:352: in recover
+    evidence['order'] = node_order(root)
+                        ^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in <genexpr>
+    value = max(node_order(child) for child in item['children'])
+                ^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in <genexpr>
+    value = max(node_order(child) for child in item['children'])
+                ^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in <genexpr>
+    value = max(node_order(child) for child in item['children'])
+                ^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in <genexpr>
+    value = max(node_order(child) for child in item['children'])
+                ^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in <genexpr>
+    value = max(node_order(child) for child in item['children'])
+                ^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in <genexpr>
+    value = max(node_order(child) for child in item['children'])
+                ^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in <genexpr>
+    value = max(node_order(child) for child in item['children'])
+                ^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in node_order
+    value = max(node_order(child) for child in item['children'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseJournal.py:348: in <genexpr>
+    value = max(node_order(child) for child in item['children'])
+                ^^^^^^^^^^^^^^^^^
+E   RecursionError: maximum recursion depth exceeded
+!!! Recursion error detected, but an error occurred locating the origin of recursion.
+  The following exception happened when comparing locals in the stack frame:
+    RuntimeError: Boolean value of Tensor with more than one value is ambiguous
+  Displaying first and last 10 stack frames out of 969.
+=========================== short test summary info ============================
+FAILED test/test_sentence_end_state.py::test_deep_clause_retains_exact_values_references_and_gradients[False]
+FAILED test/test_sentence_end_state.py::test_deep_clause_retains_exact_values_references_and_gradients[True]
+2 failed, 118 passed, 3 skipped in 14.31s

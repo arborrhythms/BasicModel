@@ -1,0 +1,14 @@
+[
+  {
+    "variant": "round3a",
+    "exit_code": 0
+  },
+  {
+    "variant": "relative",
+    "exit_code": 0
+  },
+  {
+    "variant": "relative_with_old_band",
+    "exit_code": 0
+  }
+]

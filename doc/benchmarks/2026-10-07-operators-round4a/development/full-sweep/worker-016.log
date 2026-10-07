@@ -1,0 +1,36 @@
+........................................................................ [ 37%]
+.....................F.................................................. [ 74%]
+.................................................                        [100%]
+=================================== FAILURES ===================================
+___________ test_saved_old_new_pole_bodies_and_current_source_agree ____________
+test/test_operator_pole_bodies.py:22: in test_saved_old_new_pole_bodies_and_current_source_agree
+    assert body == current[name], 'refresh the saved body when production changes'
+E   AssertionError: refresh the saved body when production changes
+E   assert 'class NotLay...lf.forward(y)' == 'class NotLay...lf.forward(y)'
+E     
+E     Skipping 63 identical leading characters in diff, use -v to show
+E     - rites = ('meaning', 'poles')
+E     ?          -----------
+E     + rites = ('poles',)
+E     ?                 +
+E           field_only = True...
+E     
+E     ...Full output truncated (37 lines hidden), use '-vv' to show
+=============================== warnings summary ===============================
+test/test_occurrence_coordinates.py::test_reset_clears_only_the_selected_fields_time_band
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_occurrence_coordinates.py::test_input_event_time_uses_the_subjective_clock
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7187: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2837/test_input_event_time_uses_the0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operator_pole_bodies.py::test_saved_old_new_pole_bodies_and_current_source_agree
+1 failed, 192 passed, 3 warnings in 22.01s

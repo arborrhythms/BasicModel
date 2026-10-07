@@ -1,0 +1,26 @@
+..........F...................s...............ssssss...................s [ 70%]
+s.......s.....................                                           [100%]
+=================================== FAILURES ===================================
+___ test_restored_sidecar_cannot_swap_contexts_between_existing_occurrences ____
+test/test_existence_sidecar.py:38: in test_restored_sidecar_cannot_swap_contexts_between_existing_occurrences
+    records[0]["context"], records[1]["context"] = records[1]["context"], records[0]["context"]
+                                                   ^^^^^^^^^^
+E   IndexError: list index out of range
+=============================== warnings summary ===============================
+test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_field_binding.py::test_vector_head_selects_symbols_without_truncating_knowing
+  /Users/arogers/github/basicmodel-round4a0/bin/Spaces.py:16764: RuntimeWarning: concept pool order 1 exhausted: cannot reserve 4 provisional rows
+    warnings.warn(f"concept pool order {order} exhausted: cannot reserve {self.concept_pool_size} provisional rows", RuntimeWarning)
+
+test/test_field_learning.py::test_sentence_boundary_writes_present_percepts_at_the_negative_pole
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_existence_sidecar.py::test_restored_sidecar_cannot_swap_contexts_between_existing_occurrences
+1 failed, 91 passed, 10 skipped, 3 warnings in 12.96s

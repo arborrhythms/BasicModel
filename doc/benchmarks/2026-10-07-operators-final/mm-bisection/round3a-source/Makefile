@@ -1,0 +1,216 @@
+ifeq ($(OS),Windows_NT)
+SHELL := C:/msys64/usr/bin/bash.exe
+else
+SHELL := /bin/bash
+endif
+ifeq ($(OS),Windows_NT)
+VENV_BIN_DIR := Scripts
+VENV_PYTHON  := .venv/$(VENV_BIN_DIR)/python.exe
+VENV_PIP     := .venv/$(VENV_BIN_DIR)/pip.exe
+VENV_ARGS    := --system-site-packages
+PYTHON_BOOTSTRAP ?= py -3.12
+else
+VENV_BIN_DIR := bin
+VENV_PYTHON  := .venv/$(VENV_BIN_DIR)/python
+VENV_PIP     := .venv/$(VENV_BIN_DIR)/pip
+VENV_ARGS    :=
+PYTHON_BOOTSTRAP ?= python3.12
+endif
+
+VENV_PYTHON_FROM_BIN := ../$(VENV_PYTHON)
+VENV_STAMP := .venv/.installed-$(VENV_BIN_DIR)
+
+# --- PDF generation options (inlined from Make.mk) ----------------------------
+PD_TEMPLATE := /bits/projects/custom_template.tex
+PDFOPTS := --pdf-engine=xelatex \
+          -V geometry:margin=1in \
+          --template=$(PD_TEMPLATE) \
+          -V header-includes="\usepackage{amsmath} \usepackage{amssymb} \usepackage{unicode-math} \hyphenpenalty=10000 \exhyphenpenalty=10000 \makeatletter \renewcommand\section{\@startsection{section}{1}{\z@}{-3.5ex}{2.3ex}{\normalfont\Large\bfseries\centering}} \makeatother"
+
+# Ordered list of doc chapters for PDF generation
+PDF_CHAPTERS := README.md  doc/Installation.md doc/Architecture.md doc/Componentization.md doc/BasicModel.md doc/Spaces.md doc/STM.md doc/Language.md doc/Mereology.md doc/Logic.md doc/Reasoning.md doc/Training.md doc/Ergodic.md doc/MachineMinds.md doc/Params.md
+MODEL ?= data/BasicModel.xml
+PYTHON := PYTHONPATH=bin $(VENV_PYTHON)
+TRAIN_ARGS ?=
+TRAIN_MEMORY_PERCENT ?= 60
+TEST_ARGS ?=
+PYTORCH_MPS_HIGH_WATERMARK_RATIO ?= 0.60
+PYTORCH_MPS_LOW_WATERMARK_RATIO ?= 0.50
+
+# The shared MAKE_PDF macro drops later options due to a broken line
+# continuation, so override it locally with the reader extensions these docs use.
+MAKE_PDF = pandoc $(PDFOPTS) \
+		--from=gfm+smart+bracketed_spans+attributes \
+		--metadata title="$(TITLE)" \
+		--toc --toc-depth=3 \
+		--resource-path=.:doc
+
+.PHONY : all install xor mnist ergodic run compare test testp test_all preflight preflight_full bench doc clean \
+         train train_micro bench_local bench_sync bench_remote bench_pull
+
+all : xor
+
+$(VENV_STAMP): requirements.txt
+	rm -rf .venv
+	$(PYTHON_BOOTSTRAP) -m venv $(VENV_ARGS) .venv
+	"$(VENV_PYTHON)" -m pip install --upgrade pip setuptools wheel
+	"$(VENV_PYTHON)" -m pip install -r requirements.txt
+	@touch "$@"
+
+install : $(VENV_STAMP)
+
+
+run : $(VENV_STAMP)
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) Models.py $(XML1)
+
+train : $(VENV_STAMP)
+	@set -eu; \
+	case "$(TRAIN_MEMORY_PERCENT)" in \
+		''|*[!0-9]*) echo "TRAIN_MEMORY_PERCENT must be an integer from 1 to 100" >&2; exit 2 ;; \
+	esac; \
+	if [ "$(TRAIN_MEMORY_PERCENT)" -lt 1 ] || [ "$(TRAIN_MEMORY_PERCENT)" -gt 100 ]; then \
+		echo "TRAIN_MEMORY_PERCENT must be an integer from 1 to 100" >&2; \
+		exit 2; \
+	fi; \
+	if [ "$$(uname -s)" = "Darwin" ]; then \
+		taskpolicy_bin=$$(command -v taskpolicy 2>/dev/null || true); \
+		if [ -z "$$taskpolicy_bin" ]; then \
+			echo "taskpolicy is required for bounded macOS training" >&2; \
+			exit 2; \
+		fi; \
+		total_bytes=$$(sysctl -n hw.memsize); \
+		limit_mib=$$((total_bytes / 1024 / 1024 * $(TRAIN_MEMORY_PERCENT) / 100)); \
+		echo "[BasicModel] MPS watermarks: $(PYTORCH_MPS_HIGH_WATERMARK_RATIO)/$(PYTORCH_MPS_LOW_WATERMARK_RATIO); process memory limit: $${limit_mib} MiB ($(TRAIN_MEMORY_PERCENT)%)"; \
+		env PYTORCH_MPS_HIGH_WATERMARK_RATIO="$(PYTORCH_MPS_HIGH_WATERMARK_RATIO)" \
+			PYTORCH_MPS_LOW_WATERMARK_RATIO="$(PYTORCH_MPS_LOW_WATERMARK_RATIO)" \
+			PYTHONPATH=bin \
+			"$$taskpolicy_bin" -b -m "$$limit_mib" -P kill \
+			"$(VENV_PYTHON)" bin/train.py --model "$(MODEL)" --data text --log $(TRAIN_ARGS); \
+	else \
+		echo "[BasicModel] macOS process limit unavailable; applying allocator environment bounds only"; \
+		env PYTORCH_MPS_HIGH_WATERMARK_RATIO="$(PYTORCH_MPS_HIGH_WATERMARK_RATIO)" \
+			PYTORCH_MPS_LOW_WATERMARK_RATIO="$(PYTORCH_MPS_LOW_WATERMARK_RATIO)" \
+			PYTHONPATH=bin \
+			"$(VENV_PYTHON)" bin/train.py --model "$(MODEL)" --data text --log $(TRAIN_ARGS); \
+	fi
+
+train_micro : $(VENV_STAMP)
+	@$(MAKE) train MODEL="$(MODEL)" TRAIN_ARGS="--max-docs 1000 --num-shards 1 --num-epochs 1 --batches 10 --random-shards $(TRAIN_ARGS)"
+
+xor : data/MM_xor.xml
+	PYTORCH_ENABLE_MPS_FALLBACK=1 $(MAKE) run XML1=$<
+
+ergodic : data/ergodic.xml
+	$(MAKE) run XML1=$<
+
+mnist : data/mnist.xml
+	$(MAKE) run XML1=$<
+
+SigmaPi : $(VENV_STAMP)
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) etc/SigmaPi.py --demo
+
+SymPercept : $(VENV_STAMP)
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) etc/SymPercept.py --demo
+
+SPNN : $(VENV_STAMP)
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) etc/SPNN.py --demo
+
+
+compare : $(VENV_STAMP)
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) Models.py --report --compare $(XML1) $(XML2)
+
+# `make test` runs the default (fast) suite; tests tagged slow (>30s wall) are
+# skipped via RUN_SLOW (central slow marker and existing per-test gates). `make test_all`
+# sets RUN_SLOW=1 to also run them.
+test : $(VENV_STAMP)
+	BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py $(TEST_ARGS)
+
+# Fast local iteration is intentionally not a bounded receipt. The complete
+# `make test` path retains process limits and durable source-matched evidence.
+TEST_JOBS ?= auto
+testp : $(VENV_STAMP)
+	BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) -m pytest -n "$(TEST_JOBS)" $(TEST_ARGS)
+
+test_all : $(VENV_STAMP)
+	RUN_SLOW=1 PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py $(TEST_ARGS)
+
+# Existing environment only; the item 6.9 baseline holds the venv rebuild.
+# 8 GiB ordinary workers; 24 GiB only for the native production stage-1 arms.
+.PHONY: test_slow_weekly
+test_slow_weekly:
+	PYTHONPATH=bin:test $(VENV_PYTHON) test/slow_weekly.py
+
+preflight : $(VENV_STAMP)
+	BASICMODEL_DEVICE=cpu MODEL_COMPILE=eager PYTHONPATH=bin:test \
+		$(VENV_PYTHON) test/test_report.py test/test_fineweb_preflight.py $(TEST_ARGS)
+
+preflight_full : $(VENV_STAMP)
+	RUN_FINEWEB_STEP=1 BASICMODEL_DEVICE=cpu MODEL_COMPILE=eager PYTHONPATH=bin:test \
+		$(VENV_PYTHON) test/test_report.py test/test_fineweb_preflight.py $(TEST_ARGS)
+
+bench : $(VENV_STAMP)
+	@echo "=== Baseline (no env tweaks) ==="
+	PYTHONPATH=bin $(VENV_PYTHON) test/tools/bench_training.py
+
+# --- Recon fidelity/timing bench (bin/recon_bench.py; doc/plans/2026-07-03-reconstruction-fidelity-execution.md Task 2) ---
+# bench_local pins cpu+eager for reproducibility (MPS is seeded-nondeterministic; the iCloud path space breaks inductor).
+# bench_remote runs on ArborStudio's native path; REMOTE_COMPILE=auto is the compile experiment (Task 8).
+EPOCHS ?= 3
+REMOTE_COMPILE ?= auto
+BASICMODEL_DEVICE ?= cpu
+ARBOR_USER ?= arogers
+ARBOR_HOST ?= ArborStudio.local
+ARBOR_KEY ?= ~/.ssh/id_ed25519_arborstudio
+ARBOR_DEST ?= ~/WikiOracle/basicmodel
+# ARBOR_TUNNEL=1 routes off-LAN via the wikiOracle.org reverse tunnel (parent repo `make ssh`): jump through bitnami@wikiOracle.org to the tunnel listener at 127.0.0.1:2222.
+ARBOR_TUNNEL ?= 0
+ifeq ($(ARBOR_TUNNEL),1)
+ARBOR_HOST = 127.0.0.1
+ARBOR_KEY = /bits/cloud/bin/arssh.pem
+ARBOR_SSH_OPTS = -o ConnectTimeout=15 -i $(ARBOR_KEY) -o IdentitiesOnly=yes \
+	-o HostKeyAlias=ArborStudio-via-wikioracle -o StrictHostKeyChecking=accept-new \
+	-o 'ProxyCommand=ssh -i /bits/cloud/bin/wikiOracle.pem -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -W %h:%p bitnami@wikiOracle.org' \
+	-p 2222
+else
+ARBOR_SSH_OPTS = -o ConnectTimeout=10 -i $(ARBOR_KEY)
+endif
+ARBOR_SSH = ssh $(ARBOR_SSH_OPTS) $(ARBOR_USER)@$(ARBOR_HOST)
+# Excludes: venvs/caches/git plus large regenerable artifacts (fineweb 7.8G, embeddings 5.1G, MNIST 80M, ckpt/kv dumps).
+BENCH_EXCLUDES = --exclude .venv --exclude venv --exclude output --exclude .git \
+	--exclude .claude --exclude .worktrees --exclude __pycache__ --exclude '*.pyc' \
+	--exclude .DS_Store --exclude data/fineweb --exclude data/embeddings \
+	--exclude data/MNIST --exclude data/mnist_test.csv \
+	--exclude 'data/*.ckpt' --exclude 'data/*.kv'
+
+# Benchmarks retain the compact grammar fixture; training defaults to FineWeb.
+bench_local bench_remote : MODEL = data/MM_ladder.xml
+
+bench_local : $(VENV_STAMP)
+	BASICMODEL_DEVICE=cpu MODEL_COMPILE=eager $(PYTHON) bin/recon_bench.py $(MODEL) --epochs $(EPOCHS) --out output/
+
+bench_sync :
+	$(ARBOR_SSH) "mkdir -p $(ARBOR_DEST)"
+	rsync -av --progress $(BENCH_EXCLUDES) -e "ssh $(ARBOR_SSH_OPTS)" \
+		./ $(ARBOR_USER)@$(ARBOR_HOST):$(ARBOR_DEST)/
+
+# Non-interactive ssh PATH omits /opt/homebrew/bin (python3.12 venv bootstrap lives there), so prefix it remotely.
+bench_remote : bench_sync
+	$(ARBOR_SSH) "export PATH=/opt/homebrew/bin:\$$PATH && cd $(ARBOR_DEST) && ([ -x .venv/bin/python ] || make install) && \
+		BASICMODEL_DEVICE=$(BASICMODEL_DEVICE) MODEL_COMPILE=$(REMOTE_COMPILE) \
+		PYTHONPATH=bin .venv/bin/python bin/recon_bench.py $(MODEL) --epochs $(EPOCHS) --out output/"
+
+bench_pull :
+	rsync -av -e "ssh $(ARBOR_SSH_OPTS)" \
+		--include 'recon_*.json' --include '*.profile.txt' --exclude '*' \
+		$(ARBOR_USER)@$(ARBOR_HOST):$(ARBOR_DEST)/output/ output/
+
+clean :
+	rm -f BasicModel.pdf
+	rm -rf output/*
+
+doc : BasicModel.pdf
+
+
+TITLE := Basic Model
+BasicModel.pdf : $(PDF_CHAPTERS)
+	$(MAKE_PDF) -o $@ $^

@@ -1,0 +1,180 @@
+..............F..................F..........                             [100%]
+=================================== FAILURES ===================================
+___ test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0 ____
+
+    def test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0():
+        from test_mm_xor import _fresh_model
+        from Language import ConjunctionLayer, DisjunctionLayer
+        model, _, data = _fresh_model('data/XOR_grammar.xml')
+        try:
+            optimizer = model.getOptimizer(lr=.01)
+>           model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
+
+test/test_operators_round3a.py:170: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:15865: in runEpoch
+    result, _ = self.runBatch(
+bin/Models.py:13771: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13909: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14286: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8878: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10376: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8563: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8343: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23571: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17385: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22106: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21659: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20840: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20454: in _commit_sentence
+    disc.bind_observation_occurrence(b, store.row(row)['occurrence'])
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1548: in _fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BracketExpectation(
+  (predictor): Sequential(
+    (0): Linear(in_features=728, out_features=208, bias=True)
+    (1): ...    (1): Tanh()
+    (2): Linear(in_features=208, out_features=104, bias=True)
+  )
+  (_ltm_store): TernaryTruthStore()
+)
+b = 0, occurrence = ('ltm', 'address-v1', -5515473018305361874)
+
+    @torch.compiler.disable
+    def bind_observation_occurrence(self, b, occurrence):
+        """Attach the just-written external LTM row to this stream's view.
+    
+        This is deliberately a post-observation host boundary.  The predictor
+        saw only the prior view; the newly assigned occurrence can become
+        provenance for a *later* estimate, never an input to the estimate it
+        just supervised.
+        """
+        b = int(b)
+        if not 0 <= b < len(self._inter_context):
+            raise IndexError("expectation stream row is unavailable")
+        if (not isinstance(occurrence, tuple) or len(occurrence) != 3
+                or occurrence[0] != "ltm" or not isinstance(occurrence[1], str)
+                or type(occurrence[2]) is not int or occurrence[2] < 0):
+>           raise ValueError("observation occurrence must be a typed LTM reference")
+E           ValueError: observation occurrence must be a typed LTM reference
+
+bin/Layers.py:11164: ValueError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+_______________ TestCapacityAndWidth.test_full_returns_minus_one _______________
+
+self = <test_ternary_truth_store.TestCapacityAndWidth testMethod=test_full_returns_minus_one>
+
+    def test_full_returns_minus_one(self):
+        s = _store(cap=2)
+        self.assertEqual(s.append_idea(_v(1)), 0)
+        self.assertEqual(s.append_idea(_v(2)), 1)
+>       self.assertEqual(s.append_idea(_v(3)), -1, "full -> -1")
+                         ^^^^^^^^^^^^^^^^^^^^
+
+test/test_ternary_truth_store.py:156: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Layers.py:9678: in append_idea
+    return self.append(np1, None, None, rel_type=self.REL_NONE,
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:9673: in append
+    return self.append_meaning(meaning, kind=kind, rel_type=rel_type,
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = TernaryTruthStore()
+meaning = ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind=None)
+kind = 'fact', rel_type = 0, trust = 0.0, timestamp = None, stream = -1
+surprise = -1.0, evidence = (0.0, -0.0), order = 0, document_key = None
+sentence_index = 0, content_key = None, address = None
+
+    @torch.no_grad()
+    def append_meaning(self, meaning, *, kind="fact", rel_type=None,
+                       trust=0.0, timestamp=None, stream=-1, surprise=-1., evidence=None, order=0,
+                       document_key=None, sentence_index=0, content_key=None, address=None):
+        """Commit a complete description with explicit evidential provenance."""
+        if not isinstance(meaning, ConceptualMeaning):
+            raise TypeError("append_meaning requires a ConceptualMeaning")
+        if meaning.roles.shape[-1] != self.nDim:
+            raise ValueError("meaning width differs from the truth store")
+        if kind not in self.KINDS:
+            raise ValueError(f"unknown evidence kind {kind!r}")
+        if kind == "fact" and meaning.mode != "assertive":
+            raise ValueError("a fact requires assertive meaning, not an interrogative question")
+        if not math.isfinite(float(trust)):
+            raise ValueError("fact trust must be finite")
+        if timestamp is not None and not math.isfinite(float(timestamp)):
+            raise ValueError("fact timestamp must be finite")
+        if type(stream) is not int or stream < -1:
+            raise ValueError("index stream must be a row or shared (-1)")
+        surprise = float(surprise)
+        if not math.isfinite(surprise) or not (surprise == -1. or 0. <= surprise <= 1.):
+            raise ValueError("surprise must be unknown (-1) or in [0, 1]")
+        if type(order) is not int or order < 0:
+            raise ValueError('a stored field requires a nonnegative order')
+        if evidence is None:
+            signed = max(-1., min(1., float(trust)))
+            evidence = (max(signed, 0.), max(-signed, 0.))
+            if not meaning.polarity:
+                evidence = evidence[::-1]
+        else:
+            evidence = tuple(map(float, evidence))
+        if len(evidence) != 2 or any(not math.isfinite(x) or not 0 <= x <= 1 for x in evidence):
+            raise ValueError('evidence poles must be finite and in [0, 1]')
+        terms, complete = self._meaning_leaf_terms(meaning, order=order)
+        identifier, document, position, content, previous = self._address_for_write(
+            meaning, kind=kind, document_key=document_key, sentence_index=sentence_index,
+            content_key=content_key, key=address)
+        if previous is None and len(self) >= self.capacity:
+>           raise OverflowError(f'LTM capacity {self.capacity} exhausted; forgetting is required')
+E           OverflowError: LTM capacity 2 exhausted; forgetting is required
+
+bin/Layers.py:9403: OverflowError
+=============================== warnings summary ===============================
+test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operators_round3a.py::test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0
+FAILED test/test_ternary_truth_store.py::TestCapacityAndWidth::test_full_returns_minus_one
+2 failed, 42 passed, 2 warnings in 8.07s

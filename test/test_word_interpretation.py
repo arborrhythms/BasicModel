@@ -150,7 +150,8 @@ def test_tensor_face_replaces_content_and_preserves_occurrence_coordinates():
     word = torch.tensor([[1., 2., 3., 4., 8., 9.]])
     obj = torch.tensor([[5., 6., 7., 8.]])
     activation = torch.tensor([.5])
-    result = interpret.forward(word, object_atoms=obj, activation=activation)
+    result = interpret.forward(word, object_atoms=obj, presence=activation,
+                               evidence=torch.tensor([[.5,0.]]))
     torch.testing.assert_close(result, torch.tensor([[2.5, 3., 3.5, 4., 8., 9.]]))
 
 

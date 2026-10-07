@@ -1,0 +1,23 @@
+{
+  "round": "4a-0",
+  "baseline": "cce3a4f7b6e72fab4a9a27fd70d3fa7602553814",
+  "scope": "Source address and relative when only. Bipolar order-0 meanings remain paused.",
+  "seed": null,
+  "retries": 0,
+  "replacement_runs": 0,
+  "trainings": 30,
+  "xor_shared_class_and_reconstruction": 10,
+  "sum_control": 10,
+  "mm_xor": 10,
+  "epochs": {
+    "xor": 400,
+    "sum": 400,
+    "mm_maximum": 200
+  },
+  "source": "delivered-source/source.zip",
+  "fixture": "test/fixtures/when-readers-round4a0.json",
+  "sweep": "complete test selection before campaign; development failures and stopped sweeps retained separately",
+  "review": "No commit until Claude review",
+  "sentence_positions": "one-based within source document (spec \u00a70); ordinal among thought rows is zero-based",
+  "storage": "Every run reports rows used, capacity, non-DEF rows and per-address witness count. Evaluation also re-witnesses its existing source rows."
+}

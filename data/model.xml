@@ -488,6 +488,12 @@
   </ModalSpace>
 
   <ConceptualSpace>
+    <!-- Active bipolar complement. Zero disables meaning; storage geometry stays fixed. -->
+    <meaningWidth>128</meaningWidth>
+    <symbolCentroid>true</symbolCentroid>
+    <membershipPriming>true</membershipPriming>
+    <primingMaxBoost>2.0</primingMaxBoost>
+    <readerBlockNormalization>true</readerBlockNormalization>
     <!-- Deterministic room between the part and property-whole bounds. -->
     <latticeMargin>0</latticeMargin>
     <nInput>0</nInput>

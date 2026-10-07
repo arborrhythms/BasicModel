@@ -1,0 +1,102 @@
+"""Training test workers must honor an accelerator and keep the quick default."""
+import pytest
+
+import bounded_tests as runner
+
+
+@pytest.mark.parametrize('device', ['gpu', 'mps', 'cuda:0'])
+def test_explicit_training_device_is_preserved(tmp_path, monkeypatch, device):
+    monkeypatch.setenv('BASICMODEL_DEVICE', device)
+    assert runner.worker_environment(tmp_path)['BASICMODEL_DEVICE'] == device
+
+
+def test_slow_selection_alone_keeps_the_calibrated_cpu_device(tmp_path, monkeypatch):
+    monkeypatch.delenv('BASICMODEL_DEVICE', raising=False)
+    monkeypatch.setenv('RUN_SLOW', '1')
+    assert runner.worker_environment(tmp_path)['BASICMODEL_DEVICE'] == 'cpu'
+
+
+def test_quick_suite_retains_its_cpu_default(tmp_path, monkeypatch):
+    monkeypatch.delenv('BASICMODEL_DEVICE', raising=False)
+    monkeypatch.setenv('RUN_SLOW', '0')
+    assert runner.worker_environment(tmp_path)['BASICMODEL_DEVICE'] == 'cpu'
+
+
+def test_all_dispatches_explicit_device_marks_and_keeps_slow_proofs_on_cpu(tmp_path, monkeypatch):
+    import torch
+    if not (torch.cuda.is_available() or torch.backends.mps.is_available()):
+        pytest.skip('real accelerator required for the mixed-device integration')
+    monkeypatch.delenv('BASICMODEL_DEVICE', raising=False)
+    monkeypatch.setenv('RUN_SLOW', '1')
+    monkeypatch.delenv('PYTEST_PLUGINS', raising=False)
+    (tmp_path / 'pytest.ini').write_text('[pytest]\nmarkers =\n    slow: substantial training\n    device(name): explicit worker device\n')
+    (tmp_path / 'test_small.py').write_text(
+        "import os,pytest\nfrom pathlib import Path\n"
+        "def check(name):\n"
+        " assert os.environ['BASICMODEL_DEVICE'] == 'cpu'\n"
+        " with Path('devices').open('a') as f: f.write(name+':cpu\\n')\n"
+        "@pytest.mark.slow\ndef test_before(): check('before')\n"
+        "def test_after(): check('after')\n")
+    (tmp_path / 'test_training.py').write_text(
+        "import os,pytest\nfrom pathlib import Path\n"
+        "@pytest.mark.slow\n@pytest.mark.device('gpu')\ndef test_training():\n"
+        " import torch\n"
+        " device=os.environ['BASICMODEL_DEVICE']\n"
+        " assert device == 'mps' or device.startswith('cuda')\n"
+        " x=torch.ones(4,device=device,requires_grad=True)\n"
+        " x.square().sum().backward()\n"
+        " assert x.grad.device.type == torch.device(device).type\n"
+        " with Path('devices').open('a') as f: f.write('training:'+device+'\\n')\n")
+    selected=['test_small.py::test_before', 'test_training.py::test_training',
+              'test_small.py::test_after']
+    result=runner.run_suite(root=tmp_path, selectors=selected, run_dir=tmp_path/'result',
+        memory_bytes=1024**3, timeout=60, suite_timeout=240,
+        batch_size=64, lock_path=tmp_path/'lock')
+    assert result['exit_code'] == 0, result['reason']
+    assert result['selected'] == result['completed'] == selected
+    devices=(tmp_path/'devices').read_text().splitlines()
+    assert devices[0]=='before:cpu' and devices[-1]=='after:cpu'
+    assert devices[1] in ('training:mps','training:cuda')
+    assert result['collection']['device']=='cpu'
+    assert [worker['device'] for worker in result['workers']] == [
+        'cpu', devices[1].split(':',1)[1], 'cpu']
+
+
+def test_parallel_pool_keeps_one_accelerator_training_lane(tmp_path, monkeypatch):
+    """Concurrent CPU capacity must not make MPS/CUDA training contend with itself."""
+    import torch
+    if not (torch.cuda.is_available() or torch.backends.mps.is_available()):
+        pytest.skip('real accelerator required for the mixed-device integration')
+    monkeypatch.delenv('BASICMODEL_DEVICE', raising=False)
+    monkeypatch.setenv('RUN_SLOW', '1')
+    monkeypatch.delenv('PYTEST_PLUGINS', raising=False)
+    (tmp_path / 'pytest.ini').write_text('[pytest]\nmarkers =\n    slow: substantial training\n    device(name): explicit worker device\n')
+    (tmp_path / 'test_training.py').write_text(
+        "import os,time,pytest\nfrom pathlib import Path\n"
+        "@pytest.mark.slow\n@pytest.mark.device('gpu')\n@pytest.mark.parametrize('case',range(2))\n"
+        "def test_training(case):\n"
+        " import torch\n"
+        " device=os.environ['BASICMODEL_DEVICE']\n"
+        " assert device == 'mps' or device.startswith('cuda')\n"
+        " x=torch.ones(4,device=device,requires_grad=True)\n"
+        " x.square().sum().backward()\n"
+        " started=time.time_ns()\n"
+        " with Path('timeline').open('a') as f: f.write(f'start:{case}:{started}:{device}\\n')\n"
+        " time.sleep(.15)\n"
+        " ended=time.time_ns()\n"
+        " with Path('timeline').open('a') as f: f.write(f'end:{case}:{ended}:{device}\\n')\n")
+    result = runner.run_suite(
+        root=tmp_path, selectors=['test_training.py'], run_dir=tmp_path / 'result',
+        memory_bytes=1024**3, timeout=60, suite_timeout=240,
+        batch_size=1, workers=2, lock_path=tmp_path / 'lock')
+    assert result['exit_code'] == 0, result['reason']
+    intervals = {}
+    devices = set()
+    for line in (tmp_path / 'timeline').read_text().splitlines():
+        edge, case, when, device = line.split(':', 3)
+        intervals.setdefault(int(case), {})[edge] = int(when)
+        devices.add(device)
+    assert len(intervals) == 2 and all(set(value) == {'start', 'end'} for value in intervals.values())
+    first, second = sorted(intervals.values(), key=lambda value: value['start'])
+    assert first['end'] <= second['start'], 'two accelerator workers overlapped'
+    assert all(device == 'mps' or device.startswith('cuda') for device in devices)

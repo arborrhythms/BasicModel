@@ -24,6 +24,17 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         raise ValueError('cannot finish a reading that is not open')
     from Language import TheGrammar
     refs = program.reference_ids if program.reference_ids is not None else program.concept_ids
+    native_ids = set(int(value) for value in refs.detach().cpu().tolist()) - {-1, 0}
+    store_ref = getattr(getattr(registry, 'space', None), '_clause_store_ref', None)
+    store = store_ref() if callable(store_ref) else None
+    if store is not None:
+        native_ids.update(store.row_ids[:len(store)].tolist())
+    def native(reference):
+        return reference > 0 or reference in native_ids
+    def reference_has_point(reference, default):
+        if store is not None and store.index_of_row(reference) is not None:
+            return store.point_of_row(reference) is not None
+        return default
     values = list(program.leaves.unbind())
     frames = program.operation_values
     if frames is None:
@@ -50,8 +61,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         if kind < 0:
             break
         if kind == 0:
-            has_point = program.reference_relations is None or not bool(
-                program.reference_relations[word])
+            has_point = reference_has_point(int(refs[word]),
+                program.reference_relations is None or not bool(program.reference_relations[word]))
             stack.append(dict(value=values[word], ref=int(refs[word]), rule=None,
                               children=(), leaves=(word,), has_point=has_point))
             continue
@@ -86,9 +97,10 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                                      and reference == int(program.concept_ids[leaf]))
                     if pending_order:
                         reference = int(refs[leaf])
-                if reference > 0 or pending_order:
+                if native(reference) or pending_order:
                     selected['ref'] = reference
                     selected_refs[role] = reference
+                    operand['has_point'] = reference_has_point(reference, operand['has_point'])
         stack.append(dict(value=frames[action, 2], local=local, ref=-1,
                           rule=catalog[local], children=operands,
                           operand_refs=None if selected_refs is None else tuple(selected_refs),
@@ -135,6 +147,9 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
 
     def generic(node):
         while True:
+            determiner = getattr(node['rule'], 'determiner_mode', None)
+            if determiner is not None:
+                return determiner == 'kind'
             requests = dict(getattr(node['rule'], 'reference_kinds', ()))
             if any(mode in ('generic', 'kind') for mode in requests.values()):
                 return True
@@ -146,8 +161,13 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             node = selected
 
     def concept(node):
+        if getattr(node['rule'], 'determiner_mode', None) == 'bind':
+            chosen = node.get('operand_refs')
+            if chosen is None or chosen[1] in (-1, 0):
+                raise ValueError('a binding determiner needs an earlier occurrence')
+            return chosen[1]
         selected = head(node)
-        if selected['ref'] > 0:
+        if selected['ref'] not in (-1, 0):
             return selected['ref']
         # A composite phrase has no concept-inventory identity. When a
         # relative row needs its address, operand() writes its ended point.
@@ -173,8 +193,9 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                  and getattr(node['rule'], 'clause_form', None) != 'VP'))
 
     def recover(root, *, top=False):
-        pair = metadata(root['leaves'])['evidence']
-        polarity = pair[0] >= pair[1]
+        # Syntactic assertion polarity is a grammar property. Identification
+        # evidence remains a pair, including both and neither, through storage.
+        polarity = True
         excluded = False
         mode = 'assertive'
         node = head(root, clause=True)
@@ -191,7 +212,32 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         factored_refs = None
         role_nodes = (node, None, None)
 
+        def determined_order(item):
+            description = item['children'][item['rule'].head_role - 1]
+            orders = program.reference_orders
+            if orders is not None:
+                selected = orders[list(description['leaves'])]
+                if bool((selected >= 0).any()):
+                    return int(selected.max())
+            return max(0, metadata(description['leaves'])['order'] - 1)
+
+        def member(item):
+            mode = getattr(item['rule'], 'determiner_mode', None)
+            if mode != 'mint':
+                return None
+            description = item['children'][item['rule'].head_role - 1]
+            meta = metadata(description['leaves'])
+            meta['order'] = determined_order(item)
+            return Clause(ConceptualMeaning.from_description(value(item)), point=value(item),
+                          subject_word_id=subject_word_id(description), **bands(item), **meta)
+
         def operand(item, *, sentence=False):
+            fresh = member(item)
+            if fresh is not None:
+                ref = ('clause', len(children))
+                children.append(fresh)
+                owned.add(id(item))
+                return fresh.point, ref
             reference = concept(item) if not is_clause(item) else None
             # An unindexed numerical NP (e.g. an embedding input) still
             # has a field. If a relative S needs its address, close that NP
@@ -259,7 +305,9 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             if relation is None and node.get('operand_refs') is not None:
                 # Unknown composite addresses stay unknown. The temporary
                 # factored target cannot invent a durable operand reference.
-                references = tuple(ref if ref > 0 else -1 for ref in node['operand_refs']) + (-1,)
+                references = tuple(previous if isinstance(previous, tuple) else
+                    ref if ref not in (-1, 0) else -1
+                    for previous, ref in zip(references, node['operand_refs'])) + (-1,)
         else:
             described = replace(ConceptualMeaning.from_description(value(root)),
                                 mode=mode, polarity=polarity)
@@ -293,9 +341,30 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 pending.extend(reversed(part['children']))
         retain_completed(root)
         evidence = metadata(root['leaves'])
+        def node_order(item):
+            # Deep sentence folds must not depend on Python's recursion limit.
+            pending = [(item, False)]
+            orders = {}
+            while pending:
+                part, ready = pending.pop()
+                if not part['children']:
+                    orders[id(part)] = metadata(part['leaves'])['order']
+                    continue
+                if not ready:
+                    pending.append((part, True))
+                    pending.extend((child, False) for child in part['children'])
+                    continue
+                rule = part['rule']
+                role = 1 if getattr(rule, 'clause_form', None) == 'S' else getattr(rule, 'head_role', 0)
+                value = (orders[id(part['children'][role - 1])] if role else
+                         max(orders[id(child)] for child in part['children']))
+                orders[id(part)] = (determined_order(part) if
+                    getattr(rule, 'determiner_mode', None) in ('mint', 'bind') else value)
+            return orders[id(item)]
+        evidence['order'] = node_order(root)
         if excluded:
             support = evidence['evidence']
-            evidence['evidence'] = (0., support[1]) if polarity else (support[0], 0.)
+            evidence['evidence'] = (0., support[1])
         field = Clause(described, point=None if relation else (
             program.end_state[0] if top else value(root)), relation=relation,
             refs=references, children=tuple(children),
@@ -342,7 +411,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             probe = meaning
             if probe is None:
                 probe = ConceptualMeaning(torch.stack(roles), torch.ones(3, dtype=torch.bool),
-                                          role_refs=tuple(('sym', ref) if type(ref) is int and ref > 0 else None for ref in references))
+                                          role_refs=tuple(('sym', ref) if type(ref) is int and ref not in (-1, 0) else None for ref in references))
             if probe.role_refs[1] is not None:
                 try:
                     operation = registry.signature_for(

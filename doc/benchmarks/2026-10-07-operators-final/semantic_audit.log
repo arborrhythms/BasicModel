@@ -1,0 +1,3 @@
+Grammar certificates exact; 4 distinct meanings each
+Corpus: 90676 rows; running exhaustive pair counts
+{"words": 67391, "sentences": 90676, "checks_per_case": 411809304981556, "errors": {"conjunction": 129899673483, "disjunction": 15197298979139, "not_against": 7222419828125, "and_not_against": 7222419828125, "not_for": 0, "and_not_for": 0}, "false_membership_rates": {"conjunction": 0.00031543647001569796, "disjunction": 0.03690372897188336, "not_against": 0.017538262833688218, "and_not_against": 0.017538262833688218}, "seconds": 69.71574712498114}

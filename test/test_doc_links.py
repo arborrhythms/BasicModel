@@ -15,7 +15,14 @@ _LINK = re.compile(r"\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 
 
 def _markdown_files():
-    files = sorted((_ROOT / "doc").rglob("*.md"))
+    doc = _ROOT / "doc"
+    # Receipts retain extracted executable snapshots as historical evidence.
+    # Their copied root README refers to a documentation tree deliberately
+    # absent from the source archive. Audit receipt prose, not those copies.
+    files = sorted(path for path in doc.rglob("*.md")
+                   if not any((parent / "bin/Models.py").is_file()
+                              and (parent / "data/model.xml").is_file()
+                              for parent in path.parents if doc in parent.parents))
     for name in ("README.md", "todo.md"):
         path = _ROOT / name
         if path.exists():

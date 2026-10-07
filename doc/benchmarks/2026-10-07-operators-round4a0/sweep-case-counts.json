@@ -1,0 +1,23 @@
+{
+  "selected": 5313,
+  "completed": 5313,
+  "case_outcomes": {
+    "passed": 5022,
+    "skipped": 290,
+    "xpassed": 1
+  },
+  "raw_report_outcomes": {
+    "passed": 5025,
+    "skipped": 290,
+    "xpassed": 1
+  },
+  "duplicate_reports": {
+    "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected": [
+      "passed",
+      "passed",
+      "passed",
+      "passed"
+    ]
+  },
+  "note": "The runner emits four passed reports for test_flags_match_expected. Case totals count its node ID once. This is separate from the thirty-training campaign."
+}

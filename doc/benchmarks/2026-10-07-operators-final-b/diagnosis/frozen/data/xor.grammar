@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<!--
+  XOR grammar, role-only format. Declares ONLY operator roles: each operand's
+  input role (op_I[n]) and the operator's output role (op_O1). Forward maps inputs to output
+  (O1 = op.forward(I1, I2)); reverse maps output back to inputs
+  (I1, I2 = op.reverse(O1)).
+-->
+<grammar name="xor">
+
+  <PartSpace>
+    <!-- The analyzer root: U is "everything currently visible to the
+         analyzer", recursively decomposable into U-typed sub-surfaces.
+         The marker-free structural cover (stop / boundary / uniform) is
+         the compatibility analyzer mode. compose = parts to whole
+         (PS reverse / synthesis); generate = whole to parts (PS forward
+         / analysis). -->
+    <start name="everything">U</start>
+    <Synthesize>
+      <rule>U = stop.forward(U)</rule>
+      <rule>U = boundary.forward(U, U)</rule>
+      <rule>U = uniform.forward(U, U)</rule>
+    </Synthesize>
+    <Analyze>
+      <rule>U = stop.reverse(U)</rule>
+      <rule>U, U = boundary.reverse(U)</rule>
+      <rule>U, U = uniform.reverse(U)</rule>
+    </Analyze>
+  </PartSpace>
+
+  <Symbolic>
+    <!-- Minimal XOR symbolic grammar: each connective declares its input
+         roles (op_I[n]) and output role (op_O1); the operator outputs are
+         the start states. Tier / arity / invertibility derive from each
+         operator's GrammarLayer subclass. -->
+    <start name="connective">not_O1</start>
+    <start name="connective">intersection_O1</start>
+    <start name="connective">union_O1</start>
+
+    <compose>
+      <!-- Typed attention candidates; no predefined surface or generate face. -->
+      <rule operands="field">F = divide.forward(F)</rule>
+      <rule operands="field">F = descend.forward(F)</rule>
+      <rule operands="field">F = gloss.forward(F)</rule>
+      <rule operands="field">F = and.forward(F)</rule>
+      <rule operands="field">F = or.forward(F)</rule>
+
+      <rule>not_O1 = not.forward(not_I1)</rule>
+      <rule>intersection_O1 = intersection.forward(intersection_I1, intersection_I2)</rule>
+      <rule>union_O1 = union.forward(union_I1, union_I2)</rule>
+    </compose>
+
+    <generate>
+      <!-- Mirror of compose: output role back to input roles. -->
+      <rule>not_I1 = not.reverse(not_O1)</rule>
+      <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>
+      <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
+    </generate>
+  </Symbolic>
+
+</grammar>

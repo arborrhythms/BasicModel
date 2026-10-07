@@ -1,0 +1,53 @@
+{
+  "measured_source_blobs_in_index": 716,
+  "source_mismatches": [],
+  "receipt_inventory": [
+    {
+      "directory": "doc/benchmarks/2026-10-07-filter-toy",
+      "files": 3,
+      "bytes": 8367,
+      "all_in_index": true
+    },
+    {
+      "directory": "doc/benchmarks/2026-10-07-meaning-toy",
+      "files": 3,
+      "bytes": 10287,
+      "all_in_index": true
+    },
+    {
+      "directory": "doc/benchmarks/2026-10-07-operators-final",
+      "files": 2119,
+      "bytes": 713648033,
+      "all_in_index": true
+    },
+    {
+      "directory": "doc/benchmarks/2026-10-07-operators-final-b",
+      "files": 2263,
+      "bytes": 523466674,
+      "all_in_index": true
+    },
+    {
+      "directory": "doc/benchmarks/2026-10-07-operators-round3a",
+      "files": 1695,
+      "bytes": 845010177,
+      "all_in_index": true
+    },
+    {
+      "directory": "doc/benchmarks/2026-10-07-operators-round4a",
+      "files": 213,
+      "bytes": 15590608,
+      "all_in_index": true
+    },
+    {
+      "directory": "doc/benchmarks/2026-10-07-operators-round4a0",
+      "files": 1871,
+      "bytes": 494402220,
+      "all_in_index": true
+    }
+  ],
+  "missing_receipt_files": [],
+  "staged_changes": 6587,
+  "doc_links": "325 passed; landing/doc-links.log",
+  "unstaged_changes": [],
+  "untracked_nonignored_files": []
+}

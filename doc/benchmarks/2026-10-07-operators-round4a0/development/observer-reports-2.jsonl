@@ -1,0 +1,3 @@
+{"nodeid": "doc/benchmarks/2026-10-07-operators-round4a0/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps", "phase": "setup", "outcome": "passed", "seconds": 0.00011541700223460793, "failure": null}
+{"nodeid": "doc/benchmarks/2026-10-07-operators-round4a0/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps", "phase": "call", "outcome": "passed", "seconds": 1.337926750013139, "failure": null}
+{"nodeid": "doc/benchmarks/2026-10-07-operators-round4a0/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps", "phase": "teardown", "outcome": "passed", "seconds": 0.00027741602389141917, "failure": null}

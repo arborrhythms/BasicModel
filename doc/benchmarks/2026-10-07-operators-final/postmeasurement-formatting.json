@@ -1,0 +1,7 @@
+{
+  "file": "test/test_bounded_stm_fold.py",
+  "before": "c9cde0a9272d24ac299cfa0f65159cae3476538604a77c67520f0f5cdfb90fd2",
+  "after": "a02595ebfc0c6637be411798e64e7e6f3592baccde02da5d5bc1806ee792709d",
+  "ast_identical": true,
+  "change": "Remove one trailing space from a test assertion after all measurements. No executable change, no additional training."
+}

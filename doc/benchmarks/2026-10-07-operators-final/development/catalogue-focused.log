@@ -1,0 +1,79 @@
+....................FF....FF................................             [100%]
+=================================== FAILURES ===================================
+_ test_equality_question_uses_a_declared_formula_identity_without_an_inventory_row _
+
+    def test_equality_question_uses_a_declared_formula_identity_without_an_inventory_row():
+        from test_grammatical_query_vps import _world
+        from ClauseRow import predicate_identity, predicate_point
+        cs,registry,a,b,_context=_world()
+        question=registry.form('equal',a,b)
+        descriptor=registry.descriptors['equal']
+        assert descriptor.predicate_name == 'operation:equal'
+        assert descriptor.relation_directions == ((0,2),(2,0))
+>       assert question.role_refs[1] == ('sym',predicate_identity(descriptor.predicate_name))
+E       AssertionError: assert ('sym', 3908240892941116971) == ('sym', 4258523568460969855)
+E         
+E         At index 1 diff: 3908240892941116971 != 4258523568460969855
+E         Use -v to get more diff
+
+test/test_operator_catalogue.py:260: AssertionError
+________ test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13f057050>
+
+    def test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse(monkeypatch):
+        f = SentenceFixture(monkeypatch)
+        clause = f.clause(('lift', ('lower', 'the', 'cat'), ('verb', 'chased', ('lower', 'the', 'mouse'))))
+        row = f.store.write_clause(clause, trust=.7)
+>       assert len(f.store) == 1 and f.store.rel_type[row] == f.store.REL_NONE
+E       assert (3 == 1)
+E        +  where 3 = len(TernaryTruthStore())
+E        +    where TernaryTruthStore() = <test_clause_acceptance.SentenceFixture object at 0x13f056870>.store
+
+test/test_clause_acceptance.py:93: AssertionError
+________________ test_03_particular_subject_ends_an_idea[black] ________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13f01fe90>
+predicate = 'black'
+
+    @pytest.mark.parametrize('predicate', ['black', ('verb', 'is', 'animal')])
+    def test_03_particular_subject_ends_an_idea(monkeypatch, predicate):
+        f = SentenceFixture(monkeypatch)
+        row = f.store.write_clause(f.clause(('lift', ('lower', 'the', 'cat'), predicate)))
+>       assert f.store.ideas().tolist() == [row] and not len(f.store.relations())
+E       assert ([0, 1] == [1]
+E         
+E         At index 0 diff: 0 != 1
+E         Left contains one more item: 1
+E         Use -v to get more diff)
+
+test/test_clause_acceptance.py:147: AssertionError
+_____________ test_03_particular_subject_ends_an_idea[predicate1] ______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13f1a0dd0>
+predicate = ('verb', 'is', 'animal')
+
+    @pytest.mark.parametrize('predicate', ['black', ('verb', 'is', 'animal')])
+    def test_03_particular_subject_ends_an_idea(monkeypatch, predicate):
+        f = SentenceFixture(monkeypatch)
+        row = f.store.write_clause(f.clause(('lift', ('lower', 'the', 'cat'), predicate)))
+>       assert f.store.ideas().tolist() == [row] and not len(f.store.relations())
+E       assert ([0, 1] == [1]
+E         
+E         At index 0 diff: 0 != 1
+E         Left contains one more item: 1
+E         Use -v to get more diff)
+
+test/test_clause_acceptance.py:147: AssertionError
+=============================== warnings summary ===============================
+test/test_operator_catalogue.py::test_selected_exclusion_cannot_be_recovered_as_negation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operator_catalogue.py::test_equality_question_uses_a_declared_formula_identity_without_an_inventory_row
+FAILED test/test_clause_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse
+FAILED test/test_clause_acceptance.py::test_03_particular_subject_ends_an_idea[black]
+FAILED test/test_clause_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]
+4 failed, 56 passed, 1 warning in 4.14s

@@ -1,0 +1,20 @@
+{
+  "candidate": "round4a",
+  "baseline_commit": "cce3a4f7b6e72fab4a9a27fd70d3fa7602553814",
+  "gate_trainings": 30,
+  "gate_seed": null,
+  "retry": false,
+  "replacement": false,
+  "order": ["ten 400-epoch sum controls", "ten shared 400-epoch class/reconstruction trainings", "ten unchanged MM_xor trainings, 200 epochs maximum"],
+  "presented_reader": "one step on reconstruction-kept rows only",
+  "comparison_reader": "one step on both compose roots, kept rows on narrowing departures",
+  "expectation_predictor": "one step on reconstruction-kept rows only",
+  "identity": {"gate_pairs": 64, "gate_ones": 3, "BasicModel_pairs": 448, "BasicModel_ones": 6, "poles": "all for coordinates followed by all against coordinates", "generator": "private NumPy generator from first 8 bytes of SHA256(content key), little endian"},
+  "certificate": "all ordered vocabulary pairs including self and every sentence row; exhaustive identity-bit coverage counts; no sampling",
+  "class_band": "four correct labels and MSE < .05",
+  "sum_band": "abs(checkerboard contrast) <= .0001, class gate not met, and abs(MSE - .25) <= .02",
+  "narrowing_credit": "report counts, cost deltas and signs by proposed action, with final policy and late-window counts",
+  "full_sweep_before_campaign": true,
+  "freeze_before_campaign": true,
+  "commit": false
+}

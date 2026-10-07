@@ -1,0 +1,27 @@
+........................................................................ [ 52%]
+.................................................................        [100%]
+=============================== warnings summary ===============================
+test/test_category_codebook_retirement.py::test_category_embedding_replaces_codebook
+test/test_category_codebook_retirement.py::test_category_embedding_weight_shape
+test/test_category_codebook_retirement.py::test_category_lookup_returns_embedding_row
+test/test_category_codebook_retirement.py::test_category_lookup_by_int_index
+test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector
+test/test_category_codebook_retirement.py::test_category_embedding_registered_as_parameter
+  /Users/arogers/github/basicmodel-round4a0/bin/Spaces.py:1257: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_category_codebook_retirement.py::test_category_embedding_replaces_codebook
+test/test_category_codebook_retirement.py::test_category_embedding_weight_shape
+test/test_category_codebook_retirement.py::test_category_lookup_returns_embedding_row
+test/test_category_codebook_retirement.py::test_category_lookup_by_int_index
+test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector
+test/test_category_codebook_retirement.py::test_category_embedding_registered_as_parameter
+  /Users/arogers/github/basicmodel-round4a0/bin/Spaces.py:1257: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_category_collapse.py::test_consumption_is_clean_noop_in_serial_mode_on_live_grammar
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+137 passed, 13 warnings in 29.29s

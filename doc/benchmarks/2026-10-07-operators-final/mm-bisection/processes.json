@@ -1,0 +1,30 @@
+[
+  {
+    "version": "round3a",
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/mm_bisection.py",
+      "round3a"
+    ],
+    "pid": 39401,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 586630488,
+    "elapsed_seconds": 23.630495416000485,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/mm-bisection/round3a.log"
+  },
+  {
+    "version": "final",
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/mm_bisection.py",
+      "final"
+    ],
+    "pid": 39518,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 526140760,
+    "elapsed_seconds": 23.610407416941598,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/mm-bisection/final.log"
+  }
+]

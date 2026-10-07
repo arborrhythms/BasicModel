@@ -86,14 +86,16 @@ def test_successive_primes_propagate_further():
 
 
 def test_zero_spread_is_pure_decay_bump():
-    """spread=0 keeps the original decay+bump law byte-identical."""
+    """The energy ledger keeps decay+bump; retrieval normalizes its boosts."""
     cs, _rA, _rB = _chain_cs()
     object.__setattr__(cs, "_priming_spread", 0.0)
     b = cs.prime_seen(torch.tensor([3, 5]), bump=1.0, decay=0.5)
     assert float(b[0, 3]) == 2.0 and float(b[0, 0]) == 1.0
     b = cs.prime_seen(torch.tensor([5]), bump=1.0, decay=0.5)
-    assert abs(float(b[0, 3]) - 1.5) < 1e-6
-    assert abs(float(b[0, 5]) - 2.5) < 1e-6
+    assert abs(float(cs._priming_boosts[0, 3]) - 1.5) < 1e-6
+    assert abs(float(cs._priming_boosts[0, 5]) - 2.5) < 1e-6
+    assert abs(float(b[0, 3]) - (1 + .5/1.5)) < 1e-6
+    assert float(b[0, 5]) == 2.
 
 
 @pytest.mark.slow

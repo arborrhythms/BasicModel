@@ -1,0 +1,40 @@
+{
+  "part": "B",
+  "key": "meaningWidth",
+  "value": 0,
+  "loads": [
+    {
+      "source": "existing singleton",
+      "actual": 0
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/data/model.xml",
+      "actual": 0
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/measurements/XOR_grammar_sum_control.xml",
+      "actual": 0
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/data/model.xml",
+      "actual": 0
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/measurements/XOR_grammar_sum_control.xml",
+      "actual": 0
+    }
+  ],
+  "instances": [
+    {
+      "meaning_width": 0,
+      "centroid": true,
+      "membership_priming": true
+    },
+    {
+      "meaning_width": 0,
+      "centroid": true,
+      "membership_priming": true
+    }
+  ],
+  "verified": true
+}

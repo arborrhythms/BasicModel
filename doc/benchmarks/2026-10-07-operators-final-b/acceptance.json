@@ -1,0 +1,118 @@
+{
+  "status": "Accepted by Alec as the operators-update landing; commit, push and WikiOracle submodule bump authorized",
+  "date": "2026-10-07",
+  "authority": "Alec acceptance conveyed in the 2026-10-07 Operators update — landing instruction; plan §45",
+  "candidate_base_commit": "cce3a4f7b6e72fab4a9a27fd70d3fa7602553814",
+  "scope": "One BasicModel commit for rounds 4a-0, 4a, combined and repair; source, tests, configurations, all October 7 receipts and toys, plan and specification/document edits",
+  "runtime_source": "measured-source/source.json",
+  "runtime_source_manifest_sha256": "23cc9fba7195e60afe77978e04d73934899166e6e3ea149d5c489b1166cd3e74",
+  "runtime_source_files": 716,
+  "runtime_source_unchanged": true,
+  "measurement_helpers_matched": 189,
+  "measurement_helper_manifest_sha256": "55631072097b6879ad1727fe0249ec58898d93e12ae9c90d16320cf43b469c6c",
+  "measurements_repeated": false,
+  "measurement_summary_sha256": "dd259ef58f07b52421ec97b68e1fb931db5b9b9c33d57e8d291d244d2dfa2119",
+  "basis": {
+    "counts": {
+      "class_pass": 10,
+      "reconstruction_pass": 10,
+      "joint": 10,
+      "mm_pass": 10,
+      "sum_pass": 10,
+      "sum_floor_pass": 10,
+      "xor_bands": {
+        "at 0": 10,
+        "at 1/4": 0,
+        "between": 0,
+        "above 1/4": 0
+      },
+      "sum_bands": {
+        "at 0": 0,
+        "at 1/4": 10,
+        "between": 0,
+        "above 1/4": 0
+      }
+    },
+    "sweep": {
+      "result": "passed",
+      "exit_code": 0,
+      "cases": 5500,
+      "counts": {
+        "passed": 5214,
+        "skipped": 285,
+        "xpassed": 1
+      },
+      "seconds": 410.63126383302733,
+      "non_strict_xpass": [
+        "test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input"
+      ],
+      "source": "measured-source/source.json"
+    },
+    "training_trial_rows": 64000,
+    "R_identically_zero": true,
+    "E_identically_zero": true
+  },
+  "acceptance_document_changes": [
+    {
+      "path": "doc/benchmarks/2026-10-07-operators-final-b/README.md",
+      "at_review_sha256": "090bac1d038884472ba3da515c38fdcb5b7ccd05842fa5806813b8ffd2883e98",
+      "accepted_sha256": "cea764b8b81a8f5ce7eadeca9b5394fa2a55bc7ec9ae9d3f6c57053bdf4d285b"
+    },
+    {
+      "path": "doc/benchmarks/2026-10-07-operators-final/README.md",
+      "at_review_sha256": "da535b756b519307606aec7983e4b5257791c35e1a02741f9e4f4cb9855f4c58",
+      "accepted_sha256": "5c683347d5a501ccf0ca4bdbbb6edf1c6d3a2098c8f0eb9abef01448f878dd95"
+    },
+    {
+      "path": "doc/GradientFlow.md",
+      "at_review_sha256": "987d1d1e6c9d7daec5f45adeea8b3584df3f1d2b1cd848a203cc3b1a0c2c83df",
+      "accepted_sha256": "400dc74cbb0372408cf098cae7746a459b563b90cb3a123493ca11cf0250015c"
+    },
+    {
+      "path": "doc/Architecture.md",
+      "at_review_sha256": "4b4388cdf0f7f60914bf6c0bcb782765501de0395ce87f6672c4d15694bab98c",
+      "accepted_sha256": "48348c64b77f1b5c512dc52d8a8749dc7b0a66c47e6ed0bda95be89f3cbf853b"
+    },
+    {
+      "path": "doc/FutureWork.md",
+      "at_review_sha256": "d7482401f6859d0b4284ce2fabf767052ab2a864c9ff644094322a76b4bff8df",
+      "accepted_sha256": "eccb821d53077b7c7b4286db8ec1ebd28ddf279e2ad388749d02941ce34b8809"
+    },
+    {
+      "path": "doc/Philosophy.md",
+      "at_review_sha256": "916a293ce48f17fb6dc37d5b07906ebf56c9f8b0dfc937363640792801d51588",
+      "accepted_sha256": "f7043eae8025150b6a290d422081bf1565116cd7b675cec5c15dc555078e4549"
+    },
+    {
+      "path": "doc/specs/2026-09-29-operator-catalogue.md",
+      "at_review_sha256": "7157fe88ff083ce5d6fa60f8444d21a7e027c973d6be3dcb4aa3823e48258017",
+      "accepted_sha256": "6fdd3d4f3ee3dcc565c3ad0061e44b472c0d6f1197d260fdd1f7a3e996acb8eb"
+    },
+    {
+      "path": "doc/plans/2026-10-05-operators-update.md",
+      "at_review_sha256": "c2ba18666fda6d0bd091d97d8ac24686070d8e0ca58f45f37b1fe6d25e8d46b8",
+      "accepted_sha256": "ad451d7ba80bf3b7348ec57abf4fb4f79a1cc319242f81b0486f2ed2d5f014a8"
+    },
+    {
+      "path": "todo.md",
+      "at_review_sha256": "b220861c78e1af5ff978ec10c1849c404dff0fb4deb9a9c422dd7de5ce656dec",
+      "accepted_sha256": "149229226a8610d2cf21885309b053cdb70993311a23a9246c03fd179d67212f"
+    }
+  ],
+  "original_combined_receipt": {
+    "status": "Rejected candidate under plan §39, superseded by this accepted repair",
+    "files": 2119,
+    "unchanged_evidence_files": 2118,
+    "changed_paths": [
+      "README.md"
+    ],
+    "change": "README rejection/acceptance status only; no source or measurement changes",
+    "before_manifest_sha256": "f0bbf342713b88262b3c18a435a681313e67b6fa8104dbbe758487302a4c5cb5",
+    "readme_at_review_sha256": "da535b756b519307606aec7983e4b5257791c35e1a02741f9e4f4cb9855f4c58",
+    "readme_at_acceptance_sha256": "5c683347d5a501ccf0ca4bdbbb6edf1c6d3a2098c8f0eb9abef01448f878dd95"
+  },
+  "inverse_rule": "Each lane independently: min chooses the least compatible operand magnitudes; max chooses the greatest",
+  "next": "Item 6.5, with plan §44 magnitude as definedness first; not started",
+  "historical_reports": "receipt-summary.json and prior-receipt-integrity.json retain the pre-acceptance review state; this record supplies the acceptance and documentary delta",
+  "verification_script_sha256": "7e723207e96055a4fd912e97e1041cfb45470cd81f14abdeb7c64ee9924fcd47"
+}

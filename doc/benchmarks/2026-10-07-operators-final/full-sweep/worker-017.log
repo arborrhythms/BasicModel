@@ -1,0 +1,152 @@
+........................................................................ [ 31%]
+..............................sss.s.sssssss.s.sFsFs......FF............. [ 62%]
+.............F...........................s.sss.......................... [ 94%]
+.............                                                            [100%]
+=================================== FAILURES ===================================
+___ test_native_checkpoint_restores_active_answer_widths[False-development] ____
+test/test_output_path_supervised.py:534: in test_native_checkpoint_restores_active_answer_widths
+    assert fresh.load_weights(str(path), strict=True)
+E   AssertionError: assert False
+E    +  where False = load_weights('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_native_checkpoint_restore0/native.ckpt', strict=True)
+E    +    where load_weights = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=29, out_features=232, bias=False)\n  )\n  (question_conditioner): Linear(in_features=29, out_features=232, bias=False)\n).load_weights
+E    +    and   '/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_native_checkpoint_restore0/native.ckpt' = str(PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_native_checkpoint_restore0/native.ckpt'))
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_native_checkpoint_restore0/native.ckpt
+[BasicModel] Weight file mismatch -- cannot load /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_native_checkpoint_restore0/native.ckpt
+  Shape mismatches:
+    symbolSpace.subspace.layers.2._ltm_store.adjacent_left  saved=[4]  model=[0]
+    symbolSpace.subspace.layers.2._ltm_store.adjacent_right  saved=[4]  model=[0]
+    symbolSpace.subspace.layers.2._ltm_store.adjacent_address  saved=[4]  model=[0]
+    symbolSpace.subspace.layers.2._ltm_store.adjacent_position  saved=[4]  model=[0]
+    symbolSpace.subspace.ltm_store.adjacent_left        saved=[4]  model=[0]
+    symbolSpace.subspace.ltm_store.adjacent_right       saved=[4]  model=[0]
+    symbolSpace.subspace.ltm_store.adjacent_address     saved=[4]  model=[0]
+    symbolSpace.subspace.ltm_store.adjacent_position    saved=[4]  model=[0]
+    symbolSpace.subspace.expectation._ltm_store.adjacent_left  saved=[4]  model=[0]
+    symbolSpace.subspace.expectation._ltm_store.adjacent_right  saved=[4]  model=[0]
+    ... and 2 more
+  The model config likely changed since this checkpoint was saved.
+  To fix: correct the model XML to match the saved weights,
+          or delete/move /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_native_checkpoint_restore0/native.ckpt to start fresh.
+____ test_native_checkpoint_restores_active_answer_widths[True-development] ____
+test/test_output_path_supervised.py:534: in test_native_checkpoint_restores_active_answer_widths
+    assert fresh.load_weights(str(path), strict=True)
+E   AssertionError: assert False
+E    +  where False = load_weights('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_native_checkpoint_restore1/native.ckpt', strict=True)
+E    +    where load_weights = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=29, out_features=232, bias=False)\n  )\n  (question_conditioner): Linear(in_features=29, out_features=136, bias=False)\n).load_weights
+E    +    and   '/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_native_checkpoint_restore1/native.ckpt' = str(PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_native_checkpoint_restore1/native.ckpt'))
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_native_checkpoint_restore1/native.ckpt
+[BasicModel] Weight file mismatch -- cannot load /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_native_checkpoint_restore1/native.ckpt
+  Shape mismatches:
+    symbolSpace.subspace.layers.2._ltm_store.adjacent_left  saved=[4]  model=[0]
+    symbolSpace.subspace.layers.2._ltm_store.adjacent_right  saved=[4]  model=[0]
+    symbolSpace.subspace.layers.2._ltm_store.adjacent_address  saved=[4]  model=[0]
+    symbolSpace.subspace.layers.2._ltm_store.adjacent_position  saved=[4]  model=[0]
+    symbolSpace.subspace.ltm_store.adjacent_left        saved=[4]  model=[0]
+    symbolSpace.subspace.ltm_store.adjacent_right       saved=[4]  model=[0]
+    symbolSpace.subspace.ltm_store.adjacent_address     saved=[4]  model=[0]
+    symbolSpace.subspace.ltm_store.adjacent_position    saved=[4]  model=[0]
+    symbolSpace.subspace.expectation._ltm_store.adjacent_left  saved=[4]  model=[0]
+    symbolSpace.subspace.expectation._ltm_store.adjacent_right  saved=[4]  model=[0]
+    ... and 2 more
+  The model config likely changed since this checkpoint was saved.
+  To fix: correct the model XML to match the saved weights,
+          or delete/move /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_native_checkpoint_restore1/native.ckpt to start fresh.
+___________ test_model_checkpoint_preserves_readout_and_adam[False] ____________
+test/test_output_percept_readout.py:98: in test_model_checkpoint_preserves_readout_and_adam
+    assert fresh.load_weights(str(path), strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5133: in load_weights
+    raise ValueError("\n".join(lines))
+E   ValueError: [BasicModel] Weight file mismatch -- cannot load /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_model_checkpoint_preserve0/readout.ckpt
+E     Shape mismatches:
+E       symbolSpace.subspace.layers.2._ltm_store.adjacent_left  saved=[4]  model=[0]
+E       symbolSpace.subspace.layers.2._ltm_store.adjacent_right  saved=[4]  model=[0]
+E       symbolSpace.subspace.layers.2._ltm_store.adjacent_address  saved=[4]  model=[0]
+E       symbolSpace.subspace.layers.2._ltm_store.adjacent_position  saved=[4]  model=[0]
+E       symbolSpace.subspace.ltm_store.adjacent_left        saved=[4]  model=[0]
+E       symbolSpace.subspace.ltm_store.adjacent_right       saved=[4]  model=[0]
+E       symbolSpace.subspace.ltm_store.adjacent_address     saved=[4]  model=[0]
+E       symbolSpace.subspace.ltm_store.adjacent_position    saved=[4]  model=[0]
+E       symbolSpace.subspace.expectation._ltm_store.adjacent_left  saved=[4]  model=[0]
+E       symbolSpace.subspace.expectation._ltm_store.adjacent_right  saved=[4]  model=[0]
+E       ... and 2 more
+E     The model config likely changed since this checkpoint was saved.
+E     To fix: correct the model XML to match the saved weights,
+E             or delete/move /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_model_checkpoint_preserve0/readout.ckpt to start fresh.
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_model_checkpoint_preserve0/readout.ckpt
+____________ test_model_checkpoint_preserves_readout_and_adam[True] ____________
+test/test_output_percept_readout.py:98: in test_model_checkpoint_preserves_readout_and_adam
+    assert fresh.load_weights(str(path), strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5133: in load_weights
+    raise ValueError("\n".join(lines))
+E   ValueError: [BasicModel] Weight file mismatch -- cannot load /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_model_checkpoint_preserve1/readout.ckpt
+E     Shape mismatches:
+E       symbolSpace.subspace.layers.2._ltm_store.adjacent_left  saved=[4]  model=[0]
+E       symbolSpace.subspace.layers.2._ltm_store.adjacent_right  saved=[4]  model=[0]
+E       symbolSpace.subspace.layers.2._ltm_store.adjacent_address  saved=[4]  model=[0]
+E       symbolSpace.subspace.layers.2._ltm_store.adjacent_position  saved=[4]  model=[0]
+E       symbolSpace.subspace.ltm_store.adjacent_left        saved=[4]  model=[0]
+E       symbolSpace.subspace.ltm_store.adjacent_right       saved=[4]  model=[0]
+E       symbolSpace.subspace.ltm_store.adjacent_address     saved=[4]  model=[0]
+E       symbolSpace.subspace.ltm_store.adjacent_position    saved=[4]  model=[0]
+E       symbolSpace.subspace.expectation._ltm_store.adjacent_left  saved=[4]  model=[0]
+E       symbolSpace.subspace.expectation._ltm_store.adjacent_right  saved=[4]  model=[0]
+E       ... and 2 more
+E     The model config likely changed since this checkpoint was saved.
+E     To fix: correct the model XML to match the saved weights,
+E             or delete/move /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_model_checkpoint_preserve1/readout.ckpt to start fresh.
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/test_model_checkpoint_preserve1/readout.ckpt
+_ test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents _
+test/test_output_walk.py:99: in test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents
+    assert n_emitted.tolist()==[live+1]
+E   assert [2] == [3]
+E     
+E     At index 0 diff: 2 != 3
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_order0_percept_definitions.py::test_witnesses_write_alternatives_without_conjoining_their_literals
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7195: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp7ez04m_2/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7195: RuntimeWarning: reconstruction_identity [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3061/cfg0/MM_xor_synth.xml]: input reconstruction is an exact unmasked identity: zero cost carries no learning signal (mask or degrade the input to create one)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7195: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpv4iipyiv/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7195: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp_xv_hipe/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7195: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpf2v_xkgf/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7195: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpaoqn9en7/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-development]
+FAILED test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-development]
+FAILED test/test_output_percept_readout.py::test_model_checkpoint_preserves_readout_and_adam[False]
+FAILED test/test_output_percept_readout.py::test_model_checkpoint_preserves_readout_and_adam[True]
+FAILED test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents
+5 failed, 205 passed, 19 skipped, 8 warnings in 118.69s (0:01:58)

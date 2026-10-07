@@ -1,0 +1,30 @@
+{
+  "selectors": [
+    "test/test_category_collapse.py",
+    "test/test_clause_acceptance.py",
+    "test/test_derived_concept_codes.py",
+    "test/test_event_compose.py",
+    "test/test_generation_catalog.py",
+    "test/test_interleave_lifecycle.py",
+    "test/test_interleave_schedule.py",
+    "test/test_knowledge_artifact_writer.py",
+    "test/test_learning_readiness.py",
+    "test/test_lexical_reference_orders.py",
+    "test/test_mind_generativity.py",
+    "test/test_operator_effects.py",
+    "test/test_operators_final.py",
+    "test/test_operators_round4a.py",
+    "test/test_operators_round4a0.py",
+    "test/test_output_path_supervised.py",
+    "test/test_output_percept_readout.py",
+    "test/test_output_walk.py",
+    "test/test_prepared_answer_boundary.py",
+    "test/test_reference_table.py",
+    "test/test_review14_contracts.py",
+    "test/test_sentence_end_state.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

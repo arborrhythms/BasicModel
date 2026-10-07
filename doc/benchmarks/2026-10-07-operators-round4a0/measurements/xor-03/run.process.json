@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+    "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+  ],
+  "pid": 31579,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 710657584,
+  "elapsed_seconds": 153.99326745793223,
+  "log": "/Users/arogers/github/basicmodel-round4a0/doc/benchmarks/2026-10-07-operators-round4a0/measurements/xor-03/run.log"
+}

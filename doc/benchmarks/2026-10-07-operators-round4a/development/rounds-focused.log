@@ -1,0 +1,108 @@
+...................................FFF.................................. [ 80%]
+..................                                                       [100%]
+=================================== FAILURES ===================================
+___________ test_gate_grammars_have_no_image_complement[XOR_grammar] ___________
+
+config = 'XOR_grammar'
+
+    @pytest.mark.parametrize('config',['XOR_grammar','MM_grammar'])
+    def test_gate_grammars_have_no_image_complement(config):
+        from test_mm_xor import _fresh_model
+        from Meaning import ClosingImage
+        model,_,_=_fresh_model('data/'+config+'.xml')
+        try:
+            derived=model._concept_owner().similarity_codebook.mereology
+>           assert derived.percept_width==96 and derived.code_width==104
+E           assert (96 == 96 and 232 == 104)
+E            +  where 96 = MereologicalCodes().percept_width
+E            +  and   232 = MereologicalCodes().code_width
+
+test/test_operators_round2.py:157: AssertionError
+___________ test_gate_grammars_have_no_image_complement[MM_grammar] ____________
+
+config = 'MM_grammar'
+
+    @pytest.mark.parametrize('config',['XOR_grammar','MM_grammar'])
+    def test_gate_grammars_have_no_image_complement(config):
+        from test_mm_xor import _fresh_model
+        from Meaning import ClosingImage
+        model,_,_=_fresh_model('data/'+config+'.xml')
+        try:
+            derived=model._concept_owner().similarity_codebook.mereology
+>           assert derived.percept_width==96 and derived.code_width==104
+E           assert (96 == 96 and 232 == 104)
+E            +  where 96 = MereologicalCodes().percept_width
+E            +  and   232 = MereologicalCodes().code_width
+
+test/test_operators_round2.py:157: AssertionError
+___________ test_not_handoff_changes_pole_and_meaning_but_never_form ___________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1236c8fe0>
+
+    def test_not_handoff_changes_pole_and_meaning_but_never_form(monkeypatch):
+        from dataclasses import replace
+        from Models import BasicModel
+        from test_selected_nested_meaning import _nested
+        from reading_fixtures import finish_reading
+        _,registry,language,entry,_=_nested(monkeypatch)
+        code=entry.leaves[:1]
+        leaf=replace(entry,rows=entry.rows[:1],word_rows=entry.word_rows[:1],
+            activations=torch.ones(1),leaves=code,concept_ids=torch.tensor([1]),
+            lexical_forms=(None,),actions=torch.tensor([[0,-1,0]]),targets=torch.tensor([-1]),
+            end_state=torch.cat((code,torch.zeros_like(entry.end_state[1:]))))
+        event=code[None].requires_grad_()
+        payload=(event,torch.zeros(1,1),torch.zeros(1,dtype=torch.long),torch.ones(1,1),
+            torch.zeros(1,dtype=torch.long),torch.zeros(1,dtype=torch.long),code,
+            torch.ones(1,1,dtype=torch.bool),torch.ones(1,1,dtype=torch.bool),None,None)
+        reading=SimpleNamespace(accepted=torch.ones(1,1,dtype=torch.bool),
+                                pole_changes=torch.ones(1,1,dtype=torch.bool))
+        model=SimpleNamespace(_attention_words=reading,_attention_poles=torch.tensor([[[1.,0.]]]))
+        greedy=BasicModel._attention_sentence_payload(model,payload,torch.tensor(0))
+        model._attention_poles=model._attention_poles.flip(-1)
+        explore=BasicModel._attention_sentence_payload(model,payload,torch.tensor(0))
+        torch.testing.assert_close(explore[0],greedy[0],rtol=0,atol=0)
+        assert explore[3].item()==-1 and greedy[3].item()==1
+        positive=finish_reading(language,replace(leaf,leaf_evidence=torch.tensor([[1.,0.]])),registry=registry)
+        negative=finish_reading(language,replace(leaf,leaf_evidence=torch.tensor([[0.,1.]])),registry=registry)
+        assert positive.meaning.polarity and not negative.meaning.polarity
+        from Interpret import InterpretLayer
+        owner = SimpleNamespace(similarity_codebook=SimpleNamespace(mereology=SimpleNamespace(percept_event_width=1)))
+        interpret = InterpretLayer(conceptualSpace=owner)
+        atoms = torch.tensor([[.8, .6]])
+>       positive_code = interpret.activate(atoms, greedy[3].reshape(-1))
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_operators_round2.py:197: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Interpret.py:276: in activate
+    return activate_code(atoms, activation, width)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:12: in activate_code
+    meaning = torch.where(value < 0, exchange(meaning), meaning)
+                                     ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = tensor([[0.6000]])
+
+    def exchange(value):
+        if value.shape[-1] % 2:
+>           raise ValueError('meaning requires an even number of pole coordinates')
+E           ValueError: meaning requires an even number of pole coordinates
+
+bin/MeaningCodes.py:26: ValueError
+=============================== warnings summary ===============================
+test/test_operators_round2.py::test_not_handoff_changes_pole_and_meaning_but_never_form
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operators_round2.py::test_gate_grammars_have_no_image_complement[XOR_grammar]
+FAILED test/test_operators_round2.py::test_gate_grammars_have_no_image_complement[MM_grammar]
+FAILED test/test_operators_round2.py::test_not_handoff_changes_pole_and_meaning_but_never_form
+3 failed, 87 passed, 2 warnings in 7.45s

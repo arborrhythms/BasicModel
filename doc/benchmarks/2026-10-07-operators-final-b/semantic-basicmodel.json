@@ -1,0 +1,47 @@
+{
+  "words": 67391,
+  "sentences": 90676,
+  "pairs": 448,
+  "ordered_pairs": true,
+  "self_pairs": true,
+  "checks_per_case": 411809304981556,
+  "distinct_meanings": 57331,
+  "errors": {
+    "conjunction": 129899673483,
+    "disjunction": 15197298979139,
+    "not_against": 7222419828125,
+    "and_not_against": 7222419828125,
+    "not_for": 0,
+    "and_not_for": 0
+  },
+  "false_membership_rates": {
+    "conjunction": 0.00031543647001569796,
+    "disjunction": 0.03690372897188336,
+    "not_against": 0.017538262833688218,
+    "and_not_against": 0.017538262833688218
+  },
+  "false_negatives": 0,
+  "exact": false,
+  "method": "exhaustive identity-bit coverage histogram, all word pairs and rows",
+  "ones": 6,
+  "distinct_sentence_keys": 86056,
+  "sentence_keys_sha256": "66ea4f80a76f41a36ac7facd9c19e5428818c579518a559737a8b1ab52a8cabc",
+  "postings": 1345164,
+  "recency": "1/(1+age); one stored occurrence per admitted sentence",
+  "vocabulary_sha256": "701be75eee0ba314c30b8062f1687f240d35e723544de3ee5d2e9eef97fe2a3c",
+  "seconds": 74.46967979194596,
+  "diagnostic_only": true,
+  "corpus": {
+    "shards": [
+      {
+        "name": "shard_00000.parquet",
+        "bytes": 94511680,
+        "sha256": "6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22"
+      }
+    ],
+    "max_docs": 2000,
+    "excluded_sentences": 3,
+    "lexer": "existing sentence splitter and ASCII letter runs, all document splits"
+  },
+  "scope": "static content-addressed corpus census, not a resident production store or a training run"
+}

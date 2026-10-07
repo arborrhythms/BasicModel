@@ -1,0 +1,11 @@
+--- measured/test/test_bounded_stm_fold.py
++++ review/test/test_bounded_stm_fold.py
+@@ -66,7 +66,7 @@
+     assert Language.LiftLayer.space_role == Language.LowerLayer.space_role == 'CS'
+     assert Language.LiftLayer.invertible
+     assert not Language.LowerLayer.invertible
+-    assert Language.LowerLayer.inverse_kind == 'right' 
++    assert Language.LowerLayer.inverse_kind == 'right'
+ 
+ 
+ def test_closing_budget_is_fixed_even_when_unary_choices_do_not_shrink(monkeypatch):

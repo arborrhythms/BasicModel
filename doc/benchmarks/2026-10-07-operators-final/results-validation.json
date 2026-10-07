@@ -1,0 +1,2497 @@
+{
+  "source_matched": true,
+  "measurement_helpers_matched": true,
+  "gate_trainings": 30,
+  "seed": null,
+  "retries": 0,
+  "replacement_runs": 0,
+  "sweep": {
+    "cases": 5341,
+    "outcomes": {
+      "passed": 5038,
+      "skipped": 285,
+      "failed": 20,
+      "xpassed": 1
+    },
+    "reason": "test_failure",
+    "focused_repair_receipts": [
+      "focused-repairs-01"
+    ],
+    "seconds": 412.66233854193706
+  },
+  "counts": {
+    "class_pass": 10,
+    "reconstruction_pass": 9,
+    "joint": 9,
+    "mm_pass": 10,
+    "sum_pass": 10,
+    "sum_floor_pass": 9,
+    "xor_bands": {
+      "at 0": 10,
+      "at 1/4": 0,
+      "between": 0,
+      "above 1/4": 0
+    },
+    "sum_bands": {
+      "at 0": 0,
+      "at 1/4": 9,
+      "between": 0,
+      "above 1/4": 1
+    }
+  },
+  "below_comparison": [
+    {
+      "count": "reconstruction_pass",
+      "prior": 10,
+      "current": 9
+    },
+    {
+      "count": "joint",
+      "prior": 10,
+      "current": 9
+    }
+  ],
+  "storage_checks_passed": true,
+  "storage": [
+    {
+      "kind": "sum",
+      "run": 1,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "sum",
+      "run": 2,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "sum",
+      "run": 3,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "sum",
+      "run": 4,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "sum",
+      "run": 5,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "sum",
+      "run": 6,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "sum",
+      "run": 7,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "sum",
+      "run": 8,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "sum",
+      "run": 9,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "sum",
+      "run": 10,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "xor",
+      "run": 1,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "xor",
+      "run": 2,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "xor",
+      "run": 3,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "xor",
+      "run": 4,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "xor",
+      "run": 5,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "xor",
+      "run": 6,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "xor",
+      "run": 7,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "xor",
+      "run": 8,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "xor",
+      "run": 9,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "xor",
+      "run": 10,
+      "after_training": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          400,
+          400,
+          400,
+          400
+        ],
+        "timestamps": [
+          400.0,
+          400.0,
+          400.0,
+          400.0
+        ],
+        "all_witness_counts": [
+          800,
+          800,
+          800,
+          800,
+          400,
+          400,
+          400,
+          400
+        ]
+      },
+      "final": {
+        "rows_used": 8,
+        "capacity": 1024,
+        "sentence_rows": 4,
+        "definition_rows": 4,
+        "addresses": [
+          -6736319402935933635,
+          -2164899334207564249,
+          -2449234306209964231,
+          -8600101167942099913
+        ],
+        "sentence_indices": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "content_keys": [
+          "0f0301db11b422f4dc1cd814889e7b95a23968d5bca4ccdc585a978b0facd788",
+          "f9d9987637d5b5660d588134d97993a9737fa57bf17a458c73fee6584875bc63",
+          "0974a7be1e5d4185c549c5e76cc4c85451bc5c5472c9792c0fdf9a21ffac5201",
+          "dad29ff2106d55336c9a918cc9d91f4e979eb9c4256b3dfa2f0a8d4bb9c2a5a8"
+        ],
+        "witness_counts": [
+          401,
+          401,
+          401,
+          401
+        ],
+        "timestamps": [
+          401.0,
+          401.0,
+          401.0,
+          401.0
+        ],
+        "all_witness_counts": [
+          802,
+          802,
+          802,
+          802,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "within_capacity": true,
+      "four_sentence_rows": true,
+      "four_content_keys": true,
+      "four_hundred_witnesses": true,
+      "same_addresses_across_runs": true,
+      "final_preserves_addresses": true
+    },
+    {
+      "kind": "mm",
+      "run": 1,
+      "after_training": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          158,
+          158,
+          158,
+          158
+        ]
+      },
+      "final": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          158,
+          158,
+          158,
+          158
+        ]
+      },
+      "within_capacity": true,
+      "raw_path_definitions_only": true
+    },
+    {
+      "kind": "mm",
+      "run": 2,
+      "after_training": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          136,
+          136,
+          136,
+          136
+        ]
+      },
+      "final": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          136,
+          136,
+          136,
+          136
+        ]
+      },
+      "within_capacity": true,
+      "raw_path_definitions_only": true
+    },
+    {
+      "kind": "mm",
+      "run": 3,
+      "after_training": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          48,
+          48,
+          48,
+          48
+        ]
+      },
+      "final": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          48,
+          48,
+          48,
+          48
+        ]
+      },
+      "within_capacity": true,
+      "raw_path_definitions_only": true
+    },
+    {
+      "kind": "mm",
+      "run": 4,
+      "after_training": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          70,
+          70,
+          70,
+          70
+        ]
+      },
+      "final": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          70,
+          70,
+          70,
+          70
+        ]
+      },
+      "within_capacity": true,
+      "raw_path_definitions_only": true
+    },
+    {
+      "kind": "mm",
+      "run": 5,
+      "after_training": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          60,
+          60,
+          60,
+          60
+        ]
+      },
+      "final": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          60,
+          60,
+          60,
+          60
+        ]
+      },
+      "within_capacity": true,
+      "raw_path_definitions_only": true
+    },
+    {
+      "kind": "mm",
+      "run": 6,
+      "after_training": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          92,
+          92,
+          92,
+          92
+        ]
+      },
+      "final": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          92,
+          92,
+          92,
+          92
+        ]
+      },
+      "within_capacity": true,
+      "raw_path_definitions_only": true
+    },
+    {
+      "kind": "mm",
+      "run": 7,
+      "after_training": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          176,
+          176,
+          176,
+          176
+        ]
+      },
+      "final": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          176,
+          176,
+          176,
+          176
+        ]
+      },
+      "within_capacity": true,
+      "raw_path_definitions_only": true
+    },
+    {
+      "kind": "mm",
+      "run": 8,
+      "after_training": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          178,
+          178,
+          178,
+          178
+        ]
+      },
+      "final": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          178,
+          178,
+          178,
+          178
+        ]
+      },
+      "within_capacity": true,
+      "raw_path_definitions_only": true
+    },
+    {
+      "kind": "mm",
+      "run": 9,
+      "after_training": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          42,
+          42,
+          42,
+          42
+        ]
+      },
+      "final": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          42,
+          42,
+          42,
+          42
+        ]
+      },
+      "within_capacity": true,
+      "raw_path_definitions_only": true
+    },
+    {
+      "kind": "mm",
+      "run": 10,
+      "after_training": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          46,
+          46,
+          46,
+          46
+        ]
+      },
+      "final": {
+        "rows_used": 4,
+        "capacity": 1024,
+        "sentence_rows": 0,
+        "definition_rows": 4,
+        "addresses": [],
+        "sentence_indices": [],
+        "content_keys": [],
+        "witness_counts": [],
+        "timestamps": [],
+        "all_witness_counts": [
+          46,
+          46,
+          46,
+          46
+        ]
+      },
+      "within_capacity": true,
+      "raw_path_definitions_only": true
+    }
+  ]
+}

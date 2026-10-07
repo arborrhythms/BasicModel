@@ -1,0 +1,73 @@
+.FF..FFF................................................................ [ 38%]
+........................................................................ [ 77%]
+..........................................                               [100%]
+=================================== FAILURES ===================================
+_______ test_native_program_captures_the_symbol_band_and_one_field_time ________
+test/test_occurrence_coordinates.py:41: in test_native_program_captures_the_symbol_band_and_one_field_time
+    torch.testing.assert_close(program.symbol_when,
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 9 / 12 (75.0%)
+E   Greatest absolute difference: 0.024533838033676147 at index (0, 2) (up to 1e-05 allowed)
+E   Greatest relative difference: 0.6666656136512756 at index (0, 0) (up to 1.3e-06 allowed)
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+___________ test_native_percepts_encode_input_starts_and_share_time ____________
+test/test_occurrence_coordinates.py:56: in test_native_percepts_encode_input_starts_and_share_time
+    torch.testing.assert_close(event[..., -4:],
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 9 / 12 (75.0%)
+E   Greatest absolute difference: 0.024533838033676147 at index (0, 0, 2) (up to 1e-05 allowed)
+E   Greatest relative difference: 0.6666656136512756 at index (0, 0, 0) (up to 1.3e-06 allowed)
+_______ test_repeated_percept_occurrences_use_input_starts_and_one_time ________
+test/test_occurrence_coordinates.py:120: in test_repeated_percept_occurrences_use_input_starts_and_one_time
+    torch.testing.assert_close(event[..., -4:],
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 9 / 12 (75.0%)
+E   Greatest absolute difference: 0.024533838033676147 at index (0, 0, 2) (up to 1e-05 allowed)
+E   Greatest relative difference: 0.6666656136512756 at index (0, 0, 0) (up to 1.3e-06 allowed)
+_____ test_input_symbols_keep_their_word_starts_even_when_the_word_repeats _____
+test/test_occurrence_coordinates.py:142: in test_input_symbols_keep_their_word_starts_even_when_the_word_repeats
+    torch.testing.assert_close(program.symbol_when,
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 9 / 12 (75.0%)
+E   Greatest absolute difference: 0.024533838033676147 at index (0, 2) (up to 1e-05 allowed)
+E   Greatest relative difference: 0.6666656136512756 at index (0, 0) (up to 1.3e-06 allowed)
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+_______________ test_input_event_time_uses_the_subjective_clock ________________
+test/test_occurrence_coordinates.py:155: in test_input_event_time_uses_the_subjective_clock
+    torch.testing.assert_close(events[..., -4:],
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 20 / 20 (100.0%)
+E   Greatest absolute difference: 0.04904550686478615 at index (0, 0, 2) (up to 1e-05 allowed)
+E   Greatest relative difference: 0.7999981045722961 at index (0, 0, 0) (up to 1.3e-06 allowed)
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_occurrence_coordinates.py::test_reset_clears_only_the_selected_fields_time_band
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_occurrence_coordinates.py::test_input_event_time_uses_the_subjective_clock
+  /Users/arogers/github/basicmodel-round4a0/test/../bin/Models.py:7194: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2873/test_input_event_time_uses_the0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_occurrence_coordinates.py::test_native_program_captures_the_symbol_band_and_one_field_time
+FAILED test/test_occurrence_coordinates.py::test_native_percepts_encode_input_starts_and_share_time
+FAILED test/test_occurrence_coordinates.py::test_repeated_percept_occurrences_use_input_starts_and_one_time
+FAILED test/test_occurrence_coordinates.py::test_input_symbols_keep_their_word_starts_even_when_the_word_repeats
+FAILED test/test_occurrence_coordinates.py::test_input_event_time_uses_the_subjective_clock
+5 failed, 181 passed, 3 warnings in 22.23s

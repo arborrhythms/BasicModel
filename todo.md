@@ -17,10 +17,10 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Next:** the [grammatical operators update](doc/plans/2026-10-05-operators-update.md), then **6.5**.
+**Next:** **6.5**, with [plan §44's magnitude as definedness](doc/plans/2026-10-05-operators-update.md#44-the-two-zeros-resolved-by-magnitude-alec-2026-10-07) first. Alec accepted the [operators-update repair](doc/benchmarks/2026-10-07-operators-final-b/) under §45 on October 7: all thirty standing trainings pass, R and E are identically zero, and the measured source has a green sweep.
 
-**Current sequence (6.8 accepted on October 5; no conference freeze):**
-the grammatical operators update → 6.5 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0.
+**Current sequence (operators update accepted on October 7; no conference freeze):**
+6.5 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0.
 The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
 acceptance does not authorize fresh-model bulk scoring. Items 9 and 8 are implemented and
 reviewed; what remains of them is empirical and waits for the
@@ -124,134 +124,22 @@ generation is expected at this stage and is recorded, not tuned away.
    Alec, 2026-09-30: "equal comparison").
    The unchanged depth-three campaign remains red; retain its assertion and
    the XOR/MM evidence ([accepted landing](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).
-- **The grammatical operators update** (not yet numbered; next after the
-   accepted 6.8 landing, then 6.5; Alec, 2026-10-05).
-   The [operators update plan](doc/plans/2026-10-05-operators-update.md) orders
-   the remaining catalogue and the work carried from the 6.8 rounds.
-   **Round 1 accepted (Alec, 2026-10-06; plan §5, §9.1):** class 8/10,
-   reconstruction 10/10, sum 10/10, MM_xor 9/10 shown trajectory-identical
-   to the landing (not a regression of the round). **The scheme confirmed
-   the same day** (plan §13; [Architecture](doc/Architecture.md#the-scheme-confirmed-2026-10-06-expectation-and-surprise-through-the-architecture)):
-   the centroid for symbols with has-a wholes weighted by their narrowing;
-   two hard derivations as expectation and surprise, credited at the choice
-   and, once the path is invertible, at every layer by inversion;
-   expectation and output as the criteria, reconstruction retiring to an
-   audit where the transformations are exact. Rounds (plan §9.5, §12.3):
-   **2 credit — rounds 2, 2b, 2c and 2d not accepted; round 2e measured, awaiting review**
-   ([round-2e receipt](doc/benchmarks/2026-10-06-operators-round2e/README.md); no commit):
-   magnitude interpretation preserves forms; each answer-owned reader takes
-   one step under its round-2e rule below. Reconstruction keeps the trial;
-   the total still credits the single departure. Pole consumers and closing
-   evidence, the concept-only image, and inherited-part containment are audited.
-   MM_xor's raw count stays recorded: retired percept sampling shifts its later Bernoulli mask.
-   Its three paired replays remain separate from the thirty unseeded trainings.
-   Round 2c: class **5/10**, reconstruction **10/10**, sum **10/10 at ¼**,
-   MM_xor **9/10**; sweep green, ownership/gradient/displacement zeros.
-   All final grammar roots use conjunction and every narrowing departure ties;
-   the receipt records the class misses' trial costs and the failed MM trajectory.
-   Round 2d changes only the departure proposal to walk first, correcting it
-   by `K·R_walk·W`. The §5 RNG-only amendment applies to MM_xor after its
-   repeated seed-zero bisection; raw counts and paired trajectories stay visible.
-   Round 2d: class **2/10**, reconstruction **10/10**, sum **10/10 at ¼**,
-   raw MM_xor **10/10**. The class gate is missed despite all final roots
-   choosing conjunction and all labels being correct. All-disjunction starts
-   become all-conjunction from epochs 22, 65 and 106; three failed runs use
-   conjunction throughout. Departures split 7,978 compose / 8,022 narrowing,
-   all narrowing credits tie, and reader counters remain one update per batch.
-   Sweep green; ownership/gradient/displacement zeros. No commit before review.
-   Round 2e restores kept-root-only training for the presented reader and
-   retains 2d's mixed-root training in a separate comparison reader used only
-   for the advantage. Both are answer-owned, with one step each on detached
-   roots. The receipt records both readers' MSE, norms, flips and miss costs.
-   Round 2e: class **9/10**, reconstruction **10/10**,
-   sum **10/10 at ¼**, raw MM_xor **10/10** under the RNG-only amendment.
-   The measured standing gate is met; 40/40 final roots are conjunction.
-   Misses: 1 late flip, 0 reader plateau, 0 other.
-   Sweep and owner audits pass. No commit before Claude's review.
-   **3 identity** (pairs plus length as the parts,
-   the content width, the narrowing rule and the centroid), **4 meaning**
-   (membership as properties, co-activation through shared wholes, Kleene
-   connectives, expectation and targets by inversion), **5 attention** (the
-   filter with the factored cost), **6** the catalogue's remaining sections.
-   It carries into code what the
-   operator pass of 2026-09-27 to 09-29 decided in documents: `not` and `non`
-   over evidence poles, the conjunction's reading of poles, words as
-   restricting operators, and the determiners
-   ([accessible mind §2.0 to §2.6.2](doc/specs/2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention)).
-   Its specification is
-   [the operator catalogue](doc/specs/2026-09-29-operator-catalogue.md), in
-   progress: the pass goes noun, adjective, verb and adverb first, and
-   prepositions and tense, morphology, aspect and null last. Decided there
-   (Alec, 2026-09-29): `what` and `lookup` become one operator, which
-   returns conceptual content; `true` and `exist` are retired, since no
-   operator leaves a scalar; `sum`, as a mean, and `product` stay provided.
-   The renames (`synthesize` and `analyze`, `query`, `symbolize` and
-   `conceptualize`) are future work: "The operator rename can also be
-   future work"
-   ([FutureWork](doc/FutureWork.md#operator-names-future-work-alec-2026-09-29)).
-   Resolved there (Alec, 2026-09-29): the noun and the adjective combine
-   by an idempotent intersection, compounds are sub-typing, the verb is a
-   modifier, and the adverb is a multiplicative modifier of a modifier.
-   The candidate for what a verb phrase is to its noun phrase (Alec,
-   2026-09-29, "a good candidate"): projections onto learned, orthogonal
-   subspaces within a sentence, and a transformation found by ICA on the
-   differences between events (item 6.5); with the modal phrase a further
-   projection, "a 5D NP+VP+MP" (catalogue §4.4). Decided the same day:
-   whatever the code needs to know of an operator is a declared property
-   of its rule and the name is never consulted; the code tests operators
-   by name in about 140 places today. Proposed: operator names that are
-   not parts of speech, and alternatives for learning to choose among, "up
-   to a point" (catalogue §3.9). Answered later the same day (catalogue §4.4
-   to §9): modality is a dimension, not an order; the determiner drops the
-   order by the fold's inverse, "the" binding; `lift` and `lower` were to
-   raise and lower the order, "perhaps" better a dimension; the words "and
-   nowhere else" are withdrawn from "the order drops at the determiner";
-   a verb's object sub-types the verb; `implies` is "a relation candidate
-   for LTM" with no inverse of its own; `part`, `whole` and `equal` look
-   into the symbol codebook and `query` into LTM; a sentence that states a
-   definition needs only `equal`; `surface` is the operator of surface
-   form, with tense and aspect; tense, morphology and aspect "need more
-   work before they are included in any grammar"; the preposition is "a
-   clausal formula that creates an ADV or ADJ". "Lift/lower and
-   surface/tense can all move to future work, or at least after item 6"
-   ([FutureWork](doc/FutureWork.md#lift-and-lower-as-dimensions-surface-form-and-tense-future-work-alec-2026-09-29)).
-   Measured
-   against that: the coded `intersection` is softened and so not
-   idempotent, and loses what one word is silent on; the coded verb and
-   adverb cannot write on a dimension their operand is silent on. Open
-   there, for when the pass reaches them: `bind`, `expect` in place of
-   `arma`, and what says a sentence is absolute once `exist` is retired.
-   **Standing gate (accepted 6.8, October 5):** no regression against the
-   [§22 receipt](doc/benchmarks/2026-10-03-operators-attention/README.md):
-   class **7/10**, reconstruction **9/10**, joint **6/10**, MM_xor and sum
-   **10/10**, full sweep **4,917 passed / 0 failed**, zero sentence-path
-   gradient at perception and zero ownership conflicts. Decoder exploration
-   is implemented; the remaining work follows the operators update plan.
-   No configuration is given more rows (decided, spec §17.7). A sentence that states a definition is
-   an `equal` (Alec, 2026-09-29: "I guess we only need equal?"; catalogue
-   §6.3).
-   **Item-7 review residue** (two truths §21 and §23): the predicate identity
-   becomes a declared rule property when names stop governing operators;
-   reconcile equality's separate question identity and retire the unused
-   `GrammaticalQueryRegistry` under the reviewed no-legacy rule. These are
-   outside the accepted item-7 repair.
-   Item 5 takes up the bias of forgetting by the kind of truth that Alec
-   proposed on 2026-09-29 (forgetting spec §4).
-   **Carried from 6.8:** the [FutureWork list](doc/FutureWork.md#carried-from-the-68-1315-rounds-2026-10-04)
-   and the [operators update plan](doc/plans/2026-10-05-operators-update.md)
-   retain the attention estimator, decomposition exact-fit precedence and
-   feature standardization, form fold, Kleene connectives, complement
-   bootstrap, `not` items, concept-face negative image and form density.
-   The [dynamic stop](doc/FutureWork.md#the-dynamic-stop-glossing-above-words-descending-at-novelty-item-68-2)
-   remains future work. Item 1 retains the open-read cost and teacher-loss
-   host island; item 4 retains the trained-checkpoint evaluator.
-   **Reading residue:** the forced `interpret` at each binding and the word
-   boundary's treatment of digits remain visible in the
-   [6.8 plan](doc/plans/2026-09-27-item-6-8-one-attention.md); reconciliation
-   belongs with the carried operators work, not a repeat of the accepted gate.
+Remaining operators work stays with its assigned items: surface, tense,
+morphology, aspect, null and situation codes with 5.5; forgetting's truth-kind
+bias with 5; trained-checkpoint evaluation with 4; the concept-face negative
+image with 2; and the open-read/teacher-loss host island with 1. The
+[FutureWork list](doc/FutureWork.md#carried-from-the-68-1315-rounds-2026-10-04)
+retains the dynamic stop, operator renames and other deferred work. The
+[6.8 plan](doc/plans/2026-09-27-item-6-8-one-attention.md) retains the reading
+residue around forced `interpret` and digit boundaries. Historical operators
+measurements and decisions are in the accepted receipt and its predecessors.
+
 - **6.5. Independent components: identity as columns, verbs as change**
    ([spec](doc/specs/2026-09-26-independent-components.md)), after item 7
    (needs the closing writing every S as a row and §3.5's reference chain).
+   **First: magnitude as definedness**, as decided in operators plan §44;
+   its text joins this item before implementation. Direction, magnitude and
+   the reading's evidence pair remain separate.
    Today identity is bookkeeping and prediction trains only the predictor:
    `interpret` binds a word to its object by set logic outside autograd,
    `resolve_word_concept` carries a referent by rule, the inter-sentence loss
@@ -323,20 +211,15 @@ generation is expected at this stage and is recorded, not tuned away.
 - **5.5. Where and when a sentence occurred; tense, aspect, the preposition
    and surface form** ([spec](doc/specs/2026-09-30-occurrence-tense-aspect.md)),
    after item 6 and needing item 6.5's verb columns; one check-in (Alec,
-   2026-09-30). **Measured:** the clock's `.when` stamp is muxed into every
-   idea, so the chooser reads it: the same sentences parse two ways
-   depending on the clock's phase, one fact is stored as two ideas, and a
-   trained MM_xor's answers drift with the clock (max error .061 at the
-   end of training, .240 a thousand batches later). **Decided (Alec,
-   2026-09-30):** a row's `.where` and `.when` are where and when the
-   utterance occurred, and the time a sentence conceives stays in the
-   concept, carried by the verb phrase; a memory row's `.where` is its
-   document and its `.when` the sentence's index in that document, from 1
-   (documents have no order relation); percepts and concepts drop `.when`;
-   a row keeps only its start, and a state holds until a row of the same
-   content with evidence against begins (no duration, no `eternal` flag,
-   no refresh rule, no `timestamp`); documents are codes in the codebook
-   and the situation is presented in WholeSpace as identities; every text
+   2026-09-30). **Relative `.when` and address upsert moved to operators
+   landing (accepted October 7; plan §45)**:
+   source-relative `[i, i+1]`, stable document/content address keys,
+   re-witnessing and fail-loud capacity. See its
+   [receipt](doc/benchmarks/2026-10-07-operators-final-b/).
+   The 10-03 amendment keeps `.when` in percepts and concepts; the absolute
+   model clock remains in the timestamp column for recency. Remaining here:
+   documents as situation codes in content; learned before/after; tense,
+   aspect, prepositions and surface transformations. Every text
    configuration interleaves; tense and aspect are prepositions of the
    verb phrase with none written, the catalogue's compound selecting among
    the verb phrase's phases; the preposition is one operation with two
@@ -473,6 +356,9 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
+- **Operators update, final-b** (Alec accepted October 7; one landing from `cce3a4f7b`): addressed rows, bipolar meanings, centroids, priming, catalogue and two-lane repair; all standing counts 10/10, R/E zero, green sweep ([acceptance](doc/benchmarks/2026-10-07-operators-final-b/acceptance.json)).
+- `cce3a4f7b` Operators round 3a: identity by construction ([receipt](doc/benchmarks/2026-10-07-operators-round3a/README.md)).
+- `3de37eef5` Operators round 2: accepted credit repair ([receipt](doc/benchmarks/2026-10-06-operators-round2e/README.md)).
 - `73cd7b71b` Operators round 1 accepted and pushed, with WikiOracle bumped at `c9670b5` ([receipt](doc/benchmarks/2026-10-05-operators-update/README.md)).
 - `42daf96f` Item 6.8 accepted: one attention, two spaces and one index; tag `6.8-landing`; class **7/10**, reconstruction **9/10**, joint **6/10**, MM_xor **10/10**, sum **10/10**, sweep **4,917 passed / 0 failed**, zero ownership conflicts ([receipt](doc/benchmarks/2026-10-03-operators-attention/README.md)); carried work: [FutureWork](doc/FutureWork.md#carried-from-the-68-1315-rounds-2026-10-04) and the [operators update plan](doc/plans/2026-10-05-operators-update.md).
 - `bfe6a0d7` Item 6.9: the baseline of the composition mechanism (6.8 §12.1), one reconstruction/output decoder and one writer per weight; accepted class MSE .11475 and reconstruction 0/4 remain historical, with zero ownership conflicts ([closing receipt](doc/benchmarks/2026-10-03-item6-9-closing/README.md), [round history](doc/benchmarks/2026-10-03-item6-9-closing/todo-history.md)).

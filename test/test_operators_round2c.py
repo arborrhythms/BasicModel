@@ -4,19 +4,20 @@ import pytest
 import torch
 
 
-def test_interpret_both_directions_preserve_form_and_occurrence_sign_only_meaning():
+def test_interpret_both_directions_preserve_form_presence_and_both_lanes():
     from Interpret import InterpretLayer
     owner=SimpleNamespace(similarity_codebook=SimpleNamespace(mereology=SimpleNamespace(percept_event_width=2)))
     layer=InterpretLayer(conceptualSpace=owner)
-    atoms=torch.tensor([[.8,.4,.6,.2]],requires_grad=True)
-    activation=torch.tensor([-.5],requires_grad=True)
+    atoms=torch.tensor([[.8,.4,.6,0.]],requires_grad=True)
+    presence=torch.tensor([.5],requires_grad=True)
+    evidence=torch.tensor([[.2,.5]])
     event=torch.tensor([[0.,0.,0.,0.,7.,9.]])
-    expected=torch.tensor([[.4,.2,-.3,-.1,7.,9.]])
-    torch.testing.assert_close(layer(event,object_atoms=atoms,activation=activation),expected)
-    torch.testing.assert_close(layer.reverse(event,word_atoms=atoms,activation=activation),expected)
+    expected=torch.tensor([[.4,.2,.12,.3,7.,9.]])
+    torch.testing.assert_close(layer(event,object_atoms=atoms,presence=presence,evidence=evidence),expected)
+    torch.testing.assert_close(layer.reverse(event,word_atoms=atoms,presence=presence,evidence=evidence),expected)
     owner.similarity_codebook.mereology.percept_event_width=4
-    torch.testing.assert_close(layer(event,object_atoms=atoms,activation=activation),
-                              layer(event,object_atoms=atoms,activation=-activation),rtol=0,atol=0)
+    torch.testing.assert_close(layer(event,object_atoms=atoms,presence=presence,evidence=evidence),
+                              layer(event,object_atoms=atoms,presence=presence,evidence=evidence.flip(-1)),rtol=0,atol=0)
 
 
 @pytest.mark.parametrize('config',['XOR_grammar','MM_grammar'])
@@ -78,9 +79,11 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch):
         first,second=snapshots
         audit=model._last_sentence_credit
         if walk=='narrowing':
-            assert (first['activation']>0).any() and (second['activation']<0).any()
+            torch.testing.assert_close(first['activation'],second['activation'],rtol=0,atol=0)
             torch.testing.assert_close(first['root'],second['root'],rtol=0,atol=0)
-            assert all(a.polarity and not b.polarity for a,b in zip(first['meanings'],second['meanings']))
+            assert all(a.polarity and b.polarity for a,b in zip(first['meanings'],second['meanings']))
+            for a,b in zip(first['entries'],second['entries']):
+                torch.testing.assert_close(a.leaf_evidence, b.leaf_evidence.flip(-1))
             torch.testing.assert_close(audit['components'][:,0],audit['components'][:,1],rtol=0,atol=0)
             assert audit['advantage'].eq(0).all() and not audit['wins'].any()
             assert model._sentence_reader_weights.tolist()==[[1.,0.]]*4

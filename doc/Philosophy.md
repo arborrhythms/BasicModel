@@ -502,6 +502,14 @@ is "a region, everything the exclusion leaves"; it is not, it is the
 concept's own negative symbol. The image is still added to the ended idea,
 now at whatever order that idea has.
 
+*Superseded at the leaf (Alec, 2026-10-07).* The signed-span expression above
+is historical. One signless concept code now has two positively-valued
+symbols, carried in independent for and against lanes. Their magnitudes
+remain a pair from the attention walk to the stored row; no difference or
+sign is formed. Thus *both* retains both witnesses and never cancels to
+*neither*. See [two truths §1.1](specs/2026-09-16-two-truths-ideas-and-relations.md)
+and the [accepted repair](benchmarks/2026-10-07-operators-final-b/).
+
 Read against [the Gelug account above](#direct-perception-and-the-conceptual-overlay-gelug),
 this is exact. The **first moment** — the parallel prelude, percepts crossing
 nameless — is out of expectation's reach by construction: sensation is never
@@ -1551,12 +1559,13 @@ constituent meanings, while identity keeps one, the fold of forms. Identity
 from below, meaning from above, at every rung: order is a stamp on the row,
 not a space of its own.
 
-**Negation and the four corners.** With zero as uncertainty the logic over
-codes is Kleene's strong three-valued logic (Łukasiewicz shares its ∧, ∨,
-¬): conjunction the meet, disjunction the join, negation the reflection
-through the origin, which on the symbol is the exchange of its two poles. The
-code is never negated: percepts have no negation, and a concept is denied, not
-moved. Belnap's four values (1977) are the catuṣkoṭi, *is*, *is not*, *both*,
+**Negation and the four corners (amended October 7).** Evidence is a pair
+of independent nonnegative magnitudes on one signless code. The leaf carries
+`[form × presence | code × c⁺ | code × c⁻]`; `(1,0)`, `(0,1)`, `(1,1)` and
+`(0,0)` retain true, false, both and neither. Conjunction takes `(min⁺, max⁻)`,
+disjunction `(max⁺, min⁻)`, and `not` exchanges the lanes. The code is never
+negated: percepts have no negation, and a concept is denied, not moved.
+Belnap's four values (1977) are the catuṣkoṭi, *is*, *is not*, *both*,
 *neither*, with what Nāgārjuna does not supply, the algebra by which compounds
 take their corner: a bilattice whose truth order gives the connectives and
 whose knowledge order gives the gathering of evidence. Where the two part is
@@ -1567,6 +1576,12 @@ without inverse, as against `not`, which affirms the opposite and is its own
 inverse. Tetralemma for the corners, Belnap for the connectives, Nāgārjuna for
 `non`. A Boolean reading was tried the same day and withdrawn: it reads the
 unknown as a probability of one half, and Boole has no unknown.
+
+The accepted operators landing carries all four corners through composition
+and required-evidence closing; A-true and B-false stores *both*. Plan §44
+separately resolves defined absence versus ignorance through the concept's
+learned magnitude. That work is the first part of item 6.5, not part of this
+measured landing.
 
 ## Summary
 

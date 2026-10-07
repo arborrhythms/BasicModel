@@ -1,0 +1,19164 @@
+"""Core layer primitives used by BasicModel.
+
+This module mixes conventional neural-network utilities with a set of
+custom reversible, ergodic, and memory-style layers.  Most higher-level
+model construction happens in ``BasicModel.py``; this file provides the
+building blocks and the update rules they share.
+"""
+from __future__ import annotations  # allow X | Y union syntax on Python 3.9
+
+import os
+import warnings
+import collections
+import numpy as np
+import torch
+import math
+import random
+import uuid
+import hashlib
+import json
+import torch.nn as nn
+import torch.nn.functional as F
+from itertools import chain
+import torch.optim as optim
+import time
+from typing import Dict, List, Optional, Tuple
+from collections import namedtuple
+from dataclasses import dataclass, replace
+from contextlib import contextmanager
+from Meaning import ConceptualMeaning, canonical_role_payload
+from ClauseRow import ClauseRows
+from MemoryIndex import LeafCodeIndex
+from Thoughts import LevelledThoughtHistory, ThoughtRecord
+
+epsilon = 1e-7  # to avoid log(0)
+
+
+# Slope cap of every atanh chart's GRADIENT (straight-through).  The exact
+# chart ``atanh(x)`` has derivative ``1/(1-x^2)``: 5e6 at the 1e-7 clamp.
+# Operands at +-1 are ordinary (a max-law unit code, a saturated fold), and a
+# nested derivation over a long packed row compounded the derivative through
+# the grammar's lift/lower folds into NaN parameters (2026-09-12, FineWeb
+# packed rows, anomaly trace at ``SigmaLayer.compose``).  Beyond ``|x| =
+# ATANH_SLOPE_CAP_AT`` the backward uses the tangent slope there (5.3 at
+# 0.9); the forward value is unchanged (the clamp stays).
+ATANH_SLOPE_CAP_AT = 0.9
+
+
+class _BoundedAtanh(torch.autograd.Function):
+    """Exact ``atanh(clamp(x))`` forward; backward slope capped at the
+    tangent at ``ATANH_SLOPE_CAP_AT``.  A custom Function saves only ``x``
+    (the straight-through form saved the surrogate's intermediates too:
+    +17% peak memory on the production brick)."""
+
+    @staticmethod
+    def forward(ctx, x, eps, scale):
+        ctx.save_for_backward(x)
+        ctx.scale = float(scale)
+        return torch.atanh(x.clamp(-1 + eps, 1 - eps)) * ctx.scale
+
+    @staticmethod
+    def backward(ctx, grad):
+        (x,) = ctx.saved_tensors
+        x0 = ATANH_SLOPE_CAP_AT
+        cap = 1.0 / (1.0 - x0 * x0)
+        slope = (1.0 / (1.0 - x * x).clamp_min(1e-30)).clamp(max=cap)
+        return grad * (slope * ctx.scale), None, None
+
+
+class _BoundedLogMult(torch.autograd.Function):
+    """Exact ``log((1+c)/(1-c))`` with ``c = clamp(x)`` forward (the pi
+    chart, ``2*atanh``); backward slope capped at the tangent at ``x0``."""
+
+    @staticmethod
+    def forward(ctx, x, eps, x0):
+        ctx.save_for_backward(x)
+        ctx.x0 = float(x0)
+        c = x.clamp(-1 + eps, 1 - eps)
+        return torch.log((1 + c) / (1 - c))
+
+    @staticmethod
+    def backward(ctx, grad):
+        (x,) = ctx.saved_tensors
+        cap = 2.0 / (1.0 - ctx.x0 * ctx.x0)
+        slope = (2.0 / (1.0 - x * x).clamp_min(1e-30)).clamp(max=cap)
+        return grad * slope, None, None
+
+
+def bounded_atanh(x, eps=None, bounded=True):
+    """``atanh(x.clamp(-1+eps, 1-eps))`` forward; backward with the slope
+    capped at ``ATANH_SLOPE_CAP_AT`` when ``bounded`` (see the note above),
+    the exact derivative otherwise.  The grammar's fold layers (the nested
+    reduce ops) bound their backward; space-level and readout layers keep
+    the exact chart (the cap under-converged the crisp XOR fits)."""
+    eps = epsilon if eps is None else eps
+    if not bounded:
+        return torch.atanh(x.clamp(-1 + eps, 1 - eps))
+    return _BoundedAtanh.apply(x, float(eps), 1.0)
+
+# Device used by all layers.
+import util
+from util import TheXMLConfig, TheDevice
+from util import TheMessage
+from What import LTMSlot, WhatQuestion, WhatSlotOperation
+
+
+def _active_codebook_prototypes(codebook):
+    """Return a Codebook's logically selectable prefix.
+
+    Raw tensors and ordinary bases retain their full-table semantics.  The
+    duck-typed call avoids a ``Spaces`` import cycle while letting fixed-shape
+    Codebooks hide their inactive physical reserve from direct searches.
+    """
+    if codebook is None:
+        return None
+    active = getattr(codebook, "active_prototypes", None)
+    if callable(active):
+        return active()
+    get_w = getattr(codebook, "getW", None)
+    if callable(get_w):
+        return get_w()
+    return codebook if torch.is_tensor(codebook) else None
+
+
+# ---------------------------------------------------------------------------
+# Meronomy constants (MeronomySpec §3-§4; MeronomyPlan Stage 0).
+#
+# EPS_LOG is the log-floor near m = 0 for the membership folds: PiLayer2 /
+# SigmaLayer2 run on memberships m in [0, 1] through log/exp, and m = 0
+# (the bottom element, "nothing") is floored to EPS_LOG before the log so
+# the fold stays finite while remaining within tolerance of the absorber
+# laws. Distinct from the global ``epsilon`` (1e-7), which guards the
+# legacy odds/atanh charts.
+EPS_LOG = 1e-6
+
+# Default upper clamp for the contractive diagonal (d >= 1) when
+# ``stable=True`` on ContractiveInvertibleLinearLayer: in log-membership
+# space "stable" means BOUNDED AMPLIFICATION of negative log-mass --
+# the opposite regime of the legacy (eps, 1.0] clamp, which wanted
+# non-expansion of |x| in the odds chart. Config-overridable; see
+# ``meronomy_d_max_stable()``.
+D_MAX_STABLE = 4.0
+
+
+def meronomy_enabled():
+    """Resolve the ``<architecture><meronomy>`` mode knob (off | on).
+
+    The single meronomy option (MeronomyPlan §0): ``on`` binds the
+    meronymic slots to the membership kernels and enables the interface
+    factoring and the reference table. Default ``off`` — stages land
+    dark; existing model XMLs are untouched until cutover. Accepts the
+    bare element text (``<meronomy>on</meronomy>``) or the attributed
+    form (text under ``"_"`` when attributes like ``dMaxStable`` are
+    present).
+    """
+    try:
+        raw = TheXMLConfig.get("architecture.meronomy", default=None)
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return False
+    if isinstance(raw, dict):
+        raw = raw.get("_", None)
+    if raw is None:
+        return False
+    return str(raw).strip().lower() in ("on", "true", "1", "yes")
+
+
+def meronomy_d_max_stable():
+    """Resolve the stable-clamp upper bound for contractive diagonals.
+
+    Reads ``<architecture><meronomy dMaxStable="...">`` from the XML
+    config; falls back to the module default ``D_MAX_STABLE`` when the
+    key is absent, unparsable, or no config is loaded.
+    """
+    try:
+        raw = TheXMLConfig.get("architecture.meronomy.dMaxStable",
+                               default=None)
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return D_MAX_STABLE
+    if raw is None:
+        return D_MAX_STABLE
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return D_MAX_STABLE
+
+
+class Lexicon(nn.Embedding):
+    """Embedding table with projective unit-ball lookup.
+
+    Default rows are clipped to ``||w|| <= 1`` and scored by the
+    projective matmul form; ``ball=False`` keeps the legacy torus path.
+    Geometry details live in ``doc/Lexicon.md`` and ``doc/Spaces.md``.
+    """
+
+    def __init__(self, num_embeddings: int, embedding_dim: int,
+                 *, ball: bool = True,
+                 init: str = "uniform_ball",
+                 padding_idx=None, **kwargs):
+        """Initialize Lexicon; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__(num_embeddings, embedding_dim,
+                         padding_idx=padding_idx, **kwargs)
+        # ``ball=True`` (default) selects the projective unit-ball
+        # geometry. ``ball=False`` selects the LEGACY flat-torus
+        # geometry. Callers select it explicitly with ``ball=False``.
+        self.ball = bool(ball)
+        if not self.ball:
+            # LEGACY (torus): uniform draw on ``T^D = [-1, 1)^D``.
+            with torch.no_grad():
+                self.weight.copy_(
+                    Lexicon.random(self.weight.shape,
+                                   device=self.weight.device,
+                                   dtype=self.weight.dtype))
+        else:
+            self.reset_unit_ball_parameters(init=init)
+
+    # -- Unit-ball geometry --------------------------------------------------
+
+    @torch.no_grad()
+    def reset_unit_ball_parameters(self, init: str = "uniform_ball") -> None:
+        """Initialize weights on the unit ball.
+
+        ``init="uniform_ball"`` (default) draws directions uniformly on
+        the sphere and radii with the volume-correct ``r ~ U(0,1)^(1/D)``
+        so the resulting distribution is uniform on the closed unit ball.
+        ``init="small_normal"`` uses a small-stddev Gaussian projected
+        into the ball -- useful when downstream layers expect tight
+        clusters near the origin at the start of training.
+        """
+        V, D = self.weight.shape
+        if init == "uniform_ball":
+            W = torch.randn_like(self.weight)
+            W = W / W.norm(dim=-1, keepdim=True).clamp_min(1e-12)
+            radius = torch.rand(
+                V, 1,
+                device=self.weight.device,
+                dtype=self.weight.dtype,
+            ).pow(1.0 / max(D, 1))
+            self.weight.copy_(radius * W)
+        elif init == "small_normal":
+            self.weight.normal_(mean=0.0, std=0.02)
+            self.project_unit_ball_()
+        else:
+            raise ValueError(f"unknown init: {init}")
+
+    @staticmethod
+    def project_unit_ball(x: torch.Tensor, eps: float = 1e-12) -> torch.Tensor:
+        """Return ``x`` projected rowwise into the closed unit ball.
+
+        Rows with ``||x|| <= 1`` are unchanged; rows outside are scaled
+        to lie on the unit sphere.
+        """
+        norm = x.norm(dim=-1, keepdim=True).clamp_min(eps)
+        scale = torch.clamp(1.0 / norm, max=1.0)
+        return x * scale
+
+    @torch.no_grad()
+    def project_unit_ball_(self, eps: float = 1e-12) -> None:
+        """In-place rowwise projection of the embedding matrix into the
+        unit ball. Call after ``optimizer.step()``.
+        """
+        norm = self.weight.norm(dim=-1, keepdim=True).clamp_min(eps)
+        scale = torch.clamp(1.0 / norm, max=1.0)
+        self.weight.mul_(scale)
+
+    @torch.no_grad()
+    def lookup_index(self):
+        """Return ``(W_index, W_norm2)`` for unit-ball matmul lookup.
+
+        ``W_norm2`` should be refreshed after every optimizer step that
+        changes the lexicon. The lookup is
+
+            score = x @ W_index.T - 0.5 * W_norm2
+
+        See ``l2_scores`` and ``topk_l2``.
+        """
+        W_index = self.weight.contiguous()
+        W_norm2 = W_index.square().sum(dim=-1).contiguous()
+        return W_index, W_norm2
+
+    @staticmethod
+    def l2_scores(x: torch.Tensor, W_index: torch.Tensor,
+                  W_norm2: torch.Tensor) -> torch.Tensor:
+        """Compute L2-equivalent lookup scores ``x @ W.T - 0.5 * ||W||^2``.
+
+        Args:
+            x: ``[..., D]`` query.
+            W_index: ``[V, D]`` lexicon matrix.
+            W_norm2: ``[V]`` precomputed squared row norms of ``W_index``.
+
+        Returns:
+            ``[..., V]`` similarity scores; larger is closer under L2.
+        """
+        if x.shape[-1] != W_index.shape[-1]:
+            raise ValueError(
+                f"x last dim {x.shape[-1]} must equal "
+                f"W_index dim {W_index.shape[-1]}")
+        return x @ W_index.T - 0.5 * W_norm2
+
+    @staticmethod
+    def topk_l2(x: torch.Tensor, W_index: torch.Tensor,
+                W_norm2: torch.Tensor, k: int):
+        """Exact top-k nearest rows under Euclidean L2 in the unit ball.
+
+        Plain L2 (non-projective): ``w_i`` and ``-w_i`` are treated as
+        distinct points. Use ``topk_rp`` for the projective form where
+        antipodes are identified.
+
+        Returns ``(indices, dist_sq, scores)`` each shape ``(..., k)``.
+        """
+        if k <= 0:
+            raise ValueError("k must be positive")
+        V, D = W_index.shape
+        k = min(k, V)
+        original_shape = x.shape[:-1]
+        x_flat = x.reshape(-1, D)
+
+        x_norm2 = x_flat.square().sum(dim=-1, keepdim=True)
+        scores_all = x_flat @ W_index.T - 0.5 * W_norm2.unsqueeze(0)
+        scores, indices = torch.topk(scores_all, k=k, dim=-1, largest=True)
+
+        selected_w_norm2 = W_norm2[indices]
+        selected_ip = scores + 0.5 * selected_w_norm2
+        dist_sq = x_norm2 + selected_w_norm2 - 2.0 * selected_ip
+
+        out_shape = original_shape + (k,)
+        return (
+            indices.reshape(out_shape),
+            dist_sq.reshape(out_shape),
+            scores.reshape(out_shape),
+        )
+
+    # -- Projective unit-ball geometry (RP^D, default) -----------------------
+    #
+    # Distance:  d_RP^2(a, b) = min(||a-b||^2, ||a+b||^2)
+    #                        = ||a||^2 + ||b||^2 - 2 |<a, b>|
+    # Lookup:    score(x, w_i) = |<x, w_i>| - 0.5 * ||w_i||^2
+    # Pode:      pode(a, b)         = (a + b) / 2     (midpoint, attractor)
+    # W. pode:   wrapped_pode(a, b) = (a - b) / 2     (mid via -b, the
+    #                                                  negation rep of b)
+    # The projective distance is twice the smaller of |a - pode| and
+    # |a - wrapped_pode|, which is the user-facing pode/wrapped-pode
+    # framing.
+    #
+    # NOTE: the **antipode** of a single point p is the *furthest* point
+    # from p in the manifold's topology -- SBOW's balancing repulsion
+    # target. Unique on the flat torus (wrap(p + 1) per axis); on RP^D
+    # not a unique point (orthogonal hyperplane). The wrapped pode is
+    # the midpoint via -b, NOT the antipode of the regular pode.
+
+    @staticmethod
+    def rp_distance_sq(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """Projective squared distance ``min(||a-b||^2, ||a+b||^2)``.
+
+        Reduces the last dim. Range ``[0, max(||a||, ||b||)^2 * 4]``;
+        for unit-norm rows bounded above by ``2``.
+        """
+        inner_abs = (a * b).sum(dim=-1).abs()
+        return (a.square().sum(dim=-1) + b.square().sum(dim=-1)
+                - 2.0 * inner_abs)
+
+    @staticmethod
+    def rp_similarity(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """Projective similarity, larger is closer. Negation of
+        ``rp_distance_sq``; bounded above by 0 (when ``a = +/- b`` and
+        ``||a|| == ||b||``).
+        """
+        return -Lexicon.rp_distance_sq(a, b)
+
+    @staticmethod
+    def rp_pode(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """Pode of a pair: midpoint ``(a + b) / 2``.
+
+        Equidistant from ``a`` and ``b`` along the regular Euclidean
+        line segment. The projective distance from ``a`` to ``b`` is
+        ``2 * min(||a - pode||, ||a - wrapped_pode||)``.
+        """
+        return 0.5 * (a + b)
+
+    @staticmethod
+    def rp_wrapped_pode(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """Wrapped pode: midpoint via the **negation** of ``b``,
+        ``(a - b) / 2``.
+
+        On the projective unit ball this is the "go through the
+        ``+/-`` quotient" alternative midpoint. For the SBOW pair-
+        attraction gradient, comparing ``||a - pode||`` and
+        ``||a - wrapped_pode||`` selects which negation representative
+        of ``b`` the pair should converge through. (Despite the name,
+        the wrapped pode is *not* the antipode of the regular pode --
+        the antipode is the furthest point in the manifold and on
+        ``RP^D`` is not a unique point.)
+        """
+        return 0.5 * (a - b)
+
+    @staticmethod
+    def rp_closer_rep(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """Closer of ``b`` and ``-b`` to ``a``, picked per row.
+
+        Returns ``sign(<a, b>) * b``; ties (``<a, b> == 0``) resolve to
+        ``+b``. The "active negation representative" of ``b`` for
+        projective gradient calculations: positive-pair attraction
+        targets it, negative-pair repulsion pushes ``a`` away from it.
+        Distinct from the **antipode** (the manifold's furthest point
+        from ``a`` -- on ``RP^D`` an orthogonal hyperplane, not a
+        single point).
+        """
+        sign = torch.sign((a * b).sum(dim=-1, keepdim=True))
+        sign = torch.where(sign == 0, torch.ones_like(sign), sign)
+        return sign * b
+
+    @staticmethod
+    def rp_scores(x: torch.Tensor, W_index: torch.Tensor,
+                  W_norm2: torch.Tensor) -> torch.Tensor:
+        """Projective lookup scores ``|<x, w>| - 0.5 * ||w||^2``.
+
+        Argmax over V picks the same row as projective-distance
+        argmin. One matmul + elementwise abs + bias subtract.
+        """
+        if x.shape[-1] != W_index.shape[-1]:
+            raise ValueError(
+                f"x last dim {x.shape[-1]} must equal "
+                f"W_index dim {W_index.shape[-1]}")
+        return (x @ W_index.T).abs() - 0.5 * W_norm2
+
+    @staticmethod
+    def topk_rp(x: torch.Tensor, W_index: torch.Tensor,
+                W_norm2: torch.Tensor, k: int):
+        """Exact top-k nearest rows under projective distance on the
+        unit ball.
+
+        Returns ``(indices, dist_sq, scores)`` each shape ``(..., k)``.
+        ``dist_sq`` is the exact projective squared distance
+        ``||x||^2 + ||w||^2 - 2|<x, w>|``.
+        """
+        if k <= 0:
+            raise ValueError("k must be positive")
+        V, D = W_index.shape
+        k = min(k, V)
+        original_shape = x.shape[:-1]
+        x_flat = x.reshape(-1, D)
+
+        x_norm2 = x_flat.square().sum(dim=-1, keepdim=True)
+        inner = x_flat @ W_index.T
+        inner_abs_all = inner.abs()
+        scores_all = inner_abs_all - 0.5 * W_norm2.unsqueeze(0)
+        scores, indices = torch.topk(scores_all, k=k, dim=-1, largest=True)
+
+        selected_w_norm2 = W_norm2[indices]
+        selected_inner_abs = scores + 0.5 * selected_w_norm2
+        dist_sq = x_norm2 + selected_w_norm2 - 2.0 * selected_inner_abs
+
+        out_shape = original_shape + (k,)
+        return (
+            indices.reshape(out_shape),
+            dist_sq.reshape(out_shape),
+            scores.reshape(out_shape),
+        )
+
+    # -- Geometry-dispatching maintenance ------------------------------------
+
+    @torch.no_grad()
+    def normalize(self) -> None:
+        """Re-project weights onto the active manifold.
+
+        Ball geometry (``self.ball=True``, default): rowwise projection
+        so ``||w_i|| <= 1``. LEGACY torus geometry (``self.ball=False``):
+        wrap into ``[-1, 1)^D``. Idempotent in both cases.
+        """
+        if self.ball:
+            self.project_unit_ball_()
+        else:
+            # LEGACY (torus): coordinatewise wrap into the canonical cell.
+            self.weight.copy_(Lexicon.wrap(self.weight))
+
+    # ========================================================================
+    # LEGACY: torus geometry primitives ``T^D = [-1, 1)^D`` with wrapped MSE.
+    # ========================================================================
+    # The block below is the prior default geometry and is preserved only so
+    # call sites that still reach for ``Lexicon.wrap`` / ``Lexicon.delta`` /
+    # ``Lexicon.similarity`` / ``Lexicon.distance_sq`` / ``Lexicon.antipode``
+    # / ``Lexicon.inner_distance`` / ``Lexicon.outer_distance`` /
+    # ``Lexicon.random`` keep working unchanged during the transition to the
+    # projective unit ball. New code MUST use the projective primitives
+    # above (``rp_*``) or the geometry-dispatching ``normalize()``.
+    #
+    # Removal plan: when no in-tree call site references any of these names,
+    # delete this entire block and the ``torus`` branch in ``__init__`` /
+    # ``normalize``. There are no other entry points; the block is
+    # self-contained.
+    # ========================================================================
+
+    @staticmethod
+    def wrap(x: torch.Tensor) -> torch.Tensor:
+        """LEGACY (torus). Bring ``x`` into ``[-1, 1)^D``. Idempotent.
+
+        Differentiable almost everywhere; gradients flow as if wrap
+        were the identity.
+        """
+        return torch.remainder(x + 1.0, 2.0) - 1.0
+
+    @staticmethod
+    def delta(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """LEGACY (torus). Signed shortest-path per-axis displacement
+        from ``a`` to ``b``; result in ``[-1, 1)``.
+        """
+        return Lexicon.wrap(b - a)
+
+    @staticmethod
+    def distance_sq(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """LEGACY (torus). Mean squared per-axis wrap distance,
+        reduces the last dim. Range ``[0, 1]``.
+        """
+        return Lexicon.delta(a, b).square().mean(dim=-1)
+
+    @staticmethod
+    def similarity(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """LEGACY (torus). Wrapped-MSE similarity ``-distance_sq``;
+        range ``[-1, 0]``, larger is closer.
+        """
+        return -Lexicon.distance_sq(a, b)
+
+    @staticmethod
+    def inner_distance(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """LEGACY (torus). Per-axis short-way distance, range ``[0, 1]``."""
+        return Lexicon.delta(a, b).abs()
+
+    @staticmethod
+    def outer_distance(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """LEGACY (torus). Per-axis long-way distance, range ``[1, 2]``.
+        ``inner + outer == 2`` per axis.
+        """
+        return 2.0 - Lexicon.inner_distance(a, b)
+
+    @staticmethod
+    def antipode(p: torch.Tensor) -> torch.Tensor:
+        """LEGACY (torus). Per-axis ``+1 (mod 2)`` shift; the unique
+        point at maximum torus distance from ``p``.
+        """
+        return Lexicon.wrap(p + 1.0)
+
+    @staticmethod
+    def random(shape, *, device=None, dtype=torch.float32) -> torch.Tensor:
+        """LEGACY (torus). Uniform sample on ``T^D = [-1, 1)^D``.
+        Initialization for a ``torus=True`` Lexicon.
+        """
+        return torch.empty(shape, device=device, dtype=dtype).uniform_(-1.0, 1.0)
+
+
+@torch.no_grad()
+def topk_rp_chunked(
+    x: torch.Tensor,
+    W_index: torch.Tensor,
+    W_norm2: torch.Tensor,
+    k: int,
+    *,
+    chunk_size: int = 131_072,
+):
+    """Exact chunked top-k nearest lookup under projective L2 in the unit ball.
+
+    Avoids materializing a full ``(B, V)`` score matrix; scores in chunks of
+    ``chunk_size`` lexicon rows and merges per-chunk top-k results. Score
+    is ``|<x, w>| - 0.5 * ||w||^2`` (projective lookup); returned
+    ``dist_sq`` is the exact projective squared distance
+    ``||x||^2 + ||w||^2 - 2 |<x, w>|``.
+
+    Args:
+        x: ``[..., D]`` query.
+        W_index: ``[V, D]`` lexicon matrix.
+        W_norm2: ``[V]`` precomputed squared row norms of ``W_index``.
+        k: number of nearest rows to return.
+        chunk_size: rows of ``W_index`` to score per pass.
+
+    Returns:
+        ``(indices, dist_sq, scores)`` each shape ``(..., k)``.
+    """
+    if k <= 0:
+        raise ValueError("k must be positive")
+    V, D = W_index.shape
+    k = min(k, V)
+    original_shape = x.shape[:-1]
+    x_flat = x.reshape(-1, D)
+
+    best_scores = None
+    best_indices = None
+
+    for start in range(0, V, chunk_size):
+        end = min(start + chunk_size, V)
+        Wc = W_index[start:end]
+        Nc = W_norm2[start:end]
+
+        scores_c = (x_flat @ Wc.T).abs() - 0.5 * Nc.unsqueeze(0)
+
+        local_k = min(k, end - start)
+        scores_k, indices_k = torch.topk(
+            scores_c, k=local_k, dim=-1, largest=True)
+        indices_k = indices_k + start
+
+        if best_scores is None:
+            best_scores = scores_k
+            best_indices = indices_k
+        else:
+            merged_scores = torch.cat([best_scores, scores_k], dim=-1)
+            merged_indices = torch.cat([best_indices, indices_k], dim=-1)
+            best_scores, pos = torch.topk(
+                merged_scores, k=k, dim=-1, largest=True)
+            best_indices = merged_indices.gather(-1, pos)
+
+    x_norm2 = x_flat.square().sum(dim=-1, keepdim=True)
+    Wk_norm2 = W_norm2[best_indices]
+    selected_inner_abs = best_scores + 0.5 * Wk_norm2
+    dist_sq = x_norm2 + Wk_norm2 - 2.0 * selected_inner_abs
+
+    out_shape = original_shape + (k,)
+    return (
+        best_indices.reshape(out_shape),
+        dist_sq.reshape(out_shape),
+        best_scores.reshape(out_shape),
+    )
+
+
+@torch.no_grad()
+def topk_l2_chunked(
+    x: torch.Tensor,
+    W_index: torch.Tensor,
+    W_norm2: torch.Tensor,
+    k: int,
+    *,
+    chunk_size: int = 131_072,
+):
+    """Exact chunked top-k nearest lookup under plain (non-projective)
+    Euclidean L2 in the unit ball.
+
+    Avoids materializing a full ``(B, V)`` score matrix; instead scores
+    in chunks of ``chunk_size`` lexicon rows and merges per-chunk
+    top-k results. The final ``dist_sq`` is exact.
+
+    Args:
+        x: ``[..., D]`` query.
+        W_index: ``[V, D]`` lexicon matrix.
+        W_norm2: ``[V]`` precomputed squared row norms of ``W_index``.
+        k: number of nearest rows to return.
+        chunk_size: rows of ``W_index`` to score per pass.
+
+    Returns:
+        ``(indices, dist_sq, scores)`` each shape ``(..., k)``.
+    """
+    if k <= 0:
+        raise ValueError("k must be positive")
+    V, D = W_index.shape
+    k = min(k, V)
+    original_shape = x.shape[:-1]
+    x_flat = x.reshape(-1, D)
+
+    best_scores = None
+    best_indices = None
+
+    for start in range(0, V, chunk_size):
+        end = min(start + chunk_size, V)
+        Wc = W_index[start:end]
+        Nc = W_norm2[start:end]
+
+        scores_c = x_flat @ Wc.T - 0.5 * Nc.unsqueeze(0)
+
+        local_k = min(k, end - start)
+        scores_k, indices_k = torch.topk(
+            scores_c, k=local_k, dim=-1, largest=True)
+        indices_k = indices_k + start
+
+        if best_scores is None:
+            best_scores = scores_k
+            best_indices = indices_k
+        else:
+            merged_scores = torch.cat([best_scores, scores_k], dim=-1)
+            merged_indices = torch.cat([best_indices, indices_k], dim=-1)
+            best_scores, pos = torch.topk(
+                merged_scores, k=k, dim=-1, largest=True)
+            best_indices = merged_indices.gather(-1, pos)
+
+    x_norm2 = x_flat.square().sum(dim=-1, keepdim=True)
+    Wk_norm2 = W_norm2[best_indices]
+    selected_ip = best_scores + 0.5 * Wk_norm2
+    dist_sq = x_norm2 + Wk_norm2 - 2.0 * selected_ip
+
+    out_shape = original_shape + (k,)
+    return (
+        best_indices.reshape(out_shape),
+        dist_sq.reshape(out_shape),
+        best_scores.reshape(out_shape),
+    )
+
+
+#region Layers
+
+
+class Layer(nn.Module):
+    """Base class for custom layers with optional symbol/object axis swapping.
+
+    Composite layers should register their child layers in ``self.layers``
+    so that the ergodic interface (set_sigma, observe_sigma, etc.) and
+    paramUpdate are automatically forwarded to them.
+    """
+    def __init__(self, nInput, nOutput):
+        """Initialize Layer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super(Layer, self).__init__()
+        self.nInput       = nInput
+        self.nOutput      = nOutput
+        self.batch        = 0
+        self.layers       = []  # child layers; populate in subclass __init__
+
+    def freeze(self, learn=False):
+        """Freeze all params (learn=False) or unfreeze them (learn=True)."""
+        for param in self.parameters():
+            param.requires_grad = not learn
+    def getParameters(self):
+        """Return optimizable parameters owned by this module."""
+        params = [p for n, p in self.named_parameters()]
+        return params
+
+    # --- Ergodic interface: dispatched to self.layers automatically ---
+    def paramUpdate(self):
+        """In-place parameter update hook called once per training step."""
+        for layer in self.layers:
+            layer.paramUpdate()
+    def set_sigma(self, sigma):
+        """Set the exploration sigma scale on this module."""
+        for layer in self.layers:
+            layer.set_sigma(sigma)
+    def observe_sigma(self):
+        """Observe sigma.
+        
+        See class docstring for the operation contract.
+        """
+        for layer in self.layers:
+            layer.observe_sigma()
+    def sigma_to_ergodic(self):
+        """Sigma to ergodic.
+        
+        See class docstring for the operation contract.
+        """
+        for layer in self.layers:
+            layer.sigma_to_ergodic()
+
+    def Start(self):
+        """Per-sentence state reset. Cascades to child layers.
+
+        Layers with per-call state (e.g. accumulating regularizer
+        buffers) override this to clear that state. The default walks
+        self.layers.
+        """
+        for layer in self.layers:
+            if hasattr(layer, 'Start'):
+                layer.Start()
+
+    def End(self):
+        """Per-batch teardown. Counterpart to Start().
+
+        Cascades End() to child layers so any per-call scratch state
+        cleared in Start() is also released at batch completion. The
+        default walks self.layers; subclasses with additional per-call
+        caches override to drop them.
+        """
+        for layer in self.layers:
+            if hasattr(layer, 'End'):
+                layer.End()
+
+    def forward(self, x):
+        """Identity pass-through (subclasses override)."""
+        batch = x.shape[0]
+        return x
+    def reverse(self, y):
+        """Identity pass-through (subclasses override)."""
+        batch = y.shape[0]
+        # For 3D tensors, nOutput matches the last dim (embedding), not dim 1 (sequence)
+        if y.ndim == 3:
+            assert y.shape[2] == self.nOutput
+        else:
+            assert y.shape[1] == self.nOutput
+        return y
+class ErgodicLayer(Layer):
+    """Layer base class that adapts its explore/exploit balance over training.
+
+    Tracks **sigma** -- the running variance of the layer's gradient energy.
+    Sigma drives scalar bias and var that broadcast over any weight shape:
+
+        var  = sigma / (sigma + kappa)      exploration noise
+        bias = 1 - var                      weight trust
+
+    Low sigma (consistent gradient, found a minimum) -> high bias, low var.
+    High sigma (unstable gradient) -> low bias, high var.
+
+    Subclasses mix learned weights (scaled by ``bias``) with random noise
+    (scaled by ``var``) in their forward passes:
+        effective_weight = bias * W + var * noise
+
+    External control via ``set_sigma(sigma)``:
+        sigma=1: responsive exploration (low kappa)
+        sigma=0: suppress exploration (high kappa, var ~= 0)
+
+    ``ergodic=False`` (default): sigma tracking is still wired but
+    sigma_to_ergodic / paramUpdate are no-ops, keeping bias=1, var=0.
+    """
+    def __init__(self, nInput, nOutput, ergodic=False):
+        """Initialize ErgodicLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__(nInput, nOutput)
+        self.ergodic = ergodic
+
+        # --- Scalar explore/exploit (broadcasts over any weight shape) -----
+        # Start in pure-exploit mode; sigma_to_ergodic drives these after
+        # the first gradient step.
+        self.register_buffer('bias', torch.ones(1))
+        self.register_buffer('var',  torch.zeros(1))
+
+        # --- Scalar sigma: running gradient variance ----------------------
+        self.register_buffer('sigma',      torch.zeros(1))
+        self.register_buffer('sigma_mean', torch.zeros(1))
+        self.register_buffer('sigma_step', torch.tensor(0))
+        self.sigma_beta = 0.99
+        self.sigma_kappa = 0.01
+
+        self.dropoutRate = 0.0
+        # Initialize in moderate exploration mode
+        self.set_sigma(0.5)
+
+    def getParameters(self):
+        """Return learnable params (var/bias are buffers, not parameters)."""
+        return list(self.parameters())
+
+    def set_sigma(self, sigma):
+        """Control exploration meta-parameters.
+
+        sigma=1: encourage exploration (low kappa, responsive to gradient variance)
+        sigma=0: suppress exploration (high kappa, var ~= 0)
+        """
+        if sigma == 0:
+            self.sigma_kappa = 1e6
+        else:
+            self.sigma_kappa = 0.01 / sigma
+            self.sigma_beta = 0.99
+
+    @torch.no_grad()
+    def observe_sigma(self):
+        """Track gradient variance via Welford's algorithm.
+
+        Aggregates mean squared gradient energy across all weight parameters
+        into a single scalar, then updates the running mean and variance.
+        """
+        grad_energy = None
+        for name, param in self.named_parameters():
+            if param.grad is None or not param.requires_grad:
+                continue
+            if "noise" in name.lower():
+                continue
+            energy = param.grad.detach().pow(2).mean()
+            grad_energy = energy if grad_energy is None else grad_energy + energy
+        if grad_energy is None:
+            return
+        self.sigma_step += 1
+        beta = self.sigma_beta
+        delta = grad_energy - self.sigma_mean
+        self.sigma_mean.add_((1 - beta) * delta)
+        self.sigma.mul_(beta).add_((1 - beta) * delta * (grad_energy - self.sigma_mean))
+
+    @torch.no_grad()
+    def sigma_to_ergodic(self):
+        """Update scalar bias and var from sigma (gradient variance)."""
+        if not self.ergodic:
+            return
+        # One .item() call instead of two -- the value is reused below.
+        # Each .item() is a GPU->CPU sync and runs once per backward step.
+        step = self.sigma_step.item()
+        if step == 0:
+            return
+        # Bias-corrected sigma estimate
+        s = self.sigma / (1 - self.sigma_beta ** step)
+        s = s.clamp(min=0)
+        self.var.copy_((s / (s + self.sigma_kappa)).clamp(0, 0.95))
+        self.bias.copy_((1.0 - self.var).clamp(min=0.05))
+
+    def paramUpdate(self):
+        """In-place parameter update hook called once per training step."""
+        if not self.ergodic:
+            return
+        self.observe_sigma()
+        self.sigma_to_ergodic()
+class LinearLayer(ErgodicLayer):
+    """Standard linear (affine) layer.
+
+    Forward (ergodic):     y = x @ (bias*W + var*noise) [+ bias*biasWeight + var*biasNoise]
+    Forward (non-ergodic): y = x @ W [+ b]
+
+    ``bias`` and ``var`` come from the ErgodicLayer explore/exploit schedule.
+    When ergodic=False (default), noise buffers are not allocated and forward
+    uses the learned weights directly.
+    """
+    def __init__(self, nInput, nOutput, hasBias=True, naive=False, stable=False, ergodic=False):
+        """Initialize LinearLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super(LinearLayer, self).__init__(nInput, nOutput, ergodic=ergodic)
+        self.stable  = stable
+        self.hasBias = hasBias
+        if ergodic:
+            self.W = nn.Parameter(torch.eye(self.nInput, self.nOutput))
+        else:
+            self.W = nn.Parameter((2 * torch.rand(self.nInput, self.nOutput) - 1) / self.nInput)
+        if self.hasBias:
+            self.biasWeight = nn.Parameter(torch.zeros(1, nOutput))
+        if ergodic:
+            self.register_buffer('noise', torch.randn(self.nInput, self.nOutput))
+            if self.hasBias:
+                self.register_buffer('biasNoise', torch.randn(1, nOutput))
+        else:
+            self.set_sigma(0)
+
+    def resample_noise(self):
+        """Draw fresh Gaussian noise matching W shape/device. No-op if not ergodic."""
+        if self.ergodic:
+            self.noise = torch.randn(self.W.shape, device=TheDevice.get(), dtype=self.W.dtype)
+            if self.hasBias:
+                self.biasNoise = torch.randn(
+                    self.biasWeight.shape,
+                    device=TheDevice.get(),
+                    dtype=self.biasWeight.dtype,
+                )
+
+    def compute_W_current(self):
+        """Effective W for outer-product use (respects ergodic noise if active)."""
+        if self.ergodic:
+            return self.bias * self.W + self.var * self.noise
+        return self.W
+
+    def forward(self, x):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
+        if self.ergodic:
+            self.resample_noise()
+            W = self.bias * self.W + self.var * self.noise
+        else:
+            W = self.W
+        output = x @ W
+        return output
+    def forwardBias(self, x):
+        """Forward bias.
+        
+        See class docstring for the operation contract.
+        """
+        if self.hasBias:
+            if self.ergodic:
+                x = x + self.bias * self.biasWeight + self.var * self.biasNoise
+            else:
+                x = x + self.biasWeight
+        return x
+
+    def _effective_bias(self):
+        """Bias for log-space use (unconstrained)."""
+        if not self.hasBias:
+            return 0
+        if self.ergodic:
+            return self.bias * self.biasWeight + self.var * self.biasNoise
+        return self.biasWeight
+
+    @staticmethod
+    def test():
+        """Self-test; verifies the round-trip / invariant."""
+        nInput, nOutput = 3, 4
+        layer = LinearLayer(nInput=nInput, nOutput=nOutput)
+        input = torch.rand((1, nInput), device=TheDevice.get())
+        output = layer(input)
+
+        print(f"Input: {input}")
+        print(f"After forward linear: {output}")
+class NonNegativeLinearLayer(LinearLayer):
+    """LinearLayer with entry-wise non-negative W via softplus.
+
+    Applies softplus to the raw weight matrix so that all entries of the
+    effective W are non-negative.  This preserves the monotonicity property
+    of NonNegativeInvertibleLinearLayer without the LDU factorisation or
+    invertibility machinery.
+
+    Parameters are initialised so that softplus(raw) ~= 1.0 (near-identity
+    scaling), matching the NonNegativeInvertibleLinearLayer convention.
+    """
+
+    def __init__(self, nInput, nOutput, hasBias=True, naive=False, stable=False, ergodic=False):
+        """Initialize NonNegativeLinearLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__(nInput, nOutput, hasBias=hasBias, naive=naive, stable=stable, ergodic=ergodic)
+        with torch.no_grad():
+            self.W.fill_(math.log(math.e - 1))  # softplus_inverse(1.0)
+
+    def _get_W(self):
+        """Effective weight matrix, non-negative by construction."""
+        return nn.functional.softplus(self.W)
+
+    def compute_W_current(self):
+        """Compute w current.
+        
+        See class docstring for the operation contract.
+        """
+        if self.ergodic:
+            return nn.functional.softplus(self.bias * self.W + self.var * self.noise)
+        return self._get_W()
+
+    def forward(self, x):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
+        if self.ergodic:
+            self.resample_noise()
+            W = nn.functional.softplus(self.bias * self.W + self.var * self.noise)
+        else:
+            W = self._get_W()
+        return x @ W
+
+    def _effective_bias(self):
+        """Bias constrained to non-negative via softplus, matching NonNegativeInvertibleLinearLayer."""
+        if not self.hasBias:
+            return 0
+        if self.ergodic:
+            raw = self.bias * self.biasWeight + self.var * self.biasNoise
+            return F.softplus(raw)
+        return F.softplus(self.biasWeight)
+
+    def forwardBias(self, x):
+        """Forward bias.
+        
+        See class docstring for the operation contract.
+        """
+        if self.hasBias:
+            x = x + self._effective_bias()
+        return x
+class InvertibleLinearLayer(ErgodicLayer):
+    """Exactly-invertible linear layer factored as W = L @ D_embed @ U.
+
+    L is unit-lower-triangular [nInput, nInput], D is diagonal [rank],
+    U is unit-upper-triangular [nOutput, nOutput].  D_embed zero-pads D
+    into [nInput, nOutput] for rectangular cases.
+
+    Non-ergodic inverse is exact via triangular solves: W^-^1 = U^-^1 D^-^1 L^-^1.
+
+    Ergodic mode injects noise into each factor before extracting the
+    triangular structure, preserving the LDU form so the exact inverse is
+    always available -- no approximation or SVD required:
+        L_eff = I + strict_lower(raw_L + t * noise_raw_L)
+        U_eff = I + strict_upper(raw_U + t * noise_raw_U)
+        d_eff = b * d_effective + t * noise_d
+        W_eff = L_eff @ D_eff_embed @ U_eff
+
+    stable=True clamps d to [eps, 1] magnitude (sign preserved) via
+    _d_effective(), keeping W well-conditioned and invertible.
+
+    naive=False (default): sequential triangular solves, no W materialisation.
+    naive=True: materialise W_eff as a dense matrix; reverse materialises the
+    dense LDU inverse.
+    """
+    def __init__(self, nInput, nOutput, naive=False, ergodic=False,
+                 hasBias=True, stable=False):
+        """Initialize InvertibleLinearLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__(nInput, nOutput, ergodic=ergodic)
+        self.naive   = naive
+        self.hasBias = hasBias
+        self.stable  = stable
+        self.rank    = min(nInput, nOutput)
+
+        # LDU learned parameters
+        self.raw_L = nn.Parameter(torch.zeros(nInput, nInput))
+        self.d     = nn.Parameter(torch.ones(self.rank))
+        self.raw_U = nn.Parameter(torch.zeros(nOutput, nOutput))
+        if hasBias:
+            self.biasWeight = nn.Parameter(torch.zeros(1, nOutput))
+        if ergodic:
+            # Factor-level noise: perturb each LDU factor independently
+            self.register_buffer('noise_raw_L', torch.randn(nInput, nInput))
+            self.register_buffer('noise_raw_U', torch.randn(nOutput, nOutput))
+            self.register_buffer('noise_d',     torch.ones(self.rank))
+            if hasBias:
+                self.register_buffer('biasNoise', torch.randn(1, nOutput))
+
+    # --- Factor helpers ---
+    @staticmethod
+    def _stable_diagonal(d):
+        """Bound |d| away from zero, choosing the positive branch at zero.
+
+        ``sign(d) * clamp(abs(d))`` leaves an exactly zero learned, gated,
+        or noise-cancelled diagonal at zero because sign(0) == 0. That makes
+        the supposedly invertible LDU singular. Both directions must use
+        this same effective diagonal, including the ergodic path.
+        """
+        sign = torch.where(d < 0, -torch.ones_like(d), torch.ones_like(d))
+        return sign * d.abs().clamp(epsilon, 1.0)
+
+    def _L(self):
+        """Unit-lower-triangular: strict lower of raw_L + I."""
+        return torch.tril(self.raw_L, diagonal=-1) + torch.eye(
+            self.nInput, device=self.raw_L.device, dtype=self.raw_L.dtype)
+
+    def _U(self):
+        """Unit-upper-triangular: strict upper of raw_U + I."""
+        return torch.triu(self.raw_U, diagonal=1) + torch.eye(
+            self.nOutput, device=self.raw_U.device, dtype=self.raw_U.dtype)
+
+    def _d_effective(self):
+        """Return d clamped to [eps, 1] magnitude with sign preserved when
+        stable=True, else raw self.d.  Stability constraint lives here only.
+
+        When a caller has stashed a per-call ``_current_gate`` (a ``[rank]``
+        tensor of bounded multipliers, by convention in ``[-1, 1]`` via a
+        tanh reparam owned by the caller -- see LiftLayer / LowerLayer),
+        d is multiplied by it before the stable-clamp so the existing
+        clamp bounds the gated value. With ``gate=None`` (default), this
+        is a no-op and the layer behaves identically to its un-gated
+        baseline.
+        """
+        d = self.d
+        gate = getattr(self, '_current_gate', None)
+        if gate is not None:
+            d = d * gate
+        if self.stable:
+            return self._stable_diagonal(d)
+        return d
+
+    def _d_effective_for_gate(self, gate):
+        """Pure counterpart of ``_d_effective`` with an explicit gate."""
+        d = self.d if gate is None else self.d * gate
+        if self.stable:
+            return self._stable_diagonal(d)
+        return d
+
+    def _D_embed(self):
+        """Embed _d_effective() into [nInput, nOutput] rectangular diagonal."""
+        d = self._d_effective()
+        # ``D[i, i] = d[i]`` issued one MPS command per diagonal entry.  This
+        # helper is on every structured grammar operator's hot path, so the
+        # old Python loop created hundreds of tiny dispatches per sentence.
+        # Build the rank-square diagonal in one tensor operation, then pad it
+        # to the documented rectangular LDU shape.  Both routes have exactly
+        # the same gradients and zero off-diagonal entries.
+        # diag's backward returns a strided diagonal view. AOT's cond
+        # backward cannot merge that with the unselected branch's dense
+        # zero gradient. This identical diagonal construction reduces to a
+        # contiguous vector gradient in both branches.
+        square = torch.eye(self.rank, device=d.device, dtype=d.dtype) * d[None, :]
+        return F.pad(
+            square,
+            (0, int(self.nOutput) - int(self.rank),
+             0, int(self.nInput) - int(self.rank)))
+
+    # --- Noise resampling ---
+    def resample_noise(self):
+        """Resample noise.
+        
+        See class docstring for the operation contract.
+        """
+        if not self.ergodic:
+            return
+        # Mask to the entries that survive tril/triu, then unit-normalise so
+        # that var is the exact Frobenius norm of the perturbation regardless
+        # of matrix size.
+        n_L = torch.tril(torch.randn_like(self.noise_raw_L), diagonal=-1)
+        self.noise_raw_L = n_L / (n_L.norm() + 1e-8)
+
+        n_U = torch.triu(torch.randn_like(self.noise_raw_U), diagonal=1)
+        self.noise_raw_U = n_U / (n_U.norm() + 1e-8)
+
+        n_d = torch.randn_like(self.noise_d)
+        self.noise_d = n_d / (n_d.norm() + 1e-8)
+
+        if self.hasBias:
+            n_b = torch.randn_like(self.biasNoise)
+            self.biasNoise = n_b / (n_b.norm() + 1e-8)
+
+    # --- Effective ergodic factors ---
+    def _L_eff(self):
+        """L_eff = I + strict_lower(raw_L + var * noise_raw_L).
+        noise_raw_L is pre-masked to strict lower triangular and unit-normalised."""
+        raw = self.raw_L + self.var * self.noise_raw_L
+        return (torch.tril(raw, diagonal=-1)
+                + torch.eye(self.nInput, device=raw.device, dtype=raw.dtype))
+
+    def _U_eff(self):
+        """U_eff = I + strict_upper(raw_U + var * noise_raw_U).
+        noise_raw_U is pre-masked to strict upper triangular and unit-normalised."""
+        raw = self.raw_U + self.var * self.noise_raw_U
+        return (torch.triu(raw, diagonal=1)
+                + torch.eye(self.nOutput, device=raw.device, dtype=raw.dtype))
+
+    def _d_eff(self):
+        """d_eff = bias * d_effective + var * noise_d.
+        noise_d is unit-normalised so var is the exact L2 norm of the perturbation.
+        When stable=True, clamp magnitude to [eps, 1] so W_inv never blows up."""
+        d = self.bias * self._d_effective() + self.var * self.noise_d
+        if self.stable:
+            d = self._stable_diagonal(d)
+        return d
+
+    def _d_eff_for_gate(self, gate):
+        d = (
+            self.bias * self._d_effective_for_gate(gate)
+            + self.var * self.noise_d)
+        if self.stable:
+            d = self._stable_diagonal(d)
+        return d
+
+    # --- W materialisation ---
+    def compute_W(self):
+        """W = L @ D_embed @ U.  Shape [nInput, nOutput]."""
+        return self._L() @ self._D_embed() @ self._U()
+
+    def compute_Winverse(self):
+        """W^-^1 = U^-^1 @ D_embed^-^1 @ L^-^1.  Shape [nOutput, nInput].
+        Uses _d_effective() so stable=True is automatically respected."""
+        L = self._L()
+        U = self._U()
+        I_in  = torch.eye(self.nInput,  device=L.device, dtype=L.dtype)
+        I_out = torch.eye(self.nOutput, device=U.device, dtype=U.dtype)
+        L_inv = torch.linalg.solve_triangular(L, I_in,  upper=False, unitriangular=True)
+        U_inv = torch.linalg.solve_triangular(U, I_out, upper=True,  unitriangular=True)
+        d = self._d_effective()
+        D_inv = F.pad(
+            torch.diag(d.reciprocal()),
+            (0, int(self.nInput) - int(self.rank),
+             0, int(self.nOutput) - int(self.rank)))
+        return U_inv @ D_inv @ L_inv
+
+    def compute_W_current(self):
+        """Materialise W using current ergodic factors if ergodic, else clean W."""
+        if not self.ergodic:
+            return self.compute_W()
+        L = self._L_eff()
+        d = self._d_eff()
+        U = self._U_eff()
+        D = torch.zeros(self.nInput, self.nOutput, device=d.device, dtype=d.dtype)
+        for i in range(self.rank):
+            D[i, i] = d[i]
+        return L @ D @ U
+
+    def compute_Winverse_current(self):
+        """Exact inverse of compute_W_current(). Shape [nOutput, nInput]."""
+        if not self.ergodic:
+            return self.compute_Winverse()
+        L = self._L_eff()
+        d = self._d_eff()
+        U = self._U_eff()
+        I_in  = torch.eye(self.nInput,  device=L.device, dtype=L.dtype)
+        I_out = torch.eye(self.nOutput, device=U.device, dtype=U.dtype)
+        L_inv = torch.linalg.solve_triangular(L, I_in,  upper=False, unitriangular=True)
+        U_inv = torch.linalg.solve_triangular(U, I_out, upper=True,  unitriangular=True)
+        D_inv = torch.zeros(self.nOutput, self.nInput, device=d.device, dtype=d.dtype)
+        for i in range(self.rank):
+            D_inv[i, i] = 1.0 / d[i]
+        return U_inv @ D_inv @ L_inv
+
+    # --- Parameterised sequential apply / solve ---
+    def _apply_ldu(self, x, L, d, U):
+        """Apply x @ L @ D_embed(d) @ U sequentially.  d is a [rank] vector.
+        Supports arbitrary leading batch dimensions."""
+        orig_shape = x.shape
+        x = x.reshape(-1, orig_shape[-1])
+        x = x @ L
+        if self.nInput <= self.nOutput:
+            scaled = x * d
+            if self.nOutput > self.nInput:
+                pad = torch.zeros(x.shape[0], self.nOutput - self.nInput,
+                                  device=x.device, dtype=x.dtype)
+                x = torch.cat([scaled, pad], dim=-1)
+            else:
+                x = scaled
+        else:
+            # rank == nOutput here (min(nInput,nOutput)), so no zero-pad needed
+            x = x[..., :self.rank] * d
+        x = x @ U
+        out_shape = list(orig_shape); out_shape[-1] = self.nOutput
+        return x.reshape(out_shape)
+
+    def _solve_ldu(self, y, L, d, U):
+        """Solve y @ (L D U) = x exactly via triangular solves.  d is [rank].
+        Supports arbitrary leading batch dimensions."""
+        orig_shape = y.shape
+        y = y.reshape(-1, orig_shape[-1])
+        y = torch.linalg.solve_triangular(U.T, y.T, upper=False, unitriangular=True).T
+        if self.nInput <= self.nOutput:
+            # rank == nInput here (min(nInput,nOutput)), so no zero-pad needed
+            y = y[..., :self.rank] / d
+        else:
+            y = y / d
+            pad = torch.zeros(y.shape[0], self.nInput - self.rank,
+                              device=y.device, dtype=y.dtype)
+            y = torch.cat([y, pad], dim=-1)
+        y = torch.linalg.solve_triangular(L.T, y.T, upper=True, unitriangular=True).T
+        out_shape = list(orig_shape); out_shape[-1] = self.nInput
+        return y.reshape(out_shape)
+
+    def _apply_forward(self, x):
+        """Non-ergodic sequential forward using clean L, d, U."""
+        return self._apply_ldu(x, self._L(), self._d_effective(), self._U())
+
+    def _solve_reverse(self, y):
+        """Non-ergodic sequential reverse using clean L, d_effective, U."""
+        return self._solve_ldu(y, self._L(), self._d_effective(), self._U())
+
+    # --- Public matmul-free apply / solve --------------------------
+    # ``compute_W_current`` / ``compute_Winverse_current`` materialise
+    # the full ``[D, N]`` / ``[N, D]`` matrix; callers that only need
+    # ``x @ W`` or ``y @ W^-1`` against a batched RHS pay an O(n^3)
+    # build + an O(b*n^2) matmul.  These wrappers skip the build:
+    # apply_W_current runs ``x @ L @ D_embed @ U`` directly via three
+    # cheap matmuls; apply_Winverse_current runs two triangular solves
+    # plus a diagonal divide -- total cost O(b*n^2).  No dense W or
+    # W^-1 is ever materialised in either path, so transient memory
+    # stays at O(b*n) for the intermediate states.
+
+    def apply_W_current(self, x, gate=None):
+        """Return ``x @ W_current`` without materialising W.
+
+        Ergodic-aware: uses ``L_eff / d_eff / U_eff`` when
+        ``self.ergodic`` is True, else the clean factors.  Matches
+        the math of ``compute_W_current()`` but routes through the
+        per-factor matmul chain so transient memory is ``O(b*n)``
+        rather than ``O(n^2)``.
+        """
+        self._current_gate = gate
+        try:
+            if self.ergodic:
+                return self._apply_ldu(
+                    x, self._L_eff(), self._d_eff(), self._U_eff())
+            return self._apply_forward(x)
+        finally:
+            self._current_gate = None
+
+    def functional_Winverse(self, gate=None):
+        """``W^-1`` ``[nOutput, nInput]`` from the current clean factors,
+        without per-call module mutation (a ``while_loop`` body cannot stash
+        ``_current_gate``); non-ergodic factors, ``gate`` through the
+        diagonal like ``functional_forward``."""
+        L = self._L()
+        U = self._U()
+        d = self._d_effective_for_gate(gate)
+        I_in = torch.eye(self.nInput, device=L.device, dtype=L.dtype)
+        I_out = torch.eye(self.nOutput, device=U.device, dtype=U.dtype)
+        L_inv = torch.linalg.solve_triangular(L, I_in, upper=False, unitriangular=True)
+        U_inv = torch.linalg.solve_triangular(U, I_out, upper=True, unitriangular=True)
+        D_inv = F.pad(torch.diag(1.0 / d),
+                      (0, int(self.nInput) - int(self.rank),
+                       0, int(self.nOutput) - int(self.rank)))
+        return U_inv @ D_inv @ L_inv
+
+    def functional_reverse(self, y, gate=None, W_inv=None):
+        """``y @ W^-1`` without module mutation (the tied inverse of
+        ``functional_forward`` up to the bias, which the callers handle as
+        their ``reverse`` does).  ``W_inv`` may be passed precomputed by
+        ``functional_Winverse`` so a loop body does not rebuild (and its
+        backward does not save) the ``[n, n]`` factors at every step."""
+        if W_inv is None:
+            W_inv = self.functional_Winverse(gate)
+        out_shape = list(y.shape)
+        out_shape[-1] = int(self.nInput)
+        return (y.reshape(-1, int(self.nOutput)) @ W_inv).reshape(out_shape)
+
+    def apply_Winverse_current(self, y, gate=None):
+        """Return ``y @ Winverse_current`` without materialising W^-1.
+
+        Ergodic-aware mirror of ``apply_W_current``: uses two
+        triangular solves (``solve_triangular(L, ...)`` and
+        ``solve_triangular(U, ...)``) on the RHS plus a diagonal
+        divide.  Cost is ``O(b * n^2)`` and transient memory is
+        ``O(b * n)``; the legacy ``y @ compute_Winverse_current()``
+        path materialises ``L^-1`` / ``U^-1`` / ``D^-1`` (3 × ``O(n^2)``
+        scratch) and chains two ``O(n^3)`` matmuls.
+        """
+        self._current_gate = gate
+        try:
+            if self.ergodic:
+                return self._solve_ldu(
+                    y, self._L_eff(), self._d_eff(), self._U_eff())
+            return self._solve_reverse(y)
+        finally:
+            self._current_gate = None
+
+    def functional_forward(self, x, gate=None):
+        """Apply the current factors without per-call module mutation.
+
+        Recurrent higher-order operators cannot stash ``_current_gate`` or
+        resample noise on a captured module.  Their ungated path uses the
+        already-current factors and returns the same numerical transform as
+        ``forward(x)`` for non-ergodic layers.
+        """
+        L = self._L_eff() if self.ergodic else self._L()
+        U = self._U_eff() if self.ergodic else self._U()
+        d = (
+            self._d_eff_for_gate(gate) if self.ergodic
+            else self._d_effective_for_gate(gate))
+        if self.naive:
+            W = L @ F.pad(
+                # Match _D_embed's dense conditional-backward layout.
+                torch.eye(self.rank, device=d.device, dtype=d.dtype) * d[None, :],
+                (0, int(self.nOutput) - int(self.rank),
+                 0, int(self.nInput) - int(self.rank))) @ U
+            orig_shape = x.shape
+            out_shape = list(orig_shape)
+            out_shape[-1] = self.nOutput
+            y = (x.reshape(-1, self.nInput) @ W).reshape(out_shape)
+        else:
+            y = self._apply_ldu(x, L, d, U)
+        return self.forwardBias(y)
+
+    # --- Forward / Reverse ---
+    def forward(self, x, gate=None):
+        """Apply the LDU transform with optional ergodic noise injection.
+
+        Ergodic (self.ergodic=True):
+          Resamples noise at the start, then builds effective factors:
+            L_eff = I + strict_lower(raw_L + t * noise_raw_L)
+            U_eff = I + strict_upper(raw_U + t * noise_raw_U)
+            d_eff = b * d_effective + t * noise_d
+          naive=True: materialise W_eff = L_eff D_eff U_eff, dense matmul.
+          naive=False: sequential triangular solves via _apply_ldu.
+          Stored noise buffers remain unchanged after this call so that
+          reverse() can reconstruct the identical factors exactly.
+
+        Non-ergodic (self.ergodic=False):
+          naive=True: materialise W = L D U, dense matmul.
+          naive=False: sequential triangular solves.
+
+        ``gate``: optional ``[rank]`` tensor multiplied into the diagonal
+        ``d`` before the stable-clamp. Used by rule layers (LiftLayer /
+        LowerLayer) to select a low-rank slice of the operator. With
+        ``gate=None`` (default), behavior is unchanged from the un-gated
+        baseline.
+        """
+        if not self.ergodic:
+            return self.functional_forward(x, gate=gate)
+        self._current_gate = gate
+        try:
+            if self.ergodic:
+                self.resample_noise()
+            if self.naive:
+                W = self.compute_W_current()
+                orig_shape = x.shape
+                out_shape = list(orig_shape); out_shape[-1] = self.nOutput
+                y = (x.reshape(-1, self.nInput) @ W).reshape(out_shape)
+            else:
+                if self.ergodic:
+                    y = self._apply_ldu(x, self._L_eff(), self._d_eff(), self._U_eff())
+                else:
+                    y = self._apply_forward(x)
+            y = self.forwardBias(y)
+            return y
+        finally:
+            self._current_gate = None
+    def _effective_bias(self):
+        """Bias value for external use (e.g. PiLayer logit mode)."""
+        if not self.hasBias:
+            return 0
+        if self.ergodic:
+            return self.bias * self.biasWeight + self.var * self.biasNoise
+        return self.biasWeight
+
+    def forwardBias(self, x):
+        """Forward bias.
+        
+        See class docstring for the operation contract.
+        """
+        if self.hasBias:
+            if self.ergodic:
+                x = x + self.bias * self.biasWeight + self.var * self.biasNoise
+            else:
+                x = x + self.biasWeight
+        return x
+    def forwardBiasInterleaved(self, x):
+        """Forward bias interleaved.
+        
+        See class docstring for the operation contract.
+        """
+        if self.hasBias:
+            # [..., 2*S, nOut]: pairs along dim=-2, alternate +b/-b every row
+            signs = x.new_ones(x.shape[-2], 1)
+            signs[1::2, 0] = -1
+            bWeight = signs * self.biasWeight
+            if self.ergodic:
+                bNoise = signs * self.biasNoise
+                x = x + self.bias * bWeight + self.var * bNoise
+            else:
+                x = x + bWeight
+        return x
+
+    def reverseBias(self, y):
+        """Reverse bias.
+        
+        See class docstring for the operation contract.
+        """
+        if self.hasBias:
+            if self.ergodic:
+                y = y - (self.bias * self.biasWeight + self.var * self.biasNoise)
+            else:
+                y = y - self.biasWeight
+        return y
+
+    def reverseBiasInterleaved(self, y):
+        """Reverse bias interleaved.
+        
+        See class docstring for the operation contract.
+        """
+        if self.hasBias:
+            # [..., 2*S, nOut]: pairs along dim=-2, alternate +b/-b every row
+            signs = y.new_ones(y.shape[-2], 1)
+            signs[1::2, 0] = -1
+            bWeight = signs * self.biasWeight
+            if self.ergodic:
+                bNoise = signs * self.biasNoise
+                y = y - (self.bias * bWeight + self.var * bNoise)
+            else:
+                y = y - bWeight
+        return y
+    def reverse(self, y, gate=None):
+        """Invert the LDU transform.
+
+        Ergodic (self.ergodic=True):
+          Reconstructs L_eff, d_eff, U_eff from the noise buffers set during
+          the preceding forward() call -- no new resampling is done until after
+          the result is computed.
+          naive=False: triangular solves (exact, no materialisation).
+          naive=True: materialise the dense LDU inverse.
+          Resamples noise at end so the layer is ready for the next forward().
+
+        Non-ergodic (self.ergodic=False):
+          naive=True: materialise W_inv = U_inv D_inv L_inv, dense matmul.
+          naive=False: sequential triangular solves.
+
+        ``gate``: same gate tensor that was passed to ``forward``. The
+        gate enters via ``_d_effective`` (and the ergodic ``_d_eff``),
+        which in turn drives both ``compute_W_current`` (forward) and
+        ``compute_Winverse_current`` (reverse), so the inverse uses
+        ``1/(d * gate)`` automatically -- no separate gate-aware-reverse
+        code path. With ``gate=None``, behavior is unchanged.
+        """
+        self._current_gate = gate
+        try:
+            y = self.reverseBias(y)
+            if self.naive:
+                W_inv = self.compute_Winverse_current()
+                orig_shape = y.shape
+                out_shape = list(orig_shape); out_shape[-1] = self.nInput
+                result = (y.reshape(-1, self.nOutput) @ W_inv).reshape(out_shape)
+            else:
+                if self.ergodic:
+                    result = self._solve_ldu(y, self._L_eff(), self._d_eff(), self._U_eff())
+                else:
+                    result = self._solve_reverse(y)
+            if self.ergodic:
+                self.resample_noise()
+            return result
+        finally:
+            self._current_gate = None
+
+    @staticmethod
+    def test():
+        """Self-test; verifies the round-trip / invariant."""
+        torch.manual_seed(42)
+        device = TheDevice.get()
+        nInput, nOutput = 7, 11
+
+        # Non-ergodic roundtrip (expand)
+        layer = InvertibleLinearLayer(nInput=nInput, nOutput=nOutput, hasBias=False)
+        layer.set_sigma(0)
+        x = torch.randn(5, nInput, device=device)
+        y = layer.forward(x)
+        x_rec = layer.reverse(y)
+        err = torch.norm(x - x_rec) / torch.norm(x)
+        assert err < 1e-4, f"roundtrip error: {err:.2e}"
+        print(f"InvertibleLinearLayer roundtrip: err={err:.2e} OK")
+
+        # With bias
+        layer2 = InvertibleLinearLayer(nInput=nInput, nOutput=nOutput, hasBias=True)
+        layer2.set_sigma(0)
+        y2 = layer2.forward(x)
+        x_rec2 = layer2.reverse(y2)
+        err2 = torch.norm(x - x_rec2) / torch.norm(x)
+        assert err2 < 1e-4, f"bias roundtrip error: {err2:.2e}"
+        print(f"InvertibleLinearLayer bias roundtrip: err={err2:.2e} OK")
+
+        # Square W @ W_inv = I
+        layer3 = InvertibleLinearLayer(nInput=5, nOutput=5, hasBias=False)
+        layer3.set_sigma(0)
+        W = layer3.compute_W(); W_inv = layer3.compute_Winverse()
+        id_err = torch.norm(W @ W_inv - torch.eye(5, device=W.device))
+        assert id_err < 1e-4, f"W@W_inv identity err: {id_err:.2e}"
+        print(f"InvertibleLinearLayer W@W_inv identity: err={id_err:.2e} OK")
+
+        # Ergodic roundtrip (factor-level noise -> exact inverse)
+        elayer = InvertibleLinearLayer(nInput=5, nOutput=5, ergodic=True, stable=True)
+        with torch.no_grad():
+            elayer.var.fill_(0.2)
+            elayer.bias.fill_(0.8)
+        x3 = torch.randn(4, 5, device=device)
+        y3 = elayer.forward(x3)
+        x_rec3 = elayer.reverse(y3)
+        err3 = torch.norm(x3 - x_rec3) / torch.norm(x3)
+        assert err3 < 1e-4, f"ergodic roundtrip error: {err3:.2e}"
+        print(f"InvertibleLinearLayer ergodic roundtrip: err={err3:.2e} OK")
+
+        print("All InvertibleLinearLayer tests passed!")
+
+
+class LDUReadout(ErgodicLayer):
+    """The forward LDU projection with only output-relevant factor entries.
+
+    For rank r=min(nInput,nOutput), x @ L @ D_embed @ U is exactly
+    (x @ L[:, :r] * d) @ U[:r, :]. The remaining factor entries cannot
+    influence an output or its gradient. Keep these rectangular factors so
+    a long generated surface does not allocate an input-width square matrix.
+    This answer readout preserves every input coordinate; it is not an input
+    reconstruction inverse. Existing inverse-capable layers keep their layout.
+    """
+
+    def __init__(self, nInput, nOutput, hasBias=True):
+        super().__init__(nInput, nOutput, ergodic=False)
+        self.rank = min(nInput, nOutput)
+        self.hasBias = hasBias
+        self.raw_L = nn.Parameter(torch.zeros(nInput, self.rank))
+        self.d = nn.Parameter(torch.ones(self.rank))
+        self.raw_U = nn.Parameter(torch.zeros(self.rank, nOutput))
+        # A pole-only exclusion can leave an occupied, silent leading role.
+        # A truncated identity would then hide every later role until training.
+        # Fold the remaining input coordinates into the initial readout, with
+        # unit-norm columns and no RNG consumption. Saved factors still load
+        # verbatim; this only initializes a new answer reader.
+        if self.rank and nInput > self.rank:
+            rows = torch.arange(self.rank, nInput, device=self.raw_L.device)
+            columns = rows.remainder(self.rank)
+            with torch.no_grad():
+                self.raw_L[rows, columns] = 1.
+                counts = (nInput + self.rank - 1 - torch.arange(
+                    self.rank, device=self.d.device)) // self.rank
+                self.d.copy_(counts.to(self.d).rsqrt())
+        if hasBias:
+            self.biasWeight = nn.Parameter(torch.zeros(1, nOutput))
+        self.register_buffer("_readout_format", torch.tensor(1, dtype=torch.int64))
+
+    def forward(self, x):
+        lower = torch.tril(self.raw_L, diagonal=-1) + torch.eye(
+            self.nInput, self.rank, device=x.device, dtype=x.dtype)
+        upper = torch.triu(self.raw_U, diagonal=1) + torch.eye(
+            self.rank, self.nOutput, device=x.device, dtype=x.dtype)
+        result = ((x @ lower) * self.d) @ upper
+        return result + self.biasWeight if self.hasBias else result
+
+    def reverse(self, y):
+        raise NotImplementedError("LDUReadout is an output projection, not a reconstruction inverse")
+
+
+class ConceptualCombine(Layer):
+    r"""Square, exactly-invertible 2-STREAM conceptual bind (C-10).
+
+    Asymmetric-vq plan sec.5 (rev. 2026-06-09; slot geometry corrected
+    2026-06-10): a concept is the REVERSIBLE BIND of its perceptual form
+    (PS) and symbolic form (WS). The two streams are stacked along the
+    VECTOR axis -- ``N`` slots each, ``2N`` total -- and ONE cascade runs
+    over the flattened ``2N * D`` slab (``16 * nDim`` for the production
+    parallel config: ``2^14`` exactly, zero pad), so the bind mixes ACROSS
+    slots, not merely within each position. Wraps an
+    :class:`InvertibleLinearLayer` (the dense LDU, ``full`` / ``last``) or
+    the base :class:`GrammarLayer` butterfly cascade (``butterfly``)::
+
+        CS_t = ILL_t( stack[ PS_t ; WS_t ] )        # forward bind
+        [ PS_t ; WS_t ] = ILL_t^{-1}( CS_t )        # exact reverse
+
+    with ``PS_t, WS_t`` of shape ``[..., N, D]`` (the FULL muxed event
+    width: the where/when band PARTICIPATES in the bind, option B -- the
+    spec's ``16 * nDim`` arithmetic is the event width, ``nDim`` being the
+    config event width). ``CS_t`` is the
+    WHOLE mixed bind, flattened (``[..., M]``, ``M = next_pow2(2N*D)``);
+    the PS / WS VIEWS are its slot-halves -- ``views(CS)[0] ==``
+    vectors ``0..N-1``, ``views(CS)[1] ==`` vectors ``N..2N-1`` -- exactly
+    the row-windows a Phase-5/6 ``.active`` index view can express. There
+    is NO augment and NO carrier/augment split. This retires the 3-stream
+    design's pathologies at the source (doc/plans/2026-06-09-asymmetric-
+    vq-symbolic-ws.md sec.5):
+
+      * **contraction gone** -- nothing is shed to an augment; the carrier
+        holds the full bind, so there is no rank bottleneck and no
+        per-stage scale collapse (the old design read the carrier from the
+        ps-slot only -- 1/3 rank -- bleeding 2/3 to the augment per stage);
+      * **exact inversion, no augment threading** -- the layer is a true
+        bijection on its operating width, so ``CS -> (PS, WS)`` is exact by
+        construction; the whole augment-pairing reverse is deleted
+        (``reverse_dropped`` retired with it);
+      * **right semantics** -- the mix of the three alphas is ABSORBED into
+        the learned weights; the carrier is the bind, not a slice.
+
+    The bind is kept PURELY LINEAR: a saturating squash inside the combine
+    would break exact inversion; PS/WS arrive already bounded (codebook /
+    fold), norm-carried through the layer (the +-1 OPERATING RANGE is an
+    input contract, not a tanh).
+
+    The span is selected by the global ``<sigmaPi>`` knob via
+    :meth:`Spaces.Space.sigma_pi_mode` (``last`` | ``butterfly`` | ``full``),
+    matching the PS.Pi / WS.Sigma construction in Spaces.py so behaviour is
+    consistent across the codebase:
+
+      * ``full``      -- ONE dense LDU over the whole ``[..., 2D]`` slab
+                         (the wide<->deep invertible bridge).
+      * ``last``      -- per-slot square fold over the last dim; for this
+                         per-position bind the slot IS the ``2D`` content
+                         vector, so it is the same single dense LDU as
+                         ``full`` (no cross-position flatten).
+      * ``butterfly`` -- the O(M log M) cross-element 2x2-LDU cascade over a
+                         POWER-OF-TWO width ``M = next_pow2(2D)``. The base
+                         GrammarLayer cascade is PURELY LINEAR: each node is a
+                         bare 2x2 LDU pair op (:meth:`GrammarLayer.
+                         _butterfly_pair_forward` /
+                         :meth:`GrammarLayer._butterfly_pair_reverse`), whose
+                         closed-form per-node inverse (sign-flip on the
+                         off-diagonals + reciprocals on the diagonals) makes
+                         the cascade an exact bijection on ``R^M`` -- there is
+                         no pi (atanh/tanh) fold. (PiLayer / SigmaLayer inject
+                         that nonlinearity via their ``forward`` / ``reverse``
+                         overrides, which the BARE GrammarLayer here never
+                         calls; ``_butterfly_pair_op`` in SigmaLayer is dead
+                         code on this path.) Sizing the layer at ``M`` (so the
+                         layer's ``N == M_total == M``) is what makes the
+                         round-trip exact: nothing is zero-padded or stripped,
+                         so the per-node bijection covers every coordinate the
+                         cascade writes into.
+
+    Unlike PiLayer/SigmaLayer this combine is a PLAIN invertible linear map
+    (no multiplicative log-domain fold): the conceptual carrier is a linear
+    mixture, so the dense path uses ``InvertibleLinearLayer`` directly and the
+    butterfly path uses the bare linear cascade.
+
+    Shape conventions (both paths): arbitrary leading batch dims ``[..., D]``
+    per stream. ``ConceptualCombine`` itself flattens all leading dims to a
+    single batch dim before calling the wrapped layer and restores them on the
+    outputs, so the butterfly path no longer relies on GrammarLayer's own
+    multi-dim flatten (which would mix the wrong axes for ``[B, T, D]``).
+
+    This is a self-contained layer; wiring into the Models forward path is a
+    later task.
+    """
+
+    def __init__(self, content_dim, n_vectors=1, naive=False,
+                 sigma_pi_mode="full", hasBias=True, ergodic=False,
+                 n_streams=2, nonlinear=False):
+        """Build the per-stage square 2-stream slot bind.
+
+        Args:
+            content_dim: ``D`` -- the per-vector width: the FULL muxed
+                event width (``cs.muxedSize`` == the config ``nDim``), so
+                the where/when band participates in the bind (option B).
+            n_vectors: ``N`` -- the per-stream slot count. The streams
+                stack to ``2N`` vectors and the wrapped layer is square
+                over ``M = next_pow2(2 * N * D)`` (``== 2ND`` when that is
+                a power of two -- the production 16*1024 = 2^14 case).
+            naive: forwarded to ``InvertibleLinearLayer`` (dense path only);
+                ``naive=False`` routes reverse through the exact structured
+                ``_solve_ldu`` (the design's required path -- do NOT use
+                ``naive=True`` / pinv).
+            sigma_pi_mode: the global ``<sigmaPi>`` span; one of
+                ``last`` | ``butterfly`` | ``full`` (legacy ``<butterfly>``
+                boolean accepted). Normalised via ``Space.sigma_pi_mode``.
+            hasBias: forwarded to the dense ``InvertibleLinearLayer``. The
+                butterfly cascade is bias-free by construction.
+            ergodic: forwarded to the dense ``InvertibleLinearLayer`` (noise
+                injection preserving the exact LDU inverse). Ignored by the
+                butterfly path (the base cascade has no ergodic mode).
+        """
+        D = int(content_dim)
+        Nv = int(n_vectors)
+        if D < 1 or Nv < 1:
+            raise ValueError(
+                f"ConceptualCombine: content_dim and n_vectors must be "
+                f">= 1; got D={D}, N={Nv}")
+        S = int(n_streams)
+        if S < 2:
+            raise ValueError(
+                f"ConceptualCombine: n_streams must be >= 2; got {S}")
+        N = S * Nv * D
+        super().__init__(N, N)
+        self.content_dim = D
+        self.n_vectors = Nv
+        self.n_streams = S
+        # nonlinear: saturate the bound concept onto the unit ball (+-1) with a
+        # tanh fold (forward) + atanh (reverse). The linear bind alone is a GLM
+        # over the per-stream inputs and cannot represent a non-separable
+        # function (e.g. XOR); the tanh at concept formation supplies the joint
+        # nonlinearity, and atanh keeps the map an exact bijection.
+        self.nonlinear = bool(nonlinear)
+        self.combine_dim = N  # flattened S*N*D stack [stream0-slots ; stream1 ; ...]
+
+        # Normalise the <sigmaPi> span the same way the spaces do; a lazy
+        # import keeps Layers.py free of a Spaces import cycle (Spaces
+        # imports Layers). Fall back to the documented enum if Spaces is
+        # unavailable at construction time.
+        try:
+            from Spaces import Space
+            mode = Space.sigma_pi_mode(sigma_pi_mode)
+        except Exception:
+            if isinstance(sigma_pi_mode, bool):
+                mode = "butterfly" if sigma_pi_mode else "last"
+            elif sigma_pi_mode is None:
+                mode = "last"
+            else:
+                v = str(sigma_pi_mode).strip().lower()
+                if v in ("last", "butterfly", "full"):
+                    mode = v
+                elif v in ("true", "1"):
+                    mode = "butterfly"
+                elif v in ("false", "0", ""):
+                    mode = "last"
+                else:
+                    raise ValueError(
+                        "ConceptualCombine: sigma_pi_mode must be "
+                        f"last|butterfly|full; got {sigma_pi_mode!r}")
+        self.sigma_pi_mode = mode
+
+        if mode == "butterfly":
+            # Cross-element linear 2x2-LDU cascade over the WHOLE flattened
+            # 2N*D stack -- the bind mixes across slots, the same
+            # cross-position reach PS.sigma / WS.pi get from their
+            # flattened cascades. The base GrammarLayer cascade is
+            # plain-linear and exactly invertible (closed-form per-node
+            # inverse); no pi (atanh/tanh) fold.
+            #
+            # CRITICAL: size the cascade at M = next power of two >= 2N*D,
+            # NOT at 2N*D. The GrammarLayer butterfly cascade structurally
+            # runs over next_pow2(N) and, if N is not itself a power of
+            # two, _butterfly_flatten zero-pads up to that width while
+            # _butterfly_unflatten strips back down to N -- discarding the
+            # coords the cascade wrote into the padded tail, which the
+            # zero-re-padding reverse cannot recover (round-trip error at
+            # non-identity weights). By constructing the layer with
+            # N == M (a power of two) the layer's N == M_total == M, so
+            # NOTHING is padded or stripped and the cascade is an exact
+            # bijection on the full R^M. ConceptualCombine owns the
+            # 2ND->M zero-pad (forward) and the M->2ND read-back (reverse)
+            # itself. For the production parallel config (N=8, D=1024)
+            # M == 16384 == 2^14 exactly: zero pad, zero waste.
+            M = 1 << ((N - 1).bit_length())  # next pow2 >= 2ND
+            self.combine_padded = M          # cascade operating width
+            self.layer = GrammarLayer(M, M, butterfly=True, N=M)
+        else:
+            # "full" and "last": a single dense LDU over the whole
+            # flattened 2N*D stack (per-position and flattened coincide
+            # once the stack is flattened), so both map to one
+            # InvertibleLinearLayer. Square, no padding. Practical only
+            # at small test widths -- production uses butterfly.
+            self.combine_padded = N
+            self.layer = InvertibleLinearLayer(
+                N, N, naive=naive, ergodic=ergodic,
+                hasBias=hasBias, stable=True)
+        # The carrier IS the full bind: the layer's operating width.
+        self.carrier_dim = self.combine_padded
+        self.layers.append(self.layer)
+        # The CORPUS CALLOSUM (Alec, 2026-06-10): when CS glues the bind's
+        # two views for operation (until OutputSpace accepts both views as
+        # two subspaces), the halves are literally STACKED along the vector
+        # axis (2N vectors) and glued by a learned [2N, N] matrix over the
+        # SLOT axis (channel-preserving). Initialised to AVERAGING
+        # (0.5 * [I_N ; I_N]) so the glue starts as the balanced mix of the
+        # two hemispheres and learns its own routing from there. Tiny
+        # parameter cost (2N*N scalars; 128 for the production 16x8).
+        _cal = torch.zeros(S * Nv, Nv)
+        _eye = torch.eye(Nv)
+        for _s in range(S):                       # averaging init: (1/S) I per stream
+            _cal[_s * Nv:(_s + 1) * Nv, :] = (1.0 / S) * _eye
+        self.callosum = nn.Parameter(_cal)
+
+    def _combine(self, *streams):
+        """Stack the ``n_streams`` ``[..., N, D]`` streams along the VECTOR axis
+        into ``[..., S*N, D]`` (order: stream 0, 1, ...; the 2-stream case is
+        ``[ps-slots ; ws-slots]``)."""
+        return torch.cat(streams, dim=-2)
+
+    def _split_streams(self, x):
+        """Split ``[..., S*N, D]`` into ``n_streams`` slices each ``[..., N, D]``
+        (2-stream case returns ``(ps, ws)``)."""
+        Nv = self.n_vectors
+        return tuple(x[..., s * Nv:(s + 1) * Nv, :]
+                     for s in range(self.n_streams))
+
+    def views(self, carrier):
+        """The PS / WS views of a bind: its slot-halves.
+
+        ``carrier`` is the ``[..., M]`` flat bind ``forward`` returned.
+        Returns ``(ps_view, ws_view)``, each ``[..., N, D]`` -- vectors
+        ``0..N-1`` and ``N..2N-1`` of the STORED mix (the row-windows a
+        Phase-5/6 ``.active`` index view expresses; NOT the inverse's
+        halves, so a consumer of the views keeps the bind in its gradient
+        path).
+        """
+        leading = tuple(carrier.shape[:-1])
+        body = carrier[..., :self.combine_dim].reshape(
+            *leading, self.n_streams * self.n_vectors, self.content_dim)
+        return tuple(v.contiguous() for v in self._split_streams(body))
+
+    def glue(self, carrier):
+        """The corpus-callosum glue: the STACKED views reduced to N vectors.
+
+        Reads the bind's ``[..., 2N, D]`` stack (both views, literally
+        stacked) and applies the learned ``[2N, N]`` callosum over the
+        slot axis: ``out[..., n, :] = sum_k callosum[k, n] *
+        stack[..., k, :]``. Channel-preserving; init = averaging the two
+        hemispheres. This is the head-facing N-vector operation event
+        until OutputSpace accepts both views directly.
+        """
+        leading = tuple(carrier.shape[:-1])
+        stack = carrier[..., :self.combine_dim].reshape(
+            *leading, self.n_streams * self.n_vectors, self.content_dim)
+        # [..., S*N, D] x [S*N, N] -> [..., N, D] over the slot axis.
+        glued = torch.einsum("...kd,kn->...nd", stack, self.callosum)
+        return glued.contiguous()
+
+    @staticmethod
+    def _flatten_leading(x):
+        """Flatten all leading dims to a single batch dim.
+
+        ``[..., W] -> ([B', W], leading_shape)`` where ``B'`` is the
+        product of the leading dims. The combine owns this flatten (rather
+        than delegating to GrammarLayer's multi-dim flatten, which would
+        mix the wrong axes for ``[B, T, D]`` inputs) so the wrapped layer
+        always sees a clean ``[B', W]`` matrix.
+        """
+        leading = tuple(x.shape[:-1])
+        return x.reshape(-1, x.shape[-1]), leading
+
+    def forward(self, *streams):
+        """The bind: ``CS = layer(flatten(stack[stream0 ; stream1 ; ...]))``.
+
+        Stacks the ``n_streams`` ``[..., N, D]`` streams along the vector axis
+        into ``[..., S*N, D]``, flattens the trailing ``(S*N, D)`` into ``S*N*D``
+        (and all leading dims to a single batch dim), zero-pads
+        ``S*N*D -> M`` (the operating width; empty for the production
+        ``16*1024 = 2^14`` case), applies the wrapped invertible layer, and
+        restores the leading dims.
+
+        Returns the FULL ``[..., M]`` flat carrier ``CS`` -- the whole
+        mixed bind. There is no augment: the carrier and the bind are the
+        same tensor, which is what makes :meth:`reverse` an exact inversion
+        with nothing threaded alongside. Use :meth:`views` for the
+        ``[..., N, D]`` PS / WS slot-half windows.
+        """
+        x = self._combine(*streams)                # [..., S*N, D]
+        leading = tuple(x.shape[:-2])
+        flat = x.reshape(-1, self.combine_dim)     # [B', S*N*D]
+        if self.combine_padded > self.combine_dim:
+            pad = flat.new_zeros(
+                flat.shape[0], self.combine_padded - self.combine_dim)
+            flat = torch.cat([flat, pad], dim=-1)  # [B', M]
+        out = self.layer.forward(flat)             # [B', M]
+        if self.nonlinear:
+            # Concepts live on the unit ball (+-1): saturate the bind.
+            # ``reverse`` applies atanh so the map stays an exact bijection.
+            out = torch.tanh(out)
+        # A5 fullgraph fix (kept from the 3-stream design): force a
+        # materialised, non-aliasing output so no view of a padded
+        # intermediate escapes the forward (AOT autograd's output-alias
+        # epilogue chokes on views whose recorded base width differs from
+        # the runtime base).
+        return out.contiguous().reshape(*leading, self.carrier_dim)
+
+    def reverse(self, carrier):
+        """Exact reverse: ``[ps ; ws] = layer^{-1}(CS)``.
+
+        Flattens leading dims, applies the layer's exact structured inverse
+        (dense ``naive=False`` -> ``_solve_ldu``; butterfly -> the per-node
+        closed-form pair reverse), reads back the first ``2N*D`` coords
+        (the ``M - 2N*D`` tail is the recovered zero-pad, ~0), un-flattens
+        to ``[..., 2N, D]``, and splits into ``(ps, ws)`` each
+        ``[..., N, D]``. Exact to the solve / cascade tolerance -- by
+        construction, with NOTHING threaded: the carrier IS the whole bind.
+        """
+        flat, leading = self._flatten_leading(carrier)  # [B', M]
+        if self.nonlinear:
+            # Invert the forward tanh: atanh(tanh(z)) == z. Clamp just inside
+            # (-1, 1) so saturated coords don't map to +-inf (matches the
+            # forward tanh().clamp() contract used elsewhere).
+            flat = bounded_atanh(flat, 1e-6, bounded=False)
+        x = self.layer.reverse(flat)                    # [B', M]
+        body = x[..., :self.combine_dim].reshape(
+            *leading, self.n_streams * self.n_vectors, self.content_dim)
+        return tuple(v.contiguous() for v in self._split_streams(body))
+
+
+class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
+    """InvertibleLinearLayer whose W = L @ D @ U is entry-wise non-negative.
+
+    Applies softplus to off-diagonal entries of L and U, and to the
+    diagonal d, so that all factors are non-negative.  Since the product
+    of non-negative matrices is non-negative, W >= 0 by construction.
+
+    The exact LDU inverse (triangular solves) is still available -- the
+    inverse of a non-negative W is not itself non-negative, but that's
+    fine since only the forward W needs the constraint.
+
+    Parameters are initialised so that softplus(raw) starts near the
+    identity: raw_L, raw_U off-diagonals at -5 (softplus(-5) ~ 0.007),
+    d at softplus_inverse(1) ~ 0.541.
+    """
+
+    def __init__(self, nInput, nOutput, naive=False, ergodic=False,
+                 hasBias=True, stable=False):
+        """Initialize NonNegativeInvertibleLinearLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__(nInput, nOutput, naive=naive, ergodic=ergodic,
+                         hasBias=hasBias, stable=stable)
+        # Re-initialise so softplus(raw) gives near-identity W.
+        with torch.no_grad():
+            # softplus(-5) ~ 0.007 ~= 0 for off-diagonals
+            self.raw_L.fill_(-5.0)
+            self.raw_U.fill_(-5.0)
+            # softplus(0.5414) ~ 1.0 for diagonal
+            self.d.fill_(math.log(math.e - 1))  # softplus_inverse(1.0)
+
+    # --- Non-negative factor helpers ---
+    def _L(self):
+        """Unit-lower-triangular with non-negative off-diagonals."""
+        off = torch.tril(nn.functional.softplus(self.raw_L), diagonal=-1)
+        return off + torch.eye(self.nInput, device=self.raw_L.device, dtype=self.raw_L.dtype)
+
+    def _U(self):
+        """Unit-upper-triangular with non-negative off-diagonals."""
+        off = torch.triu(nn.functional.softplus(self.raw_U), diagonal=1)
+        return off + torch.eye(self.nOutput, device=self.raw_U.device, dtype=self.raw_U.dtype)
+
+    def _d_effective(self):
+        """Strictly positive diagonal via softplus."""
+        d = nn.functional.softplus(self.d)
+        gate = getattr(self, '_current_gate', None)
+        if gate is not None:
+            d = d * gate
+        if self.stable:
+            d = d.clamp(epsilon, 1.0)
+        return d
+
+    def _d_effective_for_gate(self, gate):
+        d = nn.functional.softplus(self.d)
+        if gate is not None:
+            d = d * gate
+        if self.stable:
+            d = d.clamp(epsilon, 1.0)
+        return d
+
+    # --- Ergodic overrides ---
+    def _L_eff(self):
+        """Ergodic L with non-negative off-diagonals."""
+        raw = self.raw_L + self.var * self.noise_raw_L
+        off = torch.tril(nn.functional.softplus(raw), diagonal=-1)
+        return off + torch.eye(self.nInput, device=raw.device, dtype=raw.dtype)
+
+    def _U_eff(self):
+        """Ergodic U with non-negative off-diagonals."""
+        raw = self.raw_U + self.var * self.noise_raw_U
+        off = torch.triu(nn.functional.softplus(raw), diagonal=1)
+        return off + torch.eye(self.nOutput, device=raw.device, dtype=raw.dtype)
+
+    def _d_eff(self):
+        """Ergodic d, strictly positive via softplus."""
+        d_base = nn.functional.softplus(self.d)
+        d = self.bias * d_base + self.var * self.noise_d
+        d = nn.functional.softplus(d)  # ensure positive after noise
+        gate = getattr(self, '_current_gate', None)
+        if gate is not None:
+            d = d * gate
+        if self.stable:
+            d = d.clamp(epsilon, 1.0)
+        return d
+
+    def _d_eff_for_gate(self, gate):
+        d_base = nn.functional.softplus(self.d)
+        d = self.bias * d_base + self.var * self.noise_d
+        d = nn.functional.softplus(d)
+        if gate is not None:
+            d = d * gate
+        if self.stable:
+            d = d.clamp(epsilon, 1.0)
+        return d
+
+
+    # _effective_bias, forwardBias, reverseBias inherited from
+    # InvertibleLinearLayer -- no constraint needed with symmetric
+    # log domain (-inf, +inf).
+
+
+class ContractiveInvertibleLinearLayer(NonNegativeInvertibleLinearLayer):
+    r"""Non-negative LDU layer under the meronymic weight law
+    (MeronomySpec §4; MeronomyPlan Stage 1).
+
+    A NEW class beside :class:`NonNegativeInvertibleLinearLayer`, not a
+    modification of it -- legacy layers and checkpoints are untouched.
+    All constraints hold BY CONSTRUCTION (softplus reparametrization),
+    at init and after arbitrary optimizer steps (spec §10.10):
+
+        diag(W)    >= 1   d = 1 + softplus(raw); init raw = -5 => d ~ 1
+        offdiag(W) >= 0   softplus-LDU as in the parent
+        b          <= 0   b = -softplus(raw); init raw = -5 => b ~ 0
+
+    Applied to log-memberships (log m <= 0, PiLayer2), contraction is a
+    theorem of the parametrization: the diagonal amplifies negative
+    log-mass, off-diagonal mixing only deepens the part, and the bias
+    can only deepen it further -- pi(m) <= m for all m. This is the
+    load-bearing member of the meronomy design: a minted whole
+    geometrically dominates its parts at mint, not after training.
+
+    ``stable=True`` clamps d to ``[1.0, d_max]`` -- the OPPOSITE regime
+    of the parent's ``(eps, 1.0]`` clamp: in log-membership space
+    "stable" means bounded amplification of negative log-mass, not
+    non-expansion of |x| (the odds chart's concern). ``d_max`` defaults
+    to ``meronomy_d_max_stable()`` (config-overridable D_MAX_STABLE).
+
+    ``blocks=k`` declares the k-operand fold form (binary folds use
+    ``blocks=2`` with ``nInput == 2 * nOutput``): the effective weight
+    is the stack of operand blocks ``W = [W_1; ...; W_k]`` and the law
+    holds PER BLOCK -- every block diagonal ``diag(W_b) >= 1`` per row
+    (spec §4: this yields the acceptance bound pi <= min(operands)).
+    Realized inside the LDU by lifting the block-diagonal entries of L
+    (rows ``b * nOutput + i``, col ``i``, ``b >= 1``; strict lower
+    triangle, so unit-triangularity and the exact triangular-solve
+    inverse are untouched) to the same ``1 + softplus`` law as d:
+    ``W[b*D + i, i] >= L[b*D + i, i] * d_i >= 1``.
+    """
+
+    def __init__(self, nInput, nOutput, naive=False, ergodic=False,
+                 hasBias=True, stable=False, blocks=1, d_max=None):
+        """Initialize ContractiveInvertibleLinearLayer; see class docstring.
+
+        ``blocks > 1`` requires ``nInput == blocks * nOutput`` (operand
+        blocks stack along the input axis). ``d_max=None`` resolves via
+        ``meronomy_d_max_stable()`` at construction time.
+        """
+        if int(blocks) < 1:
+            raise ValueError(
+                f"ContractiveInvertibleLinearLayer: blocks must be >= 1; "
+                f"got {blocks}")
+        if int(blocks) > 1 and nInput != int(blocks) * nOutput:
+            raise ValueError(
+                f"ContractiveInvertibleLinearLayer: blocks={blocks} "
+                f"requires nInput == blocks * nOutput; got "
+                f"nInput={nInput}, nOutput={nOutput}")
+        super().__init__(nInput, nOutput, naive=naive, ergodic=ergodic,
+                         hasBias=hasBias, stable=stable)
+        self.blocks = int(blocks)
+        self.d_max = float(d_max) if d_max is not None \
+            else float(meronomy_d_max_stable())
+        with torch.no_grad():
+            # Parent fills d at softplus_inverse(1.0) for softplus(d) ~ 1;
+            # the contractive law is d = 1 + softplus(raw), so re-init the
+            # raw at -5 => d ~ 1.0067 ~ 1 (near-identity, just above it).
+            self.d.fill_(-5.0)
+            if hasBias:
+                # b = -softplus(raw); raw = -5 => b ~ -0.0067 ~ 0. The
+                # parent leaves biasWeight at zeros, which here would be
+                # b = -log(2) -- too deep for a near-identity init.
+                self.biasWeight.fill_(-5.0)
+        # +1.0 lift at the block-diagonal entries of L (see class
+        # docstring). None when blocks == 1 (unary form: no lift).
+        if self.blocks > 1:
+            lift = torch.zeros(nInput, nInput)
+            for b in range(1, self.blocks):
+                for i in range(nOutput):
+                    lift[b * nOutput + i, i] = 1.0
+            self.register_buffer('_block_diag_lift', lift)
+        else:
+            self.register_buffer('_block_diag_lift', None)
+        # Cached identity matrices for the unit-triangular factors.
+        # The parent materializes ``torch.eye`` on every call; under
+        # torch.export → executorch edge dialect, eye decomposes to an
+        # ``aten.arange`` whose dtype (uint16 for small ranges) the
+        # edge verifier rejects. Constant buffers trace as lifted
+        # constants instead, and skip the per-call build (non-persistent:
+        # derived data, not state).
+        self.register_buffer('_eye_in', torch.eye(nInput), persistent=False)
+        self.register_buffer('_eye_out', torch.eye(nOutput),
+                             persistent=False)
+
+    # --- Contractive factor helpers ---
+    def _L(self):
+        """Unit-lower-triangular, non-negative off-diagonals; block
+        diagonals (blocks > 1) carry the 1 + softplus(raw) >= 1 law."""
+        off = torch.tril(nn.functional.softplus(self.raw_L), diagonal=-1)
+        if self._block_diag_lift is not None:
+            off = off + self._block_diag_lift
+        return off + self._eye_in
+
+    def _U(self):
+        """Unit-upper-triangular with non-negative off-diagonals
+        (cached-identity variant of the parent's; export-safe)."""
+        off = torch.triu(nn.functional.softplus(self.raw_U), diagonal=1)
+        return off + self._eye_out
+
+    def _d_effective(self):
+        """Diagonal d = 1 + softplus(raw) >= 1; stable=True clamps to
+        [1.0, d_max] (bounded amplification of negative log-mass)."""
+        d = 1.0 + nn.functional.softplus(self.d)
+        gate = getattr(self, '_current_gate', None)
+        if gate is not None:
+            d = d * gate
+        if self.stable:
+            d = d.clamp(1.0, self.d_max)
+        return d
+
+    def _d_effective_for_gate(self, gate):
+        d = 1.0 + nn.functional.softplus(self.d)
+        if gate is not None:
+            d = d * gate
+        if self.stable:
+            d = d.clamp(1.0, self.d_max)
+        return d
+
+    # --- Ergodic overrides (noise enters raw domain; law preserved) ---
+    def _L_eff(self):
+        """Ergodic _L: perturb raw, then reapply the per-entry law."""
+        raw = self.raw_L + self.var * self.noise_raw_L
+        off = torch.tril(nn.functional.softplus(raw), diagonal=-1)
+        if self._block_diag_lift is not None:
+            off = off + self._block_diag_lift
+        return off + self._eye_in
+
+    def _U_eff(self):
+        """Ergodic _U (cached-identity variant; export-safe)."""
+        raw = self.raw_U + self.var * self.noise_raw_U
+        off = torch.triu(nn.functional.softplus(raw), diagonal=1)
+        return off + self._eye_out
+
+    def _d_eff(self):
+        """Ergodic d: noise (and the anneal bias) enter the RAW domain
+        and the ``1 + softplus`` law is applied ONCE — the ``_L_eff``
+        convention. ``bias = 1, var = 0`` therefore reproduces the
+        clean ``_d_effective`` exactly (init ~1.0067, near-identity).
+
+        Review fix 2026-06-11: the previous form softplused ``self.d``
+        before the ergodic mix and then re-softplused, inflating the
+        init diagonal to ~1.697 — ergodic meronymy folds started far
+        more contractive than the documented near-identity point.
+        """
+        raw = self.bias * self.d + self.var * self.noise_d
+        d = 1.0 + nn.functional.softplus(raw)
+        gate = getattr(self, '_current_gate', None)
+        if gate is not None:
+            d = d * gate
+        if self.stable:
+            d = d.clamp(1.0, self.d_max)
+        return d
+
+    def _d_eff_for_gate(self, gate):
+        raw = self.bias * self.d + self.var * self.noise_d
+        d = 1.0 + nn.functional.softplus(raw)
+        if gate is not None:
+            d = d * gate
+        if self.stable:
+            d = d.clamp(1.0, self.d_max)
+        return d
+
+    # --- Non-positive bias (b <= 0 by construction) ---
+    # The legacy positive path (NonNegativeLinearLayer._effective_bias,
+    # b = +softplus) and the unconstrained invertible path (raw
+    # biasWeight) are both untouched; this class owns the third regime.
+    def _effective_bias(self):
+        """Bias b = -softplus(raw) <= 0; ergodic noise enters the raw."""
+        if not self.hasBias:
+            return 0
+        if self.ergodic:
+            raw = self.bias * self.biasWeight + self.var * self.biasNoise
+            return -nn.functional.softplus(raw)
+        return -nn.functional.softplus(self.biasWeight)
+
+    def forwardBias(self, x):
+        """Add the constrained (non-positive) bias."""
+        if self.hasBias:
+            x = x + self._effective_bias()
+        return x
+
+    def reverseBias(self, y):
+        """Subtract the constrained (non-positive) bias."""
+        if self.hasBias:
+            y = y - self._effective_bias()
+        return y
+
+
+# =====================================================================
+# SurfaceSchema -- universal surface-realization templates (UG = shared
+# templates). doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter
+# .md ("Absorb / Emit / Swap codification"). Each operator declares one
+# of five templates describing how its surface marker and operand order
+# describe operand order and marker slots. Actual spellings are surface
+# grammar leaves; the retired analyzer's per-operator spelling registry
+# has no role in realization. Two operators "share one template" when they reference the
+# same singleton -- conjunction / disjunction / isEqual are surface-
+# indiscriminable and all use T2, discriminated by the slot-0 operator
+# vector rather than by distinct schemas.
+# =====================================================================
+class SurfaceSchema:
+    """One universal surface-realization template (T1-T5).
+
+    Fields:
+      template_id      'T1'..'T5'.
+      name             human-readable template name.
+      arity            operand count the template realizes (1 or 2).
+      has_marker       True iff the template carries a learned marker slot.
+      marker_position  where the marker sits: 'PRE' / 'INFIX' / 'SUF' /
+                       'CIRCUM' / 'LEARNED' (position itself learned) /
+                       'NONE'.
+      order_mode       how operand order is realized: 'TRIVIAL' (unary),
+                       'FREE' ({id,swap} either, unrecorded), 'MARKED'
+                       ({id,swap} recorded), 'ELISION' (one survives, the
+                       other absorbed).
+      selects_op       True iff the marker may select which operator fires
+                       (e.g. and / or / copula share one INFIX schema).
+
+    Equality is by ``template_id`` so equal templates compare equal even
+    if not the same object; the canonical templates below are singletons,
+    so ``is`` also holds for operators that share a template.
+    """
+
+    __slots__ = ('template_id', 'name', 'arity', 'has_marker',
+                 'marker_position', 'order_mode', 'selects_op')
+
+    def __init__(self, template_id, name, arity, has_marker,
+                 marker_position, order_mode, selects_op=False):
+        """Store the template fields; see class docstring."""
+        self.template_id = template_id
+        self.name = name
+        self.arity = int(arity)
+        self.has_marker = bool(has_marker)
+        self.marker_position = marker_position
+        self.order_mode = order_mode
+        self.selects_op = bool(selects_op)
+
+    def __eq__(self, other):
+        return (isinstance(other, SurfaceSchema)
+                and other.template_id == self.template_id)
+
+    def __hash__(self):
+        return hash(self.template_id)
+
+    def __repr__(self):
+        return (f"SurfaceSchema({self.template_id} {self.name} "
+                f"arity={self.arity} marker={self.has_marker} "
+                f"order={self.order_mode})")
+
+
+# The five universal templates. T4 (bare juxtapose) is the default base
+# schema (GrammarLayer.surface_schema) so any operator round-trips by bare
+# concatenation even before a marker is learned.
+T1_UNARY_AFFIX = SurfaceSchema(
+    'T1', 'UNARY_AFFIX', 1, True, 'LEARNED', 'TRIVIAL')
+T2_BINARY_INFIX = SurfaceSchema(
+    'T2', 'BINARY_INFIX', 2, True, 'INFIX', 'FREE', selects_op=True)
+T3_BINARY_DIRECTIONAL = SurfaceSchema(
+    'T3', 'BINARY_DIRECTIONAL', 2, True, 'LEARNED', 'MARKED')
+T4_BINARY_JUXTAPOSE = SurfaceSchema(
+    'T4', 'BINARY_JUXTAPOSE', 2, False, 'NONE', 'MARKED')
+T5_BINARY_ELISION = SurfaceSchema(
+    'T5', 'BINARY_ELISION', 2, False, 'NONE', 'ELISION')
+
+
+class GrammarLayer(Layer):
+    """Base class for layers that implement grammar rule operators.
+
+    A GrammarLayer wraps a tensor kernel as a proper Layer with a
+    known arity, invertibility flag, and canonical rule_name. The
+    Grammar's ``rule_probability`` lookup uses ``rule_name`` to gate
+    the layer's contribution in the bottom-up forward path; the
+    SyntacticLayer dispatches the layer top-down by the same name.
+
+    Note (2026-04-30): ``PiLayer`` / ``SigmaLayer`` inherit directly
+    from GrammarLayer so the parameterized fold layers ARE Grammar
+    layers, not wrapped by separate IntersectionLayer / UnionLayer
+    adapters. The wrappers remain for
+    back-compat but are no longer the only path to attach a rule_name
+    to a parameterized fold.
+
+    ``Ops`` itself is in the process of being demoted to a private
+    math-kernel namespace; new operators should derive from
+    GrammarLayer rather than adding methods to Ops. See module-level
+    docstring for the migration direction.
+
+    Class attributes (override in subclasses):
+        rule_name:   canonical operator name as it appears in grammar
+                     bodies (e.g. "not", "intersection", "union").
+        arity:       1 for unary, 2 for binary.
+        invertible:  True if reverse() recovers the input exactly.
+        lossy:       True if forward() loses information (no exact
+                     reverse possible).
+        space_role:        which space the operator runs in:
+                       'S' -- symbols (default; most ops live here)
+                       'C' -- concepts (intersection / union)
+                       'P' -- percepts (rare)
+                     Used by the chart and per-space SyntacticLayer
+                     to gate which rules can fire in which space.
+        reads_activation: True iff the op consumes the bivector
+                     activation ``[..., 2]`` from
+                     ``subspace.materialize(mode='activation')``
+                     rather than the muxed event tensor. The
+                     per-space dispatcher consults this flag to
+                     pick the right read source. Default False
+                     (muxed event read via ``materialize()``).
+    """
+    rule_name        = ""
+    arity            = 1
+    invertible       = False
+    lossy            = False
+    space_role             = 'SS'
+    reads_activation = False
+
+    # Computation and grammatical roles are declarations, independent of the
+    # spelling used to register or rename a rule.
+    # Pure structural kernels write the selected serial carrier; their
+    # generation face emits percepts under the walk's work meter. These are
+    # one declaration, narrowed by the face, never extra effects at runtime.
+    effect_reads = ('percept', 'knowing', 'symbolic', 'serial', 'priming', 'budget')
+    effect_writes = ('serial', 'percept', 'budget')
+    footprint_reads = ('form', 'meaning', 'poles')
+    footprint_writes = ('form', 'meaning')
+    field_eligible = False
+    case_head_role = 0
+    order_delta = 0
+    inverse_kind = None
+    clause_form = None
+    head_role = 0
+    relation_kind = None
+    scope_transparent = False
+    polarity_effect = None
+    meaning_mode = None
+    same_reference_idempotent = False
+    predicate_identity = None
+
+    def compose_from_grammar_context(self, operands, *, context):
+        """Adapt this legacy tensor layer to the public structural-face call.
+
+        The grammar dispatcher validates the immutable context and arity before
+        reaching this compatibility adapter.  Existing tensor kernels keep
+        their narrow ``compose(left, right)`` / ``compose(value)`` signatures;
+        new grammar layers may override this method when they genuinely need
+        the owner-selected word stream or priming snapshot.
+        """
+        operands = tuple(operands)
+        if len(operands) != int(self.arity):
+            raise ValueError(
+                f"{type(self).__name__} expects {self.arity} structural operands, "
+                f"got {len(operands)}")
+        return self.compose(*operands)
+
+    def generate_from_grammar_context(self, result, *, context):
+        """Adapt legacy ``generate`` kernels to the public reverse-face call."""
+        return self.generate(result)
+
+    def raise_no_inverse(self, why=""):
+        """Serial-derivation fail-loud contract (2026-07-04 plan, Task 1):
+        a rule with no faithful reverse RAISES instead of fabricating an
+        identity/pseudo split -- the error inventory is the Gate-S1
+        decision procedure (write a real reverse() or remove the rule)."""
+        detail = f" [{why}]" if why else ""
+        raise NotImplementedError(
+            f"{type(self).__name__} rule '{self.rule_name}' "
+            f"(arity {self.arity}, space_role {self.space_role}): no "
+            f"faithful reverse(){detail} -- write a real reverse() or "
+            f"remove the rule from the grammar "
+            f"(serial-derivation plan 2026-07-04, Gate S1 inventory).")
+
+    # Surface-realization template (SurfaceSchema, above). T4 BINARY_
+    # JUXTAPOSE is the default base schema -- bare concatenation, no
+    # marker -- so any operator round-trips even before it learns a
+    # marker. Concrete operators override this with their template
+    # (see GRAMMAR_LAYER_CLASSES schema assignment in Language.py).
+    surface_schema   = T4_BINARY_JUXTAPOSE
+
+    # Chart authority registration -- Surface-3 wiring (see
+    # doc/research/three-surfaces.md). When a SyntacticLayer registers
+    # itself as the class-level authority, every GrammarLayer instance
+    # constructed afterwards adds itself to the authority's roster, and
+    # its `gated_run(x, fn, *args)` helper consults the authority
+    # before running `fn`. The chart can then gate Pi / Sigma /
+    # Not / etc. via `rule_probability(rule_name)`. Default: no
+    # authority -> layers run unconditionally (backward-compat).
+    _chart_authority = None
+
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        """Initialize GrammarLayer; allocate state for the class contract.
+
+        See class docstring for invariants.
+
+        Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md;
+        2026-05-27 revision): when ``butterfly=True``, allocate an
+        FFT-style element-pair butterfly cascade over a flattened
+        ``[B, M]`` view where ``M`` is the total element count
+        (rounded up to the next power of two). Each cascade node is a
+        single ``2 x 2`` LDU-factored block (``L``: unit lower-tri /
+        one off-diag scalar; ``d``: 2 diagonal scalars; ``U``: unit
+        upper-tri / one off-diag scalar). The 2-element per-pair op
+        mixes pairs of elements; ``log2(M)`` levels with bit-reversal
+        permutations between them connect every pair of elements
+        across the whole flattened vector.
+
+        ``N`` is the **flattened element count** (e.g., ``nInput *
+        nInputDim`` for a per-position-D layer). Padded to the next
+        power of two internally; the pad slots are zero-init and
+        contribute identity at forward / reverse. Callers may pass
+        ``N=None`` to defer; the wrapping space (e.g. ``PartSpace``)
+        auto-computes it.
+
+        Per-node LDU storage (vs the prior single packed ``W`` Parameter
+        and ``torch.linalg.solve`` inverse): for ``2 x 2`` nodes the
+        inverse is closed-form (sign-flip on off-diagonals + reciprocals
+        on diagonals), no matrix solve required. This matches what
+        PiLayer / SigmaLayer's invertibility already does at the layer
+        level — the cascade uses the same parameterization on each
+        node.
+        """
+        super().__init__(nInput, nOutput)
+        # -- Butterfly cascade state (Stage 5, 2026-05-27 revision) --
+        # FFT-style element-pair cascade over a flattened element axis.
+        # Each node is a 2-element op with a 2x2 LDU block (4 scalars).
+        # Identity init makes ``forward(x) == x`` at init.
+        self.butterfly = bool(butterfly)
+        if self.butterfly:
+            if N is None or int(N) <= 0:
+                raise ValueError(
+                    "GrammarLayer: butterfly=True requires N >= 2 "
+                    "(total flattened element count); got N={N!r}")
+            N_in = int(N)
+            if N_in < 2:
+                raise ValueError(
+                    f"GrammarLayer.butterfly: N must be >= 2; got {N_in}")
+            # Pad to next power of two (FFT cascade structurally
+            # requires 2^k); the extra slots are zero-padded at
+            # forward time and stripped at the end.
+            M = 1
+            while M < N_in:
+                M *= 2
+            n_levels = int(math.log2(M))
+            self.N = N_in            # nominal (unpadded) element count
+            self.M_total = M         # padded power-of-two for the cascade
+            self.n_levels = n_levels
+            # The cascade composes square (nInput == nOutput required
+            # so reverse round-trips at the layer level).
+            if int(nInput) != int(nOutput):
+                raise ValueError(
+                    "GrammarLayer.butterfly: nInput must equal "
+                    f"nOutput (got {nInput} vs {nOutput})")
+            # Packed per-pair LDU storage. Each node owns 4 scalars:
+            #   L: single sub-diagonal entry (the [1, 0] of the 2x2 L)
+            #   d0, d1: the two diagonal entries
+            #   U: single super-diagonal entry (the [0, 1] of the 2x2 U)
+            # Identity init: L=0, d0=d1=1, U=0 → W=I per node.
+            pair_count = M // 2
+            self.butterfly_L = nn.Parameter(
+                torch.zeros(n_levels, pair_count))
+            self.butterfly_d = nn.Parameter(
+                torch.ones(n_levels, pair_count, 2))
+            self.butterfly_U = nn.Parameter(
+                torch.zeros(n_levels, pair_count))
+            # Per-level bit-reversal permutations placing XOR-
+            # neighbour elements adjacent before pair-pack.
+            perms = self._build_butterfly_perms(M, n_levels)
+            self.register_buffer('butterfly_perms', perms)
+        # Auto-register with the chart authority (if any). Only
+        # layers that carry a non-empty rule_name participate; the
+        # base GrammarLayer with rule_name="" stays anonymous.
+        if (GrammarLayer._chart_authority is not None
+                and self.rule_name):
+            try:
+                GrammarLayer._chart_authority.register_grammar_layer(self)
+            except AttributeError:
+                # Authority object is not a SyntacticLayer-shaped
+                # registrar; ignore so we don't trip back-compat
+                # construction paths.
+                pass
+
+    # ---------------------------------------------------------------
+    # Butterfly cascade machinery (Stage 5).
+    # ---------------------------------------------------------------
+    @staticmethod
+    def _build_butterfly_perms(N, n_levels):
+        """Per-level permutation that makes XOR-neighbours adjacent.
+
+        At level ``k`` (0-indexed) the cascade pairs slot ``i`` with
+        slot ``i XOR (1 << k)``.  The permutation reorders the slot
+        axis so that XOR-neighbours land in adjacent positions; the
+        pair-pack reshape then groups them, the per-pair op fires,
+        and the inverse permutation re-scatters the result.
+
+        Returns a buffer ``[n_levels, N]`` of forward permutation
+        indices.  ``_butterfly_inverse_perm`` is computed on demand
+        from this -- not stored separately because each forward perm
+        already costs ``N`` ints per level and the inverse is just
+        a scatter.
+        """
+        perms = torch.empty((n_levels, N), dtype=torch.long)
+        for k in range(n_levels):
+            stride = 1 << k
+            block = stride << 1
+            order = []
+            for start in range(0, N, block):
+                for offset in range(stride):
+                    order.append(start + offset)
+                    order.append(start + offset + stride)
+            perms[k] = torch.tensor(order, dtype=torch.long)
+        return perms
+
+    @staticmethod
+    def _butterfly_inverse_perm(perm):
+        """Return the inverse permutation: ``inv[perm[i]] = i``."""
+        # ``empty`` (contiguous), not ``empty_like``: ``perm`` is a non-contiguous
+        # view, so ``empty_like`` lowers to ``aten.empty_permuted`` (no portable
+        # ExecuTorch kernel). ``inv`` is fully overwritten below -> identical.
+        inv = torch.empty(perm.shape, dtype=perm.dtype, device=perm.device)
+        inv[perm] = torch.arange(perm.numel(), device=perm.device)
+        return inv
+
+    # -- 2x2 LDU per-pair scalar ops (the cascade primitive) -----------
+    #
+    # Each node owns 4 scalars: L (sub-diag), d0, d1 (diag), U (super-
+    # diag). The full 2x2 matrix is W = L_node @ D_node @ U_node where
+    #   L_node = [[1, 0], [L, 1]]
+    #   D_node = diag(d0, d1)
+    #   U_node = [[1, U], [0, 1]]
+    # Forward pair op: y = L_node @ D_node @ U_node @ x
+    #   u_x_0 = x0 + U*x1
+    #   u_x_1 = x1
+    #   du_x_0 = d0 * u_x_0
+    #   du_x_1 = d1 * u_x_1
+    #   y0 = du_x_0
+    #   y1 = L * du_x_0 + du_x_1
+    # Reverse pair op: x = U_node^-1 @ D_node^-1 @ L_node^-1 @ y
+    #   L_inv @ y: [y0, y1 - L*y0]
+    #   D_inv @ ...: [.../d0, .../d1]
+    #   U_inv @ ...: [a - U*b, b]
+    # No torch.linalg.solve; no matrix inverse. Pure scalar ops.
+
+    # Lower bound for the 2x2-LDU diagonal magnitude. Larger than the
+    # full-LDU ``epsilon`` (1e-7) because the butterfly is a CASCADE: the
+    # reverse divides by ``|d|`` at EVERY level, so ``(1/eps)^n_levels`` must
+    # stay finite. 1e-3 bounds the worst-case reverse amplification while
+    # leaving ``d`` essentially free near its unit (identity) init.
+    _BUTTERFLY_D_EPS = 1e-3
+
+    @staticmethod
+    def _stable_pair_d(d_node):
+        """Clamp the 2x2-LDU diagonal away from zero: ``|d|`` in
+        ``[_BUTTERFLY_D_EPS, 1]``, sign preserved, and ``d == 0 -> +eps``
+        (a plain ``sign(0)=0`` would otherwise leave it at zero).
+
+        The reverse pair op divides by ``d``; an unclamped learnable diagonal
+        that drifts to ~0 makes ``1/d`` blow up -- the radix reverse
+        divergence (a ``d`` reaching 0 / a flushed denormal on MPS). Applied
+        IDENTICALLY in the forward and reverse pair ops so ``x*d`` then
+        ``/d`` cancel exactly: the cascade stays structurally invertible.
+        """
+        sign = torch.sign(d_node) + (d_node == 0).to(d_node.dtype)
+        return sign * d_node.abs().clamp(GrammarLayer._BUTTERFLY_D_EPS, 1.0)
+
+    def _butterfly_pair_forward(self, x_pair, L_node, d_node, U_node):
+        """Apply 2x2 LDU pair op forward: y = L @ D @ U @ x_pair.
+
+        Args:
+            x_pair: ``[B, M, 2]`` paired input (M = total // 2).
+            L_node: ``[M]`` sub-diagonal scalars.
+            d_node: ``[M, 2]`` diagonal scalars.
+            U_node: ``[M]`` super-diagonal scalars.
+
+        Returns:
+            ``[B, M, 2]`` paired output.
+        """
+        d_node = self._stable_pair_d(d_node)
+        x0 = x_pair[..., 0]
+        x1 = x_pair[..., 1]
+        # U: [[1, U], [0, 1]]
+        u_x0 = x0 + U_node * x1
+        u_x1 = x1
+        # D: diag(d0, d1)
+        du_x0 = d_node[..., 0] * u_x0
+        du_x1 = d_node[..., 1] * u_x1
+        # L: [[1, 0], [L, 1]]
+        y0 = du_x0
+        y1 = L_node * du_x0 + du_x1
+        return torch.stack([y0, y1], dim=-1)
+
+    def _butterfly_pair_reverse(self, y_pair, L_node, d_node, U_node):
+        """Apply 2x2 LDU pair op reverse: x = U^-1 @ D^-1 @ L^-1 @ y.
+
+        Closed-form inverse from the LDU scalars (sign-flips on the
+        off-diagonals + reciprocals on the diagonals). No matrix
+        solve required.
+        """
+        d_node = self._stable_pair_d(d_node)
+        y0 = y_pair[..., 0]
+        y1 = y_pair[..., 1]
+        # L^-1 = [[1, 0], [-L, 1]]
+        a0 = y0
+        a1 = y1 - L_node * y0
+        # D^-1 = diag(1/d0, 1/d1)
+        b0 = a0 / d_node[..., 0]
+        b1 = a1 / d_node[..., 1]
+        # U^-1 = [[1, -U], [0, 1]]
+        x0 = b0 - U_node * b1
+        x1 = b1
+        return torch.stack([x0, x1], dim=-1)
+
+    def _butterfly_flatten(self, x):
+        """Flatten ``x`` to ``[B, M_total]`` (padded with zeros).
+
+        Accepts any shape with leading batch dim B; flattens the
+        remaining dims, then right-pads with zeros to reach
+        ``self.M_total`` (the next power of two ≥ ``self.N``).
+
+        Returns ``(flat, original_shape)`` where ``original_shape`` is
+        the tuple of dims after B (for unflatten).
+        """
+        original_shape = tuple(x.shape[1:])
+        B = x.shape[0]
+        flat = x.reshape(B, -1)
+        n = flat.shape[1]
+        if n < self.M_total:
+            pad = torch.zeros(
+                B, self.M_total - n,
+                device=flat.device, dtype=flat.dtype)
+            flat = torch.cat([flat, pad], dim=1)
+        elif n > self.M_total:
+            # Should not happen if constructor sized M_total correctly,
+            # but guard against caller passing larger input than spec'd.
+            raise RuntimeError(
+                f"butterfly_flatten: input has {n} elements per batch "
+                f"row but cascade is sized for M_total={self.M_total}.")
+        return flat, original_shape
+
+    def _butterfly_unflatten(self, flat, original_shape):
+        """Inverse of ``_butterfly_flatten``: strip pad, reshape."""
+        B = flat.shape[0]
+        n = 1
+        for d in original_shape:
+            n *= d
+        return flat[:, :n].reshape((B,) + original_shape)
+
+    def _butterfly_live_factors(self, level, n_live):
+        """Pin every pair touching padding to identity in BOTH directions.
+
+        Zero-padding alone is not invertible after training: a learned pair
+        can move live information into a padded coordinate which unflatten
+        discards. Identity on those pairs makes the zero-pad subspace
+        invariant, so the stripped result still has a genuine inverse.
+        Use the actual flattened input width (callers may use less than N).
+        Masks are derived from existing permutation buffers, introducing no
+        checkpoint state and costing nothing on the unpadded path.
+        """
+        L = self.butterfly_L[level]
+        d = self.butterfly_d[level]
+        U = self.butterfly_U[level]
+        if n_live == self.M_total:
+            return L, d, U
+        live = (self.butterfly_perms[level].reshape(-1, 2) < n_live).all(-1)
+        return (torch.where(live, L, 0.0),
+                torch.where(live.unsqueeze(-1), d, 1.0),
+                torch.where(live, U, 0.0))
+
+    def _butterfly_forward(self, x):
+        """FFT-style element-pair butterfly cascade forward.
+
+        Flattens ``x`` to a 1-D-per-batch vector of length ``M_total``
+        (padded power-of-two). At each level:
+          1. Permute along the element axis (XOR-neighbour pairs
+             adjacent).
+          2. Pack adjacent pairs into ``[B, M_total // 2, 2]``.
+          3. Apply 2x2 LDU pair op with the level's L, d, U scalars.
+          4. Unpack to ``[B, M_total]``.
+          5. Inverse-permute to restore the natural element order.
+
+        Identity init (L=0, d0=d1=1, U=0) makes ``forward(x) == x``
+        at init (modulo the zero-pad strip).
+        """
+        flat, original_shape = self._butterfly_flatten(x)
+        n_live = math.prod(original_shape)
+        for level in range(self.n_levels):
+            perm = self.butterfly_perms[level]
+            inv_perm = self._butterfly_inverse_perm(perm)
+            flat = flat[:, perm]
+            pair = flat.reshape(flat.shape[0], -1, 2)
+            pair = self._butterfly_pair_forward(
+                pair, *self._butterfly_live_factors(level, n_live))
+            flat = pair.reshape(flat.shape[0], -1)
+            flat = flat[:, inv_perm]
+        return self._butterfly_unflatten(flat, original_shape)
+
+    def _butterfly_reverse(self, y):
+        """Inverse of ``_butterfly_forward`` (LDU sign-flip + reciprocal).
+
+        Runs the per-level inverse pair op in reverse level order.
+        Composed with ``_butterfly_forward`` this restores the input
+        up to numerical precision. Pairs touching padding remain identity
+        after training too, so stripping the pad cannot discard information.
+        """
+        flat, original_shape = self._butterfly_flatten(y)
+        n_live = math.prod(original_shape)
+        for level in reversed(range(self.n_levels)):
+            perm = self.butterfly_perms[level]
+            inv_perm = self._butterfly_inverse_perm(perm)
+            flat = flat[:, perm]
+            pair = flat.reshape(flat.shape[0], -1, 2)
+            pair = self._butterfly_pair_reverse(
+                pair, *self._butterfly_live_factors(level, n_live))
+            flat = pair.reshape(flat.shape[0], -1)
+            flat = flat[:, inv_perm]
+        return self._butterfly_unflatten(flat, original_shape)
+
+    def forward(self, x):
+        """Default forward dispatch.
+
+        When ``self.butterfly`` is True, runs the butterfly cascade.
+        Otherwise raises: subclasses must override ``forward`` for
+        their non-butterfly behaviour.
+        """
+        if self.butterfly:
+            return self._butterfly_forward(x)
+        raise NotImplementedError(
+            f"{type(self).__name__}.forward: not implemented "
+            "(set butterfly=True to use the cascade or override "
+            "forward in the subclass)")
+
+    def reverse(self, y):
+        """Default reverse dispatch.
+
+        When ``self.butterfly`` is True, runs the butterfly cascade
+        inverse. Otherwise raises.
+        """
+        if self.butterfly:
+            return self._butterfly_reverse(y)
+        raise NotImplementedError(
+            f"{type(self).__name__}.reverse: not implemented")
+
+    @classmethod
+    def set_chart_authority(cls, syntactic_layer):
+        """Install ``syntactic_layer`` as the class-level chart
+        authority. Future GrammarLayer instances will auto-register;
+        existing instances can be registered manually via the
+        authority's ``register_grammar_layer`` method.
+
+        Pass ``None`` to clear the authority (e.g. for tests that
+        want unconditional forward behavior).
+        """
+        cls._chart_authority = syntactic_layer
+
+    # -- Sentence / sugar absorption marker -----------------------------
+    #
+    # ``absorb(left, right)`` is a base-class method available on every
+    # GrammarLayer subclass. Forward semantics: return ``left`` -- a
+    # binary left-pass that discards ``right``. The grammar fires it
+    # to consume syntactic sugar (whitespace, punctuation, low-
+    # semantic-weight tokens, sentence boundary markers) into a
+    # surrounding constituent without contributing to it.
+    #
+    # Lossy by contract: the right operand is unrecoverable; the
+    def absorb(self, left, right):
+        """Consume a structural marker and keep its content operand."""
+        return left
+
+    def gated_run(self, x, fn, *fn_args, **fn_kwargs):
+        """Soft-gate the layer's forward through the chart authority.
+
+        If no authority is registered, this is a passthrough: returns
+        ``fn(x, *fn_args, **fn_kwargs)``.
+
+        If an authority is registered, queries
+        ``authority.should_run_rule(rule_name)`` -> probability ``p``
+        in [0, 1], then returns the soft mixture
+        ``p * fn(x, ...) + (1 - p) * x`` so gradient flows through
+        both branches. ``p == 1.0`` short-circuits to the un-mixed
+        forward (the structural fast path the existing space-forward
+        code already uses for `union(C, C)` / `Contiguous(S)` /
+        `not(S)` gating).
+        """
+        auth = GrammarLayer._chart_authority
+        if auth is None or not self.rule_name:
+            return fn(x, *fn_args, **fn_kwargs)
+        try:
+            p = float(auth.should_run_rule(self.rule_name))
+        except Exception:
+            return fn(x, *fn_args, **fn_kwargs)
+        if p >= 1.0 - 1e-9:
+            return fn(x, *fn_args, **fn_kwargs)
+        if p <= 1e-9:
+            return x
+        return p * fn(x, *fn_args, **fn_kwargs) + (1.0 - p) * x
+
+    # -- Binary tensor op contract for the chart parser --------------
+    #
+    # ``compose(*operands)`` is the arity-aware binary tensor op the
+    # CKY chart driver calls to combine child span vectors into a
+    # parent span vector. ``decompose(parent)`` is the matching inverse
+    # used by the outside pass / reconstruction loss to push gradients
+    # back into child cells.
+    #
+    # Shape contract:
+    #   arity == 1: compose(x: [..., D]) -> [..., D'];
+    #               decompose(y: [..., D']) -> [..., D]
+    #   arity == 2: compose(left: [..., D], right: [..., D]) -> [..., D'];
+    #               decompose(y: [..., D']) -> (left, right)
+    #
+    # The base class provides arity-aware default implementations:
+    # arity-1 layers route through ``forward`` / ``reverse``; arity-2
+    # layers raise NotImplementedError until a subclass plugs in the
+    # binary parameterization. Lossy layers can override decompose
+    # with a pseudo-inverse (e.g. identity).
+    def _check_bivector_shape(self, x):
+        """Validate that ``x`` carries at least the bivector pole pair
+        in its last dim.
+
+        Every grammar op that consumes per-position activations expects
+        a tensor whose trailing dim begins with the ``[pos, neg]``
+        bivector. The materialized event tensor passed in by the
+        dispatcher has shape ``[B, V, nWhat + nWhere + nWhen]`` with
+        the bivector at ``[..., :2]`` (nWhat == 2 by convention);
+        callers that pass a narrower tensor are working on degenerate
+        input (e.g. an empty subspace) and the op cannot proceed.
+
+        Centralised here so subclasses don't each re-implement the
+        check; raises a uniform ``ValueError`` carrying the offending
+        shape and the calling subclass name.
+        """
+        if not torch.is_tensor(x):
+            raise ValueError(
+                f"{type(self).__name__}: expected a Tensor, got "
+                f"{type(x).__name__}")
+        if x.shape[-1] < 2:
+            raise ValueError(
+                f"{type(self).__name__}: expected last dim >= 2 "
+                f"(the .what bivector poles); got shape "
+                f"{tuple(x.shape)}")
+
+    def compose(self, *operands):
+        """Combine child operand(s) into a parent vector.
+
+        Default routes arity-1 through ``forward``. Arity-2 subclasses
+        must override.
+        """
+        if self.arity == 1:
+            if len(operands) != 1:
+                raise ValueError(
+                    f"{type(self).__name__}.compose: arity 1 expects "
+                    f"1 operand, got {len(operands)}")
+            return self.forward(operands[0])
+        raise NotImplementedError(
+            f"{type(self).__name__}.compose: arity-{self.arity} "
+            f"binary tensor op not implemented")
+
+    def generate(self, parent):
+        """Inverse of ``compose``: split a parent into its operand(s).
+
+        Default routes arity-1 through ``reverse`` when invertible,
+        otherwise returns the parent unchanged (lossy identity
+        recovery). Arity-2 subclasses must override.
+
+        Renamed from ``decompose`` (2026-05-01) to align with the
+        ``<compose>`` / ``<generate>`` grammar XML sections and the
+        chart's parse / generate vocabulary. ``decompose`` is kept
+        as a back-compat alias on every GrammarLayer.
+        """
+        if self.arity == 1:
+            if self.invertible:
+                return self.reverse(parent)
+            return parent
+        raise NotImplementedError(
+            f"{type(self).__name__}.generate: arity-{self.arity} "
+            f"binary tensor op not implemented")
+
+    def decompose(self, *args, **kwargs):
+        """Back-compat alias for ``generate``. Renamed 2026-05-01;
+        existing call sites that invoke ``layer.decompose(...)``
+        keep working unchanged."""
+        return self.generate(*args, **kwargs)
+
+
+class SigmaLayer(GrammarLayer):
+    """Additive chart map used by the grammar's LiftLayer.
+
+    Lift owns the operand assembly and dispatch. Perceptual towers use
+    their native meronomies; they do not own this fold.
+
+    With ``nonlinear=True``, ``forward`` charts its input through atanh,
+    applies the inner linear map, then returns tanh of the result. For the
+    default plain host this is ``tanh(atanh(x) @ W)``; the invertible host
+    also applies its affine bias. An immediately preceding Pi tanh is
+    cancelled by this entry chart away from clipping: stacking these bounded
+    charts does not create a hidden nonlinear feature layer. With
+    ``nonlinear=False``, ``forward`` returns the raw inner map result.
+    ``reverse`` mirrors the same chart choice.
+
+    When ``invertible=True``, uses an invertible linear layer so
+    ``reverse()`` is available via the exact LDU inverse.  When
+    ``invertible=False`` (default), uses a plain LinearLayer.
+
+    Weight initialization (non-ergodic) is scaled by 1/nInput so that
+    the output stays in [-1, 1] at init when input is in [-1, 1].
+
+    All ergodic machinery lives in the inner layer; SigmaLayer dispatches
+    the ergodic interface (set_sigma, observe_sigma, etc.) there.
+
+    ``monotonic`` selects the weight constraint (only meaningful with
+    ``invertible=True``):
+        monotonic=True:  W >= 0 (NonNegativeInvertibleLinearLayer) -- ordering preserved
+        monotonic=False: W unrestricted (InvertibleLinearLayer)    -- bitonic response
+    """
+    _bounded_backward = False
+
+    def __init__(self, nInput, nOutput, ergodic=False, naive=True,
+                 invertible=False, nonlinear=True, stable=False,
+                 monotonic=False, butterfly=False, N=None):
+        """Initialize SigmaLayer; allocate state for the class contract.
+
+        See class docstring for invariants.
+
+        ``butterfly`` / ``N`` (Stage 5, doc/plans/2026-05-26-two-loop-
+        pi-sigma-substrate.md): when ``butterfly=True``, the layer
+        delegates ``forward`` / ``reverse`` to the inherited
+        GrammarLayer butterfly cascade. ``N`` is the per-position
+        slot count and must be a power of two; ``nInput == nOutput``
+        defines D, the per-slot feature width. The per-pair op is
+        sigma-style (atanh -> matmul -> tanh) applied at each
+        cascade node.
+        """
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        self.invertible = invertible
+        self.ergodic    = ergodic
+        self.nonlinear  = nonlinear
+        self.stable     = stable
+        self.monotonic  = monotonic
+        self.activation = torch.zeros(1, nOutput, 1)
+        if self.butterfly:
+            # In butterfly mode the cascade owns the parameterised
+            # weight; no separate inner LDU layer is needed for the
+            # unary feature fold (per-pair op runs on packed pairs).
+            # ``self.layer`` is left unset; the legacy unary forward
+            # path is replaced by ``_butterfly_forward``.
+            self.layer = None
+        else:
+            if invertible:
+                if monotonic:
+                    self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic, stable=stable)
+                else:
+                    self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic, stable=stable)
+            else:
+                self.layer = LinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic)
+            self.layers.append(self.layer)
+
+    @property
+    def bias(self): return self.layer.bias
+    @property
+    def var(self):  return self.layer.var
+
+    # -- Inner Sigma transform on packed features --
+    def _sigma_inner_forward(self, packed, binary=False, gate=None):
+        """Apply atanh -> linear -> tanh on a packed [..., 2D] tensor."""
+        if binary:
+            packed = Ops.top2_select_ste(packed)
+        if self.nonlinear:
+            packed = bounded_atanh(packed, bounded=self._bounded_backward)
+        out = (self.layer.forward(packed, gate=gate) if gate is not None
+               else self.layer.forward(packed))
+        if self.nonlinear:
+            out = torch.tanh(out)
+        self.activation = out.detach()
+        return out
+
+    # -- Butterfly per-pair op -----------------------------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Sigma-style per-pair op for the butterfly cascade.
+
+        atanh -> einsum -> tanh applied per pair (the same math the
+        unary ``forward`` path uses, but per-pair-batched over the
+        packed pair axis).
+        """
+        if self.nonlinear:
+            x_pair = bounded_atanh(x_pair, bounded=self._bounded_backward)
+        out = torch.einsum('bmi,mij->bmj', x_pair, W_node)
+        if self.nonlinear:
+            out = torch.tanh(out)
+        return out
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; inverts the per-pair op."""
+        if self.nonlinear:
+            y_pair = bounded_atanh(y_pair, bounded=self._bounded_backward)
+        out = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        if self.nonlinear:
+            out = torch.tanh(out)
+        return out
+
+    def compute_forward(self, x, binary=False):
+        """Pure ungated Sigma computation for a recurrent HOP body."""
+        if self.butterfly:
+            if self.nonlinear:
+                x = bounded_atanh(x, bounded=self._bounded_backward)
+            y = self._butterfly_forward(x)
+            return torch.tanh(y) if self.nonlinear else y
+        if binary:
+            x = Ops.top2_select_ste(x)
+        if self.nonlinear:
+            x = bounded_atanh(x, bounded=self._bounded_backward)
+        if hasattr(self.layer, "functional_forward"):
+            y = self.layer.functional_forward(x)
+        else:
+            y = self.layer.forward(x)
+        return torch.tanh(y) if self.nonlinear else y
+
+    def forward(self, x, binary=False, gate=None):
+        """Apply the additive OR fold.
+
+        ``binary=True`` selects the top-2 input operands (by |x|) via
+        Ops.top2_select_ste before the atanh entry transform; the rest
+        drop to 0 in additive domain (silent in the OR).  Backward is
+        STE -- gradient flows to every input as if no selection ran.
+
+        ``gate`` (optional): per-call ``[rank]`` tensor passed through
+        to the inner ``InvertibleLinearLayer`` as a multiplicative gate
+        on its diagonal. Used by rule layers (LiftLayer / LowerLayer)
+        to select a low-rank slice of the operator. The gating lives
+        inside the LDU layer; SigmaLayer just passes it through.
+
+        Butterfly mode (``self.butterfly``): wrap the FFT-style
+        element-pair cascade (per the 2026-05-27 revision) with the
+        same atanh / tanh transforms as the per-position path. The
+        cascade replaces the ``W @ x`` linear core; the surrounding
+        nonlinearity preserves the sigma semantics. ``binary`` and
+        ``gate`` are not honoured in butterfly mode.
+        """
+        if self.butterfly:
+            if self.nonlinear:
+                x = bounded_atanh(x, bounded=self._bounded_backward)
+            y = self._butterfly_forward(x)
+            if self.nonlinear:
+                y = torch.tanh(y)
+            self.activation = y.detach()
+            return y
+        if binary:
+            x = Ops.top2_select_ste(x)
+        if self.nonlinear:
+            x = bounded_atanh(x, bounded=self._bounded_backward)
+        y = self.layer.forward(x, gate=gate) if gate is not None else self.layer.forward(x)
+        if self.nonlinear:
+            y = torch.tanh(y)
+        self.activation = y.detach()
+        return y
+
+    def reverse(self, y, gate=None):
+        """Invert tanh then apply W^-1 then tanh. Requires invertible=True.
+
+        ``gate`` (optional): same gate tensor passed to ``forward``;
+        flows through to the inner LDU layer's reverse so the inverse
+        uses ``1/(d * gate)``.
+
+        Butterfly mode: wrap ``_butterfly_reverse`` with atanh / tanh
+        symmetric to forward.
+        """
+        if self.butterfly:
+            if self.nonlinear:
+                y = bounded_atanh(y, bounded=self._bounded_backward)
+            x = self._butterfly_reverse(y)
+            if self.nonlinear:
+                x = torch.tanh(x)
+            self.activation = x.detach()
+            return x
+        if self.nonlinear:
+            y = bounded_atanh(y, bounded=self._bounded_backward)
+        x = self.layer.reverse(y, gate=gate) if gate is not None else self.layer.reverse(y)
+        if self.nonlinear:
+            x = torch.tanh(x)
+        self.activation = x.detach()
+        return x
+
+    # -- Binary tensor ops (chart parser) -----------------------------
+    #
+    # ``forward(x: [..., D])`` is the unary feature-fold form: it
+    # applies the OR-fold linear transform within a single operand's
+    # feature axis. The chart parser needs the *binary* form: combine
+    # two operand vectors (one per child span) into one parent vector
+    # via the same parameterization. For the OR-fold the natural
+    # binary semantics is the additive (logit-domain) sum -- atanh
+    # the operands, sum across operands, then apply the same linear
+    # + tanh. ``compose`` and ``decompose`` close the loop with a
+    # balanced inverse so the chart can also push parent gradients
+    # back into child cells.
+    def compose(self, left, right, gate=None):
+        """Binary OR fold: combine two ``[..., D]`` operands into one.
+
+        Args:
+            left, right: ``[..., D]`` in [-1, 1].
+            gate: optional per-call ``[rank]`` multiplier on the inner
+                LDU's diagonal (used by LiftLayer for low-rank slicing).
+
+        Returns:
+            ``[..., nOutput]`` in [-1, 1].
+        """
+        if self.nonlinear:
+            a_l = bounded_atanh(left, bounded=self._bounded_backward)
+            a_r = bounded_atanh(right, bounded=self._bounded_backward)
+        else:
+            a_l = left
+            a_r = right
+        a_sum = a_l + a_r
+        out = (self.layer.forward(a_sum, gate=gate) if gate is not None
+               else self.layer.forward(a_sum))
+        if self.nonlinear:
+            out = torch.tanh(out)
+        if not torch.compiler.is_compiling():
+            self.activation = out.detach()
+        return out
+
+    def synthesize_over_set(self, part_codes, mask=None):
+        """σ-fold a SET of M codes ``[..., M, D]`` into ONE code ``[..., D]``
+        that geometrically contains them (doc/specs/mereological-order-
+        raising.md: a higher-order PART synthesized from its constituents).
+
+        The M-way generalization of :meth:`compose`'s binary atanh-sum: every
+        constituent's logit contributes additively before one shared
+        ``self.layer.forward`` + ``tanh``, so the parent contains all M.
+        Order-invariant, ``M -> 1``, reuses the SAME ``self.layer`` (NO new
+        parameters), and for ``M == 2`` reduces exactly to ``compose``. The
+        balanced split in :meth:`generate` inverts it (each constituent
+        ``= tanh(s / M)``) when the inner layer is invertible -- the explicit
+        ``part_chain`` provenance is the fallback when it is not."""
+        if mask is not None:
+            valid = mask.to(device=part_codes.device, dtype=torch.bool)
+            part_codes = torch.where(
+                valid.unsqueeze(-1), part_codes,
+                torch.zeros_like(part_codes))
+        if self.nonlinear:
+            a = bounded_atanh(part_codes, bounded=self._bounded_backward)
+        else:
+            a = part_codes
+        a_sum = a.sum(dim=-2)
+        out = self.layer.forward(a_sum)
+        if self.nonlinear:
+            out = torch.tanh(out)
+        return out
+
+    def generate(self, parent, gate=None):
+        """Inverse of compose; balanced split.
+
+        Given ``y = tanh((atanh(left) + atanh(right)) @ W + b)`` the
+        reconstruction recovers the pre-transform sum
+        ``s = atanh(left) + atanh(right) = layer.reverse(atanh(y))``
+        and assigns ``left == right == tanh(s/2)``. Round-trip
+        ``compose(*generate(y)) == y`` when the inner layer is
+        invertible.
+
+        Args:
+            parent: ``[..., nOutput]`` in [-1, 1].
+            gate: same gate passed to ``compose``.
+
+        Returns:
+            ``(left, right)``: each ``[..., nInput]`` in [-1, 1].
+
+        Requires ``invertible=True`` on the inner LinearLayer.
+        """
+        if self.nonlinear:
+            a_y = bounded_atanh(parent, bounded=self._bounded_backward)
+        else:
+            a_y = parent
+        a_sum = (self.layer.reverse(a_y, gate=gate) if gate is not None
+                 else self.layer.reverse(a_y))
+        half = a_sum * 0.5
+        if self.nonlinear:
+            op = torch.tanh(half)
+        else:
+            op = half
+        return op, op
+
+    def generate_functional(self, parent, gate=None, W_inv=None, reference=None,
+                            reference_side=None):
+        """``generate`` without module mutation (compiled reverse loops);
+        ``W_inv`` is the inner layer's precomputed inverse (optional)."""
+        a_y = bounded_atanh(parent, bounded=self._bounded_backward) if self.nonlinear else parent
+        a_sum = self.layer.functional_reverse(
+            a_y - self.layer._effective_bias(), gate=gate, W_inv=W_inv)
+        half = a_sum * 0.5
+        op = torch.tanh(half) if self.nonlinear else half
+        if reference is None:
+            return op, op
+        right, known = reference_side
+        ref_chart = (bounded_atanh(reference, bounded=self._bounded_backward)
+                     if self.nonlinear else reference)
+        remainder = a_sum - ref_chart
+        remainder = torch.tanh(remainder) if self.nonlinear else remainder
+        left = torch.where(right[:, None], remainder, reference)
+        right_value = torch.where(right[:, None], reference, remainder)
+        return torch.where(known[:, None], left, op), torch.where(known[:, None], right_value, op)
+
+    @staticmethod
+    def test():
+        """Self-test; verifies the round-trip / invariant."""
+        nInput, nOutput = 3, 4
+        layer = SigmaLayer(nInput=nInput, nOutput=nOutput, nonlinear=True)
+
+        x = torch.randn((2, 5, nInput), device=TheDevice.get())
+        layer.set_sigma(0.999)
+
+        criterion = nn.MSELoss()
+        # Local import: Layers.py is imported by Optimizer's eventual
+        # callers; keep the dep local to this smoke-test path to avoid
+        # any import-order surprise during module load.
+        from Optimizer import Adam
+        optimizer = Adam(layer.getParameters(), lr=0.01)
+        optimizer.zero_grad()
+        y = layer(x)
+        loss = criterion(y, y)
+        loss.backward()
+        print(f"Original input: {x}")
+        print(f"After linear: {y}")
+
+        nInput, nOutput = 5, 7
+        layer = SigmaLayer(nInput=nInput, nOutput=nOutput, naive=False,
+                           invertible=True, nonlinear=True)
+        x = torch.randn((2, 5, nInput), device=TheDevice.get())
+        layer.set_sigma(0.0)
+        y = layer.forward(x)
+        y_inv = layer.reverse(y)
+        assert torch.norm(x - y_inv) < 0.00001
+        layer = SigmaLayer(nInput=nInput, nOutput=nOutput, naive=True,
+                           invertible=True, nonlinear=True)
+        x = torch.randn((4, 8, nInput), device=TheDevice.get())
+        layer.set_sigma(0.0)
+        y = layer.forward(x)
+        assert y.shape == (4, 8, nOutput), "Incorrect Size"
+        y_inv = layer.reverse(y)
+        assert torch.norm(x - y_inv) < 0.00001
+        print("SigmaLayer tests passed.")
+
+
+class RunStructureLayer(Layer):
+    """Fixed-shape mereological run / gap / containment structure over a SET of
+    ``.where`` brackets (``doc/specs/mereological-order-raising.md``).
+
+    Given the sibling part spans under a candidate whole -- ``spans``
+    ``[..., K, 2]`` of ``(start, end)`` with a ``valid`` mask -- it reports how
+    many CONTIGUOUS RUNS they form (``n_runs`` == the part count == the
+    part/whole ratio numerator) plus the pairwise containment mask (the
+    ``A isa B`` test). Subsymbolic + compiled-forward-safe: NO host-side control
+    flow, no sort, no variable shapes. A span ``i`` starts a new run iff NO
+    valid earlier span (by start, index tie-broken) reaches ``start_i - tol`` --
+    one ``[..., K, K]`` broadcast of comparisons + an ``any``-reduction, O(K^2)
+    over the small slot count K. Parameter-free (a measure), but a real
+    ``Layer`` so the Start/End/Reset/paramUpdate cascade reaches it via
+    ``self.layers``.
+    """
+
+    def __init__(self, nWhere=2, contiguity_tol=0.5):
+        """``nWhere`` is the bracket width (2); ``contiguity_tol`` is the error
+        band around "the spans touch" (gap ~= 0): touching / overlapping spans
+        (gap 0) merge into one run, while a skipped position (gap >= 1, e.g. a
+        space that is not itself a part -- a word boundary) opens a new run."""
+        super().__init__(nWhere, nWhere)
+        self.contiguity_tol = float(contiguity_tol)
+
+    def forward(self, spans, valid=None, tol=None):
+        """``spans`` ``[..., K, 2]`` (start, end). ``valid`` ``[..., K]`` bool
+        (default ``end > start`` -- analysis-span pads are ``(0, 0)``).
+
+        Returns a dict of FIXED-SHAPE tensors:
+            ``n_runs`` / ``n_gaps`` ``[...]`` (long);
+            ``is_run_start`` / ``valid`` ``[..., K]`` (bool);
+            ``contained_mask`` ``[..., K, K]`` bool (``[..., i, j]`` = span i
+                within span j: ``start_i >= start_j - tol`` and
+                ``end_i <= end_j + tol``, both valid; the diagonal is True);
+            ``ratio`` ``[...]`` (== ``n_runs``, the routing input: one run =>
+                singleton / refine, many => integrate / disintegrate);
+            ``span_extent`` ``[..., K]`` per-part width (0 for pads);
+            ``max_extent`` / ``total_extent`` ``[...]`` -- the extent dimension
+                the run-count misses: a singleton with large ``max_extent`` is a
+                long part that property-tiling should analyse;
+            ``tightest_container`` ``[..., K]`` (long) -- force #1: for each span
+                the index of its SMALLEST strict container (the smallest whole
+                over it), or ``-1`` when none. The "A isa B" edge with no
+                intervening smaller whole;
+            ``route_hint`` ``[...]`` (long) -- the three-aspect routing class:
+                ``0`` NULL (no valid runs), ``1`` REFINE (one contiguous run /
+                singleton), ``2`` RAISE (>1 run / discontiguous).
+        """
+        tol = self.contiguity_tol if tol is None else float(tol)
+        starts = spans[..., 0]
+        ends = spans[..., 1]
+        if valid is None:
+            valid = ends > starts
+        K = int(starts.shape[-1])
+        idx = torch.arange(K, device=spans.device)
+        si = starts.unsqueeze(-1)                  # [..., K, 1] (i)
+        sj = starts.unsqueeze(-2)                  # [..., 1, K] (j)
+        ei = ends.unsqueeze(-1)
+        ej = ends.unsqueeze(-2)                    # [..., 1, K]
+        vj = valid.unsqueeze(-2)                   # [..., 1, K]
+        # j precedes i (start order, index tie-break) AND j's end reaches i's
+        # start within tol -> i is connected to an earlier span.
+        precedes = (sj < si) | ((sj == si)
+                                & (idx.unsqueeze(-1) > idx.unsqueeze(-2)))
+        reaches = ej >= (si - tol)
+        has_earlier = (precedes & reaches & vj).any(dim=-1)        # [..., K]
+        is_run_start = valid & (~has_earlier)
+        n_runs = is_run_start.sum(dim=-1)                           # [...]
+        n_gaps = (n_runs - 1).clamp(min=0)
+        contained_mask = ((si >= sj - tol) & (ei <= ej + tol)
+                          & valid.unsqueeze(-1) & vj)               # [..., K, K]
+        # Extent signals (the "how WIDE is each part" dimension, fixed-shape):
+        # the run-count alone cannot tell a basic-level word from a long
+        # single part (e.g. "antidisestablishmentarianism" -> 1 run, extent 28).
+        # A singleton (n_runs == 1) with a LARGE max_extent is the
+        # property-tiling-analysis trigger that n_runs misses; routing combines
+        # the two. Pads (invalid) contribute 0.
+        span_extent = (ends - starts).clamp(min=0) * valid.to(ends.dtype)  # [..., K]
+        max_extent = span_extent.amax(dim=-1)                              # [...]
+        total_extent = span_extent.sum(dim=-1)                            # [...]
+        # Force #1 -- the TIGHTEST link (doc/specs/mereological-order-raising.md:
+        # "link the largest part with the smallest whole; skip when a bigger
+        # part or smaller whole already subsumes the relation"). For each span i
+        # (a candidate part), pick its SMALLEST STRICT container j (i != j, i in
+        # j, minimal extent) -- that is the smallest whole over it; -1 when none.
+        # Fixed-shape: mask the diagonal out of contained_mask, fill non-container
+        # extents with +big, argmin over j. (Ties -> lowest index, the repo's
+        # index tie-break.) This is the "A isa B" edge with no intervening whole.
+        eye = torch.eye(K, dtype=torch.bool, device=spans.device)
+        eye = eye.view((1,) * (contained_mask.dim() - 2) + (K, K))
+        strict = contained_mask & (~eye)                            # [..., K, K]
+        has_container = strict.any(dim=-1)                          # [..., K]
+        _BIG = float(2 ** 30)
+        cand_ext = torch.where(
+            strict, span_extent.unsqueeze(-2),
+            torch.full_like(span_extent.unsqueeze(-2), _BIG))       # [..., K, K]
+        argmin_j = cand_ext.argmin(dim=-1)                          # [..., K]
+        tightest_container = torch.where(
+            has_container, argmin_j, torch.full_like(argmin_j, -1))  # [..., K]
+        # Three-aspect routing hint (doc/specs/mereological-order-raising.md
+        # "contiguity routes refine vs raise"): per whole, classify its .where
+        # run-structure -- 0 = NULL (no valid runs, nothing to act on);
+        # 1 = REFINE (one contiguous run = a localized singleton -> chunk finer
+        # / property-tile); 2 = RAISE (>1 run = discontiguous -> raise order).
+        # A computed signal from n_runs; the routing ACTION (the feedback loop)
+        # consumes it later.
+        route_hint = torch.where(
+            n_runs <= 0, torch.zeros_like(n_runs),
+            torch.where(n_runs == 1, torch.ones_like(n_runs),
+                        torch.full_like(n_runs, 2)))                  # [...]
+        return {"n_runs": n_runs, "n_gaps": n_gaps,
+                "is_run_start": is_run_start, "valid": valid,
+                "contained_mask": contained_mask, "ratio": n_runs,
+                "span_extent": span_extent, "max_extent": max_extent,
+                "total_extent": total_extent,
+                "tightest_container": tightest_container,
+                "route_hint": route_hint}
+
+
+
+
+# Char-class property tiling (doc/specs/mereological-order-raising.md "Analysis
+# = property-tiling"). A char-class property is a BINARY TILING of a byte input
+# into {has-class} / {not} -- the analysis-side (WholeSpace π) dual of a
+# synthesis chunk. ASCII byte ranges (inclusive) per class; selecting a SET of
+# classes ORs them (the analysis-side OR over .index-selected properties, dual
+# to PartSpace's AND over particles).
+# Primitive byte properties.  These are predicates, not an exclusive token
+# vocabulary: an ASCII capital satisfies both LETTER and CAPITAL.  WholeSpace
+# owns one vector per primitive property; combinations are represented by
+# simultaneous property activation and become concepts only after the
+# PartSpace/WholeSpace streams meet in ConceptualSpace.
+LETTER, DIGIT, WHITESPACE, PUNCT = 0, 1, 2, 3
+CAPITAL, CONTROL, HIGH_BYTE, PAD = 4, 5, 6, 7
+# Key-only sentinel for the generic "word" whole-TYPE (a whole, not a tiling
+# predicate): used as a property_class_whole key, never passed to
+# char_class_region (whose spans come from the whitespace analysis cut).
+WORD = 100
+# The two POLES of the relation-only CS symbol lattice (Alec 2026-07-02): in
+# presence space NOTHING = [0,0,...] (bottom; as a PART it contributes W @ 0 = 0
+# -- no edge needed) and EVERYTHING = [1,1,...] (top; as a WHOLE it contributes
+# the sum of its weights -- realized as the constant-1 "everything" column of
+# the percept SparseLayer, i.e. a learnable bias). A freshly-minted OBJECT
+# concept B starts maximally unspecified -- Parts(B)={NOTHING},
+# Wholes(B)={EVERYTHING} -- and successive refinement replaces the poles with
+# concrete codes (for text: letters below, the sentence above). The ids stay
+# key-only sentinels in the relation table, never tiling predicates.
+EVERYTHING = 101
+NOTHING = 102
+UNIVERSE = EVERYTHING   # back-compat alias (pre-2026-07-02 name)
+ATOM = NOTHING          # back-compat alias (pre-2026-07-02 name)
+_CHAR_CLASS_RANGES = {
+    LETTER: [(65, 90), (97, 122)],          # A-Z, a-z
+    DIGIT: [(48, 57)],                       # 0-9
+    WHITESPACE: [(9, 13), (32, 32)],         # tab, LF, VT, FF, CR, space
+    PUNCT: [(33, 47), (58, 64), (91, 96), (123, 126)],   # ASCII punctuation
+    CAPITAL: [(65, 90)],                     # overlaps LETTER by design
+    CONTROL: [(1, 8), (14, 31), (127, 127)],
+    HIGH_BYTE: [(128, 255)],                 # UTF-8 lead/continuation bytes
+    PAD: [(0, 0)],                           # InputSpace NUL/pad sentinel
+}
+
+
+def char_class_region(byte_input, class_ids):
+    """Binary-tiling region of ``byte_input`` for a SET of char classes.
+
+    ``byte_input`` ``[..., N]`` (byte values 0..255); ``class_ids`` an iterable
+    of the primitive byte-property ids above. Returns a signed
+    region ``[..., N]`` in ``{+1, -1}``: ``+1`` where the byte is in ANY
+    selected class (the OR-union -- the has-property whole), ``-1`` otherwise
+    (the complement whole). Same ``>0 has / <=0 not`` convention as
+    :meth:`Codebook.materialize_property`. A fixed 256-entry membership LUT
+    (built from the selected classes, then gathered) keeps this a fixed-shape
+    tensor op -- no host-side per-position control flow (the class loop is over
+    the fixed selected set, not the data)."""
+    if not torch.is_tensor(byte_input):
+        byte_input = torch.as_tensor(byte_input)
+    b = byte_input.long()
+    lut = torch.zeros(256, dtype=torch.bool)
+    for cid in class_ids:
+        for (lo, hi) in _CHAR_CLASS_RANGES[int(cid)]:
+            lut[lo:hi + 1] = True
+    member = lut.to(b.device)[b.clamp(min=0, max=255)]
+    return member.to(torch.float32) * 2.0 - 1.0
+
+
+class PropertyTilingLayer(Layer):
+    """WholeSpace char-class property tiling (doc/specs/mereological-order-
+    raising.md): an ANALYSIS op that binary-tiles a byte input into
+    ``{has-class}`` / ``{not}`` for a selected SET of char classes
+    (``LETTER`` / ``DIGIT`` / ``WHITESPACE`` / ``PUNCT``), OR-unioned -- the
+    analysis-side dual of a synthesis chunk. Parameter-free, fixed-shape (like
+    :class:`RunStructureLayer`). ``forward(byte_input, class_ids)`` returns the
+    signed region ``[..., N]`` in ``{+1, -1}`` (``+1`` = the has-property whole,
+    ``-1`` = the complement whole), each carrying a ``.what`` (the class) and,
+    via the run/containment measure over the ``+1`` runs, a ``.where``."""
+
+    LETTER, DIGIT, WHITESPACE, PUNCT = LETTER, DIGIT, WHITESPACE, PUNCT
+
+    def __init__(self):
+        super().__init__(1, 1)              # parameter-free measure; nominal widths
+
+    def forward(self, byte_input, class_ids):
+        """Signed ``{+1,-1}`` tiling region for the OR-union of ``class_ids``."""
+        return char_class_region(byte_input, class_ids)
+
+
+class NegationLayer(Layer):
+    """Materialize bivalent or ternary literals for Sigma/Pi logic.
+
+    Canonical DNF keeps negation at the literal level, then builds AND
+    terms over those literals and ORs the terms.  The default bivalent
+    layer is the signed pair:
+
+        forward(x) = [x, -x]
+
+    With ``ternary=True`` the layer inserts the non-affirming residual
+    from the grammar's ternary partition:
+
+        forward(x) = [x, Ops._non_kernel(x), -x]
+
+    For crisp signed values {-1, 0, 1}, exactly one ternary channel is
+    positive: affirmation, non-affirming negation, or not-negation.
+    Soft values remain a differentiable relaxation of that partition.
+    """
+
+    def __init__(self, nInput, ternary=False):
+        """Initialize NegationLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        ternary = bool(ternary)
+        super().__init__(nInput, (3 if ternary else 2) * nInput)
+        self.ternary = ternary
+
+    def forward(self, x):
+        """Return [x, -x] or [x, non(x), -x] along the final axis."""
+        if x.shape[-1] != self.nInput:
+            raise ValueError(
+                f"NegationLayer expected last dim {self.nInput}, "
+                f"got {x.shape[-1]}")
+        if self.ternary:
+            return torch.cat((x, Ops._non_kernel(x, monotonic=False), -x), dim=-1)
+        return torch.cat((x, -x), dim=-1)
+
+    def reverse(self, y):
+        """Collapse a literal bank back to signed variable evidence."""
+        if y.shape[-1] != self.nOutput:
+            raise ValueError(
+                f"NegationLayer.reverse expected last dim {self.nOutput}, "
+                f"got {y.shape[-1]}")
+        pos = y[..., :self.nInput]
+        neg_start = 2 * self.nInput if self.ternary else self.nInput
+        neg = y[..., neg_start:neg_start + self.nInput]
+        return 0.5 * (pos - neg)
+
+# NotLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
+
+# NonLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
+
+
+# IntersectionLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
+
+
+# UnionLayer (ex-UnionLayer; lattice max) -- moved to Language.py (2026-05-29 §5;
+# renamed 2026-07-05: 'union' is now the additive concept op).
+# LiftLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
+
+
+# LowerLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
+
+
+# Binary SymbolizeLayer retired by the operator catalogue (§3.4).
+
+
+# ConjunctionLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
+
+
+# DisjunctionLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
+
+
+# IsEqualLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
+
+
+class EqualLayer(GrammarLayer):
+    """``C -> equal(C, C)`` -- geometric identity on concept bivectors.
+
+    C-space_role identity: ``equal(A, B)`` returns the mutual-parthood
+    score ``part(A, B) * part(B, A)`` on bivector activations,
+    yielding 1 where A and B are co-located on the bivector cone
+    and 0 where they are disjoint. Acts directly on the concept-space_role
+    bivector activation; no codebook lookup is required.
+
+    Compare with the S-space_role ``isEqual`` which produces a single
+    parent symbol asserting identity — a higher-epistemic-level
+    wholeness operation that cannot be expressed at the subsymbolic
+    level.
+
+    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+    """
+    inverse_kind = 'search'
+    relation_kind = 'equal'
+    predicate_identity = 'equal'
+    rule_name        = "equal"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    space_role             = 'CS'
+    reads_activation = True
+
+    def __init__(self):
+        """Initialize EqualLayer."""
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        """Mutual parthood: ``part(left, right) * part(right, left)``."""
+        return Ops._equal_kernel(left, right)
+
+    def reverse(self, parent):
+        """Lossy ``(parent, parent)`` pseudo-inverse."""
+        return parent, parent
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        """Drive the reverse / generation pass."""
+        return self.reverse(parent)
+
+
+# PartLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
+
+
+# Query truth carriers retired; thought returns full conceptual content.
+
+
+def area_op(x, sigma=None):
+    """Normalised Gaussian region area: ``min(sigma**2, 1)``.
+
+    Args:
+        x: ``[..., D]`` activation (the proposition whose extent we
+            measure). Used only for device / dtype routing -- the area
+            depends solely on `sigma`.
+        sigma: scalar or tensor (mean reduced). When None falls back to
+            `_DEFAULT_SUBSYMBOLIC_SIGMA`.
+
+    Returns:
+        Scalar tensor on `x.device` / `x.dtype` in [0, 1].
+    """
+    if sigma is None:
+        sigma = _DEFAULT_SUBSYMBOLIC_SIGMA
+    if torch.is_tensor(sigma):
+        s = sigma.float().mean()
+    else:
+        s = float(sigma)
+        s = (x.new_tensor(s) if torch.is_tensor(x) else torch.tensor(s))
+    return torch.clamp(s.pow(2), max=1.0)
+
+
+def luminosity_op(x_a, x_b, sigma=None):
+    """Pairwise luminosity ``area - overlapArea * |t_A - t_B|`` in [-1, 1].
+
+    Both inputs are bivector-tail activations ``[..., D]`` (D >= 2);
+    the first two components carry the [pos, neg] poles. Returns a
+    scalar consistent with `Mereology.Luminosity`'s pairwise term.
+    """
+    if sigma is None:
+        sigma = _DEFAULT_SUBSYMBOLIC_SIGMA
+    sigma_f = float(sigma) if not torch.is_tensor(sigma) else float(
+        sigma.float().mean().item())
+    a_flat = x_a.reshape(-1, x_a.shape[-1])
+    b_flat = x_b.reshape(-1, x_b.shape[-1])
+    overlap = _gaussian_kernel_overlap(
+        a_flat, b_flat, sigma_f, sigma_f).mean()
+    if x_a.shape[-1] >= 2 and x_b.shape[-1] >= 2:
+        dot_a = (x_a[..., 0] - x_a[..., 1]).mean()
+        dot_b = (x_b[..., 0] - x_b[..., 1]).mean()
+    else:
+        dot_a = x_a.mean()
+        dot_b = x_b.mean()
+    disagree = (dot_a - dot_b).abs()
+    area = area_op(x_a, sigma_f).to(device=overlap.device, dtype=overlap.dtype)
+    lum = area - overlap * disagree
+    return torch.clamp(lum, min=-1.0, max=1.0)
+
+
+def isa_part_op(child, parent, sigma=None):
+    """One-step kernel overlap ``K(child, parent)`` in (0, 1] per the
+    plan's "is the child contained in the parent at this conceptual
+    order" semantics.
+    """
+    if sigma is None:
+        sigma = _DEFAULT_SUBSYMBOLIC_SIGMA
+    sigma_f = float(sigma) if not torch.is_tensor(sigma) else float(
+        sigma.float().mean().item())
+    c_flat = child.reshape(-1, child.shape[-1])
+    p_flat = parent.reshape(-1, parent.shape[-1])
+    overlap = _gaussian_kernel_overlap(
+        c_flat, p_flat, sigma_f, sigma_f)
+    return overlap.mean()
+
+
+# GRAMMAR_LAYER_CLASSES -- moved to Language.py (2026-05-29 grammar-file-refactor §5). Backward-compat lookup is provided by the module-level __getattr__ at the end of this file.
+
+
+# Ops whose .reverse / .generate is a continuous monotonic kernel and
+# therefore preserves connectedness of the back-projected fiber. Used
+# by Models.BaseModel.hoc_shape / Contiguous to decide whether a leaf
+# at the bottom of the derivation tree carries trustworthy
+# hyperrectangle geometry.
+#
+#   pi    -- multiplicative log-domain AND-fold; monotonic LDU.
+#   sigma -- additive matmul; monotonic LDU.
+#   lift  -- gated SigmaLayer.compose (per-rule rank gate; same LDU).
+#   lower -- gated PiLayer.compose (per-rule rank gate; same LDU).
+#   not   -- bivector pole swap; bijection (permutation of channels).
+#   non   -- per-pole bivector complement [1-pos, 1-neg]; affine
+#            self-inverse bijection on each pole.
+#
+# All others (intersection / union / conjunction / disjunction / equals
+# / part / Contiguous / true / false / what / where / when / swap /
+# query / absorb) have lossy reverse paths -- the pseudo-inverse
+# `(parent, parent)` or a pole projection -- so a leaf whose path
+# includes any of them carries degraded contiguity information.
+CONTIGUITY_PRESERVING_OPS = frozenset({'pi', 'sigma', 'lift', 'lower', 'not', 'non'})
+
+
+class ConceptsFromPercepts(Layer):
+    """Common interface for a first-level concept-activation readout.
+
+    ``percepts[..., i]`` is signed evidence for ONE identified part or
+    whole code, not an RMS summary of its native vector. Input positions
+    must have stable (space, code) identities; output positions identify
+    concepts. The caller owns that mapping, spatial alignment, candidate
+    admission (normally at most eight references), and the full parallel
+    content needed by reconstruction. This small dense primitive does not
+    search a vocabulary or replace that content with scalar activations.
+
+    Multiple references knit into each concept; multiple concepts may be
+    present simultaneously. The result is independent tanh activations in
+    [-1, 1], not a softmax over concepts. A boolean ``mask`` broadcastable
+    to the input marks observed/admitted evidence. Missing references are
+    omitted, not treated as observed absence (-1). With no evidence at all
+    the result is zero (unknown), even if a learned bias is nonzero.
+
+    ``forward`` and ``conceptsFromPercepts`` have the same tensor contract.
+    This readout is not generally invertible: deliberately reject the
+    identity ``Layer.reverse`` inherited by ordinary utility layers.
+    """
+
+    def __init__(self, nInput, nOutput):
+        if not isinstance(nInput, int) or isinstance(nInput, bool) or nInput < 1:
+            raise ValueError("nInput must be a positive integer")
+        if not isinstance(nOutput, int) or isinstance(nOutput, bool) or nOutput < 1:
+            raise ValueError("nOutput must be a positive integer")
+        super().__init__(nInput, nOutput)
+        # Use the existing additive substrate, but NOT its legacy atanh
+        # input chart: the agreed evidence formula is tanh(b + sum(w*g*e)).
+        # No inverse is claimed for a scalar concept-activation readout.
+        self.sigma = SigmaLayer(nInput, nOutput, nonlinear=False,
+                                invertible=False, ergodic=False)
+        self.layers.append(self.sigma)
+
+    @property
+    def input_weights(self):
+        """Actual connection coefficients [input code, output concept]."""
+        return self.sigma.layer.W
+
+    @property
+    def concept_bias(self):
+        """Per-concept bias [1, output concept], not an ergodic multiplier."""
+        return self.sigma.layer.biasWeight
+
+    def _preactivation(self, percepts, context):
+        raise NotImplementedError("choose Gated or SigmaConceptsFromPercepts")
+
+    def forward(self, percepts, *, mask=None, context=None):
+        if percepts.ndim < 1 or percepts.shape[-1] != self.nInput:
+            raise ValueError("percepts must end in nInput code-specific activations")
+        if not percepts.is_floating_point():
+            raise TypeError("percepts must be floating-point signed evidence")
+        if mask is not None:
+            if mask.dtype != torch.bool:
+                raise TypeError("mask must be boolean; absence is an evidence value")
+            mask = torch.broadcast_to(mask, percepts.shape)
+            # Multiplication by zero would retain NaNs in padding. Missing
+            # evidence is excluded from both the value and its gradient.
+            percepts = torch.where(mask, percepts, torch.zeros_like(percepts))
+        activation = torch.tanh(self._preactivation(percepts, context))
+        if mask is not None:
+            activation = torch.where(mask.any(dim=-1, keepdim=True), activation,
+                                     torch.zeros_like(activation))
+        return activation
+
+    def conceptsFromPercepts(self, percepts, *, mask=None, context=None):
+        """Named entry point; use __call__ so module hooks still run."""
+        return self(percepts, mask=mask, context=context)
+
+    def regularization_loss(self):
+        """Explicit, device-local scalar; no hidden training-loop mutation."""
+        return self.input_weights.new_zeros(())
+
+    def reverse(self, y):
+        raise NotImplementedError(
+            "concept activation is not an inverse carrier; decode the collective field")
+
+
+class GatedConceptsFromPercepts(ConceptsFromPercepts):
+    r"""Learned participation followed by a weighted tanh readout.
+
+    g_ic = sigmoid(gate_logits_ic + sum_d context_d * context_weights_dic)
+    a_c  = tanh(b_c + sum_i evidence_i * g_ic * input_weights_ic)
+
+    The gate intercept identifies a reference/concept pair; optional local
+    context modulates that participation. Context is never a direct output
+    shortcut. Sigmoids are not normalized against one another, and there is
+    no fixed-two preference, hard top-k, STE, or automatic sparsity penalty.
+    Serial recognition can use two inputs, serial construction can use
+    more, and parallel recognition can keep a richer selected set.
+    """
+
+    def __init__(self, nInput, nOutput, *, context_dim=0):
+        if (not isinstance(context_dim, int) or isinstance(context_dim, bool)
+                or context_dim < 0):
+            raise ValueError("context_dim must be a nonnegative integer")
+        super().__init__(nInput, nOutput)
+        self.context_dim = context_dim
+        self.gate_logits = nn.Parameter(torch.zeros(nInput, nOutput))
+        if context_dim:
+            self.context_weights = nn.Parameter(
+                torch.zeros(context_dim, nInput, nOutput))
+        else:
+            self.register_parameter("context_weights", None)
+
+    def gates(self, context=None):
+        """Return [I,C] or [...,I,C] participation; no evidence is consumed."""
+        logits = self.gate_logits
+        if context is not None:
+            if not self.context_dim:
+                raise ValueError("context requires context_dim > 0")
+            if context.ndim < 1 or context.shape[-1] != self.context_dim:
+                raise ValueError("context must end in context_dim features")
+            logits = logits + torch.einsum(
+                "...d,dic->...ic", context, self.context_weights)
+        # An omitted context means neutral, zero-valued context, leaving
+        # the learned reference-specific gate intercepts active.
+        return torch.sigmoid(logits)
+
+    def _preactivation(self, percepts, context):
+        gates = self.gates(context)
+        if context is not None:
+            # Context may be shared across the batch, but must not expand
+            # the evidence batch or silently create additional locations.
+            gates = torch.broadcast_to(
+                gates, (*percepts.shape[:-1], self.nInput, self.nOutput))
+        weights = self.input_weights * gates
+        value = torch.einsum("...i,...ic->...c", percepts, weights)
+        # LinearLayer deliberately separates its affine bias from forward.
+        return self.sigma.layer.forwardBias(value).reshape(
+            *percepts.shape[:-1], self.nOutput)
+
+
+class SigmaConceptsFromPercepts(ConceptsFromPercepts):
+    r"""Simpler tanh(Sigma(e) + b), optionally with connection-wise lasso.
+
+    R(W) = l1_lambda * sum_ic |W_ic| / nOutput
+
+    The penalty is a mean over concepts of each concept's incoming L1
+    norm. It does NOT penalize percept activations, bias, whole-codebook
+    rows, or LDU factors. A code remains available to other concepts when
+    one connection becomes zero. ``l1_lambda=0`` is the unregularized
+    control, and no context-dependent selector is present in this variant.
+
+    Choose ONE training route: add ``regularization_loss()`` to the smooth
+    loss, OR backpropagate the smooth loss alone, take a plain SGD step,
+    then call ``proximal_step_(learning_rate)``. Do not count L1 twice.
+    The latter gives exact zeros via the L1 proximal operator; ordinary
+    Adam plus an L1 gradient need not. Neither route guarantees a support
+    budget of eight, and zero weights alone do not accelerate a dense GEMM.
+    """
+
+    def __init__(self, nInput, nOutput, *, l1_lambda=0.0):
+        l1_lambda = float(l1_lambda)
+        if not math.isfinite(l1_lambda) or l1_lambda < 0:
+            raise ValueError("l1_lambda must be finite and nonnegative")
+        super().__init__(nInput, nOutput)
+        self.l1_lambda = l1_lambda
+
+    def _preactivation(self, percepts, context):
+        if context is not None:
+            raise ValueError("Sigma baseline has no context selector")
+        value = self.sigma(percepts)
+        return self.sigma.layer.forwardBias(value).reshape(
+            *percepts.shape[:-1], self.nOutput)
+
+    def regularization_loss(self):
+        return self.l1_lambda * self.input_weights.abs().sum() / self.nOutput
+
+    @staticmethod
+    def from_coefficients(percepts, coefficients, *, mask=None):
+        """The same affine/tanh law for an indexed bank of concept rows.
+
+        Each ``coefficients[..., I+1]`` row contains I input weights and
+        one bias. Leading dimensions broadcast across locations; this avoids
+        evaluating an entire concept inventory to read a handful of rows.
+        """
+        if int(coefficients.shape[-1]) != int(percepts.shape[-1]) + 1:
+            raise ValueError("Sigma coefficients must contain I weights and one bias")
+        if mask is not None:
+            if mask.dtype != torch.bool:
+                raise TypeError("evidence mask must be boolean")
+            mask = torch.broadcast_to(mask, percepts.shape)
+            percepts = torch.where(mask, percepts, torch.zeros_like(percepts))
+        result = torch.tanh(
+            (percepts * coefficients[..., :-1]).sum(dim=-1)
+            + coefficients[..., -1])
+        if mask is not None:
+            result = torch.where(mask.any(dim=-1), result, torch.zeros_like(result))
+        return result
+
+    @torch.no_grad()
+    def proximal_step_(self, learning_rate):
+        """Soft-threshold W after plain SGD on the smooth loss, not Adam.
+
+        Threshold lr*lambda/nOutput matches the exact normalization of
+        regularization_loss. Bias is untouched, and a later smooth step
+        may reactivate a zero edge. This is not permanent topology pruning.
+        See Parikh & Boyd, Proximal Algorithms, section 6.5.2 (L1 norm).
+        """
+        learning_rate = float(learning_rate)
+        if not math.isfinite(learning_rate) or learning_rate < 0:
+            raise ValueError("learning_rate must be finite and nonnegative")
+        threshold = learning_rate * self.l1_lambda / self.nOutput
+        if threshold:
+            weight = self.input_weights
+            weight.copy_(weight.sign() * (weight.abs() - threshold).clamp_min(0))
+        return self
+
+
+class IndexedSigmaConceptsFromPercepts(Layer):
+    """Plain Sigma readouts, stored row-locally for a large concept bank.
+
+    This is the indexed storage form of SigmaConceptsFromPercepts, not a
+    different activation formula. One concept owns up to ``nInput`` stable
+    (part/whole, code) reference slots and one affine row. There are no gates,
+    source means, or learned selectors. Optional weak connection L1 is applied
+    by the row-local optimizer's diagonal-metric proximal step, not by an
+    additional autograd penalty. Lookup is O(admitted concepts), with sparse
+    gradients for RowLocalAdam; compiled loops consume the gathered rows.
+
+    Reference admission happens only at the eager vocabulary boundary. Slots
+    never silently change identity when new references arrive. All source
+    percepts remain in the collective field even when this bounded readout
+    cannot admit another reference.
+    """
+
+    def __init__(self, nInput, capacity, *, l1_lambda=0.0):
+        super().__init__(int(nInput), int(capacity))
+        if self.nInput < 1 or self.nOutput < 1:
+            raise ValueError("indexed Sigma dimensions must be positive")
+        self.l1_lambda = float(l1_lambda)
+        if not math.isfinite(self.l1_lambda) or self.l1_lambda < 0:
+            raise ValueError("readout L1 must be finite and nonnegative")
+        self.coefficients = nn.Parameter(torch.full((self.nOutput, self.nInput + 1), .5))
+        with torch.no_grad():
+            self.coefficients[:, -1].zero_()
+        self.references = {}
+
+    def admit_references(self, row, parts, wholes):
+        """Append stable typed slots, reserving neither fillers nor four per role."""
+        row = int(row)
+        if not 0 <= row < self.nOutput:
+            raise ValueError("concept row is outside indexed Sigma capacity")
+        slots = list(self.references.get(row, ()))
+        parts = sorted(set(int(code) for code in parts if int(code) >= 0))
+        wholes = sorted(set(int(code) for code in wholes if int(code) >= 0))
+        # Interleave initially so both mereological roles are represented;
+        # either side can use spare slots when the other has fewer references.
+        for rank in range(max(len(parts), len(wholes))):
+            for role, codes in ((0, parts), (1, wholes)):
+                if rank < len(codes):
+                    ref = (role, codes[rank])
+                    if ref not in slots and len(slots) < self.nInput:
+                        slots.append(ref)
+        self.references[row] = tuple(slots)
+        return tuple(slots)
+
+    def lookup_coefficients(self, rows):
+        known = rows >= 0
+        values = F.embedding(rows.clamp_min(0).long(), self.coefficients, sparse=True)
+        return torch.where(known.unsqueeze(-1), values, torch.zeros_like(values))
+
+    def forward(self, percepts, rows, *, mask=None):
+        known = rows >= 0
+        admitted = known.unsqueeze(-1).expand_as(percepts)
+        if mask is not None:
+            admitted = torch.logical_and(admitted, mask)
+        return SigmaConceptsFromPercepts.from_coefficients(
+            percepts, self.lookup_coefficients(rows), mask=admitted)
+
+    def conceptsFromPercepts(self, percepts, rows, *, mask=None):
+        return self(percepts, rows, mask=mask)
+
+    @torch.no_grad()
+    def l1_batch(self, rows, reference_roles):
+        """Observed rows, connection mask, normalized strength and report cost.
+
+        Average incoming L1 over DISTINCT observed concepts, not sentence
+        occurrences or dictionary capacity. Only admitted typed references
+        count; reserved slots and bias are excluded. Returned cost is detached:
+        the optimizer applies this objective once via its proximal update.
+        No vocabulary-wide scan or dense gradient is constructed.
+        """
+        if not self.l1_lambda:
+            return None
+        if (rows.dtype != torch.long or reference_roles.dtype != torch.long
+                or rows.device != self.coefficients.device
+                or reference_roles.device != rows.device
+                or tuple(reference_roles.shape) != (*rows.shape, self.nInput)):
+            raise ValueError("readout L1 requires concept rows and their typed reference slots")
+        flat_rows = rows.reshape(-1)
+        roles = reference_roles.reshape(-1, self.nInput)
+        connections = (roles == 0) | (roles == 1)
+        valid = (flat_rows >= 0) & connections.any(dim=-1)
+        selected, inverse = torch.unique(flat_rows[valid], sorted=True, return_inverse=True)
+        if not selected.numel():
+            return None
+        counts = torch.zeros(selected.numel(), self.nInput,
+                             dtype=torch.long, device=rows.device)
+        counts.index_add_(0, inverse, connections[valid].long())
+        mask = F.pad(counts > 0, (0, 1), value=False)  # bias is not an input
+        coefficients = self.coefficients.index_select(0, selected)
+        strength = self.l1_lambda / selected.numel()
+        cost = strength * torch.where(mask, coefficients.abs(), 0).sum()
+        return selected, mask, strength, cost
+
+    def reverse(self, y):
+        raise NotImplementedError("decode the collective percept field, not the scalar readout")
+
+    def reference_state(self):
+        """Metadata saved with ConceptualSpace.vocab_extras, not tensor state."""
+        return {"version": 1, "references": dict(self.references)}
+
+    def load_reference_state(self, state):
+        if not isinstance(state, dict) or state.get("version") != 1:
+            raise ValueError("unsupported indexed Sigma reference schema")
+        references = {}
+        for row, slots in state.get("references", {}).items():
+            row = int(row)
+            slots = tuple((int(role), int(code)) for role, code in slots)
+            if (not 0 <= row < self.nOutput or len(slots) > self.nInput
+                    or len(set(slots)) != len(slots)
+                    or any(role not in (0, 1) or code < 0 for role, code in slots)):
+                raise ValueError("invalid indexed Sigma reference slots")
+            references[row] = slots
+        self.references = references
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        key = prefix + "coefficients"
+        value = state_dict.get(key)
+        if torch.is_tensor(value) and tuple(value.shape) != tuple(self.coefficients.shape):
+            if value.dim() == 2 and int(value.shape[1]) == self.nInput + 1:
+                # A larger reserve adds unused rows; learned rows and their
+                # reference identities retain their original addresses.
+                restored = self.coefficients.detach().clone()
+                count = min(int(value.shape[0]), self.nOutput)
+                restored[:count].copy_(value[:count])
+                state_dict[key] = restored
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                     missing_keys, unexpected_keys, error_msgs)
+
+
+class PiLayer(GrammarLayer):
+    r"""Multiplicative chart map used by the grammar's LowerLayer:
+    ``[-1, 1] -> [-1, 1]``.
+
+    Lower owns the operand assembly and dispatch. Perceptual towers use
+    their native meronomies; they do not own this fold.
+
+    Both modes share the symmetric log-domain embedding (1+x)/(1-x):
+
+        Forward:  z = _from_mult(exp(W @ log(_to_mult(x)) + b))
+        Reverse:  x = _from_mult(exp(W^-^1 @ (log(_to_mult(z)) - b)))
+
+    Entry transform (1+x)/(1-x) = exp(2*atanh(x)):
+        x = 0  ->  1  ->  log = 0   : absent = multiplicative identity
+        x = +k and x = -k produce equal and opposite log-space contributions
+
+    Exit transform (y-1)/(y+1) is the exact inverse. In ``nonlinear=True``
+    mode this gives ``tanh(W @ atanh(x) + b/2)``; a following bounded
+    Sigma chart cancels that tanh away from clipping. ``nonlinear=False``
+    instead retains the exponential output, ``exp(2*W @ atanh(x) + b)``.
+    Those exponential features remain nonlinear under a linear Sigma readout.
+
+    ``monotonic`` selects the weight constraint:
+        monotonic=True:  W >= 0 (NonNegativeInvertibleLinearLayer) -- ordering preserved
+        monotonic=False: W unrestricted (InvertibleLinearLayer) -- bitonic response
+    """
+
+    _eps = 1e-6
+
+    def __init__(self, nInput, nOutput, ergodic=False, naive=True,
+                 invertible=False, hasBias=True, stable=True,
+                 monotonic=False, nonlinear=True,
+                 butterfly=False, N=None):
+        """Initialize PiLayer; allocate state for the class contract.
+
+        See class docstring for invariants.
+
+        ``butterfly`` / ``N`` (Stage 5, doc/plans/2026-05-26-two-loop-
+        pi-sigma-substrate.md): when ``butterfly=True``, the layer
+        delegates ``forward`` / ``reverse`` to the inherited
+        GrammarLayer butterfly cascade. ``N`` is the per-position
+        slot count and must be a power of two; ``nInput == nOutput``
+        defines D. The per-pair op is pi-style (atanh -> matmul ->
+        tanh) applied at each cascade node.
+        """
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        self.invertible = invertible
+        self.stable     = stable
+        self.hasBias    = hasBias
+        self.monotonic  = monotonic
+        self.nonlinear  = nonlinear
+        if self.butterfly:
+            # Butterfly mode owns the per-position weight cascade;
+            # the legacy unary inner layer is not constructed.
+            self.layer = None
+        else:
+            if invertible:
+                if monotonic:
+                    self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
+                                                                  naive=naive, ergodic=ergodic,
+                                                                  stable=stable)
+                else:
+                    self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
+                                                       naive=naive, ergodic=ergodic,
+                                                       stable=stable)
+            else:
+                self.layer = LinearLayer(nInput, nOutput, hasBias=hasBias)
+            self.layers.append(self.layer)
+
+    @property
+    def bias(self):
+        if self.layer is None:
+            return None
+        return self.layer.bias
+    @property
+    def var(self):
+        if self.layer is None:
+            return None
+        return self.layer.var
+
+    def resample_noise(self):
+        """Resample noise.
+
+        See class docstring for the operation contract.
+        """
+        if self.layer is not None:
+            self.layer.resample_noise()
+
+    # -- Symmetric domain transforms ----------------------------------
+
+    # Per-instance switch for the bounded backward of the charts (grammar
+    # fold layers set it; space-level layers keep the exact derivative).
+    _bounded_backward = False
+
+    # Slope cap of the log-odds chart's GRADIENT (straight-through): the
+    # exact chart ``2*atanh(x)`` has derivative ``2/(1-x^2)``, 2e6 at the
+    # clamp; nested folds over a long packed row compounded it 100x per
+    # level into NaN (2026-09-11, packed FineWeb rows). Beyond ``|x| = 0.9``
+    # the backward uses the tangent slope at 0.9 (10.5); the forward value
+    # is unchanged.
+    _ODDS_SLOPE_CAP_AT = 0.9
+
+    def _log_mult(self, x):
+        """``log(_to_mult(x))`` = ``2*atanh(x)``, forward exact (with the
+        domain clamp), backward with a bounded slope (see the class note).
+        A custom Function keeps the forward expression byte-identical and
+        saves only ``x``."""
+        if not self._bounded_backward:
+            return torch.log(self._to_mult(x))
+        return _BoundedLogMult.apply(x, float(self._eps), self._ODDS_SLOPE_CAP_AT)
+
+    def _to_mult(self, x):
+        """Map [-1, 1] -> (0, inf), identity at 0 -> 1.
+
+        The clamp into the open ``(-1, 1)`` interval is UNCONDITIONAL:
+        ``(1 + x)/(1 - x)`` is positive only there, and its result
+        always feeds a ``log`` (the forward fold for both ``nonlinear``
+        settings, and the ``nonlinear=True`` reverse). An input at or
+        outside ``+-1`` -- e.g. an un-normalized percept on an untrained
+        model, since percept normalization runs AFTER ``pi.forward`` --
+        would otherwise make the ratio ``<= 0`` and inject
+        ``log(<=0) = NaN``. Enforcing the documented ``[-1, 1]`` domain
+        keeps the fold finite; strictly in-domain values
+        (``|x| < 1 - eps``) are unchanged. The clamp does NOT swallow
+        non-finite input (``clamp(nan/inf)`` stays nan/inf), so a genuine
+        upstream divergence still propagates and fails loud.
+        """
+        x = x.clamp(-1 + self._eps, 1 - self._eps)
+        return (1 + x) / (1 - x)
+
+    def _from_mult(self, y):
+        """Map (0, inf) -> (-1, 1), identity at 1 -> 0."""
+        return (y - 1) / (y + 1)
+
+    # -- Butterfly per-pair op (Stage 5) ------------------------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Pi-style per-pair op for the butterfly cascade.
+
+        atanh -> einsum -> tanh applied per pair. The atanh / tanh
+        framing is the unary pi math (the multiplicative AND fold in
+        log-mult domain reduces to the same atanh-> linear -> tanh
+        kernel once the bias term is dropped, which the cascade does
+        intentionally -- the per-node weights carry all parametric
+        flexibility).
+        """
+        if self.nonlinear:
+            x_pair = bounded_atanh(x_pair, bounded=self._bounded_backward)
+        out = torch.einsum('bmi,mij->bmj', x_pair, W_node)
+        if self.nonlinear:
+            out = torch.tanh(out)
+        return out
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; inverts the per-pair op."""
+        if self.nonlinear:
+            y_pair = bounded_atanh(y_pair, bounded=self._bounded_backward)
+        out = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        if self.nonlinear:
+            out = torch.tanh(out)
+        return out
+
+    # -- forward / reverse --------------------------------------------
+
+    def compute_forward(self, x, binary=False, gate=None):
+        """Pure ungated Pi computation for a recurrent HOP body."""
+        if self.butterfly:
+            if binary:
+                x = Ops.top2_select_ste(x)
+            l = self._log_mult(x)
+            wl = self._butterfly_forward(l)
+            return torch.tanh(wl / 2) if self.nonlinear else torch.exp(wl)
+        if binary:
+            x = Ops.top2_select_ste(x)
+        l = self._log_mult(x)
+        if hasattr(self.layer, "functional_forward"):
+            l = l.to(self.layer.d.device)
+            wl = self.layer.functional_forward(l, gate=gate)
+        else:
+            W = self.layer.compute_W_current()
+            l = l.to(W.device)
+            wl = l @ W + self.layer._effective_bias()
+        return torch.tanh(wl / 2) if self.nonlinear else torch.exp(wl)
+
+    def forward(self, x, binary=False, gate=None):
+        """Apply the log-domain multiplicative AND fold.
+
+        ``binary=True`` selects the top-2 input operands (by |x|) via
+        Ops.top2_select_ste before the entry transform; the rest drop
+        to 0 in raw domain -> 1 (mult-identity) in mult-domain ->
+        factor 1 in the product, i.e. irrelevant to the AND.  Backward
+        is STE -- gradient flows to every input as if no selection ran.
+
+        ``gate`` (optional): per-call ``[rank]`` tensor stashed on
+        ``self.layer._current_gate`` so that ``compute_W_current``
+        -> ``_d_effective`` picks it up. Used by rule layers
+        (LiftLayer / LowerLayer) for low-rank operator slicing.
+
+        Butterfly mode: wrap the FFT-style element-pair cascade with
+        the pi log-domain transforms (``_to_mult`` / log / cascade /
+        exp / ``_from_mult``). The cascade replaces the ``W @ l``
+        linear core in log-mult space; the surrounding nonlinearity
+        preserves the pi semantics.
+        """
+        if self.butterfly:
+            if binary:
+                x = Ops.top2_select_ste(x)
+            l = self._log_mult(x)
+            wl = self._butterfly_forward(l)
+            if self.nonlinear:
+                out = torch.tanh(wl / 2)
+            else:
+                out = torch.exp(wl)
+            return out
+        if not self.layer.ergodic:
+            return self.compute_forward(x, binary=binary, gate=gate)
+        # Inline inner-forward: log-domain multiplicative AND fold.
+        self.layer._current_gate = gate
+        try:
+            if self.layer.ergodic:
+                self.resample_noise()
+            W = self.layer.compute_W_current()
+            x = x.to(W.device)
+            if binary:
+                x = Ops.top2_select_ste(x)
+            l = self._log_mult(x)
+            wl = l @ W
+            b = self.layer._effective_bias()
+            wl = wl + b
+            if self.nonlinear:
+                out = torch.tanh(wl / 2)
+            else:
+                out = torch.exp(wl)
+        finally:
+            self.layer._current_gate = None
+        return out
+
+    def reverse(self, y, gate=None):
+        """Recover x from y.  Requires invertible=True.
+
+        ``gate`` flows through ``compute_Winverse_current`` ->
+        ``_d_effective`` -> ``1/(d * gate)``.
+
+        Butterfly mode: wrap ``_butterfly_reverse`` with pi log-domain
+        transforms symmetric to forward.
+        """
+        if self.butterfly:
+            if self.nonlinear:
+                l = self._log_mult(y)
+            else:
+                # ``nonlinear=False`` forward emits a positive mult-domain
+                # value (``exp(wl) in (0, inf)``); the reverse ``log`` needs
+                # that domain. A reconstruction seed driven from an arbitrary
+                # (signed) idea can land <= 0 here -- clamp to the log domain
+                # so the leg stays finite instead of injecting
+                # ``log(<=0) = NaN``. NaN/Inf inputs (a genuine upstream
+                # divergence) still propagate through the clamp and fail loud
+                # downstream -- the clamp rescues only finite out-of-domain
+                # values, it does not swallow non-finite ones.
+                l = torch.log(y.clamp(min=self._eps))
+            lx = self._butterfly_reverse(l)
+            # ``tanh(lx/2)`` equals ``_from_mult(exp(lx))`` for finite ``lx``
+            # but is saturation-safe (no ``inf/inf = NaN`` on overflow), so it
+            # serves both the nonlinear and the former ``_from_mult(exp)``
+            # branch.
+            out = torch.tanh(lx / 2)
+            return out
+        # Inline inner-reverse: log-domain multiplicative AND fold inverse.
+        self.layer._current_gate = gate
+        try:
+            W_inv = self.layer.compute_Winverse_current()
+            y = y.to(W_inv.device)
+            if self.nonlinear:
+                l = self._log_mult(y)
+            else:
+                # See the butterfly branch above: ``nonlinear=False`` reverse
+                # expects ``y`` in the positive mult-domain the forward emits.
+                # Clamp to the log domain so a signed reconstruction seed
+                # stays finite, while NaN/Inf still propagate (fail-loud
+                # preserved -- the clamp does not swallow non-finite input).
+                l = torch.log(y.clamp(min=self._eps))
+            b = self.layer._effective_bias()
+            lx = (l - b) @ W_inv
+            # ``tanh(lx/2)`` == ``_from_mult(exp(lx))`` but saturation-safe.
+            out = torch.tanh(lx / 2)
+            if self.layer.ergodic:
+                self.resample_noise()
+        finally:
+            self.layer._current_gate = None
+        return out
+
+    def factorize_over_set(self, y, M, gate=None):
+        r"""π-FACTORIZE a fold into M EQUAL factors -- the log-domain DUAL of
+        :meth:`SigmaLayer.generate`'s balanced split (doc/specs/mereological-
+        order-raising.md "Ramsification with the towers"; the π-analyse split's
+        property-source). The π forward folds factors MULTIPLICATIVELY (their
+        log-memberships SUM through ``W``); this recovers the summed
+        log-membership ``lx = (log(_to_mult(y)) - b) @ W^-1`` exactly as
+        :meth:`reverse`, then SPLITS IT EQUALLY by ``M`` and exits, returning ONE
+        representative factor ``[..., nInput]`` in ``[-1, 1]`` (the M factors are
+        equal, exactly as ``σ.generate`` returns equal halves). ``M == 1``
+        reduces to :meth:`reverse`. Where σ splits a SUM by M in the atanh
+        domain, π splits a PRODUCT by M in the log-mult domain. Requires
+        ``invertible=True``; round-trips (re-folding M equal copies recovers
+        ``y``)."""
+        M = max(1, int(M))
+        if self.butterfly:
+            if self.nonlinear:
+                l = self._log_mult(y)
+            else:
+                l = torch.log(y.clamp(min=self._eps))
+            lx = self._butterfly_reverse(l)
+            return torch.tanh((lx / float(M)) / 2.0)
+        self.layer._current_gate = gate
+        try:
+            W_inv = self.layer.compute_Winverse_current()
+            y = y.to(W_inv.device)
+            if self.nonlinear:
+                l = self._log_mult(y)
+            else:
+                l = torch.log(y.clamp(min=self._eps))
+            b = self.layer._effective_bias()
+            lx = (l - b) @ W_inv
+            out = torch.tanh((lx / float(M)) / 2.0)
+            if self.layer.ergodic:
+                self.resample_noise()
+        finally:
+            self.layer._current_gate = None
+        return out
+
+    # -- Binary tensor ops (chart parser) -----------------------------
+    #
+    # ``forward(x: [..., D])`` is the unary feature-fold form. The
+    # chart parser needs the *binary* form: combine two operand
+    # vectors (one per child span) into one parent vector via the
+    # same parameterization. For the AND-fold, the natural binary
+    # semantics is multiplication in mult-domain == addition in
+    # log-mult domain: log_mult(left) + log_mult(right) is then
+    # passed through the same W + b + tanh-half pipeline as the
+    # unary form. ``decompose`` closes the loop with a balanced
+    # split so the chart can also push parent gradients back into
+    # child cells.
+    def compose(self, left, right, gate=None):
+        """Binary AND fold: combine two ``[..., D]`` operands into one.
+
+        Args:
+            left, right: ``[..., D]`` in [-1, 1].
+            gate: optional per-call ``[rank]`` multiplier on the inner
+                LDU's diagonal (used by LowerLayer for low-rank slicing).
+
+        Returns:
+            ``[..., nOutput]`` in [-1, 1].
+        """
+        if not self.layer.ergodic or torch.compiler.is_compiling():
+            # ``PiLayer(invertible=False)`` owns a plain LinearLayer, which
+            # has ``W`` but no LDU diagonal ``d``.  Composition is valid for
+            # both variants; choose the device from the registered parameters
+            # instead of assuming the invertible implementation.
+            device = next(self.layer.parameters()).device
+            left = left.to(device)
+            right = right.to(device)
+            if self.nonlinear:
+                l_l = self._log_mult(left)
+                l_r = self._log_mult(right)
+            else:
+                l_l = torch.log(left)
+                l_r = torch.log(right)
+            l_sum = l_l + l_r
+            if hasattr(self.layer, "functional_forward"):
+                wl = self.layer.functional_forward(l_sum, gate=gate)
+            else:
+                # Plain LinearLayer (the non-invertible Pi variant) has no
+                # functional LDU helper; apply its current affine map directly.
+                wl = (l_sum @ self.layer.compute_W_current()
+                      + self.layer._effective_bias())
+            return torch.tanh(wl / 2) if self.nonlinear else torch.exp(wl)
+        self.layer._current_gate = gate
+        try:
+            if self.layer.ergodic:
+                self.resample_noise()
+            W = self.layer.compute_W_current()
+            left = left.to(W.device)
+            right = right.to(W.device)
+            if self.nonlinear:
+                l_l = self._log_mult(left)
+                l_r = self._log_mult(right)
+            else:
+                l_l = torch.log(left)
+                l_r = torch.log(right)
+            l_sum = l_l + l_r
+            wl = l_sum @ W
+            b = self.layer._effective_bias()
+            wl = wl + b
+            if self.nonlinear:
+                return torch.tanh(wl / 2)
+            return torch.exp(wl)
+        finally:
+            self.layer._current_gate = None
+
+    def generate_functional(self, parent, gate=None, W_inv=None, reference=None,
+                            reference_side=None):
+        """``generate`` without module mutation (compiled reverse loops):
+        the same balanced split through the tied inverse; ``W_inv`` is the
+        inner layer's precomputed inverse (optional)."""
+        if not self.nonlinear:
+            raise RuntimeError("generate_functional requires nonlinear pi")
+        log_mult_y = self._log_mult(parent)
+        b = self.layer._effective_bias()
+        s = self.layer.functional_reverse(log_mult_y - b, gate=gate, W_inv=W_inv)
+        op = torch.tanh(s * 0.25)
+        if reference is None:
+            return op, op
+        right, known = reference_side
+        remainder = torch.tanh((s - self._log_mult(reference)) * .5)
+        left = torch.where(right[:, None], remainder, reference)
+        right_value = torch.where(right[:, None], reference, remainder)
+        return torch.where(known[:, None], left, op), torch.where(known[:, None], right_value, op)
+
+    def generate(self, parent, gate=None):
+        """Inverse of compose; balanced split.
+
+        Given ``y = tanh((W @ (log_mult(left) + log_mult(right)) + b)
+        / 2)`` recover the pre-transform sum
+        ``s = log_mult(left) + log_mult(right)`` and assign
+        ``left == right == _from_mult(exp(s/2))``. Round-trip
+        ``compose(*generate(y)) == y`` when the inner layer is
+        invertible.
+
+        Args:
+            parent: ``[..., nOutput]`` in [-1, 1].
+            gate: same gate passed to ``compose``.
+
+        Returns:
+            ``(left, right)``: each ``[..., nInput]`` in [-1, 1].
+
+        Requires ``invertible=True``.
+        """
+        self.layer._current_gate = gate
+        try:
+            W_inv = self.layer.compute_Winverse_current()
+            parent = parent.to(W_inv.device)
+            if self.nonlinear:
+                log_mult_y = self._log_mult(parent)
+            else:
+                log_mult_y = torch.log(parent)
+            b = self.layer._effective_bias()
+            s = (log_mult_y - b) @ W_inv
+            half = s * 0.5
+            if self.nonlinear:
+                op = self._from_mult(torch.exp(half))
+            else:
+                op = torch.exp(half)
+            if self.layer.ergodic:
+                self.resample_noise()
+            return op, op
+        finally:
+            self.layer._current_gate = None
+
+    @staticmethod
+    def test():
+        """Self-test; verifies the round-trip / invariant."""
+        nBatch, nInput, nOutput = 5, 3, 4
+        layer = PiLayer(nInput=nInput, nOutput=nOutput, nonlinear=True)
+        device = next(layer.parameters()).device
+        # Inputs in [-1, 1]
+        x = torch.rand((nBatch, 6, nInput), device=device) * 2 - 1
+        layer.set_sigma(0.999)
+        y = layer(x)
+        assert y.shape == (nBatch, 6, nOutput), f"shape mismatch: {y.shape}"
+        assert torch.isfinite(y).all(), "PiLayer forward produced non-finite values"
+        assert torch.all(y >= -1) and torch.all(y <= 1), "PiLayer output must be in [-1, 1]"
+        print(f"PiLayer forward: input {x.shape} -> output {y.shape}")
+
+        def check_roundtrip(desc, **kwargs):
+            """Check roundtrip.
+            
+            See class docstring for the operation contract.
+            """
+            kw = dict(nInput=3, nOutput=6, invertible=True, nonlinear=True)
+            kw.update(kwargs)
+            layer = PiLayer(**kw)
+            device = next(layer.parameters()).device
+            nI = kw['nInput']
+            # Inputs in [-1, 1]
+            inputs = [('3D [B,S,nIn]', torch.rand(16, 5, nI, device=device) * 2 - 1),
+                      ('2D [B,nIn]',   torch.rand(16, nI,    device=device) * 2 - 1)]
+            for tag, x in inputs:
+                layer.set_sigma(0.0)
+                y = layer.forward(x)
+                x_recon = layer.reverse(y)
+                error = torch.norm(x - x_recon) / torch.norm(x)
+                assert error < 1e-4, f"{desc} {tag}: reconstruction error {error:.2e}"
+            print(f"  {desc}: OK")
+
+        def check_stability(desc, **kwargs):
+            """Check stability.
+            
+            See class docstring for the operation contract.
+            """
+            kw = dict(nInput=3, nOutput=6, invertible=True, stable=True,
+                      nonlinear=True)
+            kw.update(kwargs)
+            layer = PiLayer(**kw)
+            device = next(layer.parameters()).device
+            nI = kw['nInput']
+            dtype = next(layer.parameters()).dtype
+            layer.set_sigma(0.0)
+
+            # Test boundary values in [-1, 1]
+            x_edge = torch.tensor(
+                [[-1.0] * nI,
+                 [0.0] * nI,
+                 [1.0] * nI,
+                 [-0.5, 0.0, 0.5][:nI] if nI <= 3 else [-0.5, 0.0, 0.5] + [0.25] * (nI - 3)],
+                device=device,
+                dtype=dtype,
+            )
+
+            y = layer.forward(x_edge)
+            assert torch.isfinite(y).all(), f"{desc}: forward produced non-finite values"
+            assert torch.all(y >= -1) and torch.all(y <= 1), f"{desc}: output outside [-1, 1]"
+
+            x_recon = layer.reverse(y)
+            assert torch.isfinite(x_recon).all(), f"{desc}: reverse produced non-finite values"
+            print(f"  {desc}: OK")
+
+        print("Invertible PiLayer roundtrip variations:")
+        check_roundtrip("naive=T hasBias=T", naive=True,  hasBias=True)
+        check_roundtrip("naive=T hasBias=F", naive=True,  hasBias=False)
+        check_roundtrip("naive=F hasBias=T", naive=False, hasBias=True)
+        check_roundtrip("naive=F hasBias=F", naive=False, hasBias=False)
+        check_roundtrip("square nIn=nOut=6", naive=True,  hasBias=False, nInput=6, nOutput=6)
+        check_roundtrip("ergodic naive=T hasBias=F", naive=True,  hasBias=False, ergodic=True)
+        check_roundtrip("ergodic naive=T hasBias=T", naive=True,  hasBias=True,  ergodic=True)
+        check_roundtrip("ergodic naive=F hasBias=T", naive=False, hasBias=True,  ergodic=True)
+
+        print("Stable PiLayer boundary variations:")
+        check_stability("stable naive=T hasBias=T", naive=True, hasBias=True)
+        check_stability("stable naive=T hasBias=F", naive=True, hasBias=False)
+        check_stability("stable naive=F hasBias=T", naive=False, hasBias=True)
+        check_stability("stable naive=F hasBias=F", naive=False, hasBias=False)
+        check_stability("stable square nIn=nOut=6", naive=True, hasBias=False, nInput=6, nOutput=6)
+        print("PiLayer tests passed.")
+
+
+class PiLayer2(Layer):
+    r"""Membership-domain analysis fold (MeronomySpec §4; MeronomyPlan
+    Stage 2): the part-maker / intersection.
+
+    A NEW class beside the legacy :class:`PiLayer`, which stays untouched
+    for non-meronymic consumers. Runs on MEMBERSHIPS ``m in [0, 1]^D``
+    (the meronomy chart) -- ground content natively; epistemic scalars
+    enter only through the evaluation chart ``Ops.eval_chart`` (§3).
+    NO odds transforms anywhere in this class: the legacy odds embedding
+    ``(1+x)/(1-x)`` -- the ``p+n=1`` zero-ignorance slice, Bayesian
+    sharpening rather than contraction -- is retired from the meronymic
+    path.
+
+        forward:  z = exp(W · log(clamp(m, EPS_LOG, 1)) + b)
+        reverse:  m = exp(W^-1 · (log z − b))           (exact LDU solve)
+
+    The inner :class:`ContractiveInvertibleLinearLayer` enforces
+    ``diag(W) >= 1`` (per operand block for binary folds),
+    ``offdiag(W) >= 0``, ``b <= 0`` by construction, so CONTRACTION IS A
+    THEOREM: ``pi(m) <= m`` for all m, and for the binary ``2D -> D``
+    form (``blocks=2``) the acceptance bound ``pi <= min(operands)``
+    holds elementwise -- operand mixing is safe because off-diagonal
+    terms add negative log-mass (they can only deepen the part).
+
+    Identities / absorbers (§4): ``1`` is the pi-identity (intersecting
+    with everything is a no-op -- exact at near-identity init, to eps in
+    general) and ``0`` is the pi-absorber (a single zero witness
+    annihilates; exclusion propagates -- a THEOREM for all admissible
+    weights, since ``diag >= 1`` forces ``z <= EPS_LOG`` there).
+
+    The forward floors m at ``EPS_LOG`` (the §4 eps-floor near m = 0)
+    and ceils at 1 (log m <= 0 is what makes the contraction theorem
+    bite); NaN/Inf inputs propagate through the clamp and fail loud.
+    The binary reverse stays recommender-shaped as today
+    (``Ops.intersectionReverse`` -- codebook search; the layer's own
+    ``reverse`` is the exact unary inverse / canonical binary preimage).
+    """
+
+    def __init__(self, nInput, nOutput, naive=False, ergodic=False,
+                 hasBias=True, stable=True, blocks=1, d_max=None):
+        """Initialize PiLayer2; see class docstring for the kernel law.
+
+        ``stable=True`` (default) bounds the diagonal in
+        ``[1, d_max]`` -- bounded amplification of negative log-mass.
+        ``blocks=2`` declares the binary ``2D -> D`` fold form.
+        """
+        super().__init__(nInput, nOutput)
+        self.blocks = int(blocks)
+        self.layer = ContractiveInvertibleLinearLayer(
+            nInput, nOutput, naive=naive, ergodic=ergodic,
+            hasBias=hasBias, stable=stable, blocks=blocks, d_max=d_max)
+        self.layers.append(self.layer)
+
+    @staticmethod
+    def _clamp_membership(m):
+        """Membership-chart domain guard: floor EPS_LOG, ceil 1.
+
+        The floor keeps ``log`` finite at the ``m -> 0`` corner (and is
+        what the corner round-trips recover); the ceil keeps
+        ``log m <= 0`` so the §4 contraction theorem holds. NaN/Inf
+        propagate (the clamp rescues finite out-of-domain values only).
+        """
+        return m.clamp(EPS_LOG, 1.0)
+
+    def forward(self, m, gate=None):
+        """pi(m) = exp(W · log(clamp(m, EPS_LOG, 1)) + b).
+
+        Memberships in, memberships out (``z in (0, 1]`` is automatic:
+        every log-domain term is <= 0 under the weight law).
+        ``gate`` flows to the inner LDU diagonal as in the legacy folds.
+        """
+        m = m.to(self.layer.d.device)
+        l = torch.log(self._clamp_membership(m))
+        wl = (self.layer.forward(l, gate=gate) if gate is not None
+              else self.layer.forward(l))
+        return torch.exp(wl)
+
+    def reverse(self, z, gate=None):
+        """m = exp(W^-1 · (log z − b)) -- the exact §4 inverse.
+
+        ``z`` is floored at the dtype's tiny (NOT at EPS_LOG: a fold of
+        EPS_LOG-floored operands lands far below EPS_LOG, and the corner
+        round-trip must recover the floor exactly) and ceiled at 1.
+        Output is clamped back to the membership chart ``[0, 1]``.
+        """
+        z = z.to(self.layer.d.device)
+        z = z.clamp(torch.finfo(z.dtype).tiny, 1.0)
+        lz = torch.log(z)
+        lx = (self.layer.reverse(lz, gate=gate) if gate is not None
+              else self.layer.reverse(lz))
+        return torch.exp(lx).clamp(0.0, 1.0)
+
+    def compose(self, left, right, gate=None):
+        """Binary AND fold on memberships: requires ``blocks == 2``.
+
+        Concatenates the operands along the feature axis and runs the
+        2D -> D forward; ``pi(left, right) <= min(left, right)``
+        elementwise is the §10.1 acceptance bound.
+        """
+        if self.blocks != 2:
+            raise RuntimeError(
+                "PiLayer2.compose requires the binary form "
+                f"(blocks=2); this layer has blocks={self.blocks}")
+        return self.forward(torch.cat([left, right], dim=-1), gate=gate)
+
+
+class SigmaLayer2(Layer):
+    r"""Membership-domain synthesis fold (MeronomySpec §4; MeronomyPlan
+    Stage 2): the whole-maker / union, as the De Morgan wrap of a pi
+    kernel:
+
+        sigma(m) = 1 − pi_kernel(1 − m)        (probabilistic-sum family)
+
+    ONE FOLD KERNEL PLUS ONE INVOLUTION implements both operators: this
+    class owns no weights of its own -- ``self.kernel`` is a
+    :class:`PiLayer2` (constructed here, or passed in to share an
+    existing kernel object), and extension ``sigma(m) >= m`` (binary:
+    ``sigma >= max(operands)``, §10.1) is the mirrored theorem under the
+    same weight law. No separate sigma constraint surface exists.
+
+    Identities / absorbers mirror pi's: ``0`` is the sigma-identity and
+    ``1`` the sigma-absorber (everything absorbs -- a theorem for all
+    admissible weights). Single-lump doctrine (§4): no adjacency exists
+    over witness dims, so every sigma extent is a single lump; no
+    abstraction classifier is implemented here or anywhere.
+
+    Legacy :class:`SigmaLayer` (tanh/atanh additive fold) stays untouched
+    for non-meronymic consumers.
+    """
+
+    def __init__(self, nInput=None, nOutput=None, kernel=None, **kw):
+        """Initialize SigmaLayer2 around a pi kernel.
+
+        Either pass ``nInput`` / ``nOutput`` (+ PiLayer2 kwargs) to
+        construct a fresh kernel, or pass ``kernel=`` an existing
+        :class:`PiLayer2` to share its object (the §10.4 De Morgan
+        exactness setup: one shared kernel, two operators).
+        """
+        if kernel is None:
+            if nInput is None or nOutput is None:
+                raise ValueError(
+                    "SigmaLayer2: pass nInput/nOutput or kernel=")
+            kernel = PiLayer2(nInput, nOutput, **kw)
+        elif kw:
+            raise ValueError(
+                "SigmaLayer2: kernel= and PiLayer2 kwargs are exclusive")
+        super().__init__(kernel.nInput, kernel.nOutput)
+        self.kernel = kernel
+        self.layers.append(kernel)
+        self.blocks = kernel.blocks
+
+    def forward(self, m, gate=None):
+        """sigma(m) = 1 − pi(1 − m); memberships in, memberships out."""
+        return 1.0 - self.kernel.forward(1.0 - m, gate=gate)
+
+    def reverse(self, z, gate=None):
+        """Exact inverse through the involution: 1 − pi.reverse(1 − z)."""
+        return 1.0 - self.kernel.reverse(1.0 - z, gate=gate)
+
+    def compose(self, left, right, gate=None):
+        """Binary OR fold on memberships: requires ``blocks == 2``.
+
+        ``sigma(left, right) >= max(left, right)`` elementwise is the
+        mirrored §10.1 bound. The binary reverse stays recommender-shaped
+        (``Ops.unionReverse``) as today.
+        """
+        return 1.0 - self.kernel.compose(1.0 - left, 1.0 - right, gate=gate)
+
+
+class SparseLayer(Layer):
+    """COO sparse linear substrate: forward tanh(W @ x), reverse tanh(W^T @ y).
+
+    A generic sparse-linear autoencoder pair. Edges are appended host-side
+    (add_edge, idempotent) and removed by remove_edges; values are ONE
+    learnable Parameter grown tail-preserving so trained weights survive
+    growth. No LDU inverse: the reverse is the transpose. No atanh entry:
+    inputs are presences [0,1) / activations (-1,1), not logit-domain codes.
+    Kernel "scatter" (index_select + index_add_) is export-safe (MLX /
+    executorch); "spmm" (torch.sparse.mm, COO kept on MPS) is the opt-in
+    fast path. Empty layer -> zeros (both directions). Optional role-tagged
+    column blocks partition the input columns (role_slice); forbid_self_edges
+    rejects the r == c diagonal. Carries NO concept vocabulary -- the concept
+    relation store lives on :class:`ConceptualAttentionLayer`.
+    """
+
+    def __init__(self, nInput, nOutput, nonlinear=True, kernel="scatter",
+                 device=None, roles=None, forbid_self_edges=False):
+        super().__init__(nInput, nOutput)
+        if kernel not in ("scatter", "spmm"):
+            raise ValueError(f"SparseLayer: unknown kernel {kernel!r}")
+        self.nonlinear = nonlinear
+        self.kernel = kernel
+        self._target_device = device
+        self._forbid_self_edges = bool(forbid_self_edges)
+        self._rows = []            # host COO row (output) indices
+        self._cols = []            # host COO col (input) indices
+        self._init_vals = []       # host init weights (growth tail source)
+        self._index = {}           # (row, col) -> position in values
+        self._edge_ids = []        # allocation identities survive growth, not recycling
+        self._next_edge_id = 0
+        self._optimizer = None
+        self.values = None         # nn.Parameter [nnz]
+        self._dev_cache = None     # (device, rows_t, cols_t), dirty on edit
+        # Role-tagged column blocks: ordered (name, width) pairs partitioning
+        # the input columns; the bias is its OWN trailing 1-wide block.
+        self.roles = tuple(roles) if roles else None
+        self._role_off = {}
+        if self.roles:
+            off = 0
+            for (name, width) in self.roles:
+                self._role_off[str(name)] = off
+                off += int(width)
+            if off != self.nInput:
+                raise ValueError(
+                    f"SparseLayer: role widths sum {off} != nInput "
+                    f"{self.nInput}")
+
+    @property
+    def nnz(self):
+        return len(self._rows)
+
+    def _save_to_state_dict(self, destination, prefix, keep_vars):
+        super()._save_to_state_dict(destination, prefix, keep_vars)
+        if getattr(self, '_sidecar_owned', False):
+            destination.pop(prefix + 'values', None)
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata,
+                             strict, missing_keys, unexpected_keys, error_msgs):
+        if getattr(self, '_sidecar_owned', False):
+            # Topology and values are restored together, once, by the sidecar.
+            state_dict = dict(state_dict)
+            state_dict.pop(prefix + 'values', None)
+            if self.values is not None:
+                state_dict[prefix + 'values'] = self.values.detach()
+        super()._load_from_state_dict(state_dict, prefix, local_metadata,
+                                     strict, missing_keys, unexpected_keys, error_msgs)
+
+    def _device(self):
+        if self.values is not None:
+            return self.values.device
+        return self._target_device or torch.device("cpu")
+
+    def _grow_values(self):
+        # Tail-preserving: keep trained prefix, init the new tail.
+        n = self.nnz
+        if n == 0:
+            return
+        prev = self.values
+        if prev is not None and int(prev.shape[0]) == n:
+            return
+        dev = self._device()
+        new = torch.tensor(self._init_vals, dtype=torch.float32, device=dev)
+        if prev is not None:
+            keep = min(int(prev.shape[0]), n)
+            if keep > 0:
+                with torch.no_grad():
+                    new[:keep] = prev.detach()[:keep].to(dev)
+        self._replace_values(nn.Parameter(new), list(range(0 if prev is None else len(prev))))
+        self._dev_cache = None
+
+    def _replace_values(self, new, old_positions):
+        """Migrate moments and pending gradients by surviving COO position.
+
+        Boundary edits can precede backward. A hook on the old leaf relays
+        that pending gradient to surviving allocation identities only.
+        Recycled edges have fresh identities and cannot inherit old credit.
+        """
+        old = self.values
+        old_ids = tuple(getattr(self, '_parameter_edge_ids', ()))
+        self.values = new
+        self._parameter_edge_ids = tuple(self._edge_ids)
+        optimizer = self._optimizer
+        if optimizer is not None:
+            from Layers import RadixLayer
+            leaves = list(RadixLayer._optimizer_leaves(optimizer))
+            owned = False
+            for leaf in leaves:
+                for group in leaf.param_groups:
+                    if old is not None and any(p is old for p in group['params']):
+                        group['params'] = [new if p is old else p for p in group['params'] if p is not old or new is not None]
+                        owned = True
+                if old is not None and old in leaf.state:
+                    state = leaf.state.pop(old)
+                    if new is not None:
+                        migrated = {}
+                        for name, value in state.items():
+                            if torch.is_tensor(value) and value.shape == old.shape and name != 'step':
+                                target = torch.zeros_like(new)
+                                if old_positions:
+                                    target[:len(old_positions)] = value[old_positions]
+                                migrated[name] = target
+                            else:
+                                migrated[name] = value
+                        leaf.state[new] = migrated
+            if not owned and new is not None:
+                # These definition weights join the ordinary dense group
+                # when getOptimizer sees them at construction. Keep that
+                # layout when their first edge is admitted after construction.
+                leaves[0].param_groups[0]['params'].append(new)
+        if old is not None and old.requires_grad:
+            def relay(gradient):
+                live = self.values
+                if live is None:
+                    return gradient.new_zeros(gradient.shape)
+                positions = {key: i for i, key in enumerate(self._edge_ids)}
+                pairs = [(i, positions[key]) for i, key in enumerate(old_ids) if key in positions]
+                if pairs:
+                    old_i, new_i = zip(*pairs)
+                    credit = torch.zeros_like(live)
+                    credit[list(new_i)] = gradient[list(old_i)].to(credit)
+                    live.grad = credit if live.grad is None else live.grad + credit
+                return gradient.new_zeros(gradient.shape)
+            old.register_hook(relay)
+            if old.grad is not None:
+                relay(old.grad)
+
+    def role_slice(self, name):
+        """The ``(start, end)`` input-column range of role block ``name``."""
+        off = self._role_off.get(str(name))
+        if off is None:
+            raise KeyError(f"SparseLayer: unknown role {name!r}")
+        width = dict((str(n), int(w)) for (n, w) in self.roles)[str(name)]
+        return off, off + width
+
+    def add_edge(self, row, col, weight=0.0, role=None):
+        """Append edge output[row] <- weight * input[col]; idempotent. With
+        ``role``, ``col`` is block-local and offsets into that role block."""
+        if role is not None:
+            start, end = self.role_slice(role)
+            c = int(col)
+            if not (0 <= c < end - start):
+                raise IndexError(
+                    f"SparseLayer.add_edge: col {c} beyond role "
+                    f"{role!r} width {end - start}")
+            col = start + c
+        r, c = int(row), int(col)
+        if not (0 <= r < self.nOutput and 0 <= c < self.nInput):
+            raise IndexError(
+                f"SparseLayer.add_edge out of range: ({r},{c}) for "
+                f"[{self.nOutput},{self.nInput}]")
+        source = c % (self.nOutput + 1) if getattr(self, '_paired_sources', False) else c
+        if self._forbid_self_edges and r == source:
+            raise ValueError(
+                f"SparseLayer: self-edge ({r}, {c}) forbidden")
+        if getattr(self, '_sidecar_owned', False) and float(weight) < 0:
+            raise ValueError('concept exponents must be nonnegative')
+        pos = self._index.get((r, c))
+        if pos is not None:
+            return pos
+        pos = self.nnz
+        self._rows.append(r)
+        self._cols.append(c)
+        self._init_vals.append(float(weight))
+        self._edge_ids.append(self._next_edge_id)
+        self._next_edge_id += 1
+        self._index[(r, c)] = pos
+        self._grow_values()
+        return pos
+
+    def remove_edges(self, pairs):
+        """Drop (row, col) edges (pruning rounds); compact values, keep survivors."""
+        drop = {(int(r), int(c)) for (r, c) in pairs} & set(self._index)
+        if not drop:
+            return 0
+        keep = [i for i in range(self.nnz)
+                if (self._rows[i], self._cols[i]) not in drop]
+        old_vals = self.values
+        self._rows = [self._rows[i] for i in keep]
+        self._cols = [self._cols[i] for i in keep]
+        self._init_vals = [self._init_vals[i] for i in keep]
+        self._edge_ids = [self._edge_ids[i] for i in keep]
+        self._index = {(r, c): i
+                       for i, (r, c) in enumerate(zip(self._rows, self._cols))}
+        if not keep:
+            self._replace_values(None, [])
+        else:
+            with torch.no_grad():
+                kept = old_vals.detach()[torch.tensor(keep, device=old_vals.device)].clone()
+            self._replace_values(nn.Parameter(kept), keep)
+        self._dev_cache = None
+        return len(drop)
+
+    def _indices(self, device):
+        # Cached long index tensors per device; rebuilt when edited.
+        cache = self._dev_cache
+        if cache is not None and cache[0] == device:
+            return cache[1], cache[2]
+        rows_t = torch.tensor(self._rows, dtype=torch.long, device=device)
+        cols_t = torch.tensor(self._cols, dtype=torch.long, device=device)
+        self._dev_cache = (device, rows_t, cols_t)
+        return rows_t, cols_t
+
+    def _matmul(self, x, transpose=False, abs_weights=False):
+        # Sparse matmul core; x is [n_in, B]; returns [n_out, B].
+        # abs_weights: |W| x (the relevance-priority spread; sec C).
+        n_from = self.nInput if not transpose else self.nOutput
+        n_to = self.nOutput if not transpose else self.nInput
+        if int(x.shape[0]) != n_from:
+            raise ValueError(
+                f"SparseLayer: input rows {int(x.shape[0])} != {n_from}")
+        if self.nnz == 0 or self.values is None:
+            return x.new_zeros((n_to, int(x.shape[-1])))
+        rows_t, cols_t = self._indices(x.device)
+        take, put = (cols_t, rows_t) if not transpose else (rows_t, cols_t)
+        vals = self.values.to(x.device)
+        if abs_weights:
+            vals = vals.abs()
+        if self.kernel == "spmm":
+            idx = torch.stack([put, take])
+            W = torch.sparse_coo_tensor(
+                idx, vals, (n_to, n_from)).coalesce()
+            if x.device.type != "mps":       # MPS has no COO->CSR kernel
+                W = W.to_sparse_csr()
+            return torch.sparse.mm(W, x)
+        contrib = x.index_select(0, take) * vals.unsqueeze(-1)
+        out = x.new_zeros((n_to, int(x.shape[-1])))
+        return out.index_add_(0, put, contrib)
+
+    def _apply_shape(self, x, transpose):
+        squeeze = x.dim() == 1
+        out = self._matmul(x.unsqueeze(-1) if squeeze else x, transpose)
+        if self.nonlinear:
+            out = torch.tanh(out)
+        return out.squeeze(-1) if squeeze else out
+
+    def forward_linear_abs(self, x):
+        """``|W| @ x`` -- the relevance-priority spread (edge MAGNITUDES
+        carry priority up the pyramid; Architecture sec C)."""
+        return self._apply_shape_linear_abs(x)
+
+    def _apply_shape_linear_abs(self, x):
+        squeeze = x.dim() == 1
+        if squeeze:
+            x = x.unsqueeze(-1)
+        out = self._matmul(x, abs_weights=True)
+        return out.squeeze(-1) if squeeze else out
+
+    def forward_linear(self, x):
+        """W @ x with NO nonlinearity (for pre-tanh summation of families)."""
+        squeeze = x.dim() == 1
+        out = self._matmul(x.unsqueeze(-1) if squeeze else x, False)
+        return out.squeeze(-1) if squeeze else out
+
+    def forward(self, x):
+        return self._apply_shape(x, transpose=False)
+
+    def reverse(self, y):
+        """Transpose decode: tanh(W^T @ y) (the sparse autoencoder pair)."""
+        return self._apply_shape(y, transpose=True)
+
+
+    def bind(self, inventory_rows, *, paired=True):
+        """Gather a differentiable sparse view into a transient attended field.
+
+        Inventory addresses stay in the persistent definition. Missing source
+        concepts contribute zero evidence; the standing poles keep their rails.
+        """
+        addresses = [int(r) for r in inventory_rows]
+        lookup = {r: i for i, r in enumerate(addresses) if r >= 0}
+        size = len(addresses)
+        view = SparseLayer(2 * (size + 1) if paired else self.nInput,
+                           size, nonlinear=False, device=self._device())
+        selected, rows, cols, missing = [], [], [], []
+        for pos, (row, col) in enumerate(zip(self._rows, self._cols)):
+            target = lookup.get(row)
+            if target is None:
+                continue
+            absent = False
+            if paired:
+                source, pole = col % (self.nOutput + 1), col // (self.nOutput + 1)
+                source = size if source == self.nOutput else lookup.get(source)
+                if source is None:
+                    # Both poles of an unattended source are unknown. Keep
+                    # its exponent and mask membership on both fold passes.
+                    absent = True
+                    source, pole = size, 1
+                col = source + pole * (size + 1)
+            selected.append(pos)
+            rows.append(target)
+            cols.append(col)
+            missing.append(absent)
+        view._rows, view._cols = rows, cols
+        view._index = {pair: i for i, pair in enumerate(zip(rows, cols))}
+        if self.values is not None:
+            index = torch.tensor(selected, device=self.values.device, dtype=torch.long)
+            object.__setattr__(view, 'values', self.values.index_select(0, index))
+        view._inventory_edges = selected
+        view._missing_sources = torch.tensor(missing, dtype=torch.bool)
+        view._paired_sources = paired
+        return view
+
+    def fold_presence(self, u, *, conjunctive=False, start=0, end=None,
+                      own=None, own_mask=None, own_known=None, dual=False,
+                      edge_memberships=None, edge_known=None):
+        """Reduce weighted memberships by min/max; polarity is a source column.
+
+        A dual pass swaps the two source blocks, retaining the same fold. Empty
+        definitions, including all-zero exponents, assert neither polarity.
+        Each pole reduces its nonzero contributions independently; a zero
+        pole supplies no evidence and cannot veto evidence on that pole.
+        Exponents qualify individual memberships, never count witnesses.
+        Finite log floors preserve gradients without moving Boolean rails.
+        """
+        end = self.nOutput if end is None else int(end)
+        rows, cols = self._indices(u.device)
+        select = (rows >= int(start)) & (rows < end)
+        rows, cols = rows[select], cols[select]
+        if dual:
+            cols = (cols + self.nInput // 2) % self.nInput
+        out = u.new_full((end - int(start), u.shape[-1]), 1. if conjunctive else 0.)
+        mass = u.new_zeros(end - int(start))
+        seen = torch.zeros_like(out, dtype=torch.bool)
+        if self.values is not None:
+            raw = self.values.clone().to(u.device)[select]
+            # Zero is the unwritten magnitude. Once a definition has an
+            # observed part, prospective zero edges can receive credit;
+            # projection after the update constrains their stored magnitude.
+            w = raw + (raw.clamp_min(0) - raw).detach()
+            # Native percept inventories can be large. A membership read
+            # gathers only the written edges, using this same pi scatter.
+            v = (u.index_select(0, cols) if edge_memberships is None
+                 else edge_memberships[select]).clamp(0, 1)
+            if edge_known is not None:
+                known = edge_known[select]
+            else:
+                known = torch.ones_like(v, dtype=torch.bool)
+            known = known & (v > 0)
+            missing = getattr(self, '_missing_sources', None)
+            if missing is not None:
+                known = known & ~missing.to(v.device)[select, None]
+            eps = torch.finfo(v.dtype).eps
+            if conjunctive:
+                vp = v + (v.clamp_min(eps) - v).detach()
+                chart = vp.log()
+                hit = v == 0
+            else:
+                vp = v + (v.clamp_max(1 - eps) - v).detach()
+                chart = torch.log1p(-vp)
+                hit = v == 1
+            powered = (w[:, None] * chart).exp() if conjunctive else -torch.expm1(w[:, None] * chart)
+            exact = torch.where(hit & (w[:, None] > 0), 0. if conjunctive else 1., powered)
+            powered = powered + (exact - powered).detach()
+            if conjunctive:
+                # A zero exponent is an unwritten edge, not q**0 evidence.
+                # Straight-through incidence permits inserting and removing
+                # an edge even at a crisp membership rail. Its magnitude
+                # still qualifies the membership through the power above.
+                written = (w > 0).to(w)
+                # Only an unwritten edge needs surrogate incidence credit.
+                # A written edge differentiates its exponent exactly; adding
+                # incidence credit there reverses the gradient for fractions.
+                insertion = written + (w - w.detach()) * (w.detach() == 0).to(w)
+                candidate = powered * insertion[:, None]
+                neutral = torch.where(w[:, None] > 0, candidate, 1.)
+                powered = candidate + (neutral - candidate).detach()
+            # Sorting is per pole. Opposite evidence is retained by the
+            # other pass; it never erases the support reduced by this one.
+            powered = torch.where(known, powered, 1. if conjunctive else 0.)
+            out = out.scatter_reduce(0, (rows - int(start))[:, None].expand_as(powered),
+                                     powered, reduce='amin' if conjunctive else 'amax',
+                                     include_self=False)
+            seen = seen.scatter_reduce(0, (rows - int(start))[:, None].expand_as(known),
+                                       known & (w[:, None] > 0), reduce='amax')
+            mass = mass.index_add(0, rows - int(start), w)
+        if own is not None:
+            present = own_mask[:, None] if own_known is None else own_mask[:, None] & own_known
+            present = present & (own > 0)
+            neutral = torch.where(present, own, 1. if conjunctive else 0.)
+            other = own + (neutral - own).detach()
+            out = torch.minimum(out, other) if conjunctive else torch.maximum(out, other)
+            mass = mass + own_mask.to(mass)
+            seen = seen | present
+        # Forward unknown is exactly zero. Preserve the exponent derivative
+        # for a zero candidate on a present witness, so either pole can learn.
+        exact = torch.where(seen, out, 0.)
+        result = out + (exact - out).detach()
+        return result * (mass > 0)[:, None] if conjunctive else result
+
+    def attribute_presence(self, y, *, observed=None, conjunctive=False,
+                           start=0, end=None, dual=False):
+        """Intersect a request with present cases, or choose when imagining.
+
+        With no field, a disjunction selects its strongest written case;
+        ties use sparse insertion order. A conjunction attributes every
+        required part. No union transpose or division of support is used.
+        """
+        end = self.nOutput if end is None else int(end)
+        result = y.new_zeros(self.nInput, y.shape[-1])
+        if self.values is None:
+            return result
+        rows, cols = self._indices(y.device)
+        weights = self.values.to(y).clamp_min(0)
+        selected = (rows >= int(start)) & (rows < end) & (weights > 0)
+        missing = getattr(self, '_missing_sources', None)
+        if missing is not None:
+            selected &= ~missing.to(selected.device)
+        rows, cols, weights = rows[selected], cols[selected], weights[selected]
+        if dual:
+            cols = (cols + self.nInput // 2) % self.nInput
+        if not len(rows):
+            return result
+        request = y.index_select(0, rows)
+        if observed is not None:
+            contribution = torch.minimum(request, observed.index_select(0, cols))
+        elif conjunctive:
+            contribution = request
+        else:
+            # Case choice is explicit. Existing learned exponents provide
+            # its priorities; the selected case receives the whole request.
+            chosen = torch.zeros_like(weights, dtype=torch.bool)
+            for row in rows.unique().tolist():
+                candidates = (rows == row).nonzero().flatten()
+                chosen[candidates[weights[candidates].argmax()]] = True
+            contribution = request * chosen[:, None]
+        return result.scatter_reduce(0, cols[:, None].expand_as(contribution),
+                                     contribution, reduce='amax', include_self=True)
+
+
+class ConceptualAttentionLayer(SparseLayer):
+    """Concept records and disjunctive parts W_sigma on one row inventory.
+
+    W_pi stores conjunctive parts of the same concepts. Context weights are
+    the witnessed where; participation is an EWMA buffer, never a parameter.
+    """
+
+    def __init__(self, nInput, nOutput, nonlinear=True, kernel="scatter",
+                 device=None, roles=None, forbid_self_edges=False):
+        super().__init__(nInput, nOutput, nonlinear=nonlinear, kernel=kernel,
+                         device=device, roles=roles,
+                         forbid_self_edges=forbid_self_edges)
+        # Discrete relation store (doc/plans/2026-07-02-two-phase-loops-
+        # sparse-relation.md P1): ordered role-tagged constituent records per
+        # row key (GLOBAL concept id), plus the capacity-bounded tensor-row
+        # map. Host-side (no tensor shape dependence).
+        self._constituents = {}    # key -> [(role, ref), ...] insertion order
+        self._tensor_rows = {}     # key -> GLOBAL tensor row
+        self._tensor_row_keys = {} # derived reverse map; updated at allocation/load
+        self._row_next = {}        # region base -> next unallocated local row
+
+        self.conjunctive = SparseLayer(nInput, nOutput, nonlinear=False,
+                                      device=device, forbid_self_edges=True)
+        # Feature addresses interleave PS/WS and membership/complement:
+        # 4*row + 2*tower + pole. No distributed coordinate is an address.
+        self.features = SparseLayer(1, nOutput, nonlinear=False, device=device)
+        self.features._feature_sources = True
+        self.features._sidecar_owned = True
+        # A PS literal may be an ordered group before recurrence forms a
+        # percept. Metadata belongs to its sparse edge, including its pole.
+        self.feature_groups = {}
+        self._sidecar_owned = self.conjunctive._sidecar_owned = True
+        self._paired_sources = self.conjunctive._paired_sources = nInput == 2 * (nOutput + 1)
+        # Context is sparse over persistent inventory addresses, never field slots.
+        self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+                                             torch.empty(0, device='cpu'), (0, 0), device='cpu').coalesce()
+        for name, value in (
+                ('participation', torch.ones(nOutput)),
+                ('provisional', torch.zeros(nOutput, dtype=torch.bool)),
+                ('assigned', torch.zeros(nOutput, dtype=torch.bool)),
+                ('managed', torch.zeros(nOutput, dtype=torch.bool)),
+                ('witnessed', torch.zeros(nOutput, dtype=torch.bool)),
+                ('witness_strength', torch.zeros(nOutput)),
+                ('refinement_best', torch.full((nOutput,), float('inf'))),
+                ('refinement_stale', torch.zeros(nOutput, dtype=torch.long)),
+                ('refinement_step', torch.full((nOutput,), -1, dtype=torch.long)),
+                ('context_seen', torch.zeros(nOutput, dtype=torch.long)),
+                ('observation', torch.zeros((), dtype=torch.long))):
+            # The structural sidecar owns these row-aligned values. Keeping
+            # them out of state_dict also preserves strict loads for a store
+            # whose sparse module had not been registered before saving.
+            self.register_buffer(name, value, persistent=False)
+
+    def part_matrices(self):
+        return self, self.conjunctive
+
+    def definition_matrices(self):
+        return self, self.conjunctive, self.features
+
+    @torch.no_grad()
+    def project_parts(self):
+        """Preserve polarity; only provisional alternatives normalize support."""
+        for matrix in self.part_matrices():
+            if matrix.values is not None:
+                matrix.values.clamp_min_(0)
+        if self.features.values is not None:
+            self.features.values.clamp_(0, 1)
+        if self.values is not None:
+            rows, _ = self._indices(self.values.device)
+            maxima = self.values.new_zeros(self.nOutput).scatter_reduce_(
+                0, rows, self.values, reduce='amax')
+            managed = (self.assigned & self.provisional).to(rows.device)
+            divisor = torch.where(managed[rows],
+                                  maxima[rows].clamp_min(1e-12), 1.)
+            self.values.div_(divisor)
+
+    def migrate_part_moments(self, optimizer):
+        """A signed-to-pole checkpoint conversion reverses first moments."""
+        for matrix in self.part_matrices():
+            signs = getattr(matrix, '_checkpoint_exponent_signs', None)
+            if signs is None:
+                continue
+            for leaf in RadixLayer._optimizer_leaves(optimizer):
+                moment = leaf.state.get(matrix.values, {}).get('exp_avg')
+                if moment is not None:
+                    moment.mul_(signs.to(moment))
+            del matrix._checkpoint_exponent_signs
+
+    def ensure_context(self):
+        """Allocate only when the parallel pool observes its bounded span."""
+        if self.where.numel() == 0:
+            self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+                                                 torch.empty(0, device='cpu'), (self.nOutput, self.nOutput), device='cpu').coalesce()
+        return self.where
+
+    def grow_inventory(self, size):
+        """Grow definition storage independently of the bounded attended field."""
+        size, old = int(size), self.nOutput
+        if size <= old:
+            return
+        for matrix in self.part_matrices():
+            matrix._cols = [(c % (old + 1) if c % (old + 1) != old else size)
+                            + (c // (old + 1)) * (size + 1) for c in matrix._cols]
+            matrix._index = {pair: i for i, pair in enumerate(zip(matrix._rows, matrix._cols))}
+            matrix.nInput, matrix.nOutput = 2 * (size + 1), size
+            matrix._dev_cache = None
+        self.features.nOutput = size
+        for name, value in list(self.named_buffers(recurse=False)):
+            if value.ndim == 1:
+                fill = {'participation': 1, 'refinement_best': float('inf'),
+                        'refinement_step': -1}.get(name, 0)
+                setattr(self, name, torch.cat((value, value.new_full((size - old,), fill))))
+        if self.where.numel():
+            self.where = torch.sparse_coo_tensor(self.where.indices(), self.where.values(),
+                                                 (size, size), device='cpu').coalesce()
+
+    def context_similarities(self, context):
+        """Sparse inventory context dot products and row norms, without a square slab."""
+        where = self.ensure_context().coalesce()
+        dot = torch.sparse.mm(where, context.cpu()[:, None]).flatten()
+        norm = dot.new_zeros(self.nOutput).index_add_(0, where.indices()[0], where.values().square()).sqrt_()
+        return dot / (norm * context.norm()).clamp_min(1e-12)
+
+    def write_context(self, row, context, beta):
+        where = self.ensure_context().coalesce()
+        indices, values = where.indices(), where.values()
+        previous = values.new_zeros(self.nOutput)
+        selected = indices[0] == row
+        previous[indices[1, selected]] = values[selected]
+        updated = beta * previous + (1 - beta) * context.cpu()
+        columns = updated.nonzero().flatten()
+        new = torch.stack((torch.full_like(columns, row), columns))
+        self.where = torch.sparse_coo_tensor(torch.cat((indices[:, ~selected], new), 1),
+            torch.cat((values[~selected], updated[columns])), where.shape, device='cpu').coalesce()
+
+    def clear_context(self, row):
+        where = self.ensure_context().coalesce()
+        indices = where.indices()
+        keep = (indices != row).all(0)
+        self.where = torch.sparse_coo_tensor(indices[:, keep], where.values()[keep], where.shape, device='cpu').coalesce()
+
+    @classmethod
+    def square(cls, n_concepts, device=None):
+        """S concept rows read two blocks of S sources plus a bias pole.
+
+        Column S is EVERYTHING; 2S+1 is its absent negative pole. Neither
+        polarity of a concept may enter its own definition.
+        """
+        return cls(2 * (int(n_concepts) + 1), int(n_concepts),
+                   device=device, forbid_self_edges=True)
+
+    def forward(self, presence):
+        """The concept store reads disjunctive parts in their presence chart."""
+        return self.fold_presence(presence)
+
+    def reverse(self, presence):
+        return self.attribute_presence(presence)
+
+    def parts_extras(self):
+        """Checkpoint both parts matrices and row-aligned discovery state."""
+        matrices = {}
+        for name, matrix in (('conjunctive', self.conjunctive), ('features', self.features)):
+            matrices[name] = dict(rows=list(matrix._rows), cols=list(matrix._cols),
+                                  nInput=matrix.nInput,
+                                  values=None if matrix.values is None else matrix.values.detach().cpu().clone())
+        return dict(version=4, matrices=matrices, where=self.where.clone(),
+                    feature_groups=dict(self.feature_groups),
+                    buffers={name: value.detach().cpu().clone()
+                             for name, value in self.named_buffers(recurse=False)})
+
+    def load_parts_extras(self, saved, *, old_size=None):
+        if saved is None:
+            return
+        if any(blob.get('locations') for blob in saved.get('matrices', {}).values()):
+            raise ValueError('positional concept definitions predate item 9b; re-teach exact conjunctions as native fused percepts')
+        if saved.get('version') not in (1, 2, 3, 4):
+            raise ValueError('unsupported conceptual parts checkpoint')
+        self.feature_groups = dict(saved.get('feature_groups', {}))
+        old_span = self.nOutput if old_size is None else old_size
+        self.where.zero_()
+        if saved['version'] == 1:
+            blob = saved['matrices']['where']
+            context = torch.sparse_coo_tensor(torch.tensor([blob['rows'], blob['cols']], dtype=torch.long),
+                torch.empty(0) if blob['values'] is None else blob['values'].cpu(), (old_span, old_span)).coalesce()
+        else:
+            context = saved['where']
+            if context.numel() and tuple(context.shape) != (old_span, old_span):
+                raise ValueError('concept context shape mismatch')
+        if context.numel():
+            context = context.cpu().to_sparse_coo().coalesce()
+            self.where = torch.sparse_coo_tensor(context.indices(), context.values(),
+                (self.nOutput, self.nOutput), device='cpu').coalesce()
+        for name in ('conjunctive', 'features'):
+            matrix = getattr(self, name)
+            blob = saved['matrices'].get(name, dict(rows=[], cols=[], values=None, nInput=1))
+            if name == 'features':
+                matrix.nInput = int(blob['nInput'])
+            rows, cols, values = blob['rows'], blob['cols'], blob['values']
+            if name != 'features' and saved['version'] == 1:
+                cols = [(self.nOutput if c == old_span else c) +
+                        (self.nOutput + 1 if values is not None and values[i] < 0 else 0)
+                        for i, c in enumerate(cols)]
+                if values is not None:
+                    matrix._checkpoint_exponent_signs = torch.where(values < 0, -1., 1.)
+                    values = values.abs()
+            elif name != 'features' and old_size is not None:
+                cols = [(self.nOutput if c % (old_span + 1) == old_span
+                         else c % (old_span + 1)) + (c // (old_span + 1)) * (self.nOutput + 1)
+                        for c in cols]
+            if (len(rows) != len(cols) or len(set(zip(rows, cols))) != len(rows)
+                    or (values is not None and values.numel() != len(rows))
+                    or any(not 0 <= r < matrix.nOutput for r in rows)
+                    or any(not 0 <= c < matrix.nInput for c in cols)):
+                raise ValueError('malformed conceptual parts checkpoint')
+            matrix._rows, matrix._cols = list(rows), list(cols)
+            matrix._index = {pair: i for i, pair in enumerate(zip(rows, cols))}
+            matrix._init_vals = [] if values is None else values.tolist()
+            matrix._dev_cache = None
+            matrix._edge_ids = list(range(len(rows)))
+            matrix._next_edge_id = len(rows)
+            matrix._parameter_edge_ids = tuple(matrix._edge_ids)
+            matrix.values = None if values is None else nn.Parameter(
+                values.to(self._device()).clone(), requires_grad=name != 'where')
+        for name, value in saved['buffers'].items():
+            target = getattr(self, name)
+            if target.shape == value.shape:
+                target.copy_(value.to(target))
+            elif old_size is not None and value.ndim == 1 and len(value) == old_size:
+                target[:old_size].copy_(value.to(target))
+            else:
+                raise ValueError(f'conceptual buffer shape mismatch: {name}')
+
+    # -- discrete relation store: the ordered role-tagged relation records.
+    # Row keys are GLOBAL concept ids; the local tensor row of a key is a
+    # separate capacity-bounded allocation. --------------------------------
+
+    def ensure_row_key(self, key):
+        """Register ``key`` in the record store (empty record list)."""
+        self._constituents.setdefault(int(key), [])
+
+    def pop_row_key(self, key):
+        """Remove ``key`` + its records (retire)."""
+        self._record_revision = getattr(self, '_record_revision', 0) + 1
+        return self._constituents.pop(int(key), None)
+
+    def constituents(self, key):
+        """The ordered ``[(role, ref), ...]`` records of ``key`` (copy)."""
+        return list(self._constituents.get(int(key), ()))
+
+    def iter_constituents(self, key):
+        """Read records without copying an unbounded list at a query boundary.
+
+        Consumers must bound their iteration and own any retained snapshot.
+        This iterator supplies no new record or tensor row.
+        """
+        return iter(self._constituents.get(int(key), ()))
+
+    def constituent_count(self, key):
+        """Constant-time record count for bounded readers; no list materialization."""
+        return len(self._constituents.get(int(key), ()))
+
+    def add_constituent(self, key, role, ref):
+        """Append a role-tagged constituent record; idempotent per record."""
+        recs = self._constituents.setdefault(int(key), [])
+        if (role, ref) not in recs:
+            recs.append((role, ref))
+            self._record_revision = getattr(self, '_record_revision', 0) + 1
+
+    def remove_constituent(self, key, role, ref):
+        """Discard one role-tagged record (silent when absent)."""
+        recs = self._constituents.get(int(key))
+        if recs is not None and (role, ref) in recs:
+            recs.remove((role, ref))
+            self._record_revision = getattr(self, '_record_revision', 0) + 1
+
+    def set_role_constituents(self, key, role, refs):
+        """Replace ALL of ``role``'s records for ``key`` (other roles kept)."""
+        recs = self._constituents.setdefault(int(key), [])
+        kept = [(r, x) for (r, x) in recs if r != role]
+        self._constituents[int(key)] = kept + [(role, x) for x in refs]
+        self._record_revision = getattr(self, '_record_revision', 0) + 1
+
+    def clear_constituents(self, key):
+        """Empty ``key``'s records but KEEP the key registered."""
+        self._constituents[int(key)] = []
+        self._record_revision = getattr(self, '_record_revision', 0) + 1
+
+    def count_role(self, key, role):
+        """Number of ``role``-tagged records on ``key``."""
+        return sum(1 for (r, _x) in self._constituents.get(int(key), ())
+                   if r == role)
+
+    def row_is_identity(self, key):
+        """Exactly one part-role + one whole-role record: the 1:1 tie."""
+        return (self.count_role(key, "part") == 1
+                and self.count_role(key, "whole") == 1)
+
+    def embed_pair(self, key, whole_ref, part_ref, weight=1.0):
+        """EXACT embedding of the ordered pair, sec-4c storage order
+        ``[whole, part]`` (whole first). Records the ordered constituents;
+        the weighted role-tagged COO edges are written by the population
+        pass (P2 wires them here once the symbol columns split by role)."""
+        self.ensure_row_key(key)
+        self.add_constituent(key, "whole", whole_ref)
+        self.add_constituent(key, "part", part_ref)
+        return int(key)
+
+    def discretize_row(self, key):
+        """The ``(whole_ref, part_ref)`` pair when ``key`` holds EXACTLY one
+        whole-role and one part-role record; ``None`` otherwise (the discrete
+        reading is defined only on the binary-ordered subset)."""
+        if not self.row_is_identity(key):
+            return None
+        recs = self._constituents.get(int(key), ())
+        whole = next(x for (r, x) in recs if r == "whole")
+        part = next(x for (r, x) in recs if r == "part")
+        return whole, part
+
+    def assign_row(self, key, capacity=None, base=0):
+        """First-seen GLOBAL tensor row of ``key`` within the row region
+        starting at ``base``; ``None`` when that region is full. ``capacity``
+        bounds the region (defaults to the rows past ``base``). Namespaced
+        tuple keys pass through; plain keys coerce to int (back-compat)."""
+        k = key if isinstance(key, tuple) else int(key)
+        r = self._tensor_rows.get(k)
+        if r is None:
+            b = int(base)
+            cap = int(self.nOutput - b if capacity is None else capacity)
+            nxt = int(self._row_next.get(b, 0))
+            while nxt < cap and b + nxt in self._tensor_row_keys:
+                nxt += 1
+            if nxt >= cap:
+                return None
+            r = b + nxt
+            self._row_next[b] = nxt + 1
+            self._tensor_rows[k] = r
+            self._tensor_row_keys[r] = k
+        return int(r)
+
+    def row_of(self, key):
+        """The GLOBAL tensor row of ``key`` (plain or namespaced tuple), or
+        ``None`` if unallocated."""
+        k = key if isinstance(key, tuple) else int(key)
+        return self._tensor_rows.get(k)
+
+    def hebbian_strengthen_row(self, row, eta=0.1, cap=4.0):
+        """Bump every edge on ``row`` by ``eta`` (clamped to ``cap``);
+        ``no_grad`` -- evidence weights update by their own law."""
+        if self.values is None:
+            return
+        with torch.no_grad():
+            for (r, _c), i in self._index.items():
+                if r == int(row):
+                    self.values[i] = min(float(cap),
+                                         float(self.values[i]) + float(eta))
+
+    def decay_row(self, row, factor=0.9):
+        """Scale every edge on ``row`` by ``factor`` (the forgetting
+        counterpart of :meth:`hebbian_strengthen_row`); ``no_grad``.
+        Returns the max ``|value|`` remaining on the row (0.0 when the
+        row carries no edges) so callers can retire fully-decayed rows."""
+        if self.values is None:
+            return 0.0
+        peak = 0.0
+        with torch.no_grad():
+            for (r, _c), i in self._index.items():
+                if r == int(row):
+                    self.values[i] = float(self.values[i]) * float(factor)
+                    peak = max(peak, abs(float(self.values[i])))
+        return peak
+
+    def definition_sparsity_penalty(self, free_size=2):
+        """Rank-ordered soft-L0 on each concept's DEFINITION SIZE (snap
+        contract sec 1.4 / sec 5, 2026-07-06): sort a concept row's in-edge
+        weights by magnitude (excluding both standing bias poles), EXEMPT the top
+        ``free_size`` (genus + differentia, the minimal definition), and sum
+        the marginal ranks. Shrinkage then lands only on the surplus symbols
+        (the ones to drop) while the core stay at full presence -- a
+        differentiable soft-L0 (``torch.sort`` backprops through the marginal
+        values). Returns the scalar penalty, or ``None`` when the store is
+        empty / has no marginal tail past ``free_size``. Reads the LIVE
+        ``self.values`` (reallocated on growth/prune) -- never cache it.
+        """
+        vals = self.values
+        if vals is None or not torch.is_tensor(vals) or vals.numel() == 0:
+            return None
+        ncol = int(self.nInput)
+        free = max(0, int(free_size))
+        rows_t, cols_t = self._indices(vals.device)
+        concept_col = (torch.ones_like(cols_t, dtype=torch.bool)
+                       if getattr(self, '_feature_sources', False) else
+                       (cols_t % (self.nOutput + 1)) < self.nOutput
+                       if getattr(self, '_paired_sources', False) else cols_t < ncol - 1)
+        rows, weights = rows_t[concept_col], vals[concept_col].clamp_min(0)
+        # Sort edges by magnitude, then stably group rows. Segment ranks
+        # exempt each row's core without allocating an inventory-sized square.
+        by_weight = weights.argsort(descending=True, stable=True)
+        order = by_weight[rows[by_weight].argsort(stable=True)]
+        rows, weights = rows[order], weights[order]
+        positions = torch.arange(len(rows), device=rows.device)
+        starts = torch.cat((torch.ones_like(rows[:1], dtype=torch.bool), rows[1:] != rows[:-1]))
+        base = torch.where(starts, positions, 0).cummax(0).values
+        return weights[(positions - base) >= free].sum()
+
+
+class ConceptAllocator:
+    """Thin shared owner of GLOBAL concept structure for one ConceptualSpace
+    (2026-07-02 two-phase/consolidation plan P1; v3 single-layer collapse,
+    doc/plans/2026-07-02-iterated-symbolic-loop.md): id allocation, ramsified
+    order derivation (bookkeeping only), raise/retire bookkeeping, the
+    resolved-identity map, and the global idempotency caches. ALL concept
+    records and tensor rows live on ONE shared store
+    (``self.layer()``, a :class:`ConceptualAttentionLayer`); rows are
+    permanent -- nothing migrates by order."""
+
+    def __init__(self, layer_sizer=None, order_cap=None):
+        self.next_id = 1                 # 0 reserved
+        self.placement = {}              # cid -> derived order (bookkeeping)
+        self.raised = set()              # σ-raised: never re-refined
+        self.singletons = set()          # unit-set rows (min-support exempt)
+        self.retired = set()
+        self.identity = {}               # cid -> (part, whole) 1:1 ties
+        self.relate_idx = {}             # (part, whole) / ("raise", fs) -> cid
+        self.word_forms = {}             # surface -> set of persistent concept ids
+        self.reference_orders = {}       # grammar-resolved object order
+        self.testimony_seen = {}         # object id -> first two distinct occurrences
+        self.testimony_current = {}      # deduplication within this observation boundary
+        self._layers = {}                # {0: THE shared square layer}
+        self._layer_sizer = layer_sizer  # order -> (nInput, nOutput, device)
+        self._order_cap = order_cap      # () -> max ramsified order S
+
+    def layer(self, order=0):
+        """THE shared store (v3: ``order`` ignored, every order gets the same
+        object) -- always a :class:`ConceptualAttentionLayer` so the concept
+        relation store is present. A square sizer (roles=None,
+        nInput==nOutput+1) builds the square wave store; no sizer keeps the
+        host-sized 1x1 record-container stub (never runs the wave)."""
+        got = self._layers.get(0)
+        if got is None:
+            n_in, n_out, dev, roles = (self._layer_sizer(0)
+                                       if self._layer_sizer
+                                       else (1, 1, None, None))
+            if roles is None and int(n_in) == int(n_out) + 1:
+                got = ConceptualAttentionLayer.square(int(n_out), device=dev)
+            else:
+                got = ConceptualAttentionLayer(
+                    max(1, int(n_in)), max(1, int(n_out)),
+                    device=dev, roles=roles)
+            self._layers[0] = got
+        return got
+
+    def new_concept(self):
+        """Allocate a fresh global concept id (stable handle, no vector)."""
+        cid = int(self.next_id)
+        self.next_id = cid + 1
+        self.placement[cid] = 0
+        self.layer(0).ensure_row_key(cid)
+        return cid
+
+    def touch(self, cid):
+        """Register an externally-supplied cid (first-touch, order 0)."""
+        cid = int(cid)
+        if cid not in self.placement:
+            self.placement[cid] = 0
+            self.layer(0).ensure_row_key(cid)
+        return cid
+
+    def store_of(self, cid):
+        """The layer currently holding ``cid``'s records."""
+        return self.layer(self.placement.get(int(cid), 0))
+
+    def records(self, cid):
+        return self.store_of(cid).constituents(cid)
+
+    def refs(self, cid, role):
+        """``role``-tagged refs of ``cid`` in record (insertion) order."""
+        return [x for (r, x) in self.records(cid) if r == role]
+
+    def cap(self):
+        return int(self._order_cap()) if self._order_cap else 0
+
+    def order_of(self, cid, _seen=None):
+        """Ramsified order: 0 for all-raw constituents, else 1 + max order
+        of the sym-ref constituents, capped at S. Cycle-guarded."""
+        cid = int(cid)
+        _seen = _seen if _seen is not None else set()
+        if cid in _seen:
+            return 0
+        _seen.add(cid)
+        subs = []
+        for x in (sorted(self.refs(cid, "part"), key=repr)
+                  + sorted(self.refs(cid, "whole"), key=repr)):
+            if isinstance(x, tuple) and len(x) == 2 and x[0] == "sym":
+                subs.append(self.order_of(x[1], _seen))
+        return max(self.reference_orders.get(cid, 0),
+                   0 if not subs else min(self.cap(), 1 + max(subs)))
+
+    def settle(self, cid):
+        """Re-derive ``cid``'s order (BOOKKEEPING ONLY, v3: records and rows
+        are permanent in the single shared layer -- no migration)."""
+        cid = self.touch(cid)
+        new = self.order_of(cid)
+        self.placement[cid] = new
+        return new
+
+    def add(self, cid, role, ref):
+        cid = self.touch(cid)
+        self.store_of(cid).add_constituent(cid, role, ref)
+        self.settle(cid)
+
+    def remove(self, cid, role, ref):
+        cid = self.touch(cid)
+        self.store_of(cid).remove_constituent(cid, role, ref)
+        self.settle(cid)
+
+    def set_role(self, cid, role, refs):
+        cid = self.touch(cid)
+        self.store_of(cid).set_role_constituents(cid, role, refs)
+        self.settle(cid)
+
+    def clear(self, cid):
+        cid = self.touch(cid)
+        self.store_of(cid).clear_constituents(cid)
+        self.settle(cid)
+
+    def drop(self, cid):
+        """Retire: remove records + registry entry (tensor rows persist --
+        row assignments are permanent in the shared layer) and clear
+        idempotency-cache entries pointing at ``cid``."""
+        cid = int(cid)
+        o = self.placement.pop(cid, None)
+        if o is not None:
+            self.layer(o).pop_row_key(cid)
+        self.retired.add(cid)
+        for ids in self.word_forms.values():
+            ids.discard(cid)
+        for k in [k for k, v in self.relate_idx.items() if int(v) == cid]:
+            self.relate_idx.pop(k, None)
+
+
+class MeronymicFoldAdapter(Layer):
+    """Membership-native adapter for a meronymic sigma/pi slot
+    (MeronomyPlan Stage 9 cutover; MeronomySpec §2, §4).
+
+    The PS/WS wire carries membership directly: ``m in [0, 1]``. Sigma
+    and pi therefore consume and return membership coordinates without a
+    signed evaluation chart. The learned unary fold is invertible with a
+    closed-form bounded-domain inverse; the M-to-1 union used to
+    assemble a word is intentionally not invertible and is reversed from
+    retained constituent and fold-provenance records.
+
+    At near-identity init the membership kernel is approximately the
+    identity on memberships (bounded shear/curve coefficients are near 0), so the adapter
+    starts close to a pass-through: cutover begins from a benign
+    operating point and training shapes the fold from there.
+
+    ``kind``: ``'sigma'`` (PS slot — synthesis/whole-maker) or ``'pi'``
+    (WS slot — analysis/part-maker). ``binary=`` is accepted for
+    call-surface parity with the legacy folds and ignored (operand
+    selection belongs to the binary ``blocks=2`` form, not the unary
+    slot). Non-meronymic consumers keep the odds-kernel layers (plan §4
+    item 4 — those operators are NOT legacy; only this slot rebinds).
+
+    **Butterfly mode.** ``butterfly=True`` composes gather-free 2x2
+    monotone coupling nodes across one vector's feature lanes; leading batch
+    and word/location axes never mix. Each node uses two bounded extensive
+    shears around an endpoint-fixing diagonal curve. Sigma runs that flow;
+    pi is its complement conjugate. Every constituent map preserves
+    ``[0,1]``, fixes 0 and 1, is order-preserving, and has a closed-form
+    reverse. The coefficient budget splits ``log(d_max)`` across levels, so
+    inverse gain remains bounded end-to-end. This replaces the former
+    log-power LDU, whose values were finite but whose cross-derivatives
+    diverged near a membership corner when an exponent lay between 0 and 1.
+    Near-identity raw initialization still yields taps near 0.0025 with useful
+    gradients. ``gate`` is not honoured in butterfly mode (same contract as
+    the legacy cascade).
+
+    Repeated extensive/contractive application can still migrate sigma/pi
+    toward a lattice corner; that semantic pressure is tested and is distinct
+    from a one-step numerical singularity. If the geometry proves too
+    restrictive, the contingency remains an explicit part-whole tree over
+    code atoms rather than weakening the range or invertibility contracts.
+    """
+    invertible = True
+    # Legacy slot-surface attributes: consumers of the slot layers read
+    # these (e.g. the WS parallel-fold dispatch reads ``fold.N`` to
+    # match the construction-time flat total; ``butterfly`` is probed
+    # with getattr). In unary mode the adapter is a per-slot membership
+    # fold and carries the legacy total for dispatch only; in butterfly
+    # mode the cascade is real and ``butterfly`` flips True per
+    # instance.
+    butterfly = False
+    nonlinear = False
+    monotonic = True
+
+    def __init__(self, kind, nInput, nOutput, stable=True, ergodic=False,
+                 naive=False, legacy_N=None, butterfly=False, d_max=None):
+        super().__init__(nInput, nOutput)
+        if kind not in ('sigma', 'pi'):
+            raise ValueError(
+                f"MeronymicFoldAdapter: kind must be 'sigma' or 'pi'; "
+                f"got {kind!r}")
+        self.kind = kind
+        self.N = int(legacy_N) if legacy_N is not None else int(nInput)
+        self.butterfly = bool(butterfly)
+        if self.butterfly:
+            # PER-VECTOR cascade (Alec 2026-07-07: mereological order-raising
+            # raises EACH vector's order over its own features independently
+            # -- it never mixes across word slots). The cascade is therefore
+            # sized at ``nInput`` (one vector's width), NOT the legacy
+            # whole-slab total ``legacy_N`` -- sizing at N*D made every
+            # per-word call pad one D-vector up to the slab width and fold
+            # mostly zeros (the O(N^2) serial-loop wall), and mis-pinned the
+            # pad-identity mask when the per-vector flatten landed data in
+            # lanes < D but the mask only pinned lanes >= legacy_N (leaked
+            # mass broke the exact roundtrip). ``legacy_N`` is retained on
+            # ``self.N`` for callers' bookkeeping only.
+            _vec_width = int(nInput)
+            M = 1
+            while M < max(2, _vec_width):
+                M *= 2
+            self.M_total = M
+            self.n_levels = int(math.log2(M))
+            self.d_max = float(d_max) if d_max is not None \
+                else float(meronomy_d_max_stable())
+            pair_count = M // 2
+            # SQUARE reparam (tap = raw², d = 1 + raw_d²), NOT the
+            # unary kernel's softplus: softplus locks the gradient
+            # scale to the tap size (both ~ e^raw near identity), so a
+            # depth-compensated benign start would strangle learning —
+            # the signed cascade trains precisely because its raws are
+            # linear (taps init 0, gradient 1). Squares decouple them:
+            # at raw = 0.05 the taps are ~0.0025 (near-identity across
+            # a 7-level stack: the benign-start contract) while the
+            # gradient scale is 2·raw ~ 0.10. Non-negativity is
+            # guaranteed, exact identity stays reachable (raw → 0), and
+            # the sign symmetry leaves no dead zone.
+            self.raw_bfly_L = nn.Parameter(
+                torch.full((self.n_levels, pair_count), 0.05))
+            self.raw_bfly_d = nn.Parameter(
+                torch.full((self.n_levels, pair_count, 2), 0.05))
+            self.raw_bfly_U = nn.Parameter(
+                torch.full((self.n_levels, pair_count), 0.05))
+            self.register_buffer(
+                'butterfly_perms',
+                GrammarLayer._build_butterfly_perms(M, self.n_levels))
+            # Pad hygiene (exact-invertibility requirement the signed
+            # cascade lacks): when N is not a power of two, pairs that
+            # touch a pad lane are pinned to the IDENTITY law. Pads
+            # then stay exactly 𝟘 (log-mass 0) through every level —
+            # they never absorb real mass that the unflatten would
+            # discard — so the cascade restricted to the N real lanes
+            # is a bijection and the reverse is exact. Real↔real pairs
+            # are unaffected (full law, full reach).
+            mask = torch.ones(self.n_levels, pair_count)
+            for k in range(self.n_levels):
+                perm = self.butterfly_perms[k]
+                for p in range(pair_count):
+                    # Pads start at the VECTOR width (the per-vector flatten
+                    # fills lanes [0, nInput)), not at the legacy slab total.
+                    if (int(perm[2 * p]) >= _vec_width
+                            or int(perm[2 * p + 1]) >= _vec_width):
+                        mask[k, p] = 0.0
+            self.register_buffer('_bfly_pair_mask', mask)
+            self.fold = None
+        elif kind == 'sigma':
+            self.fold = SigmaLayer2(nInput, nOutput, stable=stable,
+                                    ergodic=ergodic, naive=naive)
+        else:
+            self.fold = PiLayer2(nInput, nOutput, stable=stable,
+                                 ergodic=ergodic, naive=naive)
+        if self.fold is not None:
+            self.layers.append(self.fold)
+        self.activation = torch.zeros(1, nOutput, 1)
+        # MPS Inductor can compile the per-vector membership cascade, but not
+        # the entire stateful serial word cell within a practical cold-start
+        # budget.  This is deliberately an opt-in installed by BasicModel's
+        # MPS compilation boundary; ordinary layer use and all uncompiled
+        # paths keep calling ``_mem_cascade`` directly.
+        object.__setattr__(self, "_compiled_mem_cascade", None)
+
+    # -- membership cascade (butterfly mode) ---------------------------
+    # PER-VECTOR flatten (differs from GrammarLayer's whole-slab flatten):
+    # mereological order-raising raises ONE vector's order over its own
+    # ``percept_dim`` features and does NOT mix across word slots, so every
+    # leading dim -- batch AND word-slot -- collapses into the row axis and
+    # the cascade never pairs lanes from different vectors. ``M_total ==
+    # next_pow2(percept_dim)`` (independent of the word count), so the fold is
+    # O(rows * D * logD) -- linear in words, not the O((N*D)^2) the old
+    # whole-slab flatten produced when replayed per word.
+    def _bfly_flatten(self, x):
+        """Flatten to ``[rows, M_total]`` folding each length-``D`` vector
+        independently (``rows == prod(x.shape[:-1])``); returns
+        ``(flat, original_shape)``."""
+        original_shape = tuple(x.shape)
+        D = original_shape[-1]
+        flat = x.reshape(-1, D)
+        if D < self.M_total:
+            pad = torch.zeros(flat.shape[0], self.M_total - D,
+                              device=flat.device, dtype=flat.dtype)
+            flat = torch.cat([flat, pad], dim=1)
+        elif D > self.M_total:
+            raise RuntimeError(
+                f"MeronymicFoldAdapter._bfly_flatten: vector width {D} "
+                f"exceeds cascade M_total={self.M_total} (percept_dim "
+                f"mismatch -- the fold is sized to one vector, not the slab).")
+        return flat, original_shape
+
+    def _bfly_unflatten(self, flat, original_shape):
+        """Inverse of :meth:`_bfly_flatten`: strip pad, restore shape."""
+        D = original_shape[-1]
+        return flat[:, :D].reshape(original_shape)
+
+    def _mem_law(self):
+        """Return bounded coefficients for the monotone coupling flow.
+
+        Each level has three possible inverse-gain factors (upper shear,
+        diagonal curve, lower shear).  Splitting ``log(d_max)`` over those
+        factors and every level bounds the complete cascade's inverse gain by
+        ``d_max``.  ``cap*tanh(raw/sqrt(cap))²`` is ``raw²`` near identity,
+        stays non-negative, and approaches the cap smoothly. Pad-touching
+        pairs receive exact-zero coefficients and are identities.
+        """
+        mask = self._bfly_pair_mask
+        if not math.isfinite(self.d_max) or self.d_max < 1.0:
+            raise RuntimeError(
+                "meronymic d_max must be finite and >= 1 for a stable inverse; "
+                f"got {self.d_max}")
+        # An inverse exponential shear has both a direct derivative and a
+        # cross derivative. Conservatively, for coefficient b, each shear's
+        # induced 1/inf-norm gain is <= exp(2b); the scalar curve contributes
+        # <= exp(b). Two shears plus one curve over L levels are therefore
+        # bounded by exp(5bL). Splitting log(d_max) by 5L makes d_max a true
+        # whole-cascade inverse-gain ceiling, not merely a diagonal budget.
+        budget = math.log(max(1.0, self.d_max)) / (
+            5.0 * max(1, self.n_levels))
+        tap_cap = budget
+        diagonal_cap = 1.0 - math.exp(-budget)
+
+        def _bounded_square(raw, cap):
+            if cap <= 0.0:
+                return torch.zeros_like(raw)
+            return cap * torch.tanh(raw / math.sqrt(cap)).square()
+
+        L = _bounded_square(self.raw_bfly_L, tap_cap) * mask
+        d = (_bounded_square(self.raw_bfly_d, diagonal_cap)
+             * mask.unsqueeze(-1))
+        U = _bounded_square(self.raw_bfly_U, tap_cap) * mask
+        return L, d, U
+
+    @staticmethod
+    def _membership_curve(x, coefficient, inverse=False, contractive=False):
+        """Bounded scalar curve and its closed-form inverse.
+
+        ``h_c(x) = x + c*x*(1-x)`` fixes 0 and 1, is monotone for
+        ``0 <= c < 1``, and has inverse derivative at most ``1/(1-c)``.
+        ``contractive=True`` uses its complement conjugate
+        ``k_c(x) = x - c*x*(1-x)`` for the pi flow.
+        """
+        if contractive:
+            if not inverse:
+                return x - coefficient * x * (1.0 - x)
+            one_minus = 1.0 - coefficient
+            # The discriminant floor keeps d/dx sqrt finite at the
+            # degenerate point (x = 0 with c -> 1: a unit whose memberships
+            # are all zero, e.g. a whitespace unit); sqrt(0) has an
+            # infinite derivative and the packed-row backward overflowed
+            # to NaN (2026-09-11, packed FineWeb rows).
+            floor = 1e-6
+            discriminant = (one_minus.square()
+                            + 4.0 * coefficient * x).clamp_min(floor)
+            denominator = one_minus + torch.sqrt(discriminant)
+            return (2.0 * x / denominator.clamp_min(floor)).clamp(0.0, 1.0)
+        if not inverse:
+            return x + coefficient * x * (1.0 - x)
+        one_plus = 1.0 + coefficient
+        floor = 1e-6
+        discriminant = (one_plus.square()
+                        - 4.0 * coefficient * x).clamp_min(floor)
+        denominator = one_plus + torch.sqrt(discriminant)
+        return (2.0 * x / denominator.clamp_min(floor)).clamp(0.0, 1.0)
+
+    def _mem_cascade(self, membership, inverse=False, contractive=False):
+        """Run an invertible monotone sigma/pi flow over memberships.
+
+        GATHER-FREE pairing (MPS-compile requirement): bounds-checked
+        index ops each demand an error-report buffer argument in the
+        generated Metal kernels, and an Inductor fusion holding the
+        cascade's ``2·n_levels`` permutation gathers exhausts Metal's
+        31-buffer limit ("no 'buffer' resource location available for
+        'error_buf'"). At stride ``s = 2^k`` the XOR-partners
+        ``(i, i+s)`` sit at positions ``(off, s+off)`` of each
+        contiguous ``2s`` block, so a ``[B, M/2s, 2, s]`` VIEW
+        separates the pair members on pure reshapes — no advanced
+        indexing anywhere on the compute path. The per-pair math and
+        the parameter layout are identical to the permuted form
+        (pair ``p = blk·s + off`` — the legacy perm order;
+        ``butterfly_perms`` stays registered for the pad-mask
+        construction and lane-pair lookups in tests).
+
+        One node is an upper extensive shear, two independent bounded
+        diagonal curves, then a lower extensive shear::
+
+            a = 1 - (1-x0) exp(-U*x1)
+            a, b = h_d0(a), h_d1(x1)
+            y = 1 - (1-b) exp(-L*a)
+
+        Sigma uses the displayed extensive flow. Pi uses its complement
+        conjugate directly (multiplicative contractive shears and contractive
+        scalar curves), avoiding a numerical ``1-(1-x)`` round trip at the
+        poles. Every operation preserves the cube, is order-preserving, and
+        has a closed-form reverse executed in the opposite order. Unlike the
+        old log-power mixing, no derivative contains ``q**(w-1)``; forward
+        and reverse adjoints stay bounded at the membership corners.
+        """
+        flat, original_shape = self._bfly_flatten(membership)
+        B = flat.shape[0]
+        L, d, U = self._mem_law()
+        levels = range(self.n_levels)
+        if inverse:
+            levels = reversed(levels)
+        for level in levels:
+            s = 1 << level
+            blocks = flat.reshape(B, -1, 2, s)
+            x0 = blocks[..., 0, :]
+            x1 = blocks[..., 1, :]
+            # Per-pair scalars at [nblocks, s]; flat pair index
+            # blk·s + off matches the legacy perm-ordered layout.
+            Lk = L[level].reshape(-1, s)
+            d0 = d[level, :, 0].reshape(-1, s)
+            d1 = d[level, :, 1].reshape(-1, s)
+            Uk = U[level].reshape(-1, s)
+            if inverse:
+                # Undo lower shear, the two scalar curves, then upper.
+                if contractive:
+                    b = x1 * torch.exp(Lk * (1.0 - x0))
+                else:
+                    b = x1 - (1.0 - x1) * torch.expm1(Lk * x0)
+                a = self._membership_curve(
+                    x0, d0, inverse=True, contractive=contractive)
+                b = self._membership_curve(
+                    b, d1, inverse=True, contractive=contractive)
+                if contractive:
+                    original0 = a * torch.exp(Uk * (1.0 - b))
+                else:
+                    original0 = a - (1.0 - a) * torch.expm1(Uk * b)
+                flat = torch.stack(
+                    [original0.clamp(0.0, 1.0), b.clamp(0.0, 1.0)],
+                    dim=-2).reshape(B, -1)
+            else:
+                if contractive:
+                    a = x0 * torch.exp(-Uk * (1.0 - x1))
+                else:
+                    a = x0 - (1.0 - x0) * torch.expm1(-Uk * x1)
+                a = self._membership_curve(
+                    a, d0, contractive=contractive)
+                b = self._membership_curve(
+                    x1, d1, contractive=contractive)
+                if contractive:
+                    y1 = b * torch.exp(-Lk * (1.0 - a))
+                else:
+                    y1 = b - (1.0 - b) * torch.expm1(-Lk * a)
+                flat = torch.stack([a, y1], dim=-2).reshape(B, -1)
+        return self._bfly_unflatten(flat, original_shape)
+
+    def enable_compiled_mem_cascade(self):
+        """Install a narrow compiled forward kernel for the butterfly flow.
+
+        The stateful sentence/STM/grammar driver must stay eager on MPS: an
+        AOT graph spanning even two word ticks creates a huge backward graph
+        and spends minutes lowering before its first batch.  The membership
+        cascade is the hot, pure tensor portion of that driver.  Compiling it
+        separately gives Inductor a stable 136-wide graph whose parameters
+        remain normal differentiable inputs, so each PS/WS fold retains its
+        own gradients without tracing the Python recurrence.
+
+        ``util.compile`` also installs the MPS fusion limits required by
+        Metal's 31-buffer kernel-argument ceiling.  The wrapper is installed
+        only when a caller has explicitly enabled model compilation.
+        """
+        if not self.butterfly:
+            return False
+        if util.TheCompileBackend == "none":
+            return False
+        if getattr(self, "_compiled_mem_cascade", None) is not None:
+            return True
+        compiled = util.compile(
+            self._mem_cascade, verbose=False, fullgraph=True)
+        object.__setattr__(self, "_compiled_mem_cascade", compiled)
+        return True
+
+    def compute_forward(self, x, binary=False, gate=None):
+        """Apply one invertible learned fold directly to membership.
+
+        Butterfly mode runs the bounded coupling flow for sigma and uses the
+        complement involution for pi, one percept/property vector at a time.
+
+        Unary mode: width-mismatched calls (the legacy cascade was
+        width-agnostic; the per-slot membership fold is not) fall back
+        to identity for the batch — the same convention the WS
+        parallel-fold dispatch uses for mismatched totals.
+        """
+        if self.butterfly:
+            m = x.clamp(0.0, 1.0)
+            compiled = getattr(self, "_compiled_mem_cascade", None)
+            # Do not nest a separately compiled fold inside an already traced
+            # parent.  The canonical MPS driver is intentionally eager, while
+            # legacy CPU/CUDA full-step tracing retains its original single
+            # graph behavior.
+            cascade = (compiled if compiled is not None
+                       and not torch.compiler.is_compiling()
+                       else self._mem_cascade)
+            z = cascade(m, contractive=(self.kind == 'pi'))
+            return z.clamp(0.0, 1.0)
+        if x.shape[-1] != self.nInput:
+            return x
+        m = x.clamp(0.0, 1.0)
+        return self.fold.forward(m, gate=gate).clamp(0.0, 1.0)
+
+    def forward(self, x, binary=False, gate=None):
+        """Owner/diagnostic wrapper around the pure fold computation."""
+        out = self.compute_forward(x, binary=binary, gate=gate)
+        self.activation = out.detach()
+        return out
+
+    def _set_union_membership(self, part_codes, mask=None):
+        """Return the parameter-free De Morgan union of a constituent set.
+
+        The serial word path needs two distinct operations: first, a base
+        mereological M-to-1 aggregation which forms one percept from all of a
+        word's residual parts; second, the learned unary sigma ladder which
+        may raise that percept's order.  Keeping the set union here, before
+        either learned kernel, prevents the first ladder layer from being
+        applied once during word assembly and then a second time as fold 0.
+
+        Returns ``(union_membership, valid_mask, complements)``.  Masked
+        constituents are the sigma identity (membership zero, hence
+        complement one).  The complements are retained so the legacy learned
+        butterfly surface can preserve its pre-aggregation clamp semantics.
+        """
+        if self.kind != 'sigma':
+            raise RuntimeError(
+                "set union is defined only for sigma adapters")
+        if part_codes.dim() < 2:
+            raise RuntimeError(
+                "set union expects a constituent axis")
+        if mask is None:
+            valid = torch.ones(
+                part_codes.shape[:-1], dtype=torch.bool,
+                device=part_codes.device)
+        else:
+            valid = mask.to(device=part_codes.device, dtype=torch.bool)
+            if tuple(valid.shape) != tuple(part_codes.shape[:-1]):
+                raise RuntimeError(
+                    "meronymic set mask does not match constituent slab: "
+                    f"codes={tuple(part_codes.shape)}, "
+                    f"mask={tuple(valid.shape)}")
+
+        membership = part_codes.clamp(0.0, 1.0)
+        complement = torch.where(
+            valid.unsqueeze(-1), 1.0 - membership,
+            torch.ones_like(membership))
+        return 1.0 - complement.prod(dim=-2), valid, complement
+
+    def compute_aggregate_over_set(self, part_codes, mask=None):
+        """Form the base M-to-1 whole without a learned feature fold.
+
+        This is the serial word assembler.  It is the exact order-invariant
+        De Morgan extension ``1 - product(1 - m_i)`` in membership space.
+        It intentionally does not call
+        ``self.fold`` or ``self._mem_cascade``; learned order-raising begins at
+        the subsequent unary sigma ladder.  This computation has no diagnostic
+        cache write and is therefore safe inside a higher-order recurrent op.
+        """
+        if getattr(self, "set_law", "union") == "max":
+            # Meronomy fold ladder (contract 1): the join is the max over
+            # parts per coordinate, the idempotent lattice join (a category
+            # does not count its parts; multiplicity and order live on the
+            # witness).  Masked constituents are the join identity (zero).
+            if mask is None:
+                valid = torch.ones(part_codes.shape[:-1], dtype=torch.bool,
+                                   device=part_codes.device)
+            else:
+                valid = mask.to(device=part_codes.device, dtype=torch.bool)
+            membership = part_codes.clamp(0.0, 1.0)
+            membership = torch.where(valid.unsqueeze(-1), membership,
+                                     torch.zeros_like(membership))
+            out = membership.amax(dim=-2)
+            any_valid = valid.any(dim=-1, keepdim=True)
+            return torch.where(any_valid, out, torch.zeros_like(out))
+        union_m, valid, _complement = self._set_union_membership(
+            part_codes, mask=mask)
+        out = union_m
+        any_valid = valid.any(dim=-1, keepdim=True)
+        out = torch.where(any_valid, out, torch.zeros_like(out))
+        return out
+
+    def aggregate_over_set(self, part_codes, mask=None):
+        """Owner/diagnostic wrapper around :meth:`compute_aggregate_over_set`."""
+        out = self.compute_aggregate_over_set(part_codes, mask=mask)
+        self.activation = out.detach()
+        return out
+
+    def synthesize_over_set(self, part_codes, mask=None):
+        """Synthesize ``[..., M, D]`` constituents through a learned fold.
+
+        The ordinary slot ``forward`` raises one vector's order.  This method
+        remains the learned M-to-1 surface for callers that explicitly want
+        set aggregation and feature folding in one operation.  The serial
+        word base uses :meth:`aggregate_over_set` instead, then invokes each
+        advertised unary sigma rung exactly once.
+
+        Both modes first form the exact order-invariant De Morgan union and
+        then apply their configured membership fold once. Masked positions
+        are identities, not vague ``a=0`` operands.
+        """
+        union_m, valid, complement = self._set_union_membership(
+            part_codes, mask=mask)
+        if self.butterfly:
+            out_m = self._mem_cascade(union_m)
+        else:
+            out_m = self.fold.forward(union_m)
+        out = out_m.clamp(0.0, 1.0)
+        any_valid = valid.any(dim=-1, keepdim=True)
+        out = torch.where(any_valid, out, torch.zeros_like(out))
+        self.activation = out.detach()
+        return out
+
+    def reverse(self, y, gate=None):
+        """Invert the learned membership fold (not M-to-1 set assembly).
+
+        Width-mismatched unary calls remain identities. Butterfly mode
+        reverses each bounded shear and scalar curve in the opposite order.
+        """
+        if self.butterfly:
+            z = y.clamp(0.0, 1.0)
+            m = self._mem_cascade(
+                z, inverse=True,
+                contractive=(self.kind == 'pi')).clamp(0.0, 1.0)
+            x = m.clamp(0.0, 1.0)
+            self.activation = x.detach()
+            return x
+        if y.shape[-1] != self.nOutput:
+            self.activation = y.detach()
+            return y
+        z = y.clamp(0.0, 1.0)
+        x = self.fold.reverse(z, gate=gate).clamp(0.0, 1.0)
+        self.activation = x.detach()
+        return x
+
+    def getParameters(self):
+        """Optimizable parameters of the wrapped kernel / cascade."""
+        return [p for _, p in self.named_parameters()]
+
+class MapppingLayer(InvertibleLinearLayer):
+    """Bias-free, stable reversible linear layer for mapping between row/column spaces.
+
+    Thin wrapper that pins ``hasBias=False`` and ``stable=True`` on
+    the parent ``InvertibleLinearLayer`` so reversibility is exact.
+    Used by spaces that need a clean row<->column rotation without an
+    additive offset.
+    """
+    def __init__(self, nInput, nOutput, init='orthogonal'):
+        """Initialize MapppingLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__(nInput, nOutput, naive=False, hasBias=False, stable=True)
+class SortingLayer(Layer):
+    """NeuralSort: differentiable O(1)-depth sorting (Grover et al. 2019).
+
+    Learns a content-determined canonical ordering of vectors along dim 1.
+    A direction vector ``w`` scores each vector: s_i = w^Tv_i + bias.
+    Scores produce a soft permutation matrix via:
+
+        P[i,j] = softmax((N+1-2i)*s / tau,  dim=j)
+
+    Row i of P concentrates on the element with the i-th largest score.
+    The sorted output is P @ V -- a single batched matmul, no loops.
+
+    The scale of w controls effective temperature: small w -> soft
+    (uniform P, near-identity), large w -> hard (crisp permutation).
+
+    Forward caches the pre-sort tensor for exact restoration in reverse().
+    """
+
+    def __init__(self, symbol_dim, n_passes=None):
+        """Initialize SortingLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__(symbol_dim, symbol_dim)
+        self.symbol_dim = symbol_dim
+        # n_passes accepted for config compat but unused by NeuralSort
+        self.w = nn.Parameter(torch.randn(symbol_dim) * 0.01)
+        self.bias = nn.Parameter(torch.zeros(1))
+        self._pre_sort = None
+
+    def forward(self, act):
+        """NeuralSort on [B, N, D] along dim 1 -> [B, N, D]."""
+        self._pre_sort = act.clone()
+        B, N, D = act.shape
+        if N <= 1:
+            return act
+        # Score each vector: [B, N]
+        scores = (act * self.w).sum(dim=-1) + self.bias
+        # NeuralSort coefficients (1-indexed ranks)
+        rank = torch.arange(1, N + 1, device=act.device, dtype=scores.dtype)
+        coeff = (N + 1 - 2 * rank)                        # [N]
+        # logits[b,i,j] = coeff[i] * scores[b,j]
+        logits = coeff.unsqueeze(0).unsqueeze(-1) * scores.unsqueeze(1)
+        P = torch.softmax(logits, dim=-1)                  # [B, N, N]
+        return torch.bmm(P, act)                           # [B, N, D]
+
+    def reverse(self, act):
+        """Restore pre-sort tensor cached during forward."""
+        if self._pre_sort is not None:
+            return self._pre_sort
+        return act
+
+class AssociationLayer(Layer):
+    """Cross-symbol associative memory for bidirectional pattern completion.
+
+    Given a [B, N] activation vector over N symbol slots, computes an
+    association matrix that measures how each symbol relates to every other.
+    This implements the EQUALS rule: when symbol A is symbol B, they have a
+    high cross-association score.
+
+    type="symmetric"  -- Hopfield-like: scores = A(x)^T @ A(x), positive
+                        semi-definite.  Associations are symmetric (A==B <-> B==A).
+    type="hopfield"   -- Modern Hopfield / softmax retrieval: projects x into
+                        queries and keys, softmax attention across symbols,
+                        returns the retrieved pattern.
+
+    Input:  [B, N] symbol activations.
+    Output: [B, N] associated activations (cross-symbol pattern completion).
+    """
+
+    def __init__(self, nInput, nOutput=None, nHidden=None,
+                 type="symmetric", beta=10.0):
+        """Initialize AssociationLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        nOutput = nOutput or nInput
+        super().__init__(nInput, nOutput)
+        self.nHidden = nHidden or nInput
+        self.type = type
+        self.beta = beta
+
+        if self.type == "symmetric":
+            # Hopfield energy: E = -x^T W x, stored patterns in W = A^T A
+            self.A = LinearLayer(self.nInput, self.nHidden)
+        elif self.type == "hopfield":
+            # Modern Hopfield: separate query/key projections
+            self.Q = LinearLayer(self.nInput, self.nHidden)
+            self.K = LinearLayer(self.nInput, self.nHidden)
+        else:
+            raise ValueError(f"AssociationLayer type must be 'symmetric' or 'hopfield', got '{type}'")
+
+        if self.nHidden != self.nOutput:
+            self.Out = LinearLayer(self.nHidden, self.nOutput)
+        else:
+            self.Out = None
+
+        self.layers = [self.A] if self.type == "symmetric" else [self.Q, self.K]
+        if self.Out is not None:
+            self.layers.append(self.Out)
+
+    def forward(self, x):
+        """Compute cross-symbol associations.
+
+        Args:
+            x: [B, N] symbol activation vector.
+
+        Returns:
+            [B, N] associated activation -- pattern-completed via stored associations.
+        """
+        # Reshape to [B, N, 1] for matmul compatibility
+        x3 = x.unsqueeze(-1)  # [B, N, 1]
+
+        if self.type == "symmetric":
+            # Project: [B, N, 1] -> [B, N, H] via broadcasting
+            # A operates on the last dim, so reshape to [B, N, nInput]
+            # For 1-dim symbols, we tile to nInput width
+            a = self.A.forward(x)               # [B, nHidden]
+            # Association scores: outer product in hidden space
+            scores = torch.bmm(
+                a.unsqueeze(-1),                # [B, nHidden, 1]
+                a.unsqueeze(-2)                 # [B, 1, nHidden]
+            )                                   # [B, nHidden, nHidden]
+            # Apply to original activation via projection
+            attn = F.softmax(self.beta * scores, dim=-1)  # [B, H, H]
+            # Map back: use A to project x to hidden, attend, project back
+            h = a.unsqueeze(-1)                 # [B, H, 1]
+            out = torch.bmm(attn, h).squeeze(-1)  # [B, H]
+
+        elif self.type == "hopfield":
+            q = self.Q.forward(x)               # [B, nHidden]
+            k = self.K.forward(x)               # [B, nHidden]
+            # Similarity in hidden space -> association strength
+            scores = q * k                      # [B, nHidden] element-wise
+            out = F.softmax(self.beta * scores, dim=-1) * k  # [B, nHidden]
+
+        if self.Out is not None:
+            out = self.Out.forward(out)          # [B, nOutput]
+        return out
+
+class LiftingLayer(Layer):
+    """Codebook of verb weight matrices for conceptual composition (lift).
+
+    Each verb in the codebook is a learned [D, D] weight matrix that
+    transforms concept vectors bidirectionally (invertible linear map).
+    Verb selection is soft: cosine similarity between a query embedding
+    and learned codebook keys produces blending weights.
+
+    Transitive -- lift(C, C):
+        VP_eff @ C1 -> attention added to C2 (forward)
+        VP_eff^T @ C2 -> attention added to C1 (backward)
+
+    Intransitive -- lift(C):
+        VP_eff @ C1 -> self-attention added to C1
+    """
+    def __init__(self, nVerbs, nDim, ergodic=False):
+        """Initialize LiftingLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__(nDim, nDim)
+        self.nVerbs = nVerbs
+        self.nDim = nDim
+        # Codebook keys for soft VERB selection [nVerbs, nDim]
+        self.keys = nn.Parameter(torch.randn(nVerbs, nDim))
+        # VERB weight matrices -- stack of [nDim, nDim] (initialized near-identity)
+        self.vp_weights = nn.ParameterList([
+            nn.Parameter(torch.eye(nDim) + 0.01 * torch.randn(nDim, nDim))
+            for _ in range(nVerbs)
+        ])
+
+    def _select_vp(self, query):
+        """Soft-select a blended VERB matrix via cosine similarity.
+
+        Args:
+            query: [B, D] embedding vector for VERB selection.
+        Returns:
+            [B, D, D] blended VERB weight matrix.
+        """
+        sim = F.cosine_similarity(
+            query.unsqueeze(1),           # [B, 1, D]
+            self.keys.unsqueeze(0),       # [1, V, D]
+            dim=-1
+        )                                 # [B, V]
+        weights = F.softmax(sim * 10.0, dim=-1)  # sharp selection
+        vp_stack = torch.stack(list(self.vp_weights))  # [V, D, D]
+        vp_eff = torch.einsum('bv, vij -> bij', weights, vp_stack)  # [B, D, D]
+        return vp_eff
+
+    def forward_transitive(self, C1, C2, vp_query):
+        """Transitive VERB: C1 VERB C2.
+
+        VP_eff @ C1 -> attention added to C2 (forward)
+        VP_eff^T @ C2 -> attention added to C1 (backward)
+
+        Args:
+            C1: [B, N, D] subject concepts.
+            C2: [B, N, D] object concepts.
+            vp_query: [B, D] VERB embedding for codebook lookup.
+        Returns:
+            (C1', C2') updated concept tensors.
+        """
+        vp_eff = self._select_vp(vp_query)              # [B, D, D]
+        fwd = torch.bmm(C1, vp_eff)                     # [B, N, D]
+        bwd = torch.bmm(C2, vp_eff.transpose(1, 2))     # [B, N, D]
+        return C1 + bwd, C2 + fwd
+
+    def forward_reflexive(self, C1, vp_query):
+        """Intransitive VERB: C1 VERB (self-application).
+
+        Applies VERB as self-attention on C1, producing the post-VERB state.
+        Replaces C1 in-place for this iteration.
+
+        # NOTE: In a stateful model, this produces a state-of-affairs at T2
+        # which is distinct from the T1 input. The temporal distinction is
+        # significant for learning over sequences of events but is not
+        # represented in the current single-timestamp encoding.
+
+        Args:
+            C1: [B, N, D] concept vectors.
+            vp_query: [B, D] VERB embedding for codebook lookup.
+        Returns:
+            C1': [B, N, D] self-attended concept vectors.
+        """
+        vp_eff = self._select_vp(vp_query)              # [B, D, D]
+        attended = torch.bmm(C1, vp_eff)                 # [B, N, D]
+        return C1 + attended
+
+    def forward_transitive_svo(self, subject, verb, obj, symbolic_space):
+        """Ternary LIFT: S V O.
+
+        The object restricts the verb's lifting operation by intersecting
+        verb symbols with object symbols in symbolic space, then mapping
+        the restricted action back to conceptual space and applying it
+        to the subject.
+
+        PiLayer maps on the nDim axis: [B, N, concept_dim] -> [B, N, symbol_dim].
+        Full concept vectors pass through directly.
+
+        Args:
+            subject: [B, N, D] subject concepts (S).
+            verb: [B, N, D] verb concepts (V).
+            obj: [B, N, D] object concepts (O).
+            symbolic_space: WholeSpace for concept<->symbol projection.
+        Returns:
+            [B, N, D] lifted subject concepts.
+        """
+        ws = symbolic_space
+
+        # 1. Project concept vectors to symbol space via WholeSpace.forward()
+        ws.subspace.set_event(verb)
+        verb_syms = ws.forward(ws.subspace).materialize()     # [B, N, symbol_dim]
+        ws.subspace.set_event(obj)
+        obj_syms = ws.forward(ws.subspace).materialize()      # [B, N, symbol_dim]
+
+        # 2. Intersect: restrict verb by object (monotonic -> min)
+        restricted_syms = torch.min(verb_syms, obj_syms)      # [B, N, symbol_dim]
+
+        # 3. Symbols are already in concept-space coordinates
+        # (symbol_dim == concept_dim is enforced in WholeSpace).
+        restricted = restricted_syms                          # [B, N, D]
+
+        # 4. Weight verb by restricted concept norms -> query
+        rw = restricted.norm(dim=-1, keepdim=True)            # [B, N, 1]
+        rw = rw / (rw.max(dim=1, keepdim=True).values + 1e-6)
+        query = (verb * rw).mean(dim=1)                       # [B, D]
+
+        # 5. Select verb matrix and apply to subject
+        vp_eff = self._select_vp(query)                       # [B, D, D]
+        fwd = torch.bmm(subject, vp_eff)                      # [B, N, D]
+        return subject + fwd
+
+    @staticmethod
+    def test():
+        """Self-test; verifies the round-trip / invariant."""
+        device = TheDevice.get()
+        B, N, D, V = 4, 8, 16, 6
+        layer = LiftingLayer(nVerbs=V, nDim=D)
+
+        C1 = torch.randn(B, N, D, device=device)
+        C2 = torch.randn(B, N, D, device=device)
+        query = torch.randn(B, D, device=device)
+
+        # Soft selection shape
+        vp = layer._select_vp(query)
+        assert vp.shape == (B, D, D), f"select shape: {vp.shape}"
+
+        # Transitive
+        C1_out, C2_out = layer.forward_transitive(C1, C2, query)
+        assert C1_out.shape == (B, N, D), f"transitive C1: {C1_out.shape}"
+        assert C2_out.shape == (B, N, D), f"transitive C2: {C2_out.shape}"
+
+        # Reflexive
+        C1_refl = layer.forward_reflexive(C1, query)
+        assert C1_refl.shape == (B, N, D), f"reflexive: {C1_refl.shape}"
+
+        # Gradient flow
+        C1_grad = C1.clone().requires_grad_(True)
+        q_grad = query.clone().requires_grad_(True)
+        out = layer.forward_reflexive(C1_grad, q_grad)
+        out.sum().backward()
+        assert C1_grad.grad is not None, "no gradient on C1"
+        assert q_grad.grad is not None, "no gradient on query"
+
+        # -- Ternary SVO ------------------------------------------
+        # Mock symbolic space: PiLayer maps on nDim axis [B, N, D] -> [B, N, D]
+        class _MockSubspace:
+            """Test double for SubSpace; just stores the event tensor.
+
+            Implements the minimal subset of SubSpace's API that
+            LiftingLayer.test exercises (set_event / materialize).
+            """
+            def __init__(self):
+                """Start with no event tensor."""
+                self._event = None
+                self.batch = 0
+            def set_event(self, t, compute_activation=False):
+                """Stash the event tensor."""
+                self._event = t
+            def materialize(self):
+                """Return the stashed event tensor."""
+                return self._event
+        class _MockSymSpace:
+            """Test double for WholeSpace bound to a PiLayer.
+
+            Implements just enough of WholeSpace's API for
+            LiftingLayer.test to exercise the ternary SVO lift path.
+            """
+            def __init__(self, pi):
+                """Hold the bound PiLayer and a fresh _MockSubspace."""
+                self.layer = pi
+                self.subspace = _MockSubspace()
+            def forward(self, vspace):
+                """Forward pass.
+                
+                See class docstring for the operation this layer applies.
+                """
+                act = vspace.materialize()
+                act = self.layer.forward(act)
+                vspace.set_event(act)
+                return vspace
+        mock_ss = _MockSymSpace(PiLayer(D, D, monotonic=True,
+                                        invertible=True, nonlinear=True))
+        S = torch.randn(B, N, D, device=device)
+        V = torch.randn(B, N, D, device=device)
+        O = torch.randn(B, N, D, device=device)
+        result = layer.forward_transitive_svo(S, V, O, mock_ss)
+        assert result.shape == (B, N, D), f"SVO shape: {result.shape}"
+
+        # Gradient flow through SVO
+        S_g = S.clone().requires_grad_(True)
+        V_g = V.clone().requires_grad_(True)
+        O_g = O.clone().requires_grad_(True)
+        out_svo = layer.forward_transitive_svo(S_g, V_g, O_g, mock_ss)
+        out_svo.sum().backward()
+        assert S_g.grad is not None, "no gradient on subject"
+        assert V_g.grad is not None, "no gradient on verb"
+        assert O_g.grad is not None, "no gradient on object"
+
+        print("LiftingLayer tests passed.")
+class LoweringLayer(Layer):
+    """Rank-reducing bottleneck for conceptual composition (lower).
+
+    Compresses a concept vector through a smaller dimension then expands
+    back: [D] -> [bottleneck] -> [D]. For binary lower(C, C), the second
+    argument gates the bottleneck representation to select a specific
+    instance from the set represented by the first argument.
+    """
+    def __init__(self, nDim, bottleneck=None):
+        """Initialize LoweringLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        if bottleneck is None:
+            bottleneck = max(4, nDim // 4)
+        super().__init__(nDim, nDim)
+        self.nDim = nDim
+        self.bottleneck = bottleneck
+        self.down = LinearLayer(nDim, bottleneck)
+        self.up = LinearLayer(bottleneck, nDim)
+
+    def forward(self, left, right=None):
+        """Lower a concept through the bottleneck.
+
+        Args:
+            left: [B, N, D] or [B, D] concept vectors (the set/type).
+            right: [B, N, D] or [B, D] optional selector concept.
+                   When provided, gates the bottleneck to select an instance.
+        Returns:
+            Lowered concept, same shape as left.
+        """
+        compressed = self.down.forward(left)        # [..., bottleneck]
+        if right is not None:
+            gate = torch.sigmoid(self.down.forward(right))  # [..., bottleneck]
+            compressed = compressed * gate
+        return self.up.forward(compressed)           # [..., D]
+
+class SparsityRegLayer(Layer):
+    """Soft-threshold L1 proximal operator.
+
+    Shared by PartSpace, ConceptualSpace, and WholeSpace so a
+    single sparsity implementation is reused across space_roles. Extracted from
+    ``WholeSpace.l1_proximal``.
+
+    Acts as identity when disabled or when ``l1_lambda <= 0``. Otherwise
+    applies ``sign(x) * max(|x| - l1_lambda, 0)``, which zeros activations
+    below the threshold and shrinks survivors.
+    """
+
+    def __init__(self, l1_lambda: float = 0.0, enabled: bool = True):
+        # nInput/nOutput are unused -- this is a pointwise op -- but the
+        # Layer base contract requires both. Pass zeros; dim-agnostic.
+        """Initialize SparsityRegLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__(0, 0)
+        self.l1_lambda = float(l1_lambda)
+        self.enabled = bool(enabled)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
+        if not self.enabled or self.l1_lambda <= 0.0:
+            return x
+        return torch.sign(x) * torch.clamp(
+            torch.abs(x) - self.l1_lambda, min=0.0
+        )
+class SmoothingRegLayer(Layer):
+    """Total-variation penalty on consecutive concepts of a symbol vector.
+
+    Complements ``SparsityRegLayer`` by pressuring the symbol vector toward
+    a piecewise-flat profile in addition to an L1 sparsity norm. Penalises
+    ``|S[..., k+1] - S[..., k]|`` and returns a scalar.
+
+    In bivector mode (even last dim) the operand is reshaped to
+    ``[..., K, 2]`` and collapsed along the pole axis with ``amax`` before
+    differencing. This respects the paired-index convention from the
+    bivector encoding: indices ``2k`` and ``2k+1`` are poles of the same
+    concept -- penalising their difference would fight the 4-valued
+    (quaternary) truth encoding, so we measure discontinuity between
+    *distinct* concepts only. See basicmodel/doc/Philosophy.md
+    for the tetralemma (catuskoti) mapping.
+
+    Acts as identity (returns scalar zero) when disabled or ``lam <= 0``.
+    """
+
+    def __init__(self, lam: float = 0.0, enabled: bool = True):
+        """Initialize SmoothingRegLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__(0, 0)
+        self.lam = float(lam)
+        self.enabled = bool(enabled)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
+        if not self.enabled or self.lam <= 0.0:
+            return x.new_tensor(0.0) if torch.is_tensor(x) else torch.tensor(0.0)
+        if x.shape[-1] >= 2 and x.shape[-1] % 2 == 0:
+            pair = x.reshape(*x.shape[:-1], x.shape[-1] // 2, 2)
+            collapsed = pair.amax(dim=-1)
+        else:
+            collapsed = x
+        if collapsed.shape[-1] < 2:
+            return x.new_tensor(0.0)
+        diff = collapsed[..., 1:] - collapsed[..., :-1]
+        return self.lam * diff.abs().mean()
+class ImpenetrableLayer(Layer):
+    """Mereological separation regularizer over a symbol codebook.
+
+    Classifies each ordered pair (i, j) of codebook rows into one of five
+    mereological relations using ``Basis.part`` (clipped-cosine scalar
+    parthood, scalar=True) and penalises overlap between rows whose
+    EMA usage frequencies disagree.
+
+    Penalty: ``overlap_strength(i, j) * |trust(i) - trust(j)|``
+    where ``overlap_strength = min(P[i,j], P[j,i]) * (1 - max(P[i,j], P[j,i])^k)``
+    damps to zero as the pair approaches mutual identity (``equal``).
+
+    Five relations (with thresholds τ and ε):
+      disjoint:  P[i,j] < ε  and  P[j,i] < ε
+      part_ij:   P[i,j] > τ  and  P[j,i] < ε
+      part_ji:   P[i,j] < ε  and  P[j,i] > τ
+      equal:     P[i,j] > τ  and  P[j,i] > τ
+      overlap:   both partial (neither > τ nor < ε)
+
+    Trust source: ``basis.vq.cluster_size`` EMA when a VectorQuantize is
+    present; falls back to row norms when VQ is off.
+
+    A separate variance floor guards against row-collapse (all rows
+    converging to a single point).
+
+    Returns a scalar. When ``enabled`` is false or all weights are zero,
+    the layer short-circuits to zero without touching the codebook.
+
+    See basicmodel/doc/Philosophy.md for the tetralemma (catuskoti)
+    mapping of the 4-valued truth logic that the separated codebook carries.
+    """
+
+    def __init__(self, overlap_weight: float = 0.1,
+                 variance_floor: float = 0.01,
+                 enabled: bool = True,
+                 full_part_threshold: float = 0.9,
+                 disjoint_threshold: float = 0.1,
+                 equal_suppression: float = 4.0):
+        """Initialize ImpenetrableLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__(0, 0)
+        self.overlap_weight = float(overlap_weight)
+        self.variance_floor = float(variance_floor)
+        self.enabled = bool(enabled)
+        self.tau = float(full_part_threshold)
+        self.eps = float(disjoint_threshold)
+        self.equal_k = float(equal_suppression)
+        # Diagnostic slots populated on each forward pass.
+        self.last_overlap_loss = None
+        self.last_variance = None
+        self.last_relation_counts = None
+
+    def _pairwise_parthood(self, codebook: torch.Tensor,
+                           basis) -> torch.Tensor:
+        """Compute P[i, j] = part(cb[i], cb[j], scalar=True) for all K*K pairs."""
+        K = codebook.shape[0]
+        cb_i = codebook.unsqueeze(1).expand(K, K, -1)
+        cb_j = codebook.unsqueeze(0).expand(K, K, -1)
+        return basis.part(cb_i, cb_j, monotonic=True, scalar=True)
+
+    def _trust(self, codebook: torch.Tensor, basis) -> torch.Tensor:
+        """Trust per codebook row.
+
+        Prefer VQ cluster_size EMA usage when the underlying basis has a
+        live VectorQuantize; fall back to normalised row norms otherwise.
+        Returns a [K] tensor on ``codebook.device``.
+        """
+        vq = getattr(basis, "vq", None)
+        if vq is not None and hasattr(vq, "cluster_size"):
+            counts = vq.cluster_size
+            K = int(codebook.shape[0])
+            if torch.is_tensor(counts) and counts.numel() >= K:
+                # ``codebook`` may be the active prefix of a fixed-capacity
+                # basis while the persistent EMA buffer retains physical
+                # width. Prefix ids align, so slice trust to the same rows.
+                counts = counts[:K].to(codebook.device).float()
+                return counts / counts.sum().clamp(min=1.0)
+        n = codebook.norm(dim=-1).float()
+        return n / n.max().clamp(min=epsilon)
+
+    def _classify(self, P: torch.Tensor) -> dict:
+        """Classify each ordered off-diagonal (i, j) pair into one of five
+        mereological relations. The diagonal is masked out so diagnostic
+        counts sum to ``K * (K - 1)``."""
+        high = P > self.tau
+        low = P < self.eps
+        high_T = high.transpose(0, 1)
+        low_T = low.transpose(0, 1)
+        eye = torch.eye(P.shape[0], device=P.device, dtype=torch.bool)
+        off = ~eye
+        return {
+            "disjoint": (low & low_T) & off,
+            "part_ij":  (high & low_T) & off,
+            "part_ji":  (low & high_T) & off,
+            "equal":    (high & high_T) & off,
+            "overlap":  (~(high | low) & ~(high_T | low_T)) & off,
+        }
+
+    def forward(self, codebook: torch.Tensor, basis=None) -> torch.Tensor:
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
+        zero = (codebook.new_tensor(0.0) if isinstance(codebook, torch.Tensor)
+                else torch.tensor(0.0))
+        self.last_overlap_loss = None
+        self.last_variance = None
+        self.last_relation_counts = None
+        if not self.enabled:
+            return zero
+        if codebook is None or not isinstance(codebook, torch.Tensor):
+            return zero
+        if codebook.ndim != 2 or codebook.shape[0] < 2:
+            return zero
+        want_overlap = self.overlap_weight > 0.0 and basis is not None
+        want_var = self.variance_floor > 0.0
+        if not (want_overlap or want_var):
+            return zero
+
+        K = codebook.shape[0]
+        total = zero
+
+        if want_overlap:
+            P = self._pairwise_parthood(codebook, basis)
+            trust = self._trust(codebook, basis)
+            trust_diff = (trust.unsqueeze(0) - trust.unsqueeze(1)).abs()
+            P_T = P.transpose(0, 1)
+            min_P = torch.minimum(P, P_T)
+            max_P = torch.maximum(P, P_T)
+            # Damp overlap as the pair approaches mutual identity so that
+            # two rows meant to encode the same concept (``equal``) do
+            # not contribute to the overlap penalty.
+            damp = (1.0 - max_P.clamp(0.0, 1.0) ** self.equal_k).clamp(min=0.0)
+            eye = torch.eye(K, device=codebook.device, dtype=torch.bool)
+            keep = (~eye).float()
+            denom = keep.sum().clamp(min=1.0)
+            overlap_loss = (min_P * damp * trust_diff * keep).sum() / denom
+            self.last_overlap_loss = overlap_loss.detach()
+            total = total + self.overlap_weight * overlap_loss
+            # `last_relation_counts` is diagnostic only; the 5
+            # `v.sum().item()` calls are host syncs (cudaMemcpyDtoH)
+            # that break CUDA-graph capture. Gate behind MODEL_DEBUG
+            # (bucket-2/3 pattern; `last_relation_counts` is already
+            # None-initialised so consumers tolerate it). `_classify`
+            # is only needed for these counts, so skip it too.
+            if util.MODEL_DEBUG:
+                rels = self._classify(P)
+                self.last_relation_counts = {
+                    k: int(v.sum().item()) for k, v in rels.items()
+                }
+
+        if want_var:
+            std = codebook.std(dim=0, unbiased=False).mean()
+            var_pen = torch.relu(codebook.new_tensor(self.variance_floor) - std)
+            self.last_variance = var_pen.detach()
+            total = total + var_pen
+
+        return total
+
+
+# Default Gaussian region width for Phase 1b introspective grammar layers.
+# `area` and `luminosity` use this when the slot has no calibrated extent
+# attached.
+_DEFAULT_SUBSYMBOLIC_SIGMA = 0.1
+
+
+def _gaussian_kernel_overlap(X, Y, sigma_x, sigma_y, eps=1e-8):
+    """Gaussian kernel overlap: ``exp(-d^2 / 2(sigma_x^2 + sigma_y^2))``.
+
+    Reference implementation for the contiguity / overlap kernel reused by
+    `Mereology.Area`, `Mereology.Luminosity`, and the existing
+    `Ops.corner_overlap` / `Ops.epsilon_delta` measures.
+
+    Args:
+        X: ``[N, D]`` left points.
+        Y: ``[M, D]`` right points.
+        sigma_x: scalar or ``[N]`` per-row sigma for X.
+        sigma_y: scalar or ``[M]`` per-row sigma for Y.
+
+    Returns:
+        ``[N, M]`` overlap matrix with values in ``(0, 1]``.
+    """
+    d2 = torch.cdist(X.unsqueeze(0), Y.unsqueeze(0)).squeeze(0) ** 2  # [N, M]
+    if torch.is_tensor(sigma_x):
+        sx = sigma_x
+    else:
+        sx = torch.full((X.shape[0],), float(sigma_x),
+                        device=X.device, dtype=X.dtype)
+    if torch.is_tensor(sigma_y):
+        sy = sigma_y
+    else:
+        sy = torch.full((Y.shape[0],), float(sigma_y),
+                        device=Y.device, dtype=Y.dtype)
+    denom = 2.0 * (sx.unsqueeze(1) ** 2 + sy.unsqueeze(0) ** 2) + eps
+    return torch.exp(-d2 / denom)
+
+
+def ste_answer(q, f):
+    """Straight-through-estimator wrapper for non-differentiable lookups.
+
+    Forward returns ``f`` (the discrete answer); backward routes the
+    gradient through ``q`` (the differentiable query).  Used for
+    Mereonomy / TruthLayer reads on questions so the question-formation
+    path receives gradient.
+
+    Args:
+        q: differentiable query tensor.
+        f: discrete answer tensor (same shape, no grad needed).
+
+    Returns:
+        Tensor that equals ``f`` in the forward pass and routes
+        gradient to ``q`` on backward.
+    """
+    return q + (f - q).detach()
+
+
+class TruthLayer(Layer):
+    """Truth store on WholeSpace: encoded truth statements scaled by DoT.
+
+    Each truth statement is processed through the model pipeline to produce
+    a symbolic activation ``[nSymbols]``.  The activation is then scaled by
+    the DegreeOfTruth before storage:
+
+        stored = activation * degree
+
+    This means the stored vector carries the DoT intrinsically:
+      - degree = +1 -> full activation stored (attractor)
+      - degree = -1 -> negated activation stored (disperser)
+      - degree =  0 -> zero vector (inert, prunable)
+
+    The ``field()`` method projects stored truths into ConceptualSpace
+    via cosine similarity.  Because the degree is baked into the stored
+    vectors, positive-DoT truths attract and negative-DoT truths repel
+    without needing a separate degree buffer.
+
+    Propositional structure is defined by the S-space_role grammar:
+      - ``part(S, S)`` -- parthood / containment
+      - ``equals(S, S)`` -- identity / equivalence
+
+    LTM-BACKED MODE (``<ltmConsolidation>`` on): the canonical user-truth
+    store is the unified ``TernaryTruthStore`` (``symbolSpace.ltm_store``);
+    this layer is then a COMPATIBILITY READ MODEL over it. ``attach_ltm``
+    wires the back-reference and ``sync_from_ltm`` materializes the
+    provisioned + user rows into ``truths``/``count``/``_sources``/
+    ``_trusts``. Each nonzero identification pole contributes a flat vector
+    scaled by that pole, preserving both independently. Scalar source trust
+    stays in ``_trusts`` and never supplies a pole's magnitude. The flat-field
+    readers include luminosity, falsity penalty, consistency, clarifications
+    and assess. Gate off: no back-reference, this buffer stays the
+    canonical store (legacy behaviour).
+    """
+
+    def __init__(self, nDim: int, max_truths: int = 1024):
+        """Initialize TruthLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__(nDim, nDim)
+        self.nDim = nDim
+        self.max_truths = max_truths
+
+        # Storage buffer: activation * degree (DoT baked in)
+        self.register_buffer(
+            'truths',
+            torch.zeros(max_truths, nDim),
+        )
+        self.register_buffer(
+            'count',
+            torch.tensor(0, dtype=torch.long),
+        )
+        # Parallel metadata used by suggest_clarifications(). Indexed
+        # alongside truths[:count]; missing entries fall back to a
+        # generic "(truth #i)" reference.
+        self._sources = []
+        self._trusts = []
+
+        # Per-tick pending buffer for record_batch() / compact().
+        # Sized 4x the persistent store so a single tick can stage many
+        # candidates before pruning. compact() filters by trust and
+        # promotes survivors to the persistent buffer; lives outside the
+        # compute brick to keep `forward + backward + step` sync-free.
+        self.register_buffer(
+            '_pending_truths',
+            torch.zeros(max_truths * 4, nDim),
+        )
+        self.register_buffer(
+            '_pending_trust',
+            torch.zeros(max_truths * 4),
+        )
+        # Python int (not a tensor) — host-side cursor; reading / writing
+        # it never touches the GPU. Reset to 0 after each compact().
+        self._pending_count = 0
+
+        # Host-side emptiness flag. ``len(self)`` reads ``count.item()``
+        # (a GPU->host sync); the only in-brick consumer
+        # (SymbolSpace.truth_modulated_loss) needs *emptiness*, not the
+        # count. This bool mirrors ``count > 0`` and is maintained
+        # co-located with every ``count`` write from an already-host-side
+        # value, so it never adds a sync and cannot drift. Read via
+        # ``is_empty()``.
+        self._nonempty = False
+
+        # LTM back-reference (see class docstring "LTM-BACKED MODE").
+        # Plain attribute; ``attach_ltm`` re-binds it via
+        # ``object.__setattr__`` so the store is NOT double-registered as
+        # a submodule here (it already rides the state_dict on
+        # SymbolSpace).
+        self._ltm = None
+
+    # -- Record / Query ------------------------------------------------
+
+    @torch.no_grad()
+    def record(self, activation: torch.Tensor, degree: float,
+               basis=None) -> int:
+        """Store a truth: activation scaled by its DegreeOfTruth.
+
+        Bivector path (``basis`` provided and ``basis.monotonic`` and
+        ``activation.shape[-1]`` is even): indices 2k / 2k+1 encode the
+        positive / negative poles of concept k. For ``degree >= 0``,
+        store ``activation * degree`` (positive poles already hot). For
+        ``degree < 0``, paired-index flip via ``basis.negation(...,
+        monotonic=True)`` lands the mass on the negative poles, then
+        scale by ``|degree|``. This preserves 4-valued (quaternary)
+        truth semantics: asserting A and asserting not(A) are
+        orthogonal, not cancelling. See
+        basicmodel/doc/Philosophy.md for the tetralemma mapping.
+
+        Legacy path (no basis or odd last dim): the stored vector is
+        ``activation * degree``, so the DoT is encoded in both the
+        magnitude and (for negative degrees) the sign.
+
+        Args:
+            activation: (nDim,) symbolic activation from the model pipeline.
+            degree: scalar in [-1, 1].  +1 = certainly true, -1 = certainly
+                    false, 0 = unknown/inert.
+            basis: optional Basis with negation(monotonic=True). When
+                   provided and monotonic, enables bivector storage.
+
+        Returns:
+            Index of the stored entry.
+        """
+        if self.count >= self.max_truths:
+            raise RuntimeError(
+                f"Truth store full ({self.max_truths} entries). "
+                "Increase max_truths or prune stale entries."
+            )
+        degree = max(-1.0, min(1.0, degree))
+        idx = self.count.item()
+        # Coerce to the persistent buffer's device. Callers (tests,
+        # Models.py) sometimes construct activation tensors on the
+        # default device while the truth_layer's buffers live on the
+        # model's device; without this coercion the contradiction-check
+        # matmul below trips a cross-device gather.
+        vec = activation.detach().to(self.truths.device)
+
+        bivector_mode = (
+            basis is not None
+            and getattr(basis, 'monotonic', False)
+            and vec.shape[-1] % 2 == 0
+        )
+
+        if bivector_mode and degree < 0:
+            vec = Ops._negation_kernel(vec, monotonic=True)
+            stored_vec = vec * abs(degree)
+        else:
+            stored_vec = vec * degree
+        self.truths[idx] = stored_vec
+        self.count += 1
+        self._nonempty = True  # record() only ever grows the store
+
+        # Legacy contradiction warning: anti-parallel cosine only applies
+        # to bitonic storage. Under bivector, A and not(A) land on
+        # orthogonal paired indices (cosine 0, not -1), so this branch
+        # is skipped.
+        if not bivector_mode and idx > 0:
+            existing = self.truths[:idx]
+            s_norm = F.normalize(stored_vec.unsqueeze(0), dim=-1)
+            e_norm = F.normalize(existing, dim=-1)
+            sims = (s_norm @ e_norm.T).squeeze(0)
+            worst = sims.min()
+            if worst.item() < -0.7:
+                j = sims.argmin().item()
+                warnings.warn(
+                    f"TruthLayer: new truth [{idx}] contradicts existing "
+                    f"truth [{j}] (cosine similarity {worst.item():.3f})",
+                    stacklevel=2,
+                )
+
+        return idx
+
+    @torch.no_grad()
+    def record_batch(self, activations: torch.Tensor, trust: torch.Tensor,
+                     degree: float, basis=None) -> None:
+        """Stage a batch of activations into the per-tick pending buffer.
+
+        Unlike ``record()``, this method makes no per-cell storage decision
+        inside the compute brick. Every entry in ``activations`` is staged
+        with its associated ``trust`` value; ``compact()`` (called outside
+        the brick) drops entries with trust below the threshold and
+        promotes survivors to the persistent ``truths`` buffer.
+
+        Args:
+            activations: ``[N, nDim]`` activations to stage.
+            trust: ``[N]`` per-entry trust scores in ``[0, 1]``. The caller
+                computes these (typically magnitude-based, masked by
+                ``valid_mask``).
+            degree: scalar in ``[-1, 1]`` -- the DegreeOfTruth applied to
+                every staged activation. Sign flips (negative degree)
+                use the same bivector-aware path as ``record()``.
+            basis: optional Basis with ``negation(monotonic=True)``. When
+                provided and monotonic with even ``nDim``, enables the
+                bivector-storage path for ``degree < 0``.
+
+        No host syncs. The pending buffer's leading dim is bounded by
+        ``4 * max_truths``; overflows are truncated (host-side bounds
+        check on a Python int counter).
+        """
+        if activations.numel() == 0:
+            return
+        n = activations.shape[0]
+        degree = max(-1.0, min(1.0, degree))
+        # Pin to the buffer's device — same coercion as record() so
+        # cross-device callers don't trip the in-place buffer write below.
+        vec = activations.detach().to(self._pending_truths.device)
+
+        bivector_mode = (
+            basis is not None
+            and getattr(basis, 'monotonic', False)
+            and vec.shape[-1] % 2 == 0
+        )
+
+        if bivector_mode and degree < 0:
+            vec = Ops._negation_kernel(vec, monotonic=True)
+            stored = vec * abs(degree)
+        else:
+            stored = vec * degree
+
+        # Bounds-check via Python int (no GPU sync).
+        cap = self._pending_truths.shape[0] - self._pending_count
+        n_take = min(n, cap)
+        if n_take <= 0:
+            return
+        end = self._pending_count + n_take
+        self._pending_truths[self._pending_count:end] = stored[:n_take]
+        self._pending_trust[self._pending_count:end] = trust[:n_take].detach() \
+            .to(self._pending_trust.device)
+        self._pending_count = end
+
+    @torch.no_grad()
+    def compact(self, min_trust: float = 0.5) -> int:
+        """Promote pending entries with trust >= ``min_trust`` to the
+        persistent store. Resets the pending buffer.
+
+        Intended call site: outer doc-streaming loop, AFTER the compute
+        brick (forward + backward + optimizer.step). Lives outside the
+        brick so the one host sync (``mask.sum().item()``) does not
+        block CUDA-graph capture of the brick body.
+
+        Returns the number of entries actually promoted.
+        """
+        if self._pending_count == 0:
+            return 0
+        pending = self._pending_truths[:self._pending_count]
+        trust = self._pending_trust[:self._pending_count]
+        mask = trust >= min_trust
+        n_keep_t = mask.sum()
+        n_keep = int(n_keep_t.item())  # one sync, outside the brick
+        self._pending_count = 0
+        if n_keep == 0:
+            return 0
+        survivors = pending[mask]
+        cur = int(self.count.item())
+        cap = self.max_truths - cur
+        n_actual = min(n_keep, cap)
+        if n_actual <= 0:
+            return 0
+        self.truths[cur:cur + n_actual] = survivors[:n_actual]
+        self.count += n_actual
+        self._nonempty = True  # n_actual >= 1 here (guarded above)
+        return n_actual
+
+    # -- LTM-backed view (see class docstring "LTM-BACKED MODE") --------
+
+    def attach_ltm(self, store) -> None:
+        """Bind the unified LTM store this layer mirrors. Bypasses
+        nn.Module registration (the store already rides the state_dict on
+        SymbolSpace; registering it here would duplicate its buffers)."""
+        object.__setattr__(self, '_ltm', store)
+
+    @property
+    def ltm_backed(self):
+        """The attached LTM store, or None (legacy standalone mode)."""
+        return getattr(self, '_ltm', None)
+
+    def _flatten_ltm_row(self, store, idx: int) -> torch.Tensor:
+        """Read an idea's fused point, conformed to the content width."""
+        if int(store.rel_type[idx]) != store.REL_NONE:
+            raise ValueError("a relation has no luminosity point")
+        cw = max(1, min(int(getattr(store, 'content_width', store.nDim)),
+                        int(store.nDim)))
+        vec = store.slots[idx, 0, :cw]
+        if cw == self.nDim:
+            return vec
+        out = vec.new_zeros(self.nDim)
+        k = min(self.nDim, cw)
+        out[:k] = vec[:k]
+        return out
+
+    @torch.no_grad()
+    def sync_from_ltm(self) -> int:
+        """Rebuild the materialized view from the attached LTM store.
+
+        Selects the provisioned + user rows (``rows_of_origin``) in row
+        order and expands each independent evidence pole into ``truths[:n]``,
+        together with ``count`` / ``_sources`` / scalar source ``_trusts`` /
+        ``_nonempty``, then drops any staged pending entries (the view
+        supersedes per-cell candidates recorded during ingestion
+        forwards). Conversation rows stay out: they are the training-time
+        corpus, not the user TruthSet the flat-field readers surface.
+        Rows beyond ``max_truths`` are dropped oldest-last (the leading
+        ``max_truths`` selected rows win). Returns the view size; no-op
+        returning -1 when no store is attached."""
+        store = self.ltm_backed
+        if store is None:
+            return -1
+        idxs = store.rows_of_origin(store.ORIGIN_PROVISIONED,
+                                    store.ORIGIN_USER)
+        # Origin identifies the writer, not evidential authority.  A retained
+        # request-scoped occurrence may still be needed as grammatical content
+        # after its fact status and trust have been withdrawn; it must not then
+        # re-enter this flat accepted-truth view.
+        fact_kind = store.KINDS.index('fact')
+        idx_list = [i for i in idxs.tolist()
+                    if int(store.record_kind[i]) == fact_kind
+                    and int(store.rel_type[i]) == store.REL_NONE][:self.max_truths]
+        self.truths.zero_()
+        sources, trusts = [], []
+        for row_i in idx_list:
+            poles = (float(store.c_plus[row_i]), -float(store.c_minus[row_i]))
+            for t in poles:
+                if t == 0 or len(trusts) == self.max_truths:
+                    continue
+                self.truths[len(trusts)] = self._flatten_ltm_row(store, row_i).to(self.truths) * t
+                sources.append(store.text_of(row_i))
+                trusts.append(float(store.trust[row_i]))
+        n = len(trusts)
+        self.count.fill_(n)
+        self._nonempty = n > 0
+        self._sources = sources
+        self._trusts = trusts
+        self._pending_count = 0
+        return n
+
+    def query(self, activation: torch.Tensor, threshold: float = 0.9
+              ) -> Optional[Tuple[int, float]]:
+        """Find the closest stored truth to ``activation``.
+
+        Compares against the *direction* of stored truths (normalised).
+        The sign of the cosine similarity tells you consonance (+) vs
+        dissonance (-) with the stored truth.
+
+        Args:
+            activation: (nDim,) or (B, nDim) query vector.
+            threshold: minimum absolute cosine similarity to count as a match.
+
+        Returns:
+            (index, similarity) of the best match, or None if no match
+            exceeds the threshold.  similarity > 0 means consonant with
+            a positive truth or dissonant with a negative truth.
+        """
+        n = self.count.item()
+        if n == 0:
+            return None
+
+        stored = self.truths[:n]                                 # (n, D)
+        q = activation.detach()
+        if q.ndim == 1:
+            q = q.unsqueeze(0)                                   # (1, D)
+
+        q_norm = torch.nn.functional.normalize(q, dim=-1)
+        s_norm = torch.nn.functional.normalize(stored, dim=-1)
+        sims = (q_norm @ s_norm.T).squeeze(0)                   # (n,)
+
+        best_abs, best_idx = sims.abs().max(dim=0)
+        if best_abs.item() < threshold:
+            return None
+        idx = best_idx.item()
+        return (idx, sims[idx].item())
+
+    # -- Truth Field ---------------------------------------------------
+
+    def field(self, concepts: torch.Tensor, eps: float = 1e-8
+              ) -> torch.Tensor:
+        """Project stored truths into a scalar truth field over concepts.
+
+        Because the DoT is baked into the stored vectors, the field
+        naturally produces attractors for positive truths and dispersers
+        for negative truths:
+
+            field(c) = (1/n) Sigma_i  sim(c, truth_i)
+
+        where ``truth_i = activation_i * degree_i``.
+
+        Args:
+            concepts: (B, N, D) concept vectors in ConceptualSpace.
+
+        Returns:
+            field: (B, N) scalar field in [-1, 1].
+        """
+        n = self.count.item()
+        if n == 0:
+            return torch.zeros(
+                concepts.shape[0], concepts.shape[1],
+                device=concepts.device, dtype=concepts.dtype,
+            )
+
+        stored = self.truths[:n]                                 # (n, D)
+
+        c_norm = torch.nn.functional.normalize(
+            concepts, dim=-1, eps=eps)                            # (B, N, D)
+        # Don't normalize stored -- the magnitude carries the DoT
+        # Use dot product: stronger DoT -> stronger field influence
+        dots = torch.einsum('bnd,md->bnm', c_norm, stored)      # (B, N, n)
+        truth_field = dots.sum(dim=-1) / (n + eps)               # (B, N)
+
+        return truth_field.clamp(-1.0, 1.0)
+
+    # -- Luminosity -----------------------------------------------------
+
+    def _positive_poles(self, v: torch.Tensor) -> torch.Tensor:
+        """Extract positive poles from a **paired-index** storage vector.
+
+        Assumes ``v`` is laid out as repeated pairs
+        ``[pos_0, neg_0, pos_1, neg_1, ...]`` over ``v.shape[-1] == 2K``.
+        Even indices are positive poles; odd indices are negative poles.
+
+        .. warning::
+            This layout is **not** the current WholeSpace codebook layout,
+            where each row is ``[pos_pole, neg_pole, where..., when...]``
+            with a single leading bivector plus trailing positional data.
+            Before calling ``luminosity``/``darkness``/
+            ``tetralemma_balance_penalty`` with a symbol activation from the
+            new codebook, **slice the leading bivector** via
+            ``v[..., :2]`` at the call site. See basicmodel/doc/Spaces.md
+            "Codebook shape" note for the mapping.
+        """
+        return v[..., 0::2]
+
+    def _negative_poles(self, v: torch.Tensor) -> torch.Tensor:
+        """Extract negative poles from a paired-index storage vector.
+
+        See :meth:`_positive_poles` for the layout caveat regarding the
+        new leading-bivector WholeSpace codebook.
+        """
+        return v[..., 1::2]
+
+    # ``luminosity`` / ``area`` are now on the Mereology mixin
+    # (bin/Mereology.py) -- callable as ``model.Luminosity()`` /
+    # ``model.Area()`` on any concrete model.  TruthLayer no longer
+    # carries its own luminosity surface; consumers either go through
+    # the model or call ``Ops.hyperrectangle_volume`` directly.
+
+    def darkness(self, pi_layer=None) -> torch.Tensor:
+        """Diagnostic: ||relu(min(negative_poles(truths)))||.
+
+        Mirror of ``luminosity`` on the negative-pole half of bivector
+        storage. Elevated darkness means many truths have co-active
+        negative poles (i.e. a shared "not-X" conjunction). Returns 0
+        for non-bivector storage (odd last dim).
+        """
+        n = self.count.item()
+        if n == 0:
+            return torch.tensor(0.0, device=self.truths.device)
+
+        stored = self.truths[:n]
+        if pi_layer is not None:
+            stored = pi_layer.reverse(stored)
+
+        if stored.shape[-1] % 2 != 0:
+            return torch.tensor(0.0, device=self.truths.device)
+
+        neg = self._negative_poles(stored)
+        conjunction = neg.min(dim=0).values
+        return torch.relu(conjunction).norm()
+
+    def tetralemma_balance_penalty(self, bivector_activation: torch.Tensor,
+                               allow_excluded_middle: int = 1,
+                               allow_contradiction: int = 0,
+                               neither_threshold: float = 0.1) -> torch.Tensor:
+        """Penalize forbidden corners of the quaternary truth lattice (tetralemma).
+
+        ``bivector_activation`` is expected to be a `[..., 2K]` tensor in
+        **paired-index** layout, where each consecutive pair ``(t+, t-)``
+        encodes one concept's tetralemma corner:
+
+            T = (1, 0)   F = (0, 1)
+            N = (0, 0)   B = (1, 1)
+
+        .. warning::
+            The current WholeSpace codebook layout is
+            ``[pos_pole, neg_pole, where..., when...]`` — a **single**
+            leading bivector plus trailing positional template data, not
+            repeated pairs. If passing a symbol activation from the new
+            codebook, slice the leading bivector first
+            (``sym_act[..., :2]``) to avoid applying tetralemma corner
+            policy to positional-template dims. See
+            basicmodel/doc/Spaces.md "Codebook shape" and
+            basicmodel/doc/Philosophy.md.
+
+        Flags control which corners are penalized:
+            allow_excluded_middle == -1  =>  penalize N (force classical LEM)
+            allow_excluded_middle ==  1  =>  permit N (Kleene default)
+            allow_contradiction   ==  0  =>  penalize B (non-contradiction)
+            allow_contradiction   ==  1  =>  permit B (paraconsistent / LP)
+
+        ``neither_threshold`` is the activation level below which a concept
+        is considered "dark" (no commitment). Scaled linearly so the penalty
+        is well-behaved near the threshold.
+
+        Returns a scalar tensor. Odd last dim -> returns 0 (non-bivector).
+        """
+        act = bivector_activation
+        zero = act.new_tensor(0.0) if torch.is_tensor(act) else torch.tensor(0.0)
+        if act is None or not torch.is_tensor(act):
+            return zero
+        if act.shape[-1] % 2 != 0:
+            return zero
+
+        pair = act.reshape(*act.shape[:-1], act.shape[-1] // 2, 2)
+        t_pos = pair[..., 0]
+        t_neg = pair[..., 1]
+
+        total = zero
+        if int(allow_excluded_middle) == -1:
+            hottest = torch.maximum(t_pos, t_neg)
+            total = total + torch.relu(
+                act.new_tensor(float(neither_threshold)) - hottest
+            ).mean()
+        if int(allow_contradiction) == 0:
+            total = total + (t_pos * t_neg).mean()
+        return total
+
+    # -- Mereological fusion -------------------------------------------
+
+    def fusion(self, indices: torch.Tensor = None) -> torch.Tensor:
+        """Mereological fusion (least upper bound) of stored truths.
+
+        Returns the elementwise ``max`` across the stored truth set
+        (or the rows selected by ``indices``) — the axis-aligned bounding
+        hyperrectangle in bivector space. Every individual truth is
+        componentwise dominated by the fusion: ``t_i <= fusion`` per dim.
+
+        Under paired-index storage ``[2K]``, pairs ``(2k, 2k+1)`` encode
+        concept k's ``(pos, neg)`` poles, so fusion tightens each pair to
+        its per-truth maximum — the hyperrectangle's "top right" corner
+        in the 2D ``(pos, neg)`` plane of every concept.
+
+        Under the current WholeSpace codebook layout
+        ``[pos_pole, neg_pole, where..., when...]``, fusion on raw stored
+        rows also maxes the positional trailers; slice ``[..., :2]``
+        at the call site for a pure bivector fusion.
+
+        Returns a ``(D,)`` tensor in the same layout as stored truths, or
+        a zero vector when no truths are stored.
+        """
+        n = int(self.count.item())
+        if n == 0:
+            return torch.zeros(self.truths.shape[-1], device=self.truths.device,
+                               dtype=self.truths.dtype)
+        stored = self.truths[:n] if indices is None else self.truths[indices]
+        return stored.max(dim=0).values
+
+    # -- Universality (Golden Rule) ------------------------------------
+
+    def universality(self, subject, verb, obj, lifting_layer, symbolic_space,
+                     model=None):
+        """Golden rule: measure luminosity change from K(X,Y) + K(Y,X).
+
+        1. Compute luminosity_before (baseline truth brightness).
+        2. Apply SVO: lift(S, V, O) -> project -> temporarily store.
+        3. Apply OVS: lift(O, V, S) -> project -> temporarily store.
+        4. Compute luminosity_after.
+        5. Return luminosity_after - luminosity_before.
+
+        Positive = action preserves/increases illumination (kind).
+        Negative = action diminishes illumination (unkind).
+
+        Args:
+            subject: [B, N, D] subject concepts.
+            verb: [B, N, D] verb concepts.
+            obj: [B, N, D] object concepts.
+            lifting_layer: LiftingLayer for verb application.
+            symbolic_space: WholeSpace for projection.
+            model: ``Mereology``-mixed model providing
+                ``Luminosity(truth_layer=...)``.  Required for the
+                measure; when omitted (legacy callers) the method
+                returns ``0.0`` so universality drops out of the
+                training signal cleanly.
+
+        Returns:
+            Scalar universality score (Python float).
+        """
+        if model is None or not hasattr(model, 'Luminosity'):
+            return 0.0
+        ws = symbolic_space
+        luminosity_before = float(model.Luminosity(truth_layer=self))
+
+        # K(X, Y): original action SVO
+        result_svo = lifting_layer.forward_transitive_svo(
+            subject, verb, obj, ws)
+
+        # K(Y, X): dual action OVS
+        result_ovs = lifting_layer.forward_transitive_svo(
+            obj, verb, subject, ws)
+
+        # Project results to symbol space via WholeSpace.forward()
+        ws.subspace.set_event(result_svo)
+        svo_syms = ws.forward(ws.subspace).materialize()  # [B, N, symbol_dim]
+        ws.subspace.set_event(result_ovs)
+        ovs_syms = ws.forward(ws.subspace).materialize()  # [B, N, symbol_dim]
+
+        # Temporarily extend truth store (average over batch and vectors)
+        saved_count = self.count.item()
+        basis = getattr(getattr(ws, 'subspace', None), 'basis', None)
+        self.record(svo_syms.mean(dim=(0, 1)).detach(), degree=1.0, basis=basis)
+        self.record(ovs_syms.mean(dim=(0, 1)).detach(), degree=1.0, basis=basis)
+
+        luminosity_after = float(model.Luminosity(truth_layer=self))
+
+        # Restore truth store
+        self.count.fill_(saved_count)
+        self._nonempty = saved_count > 0  # saved_count is host-side
+        self.truths[saved_count:] = 0
+
+        return luminosity_after - luminosity_before
+
+    # -- Implication Derivation ----------------------------------------
+
+    @torch.no_grad()
+    def derive(self, part_fn, threshold: float = 0.7,
+               attenuation: float = 0.8, basis=None) -> int:
+        """Derive implied truths via pairwise mereological inference.
+
+        For each pair of stored truths, checks if one is contained in
+        the other (via ``part_fn``).  When the parthood score exceeds
+        *threshold*, a new implied truth is recorded with attenuated DoT.
+
+        Args:
+            part_fn: callable(left, right) -> parthood score tensor.
+                     Typically a ``PartLayer().compose`` from
+                     ``GRAMMAR_LAYER_CLASSES['part']`` (post-2026-05-01
+                     refactor; was ``SyntacticLayer.partForward``).
+            threshold: minimum parthood score to derive an implication.
+            attenuation: DoT scaling to prevent runaway chains.
+            basis: optional Basis forwarded to record() for bivector storage.
+
+        Returns:
+            Number of new derived truths.
+        """
+        n = self.count.item()
+        if n < 2:
+            return 0
+
+        stored = self.truths[:n]
+        norms = stored.norm(dim=-1)
+        derived = 0
+
+        for i in range(n):
+            if norms[i] < 1e-6:
+                continue
+            for j in range(n):
+                if i == j or norms[j] < 1e-6:
+                    continue
+                if self.count >= self.max_truths:
+                    return derived
+
+                score = part_fn(
+                    stored[i].unsqueeze(0), stored[j].unsqueeze(0), None)
+                if isinstance(score, torch.Tensor):
+                    score = score.mean().item()
+                if score > threshold:
+                    # Direction of truth_j, degree attenuated by score
+                    direction = F.normalize(stored[j].unsqueeze(0), dim=-1).squeeze(0)
+                    # Sign of truth_i's DoT (positive or negative truth)
+                    sign_i = 1.0 if stored[i].mean().item() >= 0 else -1.0
+                    degree = attenuation * score * sign_i
+                    self.record(direction, degree, basis=basis)
+                    derived += 1
+
+        return derived
+
+    # -- Consistency Scoring -------------------------------------------
+
+    @torch.no_grad()
+    def consistency(self, sim_threshold: float = 0.7,
+                    pair_threshold: float = 0.3,
+                    basis=None,
+                    part_threshold: float = 0.3,
+                    return_report: bool = False):
+        """Detect logical contradictions within stored truths.
+
+        Default (``return_report=False``) returns a scalar score for
+        back-compat. With ``return_report=True`` returns
+        ``(score, contradictions)`` where ``contradictions`` is a list
+        of ``(idx_i, idx_j, description)`` tuples describing cross-truth
+        part-of relations with opposite sign polarity.
+
+        Bivector path (even last dim):
+        - Scalar (default): 1 - (fraction of (truth, concept) slots that
+          are BOTH-hot within a single truth). Anti-parallel cosine is
+          NOT a contradiction; under bivector encoding A and not(A)
+          land on orthogonal paired indices.
+        - Report path: ignores within-truth BOTH (valid catuṣkoṭi) and
+          instead emits one entry per cross-truth pair (i, j) where
+          ``max(basis.part(i, j), basis.part(j, i)) >= part_threshold``
+          and the two truths have opposite sign polarity (one mostly
+          positive-pole, the other mostly negative-pole). When
+          ``basis`` is omitted, a structural proxy via positive-pole
+          overlap ratio is used so the caller still gets a report.
+
+        Legacy path (odd last dim): two truths pointing in opposite
+        directions (anti-parallel cosine) represent a contradiction;
+        the report path simply emits those anti-parallel pairs.
+
+        Args:
+            sim_threshold: legacy cosine threshold for anti-parallel
+                truths to count as conflicting.
+            pair_threshold: bivector threshold above which both poles
+                of a concept are considered co-active (BOTH).
+            basis: optional Basis with a ``part(a, b, monotonic=True)``
+                method. Used only by the report path; omit for the
+                scalar default.
+            part_threshold: minimum part-of score to count (i, j) as a
+                containment relation under the report path.
+            return_report: when True, return ``(score, contradictions)``.
+
+        Returns:
+            Scalar in [0, 1] where 1 = fully consistent, OR a tuple
+            ``(score, contradictions)`` when ``return_report=True``.
+        """
+        n = self.count.item()
+        if n < 1:
+            score = torch.tensor(1.0, device=self.truths.device)
+            return (score, []) if return_report else score
+
+        stored = self.truths[:n]
+        bivector = stored.shape[-1] % 2 == 0
+
+        if return_report:
+            contradictions = self._detect_contradictions(
+                stored, basis, part_threshold, sim_threshold
+            )
+            n_pairs = max(1, (n * (n - 1)) // 2)
+            score = torch.tensor(
+                float(max(0.0, 1.0 - len(contradictions) / n_pairs)),
+                device=self.truths.device,
+            )
+            return score, contradictions
+
+        # Scalar back-compat path.
+        if bivector:
+            pos = self._positive_poles(stored)
+            neg = self._negative_poles(stored)
+            both_hot = (pos > pair_threshold) & (neg > pair_threshold)
+            total = both_hot.numel()
+            if total == 0:
+                return torch.tensor(1.0, device=self.truths.device)
+            frac = both_hot.float().mean()
+            return (1.0 - frac).clamp(0.0, 1.0).to(self.truths.device)
+
+        # Legacy pairwise anti-parallel check.
+        if n < 2:
+            return torch.tensor(1.0, device=self.truths.device)
+
+        norms = stored.norm(dim=-1)
+        valid = norms > 1e-6
+        if valid.sum() < 2:
+            return torch.tensor(1.0, device=self.truths.device)
+
+        directions = F.normalize(stored[valid], dim=-1)
+        sim_matrix = directions @ directions.T
+        m = directions.shape[0]
+
+        n_conflicts = 0
+        n_pairs = 0
+        for i in range(m):
+            for j in range(i + 1, m):
+                n_pairs += 1
+                if sim_matrix[i, j] < -sim_threshold:
+                    n_conflicts += 1
+
+        if n_pairs == 0:
+            return torch.tensor(1.0, device=self.truths.device)
+        return torch.tensor(1.0 - n_conflicts / n_pairs,
+                            device=self.truths.device)
+
+    def _detect_contradictions(self, stored, basis, part_threshold,
+                               sim_threshold):
+        """Return List[(i, j, description)] of cross-truth contradictions.
+
+        Bivector: pair (i, j) is a contradiction when one is a
+        part-of the other (``max(part(i, j), part(j, i)) >=
+        part_threshold``) and the two have opposite sign polarity.
+        Legacy (odd last dim): pair is a contradiction when cosine
+        similarity is below ``-sim_threshold``.
+        """
+        n = stored.shape[0]
+        contradictions = []
+        if n < 2:
+            return contradictions
+
+        bivector = stored.shape[-1] % 2 == 0
+
+        if bivector:
+            for i in range(n):
+                for j in range(i + 1, n):
+                    p_ij = self._part_score(stored[i], stored[j], basis)
+                    p_ji = self._part_score(stored[j], stored[i], basis)
+                    score = max(p_ij, p_ji)
+                    if score < part_threshold:
+                        continue
+                    if self._sign(stored[i]) == self._sign(stored[j]):
+                        continue
+                    contradictions.append(
+                        (i, j,
+                         f"part-of (score={score:.2f}) with opposite "
+                         f"sign polarity")
+                    )
+            return contradictions
+
+        # Legacy: anti-parallel pairs.
+        norms = stored.norm(dim=-1)
+        for i in range(n):
+            if norms[i] < 1e-6:
+                continue
+            ni = F.normalize(stored[i].unsqueeze(0), dim=-1).squeeze(0)
+            for j in range(i + 1, n):
+                if norms[j] < 1e-6:
+                    continue
+                nj = F.normalize(stored[j].unsqueeze(0), dim=-1).squeeze(0)
+                sim = float((ni * nj).sum().item())
+                if sim < -sim_threshold:
+                    contradictions.append(
+                        (i, j, f"anti-parallel (cos={sim:.2f})")
+                    )
+        return contradictions
+
+    def _part_score(self, a, b, basis):
+        """Scalar part-of score for (a, b). Uses basis when provided,
+        otherwise a positive-pole overlap proxy on bivector storage."""
+        if basis is not None and hasattr(basis, "part"):
+            score = basis.part(a, b, monotonic=True, scalar=True)
+            if torch.is_tensor(score):
+                return float(score.mean().item())
+            return float(score)
+        # Structural proxy: how much of b's positive-pole energy is
+        # covered by a's positive-pole energy.
+        if a.shape[-1] % 2 == 0:
+            a_pos = self._positive_poles(a)
+            b_pos = self._positive_poles(b)
+            denom = float(b_pos.abs().sum().item()) + 1e-8
+            return float(torch.minimum(a_pos, b_pos).sum().item()) / denom
+        denom = float(b.abs().sum().item()) + 1e-8
+        return float(torch.minimum(a, b).clamp_min(0).sum().item()) / denom
+
+    def _sign(self, v):
+        """Return +1 if v is predominantly positive-pole, -1 otherwise.
+
+        Bivector: compare summed positive-pole mass to summed
+        negative-pole mass. Legacy: use the sign of the mean activation.
+        """
+        if v.shape[-1] % 2 == 0:
+            pos = self._positive_poles(v).abs().sum().item()
+            neg = self._negative_poles(v).abs().sum().item()
+            return 1 if pos >= neg else -1
+        return 1 if v.mean().item() >= 0 else -1
+
+    def suggest_clarifications(self, basis=None,
+                               part_threshold: float = 0.3) -> list:
+        """Generate one user-facing message per detected contradiction.
+
+        The template is fixed (for test stability and translation
+        ease): ::
+
+            "'{source_i}' (trust={trust_i}) and '{source_j}' "
+            "(trust={trust_j}) appear to contradict — please revise "
+            "to enable more rational thought."
+
+        Missing source falls back to ``"(truth #i)"`` and missing trust
+        to ``"unknown"``.
+        """
+        _, contradictions = self.consistency(
+            basis=basis, part_threshold=part_threshold, return_report=True
+        )
+        messages = []
+        sources = getattr(self, "_sources", []) or []
+        trusts = getattr(self, "_trusts", []) or []
+        for i, j, _desc in contradictions:
+            src_i = sources[i] if i < len(sources) and sources[i] else None
+            src_j = sources[j] if j < len(sources) and sources[j] else None
+            trust_i = trusts[i] if i < len(trusts) and trusts[i] is not None else None
+            trust_j = trusts[j] if j < len(trusts) and trusts[j] is not None else None
+            label_i = f"'{src_i}'" if src_i is not None else f"(truth #{i})"
+            label_j = f"'{src_j}'" if src_j is not None else f"(truth #{j})"
+            t_i = f"{trust_i:g}" if trust_i is not None else "unknown"
+            t_j = f"{trust_j:g}" if trust_j is not None else "unknown"
+            messages.append(
+                f"{label_i} (trust={t_i}) and {label_j} (trust={t_j}) "
+                f"appear to contradict — please revise to enable more "
+                f"rational thought."
+            )
+        return messages
+
+    # -- Client-facing paraconsistent assessment ---------------------
+
+    @torch.no_grad()
+    def assess(self, basis=None):
+        """Terminal paraconsistent read of the truth accumulator.
+
+        Returns per-region ``support`` / ``conflict`` / ``ignorance``
+        in ``[0, 1]`` (the only legitimate terminal bivector surface --
+        every inter-component wire is a single signed scalar; this
+        client-facing assessment recovers the catuskoti corners from
+        the accumulated TruthSet)::
+
+            support   = aP * (1 - aN)             net affirmation
+            conflict  = aP * R_N + aN * R_P       the set both affirms
+                                                  AND denies (contested)
+            ignorance = (1 - max(aP, aN))
+                        * (1 - max(R_P, R_N))     the set is silent
+
+        ``aP`` / ``aN`` are the affirming / denying poles of the
+        TruthSet's mean signed Degree-of-Truth; ``R_P`` / ``R_N`` are
+        its strongest affirming / denying evidence. Keeping ``conflict``
+        (a TruthSet that splits on a proposition) distinct from
+        ``ignorance`` (a TruthSet silent on it) is exactly the
+        degeneracy a scalar ``aP - aN`` collapse loses -- the reason
+        the accumulator stays the paraconsistent surface while the
+        wire is scalar. ``basis`` is accepted for signature parity with
+        ``consistency`` / ``suggest_clarifications``; unused here.
+        """
+        n = self.count.item()
+        if n == 0:
+            return {"support": 0.0, "conflict": 0.0, "ignorance": 1.0}
+        stored = self.truths[:n]
+        # Per-truth signed Degree-of-Truth (mean activation; sign = the
+        # belief direction baked in by record()).
+        s = stored.mean(dim=-1)                          # [n]
+        pos = torch.relu(s)                              # affirming
+        neg = torch.relu(-s)                             # denying
+        aP = float(pos.mean().item())                    # net affirmation
+        aN = float(neg.mean().item())                    # net denial
+        R_P = float(pos.max().item())                    # strongest affirm
+        R_N = float(neg.max().item())                    # strongest deny
+        support = aP * (1.0 - aN)
+        conflict = aP * R_N + aN * R_P
+        ignorance = (1.0 - max(aP, aN)) * (1.0 - max(R_P, R_N))
+        clamp = lambda x: max(0.0, min(1.0, float(x)))
+        return {
+            "support": clamp(support),
+            "conflict": clamp(conflict),
+            "ignorance": clamp(ignorance),
+        }
+
+    # -- TruthLoss: Union Norm Reduction -----------------------------
+
+    def falsity_penalty(self, symbol_states, basis):
+        """Compute additive truth loss via union norm reduction.
+
+        For each proposition in ``symbol_states``, measure how much the
+        TruthSet union norm drops when the proposition is included.
+        Contradiction cancels dimensions (via the catalogue union's
+        bitonic same-sign logic), reducing the norm -> positive penalty.
+
+        Agreeing propositions preserve or extend the union -> no penalty.
+        Unknown propositions (zero dims) pass through -> no penalty.
+        DoT weighting is implicit: high-DoT truths contribute more energy
+        to the union, so contradicting them causes a larger norm drop.
+
+        Both sides of the union live in symbol space by
+        construction: stored truths are recorded from
+        ``WholeSpace.forwardEnd``, and ``symbol_states`` should be
+        the post-pi activations cached during the Sigma-Pi loop (the
+        model's ``self.symbol_states[-1]``).  Using symbols rather
+        than pre-pi concepts keeps both operands in the basis's
+        native space.
+
+        Args:
+            symbol_states: (B, N, D) symbolic activations from the
+                forward pass (post-pi, post-l1_proximal -- the
+                committed beliefs).
+            basis: The proposition's symbol basis.
+
+        Returns:
+            Scalar penalty >= 0 (differentiable).
+        """
+        n = self.count.item()
+        if n == 0:
+            return symbol_states.new_tensor(0.0)
+
+        stored = self.truths[:n]  # (n, D)
+
+        # Set union uses signed max, independently of grammatical mean OR.
+        truth_union = stored[0]
+        for i in range(1, n):
+            truth_union = Ops.union(truth_union, stored[i])
+        union_norm = truth_union.norm()
+
+        # For each proposition, compute norm reduction
+        B, N, D = symbol_states.shape
+        propositions = symbol_states.reshape(-1, D)  # (B*N, D)
+
+        penalties = []
+        for p in range(propositions.shape[0]):
+            extended = Ops.union(truth_union, propositions[p])
+            reduction = union_norm - extended.norm()
+            penalties.append(torch.relu(reduction))
+
+        return torch.stack(penalties).mean()
+
+    # -- Maintenance ---------------------------------------------------
+
+    @torch.no_grad()
+    def prune(self, min_norm: float = 1e-6):
+        """Remove near-zero entries (truths with DoT ~= 0).
+
+        Compacts the store in-place.
+        """
+        n = self.count.item()
+        if n == 0:
+            return
+        norms = self.truths[:n].norm(dim=-1)
+        keep = norms > min_norm
+        kept = self.truths[:n][keep]
+        new_n = kept.shape[0]
+        self.truths[:new_n] = kept
+        self.truths[new_n:] = 0
+        self.count.fill_(new_n)
+        self._nonempty = new_n > 0  # new_n is a host-side tensor shape
+
+    @torch.no_grad()
+    def orthogonalize(self, sim_threshold: float = 0.85):
+        """Remove redundant truths using luminosity as the quality measure.
+
+        For each pair with |cosine similarity| > sim_threshold, the truth
+        contributing less to luminosity is removed.  Luminosity measures
+        the norm of the positive conjunction across all truths -- dropping
+        a redundant entry barely changes it, while dropping a unique entry
+        reduces it.
+
+        Args:
+            sim_threshold: similarity above which two truths are considered
+                near-duplicates.  Default 0.85.
+
+        Returns:
+            Number of truths removed.
+        """
+        n = self.count.item()
+        if n < 2:
+            return 0
+
+        stored = self.truths[:n]
+        norms = stored.norm(dim=-1)
+        valid = norms > 1e-6
+        if valid.sum() < 2:
+            return 0
+
+        directions = F.normalize(stored, dim=-1)
+        sim_matrix = directions @ directions.T           # (n, n)
+
+        # Find redundant pairs (|sim| > threshold, excluding diagonal)
+        remove = set()
+        for i in range(n):
+            if i in remove or not valid[i]:
+                continue
+            for j in range(i + 1, n):
+                if j in remove or not valid[j]:
+                    continue
+                if sim_matrix[i, j].abs().item() > sim_threshold:
+                    # Drop whichever contributes less to luminosity
+                    lum_without_i = self._luminosity_without(i)
+                    lum_without_j = self._luminosity_without(j)
+                    # Keep the one whose removal hurts luminosity more
+                    if lum_without_i >= lum_without_j:
+                        remove.add(i)
+                    else:
+                        remove.add(j)
+
+        if not remove:
+            return 0
+
+        # Compact: keep non-removed entries
+        keep_mask = torch.ones(n, dtype=torch.bool, device=stored.device)
+        for idx in remove:
+            keep_mask[idx] = False
+        kept = stored[keep_mask]
+        new_n = kept.shape[0]
+        self.truths[:new_n] = kept
+        self.truths[new_n:] = 0
+        self.count.fill_(new_n)
+        self._nonempty = new_n > 0  # new_n is a host-side tensor shape
+        return len(remove)
+
+    def _luminosity_without(self, exclude_idx: int) -> float:
+        """Luminosity with one truth excluded (for orthogonalization)."""
+        n = self.count.item()
+        indices = [i for i in range(n) if i != exclude_idx]
+        if not indices:
+            return 0.0
+        subset = self.truths[indices]
+        if subset.shape[-1] % 2 == 0:
+            subset = self._positive_poles(subset)
+        conjunction = subset.min(dim=0).values
+        return torch.relu(conjunction).norm().item()
+
+    # -- Consolidated truth computation (Phase 1: bivector retirement) --
+    # These four methods own the truth-store computation that previously
+    # lived on the model (Mereology._luminosity_truth_fold,
+    # Models.isConsistent/ground/extrapolate). The bivector poles stay
+    # internal to this accumulator; callers delegate here.
+
+    def luminosity(self, sym=None) -> float:
+        """Catuṣkoṭi luminosity of the truth store, computed on the codes.
+
+        MeronomySpec §3 (rev 2026-06-10b). Per conceptual dimension
+        ``k``, the stored signed references split into the true/false
+        pole bivector — coverage, not mass: pole strength is already baked
+        into stored magnitudes, and duplicate truths must not inflate the
+        area —
+
+            T_k = max_i relu(+truths[i, k])
+            F_k = max_i relu(-truths[i, k])
+
+            luminosity = mean_k [ (T_k - F_k) - min(T_k, F_k) ]
+
+        clamped to ``[-1, 1]``: total area weighted by sign, minus the
+        regions where the sign differs (contradictory evidence — the
+        catuṣkoṭi B corner). Per-dimension corners: T-only ⇒ ``+T``,
+        F-only ⇒ ``-F``, both ⇒ ``-min(T, F)``, neither ⇒ ``0``.
+
+        Computed directly over the stored codes — no pullback to the
+        mereological ground: the §4 weight law puts the parthood
+        geometry on the codes themselves, so code-space_role areas are a
+        registration-maintained approximation of ground areas (§5;
+        exact at mint, degrading conservatively under mixing). The
+        previous implementation decoded every row through
+        ``sym.decode_to_concept`` and folded sequentially (order-
+        dependent, and effectively stubbed: it returned 0.0 whenever
+        ``sym`` was absent); ``sym`` is retained for call-site
+        compatibility and ignored.
+
+        Paired-index bivector rows (``record`` with a monotonic basis)
+        are outside this measure's domain: their poles are orthogonal
+        by construction (no sign opposition arises), so such stores
+        read as pure positive area; B-corner policy for that layout
+        lives in ``tetralemma_balance_penalty``.
+        """
+        n = int(self.count.item())
+        if n == 0:
+            return 0.0
+        stored = self.truths[:n]
+        T = stored.clamp(min=0).max(dim=0).values
+        F = (-stored).clamp(min=0).max(dim=0).values
+        lum = ((T - F) - torch.minimum(T, F)).mean().item()
+        return max(-1.0, min(1.0, lum))
+
+    # -- The absolute corpus's duties (GrammarOpsPass §6; author
+    # sign-off 2026-06-11) ----------------------------------------------
+    #
+    # The absolute truth set is a CONSISTENT CORPUS governing admission:
+    # it (1) governs the admissibility of new truths/beliefs, (2) serves
+    # as the basis for causal reasoning (relations between ideas live in
+    # the relation rows in ``TernaryTruthStore`` and NEVER enter this store or
+    # its luminosity), and (3) provides user feedback on the truth of a
+    # statement. The conflict region ``min(T_k, F_k)`` is MEASURED,
+    # never stored; the preemption/admissibility statistic is its
+    # per-dimension MAX — one sharply contested witness interrupts,
+    # where a mean would dilute it away across nDim.
+
+    def conflict_profile(self, extra=None):
+        """Per-dimension contested mass ``min(T_k, F_k)`` over the
+        absolute store, optionally with candidate row(s) ``extra``
+        added (measured, never stored — the candidate is NOT recorded).
+        Returns a ``[nDim]`` tensor; zeros when the store is empty and
+        no candidate is given."""
+        n = int(self.count.item())
+        rows = [self.truths[:n]] if n else []
+        if extra is not None:
+            rows.append(
+                extra.reshape(-1, self.nDim).to(self.truths))
+        if not rows:
+            return torch.zeros(self.nDim)
+        stored = torch.cat(rows, dim=0)
+        T = stored.clamp(min=0).max(dim=0).values
+        F = (-stored).clamp(min=0).max(dim=0).values
+        return torch.minimum(T, F)
+
+    def conflict_mass(self, extra=None) -> float:
+        """The preemption / admissibility statistic (§6): the
+        per-dimension MAX of :meth:`conflict_profile`."""
+        prof = self.conflict_profile(extra=extra)
+        return float(prof.max().item()) if prof.numel() else 0.0
+
+    def admissible(self, candidate, threshold=0.5) -> bool:
+        """Admission governance (duty 1): a candidate truth/belief is
+        admissible iff admitting it would keep the corpus's conflict
+        mass at or below ``threshold``. A commit-point gate — the
+        measure itself is soft and stored nowhere; callers that want
+        legacy unconditional recording simply don't consult it."""
+        return self.conflict_mass(extra=candidate) <= float(threshold)
+
+    def preemption_signal(self, threshold=0.5, hysteresis=0.1,
+                          extra=None):
+        """Preattention trigger (§6): threshold + hysteresis on the
+        absolute set's conflict mass. ``extra`` carries the percept
+        stream's contested candidate(s) — conflict between incoming
+        evidence and the parse's commitments captures the serial
+        thread. Fires when the mass exceeds ``threshold``; once fired,
+        stays fired until the mass falls below ``threshold -
+        hysteresis`` (chatter guard). Returns ``(mass, fired)``.
+
+        The latch (``_preempt_active``) is a plain transient attribute:
+        measured-not-stored binds epistemic content; this is controller
+        state, absent from ``state_dict``.
+        """
+        mass = self.conflict_mass(extra=extra)
+        active = bool(getattr(self, '_preempt_active', False))
+        th = float(threshold)
+        if active:
+            active = mass > th - float(hysteresis)
+        else:
+            active = mass > th
+        self._preempt_active = active
+        return mass, active
+
+    def truth_of(self, statement, threshold=0.6):
+        """User truth feedback (duty 3): the graded truth of one
+        statement code against the corpus.
+
+        Returns ``dict(truth, contested, grounded)``: ``truth`` in
+        ``[-1, 1]`` is the signed cosine agreement of the
+        best-matching stored truth (0.0 when nothing matches above
+        ``threshold`` — unknown, not false); ``contested`` is the
+        conflict mass the statement would join (duty 1's measure,
+        reused); ``grounded`` says whether any stored truth spoke.
+        """
+        st = statement.reshape(-1)[: self.nDim].to(self.truths)
+        n = int(self.count.item())
+        contested = self.conflict_mass(extra=st)
+        if n == 0 or float(st.norm()) == 0.0:
+            return {'truth': 0.0, 'contested': contested,
+                    'grounded': False}
+        stored = self.truths[:n]
+        sims = F.normalize(stored, dim=-1) @ (st / st.norm())
+        best = sims[sims.abs().argmax()]
+        grounded = bool(best.abs().item() > float(threshold))
+        return {'truth': float(best.item()) if grounded else 0.0,
+                'contested': contested,
+                'grounded': grounded}
+
+    def isConsistent(self):
+        """Fold signed observations via the catalogue's mean for consistency.
+
+        Consolidated from ``Models.BaseModel.isConsistent``. Conflicting
+        +/- assertions cancel dimensions. Returns
+        ``dict(consistent, score, sites, union_vector)``.
+        """
+        n = self.count.item()
+        if n == 0:
+            return {'consistent': True, 'score': 1.0,
+                    'sites': torch.tensor([]), 'union_vector': torch.tensor([])}
+
+        stored = self.truths[:n]
+        from Language import SumLayer
+        mean = SumLayer()
+        union = stored[0].clone()
+        for i in range(1, n):
+            union = mean.compose(union, stored[i])
+
+        score = union.abs().mean().item()
+        threshold = 0.1
+        weak_dims = (union.abs() < threshold).nonzero(as_tuple=True)[0]
+        consistent = len(weak_dims) == 0 or score > 0.5
+
+        return {
+            'consistent': consistent,
+            'score': score,
+            'sites': weak_dims,
+            'union_vector': union,
+        }
+
+    @torch.no_grad()
+    def ground(self, activation, threshold=0.6, model=None):
+        """Minimal-subset entailment of a query against stored truths.
+
+        Consolidated from ``Models.BaseModel.ground``. Partition-aware
+        filtering uses ``model._partitions`` / ``model._activation_order``
+        when a model handle is supplied; otherwise it degrades to a
+        plain cosine match. Returns
+        ``dict(grounded, basis, trace, confidence)``.
+        """
+        n = self.count.item()
+        if n == 0:
+            return {'grounded': False, 'basis': [], 'trace': [], 'confidence': 0.0}
+
+        stored = self.truths[:n]
+        partitions = getattr(model, '_partitions', None) if model is not None else None
+
+        query_order = None
+        if partitions is not None and len(partitions) > 1:
+            query_order = model._activation_order(activation, partitions)
+
+        activation = activation.to(stored.device)
+
+        a_norm = F.normalize(activation.unsqueeze(0), dim=-1)
+        s_norm = F.normalize(stored, dim=-1)
+        sims = (a_norm @ s_norm.T).squeeze(0)
+
+        if query_order is not None and partitions is not None:
+            for i in range(n):
+                truth_order = model._activation_order(stored[i], partitions)
+                if truth_order != query_order:
+                    sims[i] = 0.0
+
+        mask = sims.abs() > threshold
+        basis_indices = mask.nonzero(as_tuple=True)[0].tolist()
+
+        if not basis_indices:
+            from Language import GRAMMAR_LAYER_CLASSES
+            part_cls = GRAMMAR_LAYER_CLASSES.get('part')
+            part_inst = part_cls() if part_cls is not None else None
+            part_fn = (lambda left, right, _inst=part_inst, **kw:
+                       _inst.compose(left, right)) if part_inst is not None else None
+            max_depth = 3
+            for depth in range(max_depth):
+                if part_fn is None:
+                    break
+                derived = self.derive(part_fn, threshold=threshold)
+                if derived == 0:
+                    break
+                n_new = self.count.item()
+                stored_new = self.truths[:n_new]
+                s_norm_new = F.normalize(stored_new, dim=-1)
+                sims_new = (a_norm @ s_norm_new.T).squeeze(0)
+                mask_new = sims_new.abs() > threshold
+                basis_indices = mask_new.nonzero(as_tuple=True)[0].tolist()
+                if basis_indices:
+                    break
+
+        if not basis_indices:
+            return {'grounded': False, 'basis': [], 'trace': [], 'confidence': 0.0}
+
+        basis_sims = sims[:self.count.item()][basis_indices] if basis_indices else torch.tensor([0.0])
+        basis_norms = stored[:self.count.item()][basis_indices].norm(dim=-1)
+        confidence = (basis_sims * basis_norms).sum().item() / max(len(basis_indices), 1)
+        confidence = max(-1.0, min(1.0, confidence))
+
+        trace = [{'index': idx, 'similarity': sims[idx].item() if idx < len(sims) else 0.0}
+                 for idx in basis_indices]
+
+        return {
+            'grounded': True,
+            'basis': basis_indices,
+            'trace': trace,
+            'confidence': confidence,
+        }
+
+    @torch.no_grad()
+    def extrapolate(self, model=None, seed_indices=None, max_new=64,
+                    attenuation=0.8):
+        """Generalize ``derive()`` to all two-argument grammar methods.
+
+        Consolidated from ``Models.BaseModel.extrapolate``. Requires a
+        model handle for the WholeSpace/ConceptualSpace context, the
+        luminosity non-decrease gate, partition-aware ordering and the
+        basis. Returns ``dict(added, rejected)``.
+        """
+        n = self.count.item()
+        if n < 2:
+            return {'added': [], 'rejected': []}
+
+        stored = self.truths[:n]
+        partitions = getattr(model, '_partitions', None) if model is not None else None
+
+        two_arg_rules = ['union', 'intersection', 'isEqual', 'part']
+
+        indices = seed_indices if seed_indices is not None else list(range(n))
+        added = []
+        rejected = []
+
+        ws = getattr(model, 'wholeSpace', None) if model is not None else None
+        from Language import GRAMMAR_LAYER_CLASSES
+        rule_kernels = {}
+        for rule_name in two_arg_rules:
+            cls = GRAMMAR_LAYER_CLASSES.get(rule_name)
+            if cls is not None:
+                try:
+                    rule_kernels[rule_name] = cls()
+                except TypeError:
+                    pass
+
+        basis = model._get_basis() if model is not None else None
+
+        for i in indices:
+            if stored[i].norm() < 1e-6:
+                continue
+            for j in indices:
+                if i == j or stored[j].norm() < 1e-6:
+                    continue
+                if len(added) >= max_new:
+                    return {'added': added, 'rejected': rejected}
+
+                if partitions is not None and len(partitions) > 1:
+                    order_i = model._activation_order(stored[i], partitions)
+                    order_j = model._activation_order(stored[j], partitions)
+                    if order_i != order_j:
+                        continue
+
+                for rule_name in two_arg_rules:
+                    kernel = rule_kernels.get(rule_name)
+                    if kernel is None:
+                        continue
+                    try:
+                        candidate = kernel.compose(
+                            stored[i].unsqueeze(0),
+                            stored[j].unsqueeze(0))
+                    except Exception:
+                        continue
+                    if candidate is None:
+                        continue
+                    candidate = candidate.squeeze(0)
+
+                    if candidate.norm() < 1e-6:
+                        continue
+
+                    if ws is not None and model is not None:
+                        lum_before = model.Luminosity(truth_layer=self)
+                    else:
+                        lum_before = 0.0
+                    saved_count = self.count.item()
+
+                    dot_i = stored[i].norm().item()
+                    dot_j = stored[j].norm().item()
+                    degree = attenuation * min(dot_i, dot_j)
+
+                    direction = F.normalize(candidate.unsqueeze(0), dim=-1).squeeze(0)
+                    self.record(direction, degree, basis=basis)
+                    if ws is not None and model is not None:
+                        lum_after = model.Luminosity(truth_layer=self)
+                    else:
+                        lum_after = lum_before
+
+                    delta = float(lum_after) - float(lum_before)
+
+                    if delta >= 0:
+                        added.append(self.count.item() - 1)
+                    else:
+                        self.count.fill_(saved_count)
+                        self.truths[saved_count:] = 0
+                        rejected.append((i, j, rule_name, delta))
+
+        return {'added': added, 'rejected': rejected}
+
+    def is_empty(self) -> bool:
+        """True iff no truths are stored -- sync-free.
+
+        Mirror of ``len(self) == 0`` that reads the host-side
+        ``_nonempty`` flag instead of ``count.item()``, so the in-brick
+        consumer (``SymbolSpace.truth_modulated_loss``) does not force a
+        GPU->host sync (CUDA-graph-capture contract; see
+        doc/BrickHostSyncStatus.md residual F).
+        """
+        return not self._nonempty
+
+    def clear(self) -> None:
+        """Reset the store to empty (count, sources, trusts, flag).
+
+        Single atomic reset so ``_nonempty`` cannot drift from
+        ``count`` -- callers must not zero ``count`` directly.
+        """
+        self.count.zero_()
+        self._sources = []
+        self._trusts = []
+        self._nonempty = False
+
+    def __len__(self):
+        """Number of stored elements."""
+        return self.count.item()
+
+    def __repr__(self):
+        """Debug-friendly representation."""
+        return (f"TruthLayer(nDim={self.nDim}, "
+                f"truths={self.count.item()}/{self.max_truths})")
+
+    # -- Test ----------------------------------------------------------
+
+    @staticmethod
+    def test():
+        """Self-test; verifies the round-trip / invariant."""
+        D = 32
+        tl = TruthLayer(D, max_truths=64)
+        assert len(tl) == 0
+
+        # Record truths -- DoT is baked into the stored activation
+        t1 = torch.randn(D)
+        t2 = torch.randn(D)
+        idx1 = tl.record(t1, degree=0.9)
+        idx2 = tl.record(t2, degree=-0.7)
+        assert len(tl) == 2
+
+        # Stored vector = activation * degree
+        assert torch.allclose(tl.truths[0], t1 * 0.9, atol=1e-6)
+        assert torch.allclose(tl.truths[1], t2 * -0.7, atol=1e-6)
+
+        # Query -- exact match (high similarity)
+        result = tl.query(t1, threshold=0.8)
+        assert result is not None
+        assert result[0] == 0
+        assert result[1] > 0  # consonant with positive truth
+
+        # Query -- no match for random vector
+        result = tl.query(torch.randn(D), threshold=0.99)
+        assert result is None
+
+        # Field projection
+        concepts = torch.randn(2, 8, D)
+        f = tl.field(concepts)
+        assert f.shape == (2, 8)
+        assert f.min() >= -1.0 and f.max() <= 1.0
+
+        # Prune near-zero (DoT ~= 0 produces near-zero stored vector)
+        tl.record(torch.randn(D), degree=0.0)
+        assert len(tl) == 3
+        tl.prune(min_norm=1e-6)
+        assert len(tl) == 2
+
+        # -- Luminosity --------------------------------------------
+        # Luminosity is now a Mereology measure on the model itself
+        # (see bin/Mereology.py); the standalone TruthLayer.luminosity
+        # surface was removed when WholeSpace.luminosity migrated.
+        # The new measure is exercised in test/test_mereology.py.
+
+        # -- Consistency -------------------------------------------
+        tl3 = TruthLayer(D, max_truths=64)
+        # Two consistent truths (same direction, same sign)
+        v = torch.randn(D)
+        tl3.record(v, degree=0.9)
+        tl3.record(v * 1.1, degree=0.8)
+        assert tl3.consistency().item() == 1.0, "same-sign truths should be consistent"
+
+        # Add contradictory truth (same direction, opposite sign)
+        tl3.record(v, degree=-0.9)
+        c = tl3.consistency().item()
+        assert c < 1.0, f"contradictory truth should lower consistency: {c}"
+
+        # Empty / single truth -> consistent
+        tl4 = TruthLayer(D, max_truths=64)
+        assert tl4.consistency().item() == 1.0
+        tl4.record(torch.randn(D), degree=0.5)
+        assert tl4.consistency().item() == 1.0
+
+        # -- Universality -----------------------------------------
+        # PiLayer maps activations [B, N] -> [B, nSym].
+        # TruthLayer nDim must match nSym (symbol dimension).
+        B, N = 2, 4
+        nSym = 6
+        tl5 = TruthLayer(nSym, max_truths=64)
+        # Store a "positive" moral axiom
+        axiom = torch.rand(nSym) * 0.5 + 0.25  # positive vector
+        tl5.record(axiom, degree=1.0)
+
+        S = torch.randn(B, N, D)
+        V = torch.randn(B, N, D)
+        O = torch.randn(B, N, D)
+
+        # Mock symbolic space: expose ``sigma`` attribute (the canonical
+        # surface after the C->S swap to SigmaLayer on WholeSpace).
+        _sigma = SigmaLayer(N, nSym, monotonic=True, invertible=True,
+                            nonlinear=True)
+        class _MockSS:
+            """Test double for WholeSpace exposing only a ``sigma`` attribute.
+
+            TruthLayer's record / record_svo path reads
+            ``symbolic_space.sigma`` to project SVO vectors into the
+            symbolic activation space; this mock supplies a real
+            ``SigmaLayer`` for those tests.
+            """
+            sigma = _sigma
+        mock_ss = _MockSS()
+        lifting = LiftingLayer(nVerbs=8, nDim=D)
+
+        # Universality requires a Mereology-mixed model for the
+        # luminosity measure; without one (this is a unit test that
+        # builds a bare TruthLayer) the method returns 0.0 cleanly.
+        u_score = tl5.universality(S, V, O, lifting, mock_ss)
+        assert u_score == 0.0, (
+            "universality without `model=` should return 0.0; "
+            f"got {u_score}")
+        # Truth store should be untouched on the no-model fast path.
+        assert len(tl5) == 1, f"truth store not restored: {len(tl5)}"
+
+        print("TruthLayer tests passed.")
+
+
+class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
+    """Durable clause rows with shared references and independent evidence.
+
+    An idea stores one fused point without its reading derivation. A
+    relation stores three reference slots, with null point operands for
+    referenced relations. Only part, implication and operator relations are
+    admitted by the closing. Trust is external provenance; c_plus and c_minus
+    retain the two evidence poles independently. Tensor columns checkpoint
+    with state_dict; semantic_extras holds reference and provenance metadata.
+    """
+
+    REL_NONE = 0
+    REL_PARTOF = 1
+    REL_IMPLIES = 2
+    REL_OPERATOR = 3
+    REL_DEF = 4
+
+    ORIGIN_CONVERSATION = 0
+    ORIGIN_PROVISIONED = 1
+    ORIGIN_USER = 2
+
+    KINDS = ("unverified", "fact", "question", "estimate", "observation")
+    MODES = ("unspecified", "assertive", "interrogative")
+
+    def __init__(self, nDim: int, capacity: int = 1024, content_width=None):
+        super().__init__(nDim, nDim)
+        self.nDim = int(nDim)
+        self.capacity = int(capacity)
+        # Content ('what') width a reasoning reader slices to (the leading
+        # band of the event vector); defaults to the full width. Stored for
+        # forward-compat -- this class keeps the FULL idea vectors.
+        self.content_width = int(content_width) if content_width else self.nDim
+        # ONE tensor: [capacity, 3, nDim] -- slot 0 = NP1, 1 = VP, 2 = NP2.
+        self.register_buffer('slots', torch.zeros(capacity, 3, nDim))
+        self.register_buffer('rel_type',
+                             torch.zeros(capacity, dtype=torch.long))
+        self.register_buffer('timestamp', torch.zeros(capacity))
+        self.register_buffer('order', torch.full((capacity,), -1, dtype=torch.long))
+        self.register_buffer('c_plus', torch.zeros(capacity))
+        self.register_buffer('c_minus', torch.zeros(capacity))
+        self.register_buffer('refs', torch.full((capacity, 3), -1, dtype=torch.long))
+        self.register_buffer('row_ids', torch.full((capacity,), -1, dtype=torch.long))
+        self.register_buffer('where', torch.zeros(capacity, 4))
+        self.register_buffer('when', torch.zeros(capacity, 4))
+        self.register_buffer('truth_schema', torch.tensor(9, dtype=torch.long))
+        self.register_buffer('surprise', torch.full((capacity,), -1.))
+        self.register_buffer('count', torch.tensor(0, dtype=torch.long))
+        # Per-row writer provenance (ORIGIN_*); default 0 = conversation so
+        # the observe-site push needs no change.
+        self.register_buffer('origin',
+                             torch.zeros(capacity, dtype=torch.long))
+        # Monotonic logical clock: each append without an explicit timestamp
+        # takes the next tick. XML provisioning appends first (earliest
+        # ticks); conversation appends continue from there.
+        self.register_buffer('_next_ts', torch.tensor(0, dtype=torch.long))
+        # Source text is checkpointed in semantic_extras. A bare state_dict
+        # restore has no text until that sidecar is supplied.
+        self._texts = []
+
+        # Semantic provenance is separate from origin and signed evidence.
+        # Scope/reference metadata rides the model's versioned sidecar; the
+        # flag prevents a tensor-only restore from forgetting required scope.
+        self.register_buffer('role_mask', torch.zeros(capacity, 3, dtype=torch.bool))
+        self.register_buffer('record_kind', torch.zeros(capacity, dtype=torch.long))
+        self.register_buffer('grammatical_mode', torch.zeros(capacity, dtype=torch.long))
+        self.register_buffer('polarity', torch.ones(capacity, dtype=torch.bool))
+        self.register_buffer('occurrence_id', torch.full((capacity,), -1, dtype=torch.long))
+        self.register_buffer('_next_occurrence', torch.tensor(0, dtype=torch.long))
+        self.register_buffer('_occurrence_namespace', torch.tensor(list(uuid.uuid4().bytes), dtype=torch.uint8))
+        self.register_buffer('metadata_required', torch.zeros(capacity, dtype=torch.bool))
+        self.register_buffer('semantic_fingerprint', torch.zeros(capacity, 32, dtype=torch.uint8))
+        self._semantic_rows = {}
+        # Estimate/observation provenance has the same durable owner as the
+        # rows themselves. It is sidecar data, not a second LTM: occurrence
+        # IDs, role vectors and evidence kind remain in the buffers above.
+        self._expectation_rows = {}
+        self._definition_rows = {}
+        from Definitions import DefinitionIndex
+        self.definitions = DefinitionIndex(self)
+        self._init_leaf_index()
+
+    @staticmethod
+    def _context_fingerprint(context, text, expectation=None, definition=None):
+        """Bind sidecar content to its tensor-owned occurrence without duplicating it."""
+        context = context or {}
+        content = {"role_refs": context.get("role_refs", (None, None, None)),
+                   "bindings": context.get("bindings", ()),
+                   "scope": context.get("scope", ()), "text": text}
+        # Legacy records keep their old fingerprint exactly. Only rows that
+        # actually carry expectation provenance add this key.
+        if expectation is not None:
+            content["expectation"] = expectation
+        if definition is not None:
+            content["definition"] = definition
+        return TernaryTruthStore._fingerprint_payload(content)
+
+    @staticmethod
+    def _fingerprint_payload(content):
+        """Hash metadata, including a legacy payload while validating migration."""
+        encoded = json.dumps(content, sort_keys=True, separators=(",", ":"),
+                             ensure_ascii=True, allow_nan=False).encode("utf-8")
+        return list(hashlib.sha256(encoded).digest())
+
+    @staticmethod
+    def _freeze_expectation_value(value):
+        """Make stream/document provenance immutable and checkpoint-safe."""
+        if isinstance(value, dict):
+            if any(not isinstance(key, str) for key in value):
+                raise TypeError("expectation provenance mapping keys must be strings")
+            return tuple((key, TernaryTruthStore._freeze_expectation_value(item))
+                         for key, item in sorted(value.items()))
+        if isinstance(value, (tuple, list)):
+            return tuple(TernaryTruthStore._freeze_expectation_value(item)
+                         for item in value)
+        if value is None or isinstance(value, (str, bool, int)):
+            return value
+        if isinstance(value, float) and math.isfinite(value):
+            return value
+        raise TypeError("expectation provenance must contain finite scalar values or typed references")
+
+    @staticmethod
+    def _validated_expectation_reference(value, namespace, *, optional=False):
+        if value is None and optional:
+            return None
+        if (not isinstance(value, tuple) or len(value) != 3
+                or value[0] != "ltm" or value[1] != namespace
+                or type(value[2]) is not int or value[2] < 0):
+            raise ValueError("expectation provenance requires a local LTM occurrence reference")
+        return value
+
+    @classmethod
+    def _normalise_expectation_provenance(cls, value, namespace):
+        """Validate one explicit estimate/observation relationship record."""
+        if value is None:
+            return None
+        if not isinstance(value, dict) or not isinstance(value.get("kind"), str):
+            raise ValueError("invalid expectation provenance")
+        kind = value["kind"]
+        if kind == "estimate":
+            expected = {"kind", "source_occurrences", "stream", "document",
+                        "intended_occurrence", "presence_logits"}
+            if (set(value) - {'kind_logit'} != expected
+                    or not isinstance(value["source_occurrences"], tuple)):
+                raise ValueError("invalid estimate provenance")
+            sources = tuple(cls._validated_expectation_reference(source, namespace)
+                            for source in value["source_occurrences"])
+            intended = cls._validated_expectation_reference(
+                value["intended_occurrence"], namespace, optional=True)
+            logits = value["presence_logits"]
+            if (not isinstance(logits, tuple) or len(logits) != 3
+                    or any(not isinstance(item, (int, float))
+                           or not math.isfinite(float(item)) for item in logits)):
+                raise ValueError("estimate provenance requires three finite presence logits")
+            kind_logit = value.get('kind_logit')
+            if kind_logit is not None and (not isinstance(kind_logit, (int, float))
+                                           or not math.isfinite(float(kind_logit))):
+                raise ValueError('estimate kind logit must be finite')
+            return {
+                "kind": "estimate",
+                "source_occurrences": sources,
+                "stream": cls._freeze_expectation_value(value["stream"]),
+                "document": cls._freeze_expectation_value(value["document"]),
+                "intended_occurrence": intended,
+                "presence_logits": tuple(float(item) for item in logits),
+                **({'kind_logit': kind_logit} if 'kind_logit' in value else {}),
+            }
+        if kind == "observation":
+            if set(value) - {'previous_estimates'} != {"kind", "estimate_occurrence"}:
+                raise ValueError("invalid observation expectation provenance")
+            return {
+                "kind": "observation",
+                "estimate_occurrence": cls._validated_expectation_reference(
+                    value["estimate_occurrence"], namespace),
+                **({'previous_estimates': tuple(cls._validated_expectation_reference(ref, namespace)
+                    for ref in value['previous_estimates'])} if 'previous_estimates' in value else {}),
+            }
+        raise ValueError("unknown expectation provenance kind")
+
+    @staticmethod
+    def _expectation_references(provenance):
+        """All durable occurrence edges carried by one expectation record."""
+        if provenance is None:
+            return ()
+        if provenance["kind"] == "estimate":
+            return tuple(provenance["source_occurrences"]) + tuple(
+                reference for reference in (provenance["intended_occurrence"],)
+                if reference is not None)
+        return (*provenance.get('previous_estimates', ()), provenance["estimate_occurrence"])
+
+    def _validate_expectation_links(self, records=None):
+        """Verify reference availability and bidirectional pair integrity."""
+        records = self._expectation_rows if records is None else records
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        identifiers = set(int(identifier) for identifier in self.occurrence_id[:len(self)].tolist())
+        for identifier, provenance in records.items():
+            if identifier not in identifiers:
+                raise ValueError("expectation provenance names an unavailable occurrence")
+            for reference in self._expectation_references(provenance):
+                self._validated_expectation_reference(reference, namespace)
+                if reference[2] not in identifiers:
+                    raise ValueError("expectation provenance occurrence is unavailable")
+            if provenance["kind"] != "estimate":
+                continue
+            target = provenance["intended_occurrence"]
+            if target is None:
+                continue
+            inverse = records.get(target[2])
+            if (inverse is None or inverse["kind"] != "observation"
+                    or identifier not in {ref[2] for ref in self._expectation_references(inverse)}):
+                raise ValueError("expectation provenance pair is not bidirectionally linked")
+
+    def _update_semantic_fingerprint(self, idx):
+        """Refresh the one integrity binding for context, text and prediction links."""
+        i = int(idx)
+        identifier = int(self.occurrence_id[i])
+        self.semantic_fingerprint[i] = self.semantic_fingerprint.new_tensor(
+            self._context_fingerprint(
+                self._semantic_rows.get(identifier, {}), self.text_of(i),
+                self._expectation_rows.get(identifier), self._definition_rows.get(identifier)))
+
+    def occurrence_of(self, idx):
+        """Stable identity; compaction changes a row index, not its occurrence."""
+        i = int(idx)
+        if not 0 <= i < len(self):
+            raise IndexError(f"row {i} of {len(self)}")
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        return ("ltm", namespace, int(self.occurrence_id[i]))
+
+    @staticmethod
+    def _role_occurrence_references(role_refs):
+        """Return ordered grammatical occurrence edges from canonical roles.
+
+        Integer-valued symbols remain ordinary opaque symbols.  Only the
+        explicit, typed ``("ltm" | "thought", namespace, id)`` convention
+        names an occurrence; role order (and repeated edges) is retained.
+        """
+        edges = []
+        for role, reference in enumerate(role_refs):
+            if not (isinstance(reference, tuple) and reference
+                    and reference[0] in ('ltm', 'thought')):
+                continue
+            if (len(reference) != 3 or not isinstance(reference[1], str)
+                    or type(reference[2]) is not int or reference[2] < 0):
+                raise ValueError("invalid semantic occurrence reference")
+            edges.append((role, reference))
+        return tuple(edges)
+
+    @staticmethod
+    def _occurrence_references(meaning):
+        """The ordered compound-role edges of one complete meaning."""
+        return TernaryTruthStore._role_occurrence_references(meaning.role_refs)
+
+    @staticmethod
+    def _context_occurrence_references(context):
+        """Find explicit occurrence addresses anywhere in semantic context.
+
+        Bindings and scopes retain their addressed records but are not
+        grammatical child edges, so they do not alter structure-read depth.
+        Iteration avoids treating an arbitrary integer as an address and does
+        not add a second reference index to the durable owner.
+        """
+        references, pending = [], [context]
+        while pending:
+            value = pending.pop()
+            if isinstance(value, dict):
+                pending.extend(value.values())
+                continue
+            if not isinstance(value, (tuple, list)):
+                continue
+            if value and value[0] in ('ltm', 'thought'):
+                if (len(value) != 3 or not isinstance(value[1], str)
+                        or type(value[2]) is not int or value[2] < 0):
+                    raise ValueError("invalid semantic context occurrence reference")
+                references.append(tuple(value))
+                continue
+            pending.extend(value)
+        return tuple(dict.fromkeys(references))
+
+    @staticmethod
+    def _validate_constituent_graph(contexts, namespace):
+        """Validate local semantic links before replacing owner metadata.
+
+        All local references must resolve among the proposed records.  Only
+        role references create structural edges; bindings and scopes are roots
+        for retention but do not turn into hidden syntax.  The iterative DFS
+        rejects cycles before the caller mutates durable state.
+        """
+        edges = {}
+        for identifier, context in contexts.items():
+            references = TernaryTruthStore._context_occurrence_references(context)
+            if any(ref[2] not in contexts
+                   for ref in references
+                   if ref[:2] == ('ltm', namespace)):
+                raise ValueError("semantic context occurrence is unavailable")
+            children = []
+            for _, reference in TernaryTruthStore._role_occurrence_references(
+                    context.get("role_refs", (None, None, None))):
+                if reference[:2] == ('ltm', namespace):
+                    if reference[2] not in contexts:
+                        raise ValueError(
+                            "semantic constituent occurrence is unavailable")
+                    children.append(reference[2])
+            edges[identifier] = tuple(children)
+
+        state = {}
+        for root in edges:
+            pending = [(root, False)]
+            while pending:
+                identifier, exiting = pending.pop()
+                if exiting:
+                    state[identifier] = 2
+                    continue
+                if state.get(identifier) == 1:
+                    raise ValueError("semantic constituent cycle")
+                if state.get(identifier) == 2:
+                    continue
+                state[identifier] = 1
+                pending.append((identifier, True))
+                pending.extend((child, False)
+                               for child in reversed(edges[identifier]))
+
+    def _validate_local_references(self, meaning):
+        """Reject dangling local references before append mutates any buffer."""
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        references = [
+            reference
+            for reference in self._context_occurrence_references(meaning.metadata())
+            if reference[:2] == ('ltm', namespace)
+        ]
+        if not references:
+            return
+        identifiers = set(int(identifier) for identifier
+                          in self.occurrence_id[:len(self)].tolist())
+        if any(reference[2] not in identifiers for reference in references):
+            raise ValueError("semantic constituent occurrence is unavailable")
+
+    def read_structure(self, reference, *, max_nodes=128, max_depth=16,
+                       max_records=1024):
+        """Derive a bounded, detached view of an occurrence's structure.
+
+        The tensors and semantic sidecar above remain authoritative.  Node,
+        grammatical-depth, and physical-record scan bounds are independent;
+        incomplete structure is named rather than flattened or inferred.
+        """
+        for name, value in (("max_nodes", max_nodes),
+                            ("max_depth", max_depth),
+                            ("max_records", max_records)):
+            if type(value) is not int or value < 0:
+                raise ValueError(f"{name} must be a non-negative integer")
+        if (not isinstance(reference, tuple) or len(reference) != 3
+                or reference[0] not in ('ltm', 'thought')
+                or not isinstance(reference[1], str)
+                or type(reference[2]) is not int or reference[2] < 0):
+            raise ValueError("structure requires an occurrence reference")
+
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        records_scanned = min(len(self), max_records)
+        indices = {
+            int(self.occurrence_id[index]): index
+            for index in range(records_scanned)
+        }
+        incomplete, occurrences, rows, edges = [], [], [], []
+        visited, active = set(), set()
+        pending = [(reference, 0, False)]
+        while pending:
+            current, depth, exiting = pending.pop()
+            if exiting:
+                active.remove(current)
+                continue
+            if current in active:
+                incomplete.append("cycle")
+                continue
+            if depth > max_depth:
+                incomplete.append("depth_limit")
+                continue
+            if current in visited:
+                continue
+            if len(visited) >= max_nodes:
+                incomplete.append("node_limit")
+                continue
+            if current[:2] != ('ltm', namespace):
+                incomplete.append("unavailable_owner")
+                continue
+            index = indices.get(current[2])
+            if index is None:
+                incomplete.append(
+                    "record_limit" if records_scanned < len(self)
+                    else "unavailable_reference")
+                continue
+            value = {
+                key: item.detach().clone() if torch.is_tensor(item) else item
+                for key, item in self.row(index).items()
+            }
+            meaning = value["meaning"]
+            if meaning is None:
+                incomplete.append("unavailable_metadata")
+                continue
+            visited.add(current)
+            active.add(current)
+            occurrences.append(current)
+            rows.append(value)
+            children = self._occurrence_references(meaning)
+            edges.extend((current, role, child) for role, child in children)
+            pending.append((current, depth, True))
+            pending.extend((child, depth + 1, False)
+                           for _, child in reversed(children))
+        return {
+            "occurrences": tuple(occurrences),
+            "rows": tuple(rows),
+            "edges": tuple(edges),
+            "records_scanned": records_scanned,
+            "incomplete": tuple(dict.fromkeys(incomplete)),
+        }
+
+    def meaning_of(self, idx):
+        """An owned detached value, or None when required context is missing."""
+        i = int(idx)
+        if not 0 <= i < len(self):
+            raise IndexError(f"row {i} of {len(self)}")
+        identifier = int(self.occurrence_id[i])
+        context = self._semantic_rows.get(identifier)
+        if bool(self.metadata_required[i]) and context is None:
+            return None
+        if not bool(self.role_mask[i].any()):
+            return None
+        return ConceptualMeaning(
+            self.slots[i].detach(), self.role_mask[i],
+            mode=self.MODES[int(self.grammatical_mode[i])],
+            polarity=bool(self.polarity[i]),
+            sentence_kind=(None if self.KINDS[int(self.record_kind[i])] == 'estimate' else
+                           'idea' if int(self.rel_type[i]) == self.REL_NONE else 'relation'),
+            **(context or {}))
+
+    def semantic_extras(self):
+        """Versioned context/provenance beside the existing tensor state.
+
+        Role vectors and scalar evidence have one owner: registered buffers.
+        This sidecar never duplicates them or supplies a second semantic store.
+        """
+        records = []
+        for i in range(len(self)):
+            identifier = int(self.occurrence_id[i])
+            context = self._semantic_rows.get(identifier)
+            if bool(self.metadata_required[i]) and context is None:
+                raise ValueError("cannot checkpoint evidence with missing semantic metadata")
+            records.append({"id": identifier, "context": dict(context or {}),
+                            "text": self.text_of(i),
+                            "expectation": self.expectation_of(i),
+                            **({"definition": self._definition_rows[identifier]}
+                               if identifier in self._definition_rows else {})})
+        return {"version": 4,
+                "namespace": bytes(self._occurrence_namespace.tolist()).hex(),
+                "records": records}
+
+    def load_semantic_extras(self, extras):
+        """Restore metadata only onto the matching durable occurrences."""
+        if not isinstance(extras, dict) or extras.get("version") not in (1, 2, 3, 4):
+            raise ValueError("unsupported truth semantic checkpoint version")
+        version = extras["version"]
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        if extras.get("namespace") != namespace:
+            raise ValueError("truth semantic checkpoint occurrence namespace differs")
+        discarded = set(getattr(self, '_discarded_occurrences', ()))
+        if discarded:
+            # A removed legacy row cannot remain reachable through a surviving
+            # observation, prediction pair, or stored row reference.
+            records = extras.get('records', ())
+            changed = True
+            while changed:
+                changed = False
+                for record in records:
+                    identifier = int(record['id'])
+                    if identifier in discarded:
+                        continue
+                    refs = self._context_occurrence_references(record.get('context') or {})
+                    refs += self._expectation_references(record.get('expectation'))
+                    if any(tuple(ref[:2]) == ('ltm', namespace) and ref[2] in discarded for ref in refs):
+                        discarded.add(identifier)
+                        changed = True
+            count = len(self)
+            keep = self.count.new_tensor([i for i in range(count)
+                if int(self.occurrence_id[i]) not in discarded])
+            if len(keep) != count:
+                import warnings
+                warnings.warn('Dropping dependent rows whose legacy truth references were retired.',
+                              UserWarning, stacklevel=2)
+                with torch.no_grad():
+                    self.compact_leaf_rows(keep)
+                    for name, value in self._buffers.items():
+                        if (name not in ('posting_codes', 'posting_roles', 'posting_rows', '_occurrence_namespace') and value is not None
+                                and value.ndim and value.shape[0] == self.capacity):
+                            value[:len(keep)] = value[keep]
+                    self.count.fill_(len(keep))
+                    self.rebuild_leaf_postings()
+            self._discarded_occurrences = discarded
+        rows = {int(self.occurrence_id[i]): i for i in range(len(self))}
+        if len(rows) != len(self):
+            raise ValueError("duplicate truth occurrence identity")
+        incoming, texts, expectation_rows, definitions = {}, [None] * len(self), {}, {}
+        for record in extras.get("records", ()):
+            identifier = int(record["id"])
+            if identifier in getattr(self, '_discarded_occurrences', ()):
+                continue
+            if identifier not in rows or identifier in incoming:
+                raise ValueError("truth semantic checkpoint has an unavailable or duplicate occurrence")
+            i = rows[identifier]
+            context = record.get("context") or {}
+            if not isinstance(context, dict) or set(context) - {"role_refs", "bindings", "scope"}:
+                raise ValueError("invalid truth semantic context")
+            if 'clause' in record:
+                raise ValueError('a current truth checkpoint cannot contain a clause derivation')
+            stored_context = dict(context)
+            meaning = ConceptualMeaning(
+                self.slots[i].detach(), self.role_mask[i],
+                mode=self.MODES[int(self.grammatical_mode[i])],
+                polarity=bool(self.polarity[i]), **stored_context)
+            incoming[identifier] = {key: meaning.metadata()[key]
+                                    for key in ("role_refs", "bindings", "scope")}
+            text = record.get("text")
+            if text is not None and not isinstance(text, str):
+                raise ValueError("truth source text must be a string")
+            texts[i] = text
+            if version == 1:
+                if "expectation" in record:
+                    raise ValueError("legacy truth semantic checkpoint has expectation provenance")
+                expectation = None
+            else:
+                if "expectation" not in record:
+                    raise ValueError("truth semantic checkpoint omits expectation provenance")
+                expectation = self._normalise_expectation_provenance(
+                    record["expectation"], namespace)
+            if expectation is not None:
+                expectation_rows[identifier] = expectation
+            if (meaning.has_context or text is not None or expectation is not None) and not bool(self.metadata_required[i]):
+                raise ValueError("truth context disagrees with its required-metadata flag")
+            definition = record.get("definition")
+            if definition is not None:
+                if (int(self.rel_type[i]) != self.REL_DEF
+                        or not {"forms", "parts", "wholes"} <= set(definition)
+                        or set(definition) - {"forms", "parts", "wholes", "identity_key"}):
+                    raise ValueError("invalid definition row metadata")
+                definitions[identifier] = definition
+            fingerprint_values = self._context_fingerprint(incoming[identifier], text, expectation, definition)
+            fingerprint = self.semantic_fingerprint.new_tensor(fingerprint_values)
+            if not torch.equal(fingerprint, self.semantic_fingerprint[i]):
+                raise ValueError("truth semantic content differs from its checkpoint fingerprint")
+        if set(incoming) != set(rows):
+            raise ValueError("truth semantic checkpoint omits stored occurrences")
+        # Validate the complete replacement before publishing any context/text
+        # to the owner.  A corrupt sidecar cannot leave a partly-restored graph.
+        self._validate_constituent_graph(incoming, namespace)
+        self._validate_expectation_links(expectation_rows)
+        self._semantic_rows = incoming
+        self._texts = texts
+        self._expectation_rows = expectation_rows
+        self._definition_rows = definitions
+        self.definitions.rebuild()
+        if getattr(self, "_leaf_index_missing", False):
+            for row in range(len(self)):
+                if self.KINDS[int(self.record_kind[row])] == "fact":
+                    self.index_stream[row] = -1
+                meaning = self.meaning_of(row)
+                if meaning is not None:
+                    terms, complete = self._meaning_leaf_terms(meaning, order=int(self.order[row]))
+                    self._append_leaf_terms(row, terms, complete, int(self.index_stream[row]))
+            self._leaf_index_missing = False
+            self._leaf_needs_owner_reindex = self._index_unfold is None
+        self.rebuild_leaf_postings()
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        self._definition_rows = {}
+        self.definitions.rebuild()
+        # Legacy checkpoints retain their recorded pair. The retired scalar
+        # was provenance, so it must not silently overwrite that evidence.
+        state_dict.pop(prefix + 'trust', None)
+        # Older checkpoints did not score surprise: unknown is not perfect.
+        state_dict.setdefault(prefix + 'surprise', torch.full_like(self.surprise, -1.))
+        old_schema = prefix + 'truth_schema' not in state_dict
+        # Scalar trust cannot reconstruct missing identification evidence.
+        state_dict.setdefault(prefix + 'c_plus', torch.zeros_like(self.c_plus))
+        state_dict.setdefault(prefix + 'c_minus', torch.zeros_like(self.c_minus))
+        if prefix + 'order' not in state_dict:
+            import warnings
+            warnings.warn('Legacy LTM rows have unknown order; decoding requires an explicit order stamp.',
+                          UserWarning, stacklevel=2)
+            state_dict[prefix + 'order'] = torch.full_like(self.order, -1)
+        state_dict[prefix + 'truth_schema'] = self.truth_schema.clone()
+        for name in ('refs', 'row_ids', 'where', 'when', 'truth_schema'):
+            state_dict.setdefault(prefix + name, getattr(self, name).clone())
+
+        semantic_keys = (
+            'record_kind', 'grammatical_mode', 'role_mask', 'polarity',
+            'occurrence_id', '_next_occurrence', '_occurrence_namespace',
+            'metadata_required', 'semantic_fingerprint')
+        present = [prefix + name in state_dict for name in semantic_keys]
+        if any(present) and not all(present):
+            error_msgs.append(f"{prefix}incomplete semantic checkpoint; cannot recover evidence scope")
+            return
+        # Legacy conversation records had no grammatical mode or evidence kind.
+        # Only the explicitly accepted TruthSet origins establish fact status.
+        if prefix + "record_kind" not in state_dict:
+            slots = state_dict.get(prefix + "slots", self.slots)
+            count = int(state_dict.get(prefix + "count", self.count))
+            origins = state_dict.get(prefix + "origin", self.origin).to(slots.device)
+            kinds = torch.full(self.record_kind.shape, self.KINDS.index("unverified"), dtype=torch.long, device=slots.device)
+            modes = torch.full(self.grammatical_mode.shape, self.MODES.index("unspecified"), dtype=torch.long, device=slots.device)
+            accepted = ((origins == self.ORIGIN_PROVISIONED) | (origins == self.ORIGIN_USER))
+            kinds[:count] = torch.where(accepted[:count], self.KINDS.index("fact"), self.KINDS.index("unverified"))
+            modes[:count] = torch.where(accepted[:count], self.MODES.index("assertive"), self.MODES.index("unspecified"))
+            mask = torch.zeros(self.role_mask.shape, dtype=torch.bool, device=slots.device)
+            mask[:count] = slots[:count].ne(0).any(-1)
+            mask[:count, 0] = True
+            rel = state_dict.get(prefix + "rel_type", self.rel_type).to(slots.device)
+            # A legacy relation without a VP has no recoverable full description.
+            incomplete = (rel[:count] != self.REL_NONE) & ~mask[:count, 1]
+            kinds[:count] = torch.where(incomplete, self.KINDS.index("unverified"), kinds[:count])
+            identifiers = torch.full(self.occurrence_id.shape, -1, dtype=torch.long, device=slots.device)
+            identifiers[:count] = torch.arange(count, device=identifiers.device)
+            migrations = {
+                "record_kind": kinds, "grammatical_mode": modes, "role_mask": mask,
+                "polarity": torch.ones_like(self.polarity),
+                "occurrence_id": identifiers,
+                "_next_occurrence": self._next_occurrence.new_tensor(count),
+                "_occurrence_namespace": self._occurrence_namespace.clone(),
+                "metadata_required": torch.zeros_like(self.metadata_required),
+                "semantic_fingerprint": torch.zeros_like(self.semantic_fingerprint),
+            }
+            migrations["semantic_fingerprint"][:count] = self.semantic_fingerprint.new_tensor(
+                self._context_fingerprint({}, None))
+            for name, value in migrations.items():
+                state_dict[prefix + name] = value
+        self._semantic_rows = {}
+        self._texts = []
+        self._expectation_rows = {}
+        self._discarded_occurrences = set()
+        if old_schema:
+            count = int(state_dict.get(prefix + 'count', self.count))
+            kinds = state_dict.get(prefix + 'rel_type', self.rel_type)[:count]
+            origins = state_dict.get(prefix + 'origin', self.origin)[:count]
+            discard = (kinds == 3) | (origins == self.ORIGIN_PROVISIONED)
+            discarded = discard.nonzero().flatten()
+            if discarded.numel():
+                import warnings
+                warnings.warn('Dropping legacy REL_OTHER rows; provisioned truths must be re-provisioned from XML.',
+                              UserWarning, stacklevel=2)
+                self._discarded_occurrences = set(state_dict[
+                    prefix + 'occurrence_id'][discarded].tolist())
+                keep = (~discard).nonzero().flatten()
+                for name, default in self._buffers.items():
+                    key = prefix + name
+                    value = state_dict.get(key)
+                    if (name in ('posting_codes', 'posting_roles', 'posting_rows', '_occurrence_namespace') or value is None or value.ndim == 0
+                            or value.shape[0] != self.capacity):
+                        continue
+                    compact = default.clone().to(value)
+                    compact[:len(keep)] = value[keep]
+                    state_dict[key] = compact
+                state_dict[prefix + 'count'] = self.count.new_tensor(len(keep))
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                      missing_keys, unexpected_keys, error_msgs)
+        self.rebuild_leaf_postings()
+
+    @torch.no_grad()
+    def accept_fact(self, idx):
+        """Explicit TruthSet admission; writer origin alone never admits a fact."""
+        i = int(idx)
+        if not 0 <= i < len(self):
+            raise IndexError(f"row {i} of {len(self)}")
+        if self.MODES[int(self.grammatical_mode[i])] == "interrogative":
+            raise ValueError("an interrogative question cannot be accepted as a fact")
+        if self.KINDS[int(self.record_kind[i])] in ("question", "estimate"):
+            raise ValueError("a question or estimate cannot certify its own referent")
+        self.record_kind[i] = self.KINDS.index("fact")
+        self.grammatical_mode[i] = self.MODES.index("assertive")
+
+    def bind_constituents(self, meaning, *, reserve=0, stream=-1):
+        """Bind a pure compose tree through this existing occurrence owner.
+
+        Preflight the entire graph and capacity before writing. Embedded
+        clauses acquire no fact authority. The returned root keeps its live
+        tensor path; only the ordinary child writes detach their payloads.
+        """
+        order, visited, active = [], set(), set()
+
+        def local_refs(value):
+            if isinstance(value, tuple):
+                if value and value[0] == "constituent":
+                    yield value
+                else:
+                    for item in value:
+                        yield from local_refs(item)
+
+        def visit(value, depth=0):
+            if id(value) in active or depth > 64:
+                raise ValueError("semantic constituent cycle or depth limit")
+            if id(value) in visited:
+                return
+            if value.roles.shape[-1] != self.nDim:
+                raise ValueError("meaning width differs from the truth store")
+            self._validate_local_references(value)
+            for field in value.metadata().values():
+                for ref in local_refs(field):
+                    if (len(ref) != 2 or type(ref[1]) is not int
+                            or not 0 <= ref[1] < len(value.constituents)):
+                        raise ValueError("semantic constituent reference is unavailable")
+            active.add(id(value))
+            for child in value.constituents:
+                visit(child, depth + 1)
+            active.remove(id(value))
+            visited.add(id(value))
+            order.append(value)
+
+        visit(meaning)
+        if len(order) - 1 + reserve > self.capacity - len(self):
+            return None
+        bound, references = {}, {}
+        for value in order:
+            def remap(item):
+                if isinstance(item, tuple):
+                    if item and item[0] == "constituent":
+                        return references[id(value.constituents[item[1]])]
+                    return tuple(remap(part) for part in item)
+                return item
+            result = ConceptualMeaning(value.roles, value.role_mask,
+                **{key: remap(item) for key, item in value.metadata().items()})
+            bound[id(value)] = result
+            if value is not meaning:
+                index = self.append_meaning(result,
+                    kind="question" if result.mode == "interrogative" else "unverified",
+                    stream=stream)
+                if index < 0:  # preflight above reserves the complete graph
+                    raise RuntimeError("constituent capacity changed during append")
+                references[id(value)] = self.occurrence_of(index)
+        return bound[id(meaning)]
+
+    @torch.no_grad()
+    def append_meaning(self, meaning, *, kind="fact", rel_type=None,
+                       trust=0.0, timestamp=None, stream=-1, surprise=-1., evidence=None, order=0):
+        """Commit a complete description with explicit evidential provenance."""
+        if not isinstance(meaning, ConceptualMeaning):
+            raise TypeError("append_meaning requires a ConceptualMeaning")
+        if meaning.roles.shape[-1] != self.nDim:
+            raise ValueError("meaning width differs from the truth store")
+        if kind not in self.KINDS:
+            raise ValueError(f"unknown evidence kind {kind!r}")
+        if kind == "fact" and meaning.mode != "assertive":
+            raise ValueError("a fact requires assertive meaning, not an interrogative question")
+        if len(self) >= self.capacity:
+            return -1
+        if not math.isfinite(float(trust)):
+            raise ValueError("fact trust must be finite")
+        if timestamp is not None and not math.isfinite(float(timestamp)):
+            raise ValueError("fact timestamp must be finite")
+        if type(stream) is not int or stream < -1:
+            raise ValueError("index stream must be a row or shared (-1)")
+        surprise = float(surprise)
+        if not math.isfinite(surprise) or not (surprise == -1. or 0. <= surprise <= 1.):
+            raise ValueError("surprise must be unknown (-1) or in [0, 1]")
+        if type(order) is not int or order < 0:
+            raise ValueError('a stored field requires a nonnegative order')
+        if evidence is None:
+            signed = max(-1., min(1., float(trust)))
+            evidence = (max(signed, 0.), max(-signed, 0.))
+            if not meaning.polarity:
+                evidence = evidence[::-1]
+        else:
+            evidence = tuple(map(float, evidence))
+        if len(evidence) != 2 or any(not math.isfinite(x) or not 0 <= x <= 1 for x in evidence):
+            raise ValueError('evidence poles must be finite and in [0, 1]')
+        terms, complete = self._meaning_leaf_terms(meaning, order=order)
+        meaning = self.bind_constituents(meaning, reserve=1, stream=stream)
+        if meaning is None:
+            return -1
+        n = len(self)
+        self._validate_local_references(meaning)
+        self.slots[n].copy_(meaning.roles)
+        self.role_mask[n].copy_(meaning.role_mask)
+        if rel_type is None:
+            rel_type = self.REL_OPERATOR if bool(meaning.role_mask[1:].any()) else self.REL_NONE
+        self.rel_type[n] = int(rel_type)
+        self.c_plus[n], self.c_minus[n] = evidence
+        self.order[n] = order
+        self.surprise[n] = surprise
+        self.origin[n] = self.ORIGIN_CONVERSATION
+        self.record_kind[n] = self.KINDS.index(kind)
+        self.grammatical_mode[n] = self.MODES.index(meaning.mode)
+        self.polarity[n] = meaning.polarity
+        identifier = int(self._next_occurrence)
+        self.occurrence_id[n] = identifier
+        self._next_occurrence.add_(1)
+        self._semantic_rows[identifier] = {key: meaning.metadata()[key]
+                                          for key in ("role_refs", "bindings", "scope")}
+        self.metadata_required[n] = meaning.has_context
+        self._ensure_texts(n + 1)
+        self._texts[n] = None
+        self._update_semantic_fingerprint(n)
+        if timestamp is None:
+            self.timestamp[n] = float(self._next_ts)
+            self._next_ts.add_(1)
+        else:
+            ts = float(timestamp)
+            self.timestamp[n] = ts
+            if ts >= float(self._next_ts):
+                self._next_ts.fill_(int(ts) + 1)
+        self.count.fill_(n + 1)
+        self._append_leaf_terms(n, terms, complete, stream)
+        return n
+
+    @torch.no_grad()
+    def append_estimate(self, meaning, *, presence_logits, source_occurrences=(),
+                        stream=None, document=None, trust=0.0, timestamp=None, kind_logit=None):
+        """Append one explicit prediction without granting fact authority.
+
+        The estimate's complete role vectors and predicted occupancy live in
+        the ordinary ternary row.  Its confidence, source occurrences and
+        intended observation are sidecar provenance bound to that same row.
+        No arriving observation is accepted here, so this method cannot make
+        a prediction self-confirming.
+        """
+        if not isinstance(meaning, ConceptualMeaning):
+            raise TypeError("append_estimate requires a ConceptualMeaning")
+        logits = torch.as_tensor(presence_logits).detach().reshape(-1)
+        if logits.numel() != 3 or not bool(torch.isfinite(logits).all()):
+            raise ValueError("estimate requires three finite presence logits")
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        provenance = self._normalise_expectation_provenance({
+            "kind": "estimate",
+            "source_occurrences": tuple(source_occurrences),
+            "stream": stream,
+            "document": document,
+            "intended_occurrence": None,
+            "presence_logits": tuple(float(value) for value in logits.to("cpu").tolist()),
+            **({'kind_logit': float(kind_logit)} if kind_logit is not None else {}),
+        }, namespace)
+        identifiers = set(int(identifier)
+                          for identifier in self.occurrence_id[:len(self)].tolist())
+        if any(reference[2] not in identifiers
+               for reference in self._expectation_references(provenance)):
+            raise ValueError("estimate source occurrence is unavailable")
+        index = self.append_meaning(
+            meaning, kind="estimate", rel_type=self.REL_NONE, trust=trust, timestamp=timestamp)
+        if index < 0:
+            return -1
+        identifier = int(self.occurrence_id[index])
+        self._expectation_rows[identifier] = provenance
+        self.metadata_required[index] = True
+        self._update_semantic_fingerprint(index)
+        return index
+
+    @torch.no_grad()
+    def link_estimate_observation(self, estimate, observation):
+        """Link an existing estimate to its later external observation.
+
+        Only the relationship changes here; neither row's predicted nor
+        observed meaning is rewritten after the target arrives.
+        """
+        estimate, observation = int(estimate), int(observation)
+        if not 0 <= estimate < len(self) or not 0 <= observation < len(self):
+            raise IndexError("expectation link row is unavailable")
+        if self.KINDS[int(self.record_kind[estimate])] != "estimate":
+            raise ValueError("expectation link must start at an estimate")
+        if self.KINDS[int(self.record_kind[observation])] not in ("observation", "question", "fact"):
+            raise ValueError("expectation link must end at an external observation")
+        estimate_id = int(self.occurrence_id[estimate])
+        observation_id = int(self.occurrence_id[observation])
+        previous = self._expectation_rows.get(estimate_id)
+        if previous is None or previous["kind"] != "estimate":
+            raise ValueError("estimate lacks retained provenance")
+        if previous["intended_occurrence"] is not None:
+            raise ValueError("estimate is already linked to an observation")
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        observation_ref = ("ltm", namespace, observation_id)
+        estimate_ref = ("ltm", namespace, estimate_id)
+        linked_estimate = dict(previous)
+        linked_estimate["intended_occurrence"] = observation_ref
+        linked_estimate = self._normalise_expectation_provenance(
+            linked_estimate, namespace)
+        prior = self._expectation_rows.get(observation_id)
+        history = () if prior is None else self._expectation_references(prior)
+        linked_observation = self._normalise_expectation_provenance({
+            "kind": "observation", "estimate_occurrence": estimate_ref,
+            **({'previous_estimates': history} if history else {}),
+        }, namespace)
+        self._expectation_rows[estimate_id] = linked_estimate
+        self._expectation_rows[observation_id] = linked_observation
+        self.metadata_required[estimate] = True
+        self.metadata_required[observation] = True
+        self._semantic_rows.setdefault(estimate_id, {})
+        self._semantic_rows.setdefault(observation_id, {})
+        self._ensure_texts(len(self))
+        self._update_semantic_fingerprint(estimate)
+        self._update_semantic_fingerprint(observation)
+        self._validate_expectation_links()
+
+    @torch.no_grad()
+    def append_expectation_pair(self, estimate, observation, *, presence_logits,
+                                source_occurrences=(), stream=None, document=None,
+                                observation_kind="observation", trust=0.0, index_stream=-1):
+        """Atomically prefer one external observation over an optional estimate.
+
+        A nearly full store must never discard an understood input merely to
+        preserve its forecast.  With room for both, append estimate first so
+        timestamp order reflects anticipation before observation; with room
+        for one, preserve only the observation and report ``-1`` for the
+        unavailable retained estimate.
+        """
+        if observation_kind not in ("observation", "question"):
+            raise ValueError("expectation pair requires an observed input kind")
+        from Meaning import expectation_surprise
+        surprise = expectation_surprise(observation.roles, estimate.roles,
+            observation.role_mask, torch.as_tensor(presence_logits).sigmoid())
+        observation = self.bind_constituents(observation, reserve=1, stream=index_stream)
+        if observation is None:
+            return -1, -1
+        if self.capacity - len(self) < 2:
+            return -1, self.append_meaning(
+                observation, kind=observation_kind, trust=trust,
+                stream=index_stream, surprise=surprise)
+        estimate_index = self.append_estimate(
+            estimate, presence_logits=presence_logits,
+            source_occurrences=source_occurrences, stream=stream,
+            document=document)
+        if estimate_index < 0:
+            # Capacity was checked above; keep the ordinary write fail-loud
+            # if a future store implementation violates that invariant.
+            raise RuntimeError("estimate append unexpectedly exhausted durable capacity")
+        observation_index = self.append_meaning(
+            observation, kind=observation_kind, trust=trust,
+                stream=index_stream, surprise=surprise)
+        if observation_index < 0:
+            raise RuntimeError("observation append unexpectedly exhausted durable capacity")
+        self.link_estimate_observation(estimate_index, observation_index)
+        return estimate_index, observation_index
+
+    def expectation_of(self, idx):
+        """Return an owned immutable-value copy of a row's expectation link."""
+        i = int(idx)
+        if not 0 <= i < len(self):
+            raise IndexError(f"row {i} of {len(self)}")
+        value = self._expectation_rows.get(int(self.occurrence_id[i]))
+        return None if value is None else dict(value)
+
+    def expectation_pair(self, idx, *, gain=1., object_mask=None):
+        """Read one linked estimate/observation pair and derive its residual.
+
+        The residual is intentionally reconstructed from the two retained
+        meanings and stored confidence rather than held as a second mutable
+        delta.  This keeps the estimate and actual observation authoritative
+        and makes any mismatch auditable after replay.
+        """
+        i = int(idx)
+        provenance = self.expectation_of(i)
+        if provenance is None:
+            raise ValueError("row has no retained expectation provenance")
+        if provenance["kind"] == "estimate":
+            estimate_index = i
+            observation_ref = provenance["intended_occurrence"]
+            if observation_ref is None:
+                raise ValueError("estimate has no observed counterpart")
+        else:
+            observation_ref = self.occurrence_of(i)
+            estimate_ref = provenance["estimate_occurrence"]
+            estimate_index = self._index_occurrences.get(estimate_ref, -1)
+            if estimate_index < 0:
+                raise ValueError("observation estimate counterpart is unavailable")
+        # Stable occurrence -> physical row is maintained by the existing
+        # leaf index on append, restore and compaction; pair reads stay O(1).
+        observation_index = self._index_occurrences.get(observation_ref, -1)
+        if observation_index < 0:
+            raise ValueError("estimate observation counterpart is unavailable")
+        estimate = self.meaning_of(estimate_index)
+        observation = self.meaning_of(observation_index)
+        if estimate is None or observation is None:
+            raise ValueError("expectation pair has unavailable semantic metadata")
+        estimate_provenance = self.expectation_of(estimate_index)
+        if estimate_provenance is None or estimate_provenance["kind"] != "estimate":
+            raise ValueError("expectation pair lacks estimate provenance")
+        logits = estimate.roles.new_tensor(estimate_provenance["presence_logits"])
+        observed_mask = observation.role_mask.to(device=estimate.roles.device)
+        observed_roles = observation.roles.to(estimate.roles)
+        residual = observed_roles - estimate.roles
+        from Meaning import negative_image
+        conceived, image = negative_image(observed_roles, estimate.roles, logits.sigmoid(),
+                                          gain=gain, object_mask=object_mask,
+                                          form_width=getattr(self,"image_form_width",0))
+        return {
+            "estimate": estimate,
+            "observation": observation,
+            "estimate_occurrence": self.occurrence_of(estimate_index),
+            "observation_occurrence": self.occurrence_of(observation_index),
+            "source_occurrences": estimate_provenance["source_occurrences"],
+            "stream": estimate_provenance["stream"],
+            "document": estimate_provenance["document"],
+            "intended_occurrence": estimate_provenance["intended_occurrence"],
+            "presence_logits": logits,
+            "residual": residual,
+            "conceived": conceived,
+            "negative_image": image,
+            "surprise": float(self.surprise[observation_index]),
+            "presence_residual": observed_mask.to(logits.dtype) - logits.sigmoid(),
+        }
+
+    def __len__(self):
+        return int(self.count.item())
+
+    def _fit(self, vec):
+        """Conform an idea operand to the store width (leading ``nDim``,
+        zero-padded). ``None`` -> the zero (Null) vector."""
+        if vec is None:
+            return self.slots.new_zeros(self.nDim)
+        v = vec.reshape(-1).to(self.slots)
+        if v.numel() == self.nDim:
+            return v
+        out = self.slots.new_zeros(self.nDim)
+        k = min(self.nDim, v.numel())
+        out[:k] = v[:k]
+        return out
+
+    @torch.no_grad()
+    def append(self, np1, vp=None, np2=None, *, rel_type=REL_NONE,
+               trust=0.0, timestamp=None, kind="fact", evidence=None, order=0) -> int:
+        """Append one ternary row. ``Null`` slots (``None``) store the zero
+        vector. ``trust`` is clamped to ``[-1, 1]``. ``timestamp`` defaults to
+        the next monotonic tick. Returns the row index, or ``-1`` when the
+        store is full."""
+        meaning = ConceptualMeaning(
+            torch.stack([self._fit(value) for value in (np1, vp, np2)]),
+            torch.tensor([value is not None for value in (np1, vp, np2)],
+                         dtype=torch.bool, device=self.slots.device),
+            mode="interrogative" if kind == "question" else "assertive")
+        return self.append_meaning(meaning, kind=kind, rel_type=rel_type,
+                                   trust=trust, timestamp=timestamp, evidence=evidence, order=order)
+
+    def append_idea(self, np1, *, trust=0.0, timestamp=None, kind="fact", evidence=None, order=0) -> int:
+        """Append a one-role description; legacy callers explicitly write facts."""
+        return self.append(np1, None, None, rel_type=self.REL_NONE,
+                           trust=trust, timestamp=timestamp, kind=kind, evidence=evidence, order=order)
+
+    def append_relation(self, np1, vp, np2, *, rel_type=REL_OPERATOR,
+                        trust=0.0, timestamp=None, kind="fact", evidence=None, order=0) -> int:
+        """Append an IDEA-RELATION-IDEA (``NP VP NP``); ``np2=None`` ->
+        ``NP VP .``."""
+        return self.append(np1, vp, np2, rel_type=rel_type,
+                           trust=trust, timestamp=timestamp, kind=kind, evidence=evidence, order=order)
+
+    def row(self, idx: int) -> dict:
+        """Read slots, evidence, stable provenance and an owned meaning.
+
+        Legacy np1/vp/np2 tensors remain views; ``meaning`` is an owned detached
+        value, or None when required semantic metadata is unavailable.
+        """
+        n = int(self.count.item())
+        if not (0 <= int(idx) < n):
+            raise IndexError(f"row {idx} of {n}")
+        i = int(idx)
+        return {
+            'np1': self.slots[i, 0], 'vp': self.slots[i, 1],
+            'np2': self.slots[i, 2], 'rel_type': int(self.rel_type[i].item()),
+            'timestamp': float(self.timestamp[i].item()),
+            'trust': float(self.trust[i].item()),
+            'order': int(self.order[i]),
+            'evidence': (float(self.c_plus[i]), float(self.c_minus[i])),
+            'corners': self.corners(i),
+            'refs': self.refs[i].clone(),
+            'row_id': int(self.row_ids[i]),
+            'where': self.where[i].clone(),
+            'when': self.when[i].clone(),
+            'surprise': float(self.surprise[i].item()),
+            'origin': int(self.origin[i].item()),
+            'text': self.text_of(i),
+            'kind': self.KINDS[int(self.record_kind[i])],
+            'occurrence': self.occurrence_of(i),
+            'meaning': self.meaning_of(i),
+            'expectation': self.expectation_of(i),
+            'metadata_complete': (not bool(self.metadata_required[i])
+                                  or int(self.occurrence_id[i]) in self._semantic_rows),
+        }
+
+    def recent(self, n: int):
+        """Row indices of the ``n`` most-recent rows (descending timestamp) --
+        the AR predictor's recency window."""
+        c = int(self.count.item())
+        if c == 0 or n <= 0:
+            return self.count.new_zeros(0)
+        order = torch.argsort(self.timestamp[:c], descending=True)
+        return order[: int(n)]
+
+    def relations(self, rel_type=None):
+        """Row indices of RELATION rows (``rel_type != REL_NONE``), optionally
+        filtered to a single ``rel_type`` -- the reasoning scan."""
+        c = int(self.count.item())
+        if c == 0:
+            return self.count.new_zeros(0)
+        rt = self.rel_type[:c]
+        mask = rt != self.REL_NONE if rel_type is None else rt == int(rel_type)
+        return mask.nonzero(as_tuple=True)[0]
+
+    def ideas(self):
+        """Row indices of ABSOLUTE-idea rows (``rel_type == REL_NONE``)."""
+        c = int(self.count.item())
+        if c == 0:
+            return self.count.new_zeros(0)
+        return (self.rel_type[:c] == self.REL_NONE).nonzero(as_tuple=True)[0]
+
+    @property
+    def trust(self):
+        """Compatibility read of signed evidence; no separate stored column."""
+        return self.c_plus - self.c_minus
+
+    @torch.no_grad()
+    def set_trust(self, idx: int, trust: float):
+        """Set signed evidence through its two poles (verification/reassertion)."""
+        i = int(idx)
+        if not (0 <= i < int(self.count.item())):
+            raise IndexError(f"row {i} of {int(self.count.item())}")
+        if not math.isfinite(float(trust)):
+            raise ValueError("fact trust must be finite")
+        signed = max(-1.0, min(1.0, float(trust)))
+        self.c_plus[i], self.c_minus[i] = max(signed, 0.), max(-signed, 0.)
+
+    @torch.no_grad()
+    def set_evidence(self, idx, positive, negative):
+        """Replace the two independent evidence poles, retaining provenance."""
+        i = int(idx)
+        if not 0 <= i < len(self):
+            raise IndexError(f"row {i} of {len(self)}")
+        values = (float(positive), float(negative))
+        if any(not math.isfinite(x) or not 0. <= x <= 1. for x in values):
+            raise ValueError("evidence poles must be finite and in [0, 1]")
+        self.c_plus[i], self.c_minus[i] = values
+
+    def corners(self, idx):
+        """Compute four overlapping corners without collapsing the poles."""
+        p, n = float(self.c_plus[idx]), float(self.c_minus[idx])
+        return min(p, 1-n), min(n, 1-p), min(p, n), min(1-p, 1-n)
+
+    # -- Provenance ------------------------------------------------------
+
+    def _ensure_texts(self, n: int):
+        """Pad the host-side ``_texts`` list to ``n`` entries."""
+        if len(self._texts) < n:
+            self._texts.extend([None] * (n - len(self._texts)))
+
+    def text_of(self, idx: int):
+        """The row's source text, or None (unset / post-load)."""
+        i = int(idx)
+        return self._texts[i] if 0 <= i < len(self._texts) else None
+
+    @torch.no_grad()
+    def set_origin(self, idx: int, origin: int, text=None):
+        """Tag a row's writer provenance (``ORIGIN_*``) and optionally
+        attach its source text -- retroactive, mirroring ``set_trust``,
+        because provisioned / user rows land via the observe-site push
+        during the forward and are identified only afterwards."""
+        i = int(idx)
+        n = int(self.count.item())
+        if not (0 <= i < n):
+            raise IndexError(f"row {i} of {n}")
+        if (text is not None and bool(self.metadata_required[i])
+                and int(self.occurrence_id[i]) not in self._semantic_rows):
+            raise ValueError("cannot update source text with missing semantic context")
+        self.origin[i] = int(origin)
+        self._ensure_texts(n)
+        if text is not None:
+            self._texts[i] = str(text)
+            if not bool(self.metadata_required[i]):
+                self._semantic_rows.setdefault(int(self.occurrence_id[i]), {})
+            self.metadata_required[i] = True
+            self._update_semantic_fingerprint(i)
+
+    def rows_of_origin(self, *origins):
+        """Row indices whose ``origin`` is any of ``origins``, in row
+        (append) order."""
+        c = int(self.count.item())
+        if c == 0 or not origins:
+            return self.count.new_zeros(0)
+        og = self.origin[:c]
+        mask = torch.zeros_like(og, dtype=torch.bool)
+        for o in origins:
+            mask |= og == int(o)
+        return mask.nonzero(as_tuple=True)[0]
+
+    @torch.no_grad()
+    def withdraw_origin(self, origin: int) -> None:
+        """Withdraw one writer's authority without deleting its content.
+
+        Tensor-only checkpoint restore uses this intermediate state while
+        semantic sidecars and thought-owned roots are unavailable.  Accepted
+        facts become unverified; questions/estimates retain their provenance;
+        all selected rows lose trust.
+        """
+        count = len(self)
+        selected = self.origin[:count] == int(origin)
+        facts = selected & (self.record_kind[:count] == self.KINDS.index("fact"))
+        self.record_kind[:count].masked_fill_(
+            facts, self.KINDS.index("unverified"))
+        self.c_plus[:count].masked_fill_(selected, 0)
+        self.c_minus[:count].masked_fill_(selected, 0)
+
+    @torch.no_grad()
+    def clear_origin(self, origin: int, *, retained_occurrences=()) -> int:
+        """Withdraw an origin and compact only its unreachable records.
+
+        The survivor closure starts from rows of other origins and explicit
+        roots supplied by another live owner (ordinary thought history).  A
+        retained withdrawn row stays at its stable occurrence ID with its
+        slots, context and source text, but no longer certifies a fact.  The
+        full closure is resolved and validated before any evidence or buffer is
+        changed.  IDs and logical clocks are never rewound.
+        """
+        c = int(self.count.item())
+        if c == 0:
+            return 0
+        selected = self.origin[:c] == int(origin)
+        if not bool(selected.any()):
+            return 0
+        namespace = bytes(self._occurrence_namespace.tolist()).hex()
+        indices = {int(self.occurrence_id[i]): i for i in range(c)}
+        if len(indices) != c:
+            raise ValueError("duplicate truth occurrence identity")
+
+        keep_rows = set((~selected).nonzero(as_tuple=True)[0].tolist())
+        pending = list(keep_rows)
+        for reference in retained_occurrences:
+            if (not isinstance(reference, tuple) or len(reference) != 3
+                    or reference[:2] != ('ltm', namespace)
+                    or type(reference[2]) is not int
+                    or reference[2] not in indices):
+                raise ValueError("retained occurrence reference is unavailable")
+            pending.append(indices[reference[2]])
+
+        seen = set()
+        while pending:
+            index = pending.pop()
+            if index in seen:
+                continue
+            seen.add(index)
+            keep_rows.add(index)
+            meaning = self.meaning_of(index)
+            if meaning is None:
+                raise ValueError(
+                    "cannot retain constituents with unavailable semantic metadata")
+            for reference in self._context_occurrence_references(meaning.metadata()):
+                if reference[:2] != ('ltm', namespace):
+                    continue
+                child = indices.get(reference[2])
+                if child is None:
+                    raise ValueError("retained constituent occurrence is unavailable")
+                pending.append(child)
+            provenance = self._expectation_rows.get(
+                int(self.occurrence_id[index]))
+            for reference in self._expectation_references(provenance):
+                child = indices.get(reference[2])
+                if child is None:
+                    raise ValueError("retained expectation occurrence is unavailable")
+                pending.append(child)
+            # Cached idea operands and relation slots name the same shared
+            # rows. Retention follows those addresses, without a syntax tree.
+            for reference in self.refs[index].tolist():
+                child = self.index_of_row(reference) if reference > 0 else None
+                if child is not None:
+                    pending.append(child)
+
+        # This includes all closure members (including context-only roots), so
+        # validation cannot accidentally erase an invalid survivor's evidence.
+        self._validate_constituent_graph(
+            {
+                int(self.occurrence_id[index]): self._semantic_rows.get(
+                    int(self.occurrence_id[index]), {})
+                for index in keep_rows
+            },
+            namespace,
+        )
+        keep = self.count.new_tensor(sorted(keep_rows))
+        n_keep = int(keep.numel())
+        removed = c - n_keep
+        # Only after every resolution/validation succeeds may evidence change.
+        self.withdraw_origin(origin)
+        if removed == 0:
+            return 0
+        self._ensure_texts(c)
+        kept_texts = [self._texts[int(i)] for i in keep.tolist()]
+        self.compact_leaf_rows(keep)
+        self.slots[:n_keep] = self.slots[keep]
+        self.rel_type[:n_keep] = self.rel_type[keep]
+        self.timestamp[:n_keep] = self.timestamp[keep]
+        self.surprise[:n_keep] = self.surprise[keep]
+        self.origin[:n_keep] = self.origin[keep]
+        for name in ('role_mask', 'record_kind', 'grammatical_mode', 'polarity',
+                     'occurrence_id', 'metadata_required', 'semantic_fingerprint',
+                     'c_plus', 'c_minus', 'refs', 'row_ids', 'where', 'when', 'order'):
+            values = getattr(self, name)
+            values[:n_keep] = values[keep]
+        alive = set(int(value) for value in self.occurrence_id[:n_keep].tolist())
+        self._semantic_rows = {key: value for key, value in self._semantic_rows.items()
+                               if key in alive}
+        self._expectation_rows = {
+            key: value for key, value in self._expectation_rows.items()
+            if key in alive}
+        self.slots[n_keep:c].zero_()
+        self.rel_type[n_keep:c].zero_()
+        self.timestamp[n_keep:c].zero_()
+        self.surprise[n_keep:c].fill_(-1.)
+        self.origin[n_keep:c].zero_()
+        self.role_mask[n_keep:c].zero_()
+        self.record_kind[n_keep:c].zero_()
+        self.grammatical_mode[n_keep:c].zero_()
+        self.polarity[n_keep:c].fill_(True)
+        self.occurrence_id[n_keep:c].fill_(-1)
+        self.metadata_required[n_keep:c].zero_()
+        self.semantic_fingerprint[n_keep:c].zero_()
+        for name in ('c_plus', 'c_minus', 'where', 'when'):
+            getattr(self, name)[n_keep:c].zero_()
+        self.refs[n_keep:c].fill_(-1)
+        self.row_ids[n_keep:c].fill_(-1)
+        self.order[n_keep:c].fill_(-1)
+        self._texts = kept_texts + [None] * (len(self._texts) - n_keep)
+        self.count.fill_(n_keep)
+        self.definitions.rebuild()
+        self.rebuild_leaf_postings()
+        self._validate_expectation_links()
+        return removed
+
+    @torch.no_grad()
+    def reset(self):
+        """Clear the store (idempotent)."""
+        self.slots.zero_()
+        self.rel_type.zero_()
+        self.timestamp.zero_()
+        self.surprise.fill_(-1.)
+        self.count.zero_()
+        self.origin.zero_()
+        self._next_ts.zero_()
+        self._texts = []
+        self.role_mask.zero_()
+        self.record_kind.zero_()
+        self.grammatical_mode.zero_()
+        self.polarity.fill_(True)
+        self.occurrence_id.fill_(-1)
+        self.metadata_required.zero_()
+        self.semantic_fingerprint.zero_()
+        self._semantic_rows = {}
+        self._expectation_rows = {}
+        self._definition_rows = {}
+        self.definitions.rebuild()
+        self.c_plus.zero_()
+        self.c_minus.zero_()
+        self.refs.fill_(-1)
+        self.row_ids.fill_(-1)
+        self.order.fill_(-1)
+        self.where.zero_()
+        self.when.zero_()
+        self.leaf_complete.zero_()
+        self.index_stream.fill_(-1)
+        self._leaf_postings, self._index_occurrences = {}, {}
+        # Occurrence IDs are never reused, even after reset. A held reference
+        # cannot silently bind to a later fact at the same physical row.
+
+
+class WhatInteractionMemory(LevelledThoughtHistory):
+    """One per-row owner of chronological ordinary and legacy thought history.
+
+    Ordinary ``ThoughtRecord`` content and level transitions share this owner's
+    existing deque. Suspended contexts are derived by replay, never owned by a
+    second stack. Only a closed legacy prefix may precede ordinary history.
+
+    The compatibility API retains the earlier What contract: each ``LTMSlot`` has
+    independently optional input / output halves; an input-only slot pushes
+    an unanswered question, an output-only slot pops the newest one (LIFO),
+    a complete slot has no stack effect.  The stack is the imbalance of the
+    chronological sequence -- there is no frame object and opening slots
+    are never edited in place. SymbolSpace owns one memory independently
+    of whether sentence expectation is enabled.
+
+    Credit boundary (spec 8.2): ``detach_mode == "slot"`` detaches every
+    value at append (the established behaviour).  ``detach_mode ==
+    "episode"`` keeps values appended after ``begin_thought_episode`` (or the
+    ``begin_thought_episode``) LIVE on the autograd graph so the root answer
+    loss can reach states created at earlier iterations; ``end`` detaches
+    them (call it after the optimizer step).
+    """
+
+    DETACH_MODES = ("slot", "episode")
+
+    def __init__(self, batch=1, capacity=1024, detach_mode="slot"):
+        self.batch = max(1, int(batch))
+        self.capacity = int(capacity)
+        self.detach_mode = str(detach_mode)
+        self._what_slots = [collections.deque() for _ in range(self.batch)]
+        self._what_closure_pressure = [0.0 for _ in range(self.batch)]
+        self._episode_live = {}          # row -> live ordinary thought records
+        self._thought_namespace = uuid.uuid4().hex
+        self._thought_next_id = 0
+
+    # -- sizing / resets ----------------------------------------------------
+
+    @property
+    def ltm_capacity(self):
+        return self.capacity
+
+    def ensure_batch(self, batch):
+        """Reallocate fresh per-row state when the batch size changes
+        (a new microbatch shape does not inherit the old rows' dialogue)."""
+        batch = max(1, int(batch))
+        if batch == self.batch:
+            return
+        self.batch = batch
+        self._what_slots = [collections.deque() for _ in range(batch)]
+        self._what_closure_pressure = [0.0 for _ in range(batch)]
+        self._episode_live = {}
+
+    def reset(self, batch=None):
+        """Clear one row (``batch`` = row index) or every row."""
+        if batch is None:
+            for dq in self._what_slots:
+                dq.clear()
+            self._what_closure_pressure = [0.0] * self.batch
+            self._episode_live = {}
+            return
+        bi = int(batch)
+        if 0 <= bi < len(self._what_slots):
+            self._what_slots[bi].clear()
+            self._what_closure_pressure[bi] = 0.0
+            self._episode_live.pop(bi, None)
+
+    def Reset(self, batch=None, hard=True):
+        """Space-style cascade entry: only a HARD (document) reset clears
+        the dialogue; a soft sentence reset keeps it."""
+        if hard:
+            self.reset(batch)
+
+    # -- value snapshots ----------------------------------------------------
+
+    @staticmethod
+    def _detach_what_value(value):
+        """Detach an interaction snapshot from the live autograd graph."""
+        if value is None:
+            return None
+        if isinstance(value, ConceptualMeaning):
+            return value.detached()
+        if isinstance(value, WhatQuestion):
+            return replace(value, prompt=WhatInteractionMemory._detach_what_value(value.prompt))
+        if torch.is_tensor(value):
+            if not bool(torch.isfinite(value).all()):
+                raise FloatingPointError(
+                    "WhatInteractionMemory.append_what_slot: response contains "
+                    "NaN/Inf; refusing to store corrupt LTM state")
+            return value.detach().clone()
+        materialize = getattr(value, "materialize", None)
+        if callable(materialize):
+            return WhatInteractionMemory._detach_what_value(materialize())
+        if isinstance(value, tuple):
+            return tuple(WhatInteractionMemory._detach_what_value(v) for v in value)
+        if isinstance(value, list):
+            return [WhatInteractionMemory._detach_what_value(v) for v in value]
+        if isinstance(value, dict):
+            return {
+                k: WhatInteractionMemory._detach_what_value(v)
+                for k, v in value.items()
+            }
+        return value
+
+
+    @staticmethod
+    def _what_open_indices(slots):
+        """Derive the unanswered-input stack from chronological slots."""
+        stack = []
+        for index, slot in enumerate(slots):
+            if slot.operation is WhatSlotOperation.OPEN:
+                stack.append(index)
+            elif slot.operation is WhatSlotOperation.CLOSE:
+                if not stack:
+                    raise ValueError(
+                        "an output-only LTM slot has no open input to close")
+                stack.pop()
+        return stack
+
+    @staticmethod
+    def _trim_balanced_what_prefix(slots, capacity):
+        """Bound memory by evicting only complete chronological prefixes."""
+        slots = list(slots)
+        while len(slots) > capacity:
+            depth = 0
+            cut = None
+            for index, slot in enumerate(slots):
+                if slot.operation is WhatSlotOperation.OPEN:
+                    depth += 1
+                elif slot.operation is WhatSlotOperation.CLOSE:
+                    depth -= 1
+                if depth == 0:
+                    cut = index + 1
+                    break
+            if cut is None:
+                raise OverflowError(
+                    "LTM capacity exhausted by unanswered questions; close "
+                    "the newest question before opening another")
+            del slots[:cut]
+        return slots
+
+    # -- episodes (spec 8.2) -------------------------------------------------
+
+
+    def in_episode(self, b=0):
+        return int(b) in self._episode_live
+
+    def end_what_episode(self, b=0, detach=True):
+        """Close row ``b``'s episode; with ``detach`` (the default) every
+        slot appended during it is replaced by its detached copy.  Returns
+        the number of slots detached."""
+        bi = int(b)
+        # A legacy credit reservation may end before forward establishes its
+        # batch row (for example after an early failure). Ordinary history can
+        # exist only in an already-owned row.
+        state = self.thought_state(b=bi) if 0 <= bi < self.batch else None
+        if state is not None and not state.finished:
+            raise RuntimeError("cannot detach an unfinished active thought episode")
+        live = self._episode_live.pop(int(b), [])
+        if not detach or not live:
+            return 0
+        ids = {id(s) for s in live}
+        replaced = 0
+        if 0 <= bi < len(self._what_slots):
+            out = []
+            for slot in self._what_slots[bi]:
+                if id(slot) in ids:
+                    slot = slot.snapshot(detach=True)
+                    replaced += 1
+                out.append(slot)
+            self._what_slots[bi] = collections.deque(out)
+        return replaced
+
+    # -- the slot API ---------------------------------------------------------
+
+    def append_what_slot(self, slot, b=0):
+        """Append one interaction and enforce LIFO/parity invariants.
+
+        A complete slot has no stack effect, an input-only slot pushes, and
+        an output-only slot pops the newest unanswered input.  Opening slots
+        are immutable; closures are later chronological records.  Values are
+        detached at append. Live episode credit belongs to ordinary thought records.
+        """
+        if not isinstance(slot, LTMSlot):
+            raise TypeError("append_what_slot expects an LTMSlot")
+        bi = int(b)
+        if bi < 0 or bi >= len(self._what_slots):
+            raise IndexError(f"LTM row {bi} is outside batch size {self.batch}")
+        current = list(self._what_slots[bi])
+        if any(isinstance(record, ThoughtRecord) for record in current):
+            raise RuntimeError("ordinary thought history requires its explicit transition API")
+        open_before = self._what_open_indices(current)
+        if slot.operation is WhatSlotOperation.CLOSE and not open_before:
+            raise ValueError("an output-only LTM slot requires an open input")
+        if open_before and slot.closure_pressure < self._what_closure_pressure[bi]:
+            raise ValueError(
+                "closure pressure must be monotonic while questions remain open")
+
+        trace = slot.grammar_trace + ({
+            "operation": f"what_{slot.operation.value}",
+            "iteration": int(slot.iteration),
+            "closure_pressure": float(slot.closure_pressure),
+            "forced": bool(slot.forced),
+            "temporal": (
+                slot.question.context_values()
+                if slot.question is not None else None),
+        },)
+        snapshot = self._detach_what_value
+        stored = LTMSlot(
+            input=snapshot(slot.input),
+            output=snapshot(slot.output),
+            question=snapshot(slot.question),
+            iteration=slot.iteration,
+            closure_pressure=slot.closure_pressure,
+            forced=slot.forced,
+            grammar_trace=snapshot(trace),
+        )
+        candidate = self._trim_balanced_what_prefix(
+            current + [stored], self.capacity)
+        open_after = self._what_open_indices(candidate)
+        self._what_slots[bi] = collections.deque(candidate)
+        self._what_closure_pressure[bi] = (
+            float(slot.closure_pressure) if open_after else 0.0)
+        return stored
+
+    def get_what_slots(self, n=None, b=0):
+        """Return interaction slots, oldest first."""
+        bi = int(b)
+        if bi < 0 or bi >= len(self._what_slots):
+            return []
+        slots = [slot for slot in self._what_slots[bi] if isinstance(slot, LTMSlot)]
+        if n is None:
+            return slots
+        n = int(n)
+        return [] if n <= 0 else slots[-n:]
+
+    def open_what_slots(self, b=0):
+        """Return unanswered input slots in stack order, newest last."""
+        slots = self.get_what_slots(b=b)
+        return [slots[index] for index in self._what_open_indices(slots)]
+
+    def what_open_depth(self, b=0):
+        return len(self.open_what_slots(b=b))
+
+    def what_at_parity(self, b=0):
+        return self.what_open_depth(b=b) == 0
+
+    def what_context(self, question=None, b=0):
+        """Return the new, target-free portion of grammar chooser context.
+
+        ``open_question`` is the newest unanswered input representation
+        and ``latest_output`` the newest output representation (spec 7.3:
+        the resolve step consumes them directly); both ``None`` when absent.
+        """
+        bi = int(b)
+        slots = self.get_what_slots(b=bi)
+        open_indices = self._what_open_indices(slots)
+        open_depth = len(open_indices)
+        pressure = (float(self._what_closure_pressure[bi])
+                    if 0 <= bi < len(self._what_closure_pressure) else 0.0)
+        latest_output = next((slot.output for slot in reversed(slots)
+                              if slot.output is not None), None)
+        return {
+            "temporal": (question.context_values()
+                         if question is not None else None),
+            "input_mask": tuple(slot.input is not None for slot in slots),
+            "output_mask": tuple(slot.output is not None for slot in slots),
+            "input_representations": tuple(slot.input for slot in slots),
+            "output_representations": tuple(slot.output for slot in slots),
+            "open_depth": open_depth,
+            "parity": open_depth == 0,
+            "closure_pressure": pressure,
+            "open_question": (slots[open_indices[-1]].input
+                              if open_indices else None),
+            "latest_output": latest_output,
+        }
+
+
+@dataclass(frozen=True)
+class MeaningExpectation:
+    """A prior estimate in canonical NP1/VP/NP2 order, never an observation."""
+
+    roles: torch.Tensor
+    presence_logits: torch.Tensor
+    bindings: object = ()
+    scope: object = ()
+    kind_logit: object = None
+
+    def __post_init__(self):
+        from Meaning import _freeze_metadata
+        if self.roles.ndim != 2 or self.roles.shape[0] != 3 or self.presence_logits.shape != (3,):
+            raise ValueError("expectation requires three roles and presence logits")
+        if self.kind_logit is not None and self.kind_logit.shape != ():
+            raise ValueError("expectation kind requires one idea/relation logit")
+        object.__setattr__(self, "bindings", _freeze_metadata(self.bindings))
+        object.__setattr__(self, "scope", _freeze_metadata(self.scope))
+
+    def detached(self):
+        return type(self)(self.roles.detach().clone(), self.presence_logits.detach().clone(),
+                          self.bindings, self.scope, None if self.kind_logit is None else
+                          self.kind_logit.detach().clone())
+
+
+@dataclass(frozen=True)
+class ExpectationComparison:
+    """Detached aligned observation and its unchanged prior expectation."""
+
+    estimate: MeaningExpectation
+    observed: torch.Tensor
+    occupied: torch.Tensor
+    residual: torch.Tensor
+    presence_residual: torch.Tensor
+    document: object
+    source_occurrences: tuple = ()
+    stream: object = None
+    sentence_kind: object = None
+    kind_residual: object = None
+
+
+@dataclass(frozen=True)
+class _PendingMeaningExpectation:
+    """One pre-observation estimate plus only its permitted context identity."""
+
+    prediction: MeaningExpectation
+    source_occurrences: tuple
+    stream: object
+    document: object
+    inputs: object = None
+    versions: tuple = ()
+    policy: tuple = ()
+    work: int = 0
+    frames: tuple = ()
+    walk: object = None
+    comparison: object = None
+
+    def detached(self):
+        from dataclasses import replace
+        return replace(self, prediction=self.prediction.detached(),
+            inputs=None if self.inputs is None else tuple(x.detach() for x in self.inputs),
+            frames=tuple(frame.detached() for frame in self.frames),
+            walk=None if self.walk is None else self.walk.detached())
+
+
+class SentenceExpectation(Layer):
+    """Order-sensitive prediction over complete, masked local meanings.
+
+    Positions identify grammatical roles and chronological lags, not concept
+    addresses. Each output role has its own coordinates; padding is excluded
+    before the network sees it. Compound references are handled by the owner
+    of the meaning, rather than by treating their integer IDs as features.
+    """
+
+    def __init__(self, concept_dim, context_window):
+        width = 3 * (int(concept_dim) + 1)
+        super().__init__(int(context_window) * width, width)
+        self.concept_dim = int(concept_dim)
+        self.context_window = int(context_window)
+        hidden = min(1024, max(32, 2 * width))
+        self.network = nn.Sequential(
+            nn.Linear(self.nInput, hidden), nn.Tanh(),
+            nn.Linear(hidden, width))
+        # New checkpoints start neutral. This consumes no random draws and
+        # leaves the reviewed role-head initialization reproducible.
+        self.kind_weight = nn.Parameter(torch.zeros(hidden))
+        self.kind_bias = nn.Parameter(torch.zeros(()))
+
+    def forward(self, roles, masks):
+        roles, masks = roles.detach(), masks.detach()
+        features = torch.cat((
+            torch.where(masks.unsqueeze(-1), roles, torch.zeros_like(roles)),
+            masks.to(roles.dtype).unsqueeze(-1)), dim=-1)
+        hidden = self.network[:2](features.flatten(start_dim=1))
+        out = self.network[2](hidden).reshape(
+            roles.shape[0], 3, self.concept_dim + 1)
+        kind = F.linear(hidden, self.kind_weight[None], self.kind_bias[None]).squeeze(-1)
+        return out[..., :self.concept_dim], out[..., -1], kind
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        for name in ('kind_weight', 'kind_bias'):
+            state_dict.setdefault(prefix + name, torch.zeros_like(getattr(self, name)))
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                     missing_keys, unexpected_keys, error_msgs)
+
+
+class BracketExpectation(Layer):
+    """Sentence expectation with structured production and legacy predictors.
+
+    The model selects ``expectation_scope="structured"``: every occupied
+    NP1/VP/NP2 role and its mask enter an order-sensitive bounded predictor.
+    ``begin_document`` isolates external streams without deleting durable
+    evidence or an already-scored loss. Root-only direct construction remains
+    a benchmark and compatibility API. The ARMA description below concerns
+    the separately weighted legacy objective.
+
+    **What it is.** Sentence-level autoregression lives here, not in
+    the within-sentence body (which is now IR-only / masked-LM).  Each
+    sentence is summarised into a flat ``[B, sentence_dim]`` rep
+    ``s_t`` (the body's S-space_role root slot pooled per row); the
+    predictor consumes the last ``p`` sentence reps plus the last
+    ``q`` prediction errors and produces ``s_hat_{t+1}``.
+
+    **Loss.** ``MSE(predictor(s_{t-1..t-p}, e_{t-1..t-q}), s_t)``.
+    The residual ``e_t = s_t - s_hat_t`` is pushed into the MA ring
+    so the next prediction can correct for systematic bias in the AR
+    extrapolation.
+
+    **Buffers (per row).**
+
+    - ``_s_history``: ``[B, p, sentence_dim]`` ring of last ``p``
+      sentence reps (most recent at index ``-1``).
+    - ``_e_history``: ``[B, q, sentence_dim]`` ring of last ``q``
+      residuals.
+    - ``_s_count`` / ``_e_count``: ``[B]`` long, current fill levels.
+
+    All buffers are non-persistent (transient state, not checkpoint
+    material) and follow ``.to(device)`` through ``register_buffer``.
+
+    **Reset.** ``Reset()`` clears both rings.  ARMA lags carry across
+    document boundaries by default — discourse continuity is
+    information the predictor wants to use; callers that need a hard
+    boundary call ``Reset()`` explicitly.
+
+    **Subclass.** ``Layer`` rather than ``Space``: no SubSpace, no
+    forward/reverse tensor-map contract.  Lives inside
+    ``SymbolSpace.layers`` so the Layer ergodic walk reaches the MLP
+    predictor's parameters via ``SymbolSpace.params``.
+
+    Replaces the pre-2026-05-14 contrastive cosine machinery
+    (``context_window`` recent buffer, ``centroid_history`` repulsive
+    ring, ``lam`` cosine push) and the QKVAttentionLayer-based
+    predictive head.  See ``doc/Architecture.md`` §"Sentence-level
+    AR (BracketExpectation)" for the design rationale.
+    """
+
+    name = "Discourse"
+
+    def __init__(self, n_symbols, max_depth, n_dim,
+                 p=5, q=2, hidden_dim=None,
+                 concept_dim=None, batch=1, ltm_capacity=1024,
+                 # Legacy-named kwargs accepted for back-compat; ignored.
+                 context_window=None, centroid_history=None, lam=None,
+                 expectation_scope="root"):
+        """Initialize the ARMA(p, q) predictor.
+
+        ``n_symbols``, ``max_depth``, ``n_dim`` describe the legacy
+        ``[S | W]`` snapshot layout the caller used to hand in; under
+        ARMA we only need the flat ``sentence_dim`` (defaults to
+        ``n_symbols * n_dim``) but keep the constructor signature for
+        smooth migration of the SymbolSpace instantiation site.
+
+        ``p`` = AR lag count (number of past sentence reps consumed
+        by the predictor); ``q`` = MA lag count (past residuals).
+        ``hidden_dim`` defaults to ``2 * sentence_dim``.
+        ``concept_dim`` is the full width of each predicted grammatical role.
+        No prediction is cast into a comprehension input.
+
+        ``ltm_capacity`` bounds the long-term-memory (LTM) chain of
+        per-sentence STM end-states (the AR sequence used for
+        inter-sentence prediction; see ``observe_stm_end_state`` /
+        ``get_stm_chain``).  Default 1024 — separate from TruthLayer's
+        ``truthMaxEntries`` and from the ARMA orders ``p`` / ``q``.
+
+        ``context_window`` / ``centroid_history`` / ``lam`` are
+        accepted for signature back-compat with the retired
+        contrastive constructor and ignored.
+        """
+        del context_window, centroid_history, lam  # retired knobs
+        n_symbols = int(n_symbols)
+        n_dim = int(n_dim)
+        # Sentence-rep pooling: the per-sentence rep ``s_t`` is the
+        # **root S-space_role slot** (row 0 of the body's final-stage S-space_role
+        # event), not the full ``[n_symbols, n_dim]`` flatten.  The
+        # root is what the start-symbol reduction wrote -- it carries
+        # the sentence-level signal; the other slots are intermediate
+        # composition state.  This keeps the predictor's input width
+        # bounded at ``(p + q) * n_dim`` instead of
+        # ``(p + q) * n_symbols * n_dim`` (which OOMs the allocator on
+        # configs where ``n_symbols * n_dim`` is in the hundreds of
+        # thousands -- the legacy contrastive snapshot avoided this
+        # by never feeding the snapshot through a Linear).
+        sentence_dim = n_dim
+        super().__init__(sentence_dim, sentence_dim)
+
+        self.n_symbols = n_symbols
+        self.max_depth = int(max_depth)
+        self.n_dim = n_dim
+        self.sentence_dim = sentence_dim
+        self.p = int(p)
+        self.q = int(q)
+        # Cap hidden_dim so the predictor's Linear stays under the
+        # allocator's per-tensor budget on every config we ship --
+        # 1024 is comfortably bigger than ``sentence_dim`` for every
+        # MM_* training config (sentence_dim == n_dim, typically 2-100)
+        # and small enough that the MLP fits in a few MB.
+        _hidden_cap = 1024
+        self.hidden_dim = int(hidden_dim if hidden_dim is not None
+                              else min(_hidden_cap, 2 * sentence_dim))
+        self.concept_dim = (int(concept_dim)
+                            if concept_dim is not None else None)
+
+        self._batch = int(batch)
+        if expectation_scope not in ("root", "structured"):
+            raise ValueError("expectation_scope must be root or structured")
+        # Root is the legacy direct-construction API / benchmark. The model
+        # explicitly selects structured prediction in SymbolSpace.
+        self.expectation_scope = expectation_scope
+        self._expectation_documents = [None] * self._batch
+        self._inter_last_meaning = [None] * self._batch
+        self._external_observations_suspended = False
+        self.expectation_enabled = True
+        self._last_expectation_comparisons = [None] * self._batch
+        self.reset_expectation_metrics()
+        # Phase-3-style staging slot: when the compiled step is active,
+        # ``stage_prediction()`` runs the (``@torch.compiler.disable``'d)
+        # ARMA predictor EAGERLY before the traced forward and parks the
+        # ``(pred, conf)`` tuple here.  ``predict()`` then returns the
+        # staged tuple without touching ``predict_next`` (the disabled
+        # function that forced a graph break) or the ``_s_count.item()``
+        # host sync.  ``None`` == not staged (eager path, compute live).
+        self._staged_prediction = None
+        self.register_buffer(
+            "_s_history",
+            torch.zeros(self._batch, self.p, self.sentence_dim),
+            persistent=False)
+        self.register_buffer(
+            "_s_count",
+            torch.zeros(self._batch, dtype=torch.long),
+            persistent=False)
+        self.register_buffer(
+            "_e_history",
+            torch.zeros(self._batch, max(1, self.q), self.sentence_dim),
+            persistent=False)
+        self.register_buffer(
+            "_e_count",
+            torch.zeros(self._batch, dtype=torch.long),
+            persistent=False)
+
+        # -- LTM: chain of per-sentence STM end-states (Task 7, plan §8).
+        # The AR sequence used for INTER-sentence prediction. Unlike the
+        # ARMA ``_s_history`` ring (fixed-shape ``[B, p, D]`` tensor), an
+        # end-state is VARIABLE depth (1 for an absolute sentence, 3 for
+        # a relative ``[predicate, idea1, idea2]`` end-state), so a fixed
+        # ``register_buffer`` tensor does not fit. Use one bounded
+        # ``collections.deque(maxlen=ltm_capacity)`` PER ROW (parallel
+        # document streams — mirror how ``_s_history`` is per-row), each
+        # holding time-ordered ``(depth:int, payload:[depth,D] tensor,
+        # tetralemma:tuple|None)`` tuples. This is TRANSIENT host-side
+        # state (NOT checkpoint material — mirror the ARMA rings'
+        # ``persistent=False``); it is NOT a registered buffer / not in
+        # ``state_dict`` and the boundary-only ``observe_stm_end_state``
+        # writer is ``@torch.compiler.disable``'d like ``observe``.
+        self.ltm_capacity = int(ltm_capacity)
+        self._stm_end_states = [
+            collections.deque(maxlen=self.ltm_capacity)
+            for _ in range(self._batch)]
+        # ``self.layers`` (parent Layer's ergodic-walk list) only holds
+        # objects that implement ``set_sigma`` / ``observe_sigma`` etc.
+        # The ARMA MLP predictor is an ``nn.Sequential`` (no ergodic
+        # interface), so it's NOT added here -- its parameters still
+        # register with the host module via plain attribute
+        # assignment, so the optimizer sees them.  ``LinearLayer`` is
+        # ergodic-compatible and gets added.
+        self.layers = []
+        in_dim = (self.p + self.q) * self.sentence_dim
+        if in_dim > 0 and self.sentence_dim > 0:
+            self.predictor = nn.Sequential(
+                nn.Linear(in_dim, self.hidden_dim),
+                nn.Tanh(),
+                nn.Linear(self.hidden_dim, self.sentence_dim),
+            )
+        else:
+            self.predictor = None
+
+        # -- Inter-level next-end-state predictor (Task 8, plan §9). -----
+        # The SAME predictor class as the intra-sentence in-STM predictor
+        # (``IntraSentenceLayer``), instantiated HERE at the inter-sentence
+        # level. It reads the last ``K`` STM end-states (the LTM chain) and
+        # predicts the ROOT of the next end-state. ``predict_next_end_state``
+        # wraps it into a ``(depth_hat, payload_hat[depth_hat, D])`` shape.
+        #
+        # ``stm_capacity`` here is the CHAIN WINDOW ``K`` (the number of
+        # most-recent end-states fed to the predictor), NOT the intra-level
+        # STM slot count. The plan suggests ``truthMaxEntries``; that knob
+        # (default 1024) is the TruthLayer WS-codebook cap and is NOT
+        # plumbed to this constructor, and a 1024-wide predictor input would
+        # be wasteful for a short AR context. So we use a small bounded
+        # window ``K = min(ltm_capacity, 8)`` (documented deviation): the AR
+        # signal that predicts the next end-state lives in the last handful
+        # of sentences, and the IntraSentenceLayer's ``stm_capacity`` only
+        # feeds its serial-``reverse`` fan-out default (unused on our
+        # forward-only path), so ``K`` is the meaningful quantity.
+        self._inter_chain_window = max(1, min(int(self.ltm_capacity), 8))
+        # Bounded, row-local prediction view of external observations. This
+        # is transient context, not an additional durable/evidence store.
+        # Current-step values retain their encoder graph; consumption/step
+        # boundaries detach the view, while LTM remains a stable snapshot.
+        self._inter_context = [
+            collections.deque(maxlen=self._inter_chain_window)
+            for _ in range(self._batch)]
+        # Stable LTM occurrences align one-for-one with the bounded predictor
+        # view.  The row is bound only after the host appends the external
+        # observation, so anticipation cannot learn its target's identity.
+        self._inter_context_occurrences = [
+            collections.deque(maxlen=self._inter_chain_window)
+            for _ in range(self._batch)]
+        self._inter_predictor = None
+        if self.concept_dim is not None and self.concept_dim > 0:
+            if self.expectation_scope == "structured":
+                self._inter_predictor = SentenceExpectation(
+                    self.concept_dim, self._inter_chain_window)
+            else:
+                self._inter_predictor = IntraSentenceLayer(
+                    concept_dim=self.concept_dim,
+                    stm_capacity=self._inter_chain_window,
+                    routing_dim=self.concept_dim)
+            self.layers.append(self._inter_predictor)
+
+        # L_inter accumulation (live grad tensor) + the per-row last
+        # predicted root, mirroring ConceptualSpace's intra-loss accumulator
+        # (Spaces.py ``_accumulate_intra_loss`` / ``consume_intra_loss``).
+        # ``_inter_loss_accum`` is a live (grad-carrying) running SUM of
+        # per-sentence ``MSE(payload_hat_root, actual_root)``; ``None`` until
+        # the first scored sentence. ``_inter_loss_count`` is the mean
+        # denominator. ``_inter_last_pred_root`` holds the most-recent
+        # predicted root PER ROW (``[D]`` tensor or ``None``) so the next
+        # ``observe_stm_end_state`` can score the prediction it made against
+        # the end-state that actually arrived. ``_inter_loss_weight`` gates
+        # accumulation off when the knob is non-positive (set by the host at
+        # construction; defaults to 0.1 so the layer is self-contained).
+        self._inter_loss_accum = None
+        self._inter_errors = Error()
+        self._inter_contrastive_errors = Error()
+        self._inter_loss_count = 0
+        self._inter_last_pred_root = [None] * self._batch
+        self._inter_loss_weight = 0.1
+        self._expectation_policy_outcomes = []
+        self._expectation_walk_outcomes = []
+        # Second accumulator: the InfoNCE next-idea CONTRASTIVE term -- ranks the
+        # actual next root above the chain's past roots under cosine(pred, .).
+        # Off (weight 0) -> the layer carries only the legacy MSE L_inter
+        # (byte-identical). Set by the host from <sentenceExpectationContrastiveWeight>.
+        self._inter_contrastive_accum = None
+        self._inter_contrastive_count = 0
+        self._inter_contrastive_weight = 0.0
+        self._inter_contrastive_temp = 0.1
+
+        # Consolidated durable history is stored once in TernaryTruthStore.
+        # get_stm_chain retains its legacy global-recency adapter for other
+        # readers; the predictor uses the bounded per-row _inter_context
+        # observation view so unrelated batch rows and provisioned facts
+        # cannot become a sentence's predecessor. The host appends durable
+        # observations to the store; this layer skips its duplicate deque.
+        self._ltm_store = None
+        self._ltm_consolidation = False
+
+        self.levels = ('byte','word','sentence','row')
+        self.enabled_levels = ('word','sentence')
+        self.word_dim = int(self.concept_dim or self.n_dim)
+        # Register with nn.Module, as the sentence head above does. Preserve
+        # the construction stream of the already accepted components.
+        with torch.random.fork_rng(devices=[]):
+            self.word_predictor = nn.Sequential(
+                nn.Linear((self.p+self.q)*self.word_dim,self.hidden_dim),nn.Tanh(),
+                nn.Linear(self.hidden_dim,self.word_dim))
+
+    def expect(self,level,*args,**kwargs):
+        """Expectation is indexed by its bracket level, with one owner."""
+        if level not in self.levels:raise ValueError('unknown expectation level')
+        if level not in self.enabled_levels:raise ValueError(f'{level} expectation is declared but disabled')
+        if level == 'word':
+            from WordExpectation import word_distribution
+            return word_distribution(self,*args,**kwargs)
+        if level == 'sentence':return self.predict_and_observe_stm_end_state(*args,**kwargs)
+        raise ValueError(f'{level} expectation awaits its scheduled landing')
+
+    # -- per-batch resize ---------------------------------------------
+    def ensure_batch(self, batch):
+        """Resize per-row substrate to a new batch size.  Cascaded
+        from ``SymbolSpace.ensure_batch`` so the body's per-B state is
+        sized correctly.  Zeroes the rings.
+        """
+        batch = int(batch)
+        if batch == self._batch:
+            return
+        device = self._s_history.device
+        dtype = self._s_history.dtype
+        self._batch = batch
+        self._s_history = torch.zeros(
+            batch, self.p, self.sentence_dim,
+            dtype=dtype, device=device)
+        self._s_count = torch.zeros(
+            batch, dtype=torch.long, device=device)
+        self._e_history = torch.zeros(
+            batch, max(1, self.q), self.sentence_dim,
+            dtype=dtype, device=device)
+        self._e_count = torch.zeros(
+            batch, dtype=torch.long, device=device)
+        # Resize the per-row LTM chains to match. Reallocate fresh
+        # deques: the ARMA rings above zero on resize, so the LTM chain
+        # follows the same "new batch -> clean per-row state" semantic
+        # (cascaded from ``SymbolSpace.ensure_batch`` at the start of a
+        # microbatch; the old document's chain does not survive a batch
+        # reshape any more than ``_s_history`` does).
+        self._stm_end_states = [
+            collections.deque(maxlen=self.ltm_capacity)
+            for _ in range(batch)]
+        # Per-row last-predicted-root parks reset on a batch reshape too
+        # (the prior document's pending prediction does not survive, same
+        # as the LTM chain / ARMA rings above).
+        self._inter_last_pred_root = [None] * batch
+        self._inter_last_meaning = [None] * batch
+        self._expectation_documents = [None] * batch
+        self._last_expectation_comparisons = [None] * batch
+        self._inter_context = [
+            collections.deque(maxlen=self._inter_chain_window)
+            for _ in range(batch)]
+        self._inter_context_occurrences = [
+            collections.deque(maxlen=self._inter_chain_window)
+            for _ in range(batch)]
+
+    # -- sentence-rep pooling -----------------------------------------
+    def _pool_sentence_rep(self, s_tensor):
+        """Pool an S-space_role event into a per-row ``[B, sentence_dim]``
+        sentence rep.
+
+        Accepts:
+          * ``[B, N, D]`` (microbatch S-space_role event) -- take row 0
+            (the root slot the start-symbol reduction wrote into).
+          * ``[N, D]`` (B=1 legacy) -- same: take row 0.
+          * ``[B, D]`` (already-pooled).
+        Right-pads / truncates to ``sentence_dim`` so dim mismatches
+        between training configs and the layer's stored width stay
+        well-defined.
+        """
+        if s_tensor is None:
+            return None
+        x = s_tensor
+        if x.ndim == 2:
+            if x.shape[-1] == self.sentence_dim:
+                return x
+            x = x.unsqueeze(0)                # [N, D] -> [1, N, D]
+        if x.ndim != 3:
+            return None
+        # Take the root S-space_role slot (row 0) per batch row.
+        rooted = x[:, 0, :]                   # [B, D]
+        cur = rooted.shape[-1]
+        if cur == self.sentence_dim:
+            return rooted
+        if cur > self.sentence_dim:
+            return rooted[:, :self.sentence_dim]
+        return F.pad(rooted, (0, self.sentence_dim - cur))
+
+    # -- prediction ---------------------------------------------------
+    def _predictor_input(self):
+        """Concatenate ``[s_history | e_history]`` per row.
+
+        Returns ``[B, (p + q) * sentence_dim]``.  Empty slots in
+        either ring are already zero-padded by ``ensure_batch`` /
+        ``Reset``, so the predictor always sees a stable shape on
+        cold-start.
+        """
+        s_flat = self._s_history.reshape(self._batch, -1)  # [B, p*D]
+        if self.q > 0:
+            e_flat = self._e_history.reshape(self._batch, -1)  # [B, q*D]
+            return torch.cat([s_flat, e_flat], dim=-1)
+        return s_flat
+
+    @torch.compiler.disable
+    def predict_next(self, b=None):
+        """Predict the next sentence rep without committing to history.
+
+        Returns ``[sentence_dim]`` for B=1 or with explicit ``b``;
+        otherwise returns ``[B, sentence_dim]`` stacked across rows.
+        Rows whose history is empty still get a (zero-input)
+        prediction, so the call always produces a tensor of stable
+        shape — callers gate on ``_s_count`` if they need to
+        distinguish cold-start from a real prediction.
+        """
+        if not self.expectation_enabled or self.predictor is None:
+            return None
+        x = self._predictor_input().detach()
+        out = self.predictor(x)                          # [B, sentence_dim]
+        if b is not None:
+            return out[int(b)]
+        if self._batch == 1:
+            return out[0]
+        return out
+
+    # -- observe (push + compute loss) --------------------------------
+    @torch.compiler.disable
+    def observe(self, s_tensor, mask=None):
+        """Capture sentence rep ``s_t``, compute the ARMA MSE loss,
+        and update the AR/MA rings.
+
+        Returns the per-batch mean MSE between ``s_hat_t`` (predicted
+        from history) and ``s_t``.  Returns ``None`` when no row has
+        a primed predictor (all-empty ``_s_count``) — the first
+        sentence per row has no AR signal to score against, but its
+        rep still goes into ``_s_history`` so subsequent observes
+        can predict.
+
+        ``mask`` is an optional ``[B] bool`` selecting which rows
+        ended a sentence this step (defaults to all True).
+        """
+        if not self.expectation_enabled:
+            return None
+        pooled = self._pool_sentence_rep(s_tensor)
+        if pooled is None:
+            return None
+        B = pooled.shape[0]
+        if B != self._batch:
+            self.ensure_batch(B)
+        s_hat = self.predict_next()
+        if s_hat is None:
+            return None
+        if s_hat.ndim == 1:
+            s_hat = s_hat.unsqueeze(0).expand(B, -1)
+        # Only score rows whose history was primed. Fully masked: no
+        # ``bool(primed.any())`` host gate and no boolean-mask indexing
+        # ``s_hat[primed]`` (both force a cudaMemcpyDtoH). Zero the
+        # non-primed rows, divide by the primed count. Equivalent to
+        # the old ``diff[primed].pow(2).mean()`` when >=1 row is primed;
+        # on an all-cold-start batch this returns a 0.0 tensor instead
+        # of ``None`` -- training-neutral (the diff is exactly zero so
+        # the term carries no gradient), it just logs ``arma=0`` rather
+        # than skipping the log. Contract change recorded in the
+        # discourse tests.
+        primed = self._s_count > 0                        # [B] bool
+        if mask is not None:
+            primed = primed & mask.to(primed.device)
+        pm = primed.to(s_hat.dtype).unsqueeze(-1)         # [B, 1]
+        diff = (s_hat - pooled.detach()) * pm             # [B, D]
+        n_primed = primed.sum().clamp(min=1).to(diff.dtype)
+        loss = diff.pow(2).sum() / (n_primed * s_hat.shape[-1])
+        registry = getattr(self, '_arma_errors', None)
+        if registry is None:
+            registry = self._arma_errors = Error()
+        registry.squared('arma', s_hat, pooled.detach(), mask=primed, category='expectation')
+        # Update rings -- VECTORIZED. The prior per-row Python loop +
+        # ``_push_row`` issued ``_s_count[b].item()`` /
+        # ``bool(active[b])`` per row: B host syncs per call, the
+        # dominant ``cudaMemcpyDtoH`` source (attribution probe on
+        # metalbaby: 192/224 recorded syncs). This is numerically
+        # identical -- same fill-then-shift layout, same per-row
+        # gating -- expressed as masked tensor ops so no GPU->host
+        # round-trip occurs. (Loss block above is untouched.)
+        residual = (pooled - s_hat).detach()
+        active = (mask if mask is not None
+                  else torch.ones(B, dtype=torch.bool, device=pooled.device))
+        s_all = pooled.detach()                              # [B, D]
+        Bv, D = s_all.shape
+
+        def _ring_push(hist, count, cap, new_rows):
+            # hist [B, cap, D]; count [B] long (pre-push); cap int;
+            # new_rows [B, D]. Mirrors ``_push_row``: rows in the
+            # fill phase (count < cap) scatter the new row into slot
+            # ``cap-count-1`` and increment; rows at capacity roll
+            # left (newest at the tail); inactive rows untouched.
+            cnt = count
+            fill = active & (cnt < cap)                      # [B] bool
+            shift = active & (cnt >= cap)                    # [B] bool
+            rolled = torch.roll(hist, shifts=-1, dims=1).clone()
+            rolled[:, -1, :] = new_rows
+            idx = (cap - cnt - 1).clamp(0, cap - 1)          # [B] long
+            scattered = hist.clone()
+            scattered.scatter_(
+                1, idx.view(Bv, 1, 1).expand(Bv, 1, D),
+                new_rows.unsqueeze(1))
+            new_hist = torch.where(
+                shift.view(Bv, 1, 1), rolled,
+                torch.where(fill.view(Bv, 1, 1), scattered, hist))
+            new_count = cnt + fill.to(cnt.dtype)
+            return new_hist, new_count
+
+        self._s_history, self._s_count = _ring_push(
+            self._s_history, self._s_count, self.p, s_all)
+        if self.q > 0:
+            self._e_history, self._e_count = _ring_push(
+                self._e_history, self._e_count, self.q, residual)
+        return loss
+
+    # -- LTM: long-term memory chain of STM end-states (Task 7) --------
+    @contextmanager
+    def suspend_external_observations(self):
+        """Provision memory without observing it as a corpus continuation.
+
+        Provisioning may temporarily reshape the batch while parsing truths.
+        Keep every external row's context, pending credit and scored loss;
+        durable store writes still run through their existing owner.
+        """
+        names = (
+            "_batch", "_s_history", "_s_count", "_e_history", "_e_count",
+            "_staged_prediction", "_stm_end_states", "_inter_context",
+            "_inter_context_occurrences", "_expectation_policy_outcomes", "_expectation_walk_outcomes",
+            "_inter_last_pred_root", "_inter_last_meaning",
+            "_last_expectation_comparisons",
+            "_expectation_documents", "_inter_loss_accum", "_inter_loss_count",
+            "_inter_contrastive_accum", "_inter_contrastive_count",
+            "_external_observations_suspended")
+        saved = {name: getattr(self, name) for name in names}
+        self._external_observations_suspended = True
+        self._expectation_policy_outcomes = []
+        self._expectation_walk_outcomes = []
+        self._batch = 0
+        self.ensure_batch(saved["_batch"])
+        self._staged_prediction = None
+        self._inter_loss_accum = self._inter_contrastive_accum = None
+        self._inter_loss_count = self._inter_contrastive_count = 0
+        try:
+            yield
+        finally:
+            for name, value in saved.items():
+                setattr(self, name, value)
+
+    def begin_document(self, b, document):
+        """Switch one prediction stream; retain durable memory and scored loss.
+
+        A document address is an equality key only. It never enters the
+        predictor as a numerical feature. Unrelated rows are untouched.
+        """
+        b = int(b)
+        if self._expectation_documents[b] == document:
+            return
+        self._expectation_documents[b] = document
+        if self.expectation_enabled:
+            self._expectation_stats["document_starts"] += 1
+        self._last_expectation_comparisons[b] = None
+        self._inter_context[b].clear()
+        self._inter_context_occurrences[b].clear()
+        self._inter_last_pred_root[b] = None
+        self._inter_last_meaning[b] = None
+        self._s_history[b].zero_()
+        self._e_history[b].zero_()
+        self._s_count[b] = 0
+        self._e_count[b] = 0
+
+    def _prepare_expectation_documents(self, documents, mask, batch):
+        self.ensure_batch(batch)
+        if documents is None:
+            return
+        if len(documents) != batch:
+            raise ValueError("one document address is required per batch row")
+        for b, document in enumerate(documents):
+            if mask is None or bool(mask[b]):
+                self.begin_document(b, document)
+
+    def _canonical_meaning(self, payload, depth, layout, role_mask=None):
+        """Adapt an explicit STM or infix layout; no inferred role permutation."""
+        return canonical_role_payload(payload, depth, layout, role_mask,
+                                      concept_dim=self.concept_dim)
+
+    @torch.compiler.disable
+    def expect_next_meaning(self, b=0, *, record=True, work=None,
+                            frames=(), frame_occurrences=(), policy=(), policy_work=0, refresh=False,
+                            reference_frames=()):
+        """Return the complete prior estimate, or None at a cold boundary.
+
+        Reading an already staged estimate does not replace it. ``refresh``
+        is reserved for the explicit prior-only query phase, before input.
+        Source occurrences and optional retrieved frames are its only context.
+        """
+        if self._external_observations_suspended or not self.expectation_enabled:
+            return None
+        if self.expectation_scope != "structured":
+            raise RuntimeError("complete meanings require structured prediction")
+        b = int(b)
+        pending = self._inter_last_meaning[b]
+        if not refresh and isinstance(pending, _PendingMeaningExpectation):
+            return pending.prediction
+        if work is not None:
+            work.require("record", len(self._inter_context[b]))
+        chain = list(self._inter_context[b])
+        occurrences = list(self._inter_context_occurrences[b])
+        if len(occurrences) != len(chain):
+            raise RuntimeError("expectation context occurrence view is out of sync")
+        if not chain or self._inter_predictor is None:
+            if record:
+                self._inter_last_meaning[b] = None
+            return None
+        parameter = next(self._inter_predictor.parameters())
+        zero = parameter.new_zeros(3, self.concept_dim)
+        empty = torch.zeros(3, dtype=torch.bool, device=parameter.device)
+        # Queried frames are detached extra prior context, never observations.
+        # Preserve the latest actual meaning; retrieved frames occupy older
+        # context positions on the same bounded predictor, with no new head.
+        query_context = [(int(m.role_mask.sum()), m.roles.detach(), m.role_mask)
+                         for m in tuple(frames)[:self._inter_chain_window - 1]]
+        if query_context:
+            chain = (chain[:-1] + query_context + chain[-1:])[-self._inter_chain_window:]
+        pad = self._inter_chain_window - len(chain)
+        roles = [zero] * pad + [p.to(parameter) for _, p, _ in chain]
+        masks = [empty] * pad + [m.to(parameter.device) for _, _, m in chain]
+        inputs = (torch.stack(roles)[None], torch.stack(masks)[None])
+        values, logits, kind_logits = self._inter_predictor(*inputs)
+        if not bool(torch.isfinite(values).all() and torch.isfinite(logits).all()
+                    and torch.isfinite(kind_logits).all()):
+            raise FloatingPointError("non-finite structured sentence prediction")
+        # Metadata comes only from an already retained source occurrence.
+        # The arriving target's bindings/scope are not an input to this call.
+        bindings, scope = (), ()
+        if self._ltm_store is not None and occurrences and occurrences[-1] is not None:
+            reference = occurrences[-1]
+            index = self._ltm_store._index_occurrences.get(reference)
+            source = None if index is None else self._ltm_store.meaning_of(index)
+            if source is not None:
+                bindings, scope = source.bindings, source.scope
+        prediction = MeaningExpectation(values[0], logits[0], bindings, scope, kind_logits[0])
+        if record:
+            document = self._expectation_documents[b]
+            self._inter_last_meaning[b] = _PendingMeaningExpectation(
+                prediction,
+                tuple(dict.fromkeys(reference for reference in (*occurrences, *frame_occurrences)
+                                    if reference is not None)),
+                ("external", document), document, inputs,
+                tuple(p._version for p in self._inter_predictor.parameters()),
+                tuple(policy), int(policy_work), tuple(reference_frames))
+        return prediction
+
+    def _observe_meanings(self, depths, payloads, tetralemmas, mask,
+                          layout, role_masks, train_prediction=True, sentence_kinds=None):
+        for b, payload in enumerate(payloads):
+            if mask is not None and not bool(mask[b]):
+                continue
+            if payload is None or int(depths[b]) == 0:
+                continue
+            roles, occupied = self._canonical_meaning(
+                payload, depths[b], layout,
+                None if role_masks is None else role_masks[b])
+            if not bool(occupied.any()):
+                continue
+            if not self.expectation_enabled:
+                if self._ltm_store is None:
+                    trust = None if tetralemmas is None else tetralemmas[b]
+                    self._stm_end_states[b].append(
+                        (int(occupied.sum()), roles.detach().clone(), trust))
+                continue
+            pending = self._inter_last_meaning[b]
+            if isinstance(pending, _PendingMeaningExpectation) and pending.walk is not None:
+                from WalkTrials import select_forecast
+                pending = select_forecast(pending, roles, occupied,
+                    None if sentence_kinds is None else sentence_kinds[b])
+            if isinstance(pending, _PendingMeaningExpectation) and pending.comparison is not None:
+                self._expectation_walk_outcomes.append((b, pending.comparison))
+            prediction = (pending.prediction
+                          if isinstance(pending, _PendingMeaningExpectation)
+                          else pending)
+            self._expectation_stats["observations"] += 1
+            if prediction is None:
+                self._expectation_stats["cold_starts"] += 1
+            if prediction is not None:
+                target = roles.detach().to(prediction.roles)
+                target_mask = occupied.to(prediction.roles.device)
+                squared = (prediction.roles - target).square()
+                mse = squared.mean()
+                presence = F.binary_cross_entropy_with_logits(
+                    prediction.presence_logits, target_mask.to(prediction.roles.dtype))
+                kind = None if sentence_kinds is None else sentence_kinds[b]
+                kind_loss = self._kind_loss(prediction.kind_logit, kind, mse)
+                if not bool(torch.isfinite(mse) and torch.isfinite(presence)
+                            and torch.isfinite(kind_loss)):
+                    raise FloatingPointError("non-finite structured prediction loss")
+                self._expectation_stats["predicted_targets"] += 1
+                self._expectation_stats["feature_sum"] += float(mse.detach())
+                self._expectation_stats["presence_sum"] += float(presence.detach())
+                if kind is not None:
+                    self._expectation_stats['kind_targets'] += 1
+                    self._expectation_stats['kind_sum'] += float(kind_loss.detach())
+                estimate = prediction.detached()
+                actual = target.detach().clone()
+                self._last_expectation_comparisons[b] = ExpectationComparison(
+                    estimate, actual, target_mask.detach().clone(),
+                    actual - estimate.roles,
+                    target_mask.to(actual.dtype) - estimate.presence_logits.sigmoid(),
+                    self._expectation_documents[b],
+                    (pending.source_occurrences
+                     if isinstance(pending, _PendingMeaningExpectation) else ()),
+                    (pending.stream
+                     if isinstance(pending, _PendingMeaningExpectation) else None), kind,
+                    None if kind is None or estimate.kind_logit is None else
+                    (float(kind == 'relation') - estimate.kind_logit.sigmoid()))
+                train_roles, train_logits = prediction.roles, prediction.presence_logits
+                train_kind = prediction.kind_logit
+                if (train_prediction and self.training and torch.is_grad_enabled()
+                        and (self._inter_loss_weight > 0 or self._inter_contrastive_weight > 0)):
+                    if (isinstance(pending, _PendingMeaningExpectation) and pending.inputs is not None
+                            and (not prediction.roles.requires_grad or pending.versions != tuple(
+                                p._version for p in self._inter_predictor.parameters()))):
+                        # A delayed estimate remains unchanged as evidence.
+                        # Both residual and contrastive objectives train the
+                        # current predictor from the frozen prior, never an
+                        # old parameter version's graph.
+                        replay, logits, kinds = self._inter_predictor(*(v.detach() for v in pending.inputs))
+                        train_roles, train_logits = replay[0], logits[0]
+                        train_kind = kinds[0]
+                if train_prediction and self.training and torch.is_grad_enabled() and self._inter_loss_weight > 0:
+                    step = (train_roles - target).square().mean() + F.binary_cross_entropy_with_logits(
+                        train_logits, target_mask.to(train_logits))
+                    step = step + self._kind_loss(train_kind, kind, step)
+                    self._inter_loss_accum = (step if self._inter_loss_accum is None
+                                              else self._inter_loss_accum + step)
+                    self._inter_loss_count += 1
+                    errors = self._inter_error_registry()
+                    errors.squared('roles', train_roles, target, category='expectation')
+                    errors.binary('presence', train_logits, target_mask.to(train_logits), category='expectation')
+                    if kind is not None:
+                        errors.binary('kind', train_kind, train_kind.new_tensor(float(kind == 'relation')),
+                                      category='expectation')
+                if (isinstance(pending, _PendingMeaningExpectation) and pending.policy
+                        and self.training and torch.is_grad_enabled()):
+                    self._expectation_policy_outcomes.append((
+                        pending.policy, -float((mse + presence + kind_loss).detach()), pending.work))
+                if train_prediction and self._inter_contrastive_weight > 0:
+                    self._accumulate_inter_contrastive(
+                        train_roles.flatten(), target.flatten(),
+                        [p.detach().to(target).flatten() for _, p, _ in self._inter_context[b]])
+            context = roles.clone()
+            if (not train_prediction or not self.training or not torch.is_grad_enabled()
+                    or (self._inter_loss_weight <= 0 and self._inter_contrastive_weight <= 0)):
+                context = context.detach()
+            depth = int(occupied.sum())
+            self._inter_context[b].append((depth, context, occupied.detach().clone()))
+            self._inter_context_occurrences[b].append(None)
+            self._inter_last_meaning[b] = None
+            self._inter_last_pred_root[b] = None
+            if self._ltm_store is None:
+                trust = None if tetralemmas is None else tetralemmas[b]
+                self._stm_end_states[b].append((depth, roles.detach().clone(), trust))
+
+    @staticmethod
+    def _kind_loss(logit, kind, like):
+        if kind not in (None, 'idea', 'relation'):
+            raise ValueError('sentence kind must come from the selected grammar')
+        if kind is None:
+            return like.new_zeros(())
+        if logit is None:
+            raise ValueError('grammatical kind requires a prediction logit')
+        return F.binary_cross_entropy_with_logits(logit, logit.new_tensor(float(kind == 'relation')))
+
+    @torch.compiler.disable
+    def bind_observation_occurrence(self, b, occurrence):
+        """Attach the just-written external LTM row to this stream's view.
+
+        This is deliberately a post-observation host boundary.  The predictor
+        saw only the prior view; the newly assigned occurrence can become
+        provenance for a *later* estimate, never an input to the estimate it
+        just supervised.
+        """
+        b = int(b)
+        if not 0 <= b < len(self._inter_context):
+            raise IndexError("expectation stream row is unavailable")
+        if (not isinstance(occurrence, tuple) or len(occurrence) != 3
+                or occurrence[0] != "ltm" or not isinstance(occurrence[1], str)
+                or type(occurrence[2]) is not int or occurrence[2] < 0):
+            raise ValueError("observation occurrence must be a typed LTM reference")
+        context = self._inter_context[b]
+        occurrences = self._inter_context_occurrences[b]
+        if len(context) != len(occurrences):
+            raise RuntimeError("expectation context occurrence view is out of sync")
+        if not occurrences:
+            raise ValueError("no external observation is awaiting an occurrence")
+        if occurrences[-1] is not None:
+            raise ValueError("external observation occurrence is already bound")
+        occurrences[-1] = occurrence
+        store = self._ltm_store
+        index = None if store is None else store._index_occurrences.get(occurrence)
+        if index is not None and int(store.row_ids[index]) > 0:
+            from ReferenceContext import SituationFrame
+            depth, roles, occupied = context[-1]
+            point = store.slots[index, 0] if int(store.rel_type[index]) == store.REL_NONE else None
+            context[-1] = SituationFrame(depth, roles, occupied, int(store.row_ids[index]),
+                                         None if point is None else point.detach().clone())
+
+    def situation_references(self, b=0):
+        """Only the bounded frames the predictor already holds; no LTM read."""
+        from ReferenceContext import SituationFrame
+        pending = self._inter_last_meaning[int(b)]
+        retrieved = () if pending is None else pending.frames
+        frames = [value for value in (*self._inter_context[int(b)], *retrieved)
+                  if isinstance(value, SituationFrame)]
+        return tuple(frames[-self._inter_chain_window:])
+
+    def migrate_expectation_checkpoint(self, state_dict, prefix=""):
+        """Declare root-to-structured migration without guessing shared weights.
+
+        The root predictor has different input/target semantics and parameter
+        shapes. Retain the newly constructed structured head, discard only the
+        retired head's keys, and leave every other weight intact. The model's
+        optimizer name manifest likewise starts the new head without old moments.
+        """
+        word=prefix+'word_predictor.'
+        if (prefix+'predictor.0.weight' in state_dict
+                and not any(name.startswith(word) for name in state_dict)):
+            for name,value in self.word_predictor.state_dict().items():
+                state_dict[word+name]=value.detach().clone()
+        head = prefix + "_inter_predictor."
+        if (self.expectation_scope != "structured"
+                or not any(k.startswith(head + "pi.") for k in state_dict)):
+            return False
+        for key in [k for k in state_dict if k.startswith(head)]:
+            del state_dict[key]
+        for name, value in self._inter_predictor.state_dict().items():
+            state_dict[head + name] = value.detach().clone()
+        warnings.warn("root sentence predictor migrated to a fresh structured head", UserWarning)
+        return True
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        # Retired comprehension projection: no replacement parameter or owner.
+        for key in tuple(state_dict):
+            if key.startswith(prefix + "cast."):
+                del state_dict[key]
+        # Model restoration is a new external-observation stream. Durable
+        # records are owned separately; neither those nor provisioned facts
+        # are eligible predecessors for this transient prediction context.
+        for chain in self._inter_context:
+            chain.clear()
+        for chain in self._inter_context_occurrences:
+            chain.clear()
+        self._expectation_documents = [None] * self._batch
+        self._last_expectation_comparisons = [None] * self._batch
+        self.reset_expectation_metrics()
+        self._inter_last_meaning = [None] * self._batch
+        self._inter_last_pred_root = [None] * self._batch
+        self._expectation_policy_outcomes = []
+        self._expectation_walk_outcomes = []
+        self._inter_loss_accum = self._inter_contrastive_accum = None
+        self._inter_loss_count = self._inter_contrastive_count = 0
+        self._s_history.zero_()
+        self._e_history.zero_()
+        self._s_count.zero_()
+        self._e_count.zero_()
+        self.migrate_expectation_checkpoint(state_dict, prefix)
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                     missing_keys, unexpected_keys, error_msgs)
+
+    @torch.compiler.disable
+    def observe_stm_end_state(
+            self, depths, payloads, tetralemmas=None, mask=None, *,
+            documents=None, layout="stm", role_masks=None, train_prediction=True,
+            sentence_kinds=None):
+        """Append one STM end-state PER ROW to the LTM chain.
+
+        Called from the sentence-boundary hook AFTER the reduce /
+        relative-preserve step has decided each row's end-state. EVERY
+        sentence's end state supplies the inter-sentence predictor. External
+        provenance supplies trust; grammar supplies the field's structure.
+
+        Args:
+          depths: ``[B]`` ints/long tensor (or python sequence) — the
+            end-state depth for each row (1 for an absolute sentence, 3
+            for a relative ``[predicate, idea1, idea2]`` end-state).
+          payloads: ragged list of length ``B``; ``payloads[b]`` is the
+            ``[depth_b, D]`` tensor of the end-state slots for row ``b``
+            (since depths differ per row a ragged list is natural, not a
+            single padded tensor).
+          tetralemmas: OPTIONAL list (length ``B``) / ``None``. The per-row
+            scalar trust to store with the end-state; ``None`` (the default)
+            parks ``None`` in every row's trust slot.
+
+        Stored per row as a time-ordered tuple
+        ``(depth:int, payload:[depth,D] tensor, trust:float|None)``.
+        Bounded at ``ltm_capacity`` (deque ``maxlen``): the oldest
+        end-state is evicted once the chain is full.
+
+        Fail-loud: a non-finite (NaN/Inf) payload RAISES — a corrupt
+        end-state must never be silently stored (user memory:
+        "fail loud on numerical divergence").
+        """
+        if self._external_observations_suspended or depths is None or payloads is None:
+            return
+        self._prepare_expectation_documents(documents, mask, len(payloads))
+        if self.expectation_scope == "structured":
+            return self._observe_meanings(
+                depths, payloads, tetralemmas, mask, layout, role_masks, train_prediction,
+                sentence_kinds)
+        # Normalise ``depths`` to a python list of ints without forcing
+        # a per-row host sync inside any captured region (this method is
+        # ``@torch.compiler.disable``'d and boundary-only, so a single
+        # ``.tolist()`` host hop here is fine).
+        if isinstance(depths, torch.Tensor):
+            depth_list = [int(d) for d in depths.detach().reshape(-1).tolist()]
+        else:
+            depth_list = [int(d) for d in depths]
+        B = len(payloads)
+        if mask is None:
+            active_rows = [True] * B
+        elif isinstance(mask, torch.Tensor):
+            active_rows = [
+                bool(value)
+                for value in mask.detach().reshape(-1).to("cpu").tolist()]
+        else:
+            active_rows = [bool(value) for value in mask]
+        if len(self._stm_end_states) != B:
+            # The chain list lags an un-cascaded batch reshape; grow /
+            # shrink to match this boundary's row count. (ensure_batch
+            # normally keeps these in lockstep; this is defensive.)
+            self.ensure_batch(B)
+        for b in range(B):
+            if b >= len(active_rows) or not active_rows[b]:
+                continue
+            payload = payloads[b]
+            depth = depth_list[b] if b < len(depth_list) else (
+                int(payload.shape[0]) if payload is not None else 0)
+            if payload is not None:
+                if not torch.isfinite(payload).all():
+                    raise FloatingPointError(
+                        "BracketExpectation.observe_stm_end_state: row "
+                        f"{b} STM end-state payload contains NaN/Inf "
+                        "(depth={}, shape={}). Refusing to store a "
+                        "corrupt end-state in the LTM chain."
+                        .format(depth, tuple(payload.shape)))
+                # L_inter (Task 8, plan §9): if a prediction was made for
+                # THIS row's end-state (``predict_next_end_state`` stashed a
+                # live predicted root on ``_inter_last_pred_root[b]``), score
+                # it against the end-state that actually arrived. Compare the
+                # predicted ROOT against the actual end-state's ROOT (the
+                # OLDEST slot under newest-at-slot-0, via
+                # ``_reduce_end_state_to_root``; reduced to the predictor
+                # width) — this is robust to a depth mismatch between
+                # prediction and reality (the plan's "when depths differ,
+                # compare roots"). The actual root is DETACHED
+                # so this comparison cannot move its observed target. Live
+                # preceding context may train its encoder. Score before the
+                # payload's slot-0 is available; the target is detached
+                # regardless.
+                if (train_prediction and self._inter_predictor is not None
+                        and b < len(self._inter_last_pred_root)
+                        and self._inter_last_pred_root[b] is not None):
+                    pd = payload.detach()
+                    if (self._ltm_store is not None and pd.dim() == 2
+                            and pd.shape[0] >= 2):
+                        # Consolidated: the incoming payload is STM-order
+                        # [idea2, idea1, predicate] (newest-at-slot-0); the AR
+                        # root is idea1 (slot depth-2). Wrap as [1, D] so
+                        # _reduce (consolidated -> slot 0) returns it, matching
+                        # the infix slot-0 root in _inter_context (so source
+                        # and actual roots agree).
+                        actual_root = self._reduce_end_state_to_root(
+                            pd[pd.shape[0] - 2].unsqueeze(0))
+                    else:
+                        actual_root = self._reduce_end_state_to_root(pd)
+                    pred_root = self._inter_last_pred_root[b]
+                    if actual_root is not None:
+                        actual_root = actual_root.to(
+                            device=pred_root.device, dtype=pred_root.dtype)
+                        self._accumulate_inter_loss(pred_root, actual_root)
+                        # InfoNCE: rank the actual next root above the chain's
+                        # PAST roots (negatives) under cosine(pred, .). Best-
+                        # effort -- a short/odd chain just yields fewer
+                        # negatives (the accumulator no-ops with none; the MSE
+                        # term above still runs). Gated by the contrastive weight.
+                        if float(getattr(self, "_inter_contrastive_weight",
+                                         0.0)) > 0.0:
+                            negs = []
+                            try:
+                                for (_d, _pl, _t) in self._inter_context[b]:
+                                    _rt = self._reduce_end_state_to_root(_pl)
+                                    if _rt is not None and torch.is_tensor(_rt):
+                                        negs.append(_rt.detach().to(
+                                            device=pred_root.device,
+                                            dtype=pred_root.dtype))
+                            except Exception:
+                                negs = []
+                            self._accumulate_inter_contrastive(
+                                pred_root, actual_root.detach(), negs)
+                context = payload.clone()
+                if self._ltm_store is not None and context.dim() == 2 and depth >= 3:
+                    context = torch.stack(
+                        (context[depth - 2], context[depth - 1], context[0]))
+                if (not train_prediction or not self.training or not torch.is_grad_enabled()
+                        or (self._inter_loss_weight <= 0
+                            and self._inter_contrastive_weight <= 0)):
+                    context = context.detach()
+                self._inter_context[b].append((int(depth), context, None))
+                self._inter_context_occurrences[b].append(None)
+                # Detach + clone so the stored end-state is a stable
+                # snapshot decoupled from the live STM buffer (which the
+                # next sentence overwrites in place) and carries no
+                # autograd history into the host-side ring.
+                payload = payload.detach().clone()
+            # The pending prediction for this row has now been scored (or
+            # there was none); clear it so a row that observes WITHOUT a
+            # fresh predict_next_end_state isn't double-counted next time.
+            if b < len(self._inter_last_pred_root):
+                self._inter_last_pred_root[b] = None
+            tet = None
+            if tetralemmas is not None and b < len(tetralemmas):
+                tet = tetralemmas[b]
+            # The host appends consolidated durable observations once to
+            # ltm_store. Skip the duplicate durable deque; the prediction
+            # cycle above uses its scoped, transient observation view.
+            if self._ltm_store is None:
+                self._stm_end_states[b].append((int(depth), payload, tet))
+
+    @torch.compiler.disable
+    def predict_and_observe_stm_end_state(
+            self, depths, payloads, tetralemmas=None, mask=None, *,
+            documents=None, layout="stm", role_masks=None, sentence_kinds=None):
+        """Stage the next-end-state prediction THEN observe the arriving
+        end-state, in one call — the foolproof AR ordering for the TRAINING
+        sentence-boundary hook.
+
+        The two-call staging protocol (``predict_next_end_state`` then
+        ``observe_stm_end_state``) is correct but easy to get wrong: the
+        training boundary hook historically called only ``observe`` and so
+        never staged a prediction, leaving ``L_inter`` permanently empty (the
+        inter-predictor never trained). This method makes the order
+        impossible to get wrong by composing the two existing pieces.
+
+        AR order (the WHOLE point): for EVERY batch row, run
+        ``predict_next_end_state(b)`` FIRST — predicting from the chain state
+        BEFORE this boundary's end-state is appended, so the prediction is
+        genuinely "the next end-state from history". THEN call
+        ``observe_stm_end_state`` once for the whole batch — which scores each
+        row's just-staged prediction against the end-state that actually
+        arrived (accumulating ``L_inter``) and only then appends it to the
+        chain. No double-append, no double-score: prediction reads the old
+        chain, observation supervises against the new end-state and grows the
+        chain by exactly one per row.
+
+        Args / semantics are identical to ``observe_stm_end_state`` (see its
+        docstring) — this is purely the correct ordering wrapper. Cold-start
+        safety is inherited unchanged: the first sentence predicts from an
+        empty chain (degenerate zeros root, ``_inter_last_pred_root[b]``
+        cleared to ``None``), so ``observe`` finds nothing pending to score
+        and just appends — exactly as the staged path degenerates today. When
+        there is no inter-predictor (``sentenceExpectation`` off / absolute-
+        only configs) ``predict_next_end_state`` returns ``None`` and stages
+        nothing, so this degenerates to a bare ``observe`` — byte-identical
+        to the pre-change boundary behaviour.
+        """
+        if self._external_observations_suspended or depths is None or payloads is None:
+            return
+        self._prepare_expectation_documents(documents, mask, len(payloads))
+        # Stage the next-end-state prediction for EVERY row from the chain
+        # state BEFORE the new end-states are appended (``observe`` below does
+        # the appends). ``predict_next_end_state`` records the live predicted
+        # root on ``_inter_last_pred_root[b]`` (or clears it on cold start /
+        # no predictor), which ``observe_stm_end_state`` then scores.
+        if self._inter_predictor is not None:
+            B = len(payloads)
+            if mask is None:
+                active_rows = [True] * B
+            elif isinstance(mask, torch.Tensor):
+                active_rows = [
+                    bool(value)
+                    for value in mask.detach().reshape(-1).to("cpu").tolist()]
+            else:
+                active_rows = [bool(value) for value in mask]
+            for b in range(B):
+                if b < len(active_rows) and active_rows[b]:
+                    self.predict_next_end_state(b)
+        # Score each staged prediction against the arriving end-state
+        # (accumulating ``L_inter``) and append to the chain. Reusing the
+        # existing method keeps the fail-loud / detach / ragged-payload /
+        # tetralemma handling identical and avoids any duplication.
+        self.observe_stm_end_state(
+            depths, payloads, tetralemmas=tetralemmas, mask=mask,
+            documents=documents, layout=layout, role_masks=role_masks,
+            sentence_kinds=sentence_kinds)
+
+    def get_stm_chain(self, n=None, b=0):
+        """Return the last ``n`` LTM end-states for row ``b``.
+
+        Args:
+          n: number of most-recent end-states to return; ``None`` (the
+            default) returns the entire chain for the row.
+          b: batch row index (default 0 — the test uses B=1 / row 0).
+
+        Returns a python ``list`` of time-ordered tuples (oldest first,
+        most-recent last), each ``(depth:int, payload:[depth,D] tensor,
+        trust:float|None)``. Returns ``[]`` for an out-of-range row
+        or an empty chain.
+
+        LTM consolidation FU3 (Change 2): when wired to the unified store
+        (``self._ltm_store is not None``) the chain is read from the GLOBAL
+        ``TernaryTruthStore`` recency window, NOT this layer's per-row deque.
+        The store is global (one recency window), so ``b`` is IGNORED -- this
+        is the correct semantics for B=1 / a single conversation; B>1 batched
+        training shares the one global recency window across rows.
+        Estimates are retained training targets, not external sequence
+        observations.  Exclude their tagged rows before taking the recency
+        window, so an estimate cannot become a future predictor input merely
+        because it shares the durable store with its observed counterpart.
+        The remaining rows are ordered by descending timestamp and then
+        reversed to OLDEST-FIRST time order before reconstructing each row as a
+        ``(depth, payload, tet)`` tuple matching the deque convention:
+          * occupied NP1 only -> ``(1, np1[None, :], trust)``;
+          * occupied NP1/VP -> ``(2, stack([np1, vp]), trust)``;
+          * an occupied NP2 -> ``(3, stack([np1, vp, np2]), trust)`` -- INFIX
+            ``[idea1, predicate, idea2]`` (the store's native ``[NP1, VP, NP2]``
+            order; idea1 may be present without a predicate, so it anchors the
+            triple). The consolidated ``_reduce_end_state_to_root`` reads slot
+            0 = idea1 (the subject / always-present anchor) as the AR root.
+        """
+        store = self._ltm_store
+        if store is not None:
+            total = len(store)
+            if total == 0:
+                return []
+            if n is not None and int(n) <= 0:
+                return []                            # match the deque path
+            estimate_kind = store.KINDS.index("estimate")
+            eligible = (store.record_kind[:total] != estimate_kind)
+            idxs = torch.arange(
+                total, device=store.timestamp.device, dtype=torch.long)[eligible]
+            if not idxs.numel():
+                return []
+            # Select from the full non-estimate history: asking for the last
+            # two external states must not return fewer merely because a newer
+            # retained forecast lies between them.
+            order = torch.argsort(store.timestamp[idxs], descending=True)
+            idxs = idxs[order]
+            if n is not None:
+                idxs = idxs[:int(n)]
+            idx_list = list(reversed([int(i) for i in idxs.tolist()]))
+            out = []
+            for i in idx_list:
+                occupied = store.role_mask[i].nonzero(as_tuple=True)[0]
+                if not occupied.numel():
+                    continue
+                depth = int(occupied[-1]) + 1
+                payload = store.slots[i, :depth].clone()
+                out.append((depth, payload, float(store.trust[i])))
+            return out
+        bi = int(b)
+        if bi < 0 or bi >= len(self._stm_end_states):
+            return []
+        chain = self._stm_end_states[bi]
+        if n is None:
+            return list(chain)
+        n = int(n)
+        if n <= 0:
+            return []
+        if n >= len(chain):
+            return list(chain)
+        # Last ``n``, preserving time order.
+        return list(chain)[-n:]
+
+    # -- inter-sentence next-end-state prediction (Task 8, plan §9) -----
+    def _reduce_end_state_to_root(self, payload):
+        """Reduce one (ragged-depth) end-state payload ``[depth, D]`` to a
+        single representative ``[D]`` vector: its ROOT.
+
+        The chain's payloads are ragged (depth 1 for an absolute end-state,
+        depth 3 for a relative ``[predicate, idea1, idea2]`` end-state). To
+        feed a FIXED-width ``[1, K, D]`` context into the predictor we
+        collapse each end-state to ONE vector.
+
+        Newest-at-slot-0 convention: the STM end-state is stored
+        newest-first, so the root/predicate lives at the OLDEST slot
+        (index ``depth-1``), NOT slot 0. We take that last slot — for an
+        absolute end-state (depth 1) it is slot 0 (the collapsed idea), and
+        for a relative end-state (depth 3) it is slot 2, the predicate (the
+        head the relative structure hangs off). This recovers the SAME root
+        vector the old oldest-first ``x[0]`` read returned. (Documented
+        reduction; mean-over-depth is the obvious alternative but the root
+        carries the sentence-level signal.)
+
+        Right-pads / left-truncates to ``concept_dim`` so a chain payload
+        whose D differs from the predictor's width stays well-defined.
+        """
+        if payload is None:
+            return None
+        x = payload
+        if x.dim() == 1:
+            root = x
+        elif x.dim() == 2 and x.shape[0] >= 1:
+            if self._ltm_store is not None:
+                # Consolidated / INFIX payloads [idea1, predicate, idea2]: the
+                # AR root is idea1 (slot 0) -- the subject/topic, present even
+                # when there is no predicate (Alec 2026-06-18, infix order).
+                root = x[0]
+            else:
+                root = x[x.shape[0] - 1]             # legacy newest-at-slot-0: oldest slot
+        else:
+            return None
+        D = int(self._inter_predictor.concept_dim)
+        cur = int(root.shape[-1])
+        if cur == D:
+            return root
+        if cur > D:
+            return root[:D]
+        return F.pad(root, (0, D - cur))
+
+    @torch.compiler.disable
+    def predict_next_end_state(self, b=0):
+        """Predict the SHAPE of the next STM end-state from the LTM chain.
+
+        Returns ``(depth_hat:int, payload_hat:[depth_hat, D] tensor)`` where
+        ``depth_hat`` is the predicted depth of the next end-state and
+        ``payload_hat`` is the predicted end-state slots. Runs the
+        inter-level ``IntraSentenceLayer`` (``self._inter_predictor``) over
+        the chain's last-``K`` end-state ROOTS (``K`` = ``_inter_chain_window``)
+        to produce the predicted ROOT, then broadcasts that root across
+        ``depth_hat`` slots.
+
+        Mechanism:
+          * **Chain reduction** (ragged -> fixed): reduce each of the last
+            ``K`` end-states to its root (``_reduce_end_state_to_root`` —
+            the OLDEST slot under newest-at-slot-0)
+            to form a ``[1, K, D]`` context, LEFT-padding with zeros when the
+            chain is shorter than ``K`` (so the most-recent end-state is
+            always at the tail, mirroring the ARMA ring's newest-at-``-1``).
+          * **Root prediction**: ``self._inter_predictor.forward(context,
+            routing=None, parallel=False)`` -> ``[1, D]``, the predicted root
+            of the next end-state.
+          * **depth_hat**: a simple AR prior — the depth of the MOST RECENT
+            end-state in the chain (a relative sentence tends to be followed
+            by structure of the same shape; an absolute by an absolute). The
+            test only requires ``depth in {1, 3}`` + finite payload; this AR
+            prior delivers exactly that without a separate learned head.
+            (Documented: a tiny ``concept_dim -> 2`` argmax head is the
+            richer alternative; the AR prior is the agreed scaffold.)
+          * **payload_hat**: the predicted root broadcast across
+            ``depth_hat`` slots -> ``[depth_hat, D]``.
+
+        Cold start (empty chain): returns ``(1, zeros[1, D])`` — a
+        well-defined degenerate shape the caller can stage or ignore.
+
+        Records the predicted root on ``_inter_last_pred_root[b]`` so the
+        next ``observe_stm_end_state`` can score it (``L_inter``).
+
+        Fail-loud: a non-finite predicted root RAISES (user memory: fail
+        loud on numerical divergence).
+        """
+        if (self._external_observations_suspended or not self.expectation_enabled
+                or self._inter_predictor is None):
+            return None
+        if self.expectation_scope == "structured":
+            prediction = self.expect_next_meaning(b)
+            if prediction is None:
+                parameter = next(self._inter_predictor.parameters())
+                return 1, parameter.new_zeros(1, self.concept_dim)
+            # Legacy seed API expects contiguous STM slots. The full
+            # estimate and its learned occupancy remain in MeaningExpectation.
+            occupied = prediction.presence_logits >= 0
+            depth = max(1, int(torch.nonzero(occupied).max()) + 1) if bool(occupied.any()) else 1
+            roles = prediction.roles[:depth]
+            payload = roles[[2, 0, 1]] if depth == 3 else roles.flip(0)
+            return depth, payload
+        bi = int(b)
+        D = int(self._inter_predictor.concept_dim)
+        device = next(self._inter_predictor.parameters()).device
+        dtype = next(self._inter_predictor.parameters()).dtype
+        K = int(self._inter_chain_window)
+        chain = list(self._inter_context[bi])[-K:]
+        if not chain:
+            # Cold start: no AR signal yet. Degenerate (1, zeros[1, D]).
+            self._inter_last_pred_root[bi] = None
+            zero_root = torch.zeros(D, device=device, dtype=dtype)
+            return 1, zero_root.unsqueeze(0)
+        # Reduce each end-state to its root and LEFT-pad to K so the
+        # most-recent sits at the tail (newest-at--1, like the ARMA ring).
+        roots = []
+        for (_depth, payload, _tet) in chain:
+            r = self._reduce_end_state_to_root(payload)
+            if r is None:
+                r = torch.zeros(D, device=device, dtype=dtype)
+            roots.append(r.to(device=device, dtype=dtype))
+        if len(roots) < K:
+            pad = [torch.zeros(D, device=device, dtype=dtype)
+                   for _ in range(K - len(roots))]
+            roots = pad + roots
+        context = torch.stack(roots, dim=0).unsqueeze(0)   # [1, K, D]
+        payload_root_hat = self._inter_predictor.forward(
+            context, routing=None, parallel=False)         # [1, D]
+        if not torch.isfinite(payload_root_hat).all():
+            raise FloatingPointError(
+                "BracketExpectation.predict_next_end_state: predicted "
+                "end-state root contains NaN/Inf. Refusing to emit a "
+                "corrupt prediction.")
+        root_vec = payload_root_hat.reshape(-1)[:D]         # [D]
+        # depth_hat: AR prior = depth of the most-recent end-state.
+        depth_hat = int(chain[-1][0])
+        if depth_hat <= 0:
+            depth_hat = 1
+        # Record the predicted root so the NEXT ``observe_stm_end_state``
+        # can score it (``L_inter``). When grad is enabled we keep the LIVE
+        # (grad-carrying) root tensor so the deferred MSE backprops into
+        # ``_inter_predictor``'s params; under no-grad (eval / generation)
+        # ``forward`` already produced a detached value, so this is just the
+        # prediction's value with no graph attached.
+        self._inter_last_pred_root[bi] = root_vec
+        payload_hat = root_vec.unsqueeze(0).expand(depth_hat, -1)
+        return depth_hat, payload_hat
+
+    def sentence_prediction_cost(self, depths, payloads, mask, *,
+                                 documents=None, layout="stm", role_masks=None, sentence_kinds=None, gain=1.):
+        """Preview one sentence per row without observing either candidate.
+
+        Only the pending predictions are scratch. Context, occurrences, LTM,
+        counters and policy outcomes are written once, when the winner arrives.
+        The returned pending records retain the estimate belonging to that trial.
+        """
+        before = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
+        like = next((p for p in payloads if p is not None), self._s_history)
+        errors, contrast_errors = Error(row_mask=mask), Error(row_mask=mask)
+        self._sentence_prediction_errors = (errors, contrast_errors)
+        self._sentence_comparison_errors = Error(row_mask=mask)
+        if self._external_observations_suspended or not self.expectation_enabled:
+            zero = like.new_zeros(len(payloads))
+            return zero, zero.clone(), before
+        self._prepare_expectation_documents(documents, mask, len(payloads))
+        before = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
+        costs, contrastive = [], []
+        try:
+            for b, payload in enumerate(payloads):
+                cost, contrast = like.new_zeros(()), like.new_zeros(())
+                if payload is not None and bool(mask[b]) and self._inter_predictor is not None:
+                    self.predict_next_end_state(b)
+                    negatives = []
+                    pred = target = None
+                    if self.expectation_scope == "structured":
+                        roles, occupied = self._canonical_meaning(
+                            payload, depths[b], layout,
+                            None if role_masks is None else role_masks[b])
+                        pending = self._inter_last_meaning[b]
+                        if isinstance(pending, _PendingMeaningExpectation) and pending.walk is not None:
+                            from WalkTrials import select_forecast
+                            pending = select_forecast(pending, roles, occupied,
+                                None if sentence_kinds is None else sentence_kinds[b])
+                            self._inter_last_meaning[b] = pending
+                        prediction = (pending.prediction if isinstance(
+                            pending, _PendingMeaningExpectation) else pending)
+                        if prediction is not None:
+                            pred, logits = prediction.roles, prediction.presence_logits
+                            kind_logit = prediction.kind_logit
+                            if (isinstance(pending, _PendingMeaningExpectation)
+                                    and pending.inputs is not None):
+                                # Equal-parameter trials still need separate
+                                # prediction graphs: the first backward frees
+                                # its graph before the second trial trains.
+                                # Replay only the stored prior inputs, keeping
+                                # the pending record and its estimate intact.
+                                replay, presence, kinds = self._inter_predictor(
+                                    *(v.detach() for v in pending.inputs))
+                                pred, logits = replay[0], presence[0]
+                                kind_logit = kinds[0]
+                            target = roles.detach().to(pred)
+                            cost = (pred - target).square().mean() + F.binary_cross_entropy_with_logits(
+                                logits, occupied.to(logits))
+                            cost = cost + self._kind_loss(kind_logit,
+                                None if sentence_kinds is None else sentence_kinds[b], cost)
+                            errors.squared('roles', pred, target, row=b, category='expectation')
+                            errors.binary('presence', logits, occupied.to(logits), row=b, category='expectation')
+                            kind = None if sentence_kinds is None else sentence_kinds[b]
+                            if kind is not None:
+                                errors.binary('kind', kind_logit, kind_logit.new_tensor(float(kind == 'relation')),
+                                              row=b, category='expectation')
+                            from SentenceCredit import expectation_terms
+                            expectation_terms(self._sentence_comparison_errors,
+                                pred, logits, kind_logit, target, occupied, kind, row=b, gain=gain)
+                            negatives = [p.detach().to(target).flatten()
+                                         for _, p, _ in self._inter_context[b]]
+                    else:
+                        pred = self._inter_last_pred_root[b]
+                        pd = payload.detach()
+                        if self._ltm_store is not None and pd.dim() == 2 and pd.shape[0] >= 2:
+                            pd = pd[pd.shape[0] - 2].unsqueeze(0)
+                        target = self._reduce_end_state_to_root(pd)
+                        if pred is not None and target is not None:
+                            target = target.to(pred)
+                            cost = F.mse_loss(pred, target)
+                            errors.squared('root', pred, target, row=b, category='expectation')
+                            negatives = [root.detach().to(pred) for _, p, _ in self._inter_context[b]
+                                         if (root := self._reduce_end_state_to_root(p)) is not None]
+                    if (self._inter_contrastive_weight > 0 and pred is not None
+                            and target is not None and negatives):
+                        q = F.normalize(pred.reshape(-1), dim=0)
+                        candidates = torch.stack([target.flatten()] + [n.flatten() for n in negatives])
+                        logits = (F.normalize(candidates, dim=-1) @ q) / self._inter_contrastive_temp
+                        contrast = F.cross_entropy(logits[None], logits.new_zeros(1, dtype=torch.long))
+                        contrast_errors.categorical('contrast', logits[None], logits.new_zeros(1, dtype=torch.long),
+                                                    row=b, category='expectation')
+                if not bool(torch.isfinite(cost) and torch.isfinite(contrast)):
+                    raise FloatingPointError('non-finite sentence prediction cost')
+                costs.append(cost)
+                contrastive.append(contrast)
+            pending = (list(self._inter_last_meaning), list(self._inter_last_pred_root))
+            relative = errors.total()
+            relative_contrast = contrast_errors.total()
+            return (torch.stack(costs) if relative is None else relative,
+                    torch.stack(contrastive) if relative_contrast is None else relative_contrast, pending)
+        finally:
+            self._inter_last_meaning, self._inter_last_pred_root = before
+
+    def _inter_error_registry(self):
+        registry = getattr(self, '_inter_errors', None)
+        if registry is None:
+            registry = Error()
+            self._inter_errors = registry
+        return registry
+
+    def _accumulate_inter_loss(self, pred_root, actual_root):
+        """Accumulate one sentence of ``L_inter = MSE(pred_root,
+        actual_root)`` into the live running sum, gated on grad-enabled +
+        positive weight (mirrors ``ConceptualSpace._accumulate_intra_loss``).
+
+        ``pred_root`` / ``actual_root``: ``[D]`` (or broadcastable) live
+        tensors. No-op when grad is disabled (eval) or the inter-loss weight
+        is non-positive — avoids eval-time graph growth and a wasted MSE
+        when the term is off.
+
+        Fail-loud: a non-finite step loss RAISES.
+        """
+        if not self.training or not torch.is_grad_enabled():
+            return
+        if float(self._inter_loss_weight) <= 0.0:
+            return
+        if pred_root is None or actual_root is None:
+            return
+        step_loss = F.mse_loss(pred_root, actual_root)
+        self._inter_error_registry().squared('root', pred_root, actual_root, category='expectation')
+        if not torch.isfinite(step_loss).all():
+            raise FloatingPointError(
+                "BracketExpectation._accumulate_inter_loss: L_inter step "
+                "is NaN/Inf. Refusing to accumulate a corrupt loss term.")
+        if self._inter_loss_accum is None:
+            self._inter_loss_accum = step_loss
+        else:
+            self._inter_loss_accum = self._inter_loss_accum + step_loss
+        self._inter_loss_count += 1
+
+    def consume_inter_loss(self):
+        """Return the per-sentence MEAN of the accumulated inter-sentence
+        prediction loss and RESET the accumulator.
+
+        Returns a live scalar tensor (mean over the scored sentences)
+        carrying grad to ``_inter_predictor`` and live source encodings,
+        or ``None`` when nothing was accumulated this batch (eval-time,
+        weight off, or no
+        sentence was both predicted-for and observed). Mirrors
+        ``ConceptualSpace.consume_intra_loss`` — ``runBatch`` consumes it
+        once, post-body / pre-backward, next to the ARMA + intra terms.
+        """
+        self.detach_prediction_context()
+        self._consumed_inter_errors = getattr(self, '_inter_errors', Error())
+        self._inter_errors = Error()
+        if self._inter_loss_accum is None:
+            self._inter_loss_count = 0
+            return None
+        mean_loss = self._inter_loss_accum / max(1, self._inter_loss_count)
+        self._inter_loss_accum = None
+        self._inter_loss_count = 0
+        return self._consumed_inter_errors.total()
+
+    def detach_prediction_context(self):
+        """End the current encoder graph without erasing observed context.
+
+        Loss tensors already returned/accumulated own their backward graph.
+        Future predictions read snapshots after the single optimizer step.
+        Pending predictions cannot carry credit across parameter versions.
+        """
+        for b, chain in enumerate(self._inter_context):
+            from ReferenceContext import SituationFrame
+            self._inter_context[b] = collections.deque(
+                (value.detached() if isinstance(value, SituationFrame) else
+                 (value[0], value[1].detach(), value[2]) for value in chain),
+                maxlen=self._inter_chain_window)
+        self._inter_last_pred_root = [None] * self._batch
+        self._inter_last_meaning = [
+            None if value is None else value.detached()
+            for value in self._inter_last_meaning]
+
+    def consume_expectation_walk_outcomes(self):
+        outcomes, self._expectation_walk_outcomes = self._expectation_walk_outcomes, []
+        return outcomes
+
+    def consume_expectation_policy_outcomes(self):
+        outcomes, self._expectation_policy_outcomes = self._expectation_policy_outcomes, []
+        return outcomes
+
+    def set_inter_loss_weight(self, weight):
+        """Set the inter-loss accumulation gate (read from the
+        ``sentenceExpectationLossWeight`` knob by the host at construction)."""
+        self._inter_loss_weight = float(weight)
+
+    def reset_expectation_metrics(self):
+        """Start a reporting interval without changing memory or training loss."""
+        self._expectation_stats = dict(
+            observations=0, cold_starts=0, predicted_targets=0,
+            document_starts=0, feature_sum=0., presence_sum=0., kind_targets=0, kind_sum=0.)
+
+    def expectation_metrics(self):
+        """Report detached local-role metrics in training and evaluation."""
+        stats = self._expectation_stats
+        pairs = stats["predicted_targets"]
+        return {
+            **{name: stats[name] for name in (
+                "observations", "cold_starts", "predicted_targets", "document_starts")},
+            "enabled": self.expectation_enabled, "scope": self.expectation_scope,
+            "feature_mse": stats["feature_sum"] / pairs if pairs else None,
+            "presence_bce": stats["presence_sum"] / pairs if pairs else None,
+            "kind_targets": stats['kind_targets'],
+            "kind_bce": stats['kind_sum'] / stats['kind_targets'] if stats['kind_targets'] else None,
+            "document_boundary_fraction": stats["document_starts"] / max(1, stats["observations"]),
+        }
+
+    def last_expectation_comparison(self, b=0):
+        """Read an owned copy so inspection cannot rewrite the original estimate."""
+        value = self._last_expectation_comparisons[int(b)]
+        if value is None:
+            return None
+        return ExpectationComparison(
+            value.estimate.detached(),
+            value.observed.clone(), value.occupied.clone(), value.residual.clone(),
+            value.presence_residual.clone(), value.document,
+            tuple(value.source_occurrences), value.stream, value.sentence_kind,
+            None if value.kind_residual is None else value.kind_residual.clone())
+
+    def set_expectation_enabled(self, enabled):
+        """Toggle expectation; retain durable observations and start fresh on enable."""
+        enabled = bool(enabled)
+        self.enabled_levels = tuple(level for level in ('word', 'sentence')
+            if (enabled if level == 'sentence' else level in self.enabled_levels))
+        if enabled == self.expectation_enabled:
+            return
+        self.expectation_enabled = enabled
+        self.detach_prediction_context()
+        self._inter_last_meaning = [None] * self._batch
+        self._expectation_policy_outcomes = []
+        self._expectation_walk_outcomes = []
+        for chain in self._inter_context:
+            chain.clear()
+        for chain in self._inter_context_occurrences:
+            chain.clear()
+        self._expectation_documents = [None] * self._batch
+        self._last_expectation_comparisons = [None] * self._batch
+        self._s_history.zero_()
+        self._e_history.zero_()
+        self._s_count.zero_()
+        self._e_count.zero_()
+        self._staged_prediction = None
+        self._inter_loss_accum = self._inter_contrastive_accum = None
+        self._inter_loss_count = self._inter_contrastive_count = 0
+
+    def set_inter_contrastive(self, weight, temp=0.1):
+        """Set the InfoNCE next-idea contrastive gate + softmax temperature
+        (read from ``sentenceExpectationContrastiveWeight`` / ``interContrastiveTemp``)."""
+        self._inter_contrastive_weight = float(weight)
+        self._inter_contrastive_temp = max(1e-4, float(temp))
+
+    def _accumulate_inter_contrastive(self, pred_root, pos_root, neg_roots):
+        """Accumulate one InfoNCE step: rank ``pos_root`` (the actual next root)
+        above ``neg_roots`` (the chain's past roots) under
+        ``cosine(pred_root, .)/temp``. ``pred_root`` ``[D]`` is grad-bearing (the
+        staged prediction into ``_inter_predictor``); ``pos_root`` + ``neg_roots``
+        are DETACHED, so the gradient trains the predictor, never the targets.
+        No-op under no-grad / weight<=0 / no negatives (the caller's MSE term
+        still runs). Fail-loud on NaN."""
+        if not self.training or not torch.is_grad_enabled():
+            return
+        if float(self._inter_contrastive_weight) <= 0.0:
+            return
+        if pred_root is None or pos_root is None or not neg_roots:
+            return
+        q = pred_root.reshape(-1)
+        q = q / q.norm().clamp_min(1e-12)
+        cand = torch.stack([pos_root.reshape(-1)]
+                           + [n.reshape(-1) for n in neg_roots], dim=0)  # [1+N,D]
+        cn = cand / cand.norm(dim=-1, keepdim=True).clamp_min(1e-12)
+        logits = (cn @ q) / float(self._inter_contrastive_temp)          # [1+N]
+        step = F.cross_entropy(
+            logits.unsqueeze(0),
+            torch.zeros(1, dtype=torch.long, device=logits.device))
+        errors = getattr(self, '_inter_contrastive_errors', None)
+        if errors is None:
+            errors = self._inter_contrastive_errors = Error()
+        errors.categorical('contrast', logits[None],
+                           torch.zeros(1, dtype=torch.long, device=logits.device), category='expectation')
+        if not torch.isfinite(step).all():
+            raise FloatingPointError(
+                "BracketExpectation._accumulate_inter_contrastive: InfoNCE "
+                "step is NaN/Inf. Refusing to accumulate a corrupt loss term.")
+        if self._inter_contrastive_accum is None:
+            self._inter_contrastive_accum = step
+        else:
+            self._inter_contrastive_accum = self._inter_contrastive_accum + step
+        self._inter_contrastive_count += 1
+
+    def consume_inter_contrastive_loss(self):
+        """Per-sentence MEAN of the accumulated InfoNCE next-idea loss; resets.
+        ``None`` when nothing accumulated (eval / weight off / no warm chain).
+        Mirrors :meth:`consume_inter_loss`; ``runBatch`` consumes it once,
+        post-body / pre-backward."""
+        self._consumed_contrastive_errors = getattr(self, '_inter_contrastive_errors', Error())
+        self._inter_contrastive_errors = Error()
+        if self._inter_contrastive_accum is None:
+            self._inter_contrastive_count = 0
+            return None
+        mean = self._inter_contrastive_accum / max(1, self._inter_contrastive_count)
+        self._inter_contrastive_accum = None
+        self._inter_contrastive_count = 0
+        return self._consumed_contrastive_errors.total()
+
+    # -- lifecycle ----------------------------------------------------
+    def Reset(self, batch=None, hard=True):
+        """Clear AR/MA rings on hard discourse boundary.
+
+        ``batch`` selects a specific per-row index to clear; ``None``
+        clears all rows. Soft sentence/brick resets retain the external
+        expectation stream. A hard reset clears transient context; the
+        consolidated durable store has its own lifecycle.
+        """
+        if not hard:
+            return
+        if batch is None:
+            self._last_expectation_comparisons = [None] * self._batch
+            self._expectation_policy_outcomes = []
+            self._expectation_walk_outcomes = []
+        else:
+            self._last_expectation_comparisons[int(batch)] = None
+        if batch is None:
+            self._s_history.zero_()
+            self._s_count.zero_()
+            self._e_history.zero_()
+            self._e_count.zero_()
+            # Clear the LTM chain on a hard discourse boundary. The plan
+            # (§8) defines LTM as the AR sequence for INTER-sentence
+            # prediction, so a document-boundary reset clears it the same
+            # way ``_s_history`` zeros — the next document starts cold.
+            for dq in self._stm_end_states:
+                dq.clear()
+            for dq in self._inter_context:
+                dq.clear()
+            for dq in self._inter_context_occurrences:
+                dq.clear()
+            # Drop any pending inter-sentence prediction + the live loss
+            # accumulator (Task 8): the next document predicts cold, and a
+            # boundary must not leak a half-formed grad term across the
+            # reset (mirrors the chain/ring clear above).
+            self._inter_last_pred_root = [None] * self._batch
+            self._inter_last_meaning = [None] * self._batch
+            self._expectation_documents = [None] * self._batch
+            self._inter_loss_accum = None
+            self._inter_errors = Error()
+            self._inter_contrastive_errors = Error()
+            self._inter_loss_count = 0
+            self._inter_contrastive_accum = None
+            self._inter_contrastive_count = 0
+        else:
+            bi = int(batch)
+            self._s_history[bi].zero_()
+            self._s_count[bi] = 0
+            self._e_history[bi].zero_()
+            self._e_count[bi] = 0
+            if 0 <= bi < len(self._stm_end_states):
+                self._stm_end_states[bi].clear()
+                self._inter_context[bi].clear()
+                self._inter_context_occurrences[bi].clear()
+            if 0 <= bi < len(self._inter_last_pred_root):
+                self._inter_last_pred_root[bi] = None
+                self._inter_last_meaning[bi] = None
+                self._expectation_documents[bi] = None
+    reset = Reset
+
+    def __len__(self):
+        """Max ring fill level across rows."""
+        if self._batch == 1:
+            return int(self._s_count[0].item())
+        return int(self._s_count.max().item())
+
+    def latest(self, b=None):
+        """Return the most recent sentence rep for row ``b`` (or row 0
+        for B=1), or ``None`` if the row is empty.
+        """
+        if b is None:
+            b = 0
+        n = int(self._s_count[b].item())
+        if n == 0:
+            return None
+        return self._s_history[b, -1]
+
+    # Current convenience API over explicit prediction/observation state.
+    # The retired priming and snapshot shims have been removed.
+
+    def predict(self, b=None):
+        """Legacy alias for ``predict_next``.
+
+        Returns ``(prediction, confidence)`` where confidence is a
+        scalar / per-row tensor fixed at 1.0 — the legacy attention-
+        entropy confidence had no analog in the MLP predictor, but
+        downstream callers (``SymbolSpace.stm_residual_microbatch``)
+        gate the priming bias on ``conf is None`` so we emit a
+        placeholder rather than break that wiring.  Real cold-start
+        gating happens via ``_s_count``: rows whose ring is empty
+        return ``(None, None)``.
+
+        Compiled path: ``predict()`` is called from two traced sites
+        (``BasicModel._forward_per_stage`` and
+        ``SymbolSpace.stm_residual_microbatch``), always with ``b is
+        None``.  When ``stage_prediction()`` has parked a tuple, return
+        it directly — the live body calls ``predict_next`` (which is
+        ``@torch.compiler.disable``'d → graph break) and reads
+        ``_s_count.item()`` (host sync), both fatal for fullgraph
+        capture.  Staged tuple == pure tensor read, no break, no sync.
+        """
+        if b is None:
+            staged = self._staged_prediction
+            if staged is not None:
+                return staged
+        return self._predict_live(b=b)
+
+    def _predict_live(self, b=None):
+        """Uncached ARMA prediction (the pre-staging ``predict()``
+        body).  Used on the eager path and to populate the staging
+        slot in ``stage_prediction()``.
+        """
+        if not self.expectation_enabled or self.predictor is None:
+            return None, None
+        if (self._batch == 1
+                and int(self._s_count[0].item()) == 0):
+            return None, None
+        pred = self.predict_next(b=b)
+        if pred.ndim == 1:
+            conf = pred.new_ones(())
+        else:
+            conf = pred.new_ones(pred.shape[0])
+        return pred, conf
+
+    def stage_prediction(self):
+        """Eagerly compute and park ``(pred, conf)`` for the upcoming
+        compiled forward.  Called from ``runBatch`` (eager region,
+        before the traced step) alongside the Phase-3 lex+embed stem
+        staging.  No-op-safe to call repeatedly; ``predict()`` returns
+        the parked tuple until ``clear_staged_prediction()`` runs.
+        """
+        self._staged_prediction = self._predict_live(b=None)
+
+    def clear_staged_prediction(self):
+        """Drop the staged tuple so the eager path computes live
+        again.  Called once after the compiled forward returns."""
+        self._staged_prediction = None
+
+
+
+
+
+
+class IntraSentenceLayer(Layer):
+    """In-STM autoregressive predictor: STM[1:end] -> predicted STM[0]
+    (serial) / STM_prev[0:end] -> predicted STM_new[0:end] (parallel).
+    Combined PI-then-Sigma, no intermediate tanh; the routing
+    distribution from SymbolSubSpace.current_rules conditions the
+    Sigma collapse (rule-aware predictor).
+
+    Architecture (PI first, per the design note):
+
+        pi:    PiLayer(concept_dim -> working_dim), invertible, nonlinear
+               (log-domain multiplicative boundary fold). The PI body
+               lifts low-rank STM slots into the working width.
+        sigma: SigmaLayer(working_dim -> concept_dim), invertible,
+               **nonlinear=False** (raw linear W @ x + b). Sigma
+               collapses the lifted slots into the predicted idea.
+
+    The defining requirement of this layer is that there is NO
+    intermediate activation between the PI body and the Sigma body:
+    ``sigma`` is built ``nonlinear=False`` so the two linear cores fuse
+    cleanly (PI's log-domain exp/tanh boundary still bounds PI's own
+    output, but no extra tanh is interposed before Sigma's matmul).
+
+    ``working_dim`` defaults to ``concept_dim`` so both sublayers are
+    square isomorphisms and the per-slot (parallel) round trip
+    ``reverse(forward(x, parallel=True)) ~= x`` is exact up to the LDU
+    inverse tolerance. The serial path's cross-slot Sigma collapse is
+    many-to-one and therefore only **approximately** invertible (see
+    ``reverse``).
+
+    Routing conditioning: when ``routing`` is not None it is projected
+    ``[B, routing_dim] -> [B, concept_dim]`` by ``self.routing_proj`` and
+    added as a bias to the Sigma output. This makes the predictor
+    rule-aware without a separate attention block. ``routing=None``
+    skips the bias entirely so the layer is usable before the per-word
+    router is wired (Task 4 of the STM serial/parallel plan).
+
+    Subclasses ``Layer`` (not ``Space``): no SubSpace, no tensor-map
+    contract. ``self.pi`` / ``self.sigma`` are appended to
+    ``self.layers`` (an ``nn.ModuleList``) so the Layer ergodic /
+    paramUpdate cascade and the Space's Start/Reset walk reach their
+    parameters. ``self.routing_proj`` is a plain ``nn.Linear`` (no
+    ergodic interface) and registers via attribute assignment.
+    """
+
+    name = "IntraSentence"
+
+    def __init__(self, concept_dim, stm_capacity, routing_dim,
+                 working_dim=None, naive=True, ergodic=False,
+                 stable=True, monotonic=False, batch=1):
+        """Build the combined PI-then-Sigma in-STM predictor.
+
+        ``concept_dim``: per-slot C-space_role feature width D (the input and
+        output width of the predictor).
+        ``stm_capacity``: STM slot count; the default fan-out ``k`` for
+        the serial ``reverse`` (``k = stm_capacity - 1``: the predictor
+        consumes STM[1:end], i.e. all but the freshly-predicted slot 0).
+        ``routing_dim``: width of the soft routing distribution injected
+        as the Sigma bias. Not yet populated (Task 4); the
+        ``routing_proj`` is built so the conditioning path exists, but
+        ``forward``/``reverse`` accept ``routing=None`` and skip it.
+        ``working_dim``: PI lift width (Sigma input width). Defaults to
+        ``concept_dim`` to keep both sublayers square (exact per-slot
+        inverse).
+
+        ``naive`` / ``ergodic`` / ``stable`` / ``monotonic`` follow the
+        C-space_role substrate pi/sigma construction convention (see
+        ``ConceptualSpace.sigma_in`` / ``sigma_cs``).
+        """
+        concept_dim = int(concept_dim)
+        working_dim = int(working_dim) if working_dim is not None else concept_dim
+        super().__init__(concept_dim, concept_dim)
+
+        self.concept_dim = concept_dim
+        self.working_dim = working_dim
+        self.stm_capacity = int(stm_capacity)
+        self.routing_dim = int(routing_dim)
+        self._batch = int(batch)
+
+        # PI first: lift each STM slot from concept_dim into the working
+        # width. Log-domain multiplicative boundary fold (nonlinear=True,
+        # the PiLayer default) bounds the lifted slots to [-1, 1] so the
+        # downstream raw-linear Sigma sees a well-scaled operand.
+        self.pi = PiLayer(
+            concept_dim, working_dim,
+            naive=naive, ergodic=ergodic, invertible=True,
+            hasBias=True, stable=stable, monotonic=monotonic,
+            nonlinear=True)
+        # Sigma SECOND with nonlinear=False: raw linear W @ x + b, so NO
+        # extra tanh is interposed between the PI body and the Sigma body.
+        # NOTE: this is NOT a linear fusion -- the PI body above is
+        # nonlinear=True (its symmetric log-domain (1+x)/(1-x) embedding is
+        # an intrinsic nonlinearity), so the composite is pi(nonlinear)
+        # followed by a raw-linear Sigma, not two fusable linear cores. The
+        # only guarantee is "no interposed activation between the two".
+        self.sigma = SigmaLayer(
+            working_dim, concept_dim,
+            naive=naive, ergodic=ergodic, invertible=True,
+            nonlinear=False, stable=stable, monotonic=monotonic)
+
+        # Expose the sublayers' params to the Layer ergodic / paramUpdate
+        # cascade AND the Space Start/Reset walk via the ModuleList.
+        self.layers = nn.ModuleList([self.pi, self.sigma])
+
+        # Routing conditioning: project the soft rule distribution into
+        # concept_dim and add to the Sigma output. Built unconditionally
+        # so the conditioning path exists; only applied when a non-None
+        # routing tensor is supplied (Task 4 wires the producer).
+        self.routing_proj = nn.Linear(self.routing_dim, concept_dim)
+
+    # -- core PI->Sigma transform ------------------------------------
+    def _pi_sigma(self, x):
+        """Apply ``sigma(pi(x))`` on a ``[..., concept_dim]`` operand
+        (no routing bias, no cross-slot collapse). Returns
+        ``[..., concept_dim]``. Used per-slot by both the serial and
+        parallel forward paths.
+        """
+        return self.sigma.forward(self.pi.forward(x))
+
+    def _apply_routing_bias(self, y, routing, sign=1):
+        """Add (``sign=+1``, forward) or subtract (``sign=-1``, reverse)
+        the projected routing bias on a Sigma output ``y``.
+
+        ``y``: ``[B, D]`` (serial) or ``[B, N, D]`` (parallel).
+        ``routing``: ``[B, routing_dim]`` or None. When None this is a
+        no-op (keeps the layer usable before the router is wired). When
+        present the bias is projected to ``[B, D]`` and broadcast over
+        the slot axis in the parallel case. The reverse path passes
+        ``sign=-1`` to exactly undo the additive forward bias before
+        inverting the Sigma body.
+        """
+        if routing is None:
+            return y
+        bias = self.routing_proj(routing.detach())            # [B, D]
+        if y.dim() == 3:
+            bias = bias.unsqueeze(1)                 # [B, 1, D] -> broadcast over N
+        return y + sign * bias
+
+    def forward(self, prior_slots, routing=None, parallel=False):
+        """Predict the next idea(s) from prior STM slots.
+
+        ``prior_slots``: ``[B, K, D]`` (K prior slots).
+        ``routing``: ``[B, routing_dim]`` soft rule distribution, or
+            None to skip the rule-aware bias.
+
+        Serial (``parallel=False``, the primary regime): PI-lift each of
+        the K slots, then Sigma-**collapse across the K slots** (sum-fold
+        over the slot axis) into ONE predicted idea ``[B, D]``. This is
+        the "Sigma collapses the lifted slots into the predicted idea".
+
+        Parallel (``parallel=True``): apply PI->Sigma **per slot** (no
+        cross-slot collapse), returning ``[B, N, D]`` with the same N as
+        the input.
+
+        The routing bias (if any) is added to the Sigma output in both
+        regimes (broadcast over the slot axis when parallel).
+        """
+        prior_slots = prior_slots.detach()
+        if prior_slots.dim() != 3:
+            raise ValueError(
+                f"IntraSentenceLayer.forward expects [B, K, D]; got "
+                f"shape {tuple(prior_slots.shape)}")
+
+        if parallel:
+            # Per-slot PI->Sigma; no cross-slot mixing. [B, N, D].
+            y = self._pi_sigma(prior_slots)
+            return self._apply_routing_bias(y, routing)
+
+        # Serial: PI-lift every slot, then fold (sum) the lifted slots
+        # over the slot axis BEFORE the Sigma collapse -> one idea.
+        lifted = self.pi.forward(prior_slots)        # [B, K, W]
+        folded = lifted.sum(dim=1)                    # [B, W]  (raw slot-axis sum)
+        y = self.sigma.forward(folded)                # [B, D]
+        return self._apply_routing_bias(y, routing)
+
+    def reverse(self, predicted, routing=None, parallel=False, k=None):
+        """Approximate inverse of ``forward`` (recon roundtrip helper).
+
+        Both paths first subtract the routing bias (exactly, since the
+        bias was an additive term), then invert the Sigma and PI bodies.
+
+        Parallel / per-slot path (``parallel=True``): the sublayers are
+        invertible and width-preserving, so
+        ``reverse(forward(x, parallel=True), parallel=True) ~= x`` up to
+        the LDU inverse tolerance (tight).
+
+        Serial / collapse path (``parallel=False``): the Sigma collapse
+        sums over the K lifted slots, which is **many-to-one**, so the
+        inverse is necessarily approximate. We reconstruct by
+        ``sigma.reverse`` to the working width, dividing the recovered
+        fold equally across the ``k`` slots, then ``pi.reverse`` each
+        slot back to concept width. ``k`` defaults to
+        ``stm_capacity - 1`` (the STM[1:end] fan-out the predictor
+        consumes). Returns ``[B, k, D]``.
+        """
+        if parallel:
+            if predicted.dim() != 3:
+                raise ValueError(
+                    f"IntraSentenceLayer.reverse(parallel=True) expects "
+                    f"[B, N, D]; got {tuple(predicted.shape)}")
+            y = self._apply_routing_bias(predicted, routing, sign=-1)
+            return self.pi.reverse(self.sigma.reverse(y))
+
+        # Serial collapse inverse (approximate).
+        if predicted.dim() != 2:
+            raise ValueError(
+                f"IntraSentenceLayer.reverse(parallel=False) expects "
+                f"[B, D]; got {tuple(predicted.shape)}")
+        if k is None:
+            k = max(1, self.stm_capacity - 1)
+        k = int(k)
+        y = self._apply_routing_bias(predicted, routing, sign=-1)
+        folded = self.sigma.reverse(y)               # [B, W]  (recovered slot-sum)
+        per_slot = (folded / float(k)).unsqueeze(1)  # [B, 1, W]
+        per_slot = per_slot.expand(-1, k, -1)        # [B, k, W]
+        return self.pi.reverse(per_slot)             # [B, k, D]
+
+    # -- loss helper (wired into training by a later task) -----------
+    def intra_loss(self, pred, target):
+        """L_intra = MSE(pred, target).
+
+        ``pred`` / ``target``: matching shapes (``[B, D]`` serial or
+        ``[B, N, D]`` parallel). Returns the scalar mean-squared error.
+        The actual accumulation into the training backward path is wired
+        by a later task (Task 3); this helper exists so that wiring is a
+        one-liner and the loss math lives next to the layer that defines
+        it.
+        """
+        return F.mse_loss(pred, target)
+
+    def Reset(self, batch=None, hard=True):
+        """Per-sentence / per-document state reset.
+
+        ``IntraSentenceLayer`` holds no per-call recurrent buffers (the
+        STM substrate it reads lives on ``ConceptualSpace``), so Reset
+        is a structural no-op beyond honoring an optional batch resize
+        hint. The PI / Sigma sublayers carry no per-call state to clear.
+        Present so the Space's Start/Reset cascade reaches the layer
+        without error (mirrors ``BracketExpectation.Reset``).
+        """
+        if batch is not None:
+            self._batch = int(batch)
+
+
+class ChunkLayer(Layer):
+    """Learned BPE-style codebook for perceptual chunking.
+
+    Each entry stores a merge prototype (what the pair looks like) and a
+    split prototype (the two constituents).  Forward scores adjacent pairs
+    against the codebook; reverse looks up the entry to reconstruct.
+
+    The entropic gate merges a pair only when the codebook match score
+    exceeds a learned threshold -- i.e. when encoding the pair as a single
+    chunk saves more bits than it costs.
+
+    Merging stops at word boundaries (whitespace characters) so that chunks
+    never cross word edges.  In the byte stream the space character (0x20)
+    and common whitespace bytes serve as boundary markers.
+    """
+
+    def __init__(self, nDim, bpe=False,
+                 n_vectors=1024, word_learning=2,
+                 cold_start_floor=300):
+        """Initialize ChunkLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__(nDim, nDim)
+        self.nDim = nDim
+        # -- BPE state (active only when ``bpe`` is True) ------------------
+        # Cold-start: empty merges table, vocab seeded with 256 single-byte
+        # ids so byte_value == chunk_id for the 0..255 range.  This mirrors
+        # the Embedding.create() placement of bytes at codebook indices
+        # 0..255 (see Spaces.py -- ``byte_value == codebook_index``).
+        self.bpe = bool(bpe)
+        self.n_vectors = int(n_vectors)
+        # ``word_learning`` is now a frozen-vs-active gate:
+        #   0 (or negative) -> codebook is held constant for the rest of
+        #                       the run (used when loading a pre-trained
+        #                       artifact -- avoids Inductor recompile
+        #                       churn that vocab growth would trigger).
+        #   >= 1            -> active learning mode. The integer value
+        #                       no longer matters for the threshold;
+        #                       promotion is governed by the two-gate
+        #                       criterion below.
+        self.word_learning = int(word_learning)
+        # ``cold_start_floor`` lets the lift gate be skipped while the
+        # vocab is still small (V close to 256). With V=256, V^2=65k,
+        # and the gate would demand count > N/65k, which stalls the
+        # very first merges. Until len(vocab) reaches this floor, we
+        # take argmax unconditionally.
+        self.cold_start_floor = int(cold_start_floor)
+        self.merges = []            # list[tuple[int, int]] in insertion order
+        self.vocab = {}             # dict[tuple[int,...], int]
+        self.id_to_bytes = {}       # dict[int, tuple[int,...]]
+        for i in range(256):
+            key = (i,)
+            self.vocab[key] = i
+            self.id_to_bytes[i] = key
+        self._next_id = 256
+        # Task 4 (shared byte codebook): the PerceptStore that owns byte
+        # identity across synthesis front ends. Wired by PartSpace
+        # (``mirror_to_store``) in bpe/mphf modes; when set, every vocab
+        # entry is mirrored into the store (percept_id == chunk_id) and
+        # ``bytes_for`` resolves through it -- ``id_to_bytes`` becomes
+        # the segmentation-side mirror, not the authority. Stashed
+        # without module registration: the store is owned (and
+        # registered) by the PartSpace, not this layer.
+        object.__setattr__(self, "percept_store", None)
+        self._max_merge_len = 1
+        # Cumulative pair- and unigram-counts across batches. The two
+        # gates of the promotion criterion read these directly:
+        #   prior gate:     count(pair) * V^2 > N         (lift > 1)
+        #   posterior gate: count(pair) > min unigram_count over vocab
+        #                                  (only binds when codebook full)
+        # ``_total_pairs`` is the running N (sum of all observed pair
+        # counts). ``_pair_counts`` and ``_unigram_counts`` are
+        # Python Counters keyed by chunk-id tuple / chunk-id.
+        from collections import Counter as _Counter
+        self._pair_counts = _Counter()
+        self._unigram_counts = _Counter()
+        self._total_pairs = 0
+
+    # -- Persistence (unified vocab-artifact schema) -------------------
+    #
+    # ChunkLayer's BPE merge table is per-corpus state -- discovering it
+    # from byte-pair statistics takes many training batches and triggers
+    # Inductor recompiles each time the vocab grows. Saving / loading
+    # via the vocab-artifact schema in :mod:`embed` lets a trained
+    # merge table persist across runs and avoids the cold-start
+    # churn. The artifact format is
+    # shared with ``WordVectors`` so a single ``.kv`` file can carry
+    # both a Lexicon and a BPE codebook side-by-side.
+
+    def save(self, path: str, lexicon_section: dict = None,
+             truth_data: dict = None, metadata: dict = None) -> None:
+        """Save the BPE merge table to ``path`` via the unified format.
+
+        Args:
+            path: destination file path.
+            lexicon_section: optional pre-built Lexicon section from
+                ``embed.lexicon_section_from_word_vectors``;
+                when supplied the artifact carries both the BPE
+                codebook and the Lexicon (kind="both").
+            truth_data: optional LTM snapshot (legacy passthrough).
+            metadata: optional free-form metadata dict.
+        """
+        from embed import save_artifact, bpe_section_from_chunk_layer
+        save_artifact(
+            path,
+            lexicon=lexicon_section,
+            bpe=bpe_section_from_chunk_layer(self),
+            truth_data=truth_data,
+            metadata=metadata,
+        )
+
+    def load(self, path: str) -> "ChunkLayer":
+        """Restore the BPE merge table in place from ``path``.
+
+        Accepts unified-schema artifacts with ``kind`` in
+        ``{"bpe", "both"}``. Loading a Lexicon-only artifact raises;
+        use ``embed.lexicon_to_bpe_seed`` to convert if you
+        want to cold-start BPE from a Lexicon's word list.
+
+        Returns ``self`` so calls can chain (``layer.load(...).forward(...)``).
+        """
+        from embed import load_artifact, KIND_LEXICON
+        payload = load_artifact(path)
+        if payload.get("kind") == KIND_LEXICON:
+            raise ValueError(
+                f"ChunkLayer.load: {path!r} is a Lexicon-only artifact "
+                f"(kind=lexicon); no BPE section to load. Use "
+                f"WordVectors.load instead, or convert via "
+                f"embed.lexicon_to_bpe_seed.")
+        section = payload.get("bpe")
+        if section is None:
+            raise ValueError(
+                f"ChunkLayer.load: {path!r} has no bpe section "
+                f"(kind={payload.get('kind')!r})")
+        self.merges = [tuple(p) for p in section.get("merges", [])]
+        self.vocab = {tuple(k): int(v) for k, v in section["vocab"].items()}
+        self.id_to_bytes = {
+            int(k): tuple(v) for k, v in section["id_to_bytes"].items()}
+        self._next_id = int(section.get(
+            "next_id", max(self.id_to_bytes.keys()) + 1 if self.id_to_bytes else 256))
+        self._max_merge_len = int(section.get("max_merge_len", 1))
+        # Honor n_vectors / word_learning from the artifact if the
+        # caller didn't override at construction.
+        self.n_vectors = int(section.get("n_vectors", self.n_vectors))
+        self.word_learning = int(section.get(
+            "word_learning", self.word_learning))
+        # Task 4: an artifact load replaces the vocabulary wholesale --
+        # re-mirror it into the shared byte store (no-op when unwired).
+        self.mirror_to_store()
+        return self
+
+    # -- Shared byte store (Task 4) -------------------------------------
+
+    def mirror_to_store(self, store=None):
+        """Mirror the chunk vocabulary into the shared ``PerceptStore``.
+
+        Task 4 (2026-06-09 build-batch plan): byte identity lives in ONE
+        store across synthesis front ends -- segmentation (BPE merges /
+        MPHF keys) is a strategy OVER the shared byte/percept codebook,
+        not a private table. Entries are inserted in chunk-id order and
+        ``RadixLayer.insert`` allocates sequential ids, so
+        ``percept_id == chunk_id`` for every mirrored entry. That
+        alignment is ASSERTED (fail loud): the reverse path
+        (``bytes_for`` -> ``store.bytes_for``) relies on it, and a store
+        that was grown by another writer cannot host this mirror.
+        Idempotent -- re-mirroring an already-mirrored vocabulary is a
+        no-op (``insert`` returns the existing id).
+
+        Args:
+            store: optional store to adopt as ``self.percept_store``
+                before mirroring. ``None`` keeps the current wiring.
+
+        Returns:
+            The number of vocabulary entries mirrored (0 when unwired).
+        """
+        if store is not None:
+            object.__setattr__(self, "percept_store", store)
+        store = self.percept_store
+        if store is None:
+            return 0
+        mirrored = 0
+        for cid in sorted(self.id_to_bytes):
+            bt = self.id_to_bytes[cid]
+            pid = store.insert(bytes(bt))
+            assert int(pid) == int(cid), (
+                f"ChunkLayer.mirror_to_store: percept_id {pid} != "
+                f"chunk_id {cid} for {bt!r} -- the shared store must be "
+                f"dedicated to this vocabulary (insertion in chunk-id "
+                f"order keeps the id spaces aligned).")
+            mirrored += 1
+        return mirrored
+
+    def bytes_for(self, chunk_id):
+        """Canonical bytes for ``chunk_id``, via the shared byte store.
+
+        Task 4: when the ``PerceptStore`` is wired, it is the byte-
+        identity authority and this resolves through
+        ``store.bytes_for`` (the same reverse surface radix uses);
+        ``id_to_bytes`` is the segmentation-side mirror and serves only
+        as the unwired fallback. Returns ``None`` for unknown ids.
+        """
+        cid = int(chunk_id)
+        store = self.percept_store
+        if store is not None and 0 <= cid < len(store):
+            return store.bytes_for(cid)
+        bt = self.id_to_bytes.get(cid)
+        return bytes(bt) if bt is not None else None
+
+    # -- Boundary detection --------------------------------------------
+
+    BOUNDARY_BYTES = frozenset({0x00, 0x09, 0x0A, 0x0D, 0x20})
+
+    # -- BPE forward + training ----------------------------------------
+
+    def forward(self, byte_indices):
+        """Greedy longest-match BPE encoding of a batch of byte sequences.
+
+        Active only in BPE mode (``self.bpe == True``); in legacy mode
+        this is an identity pass-through so existing downstream callers
+        keep their previous semantics.
+
+        Args:
+            byte_indices: ``[B, N]`` long tensor of byte values 0..255.
+                A zero entry terminates the row (padding sentinel).
+        Returns:
+            When ``bpe`` is True:
+                ``(chunks, spans)`` -- ``chunks`` is ``list[list[int]]`` of
+                chunk ids per row; ``spans`` is ``list[list[(start, end,
+                key)]]`` where ``key`` is the byte-tuple backing that
+                chunk.  ``end`` is inclusive.
+            When ``bpe`` is False:
+                ``byte_indices`` unchanged.
+        """
+        if not self.bpe:
+            return byte_indices
+        if byte_indices.dim() != 2:
+            raise ValueError(
+                f"ChunkLayer.forward expects [B, N] byte indices, got "
+                f"{tuple(byte_indices.shape)}")
+        B, N = byte_indices.shape
+        rows = byte_indices.tolist()
+        # Trie-based longest-match: walks the vocab once per match in
+        # O(actual_match_len) instead of the previous nested
+        # ``for L in range(upper, 0, -1): tuple(row[i:i+L]) in vocab``
+        # which paid O(_max_merge_len) tuple constructions and dict
+        # lookups at every position even for short matches. The trie
+        # is built lazily and rebuilt only when ``vocab`` grows
+        # (frozen vocab = built once, then a no-op).
+        self._ensure_trie()
+        trie = self._trie
+        id_to_bytes = self.id_to_bytes
+        vocab = self.vocab
+        all_chunks = []
+        all_spans = []
+        for b in range(B):
+            row = rows[b]
+            chunks = []
+            spans = []
+            i = 0
+            while i < N:
+                bval = row[i]
+                if bval == 0:
+                    break
+                # Descend the trie one byte at a time. Each node is
+                # ``[children_dict, terminal_id_or_None]``; track the
+                # most recent terminal as the running longest match.
+                node = trie
+                matched_id = None
+                matched_len = 0
+                j = i
+                while j < N:
+                    child = node[0].get(row[j])
+                    if child is None:
+                        break
+                    node = child
+                    j += 1
+                    if node[1] is not None:
+                        matched_id = node[1]
+                        matched_len = j - i
+                if matched_id is None:
+                    # 256 single-byte ids are seeded at __init__ so any
+                    # byte 0..255 always has a single-byte match. This
+                    # branch is defensive for unexpected vocab gaps.
+                    matched_id = vocab.get((bval,), bval)
+                    matched_len = 1
+                chunks.append(matched_id)
+                # ``id_to_bytes[matched_id]`` is the canonical byte tuple
+                # for this id (kept in sync with ``vocab`` by
+                # ``train_step`` and ``__init__``); the trie walk only
+                # accepts paths that exist in the vocab, so the matched
+                # row slice equals ``id_to_bytes[matched_id]`` and we
+                # avoid re-slicing the row.
+                spans.append((i, i + matched_len - 1, id_to_bytes[matched_id]))
+                i += matched_len
+            all_chunks.append(chunks)
+            all_spans.append(spans)
+        return all_chunks, all_spans
+
+    def _ensure_trie(self):
+        """Build / rebuild the longest-match trie when ``vocab`` changes.
+
+        Each node is ``[children_dict, terminal_id_or_None]``. When
+        ``terminal_id`` is not ``None`` the path from root to this node
+        spells the byte tuple of vocab entry ``terminal_id``. Rebuild
+        triggers off ``len(vocab)`` (vocab only grows under
+        ``train_step``); when ``word_learning == 0`` the vocab is
+        frozen and this is built once then no-op forever after.
+        """
+        cur_size = len(self.vocab)
+        if getattr(self, '_trie_size', -1) == cur_size:
+            return
+        root = [{}, None]
+        for byte_tuple, chunk_id in self.vocab.items():
+            node = root
+            for b in byte_tuple:
+                children = node[0]
+                child = children.get(b)
+                if child is None:
+                    child = [{}, None]
+                    children[b] = child
+                node = child
+            node[1] = chunk_id
+        self._trie = root
+        self._trie_size = cur_size
+
+    def train_step(self, byte_indices, k_merges=1):
+        """Learn up to ``k_merges`` new BPE merges from pair frequencies.
+
+        Encodes the batch with the current merge table, accumulates
+        adjacent-pair and unigram counts into the cumulative tallies
+        (``self._pair_counts``, ``self._unigram_counts``,
+        ``self._total_pairs``), then promotes top-k pairs that pass
+        the two-gate criterion. Returns the number of new merges added
+        (0 when none qualify).
+
+        Promotion criterion:
+          1. **Prior gate (lift > 1):** ``count(pair) * V^2 > N``,
+             where ``V = len(self.vocab)`` and ``N = self._total_pairs``.
+             A pair must be more common than uniform-distribution
+             chance over the current alphabet. Skipped while
+             ``V < cold_start_floor`` (early in the run V^2 is so
+             small the gate would stall the first merges).
+          2. **Posterior gate (earns its slot):** when the codebook
+             is full, ``count(pair)`` must exceed the minimum
+             ``self._unigram_counts[c]`` across all current chunk
+             ids. While ``len(self.vocab) < n_vectors`` this gate is
+             vacuous. The first time it fails after the codebook
+             fills, training is converged for the corpus.
+
+        Idempotent w.r.t. vocab size: stops once ``len(vocab)`` reaches
+        ``n_vectors`` AND no candidate clears Gate 2. No-op in legacy
+        (``bpe=False``) mode.
+
+        ``word_learning <= 0`` is the **frozen** marker -- the
+        merge table is held constant for the rest of the run, no new
+        entries are added regardless of byte-pair statistics. Use this
+        after loading a pre-trained BPE artifact (via ``ChunkLayer.load``)
+        so subsequent training runs don't trigger Inductor recompiles
+        every time a new pair crosses a threshold.
+        """
+        if not self.bpe:
+            return 0
+        if self.word_learning <= 0:
+            # Frozen: vocab stays as-is for the rest of the run.
+            return 0
+        all_chunks, _ = self.forward(byte_indices)
+        # Update cumulative tallies from this batch.
+        from collections import Counter
+        batch_counts = Counter()
+        batch_pairs = 0
+        for chunks in all_chunks:
+            for c in chunks:
+                self._unigram_counts[c] += 1
+            for a, b in zip(chunks, chunks[1:]):
+                batch_counts[(a, b)] += 1
+                batch_pairs += 1
+        for pair, freq in batch_counts.items():
+            self._pair_counts[pair] += freq
+        self._total_pairs += batch_pairs
+        if not self._pair_counts:
+            return 0
+        # Compute the two-gate threshold.
+        V = len(self.vocab)
+        N = self._total_pairs
+        prior_threshold = (N // (V * V)) if V >= self.cold_start_floor else 0
+        vocab_full = V >= self.n_vectors
+        if vocab_full:
+            min_unigram = min(self._unigram_counts.values()) \
+                if self._unigram_counts else 0
+            posterior_threshold = min_unigram
+        else:
+            posterior_threshold = 0
+        threshold = max(prior_threshold, posterior_threshold)
+        # Promote top-k pairs from cumulative counts that clear both gates.
+        added = 0
+        for pair, freq in self._pair_counts.most_common():
+            if added >= k_merges:
+                break
+            if freq <= threshold:
+                # Best remaining candidate is below threshold ->
+                # nothing else will clear it either; converged.
+                break
+            if vocab_full:
+                # Codebook full and no eviction -- Gate 2 has bound.
+                break
+            left_bytes = self.id_to_bytes.get(pair[0])
+            right_bytes = self.id_to_bytes.get(pair[1])
+            if left_bytes is None or right_bytes is None:
+                continue
+            new_key = left_bytes + right_bytes
+            if new_key in self.vocab:
+                continue
+            new_id = self._next_id
+            self._next_id += 1
+            self.vocab[new_key] = new_id
+            self.id_to_bytes[new_id] = new_key
+            # Task 4: promotions mirror into the shared byte store as
+            # they happen (id alignment asserted; see mirror_to_store).
+            if self.percept_store is not None:
+                _pid = self.percept_store.insert(bytes(new_key))
+                assert int(_pid) == int(new_id), (
+                    f"ChunkLayer.train_step: percept_id {_pid} != "
+                    f"chunk_id {new_id} for promoted merge {new_key!r}; "
+                    f"the shared store and the vocab id spaces must stay "
+                    f"aligned.")
+            self.merges.append(pair)
+            if len(new_key) > self._max_merge_len:
+                self._max_merge_len = len(new_key)
+            added += 1
+            # Re-evaluate gates after a promotion (V grew by 1; if we
+            # just filled the codebook, Gate 2 now binds).
+            V = len(self.vocab)
+            prior_threshold = (N // (V * V)) if V >= self.cold_start_floor else 0
+            vocab_full = V >= self.n_vectors
+            if vocab_full:
+                min_unigram = min(self._unigram_counts.values()) \
+                    if self._unigram_counts else 0
+                posterior_threshold = min_unigram
+            else:
+                posterior_threshold = 0
+            threshold = max(prior_threshold, posterior_threshold)
+        return added
+
+    # -- Byte-mode hard merge + compaction -----------------------------
+
+    def hard_merge_spans(self, data, byte_indices):
+        """Merge contiguous byte slots into spans via mean aggregation.
+
+        Dispatches on ``self.bpe``:
+          - ``bpe=False`` (legacy): whitespace-boundary spans via
+            ``BOUNDARY_BYTES``.
+          - ``bpe=True``: spans come from the learned BPE merge table
+            (greedy longest-match via ``self.forward``).  When training,
+            runs a single ``train_step`` first so the merge table grows
+            from this batch's pair statistics.
+
+        Args:
+            data: ``[B, N, D]`` byte-level vectors.
+            byte_indices: ``[B, N]`` long -- byte values 0..255.
+        Returns:
+            ``(data, span_meta)`` where ``data`` has span-start slots
+            holding mean vectors (rest zeroed) and ``span_meta`` is
+            ``list[list[(start, end, original_vectors)]]`` per batch row.
+        """
+        if self.bpe:
+            if self.training:
+                self.train_step(byte_indices)
+            return self._hard_merge_spans_bpe(data, byte_indices)
+
+        B, N, D = data.shape
+        data = data.clone()
+        span_meta = []
+        for b in range(B):
+            spans = []
+            i = 0
+            while i < N:
+                bval = byte_indices[b, i].item()
+                if bval == 0:
+                    break
+                if bval in self.BOUNDARY_BYTES:
+                    data[b, i] = 0.0
+                    i += 1
+                    continue
+                start = i
+                while i < N and byte_indices[b, i].item() not in self.BOUNDARY_BYTES:
+                    i += 1
+                end = i - 1
+                original = data[b, start:end + 1].clone()
+                data[b, start] = data[b, start:end + 1].mean(dim=0)
+                if end > start:
+                    data[b, start + 1:end + 1] = 0.0
+                spans.append((start, end, original))
+            span_meta.append(spans)
+        return data, span_meta
+
+    def _hard_merge_spans_bpe(self, data, byte_indices):
+        """BPE-mode span construction.
+
+        Each BPE chunk produced by ``self.forward`` becomes one span;
+        the span-start slot holds the mean of the span's byte vectors
+        and the trailing slots are zeroed, matching the layout that
+        ``compact`` / ``uncompact`` expect.  The original pre-merge
+        byte vectors are stored in ``span_meta`` so reconstruction via
+        ``uncompact`` is exact -- the merge table is used only for
+        forward segmentation, never for decoding bytes.
+        """
+        B, N, D = data.shape
+        data = data.clone()
+        _, raw_spans = self.forward(byte_indices)
+        span_meta = []
+        for b in range(B):
+            spans = []
+            for start, end, _key in raw_spans[b]:
+                if end >= N:
+                    end = N - 1
+                original = data[b, start:end + 1].clone()
+                data[b, start] = data[b, start:end + 1].mean(dim=0)
+                if end > start:
+                    data[b, start + 1:end + 1] = 0.0
+                spans.append((start, end, original))
+            span_meta.append(spans)
+        return data, span_meta
+
+    def compact(self, data, nWordSlots, span_meta, where_encoding=None):
+        """Pack active span-start positions into dense [B, nWordSlots, D].
+
+        After packing, overwrites the where-encoding dims ([-4, -3]) with
+        sinusoidal encoding of each span's start byte offset, so downstream
+        layers see word-level positional encoding instead of byte-level.
+
+        Args:
+            data: [B, N, D] sparse byte-level vectors (span starts populated)
+            nWordSlots: target dense width
+            span_meta: list[list[(start, end)]] or
+                list[list[(start, end, original_vectors)]] per batch
+            where_encoding: WhereEncoding instance (for sin/cos rewrite)
+        Returns:
+            dense: [B, nWordSlots, D]
+            compact_map: list[list[(dense_idx, start, end, original_vectors)]] -- for reverse
+        """
+        B, N, D = data.shape
+        dense = torch.zeros(B, nWordSlots, D, device=data.device)
+        compact_map = []
+        for b in range(B):
+            mapping = []
+            for dense_idx, span in enumerate(span_meta[b]):
+                if dense_idx >= nWordSlots:
+                    break
+                start, end = span[0], span[1]
+                original = span[2] if len(span) > 2 else None
+                dense[b, dense_idx] = data[b, start]
+                mapping.append((dense_idx, start, end, original))
+            compact_map.append(mapping)
+
+        # Overwrite where-encoding dims with span start byte offset
+        if where_encoding is not None and where_encoding.nDim > 0:
+            where_idx = [D + i for i in where_encoding.index]  # e.g. [-4,-3] -> absolute
+            for b in range(B):
+                for dense_idx, start, _end, _original in compact_map[b]:
+                    pos_enc = where_encoding.encode(float(start))  # [2] sin/cos
+                    dense[b, dense_idx, where_idx] = pos_enc
+
+        return dense, compact_map
+
+    def uncompact(self, dense, compact_map, nByteSlots):
+        """Scatter dense word vectors back to byte positions (span copy)."""
+        B, _, D = dense.shape
+        data = torch.zeros(B, nByteSlots, D, device=dense.device)
+        for b in range(B):
+            for item in compact_map[b]:
+                dense_idx, start, end = item[:3]
+                original = item[3] if len(item) > 3 else None
+                span_len = end - start + 1
+                if original is not None:
+                    data[b, start:end + 1] = original.to(device=dense.device, dtype=dense.dtype)
+                else:
+                    data[b, start:end + 1] = dense[b, dense_idx].unsqueeze(0).expand(span_len, -1)
+        return data
+#endregion
+
+#region RadixLayer (canonical PerceptStore)
+
+
+# ---------------------------------------------------------------------------
+# RadixTrie
+# ---------------------------------------------------------------------------
+
+
+class _RadixNode:
+    """Single node in the :class:`RadixTrie`.
+
+    Each node holds a (possibly empty) ``prefix`` byte-string and a dict
+    of ``children`` keyed by the first byte of the child's prefix. A
+    non-``None`` ``percept_id`` marks the node as terminal -- the
+    walk from the root concatenating prefixes reaches the canonical
+    byte sequence assigned that ID.
+
+    Internal nodes (``percept_id is None``) carry shared prefixes; the
+    longest-match walk records the deepest terminal it has seen so
+    far and returns it when no further child matches.
+    """
+
+    __slots__ = ("prefix", "percept_id", "children")
+
+    def __init__(self, prefix: bytes = b"",
+                 percept_id: Optional[int] = None) -> None:
+        self.prefix: bytes = prefix
+        self.percept_id: Optional[int] = percept_id
+        self.children: Dict[int, "_RadixNode"] = {}
+
+
+class RadixTrie:
+    """Radix trie over byte-strings with percept-ID payloads.
+
+    Supports:
+
+    * :meth:`insert` -- online insertion of ``(bytes -> percept_id)``;
+      forks existing edges as needed.
+    * :meth:`longest_match` -- O(L) longest-prefix match; returns the
+      ``(percept_id, length)`` of the deepest terminal prefix that
+      matches the input.
+    * :meth:`get` -- exact lookup for an existing key; ``None`` if
+      absent or only a partial match exists.
+    * :meth:`serialize` / :meth:`load_state` -- flat ``(prefix,
+      percept_id, [child_byte])`` triples for persistence.
+    """
+
+    def __init__(self) -> None:
+        self.root: _RadixNode = _RadixNode(prefix=b"")
+        self._size: int = 0
+
+    # ------------------------------------------------------------------
+    # Basic queries
+    # ------------------------------------------------------------------
+
+    def __len__(self) -> int:
+        return self._size
+
+    def __contains__(self, key: bytes) -> bool:
+        return self.get(key) is not None
+
+    def get(self, key: bytes) -> Optional[int]:
+        """Exact lookup: return the percept ID for ``key`` or ``None``."""
+        node = self.root
+        remaining = key
+        while remaining:
+            first = remaining[0]
+            child = node.children.get(first)
+            if child is None:
+                return None
+            cp = child.prefix
+            if not remaining.startswith(cp):
+                return None
+            remaining = remaining[len(cp):]
+            node = child
+        return node.percept_id
+
+    def longest_match(self, key: bytes) -> Tuple[Optional[int], int]:
+        """Return ``(percept_id, match_length)`` for the longest known
+        prefix of ``key``.
+
+        If no inserted key is a prefix of ``key``, returns
+        ``(None, 0)`` so the caller can route the entire input to the
+        byte-fallback path.
+        """
+        node = self.root
+        consumed = 0
+        best_id: Optional[int] = None
+        best_len: int = 0
+        if node.percept_id is not None:
+            best_id = node.percept_id
+            best_len = 0
+        remaining = key
+        while remaining:
+            first = remaining[0]
+            child = node.children.get(first)
+            if child is None:
+                break
+            cp = child.prefix
+            if not remaining.startswith(cp):
+                break
+            consumed += len(cp)
+            remaining = remaining[len(cp):]
+            node = child
+            if node.percept_id is not None:
+                best_id = node.percept_id
+                best_len = consumed
+        return best_id, best_len
+
+    # ------------------------------------------------------------------
+    # Mutation
+    # ------------------------------------------------------------------
+
+    def insert(self, key: bytes, percept_id: int) -> bool:
+        """Insert ``key`` with the supplied ``percept_id``.
+
+        Returns ``True`` if a new terminal was created and ``False`` if
+        the key was already terminal (existing ID is preserved -- this
+        method does not overwrite; callers should check :meth:`get`
+        first if they want re-key semantics).
+        """
+        if not isinstance(key, (bytes, bytearray)):
+            raise TypeError(
+                f"RadixTrie.insert: key must be bytes, got {type(key)!r}")
+        key = bytes(key)
+        if len(key) == 0:
+            if self.root.percept_id is None:
+                self.root.percept_id = int(percept_id)
+                self._size += 1
+                return True
+            return False
+        node = self.root
+        remaining = key
+        while True:
+            first = remaining[0]
+            child = node.children.get(first)
+            if child is None:
+                # Pure tail-append: new leaf carrying the remainder.
+                new_leaf = _RadixNode(prefix=remaining,
+                                      percept_id=int(percept_id))
+                node.children[first] = new_leaf
+                self._size += 1
+                return True
+            cp = child.prefix
+            # Find shared prefix length with the child's edge.
+            common = 0
+            limit = min(len(cp), len(remaining))
+            while common < limit and cp[common] == remaining[common]:
+                common += 1
+            if common == len(cp):
+                # The whole child edge matches; descend.
+                remaining = remaining[common:]
+                node = child
+                if not remaining:
+                    if node.percept_id is None:
+                        node.percept_id = int(percept_id)
+                        self._size += 1
+                        return True
+                    return False
+                continue
+            # Partial overlap -> fork the child edge at `common`.
+            old_child = child
+            split = _RadixNode(prefix=cp[:common])
+            # Re-key the old child by its first remaining byte.
+            old_child.prefix = cp[common:]
+            split.children[old_child.prefix[0]] = old_child
+            node.children[first] = split
+            if common == len(remaining):
+                # New key terminates at the split point.
+                split.percept_id = int(percept_id)
+                self._size += 1
+                return True
+            # Branch sibling for the new tail.
+            tail = remaining[common:]
+            new_leaf = _RadixNode(prefix=tail, percept_id=int(percept_id))
+            split.children[tail[0]] = new_leaf
+            self._size += 1
+            return True
+
+    # ------------------------------------------------------------------
+    # Persistence
+    # ------------------------------------------------------------------
+
+    def serialize(self) -> List[Tuple[bytes, Optional[int], List[int]]]:
+        """Pre-order flat dump: ``(prefix, percept_id, child_keys)`` per
+        node. ``child_keys`` is the ordered list of first-byte keys for
+        the node's children (so :meth:`load_state` can reconstruct the
+        edges by re-walking the same list).
+        """
+        out: List[Tuple[bytes, Optional[int], List[int]]] = []
+        stack: List[_RadixNode] = [self.root]
+        while stack:
+            node = stack.pop()
+            keys = sorted(node.children.keys())
+            out.append((node.prefix, node.percept_id, list(keys)))
+            # Push in reverse so traversal pops in sorted order.
+            for k in reversed(keys):
+                stack.append(node.children[k])
+        return out
+
+    def load_state(
+        self, dump: List[Tuple[bytes, Optional[int], List[int]]]
+    ) -> None:
+        """Rebuild the trie from a :meth:`serialize` dump."""
+        if not dump:
+            self.root = _RadixNode(prefix=b"")
+            self._size = 0
+            return
+        it = iter(dump)
+        prefix, percept_id, keys = next(it)
+        root = _RadixNode(prefix=prefix, percept_id=percept_id)
+        size = 1 if percept_id is not None else 0
+        stack: List[Tuple[_RadixNode, List[int]]] = [(root, list(keys))]
+        # Build children depth-first so the iterator matches the
+        # pre-order serialisation.
+        for node_prefix, node_id, node_keys in it:
+            parent, pending = stack[-1]
+            while not pending:
+                stack.pop()
+                if not stack:
+                    raise ValueError(
+                        "RadixTrie.load_state: dangling node after the "
+                        "tree was fully consumed")
+                parent, pending = stack[-1]
+            first_key = pending.pop(0)
+            child = _RadixNode(prefix=node_prefix, percept_id=node_id)
+            parent.children[first_key] = child
+            if node_id is not None:
+                size += 1
+            stack.append((child, list(node_keys)))
+        self.root = root
+        self._size = size
+
+
+# ---------------------------------------------------------------------------
+# BytesFallbackEncoder
+# ---------------------------------------------------------------------------
+
+
+class BytesFallbackEncoder(nn.Module):
+    """Per-byte vector codebook + hit-count bookkeeping for unknown chunks.
+
+    The encoder owns a ``[256, D]`` ``nn.Parameter`` and computes the
+    fallback vector for an unknown chunk as
+
+        v(chunk) = sum_{b in chunk} byte_codebook[b] / sqrt(len(chunk))
+
+    The division by ``sqrt(L)`` keeps the encoded norm O(1) instead of
+    growing linearly with the chunk length, matching the
+    expectation of downstream layers operating on unit-scale vectors.
+
+    Hit counts are tracked in a plain Python dict so promotion logic can
+    poll them cheaply; they are persisted via the parent
+    RadixLayer's ``vocab_extras`` blob.
+    """
+
+    def __init__(self, dim: int) -> None:
+        super().__init__()
+        if dim <= 0:
+            raise ValueError(
+                f"BytesFallbackEncoder: dim must be positive, got {dim}")
+        self.dim: int = int(dim)
+        # Full-presence percept codes: the what-basis per-row max-abs
+        # normalization, followed by the presence-cube clamp.
+        init = torch.randn(256, self.dim)
+        init = init / init.abs().amax(dim=-1, keepdim=True).clamp(min=1e-8)
+        self.byte_codebook = nn.Parameter(init.clamp(0.0, 1.0))
+        # Pure-Python hit counters; persisted via vocab_extras.
+        self.hit_counts: Dict[bytes, int] = {}
+
+    # ------------------------------------------------------------------
+    # Encoding
+    # ------------------------------------------------------------------
+
+    def encode(self, chunk: bytes) -> torch.Tensor:
+        """Return the fallback vector for ``chunk`` and bump its hit
+        counter.
+
+        ``chunk`` must be a non-empty ``bytes`` object.
+        """
+        if not isinstance(chunk, (bytes, bytearray)):
+            raise TypeError(
+                f"BytesFallbackEncoder.encode: chunk must be bytes, got "
+                f"{type(chunk)!r}")
+        if len(chunk) == 0:
+            raise ValueError(
+                "BytesFallbackEncoder.encode: chunk must be non-empty.")
+        chunk_b = bytes(chunk)
+        self.hit_counts[chunk_b] = self.hit_counts.get(chunk_b, 0) + 1
+        idx = torch.tensor(list(chunk_b),
+                           dtype=torch.long,
+                           device=self.byte_codebook.device)
+        rows = self.byte_codebook.index_select(0, idx)
+        return rows.sum(dim=0) / math.sqrt(len(chunk_b))
+
+    def hits(self, chunk: bytes) -> int:
+        """Read the hit counter for ``chunk`` (0 if never seen)."""
+        return int(self.hit_counts.get(bytes(chunk), 0))
+
+    # ------------------------------------------------------------------
+    # Persistence helpers
+    # ------------------------------------------------------------------
+
+    def extras_dump(self) -> Dict[bytes, int]:
+        """Serialise the hit-count dict for storage in ``vocab_extras``."""
+        return dict(self.hit_counts)
+
+    def extras_load(self, hit_counts: Dict[bytes, int]) -> None:
+        """Restore hit counters from a :meth:`extras_dump` payload."""
+        self.hit_counts = {bytes(k): int(v) for k, v in hit_counts.items()}
+
+
+# ---------------------------------------------------------------------------
+# RadixLayer (canonical class; formerly PerceptStore)
+# ---------------------------------------------------------------------------
+
+
+class RadixLayer(Layer):
+    """Authoritative store for perceptual identity + invertibility.
+
+    Formerly ``PerceptStore`` in ``bin/PerceptStore.py``; promoted to a
+    proper ``Layer`` subclass so the layer-API ``forward()`` /
+    ``reverse()`` symmetry holds and the standard Layer cascades
+    (Start/End, paramUpdate, sigma) apply uniformly.
+
+    See module docstring for the broader architectural context; see the
+    class spec in
+    ``doc/plans/2026-05-27-perceptstore-meta-taxonomy-reentrancy.md``
+    Sec. Design - PerceptStore for the verbatim contract.
+
+    Components:
+
+    * ``radix_trie`` -- canonical byte sequences with longest-match
+      lookup. Authoritative.
+    * ``hash_map: dict[bytes -> int]`` -- fast cache mirroring the
+      trie's terminal nodes; rebuilt on load.
+    * ``inverse_table: list[bytes]`` -- index by percept ID; maps ID
+      back to canonical bytes. Structural invertibility.
+    * ``codebook`` -- ``nn.Parameter[V, D]`` learned vector payload per
+      percept. ``V`` is fixed; insertions activate its unused rows.
+    * ``byte_fallback`` -- :class:`BytesFallbackEncoder` for unknown
+      chunks; tracks promotion-candidate hit counts.
+    * ``promotion_threshold`` / ``promotion_min_length`` -- when a chunk's
+      hit count reaches the threshold AND its length is at least the
+      minimum, it is promoted into the trie + hash_map + inverse_table
+      + codebook.
+
+    Forward path (chunk bytes -> vector):
+
+      1. ``hash_map.get(chunk)`` -> existing percept ID (fast cache hit).
+      2. Else ``radix_trie.longest_match(chunk)`` -> permanent percept
+         ID + residual bytes. The residual falls through to
+         :meth:`byte_fallback.encode`.
+      3. ``byte_fallback.encode(residual)`` -> temporary fallback
+         vector; increments hit count.
+      4. If hit count >= ``promotion_threshold`` AND
+         ``len(residual) >= promotion_min_length`` and the residual is
+         the whole chunk (so we're learning the full chunk, not just
+         the suffix), promote: insert into trie + hash_map +
+         inverse_table + codebook (init from the byte-fallback
+         encoding).
+
+    Reverse path (percept ID -> canonical bytes):
+
+      1. ``inverse_table[percept_id]`` -> bytes. Exact, no learning.
+    """
+
+    # Physical capacity is fixed at construction; admission grows occupancy.
+    DEFAULT_INITIAL_CAP: int = 64
+
+    def __init__(
+        self,
+        dim: int,
+        *,
+        initial_cap: Optional[int] = None,
+        promotion_threshold: int = 4,
+        promotion_min_length: int = 2,
+        word_bounded: bool = False,
+        basis=None,
+    ) -> None:
+        super().__init__(nInput=int(dim), nOutput=int(dim))
+        if dim <= 0:
+            raise ValueError(
+                f"RadixLayer: dim must be positive, got {dim}")
+        self.dim: int = int(dim)
+        self.promotion_threshold: int = int(promotion_threshold)
+        self.promotion_min_length: int = int(promotion_min_length)
+        # 5e word bound: promotion may not cross a word/space/punct boundary.
+        self.word_bounded: bool = bool(word_bounded)
+        cap = int(initial_cap) if initial_cap is not None \
+            else self.DEFAULT_INITIAL_CAP
+        if cap <= 0:
+            raise ValueError(
+                f"RadixLayer: initial_cap must be positive, got {cap}")
+        self._capacity: int = cap
+        self._size: int = 0
+        # 2026-06-04: vector storage is a Codebook *Basis*, not a raw
+        # nn.Parameter. When ``basis`` is supplied (PartSpace passes
+        # ``subspace.what`` in radix mode) the percept vectors live on that
+        # shared Basis -- ONE percept codebook, on ``.what``, so the SubSpace
+        # can store ``.active`` selections and materialize lazily (no vector
+        # copy). The shared basis is stashed WITHOUT module registration
+        # (object.__setattr__) so it is not double-counted in this layer's
+        # parameters / state_dict (``.what`` owns it). When ``basis`` is None
+        # (standalone / unit tests) we own a private Codebook. The
+        # ``codebook`` property exposes the ``[V, D]`` prototype tensor so the
+        # existing read / seed call sites are unchanged.
+        if basis is not None:
+            object.__setattr__(self, "_basis", basis)
+            _w = basis.getW()
+            if _w is not None:
+                self._capacity = int(_w.shape[0])
+        else:
+            from Spaces import Codebook
+            _own = Codebook()
+            _own.create(1, self._capacity, self.dim, customVQ=False)
+            _own.setW(nn.Parameter(_own.getW().detach().clone()))
+            self._basis = _own
+        self._basis.freeze_capacity("PartSpace.nVectors")
+        # Authoritative trie + cache + inverse table.
+        self.radix_trie: RadixTrie = RadixTrie()
+        self.hash_map: Dict[bytes, int] = {}
+        self.inverse_table: List[bytes] = []
+        # Byte-fallback encoder. Owns its own [256, D] Parameter.
+        self.byte_fallback: BytesFallbackEncoder = BytesFallbackEncoder(
+            self.dim)
+        # Frequency-driven concatenation (2026-06-04): per-chunk sighting
+        # counts. A spelled-out chunk is promoted to a single percept once
+        # it recurs ``promotion_threshold`` times (see ``observe_chunk``).
+        self._chunk_hits: Dict[bytes, int] = {}
+        # Promotions discovered by the eager lexical stem must not replace a
+        # Parameter that the current autograd/compiled graph already owns.
+        # Keep their initializers detached on CPU and install them only from
+        # ``flush_pending_promotions`` after backward + optimizer.step (or at
+        # the corresponding no-grad inference boundary).
+        self._pending_promotions: Dict[bytes, torch.Tensor] = {}
+        self.part_groups = {}
+        self._canonical_group_cache = None
+        self._pending_part_groups = {}
+        self._formed_this_turn = set()
+
+    def begin_turn(self):
+        """A formation may participate in aggregation only on a later turn."""
+        self._formed_this_turn.clear()
+
+    def canonical_parts(self, parts):
+        """Retile a definition's group using recorded id ancestry, never bytes.
+
+        This migrates the literal when formations overlap or arrive together.
+        Observed positions are not expanded: the membership reader still
+        compares only the canonical ids retained in the attended field.
+        """
+        if self._canonical_group_cache is None:
+            leaves, prefixes = {}, {}
+            for pid, group in sorted(self.part_groups.items()):
+                native = tuple(atom for part in group for atom in leaves.get(part, (part,)))
+                leaves[pid] = native
+                prefixes.setdefault(native[0], []).append((native, pid))
+            for choices in prefixes.values():
+                choices.sort(key=lambda item: -len(item[0]))
+            self._canonical_group_cache = leaves, prefixes
+        leaves, prefixes = self._canonical_group_cache
+        native = tuple(atom for part in parts for atom in leaves.get(int(part), (int(part),)))
+        parts, index = [], 0
+        while index < len(native):
+            for group, pid in prefixes.get(native[index], ()):
+                if native[index:index + len(group)] == group:
+                    parts.append(pid)
+                    index += len(group)
+                    break
+            else:
+                parts.append(native[index])
+                index += 1
+        return parts
+
+
+    @property
+    def codebook(self):
+        """The ``[V, D]`` percept prototype tensor (an ``nn.Parameter`` when
+        owned), backed by the Codebook Basis. Read / seed call sites use
+        ``self.codebook`` / ``self.codebook.data`` transparently; logical
+        admission leaves this physical tensor unchanged."""
+        return self._basis.getW()
+
+    # ------------------------------------------------------------------
+    # Basic queries
+    # ------------------------------------------------------------------
+
+    def __len__(self) -> int:
+        return self._size
+
+    @property
+    def capacity(self) -> int:
+        return self._capacity
+
+    @property
+    def pending_promotions(self) -> int:
+        """Number of word/chunk rows waiting for a safe growth boundary."""
+        return len(self._pending_promotions)
+
+    def __contains__(self, key: bytes) -> bool:
+        return bytes(key) in self.hash_map
+
+    # ------------------------------------------------------------------
+    # The WORD view (type="words")
+    # ------------------------------------------------------------------
+    # The store's promoted collection IS the word store (Alec 2026-07-12:
+    # it "already existed but was not labelled as such") — under meronomy
+    # synthesis promotion is word_bounded, so promoted multi-byte entries
+    # are words by construction, and their vectors are ROWS of the shared
+    # PS ``.what`` basis (percept id == codebook row). This view is the
+    # LABEL: no new state, nothing new to persist.
+    # doc/plans/2026-07-12-word-store-typed-reverse.md.
+
+    WORDS_TYPE = "words"
+
+    def word_ids(self, standalone_bytes=None):
+        """LongTensor of percept ids in the type="words" collection.
+
+        Multi-byte entries always qualify (promotion = standalone
+        recurrence; seeded byte percepts are single-byte). A SINGLE-byte
+        entry qualifies only when its byte is in ``standalone_bytes`` —
+        the same "appears standalone" attestation rule the within-whole
+        division uses (the stage-0 WS accrues that set from its own
+        staged type-runs) — so one-letter words attest without admitting
+        every ``spell_out``-seeded byte.
+        """
+        sb = standalone_bytes or ()
+        if hasattr(self, 'identity'):
+            return torch.tensor(sorted(self.identity.word_rows.values()), dtype=torch.long)
+        ids = [i for i, b in enumerate(self.inverse_table)
+               if len(b) >= 2 or (len(b) == 1 and b[0] in sb)]
+        return torch.tensor(ids, dtype=torch.long)
+
+    def word_text(self, percept_id: int) -> str:
+        """Surface text of one word entry (the realize direction)."""
+        return self.bytes_for(int(percept_id)).decode("utf-8", "replace")
+
+    def get_id(self, chunk: bytes) -> Optional[int]:
+        """Hash-map lookup. Returns ``None`` if ``chunk`` is unknown."""
+        return self.hash_map.get(bytes(chunk))
+
+    def bytes_for(self, percept_id: int) -> bytes:
+        """Reverse path: percept ID -> canonical bytes. Raises
+        :class:`IndexError` for invalid IDs."""
+        pid = int(percept_id)
+        if pid < 0 or pid >= self._size:
+            raise IndexError(
+                f"RadixLayer.bytes_for: percept_id {pid} out of range "
+                f"[0, {self._size})")
+        return self.inverse_table[pid]
+
+    def vector_for(self, percept_id: int) -> torch.Tensor:
+        """Codebook row for ``percept_id`` (size [D])."""
+        pid = int(percept_id)
+        if pid < 0 or pid >= self._size:
+            raise IndexError(
+                f"RadixLayer.vector_for: percept_id {pid} out of range "
+                f"[0, {self._size})")
+        # Gather-then-STE: clamp only this row, not the whole [V,D] store
+        # (byte-identical to ``self.codebook[pid]``; see Codebook.lookup_rows).
+        return self._basis.lookup_rows(pid)
+
+    def active_prototypes(self) -> torch.Tensor:
+        """Return only occupied percept rows, transforming after the slice.
+
+        The backing Codebook's physical capacity may be much larger than the
+        radix inventory.  Reading ``self.codebook[:self._size]`` first invokes
+        ``Codebook.getW()``, which applies the percept UNORM STE to every
+        reserved row before slicing.  Gathering the prefix through
+        ``lookup_rows`` is value/gradient-identical and scales with occupancy.
+        """
+        return self._basis.lookup_rows(slice(0, self._size))
+
+    def associate_span(self, vec, size=None):
+        """Nearest ACTIVE percept by cosine (scale-robust to the reverse-path
+        norm inflation), optionally RESTRICTED to percepts of byte-length
+        ``size`` -- the .where contract's arm (a): a maximal part covering
+        exactly the span. Returns a pid, or ``None`` when no candidate exists.
+        NaN/Inf fail loud (mirrors :meth:`reverse`)."""
+        if not torch.is_tensor(vec) or self._size <= 0:
+            return None
+        finite = torch.isfinite(vec.detach().cpu())
+        if not bool(finite.all()):
+            raise RuntimeError(
+                "RadixLayer.associate_span: input vector contains NaN/Inf. "
+                "Numerical divergence must surface, not be silently masked.")
+        W = self.active_prototypes()
+        if W is None:
+            return None
+        W = W.detach()
+        target = vec.detach().to(W.device, W.dtype).reshape(-1)
+        if target.shape[0] != W.shape[1]:
+            return None
+        if float(target.norm()) < 1e-12:
+            return None                      # zero vector = no symbol here
+        if size is not None:
+            # Size buckets over active rows; rebuilt when the store grows.
+            cache = getattr(self, "_size_buckets", None)
+            if cache is None or cache[0] != self._size:
+                buckets: dict = {}
+                for pid in range(self._size):
+                    buckets.setdefault(len(self.inverse_table[pid]), []).append(pid)
+                cache = (self._size, buckets)
+                object.__setattr__(self, "_size_buckets", cache)
+            cand = cache[1].get(int(size))
+            if not cand:
+                return None
+            W = W[cand]
+        sims = torch.nn.functional.normalize(W, dim=-1) @ \
+            torch.nn.functional.normalize(target, dim=0)
+        if size is None:
+            # Content-terminated tile (no successor claim): an ACTIVE content
+            # slot must never resolve to the 1-byte NUL pad row, which otherwise
+            # out-cosines the true word (the "NUL shadow"). Exclude it.
+            for pid in range(W.shape[0]):
+                if self.inverse_table[pid] == b"\x00":
+                    sims[pid] = float("-inf")
+        best = int(sims.argmax())
+        return int(cand[best]) if size is not None else best
+
+    # ------------------------------------------------------------------
+    # Mutation
+    # ------------------------------------------------------------------
+
+    def _capacity_exhausted(self, required: int) -> RuntimeError:
+        return RuntimeError(
+            "RadixLayer percept codebook capacity exhausted: "
+            f"required {int(required)} rows, PartSpace nVectors={self._capacity}. "
+            "No row was allocated. Increase PartSpace <nVectors> before "
+            "constructing the model and reload the checkpoint.")
+
+    def _queue_promotion(
+        self,
+        chunk: bytes,
+        init_vector: torch.Tensor,
+    ) -> None:
+        """Queue one full-chunk promotion without touching live row storage.
+
+        The queue is insertion ordered (ordinary ``dict`` on supported Python)
+        so ids are deterministic. Capacity is checked *before* the queue is
+        mutated; exhaustion is therefore atomic with respect to the radix
+        inventory and its pending state.
+        """
+        chunk_b = bytes(chunk)
+        if chunk_b in self.hash_map or chunk_b in self._pending_promotions:
+            return
+        required = self._size + len(self._pending_promotions) + 1
+        if required > self._capacity:
+            raise self._capacity_exhausted(required)
+        if (not torch.is_tensor(init_vector)
+                or tuple(init_vector.shape) != (self.dim,)):
+            raise ValueError(
+                "RadixLayer queued promotion initializer must have shape "
+                f"({self.dim},), got "
+                f"{None if not torch.is_tensor(init_vector) else tuple(init_vector.shape)}")
+        self._pending_promotions[chunk_b] = (
+            init_vector.detach().to(device="cpu").clone())
+
+    def _promote_or_queue(
+        self,
+        chunk: bytes,
+        init_vector: torch.Tensor,
+    ) -> Optional[int]:
+        """Form recurrent groups; a fresh part stops aggregation this turn."""
+        parts = self.spell_out(chunk)
+        if any(p in self._formed_this_turn for p in parts):
+            return None
+        if self._size >= self._capacity and bytes(chunk) not in self.hash_map:
+            raise self._capacity_exhausted(self._size + 1)
+        self._pending_part_groups[bytes(chunk)] = tuple(parts)
+        return int(self.insert(chunk, init_vector=init_vector))
+
+    def insert(
+        self,
+        chunk: bytes,
+        *,
+        init_vector: Optional[torch.Tensor] = None,
+    ) -> int:
+        """Insert ``chunk`` (canonical bytes) and return its percept ID.
+
+        If ``chunk`` is already known, returns the existing ID without
+        modifying state. Otherwise checks the fixed capacity and
+        seeds the new row with ``init_vector`` if supplied (else with
+        a full-presence random code).
+        """
+        if not isinstance(chunk, (bytes, bytearray)):
+            raise TypeError(
+                f"RadixLayer.insert: chunk must be bytes, got "
+                f"{type(chunk)!r}")
+        if len(chunk) == 0:
+            raise ValueError(
+                "RadixLayer.insert: chunk must be non-empty.")
+        chunk_b = bytes(chunk)
+        existing = self.hash_map.get(chunk_b)
+        if existing is not None:
+            return int(existing)
+        # Allocate the next percept ID.
+        new_id = self._size
+        if new_id >= self._capacity:
+            raise self._capacity_exhausted(new_id + 1)
+        # Seed the new row. Write the MASTER parameter (self._basis.W), NOT
+        # self.codebook: under the [0,1] percept-store STE, ``self.codebook``
+        # -> ``_basis.getW()`` returns a non-leaf clamped tensor that does NOT
+        # share storage with the master, so a ``.data`` seed there is silently
+        # discarded (the row keeps its build-time prefill). Off the percept
+        # store getW() == self.W -> same storage, byte-identical.
+        master = self._basis.W
+        with torch.no_grad():
+            if init_vector is None:
+                row = master.data[new_id, :].normal_(mean=0.0, std=1.0)
+                # §22: normalize before the cube clamp so letter joins do
+                # not inherit the max-abs initializer's saturated maxima.
+                row.div_(row.norm().clamp(min=1e-8)).clamp_(0.0, 1.0)
+            else:
+                if not torch.is_tensor(init_vector):
+                    raise TypeError(
+                        "RadixLayer.insert: init_vector must be a "
+                        f"Tensor, got {type(init_vector)!r}")
+                if init_vector.shape != (self.dim,):
+                    raise ValueError(
+                        f"RadixLayer.insert: init_vector shape "
+                        f"{tuple(init_vector.shape)} != ({self.dim},)")
+                master.data[new_id, :].copy_(
+                    init_vector.detach().to(
+                        master.device, master.dtype))
+        # Update the auxiliary structures.
+        self.radix_trie.insert(chunk_b, new_id)
+        self.hash_map[chunk_b] = new_id
+        self.inverse_table.append(chunk_b)
+        self._size += 1
+        group = self._pending_part_groups.pop(chunk_b, None)
+        if group:
+            self.part_groups[new_id] = group
+            self._canonical_group_cache = None
+            self._formed_this_turn.add(new_id)
+        # Canonical fold provenance (todo "make abstraction order
+        # canonical"): a multi-byte percept row is PRODUCED by the sigma
+        # radix synthesis (bytes -> chunk combine) -- stamp FOLD_SIGMA at
+        # pass slot 0 on the owning percept codebook. A single-byte atom
+        # is an order-0 prototype: no fold, no stamp.
+        if len(chunk_b) > 1:
+            _rf = getattr(self._basis, "record_fold", None)
+            if _rf is not None:
+                _rf(new_id, 0, getattr(self._basis, "FOLD_SIGMA", 1))
+        return new_id
+
+    # ------------------------------------------------------------------
+    # Lookup path
+    # ------------------------------------------------------------------
+
+    def lookup(self, chunk: bytes) -> torch.Tensor:
+        """Forward path: canonical bytes -> a vector of size [D].
+
+        Walks the spec'd path:
+
+          1. hash-map hit -> permanent codebook row.
+          2. radix longest-match -> known prefix + residual fallback.
+          3. byte fallback over residual; bumps hit counter; may promote.
+
+        See :meth:`lookup_with_id` for the same path plus the resolved
+        percept ID (``None`` for unpromoted slots).
+        """
+        vec, _ = self.lookup_with_id(chunk)
+        return vec
+
+    def lookup_with_id(
+        self, chunk: bytes
+    ) -> Tuple[torch.Tensor, Optional[int]]:
+        """Forward path with percept-ID resolution.
+
+        Returns ``(vector, percept_id_or_None)``:
+          * Hash-map hit -> ``(codebook[pid], pid)``.
+          * Whole input matched a known prefix exactly -> ``(vec, pid)``.
+          * Promotion fired during the call -> ``(vec, new_pid)``.
+          * Unpromoted byte-fallback / partial-match -> ``(vec, None)``.
+
+        Sibling of :meth:`lookup`; both share this single implementation
+        so the spec'd Forward path is one routine.
+        """
+        if not isinstance(chunk, (bytes, bytearray)):
+            raise TypeError(
+                f"RadixLayer.lookup_with_id: chunk must be bytes, got "
+                f"{type(chunk)!r}")
+        if len(chunk) == 0:
+            raise ValueError(
+                "RadixLayer.lookup_with_id: chunk must be non-empty.")
+        chunk_b = bytes(chunk)
+        # Step 1: hash-map fast path.
+        cached = self.hash_map.get(chunk_b)
+        if cached is not None:
+            # Gather-then-STE (Codebook.lookup_rows): clamp only the gathered
+            # row, not the full [V,D] store. Byte-identical to
+            # ``self.codebook[cached]`` -- _unorm_ste is elementwise. This is
+            # the per-slot radix hot path (was O(V) per lookup).
+            return self._basis.lookup_rows(cached), int(cached)
+        # Step 2: radix longest-match on the input.
+        match_id, match_len = self.radix_trie.longest_match(chunk_b)
+        prefix_vec: Optional[torch.Tensor] = None
+        if match_id is not None and match_len > 0:
+            prefix_vec = self._basis.lookup_rows(match_id)
+        residual = chunk_b[match_len:]
+        if not residual:
+            # Whole chunk matched (rare here since the hash-map miss
+            # came first; defensive guard).
+            vec = prefix_vec if prefix_vec is not None \
+                else self._basis.lookup_rows(match_id)
+            return vec, (int(match_id) if match_id is not None else None)
+        # Step 3: byte-fallback encode the residual.
+        fallback_vec = self.byte_fallback.encode(residual)
+        if prefix_vec is None:
+            combined = fallback_vec
+        else:
+            combined = prefix_vec + fallback_vec
+        # Step 4: promotion check + hit-counter bookkeeping.
+        # Three regimes:
+        #   (a) full miss (match_len == 0): encode() already bumped
+        #       hit_counts[chunk_b] since residual == chunk_b.
+        #   (b) partial miss, first sight: hit_counts[chunk_b] is 0
+        #       because encode() bumped only the residual; seed it to 1.
+        #   (c) partial miss, repeat sight: hit_counts[chunk_b] was
+        #       seeded on a prior call but encode() bumped only the
+        #       residual this time, so bump the full-chunk counter too.
+        full_hits = self.byte_fallback.hits(chunk_b)
+        if (full_hits == 0 and len(residual) < len(chunk_b)):
+            self.byte_fallback.hit_counts[chunk_b] = 1
+            full_hits = 1
+        elif len(residual) < len(chunk_b):
+            self.byte_fallback.hit_counts[chunk_b] = full_hits + 1
+            full_hits = full_hits + 1
+        if (full_hits >= self.promotion_threshold
+                and len(chunk_b) >= self.promotion_min_length
+                and self._promotable(chunk_b)):
+            new_pid = self._promote_or_queue(
+                chunk_b, init_vector=combined.detach())
+            return combined, (None if new_pid is None else int(new_pid))
+        return combined, None
+
+    # ------------------------------------------------------------------
+    # Spell-out emission (2026-06-04)
+    # ------------------------------------------------------------------
+
+    def spell_out(self, chunk: bytes) -> List[int]:
+        """Emit ``chunk`` as a sequence of percept IDs -- the model's
+        "send the next-largest percept, up to the size of the word"
+        contract.
+
+        At each position take the LONGEST known prefix-percept; when no
+        multi-byte prefix is known, fall to a SINGLE-BYTE percept (seeded
+        on demand so every byte is always a valid one-row percept). So an
+        unfamiliar word is "spelled out" as a run of byte/prefix percepts,
+        and a word the trie has already concatenated (via promotion) comes
+        back as one percept. EVERY returned id indexes a single
+        ``codebook`` (``.what``) row -- which is what lets the SubSpace
+        store a ``.active`` selection and materialize without copying.
+
+        Returns the list of percept-store row ids (length >= 1 for a
+        non-empty chunk).
+        """
+        chunk_b = bytes(chunk)
+        if len(chunk_b) == 0:
+            return []
+        pids: List[int] = []
+        i = 0
+        n = len(chunk_b)
+        while i < n:
+            remaining = chunk_b[i:]
+            match_id, match_len = self.radix_trie.longest_match(remaining)
+            if match_id is not None and match_len > 0:
+                pids.append(int(match_id))
+                i += int(match_len)
+                continue
+            # No known prefix at this position: emit a single byte-percept,
+            # seeding it on first sight so the spell-out always bottoms out.
+            one = chunk_b[i:i + 1]
+            pid = self.hash_map.get(one)
+            if pid is None:
+                pid = self.insert(one)
+            pids.append(int(pid))
+            i += 1
+        return pids
+
+    def _promotable(self, chunk_b: bytes) -> bool:
+        """Word-bounded gate (5e): a promotable chunk is ONE word-tiling tile."""
+        if not self.word_bounded:
+            return True
+        import Meronomy  # local: Meronomy imports Layers at module load
+        return len(Meronomy.word_tiling(chunk_b)) <= 1
+
+    def observe_chunk(self, chunk: bytes) -> Optional[int]:
+        """Frequency-driven concatenation: count a full chunk's sightings
+        and promote it to a SINGLE percept once it recurs
+        ``promotion_threshold`` times (and is at least
+        ``promotion_min_length`` bytes). The promoted row is seeded from
+        the mean of the chunk's current spell-out percepts so the new
+        concatenated percept starts meaningful (a continuation of what was
+        being spelled out). Returns the new percept id on promotion, else
+        ``None`` (already a percept, too short, boundary-crossing under
+        ``word_bounded``, or below threshold).
+        """
+        chunk_b = bytes(chunk)
+        if len(chunk_b) < self.promotion_min_length:
+            return None
+        if chunk_b in self.hash_map:
+            return None
+        if not self._promotable(chunk_b):
+            return None
+        self._chunk_hits[chunk_b] = self._chunk_hits.get(chunk_b, 0) + 1
+        if self._chunk_hits[chunk_b] < self.promotion_threshold:
+            return None
+        pids = self.spell_out(chunk_b)
+        with torch.no_grad():
+            init = (self._basis.lookup_rows(pids).mean(dim=0).detach()
+                    if pids else None)
+        new_id = self._promote_or_queue(chunk_b, init_vector=init)
+        # Once queued, further sightings must not repeatedly attempt the same
+        # promotion.  The byte spell-out returned by this batch remains live;
+        # the single promoted row becomes visible after the boundary flush.
+        if new_id is not None or chunk_b in self._pending_promotions:
+            self._chunk_hits.pop(chunk_b, None)
+        return None if new_id is None else int(new_id)
+
+    # ------------------------------------------------------------------
+    # Layer-API forward / reverse
+    # ------------------------------------------------------------------
+
+    def forward(self, chunks):
+        """Layer-API forward: alias of :meth:`lookup_with_id`.
+
+        Accepts a single ``bytes`` / ``bytearray`` chunk and returns
+        the ``(vector, percept_id_or_None)`` tuple. Batched / tensor
+        inputs are NOT supported here -- the PartSpace's
+        ``_embed_radix`` loop calls :meth:`lookup_with_id` per slot for
+        clarity; this overload just exposes the same routine under the
+        canonical Layer name so the symmetric ``forward()`` /
+        ``reverse()`` contract holds.
+        """
+        return self.lookup_with_id(chunks)
+
+    def decode_activity(self, activity):
+        """Realize native row activity at byte offsets, with no code matching.
+
+        A maximum chooses among ambiguous rows. Empty activity emits nothing;
+        a chosen multi-byte row occupies its span before the next selection.
+        """
+        if activity.ndim != 3 or activity.shape[-1] != len(self):
+            raise ValueError('radix decode requires [batch, position, active row]')
+        if not bool(torch.isfinite(activity).all()):
+            raise RuntimeError('radix activity contains NaN/Inf')
+        result = torch.zeros(activity.shape[:2], device=activity.device, dtype=torch.long)
+        strength, rows = activity.detach().max(-1)
+        for b in range(len(result)):
+            position = 0
+            while position < result.shape[1]:
+                raw = self.bytes_for(int(rows[b, position])) if strength[b, position] > 0 else b''
+                count = min(len(raw), result.shape[1] - position)
+                if count:
+                    result[b, position:position + count] = torch.tensor(
+                        list(raw[:count]), device=result.device)
+                position += max(1, count)
+        return result
+
+    def reverse(self, vec, *, symbolic_space=None):
+        """Decode native concept candidates through their word-owned inverse.
+
+        Without a concept owner this is the standalone percept-table inverse.
+        WholeSpace property rows never name words or own a taxonomy.
+        """
+        if not torch.is_tensor(vec):
+            return b''
+        if vec.ndim > 1:
+            return [self.reverse(row, symbolic_space=symbolic_space) for row in vec]
+        if not bool(torch.isfinite(vec).all()):
+            raise RuntimeError('RadixLayer.reverse: input vector contains NaN/Inf')
+        owner = symbolic_space if callable(getattr(symbolic_space, 'word_surface_for_row', None)) else None
+        rows = None
+        if owner is not None:
+            bank = _active_codebook_prototypes(getattr(owner, 'similarity_codebook', None))
+            if bank is None:
+                return b''
+            rows = [row for row in range(len(bank)) if owner.word_surface_for_row(row) is not None]
+            if not rows:
+                return b''
+            bank = bank[rows]
+        else:
+            bank = self.active_prototypes()
+        if bank is None or not len(bank):
+            return b''
+        target = vec.detach().to(bank).reshape(-1)
+        if target.numel() < bank.shape[1] or float(target.norm()) < 1e-3:
+            return b''
+        target = target[:bank.shape[1]]
+        selected = int((bank - target).square().sum(-1).argmin())
+        if owner is not None:
+            return owner.word_surface_for_row(rows[selected])
+        return self.bytes_for(selected)
+
+    # ------------------------------------------------------------------
+    # Growth
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _optimizer_leaves(optimizer):
+        """Yield concrete optimizer wrappers from a MultiOptimizer tree."""
+        children = getattr(optimizer, "optimizers", None)
+        if children is None:
+            yield optimizer
+            return
+        for child in children:
+            yield from RadixLayer._optimizer_leaves(child)
+
+    def ensure_atomic_bytes(self, byte_chunks, optimizer=None,
+                            owner_space=None):
+        """Install required one-byte fallback rows at an eager boundary.
+
+        A multi-byte promotion can wait until the post-step boundary, but an
+        unseen byte cannot: :meth:`spell_out` needs its row in the current
+        lexical stem.  This routine is therefore the mandatory, pre-gather
+        counterpart to :meth:`flush_pending_promotions`.  It validates the
+        complete admission transaction before mutating the trie inventory.
+        Physical capacity and optimizer ownership stay fixed.
+
+        Callers must invoke it before any read of the current codebook in the
+        forward/autograd graph.  ``PartSpace._embed_radix*`` does so once for
+        all distinct bytes in the incoming batch.
+        """
+        requested = []
+        seen = set()
+        for chunk in byte_chunks:
+            if not isinstance(chunk, (bytes, bytearray)):
+                raise TypeError(
+                    "RadixLayer.ensure_atomic_bytes requires byte chunks; "
+                    f"got {type(chunk)!r}")
+            chunk_b = bytes(chunk)
+            if len(chunk_b) != 1:
+                raise ValueError(
+                    "RadixLayer.ensure_atomic_bytes requires exactly one "
+                    f"byte per chunk; got length {len(chunk_b)}")
+            if chunk_b not in seen:
+                seen.add(chunk_b)
+                requested.append(chunk_b)
+
+        missing = [chunk for chunk in requested
+                   if chunk not in self.hash_map]
+        if not missing:
+            return {
+                "inserted": 0,
+                "grew": False,
+                "old_capacity": self._capacity,
+                "new_capacity": self._capacity,
+                "optimizer_groups": 0,
+            }
+
+        # Pending word rows already reserve logical ids.  Include them in the
+        # ceiling check, but do not force them into the live table here: only
+        # the byte atoms are required to spell this batch losslessly.
+        pending_only = [
+            chunk for chunk in self._pending_promotions
+            if chunk not in self.hash_map and chunk not in seen
+        ]
+        required_now = self._size + len(missing)
+        required_logical = required_now + len(pending_only)
+        if required_logical > self._capacity:
+            raise self._capacity_exhausted(required_logical)
+
+        # With enough physical slack installed, insert() cannot resize.  A
+        # byte that was somehow also pending is now satisfied immediately;
+        # remove that redundant deferred initializer.
+        for chunk in missing:
+            self.insert(chunk)
+            self._pending_promotions.pop(chunk, None)
+        return {
+            "inserted": len(missing),
+            "grew": False,
+            "old_capacity": self._capacity,
+            "new_capacity": self._capacity,
+            "optimizer_groups": 0,
+        }
+
+    def flush_pending_promotions(self, optimizer=None, owner_space=None):
+        """Commit deferred promotions at an explicit graph-safe boundary.
+
+        Preflight the entire logical admission before writing any row. The
+        physical codebook, parameter identity and optimizer moments stay fixed.
+        """
+        pending = [
+            (chunk, init) for chunk, init in self._pending_promotions.items()
+            if chunk not in self.hash_map
+        ]
+        if not pending:
+            self._pending_promotions.clear()
+            return {"inserted": 0, "grew": False,
+                    "old_capacity": self._capacity,
+                    "new_capacity": self._capacity,
+                    "optimizer_groups": 0}
+
+        required = self._size + len(pending)
+        if required > self._capacity:
+            raise self._capacity_exhausted(required)
+        for chunk, init in pending:
+            if not chunk or tuple(init.shape) != (self.dim,):
+                raise ValueError(
+                    "RadixLayer pending-promotion state is corrupt; "
+                    "no queued row was installed.")
+
+        # Capacity and all ownership transitions are now valid.  ``insert``
+        # cannot grow in this loop and each queued initializer was prechecked.
+        for chunk, init in pending:
+            self.insert(chunk, init_vector=init)
+        self._pending_promotions.clear()
+        return {
+            "inserted": len(pending),
+            "grew": False,
+            "old_capacity": self._capacity,
+            "new_capacity": self._capacity,
+            "optimizer_groups": 0,
+        }
+
+    # ------------------------------------------------------------------
+    # Persistence
+    # ------------------------------------------------------------------
+
+    def vocab_extras(self) -> Dict[str, object]:
+        """Pure-Python dump of the non-tensor state for ``vocab_extras``.
+
+        The trie, hash map, inverse table, byte-fallback hit counts,
+        and the promotion knobs all live in pure-Python structures; the
+        codebook + byte-fallback's ``[256, D]`` Parameters travel via
+        the standard ``state_dict`` mechanism.
+        """
+        return {
+            "dim": self.dim,
+            "capacity": self._capacity,
+            "size": self._size,
+            "promotion_threshold": self.promotion_threshold,
+            "promotion_min_length": self.promotion_min_length,
+            "radix_trie": self.radix_trie.serialize(),
+            "hash_map": dict(self.hash_map),
+            "inverse_table": list(self.inverse_table),
+            "byte_fallback_hits": self.byte_fallback.extras_dump(),
+            "chunk_hits": dict(self._chunk_hits),
+            "part_groups": dict(self.part_groups),
+            "pending_part_groups": dict(self._pending_part_groups),
+            "identity": self.identity.vocab_extras() if hasattr(self, 'identity') else None,
+            "pending_promotions": [
+                (chunk, init.detach().to(device="cpu").clone())
+                for chunk, init in self._pending_promotions.items()
+            ],
+        }
+
+    def load_vocab_extras(self, extras: Dict[str, object]) -> None:
+        """Restore the pure-Python state from a :meth:`vocab_extras` blob.
+
+        Note: ``codebook`` Parameter shape must already match the
+        ``capacity`` recorded in ``extras`` (the caller should have
+        loaded the state_dict first, or be calling this on a freshly
+        constructed RadixLayer with the matching ``initial_cap``).
+        """
+        cap = int(extras["capacity"])
+        size = int(extras["size"])
+        if cap > self._capacity:
+            raise ValueError(
+                "RadixLayer checkpoint exceeds PartSpace nVectors: "
+                f"checkpoint={cap}, nVectors={self._capacity}. "
+                "Configure sufficient capacity before model construction.")
+        if size > self._capacity:
+            raise ValueError(
+                f"RadixLayer checkpoint size {size} exceeds live physical "
+                f"capacity {self._capacity}")
+        self._size = size
+        self.promotion_threshold = int(extras["promotion_threshold"])
+        self.promotion_min_length = int(extras["promotion_min_length"])
+        self.radix_trie = RadixTrie()
+        # The serialised entries are lists of ints (JSON-friendly);
+        # rebuild them as proper tuples of (bytes, Optional[int], list[int]).
+        dump_in = extras["radix_trie"]
+        dump_norm: List[Tuple[bytes, Optional[int], List[int]]] = []
+        for prefix, percept_id, keys in dump_in:
+            dump_norm.append((bytes(prefix),
+                              None if percept_id is None
+                              else int(percept_id),
+                              [int(k) for k in keys]))
+        self.radix_trie.load_state(dump_norm)
+        self.hash_map = {bytes(k): int(v)
+                         for k, v in extras["hash_map"].items()}
+        self.inverse_table = [bytes(b) for b in extras["inverse_table"]]
+        self.byte_fallback.extras_load(extras["byte_fallback_hits"])
+        self._chunk_hits = {
+            bytes(k): int(v)
+            for k, v in (extras.get("chunk_hits", {}) or {}).items()
+        }
+        pending = {}
+        for chunk, init in extras.get("pending_promotions", ()) or ():
+            chunk_b = bytes(chunk)
+            init_t = torch.as_tensor(init).detach().to(device="cpu").clone()
+            if tuple(init_t.shape) != (self.dim,):
+                raise ValueError(
+                    "RadixLayer checkpoint pending initializer has shape "
+                    f"{tuple(init_t.shape)}, expected ({self.dim},)")
+            pending[chunk_b] = init_t
+        if self._size + len(pending) > self._capacity:
+            raise ValueError(
+                "RadixLayer checkpoint pending promotions exceed configured "
+                f"nVectors={self._capacity}")
+        self._pending_promotions = pending
+        self.part_groups = dict(extras.get("part_groups", {}))
+        self._canonical_group_cache = None
+        self._pending_part_groups = dict(extras.get("pending_part_groups", {}))
+        if extras.get('identity') is not None and hasattr(self, 'identity'):
+            self.identity.load_vocab_extras(extras['identity'])
+        self._formed_this_turn.clear()
+
+
+#endregion
+
+#region Tokenizer GPU Layers
+
+class BPEGpuLayer(Layer):
+    """GPU BPE tokenizer for the FROZEN-vocab training path.
+
+    The legacy ``ChunkLayer`` greedy longest-match is a Python trie walk
+    that needs ``byte_indices.tolist()`` -- a per-step cudaMemcpyDtoH. When
+    the BPE vocab is frozen (``word_learning <= 0`` -- the CPU-pretrain ->
+    freeze -> GPU-train workflow), the whole tokenizer becomes static
+    tensor ops with zero host sync. ``PartSpace`` owns an instance
+    of this layer and caches the per-(frozen) vocab static tables on
+    itself (``self._bpe_static_tables``); this layer holds the algorithm
+    only.
+
+    Bit-identical to the trie walk is asserted by ``test/bpe_gpu_equiv.py``
+    before the switch -- a one-token silent divergence corrupts all
+    training (fail-loud memory).
+    """
+
+    class _BPEGpuUnavailable(Exception):
+        """Raised when the static GPU tables cannot be built (e.g. a frozen
+        codebook/vocab key mismatch). The caller falls back to the verified
+        trie reference -- never a silent wrong result."""
+
+    # Polynomial rolling hash over bytes. 1099511628211 is the FNV-style
+    # 64-bit prime; arithmetic wraps mod 2**64 via int64 overflow, which is
+    # fine -- the hash only needs to be a consistent bucket; correctness
+    # comes from the explicit byte-verify, not from the hash being perfect.
+    _HASH_MUL = 1099511628211
+
+    def __init__(self):
+        super().__init__(nInput=0, nOutput=0)
+
+    @staticmethod
+    def _poly_hash(windows):
+        """``windows`` [..., L] int64 byte values -> [...] int64 hash."""
+        h = torch.zeros(windows.shape[:-1], dtype=torch.int64,
+                        device=windows.device)
+        L = windows.shape[-1]
+        for k in range(L):
+            h = h * BPEGpuLayer._HASH_MUL + (windows[..., k] + 1)
+        return h
+
+    @staticmethod
+    def build_static_tables(chunk_layer, codebook, device):
+        """Frozen vocab -> static device tensors. Call ONCE per (frozen)
+        chunk_layer/codebook on the target device; cache the result.
+
+        Returns a dict the GPU tokenizer + the rewired _embed_bpe consume.
+        All Python-dict / latin1 work happens HERE (one-time, host), never
+        per batch.
+        """
+        vocab = chunk_layer.vocab               # {byte-tuple: id}
+        id_to_bytes = chunk_layer.id_to_bytes   # {id: byte-tuple}
+        maxL = int(chunk_layer._max_merge_len)
+        V = int(chunk_layer._next_id)           # ids are 0..V-1
+        boundary = set(int(b) for b in chunk_layer.BOUNDARY_BYTES)
+
+        tok_bytes = torch.full((V, maxL), -1, dtype=torch.int64)
+        tok_len = torch.zeros(V, dtype=torch.int64)
+        is_boundary = torch.zeros(V, dtype=torch.bool)
+        for i in range(V):
+            key = id_to_bytes.get(i)
+            if key is None:
+                # 0..255 are always seeded; a gap above that would be a
+                # vocab bug -- single-byte fallback id == byte value.
+                key = (i,) if i < 256 else ()
+            kl = len(key)
+            tok_len[i] = kl
+            if kl:
+                tok_bytes[i, :kl] = torch.tensor(
+                    [int(b) for b in key], dtype=torch.int64)
+                is_boundary[i] = all(int(b) in boundary for b in key)
+
+        # chunk_id -> codebook row (frozen resolve chain). -1 == "skip"
+        # (boundary chunk, or byte_mode key not in the codebook -- the
+        # original returns None and the sub-token is dropped).
+        byte_mode = bool(getattr(codebook, 'byte_mode', False))
+        key_to_index = codebook.pretrain.key_to_index
+        chunk_to_cb = torch.full((V,), -1, dtype=torch.int64)
+        for i in range(V):
+            if bool(is_boundary[i]):
+                continue
+            key = id_to_bytes.get(i, (i,) if i < 256 else ())
+            if not key:
+                continue
+            latin1 = "".join(chr(int(b) & 0xFF) for b in key)
+            idx = key_to_index.get(latin1)
+            if idx is None:
+                if byte_mode:
+                    continue          # original: _resolve -> None -> skip
+                raise AssertionError(
+                    f"build_static_tables: key {latin1!r} missing from "
+                    f"frozen codebook.pretrain (word_learning<=0) -- .kv "
+                    f"load mismatch.")
+            chunk_to_cb[i] = int(idx)
+
+        # Per-length sorted (hash -> id) for longest-match searchsorted.
+        by_len = {}
+        for L in range(1, maxL + 1):
+            ids = [i for i in range(V) if int(tok_len[i]) == L]
+            if not ids:
+                by_len[L] = None
+                continue
+            ids_t = torch.tensor(ids, dtype=torch.int64)
+            windows = tok_bytes[ids_t, :L]                 # [K, L]
+            hashes = BPEGpuLayer._poly_hash(windows)       # [K]
+            order = torch.argsort(hashes)
+            by_len[L] = (hashes[order].to(device),
+                         ids_t[order].to(device))
+
+        return {
+            "maxL": maxL, "V": V,
+            "tok_bytes": tok_bytes.to(device),
+            "tok_len": tok_len.to(device),
+            "is_boundary": is_boundary.to(device),
+            "chunk_to_cb": chunk_to_cb.to(device),
+            "by_len": by_len,
+        }
+
+    @staticmethod
+    def gpu_longest_match(byte_buf, tables):
+        """``byte_buf`` [B, N] long (0..255; 0 terminates a row).
+
+        Returns ``best_id`` [B, N] long and ``best_len`` [B, N] long: the
+        id / length of the longest vocab entry starting at each position
+        (single-byte fallback guarantees ``best_len >= 1``). Pure tensor
+        ops, no host sync.
+        """
+        B, N = byte_buf.shape
+        dev = byte_buf.device
+        maxL = tables["maxL"]
+        tok_bytes = tables["tok_bytes"]
+        # Single-byte baseline: id == byte value (ids 0..255 seeded), len 1.
+        best_id = byte_buf.clone()
+        best_len = torch.ones(B, N, dtype=torch.int64, device=dev)
+
+        for L in range(2, maxL + 1):
+            entry = tables["by_len"].get(L)
+            if entry is None or N < L:
+                continue
+            keys_sorted, ids_sorted = entry
+            # [B, N-L+1, L] windows; pad-free positions only.
+            win = byte_buf.unfold(1, L, 1).to(torch.int64)     # [B, M, L]
+            h = BPEGpuLayer._poly_hash(win)                    # [B, M]
+            pos = torch.searchsorted(keys_sorted, h)
+            pos = pos.clamp(max=keys_sorted.numel() - 1)
+            hit = keys_sorted[pos] == h
+            cand_id = ids_sorted[pos]                          # [B, M]
+            # Byte-verify (collision-proof): window == tok_bytes[cand_id].
+            cb = tok_bytes[cand_id][..., :L]                   # [B, M, L]
+            verified = hit & (win == cb).all(dim=-1)           # [B, M]
+            # A match of length L at position i beats any shorter one.
+            M = win.shape[1]
+            sl = slice(0, M)
+            take = verified
+            best_id[:, sl] = torch.where(take, cand_id, best_id[:, sl])
+            best_len[:, sl] = torch.where(
+                take, torch.full_like(best_len[:, sl], L),
+                best_len[:, sl])
+        return best_id, best_len
+
+    @staticmethod
+    def segment_words(chunk_ids, tok_count, tables, nIdeas):
+        """Tensor word-segmentation, **fully static** (no ``.item()``, no
+        boolean-mask compaction -> zero DtoH, fullgraph/CUDA-graph safe).
+        Bit-identical semantics to ``_embed_bpe``'s Python sweep:
+
+          * boundary chunk (all bytes in BOUNDARY_BYTES) separates words;
+          * non-boundary chunk resolves via ``chunk_to_cb`` (-1 == skip:
+            byte_mode key not in codebook);
+          * a word = a maximal run of non-boundary chunks, EMITTED only if
+            it has >=1 resolved sub-token (empty/all-unresolved runs take
+            no slot); per-row emitted words are slotted 0..nIdeas-1 in
+            left-to-right order, later words dropped.
+
+        Everything stays ``[B,T]`` (T = chunk buffer width, static). The
+        emitter scatters these into static ``[B*nIdeas]`` buffers, so the
+        target id ``b*nIdeas+slot`` is the only thing needed -- no dense
+        word-id / word-count, hence no host sync.
+
+        Returns (all ``[B,T]``, long/bool): ``sub_cb`` (codebook row, -1
+        where not a kept sub-token), ``sub_target`` (``b*nIdeas+slot``, or
+        ``B*nIdeas`` trash bucket where not kept), ``sub_pos`` (token index,
+        for first-sub-token tiebreak), ``keep`` (bool).
+        """
+        B, T = chunk_ids.shape
+        dev = chunk_ids.device
+        pos = torch.arange(T, device=dev).unsqueeze(0).expand(B, T)
+        valid = pos < tok_count.unsqueeze(1)
+        ids = chunk_ids.clamp(min=0)
+        is_bnd = tables["is_boundary"][ids] | (~valid)          # pad => sep
+        cb = tables["chunk_to_cb"][ids]                          # -1 = skip
+        resolved = valid & (~is_bnd) & (cb != -1)                # [B,T]
+
+        # run_key = #boundary chunks strictly before this position (a run
+        # of non-boundary chunks between two boundaries shares one key).
+        bnd_i = is_bnd.to(torch.int64)
+        run_key = torch.cumsum(bnd_i, dim=1) - bnd_i             # [B,T]
+
+        # Per (b, run_key): does the run hold >=1 resolved sub-token?
+        has_res = torch.zeros(B, T, dtype=torch.int64, device=dev)
+        has_res.scatter_reduce_(
+            1, run_key, resolved.to(torch.int64),
+            reduce="amax", include_self=True)                    # 0/1 grid
+
+        # Slot for an emitted run = #emitted runs with smaller run_key
+        # (exclusive cumsum of the has_res grid over the run-key axis).
+        emit_excl = torch.cumsum(has_res, dim=1) - has_res       # [B,T]
+        slot = emit_excl.gather(1, run_key)                      # [B,T]
+        keep = resolved & (slot < nIdeas)                          # [B,T] bool
+
+        b_idx = (torch.arange(B, device=dev)
+                 .unsqueeze(1).expand(B, T))                     # [B,T]
+        trash = B * nIdeas
+        sub_target = torch.where(keep, b_idx * nIdeas + slot,
+                                 torch.full_like(slot, trash))
+        sub_cb = torch.where(keep, cb, torch.full_like(cb, -1))
+        return sub_cb, sub_target, pos, keep
+
+    @staticmethod
+    def gpu_chunk_ids(byte_buf, best_id, best_len):
+        """Greedy left-to-right consumption -> token-major ``chunk_ids``
+        [B, N] long (padded with -1) and ``tok_count`` [B] long.
+
+        Sequential by nature (token k+1 starts at cursor + L[cursor]); a
+        bounded on-device scan over a ``[B]`` cursor, fixed N iterations
+        with masking -- no ``.any()``/``.item()`` host sync. N is the byte
+        buffer width; #tokens per row <= N so N iterations always suffice.
+        """
+        B, N = byte_buf.shape
+        dev = byte_buf.device
+        chunk_ids = torch.full((B, N), -1, dtype=torch.int64, device=dev)
+        cursor = torch.zeros(B, dtype=torch.int64, device=dev)
+        tok_count = torch.zeros(B, dtype=torch.int64, device=dev)
+        ar = torch.arange(B, device=dev)
+        for t in range(N):
+            c = cursor.clamp(max=N - 1)
+            cur_byte = byte_buf[ar, c]
+            active = (cursor < N) & (cur_byte != 0)
+            cur_id = best_id[ar, c]
+            cur_len = best_len[ar, c]
+            chunk_ids[ar, torch.full_like(cursor, t)] = torch.where(
+                active, cur_id, chunk_ids[ar, torch.full_like(cursor, t)])
+            tok_count = tok_count + active.to(torch.int64)
+            cursor = cursor + torch.where(
+                active, cur_len, torch.zeros_like(cur_len))
+        return chunk_ids, tok_count
+
+
+
+class MPHFGpuLayer(Layer):
+    """Static minimal-perfect-hash (MPHF) percept->row index for the
+    FROZEN-vocab training path -- the Rework A core mechanism.
+
+    Per the consolidated two-loop spec (§"Percept -> MPHF -> table",
+    §IMPLEMENTATION DETAILS D2): each percept's byte slot passes through an
+    MPHF producing an ``index in [0, V_percept)``. That index addresses a
+    **table** whose every entry holds BOTH (1) the literal surface word
+    string and (2) the ConceptualSpace activation vector for that token.
+    The table's halves are reused directly from the frozen ``Embedding``
+    codebook (``codebook.wv._vectors`` and ``codebook.wv.index_to_key``)
+    -- no parallel structures.
+
+    Build/verify pattern mirrors ``BPEGpuLayer``: frozen, built ONCE at
+    the CPU->GPU handoff over the frozen lexicon key set, cached on the
+    owning ``PartSpace`` as ``self._mphf_static_tables``; runtime is
+    pure static tensor ops -- poly-hash + ``searchsorted`` + collision-
+    proof byte-verify -- ZERO host sync, O(1) per slot. The MPHF is
+    **non-invertible**: the reverse map is the table lookup, never an
+    inverse hash. A one-row silent mis-resolution corrupts all training,
+    so the byte-verify is exact regardless of hash collisions (fail-loud
+    memory).
+    """
+
+    class _MPHFUnavailable(Exception):
+        """Raised when the static MPHF table cannot be built (e.g. an empty
+        or non-Embedding codebook). The caller falls back to the existing
+        verified path -- never a silent wrong result."""
+
+    def __init__(self):
+        super().__init__(nInput=0, nOutput=0)
+
+    @staticmethod
+    def build_mphf_table(codebook, device):
+        """Frozen lexicon key set -> static device tensors. Call ONCE per
+        (frozen) codebook on the target device; cache the result.
+
+        The frozen key set is ``codebook.wv.index_to_key`` (the ``.kv``
+        lexicon + ASCII bootstrap + NULL rows -- frozen at
+        ``word_learning<=0``). All Python-dict / utf-8 work happens HERE
+        (one-time, host), never per batch.
+
+        Returns a dict the runtime ``mphf_index`` consumes plus the
+        ``surface`` list (== ``index_to_key``) for the reverse map.
+        """
+        wv = getattr(codebook, "wv", None)
+        if wv is None or getattr(wv, "index_to_key", None) is None:
+            raise MPHFGpuLayer._MPHFUnavailable(
+                "build_mphf_table: codebook has no wv.index_to_key "
+                "(non-Embedding / numeric codebook).")
+        keys = list(wv.index_to_key)
+        V = len(keys)
+        if V == 0:
+            raise MPHFGpuLayer._MPHFUnavailable(
+                "build_mphf_table: empty lexicon.")
+
+        # Each key -> its utf-8 byte tuple, EXACTLY as InputSpace lexes a
+        # token slot into ``subspace.what.W`` (null-terminated utf-8). The
+        # MPHF keys on the same byte representation the percept slot carries
+        # so the lookup is byte-for-byte the frozen ``key_to_index`` row.
+        key_bytes = []
+        maxL = 1
+        for k in keys:
+            try:
+                kb = k.encode("utf-8")
+            except Exception:
+                # Non-str keys are not lexable percept slots; map to a
+                # zero-length entry (never matched -> NULL row fallback).
+                kb = b""
+            key_bytes.append(kb)
+            if len(kb) > maxL:
+                maxL = len(kb)
+
+        # Padded row->bytes (-1 pad) + lengths for the collision-proof
+        # byte-verify, mirroring ``BPEGpuLayer``'s ``tok_bytes``/``tok_len``.
+        tok_bytes = torch.full((V, maxL), -1, dtype=torch.int64)
+        tok_len = torch.zeros(V, dtype=torch.int64)
+        for i, kb in enumerate(key_bytes):
+            kl = len(kb)
+            tok_len[i] = kl
+            if kl:
+                tok_bytes[i, :kl] = torch.tensor(
+                    [int(b) for b in kb], dtype=torch.int64)
+
+        # Per-length sorted (poly-hash -> row idx) index for the O(1)
+        # exact-key ``searchsorted`` lookup. A length-0 key (empty / NULL
+        # sentinel slot) is never matched -- the runtime maps an empty slot
+        # to ``null_row`` explicitly, not via the hash.
+        by_len = {}
+        for L in range(1, maxL + 1):
+            ids = [i for i in range(V) if int(tok_len[i]) == L]
+            if not ids:
+                by_len[L] = None
+                continue
+            ids_t = torch.tensor(ids, dtype=torch.int64)
+            windows = tok_bytes[ids_t, :L]                 # [K, L]
+            hashes = BPEGpuLayer._poly_hash(windows)       # [K]
+            order = torch.argsort(hashes)
+            by_len[L] = (hashes[order].to(device),
+                         ids_t[order].to(device))
+
+        # The NULL row: ``\x00`` (byte 0) is the per-row cursor closing / pad
+        # sentinel and ``Embedding.create`` seeds it at row 0. An empty /
+        # all-zero percept slot resolves here (the NULL char surface), NOT
+        # via the hash.
+        null_row = int(wv.key_to_index.get("\x00", 0))
+
+        return {
+            "maxL": int(maxL),
+            "V": int(V),
+            "tok_bytes": tok_bytes.to(device),
+            "tok_len": tok_len.to(device),
+            "by_len": by_len,
+            "null_row": null_row,
+            # The surface-string half of the D2 table == index_to_key
+            # (ASCII-prefilled + NULL; the reverse map's lookup target).
+            "surface": keys,
+        }
+
+    @staticmethod
+    def mphf_index(token_byte_slots, tables, return_verified=False):
+        """``token_byte_slots`` [B, K, W] long (0..255; 0 terminates a slot,
+        EXACTLY ``InputSpace.subspace.what.W``'s per-token null-terminated
+        utf-8 layout).
+
+        Returns ``row`` [B, K] long: the frozen lexicon row index for each
+        percept slot. Pure static tensor ops (poly-hash + ``searchsorted``
+        + collision-proof byte-verify), ZERO host sync, O(1) per slot.
+
+        Resolution per slot:
+          * effective key length L = #leading non-zero bytes (utf-8 token,
+            null-terminated -- the byte AFTER the token is the 0 sentinel);
+          * L == 0 (empty / pad / NULL-sentinel slot) -> ``null_row``;
+          * else poly-hash the L-byte window, ``searchsorted`` the
+            length-L sorted hash table, byte-verify against ``tok_bytes``
+            (collision-proof: exact regardless of hash); a verified hit ->
+            that row, a miss (key not in the frozen lexicon -- OOV) ->
+            ``null_row`` (the documented frozen-vocab fallback: the table
+            only holds the frozen key set; an OOV percept reconstructs to
+            the NULL surface rather than silently aliasing a wrong row).
+
+        When ``return_verified=True``, returns ``(row, verified)`` where
+        ``verified`` ``[B, K]`` bool is True only for slots that hit the
+        frozen lexicon via the collision-proof byte-verify (False for
+        L==0 slots AND OOV slots; the row at those False positions is the
+        ``null_row`` fallback). The ``synthesis_mode='mphf'`` selectable
+        runtime path uses this signal to gate the OOV->BPE-trie fallback
+        per spec.
+        """
+        if token_byte_slots.dim() == 2:
+            token_byte_slots = token_byte_slots.unsqueeze(-1)
+        B, K, W = token_byte_slots.shape
+        dev = token_byte_slots.device
+        bb = token_byte_slots.to(torch.int64).clamp(0, 255)  # [B,K,W]
+        null_row = tables["null_row"]
+        maxL = tables["maxL"]
+
+        # Effective key length = #leading non-zero bytes (the slot is one
+        # token's utf-8 bytes then a 0). ``cumprod`` over (byte != 0) gives
+        # 1 for every position up to (not including) the first 0; the sum
+        # is the leading-run length -- pure tensor, no host sync.
+        nonzero = (bb != 0).to(torch.int64)                  # [B,K,W]
+        lead = torch.cumprod(nonzero, dim=-1)                # [B,K,W]
+        eff_len = lead.sum(dim=-1)                            # [B,K]
+
+        row = torch.full((B, K), null_row, dtype=torch.int64, device=dev)
+        verified_any = torch.zeros((B, K), dtype=torch.bool, device=dev)
+        for L in range(1, min(maxL, W) + 1):
+            entry = tables["by_len"].get(L)
+            if entry is None:
+                continue
+            keys_sorted, ids_sorted = entry
+            win = bb[..., :L]                                 # [B,K,L]
+            h = BPEGpuLayer._poly_hash(win)                   # [B,K]
+            pos = torch.searchsorted(keys_sorted, h)
+            pos = pos.clamp(max=keys_sorted.numel() - 1)
+            hit = keys_sorted[pos] == h
+            cand = ids_sorted[pos]                            # [B,K]
+            cb = tables["tok_bytes"][cand][..., :L]           # [B,K,L]
+            verified = hit & (win == cb).all(dim=-1) & (eff_len == L)
+            row = torch.where(verified, cand, row)
+            verified_any = verified_any | verified
+        if return_verified:
+            return row, verified_any
+        return row
+
+    @staticmethod
+    def reverse_map_rows(concept_vectors, codebook):
+        """Non-invertible reverse map: a concept-activation vector ->
+        nearest ``wv._vectors`` row index.
+
+        The MPHF is NOT inverted; the reverse map is the **table lookup**
+        (nearest concept-activation row). ``concept_vectors`` is ``[..., D]``
+        (D == ``wv._vectors`` width). Returns the matching ``[...]`` long
+        row indices; ``surface[idx]`` (== ``codebook.wv.index_to_key[idx]``)
+        is the reconstructed literal surface word. Pure tensor op, no host
+        sync (the host ``index_to_key`` indexing is the caller's choice,
+        done only off the training-critical path).
+        """
+        W = codebook.wv._vectors                              # [V, D]
+        flat = concept_vectors.reshape(-1, concept_vectors.shape[-1])
+        # Cosine-style nearest row (the codebook lives on the periodic unit
+        # cell; dot-product nearest is the same neighbour the codebook
+        # search uses). Static [N, V] then argmax -- no host sync.
+        sims = flat @ W.t()                                   # [N, V]
+        idx = sims.argmax(dim=-1)                              # [N]
+        return idx.reshape(concept_vectors.shape[:-1])
+
+
+class SymbolLearningLayer(Layer):
+    """Symbol-learning statistics + promotion policy.
+
+    Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
+    §Phase 2 / step 6 — scaffold; deferred §Phase 2 → Phase 3 closeout —
+    policy + ``extend_artifact`` integration.
+
+    Disabled-by-default and detached from autograd. Inlines the former
+    ``SymbolLearningStats`` (accumulator), ``SymbolLearningPolicy``
+    (MDL-flavored thresholds), and ``flush_and_promote`` orchestration
+    into a single Layer that ``ConceptualSpace`` owns. Promotion still
+    happens only at explicit flush boundaries -- never inside autograd
+    ``forward``.
+
+    Hook signals:
+      * Zero-order / QE via ``observe_qe(activation, snapped)``: squared
+        quantization error + online leader-clustering producing per-cluster
+        (centroid, qe_ema, stability) summaries.
+      * Higher-order / PMI via ``observe_reduce(left_ref, right_ref,
+        parent_ref, *, parent_scalar=None, parent_category=None,
+        parent_order=None)``: pair counts + the rule's LHS metadata.
+
+    Numerical-divergence policy: NaN / Inf inputs to ``observe_qe`` raise
+    ``ValueError`` rather than getting silently ``nan_to_num``-cleaned.
+    """
+
+    class _Cluster:
+        """One leader-clustering cluster: centroid + EMA of squared QE +
+        stability count. Centroid is a detached 1-D tensor."""
+        __slots__ = ('centroid', 'qe_ema', 'stability')
+
+        def __init__(self, centroid, qe_ema, stability):
+            self.centroid = centroid
+            self.qe_ema = float(qe_ema)
+            self.stability = int(stability)
+
+    def __init__(self, enabled=False, *,
+                 leader_radius=0.5, ema_alpha=0.1,
+                 qe_promote_threshold=0.5, stability_n=10,
+                 pmi_threshold=1.0, count_threshold=5,
+                 default_zero_order_category='NEW',
+                 default_zero_order_parent_ref_id=0,
+                 default_higher_order_category='NEW',
+                 default_higher_order_order=1):
+        super().__init__(nInput=0, nOutput=0)
+        self.enabled = bool(enabled)
+        # Stats hyperparameters.
+        self.leader_radius = float(leader_radius)
+        self.ema_alpha = float(ema_alpha)
+        # Policy thresholds.
+        self.qe_promote_threshold = float(qe_promote_threshold)
+        self.stability_n = int(stability_n)
+        self.pmi_threshold = float(pmi_threshold)
+        self.count_threshold = int(count_threshold)
+        self.default_zero_order_category = str(default_zero_order_category)
+        self.default_zero_order_parent_ref_id = int(
+            default_zero_order_parent_ref_id)
+        self.default_higher_order_category = str(default_higher_order_category)
+        self.default_higher_order_order = int(default_higher_order_order)
+        # Accumulator state — plain Python so nothing leaks into autograd.
+        self.qe_count = 0
+        self.qe_sum_squared = 0.0
+        self.pair_counts = {}
+        self.pair_info = {}
+        self._clusters = []
+
+    @staticmethod
+    def enabled_from_config():
+        """Read ``<architecture><symbolLearning enabled="..."/>`` from XML.
+
+        Defaults to ``False`` when the key is absent. Accepts ``"true"`` /
+        ``"false"`` (case-insensitive) and ``"1"`` / ``"0"``. Any other
+        value falls back to ``False``.
+        """
+        try:
+            raw = TheXMLConfig.get("architecture.symbolLearning.enabled",
+                                   default=False)
+        except (KeyError, TypeError, ValueError, AttributeError):
+            return False
+        if raw is None:
+            return False
+        if isinstance(raw, bool):
+            return raw
+        s = str(raw).strip().lower()
+        return s in ("true", "1", "yes", "on")
+
+    def observe_qe(self, activation, snapped):
+        """Record one quantization-error measurement.
+
+        Computes squared distance between the pre-snap activation and
+        the snapped prototype, updates the aggregate QE counter, and
+        runs online leader clustering on the un-snapped activation.
+
+        NaN / Inf inputs raise ``ValueError`` per the project's "fail
+        loud on numerical divergence" rule.
+        """
+        if not self.enabled:
+            return
+        if torch.isnan(activation).any() or torch.isinf(activation).any():
+            raise ValueError(
+                "SymbolLearningLayer.observe_qe: NaN/Inf in activation")
+        if torch.isnan(snapped).any() or torch.isinf(snapped).any():
+            raise ValueError(
+                "SymbolLearningLayer.observe_qe: NaN/Inf in snapped")
+        with torch.no_grad():
+            act = activation.detach()
+            snap = snapped.detach()
+            diff = act - snap
+            sq = float(diff.pow(2).sum().item())
+            flat = act.reshape(-1)
+        self.qe_count += 1
+        self.qe_sum_squared += sq
+        self._update_clusters(flat, sq)
+
+    def _update_clusters(self, vec, sq_qe):
+        """Online leader clustering."""
+        if not self._clusters:
+            self._clusters.append(self._Cluster(
+                centroid=vec.clone(), qe_ema=sq_qe, stability=1))
+            return
+        radius_sq = self.leader_radius ** 2
+        nearest = None
+        nearest_d = math.inf
+        for c in self._clusters:
+            if c.centroid.shape != vec.shape:
+                continue
+            d = float((vec - c.centroid).pow(2).sum().item())
+            if d < nearest_d:
+                nearest_d = d
+                nearest = c
+        if nearest is None or nearest_d > radius_sq:
+            self._clusters.append(self._Cluster(
+                centroid=vec.clone(), qe_ema=sq_qe, stability=1))
+            return
+        a = self.ema_alpha
+        nearest.qe_ema = (1.0 - a) * nearest.qe_ema + a * sq_qe
+        nearest.centroid = (1.0 - a) * nearest.centroid + a * vec
+        nearest.stability += 1
+
+    def observe_reduce(self, left_ref, right_ref, parent_ref, *,
+                       parent_scalar=None, parent_category=None,
+                       parent_order=None):
+        """Record one REDUCE outcome with rule LHS metadata."""
+        if not self.enabled:
+            return
+        key = (int(left_ref), int(right_ref))
+        self.pair_counts[key] = self.pair_counts.get(key, 0) + 1
+        info = self.pair_info.setdefault(key, {
+            'count': 0,
+            'parent_scalar_sum': 0.0,
+            'parent_ref': int(parent_ref),
+            'parent_category': None,
+            'parent_order': None,
+        })
+        info['count'] += 1
+        info['parent_ref'] = int(parent_ref)
+        if parent_scalar is not None:
+            info['parent_scalar_sum'] += float(parent_scalar)
+        if parent_category is not None:
+            info['parent_category'] = str(parent_category)
+        if parent_order is not None:
+            info['parent_order'] = int(parent_order)
+
+    def flush(self):
+        """Return a snapshot of accumulated stats and reset state."""
+        snap = {
+            'qe_count': self.qe_count,
+            'qe_sum_squared': self.qe_sum_squared,
+            'qe_mean': (self.qe_sum_squared / self.qe_count
+                        if self.qe_count > 0 else 0.0),
+            'pair_counts': dict(self.pair_counts),
+            'pair_info': {k: dict(v) for k, v in self.pair_info.items()},
+            'clusters': [
+                {'centroid': c.centroid.clone(),
+                 'qe_ema': c.qe_ema,
+                 'stability': c.stability}
+                for c in self._clusters
+            ],
+        }
+        self.qe_count = 0
+        self.qe_sum_squared = 0.0
+        self.pair_counts = {}
+        self.pair_info = {}
+        self._clusters = []
+        return snap
+
+    def propose_candidates(self, snapshot):
+        """Apply MDL-flavored thresholds to ``snapshot`` and return a list
+        of ``embed.NewRef`` candidates. May be empty.
+
+        Zero-order:
+          Promote a cluster with ``stability >= stability_n`` AND
+          ``qe_ema >= qe_promote_threshold`` to a new order-0 ref at
+          ``default_zero_order_category`` /
+          ``default_zero_order_parent_ref_id``. The cluster centroid's
+          scalar mean becomes the new ref's learned scalar.
+
+        Higher-order:
+          Promote a pair ``(a, b)`` with ``count >= count_threshold`` AND
+          ``log(P(a,b) / (P(a) P(b))) >= pmi_threshold`` to a new ref at
+          the recorded ``parent_category`` / ``parent_order`` (from the
+          rule's LHS metadata). The new ref's scalar is the mean of the
+          reduce-time parent activations.
+        """
+        from embed import NewRef
+        candidates = []
+        # ---- Zero-order (QE) ----
+        for c in snapshot.get('clusters', []):
+            if c['stability'] < self.stability_n:
+                continue
+            if c['qe_ema'] < self.qe_promote_threshold:
+                continue
+            centroid = c['centroid']
+            if isinstance(centroid, torch.Tensor):
+                scalar = float(centroid.mean().item())
+            else:
+                scalar = float(centroid)
+            candidates.append(NewRef(
+                scalar=scalar,
+                order=0,
+                parent_ref_id=int(self.default_zero_order_parent_ref_id),
+                category=str(self.default_zero_order_category),
+            ))
+        # ---- Higher-order (PMI × frequency) ----
+        pair_counts = snapshot.get('pair_counts', {})
+        pair_info = snapshot.get('pair_info', {})
+        total = sum(pair_counts.values())
+        if total > 0:
+            left_marginal = {}
+            right_marginal = {}
+            for (a, b), n in pair_counts.items():
+                left_marginal[a] = left_marginal.get(a, 0) + n
+                right_marginal[b] = right_marginal.get(b, 0) + n
+            for (a, b), n in pair_counts.items():
+                if n < self.count_threshold:
+                    continue
+                la = left_marginal[a]
+                rb = right_marginal[b]
+                if la <= 0 or rb <= 0:
+                    continue
+                # PMI = log[ (n * total) / (la * rb) ]
+                pmi = math.log((n * total) / (la * rb))
+                if pmi < self.pmi_threshold:
+                    continue
+                info = pair_info.get((a, b), {})
+                count = max(info.get('count', n), 1)
+                scalar_sum = info.get('parent_scalar_sum', 0.0)
+                scalar = scalar_sum / count if count > 0 else 0.0
+                category = info.get('parent_category') \
+                    or self.default_higher_order_category
+                order = info.get('parent_order')
+                if order is None:
+                    order = self.default_higher_order_order
+                parent_ref = info.get(
+                    'parent_ref', self.default_zero_order_parent_ref_id)
+                candidates.append(NewRef(
+                    scalar=float(scalar),
+                    order=int(order),
+                    parent_ref_id=int(parent_ref),
+                    category=str(category),
+                ))
+        return candidates
+
+    def flush_and_promote(self, artifact_path):
+        """Flush accumulated stats, run the policy, call
+        ``embed.extend_artifact`` on any candidates. Returns the
+        candidate list (empty when nothing crossed the thresholds).
+
+        Flush boundary is the caller's responsibility (e.g., end of
+        training batch). By construction this never mutates the
+        artifact inside an autograd forward.
+        """
+        from embed import extend_artifact
+        snap = self.flush()
+        candidates = self.propose_candidates(snap)
+        if candidates:
+            extend_artifact(artifact_path, candidates)
+        return candidates
+
+
+class LeafDecoderHead(nn.Module):
+    """Slot-conditioned leaf decoder for the Method-1 -> Method-2
+    distillation (doc/plans/2026-07-14-signed-space-snap-design.md, step 3):
+    ``leaf_i = W2 · tanh(W1 · S + e_i)`` — a shared trunk plus a per-slot
+    embedding (parameter-light; the anchors-over-MLPs house preference).
+    Trained to regenerate the EXACT per-word leaves from the collapsed
+    root, which the root cannot satisfy while collapsing distinct
+    sentences into one attractor (the measured root-separability gap)."""
+
+    def __init__(self, d_in, n_slots, d_out, hidden=256):
+        super().__init__()
+        self.d_in = int(d_in)
+        self.n_slots = int(n_slots)
+        self.d_out = int(d_out)
+        self.trunk = nn.Linear(self.d_in, hidden)
+        self.slot_e = nn.Parameter(torch.randn(self.n_slots, hidden) * 0.02)
+        self.out = nn.Linear(hidden, self.d_out)
+
+    def forward(self, S):
+        """``S [B, d_in]`` -> predicted leaves ``[B, n_slots, d_out]``."""
+        h = self.trunk(S).unsqueeze(1) + self.slot_e.unsqueeze(0)
+        return self.out(torch.tanh(h))
+
+
+class ShortTermMemory(Layer):
+    """Runtime idea stack plus shift/reduce scorer for ConceptualSpace.
+
+    Newest ideas live at slot 0; capacity defaults to 8 and is configurable
+    via ``<ConceptualSpace><stmCapacity>``. See ``doc/STM.md``.
+    """
+
+    DEFAULT_CAPACITY = 8
+
+    def __init__(self, batch=1, capacity=None, concept_dim=0):
+        super().__init__(nInput=0, nOutput=0)
+        # Constructor sizes seed standalone tests; attached SymbolSubSpace
+        # owns the live buffers.
+        self._init_capacity = int(capacity or self.DEFAULT_CAPACITY)
+        self._init_concept_dim = int(concept_dim)
+        self._init_batch = int(batch)
+        # Standalone fallback until attach_word_subspace routes to SymbolSubSpace.
+        self._word_subspace = None
+        # Plain attributes keep STM state out of nn.Module buffers and traces.
+        object.__setattr__(
+            self, '_live_buffer',
+            torch.zeros(self._init_batch, self._init_capacity,
+                        self._init_concept_dim))
+        object.__setattr__(
+            self, '_live_depth',
+            torch.zeros(self._init_batch, dtype=torch.long))
+        # Parallel provenance slabs. ``_live_orders`` is the actual
+        # subsymbolic/concept order of each idea; ``_live_grammar_orders`` is
+        # the syntactic derivation depth. Keeping them separate prevents a
+        # grammatical REDUCE from relabelling a word's mereological order.
+        object.__setattr__(
+            self, '_live_orders',
+            torch.full((self._init_batch, self._init_capacity), -1,
+                       dtype=torch.long))
+        object.__setattr__(
+            self, '_live_grammar_orders',
+            torch.full((self._init_batch, self._init_capacity), -1,
+                       dtype=torch.long))
+        # Exact sparse concept provenance for each occupied idea.  A row of
+        # ``-1`` means the dense payload has no single durable concept-row
+        # identity (for example, it is the result of a grammatical
+        # transformation).  Activations carry the coefficient of the named
+        # lexical row; they are zero whenever the row is unknown.
+        object.__setattr__(
+            self, '_live_concept_rows',
+            torch.full((self._init_batch, self._init_capacity), -1,
+                       dtype=torch.long))
+        object.__setattr__(
+            self, '_live_concept_activations',
+            torch.zeros(self._init_batch, self._init_capacity))
+        self._live_capacity = self._init_capacity
+        self._live_max_depth_host = 0
+
+    def attach_word_subspace(self, word_subspace):
+        """Route STM accessors to the owning ``SymbolSubSpace`` buffers."""
+        object.__setattr__(self, '_word_subspace', word_subspace)
+        # Grow the owner to the constructor-requested capacity if needed.
+        if hasattr(word_subspace, 'idea_ensure_capacity'):
+            word_subspace.idea_ensure_capacity(self._init_capacity)
+
+    # -- per-forward live working buffer ---------------------------------
+    # Fresh, plain-attribute tensors avoid torch.compile input mutation.
+
+    @staticmethod
+    def _assign_live(owner, name, value):
+        """Install a live STM tensor.
+
+        Under the compiler this is an in-place copy whenever the existing
+        tensor has the same shape/dtype/device: with a ``torch.while_loop``
+        in the graph, dynamo (torch 2.14 nightly) drops a later attribute
+        *assignment* of an attribute assigned earlier in the same graph
+        (the per-forward seed), so the reads after the word loop -- the
+        sentence reduce and the reconstruction loss -- saw the empty seed.
+        An in-place copy is tracked correctly and keeps the gradient.
+        Eager execution keeps the plain assignment (the buffer may change
+        shape, and a persisted buffer must not be mutated in place).
+        """
+        current = owner.__dict__.get(name)
+        if (torch.compiler.is_compiling() and torch.is_tensor(value)
+                and torch.is_tensor(current)
+                and tuple(current.shape) == tuple(value.shape)
+                and current.dtype == value.dtype
+                and current.device == value.device
+                and current is not value):
+            current.copy_(value)
+            return
+        object.__setattr__(owner, name, value)
+
+    def detach_live(self):
+        """Cut the autograd history of the live STM state at a brick
+        boundary.  The state carries values across bricks; under the
+        compiler it is updated by in-place copies (``_assign_live``), and
+        an in-place copy on a tensor with a graph chains every brick's
+        graph to the previous one (the loop checkpoints of all earlier
+        bricks stayed alive: 1-1.5 GiB per brick at B = 8, W = 256)."""
+        for name, value in list(self.__dict__.items()):
+            if name.startswith("_live_") and torch.is_tensor(value) \
+                    and value.grad_fn is not None:
+                object.__setattr__(self, name, value.detach())
+
+    @property
+    def _buffer(self):
+        return self._live_buffer
+
+    @_buffer.setter
+    def _buffer(self, value):
+        self._assign_live(self, '_live_buffer', value)
+        # A wholesale carrier replacement invalidates provenance unless the
+        # caller immediately installs the correspondingly transformed slabs.
+        # Internal functional updates do exactly that; external legacy writes
+        # therefore degrade safely to "unknown" instead of inheriting orders
+        # from unrelated ideas.
+        if torch.is_tensor(value) and hasattr(self, '_live_orders'):
+            shape = tuple(value.shape[:2])
+            object.__setattr__(
+                self, '_live_orders',
+                torch.full(shape, -1, dtype=torch.long, device=value.device))
+            object.__setattr__(
+                self, '_live_grammar_orders',
+                torch.full(shape, -1, dtype=torch.long, device=value.device))
+            object.__setattr__(
+                self, '_live_concept_rows',
+                torch.full(shape, -1, dtype=torch.long, device=value.device))
+            object.__setattr__(
+                self, '_live_concept_activations',
+                torch.zeros(shape, dtype=value.dtype, device=value.device))
+
+    @property
+    def _depth(self):
+        return self._live_depth
+
+    @_depth.setter
+    def _depth(self, value):
+        self._assign_live(self, '_live_depth', value)
+
+    @property
+    def _orders(self):
+        return self._live_orders
+
+    @_orders.setter
+    def _orders(self, value):
+        self._assign_live(self, '_live_orders', value)
+
+    @property
+    def _grammar_orders(self):
+        return self._live_grammar_orders
+
+    @_grammar_orders.setter
+    def _grammar_orders(self, value):
+        self._assign_live(self, '_live_grammar_orders', value)
+
+    @property
+    def _concept_rows(self):
+        return self._live_concept_rows
+
+    @_concept_rows.setter
+    def _concept_rows(self, value):
+        self._assign_live(self, '_live_concept_rows', value)
+
+    @property
+    def _concept_activations(self):
+        return self._live_concept_activations
+
+    @_concept_activations.setter
+    def _concept_activations(self, value):
+        self._assign_live(self, '_live_concept_activations', value)
+
+    @property
+    def _max_depth_host(self):
+        return self._live_max_depth_host
+
+    @_max_depth_host.setter
+    def _max_depth_host(self, value):
+        self._live_max_depth_host = int(value)
+
+    @property
+    def capacity(self):
+        ss = self._word_subspace
+        if ss is None:
+            return self._live_capacity
+        return ss._idea_capacity
+
+    @property
+    def concept_dim(self):
+        ss = self._word_subspace
+        if ss is None:
+            return self._init_concept_dim
+        return ss._stm_payload_dim
+
+    def begin_forward(self, batch, device=None, dtype=None):
+        """Allocate a fresh per-forward STM buffer on the requested device."""
+        batch = int(batch)
+        cap = int(self.capacity)
+        dim = int(self.concept_dim)
+        # Do not read the old buffer here; that would make it a traced input.
+        if dtype is None:
+            dtype = torch.float32
+        self._buffer = torch.zeros(
+            batch, cap, dim, device=device, dtype=dtype)
+        self._depth = torch.zeros(batch, dtype=torch.long, device=device)
+        self._orders = torch.full(
+            (batch, cap), -1, dtype=torch.long, device=device)
+        self._grammar_orders = torch.full(
+            (batch, cap), -1, dtype=torch.long, device=device)
+        self._concept_rows = torch.full(
+            (batch, cap), -1, dtype=torch.long, device=device)
+        self._concept_activations = torch.zeros(
+            (batch, cap), dtype=dtype, device=device)
+        self._max_depth_host = 0
+        from ClauseScope import ClauseScope
+        self._clause_state = ClauseScope.empty(self._buffer)
+
+    def ensure_clause_state(self):
+        from ClauseScope import ClauseScope
+        value = getattr(self, '_clause_state', None)
+        if (not torch.is_tensor(value) or value.shape != (*self._buffer.shape[:2], 2)
+                or value.device != self._buffer.device):
+            value = ClauseScope.empty(self._buffer)
+            self._clause_state = value
+        return value
+
+    def ensure_order_state(self):
+        """Return shape/device-aligned concept and grammar order slabs.
+
+        A few older tests and checkpoint adapters assign ``_buffer``
+        directly. Treat such a replacement as provenance-unknown instead of
+        retaining a stale order slab with a coincidentally compatible prefix.
+        """
+        buf = self._buffer
+        shape = tuple(buf.shape[:2])
+        orders = self._orders
+        grammar = self._grammar_orders
+        if (orders is None or tuple(orders.shape) != shape
+                or orders.device != buf.device):
+            orders = torch.full(
+                shape, -1, dtype=torch.long, device=buf.device)
+            self._orders = orders
+        if (grammar is None or tuple(grammar.shape) != shape
+                or grammar.device != buf.device):
+            grammar = torch.full(
+                shape, -1, dtype=torch.long, device=buf.device)
+            self._grammar_orders = grammar
+        return orders, grammar
+
+    def ensure_reference_state(self):
+        """Return row/activation slabs aligned with the live STM payload.
+
+        Wholesale legacy writes to ``_buffer`` deliberately reset these
+        slabs.  This helper also repairs old checkpoint/test adapters that
+        supplied only the payload and order metadata.
+        """
+        buf = self._buffer
+        shape = tuple(buf.shape[:2])
+        rows = self._concept_rows
+        activations = self._concept_activations
+        if (rows is None or tuple(rows.shape) != shape
+                or rows.device != buf.device or rows.dtype != torch.long):
+            rows = torch.full(
+                shape, -1, dtype=torch.long, device=buf.device)
+            self._concept_rows = rows
+        if (activations is None or tuple(activations.shape) != shape
+                or activations.device != buf.device
+                or activations.dtype != buf.dtype):
+            activations = torch.zeros(
+                shape, dtype=buf.dtype, device=buf.device)
+        # Unknown rows never retain a coefficient. Apply this tensorially so
+        # the invariant is equally true in eager and compiled execution.
+        activations = torch.where(
+            rows >= 0, activations, torch.zeros_like(activations))
+        self._concept_activations = activations
+        return rows, activations
+
+    @staticmethod
+    def _coerce_order_rows(value, batch, device, *, default=-1):
+        if value is None:
+            return torch.full(
+                (int(batch),), int(default), dtype=torch.long, device=device)
+        if torch.is_tensor(value):
+            return value.to(device=device, dtype=torch.long).reshape(int(batch))
+        return torch.full(
+            (int(batch),), int(value), dtype=torch.long, device=device)
+
+    @staticmethod
+    def _coerce_concept_rows(value, batch, device):
+        if value is None:
+            return torch.full(
+                (int(batch),), -1, dtype=torch.long, device=device)
+        if torch.is_tensor(value):
+            return value.to(
+                device=device, dtype=torch.long).reshape(int(batch))
+        return torch.full(
+            (int(batch),), int(value), dtype=torch.long, device=device)
+
+    @staticmethod
+    def _coerce_concept_activations(value, batch, device, dtype,
+                                    concept_rows=None):
+        if value is None:
+            activations = torch.zeros(
+                (int(batch),), dtype=dtype, device=device)
+        elif torch.is_tensor(value):
+            activations = value.to(
+                device=device, dtype=dtype).reshape(int(batch))
+        else:
+            activations = torch.full(
+                (int(batch),), float(value), dtype=dtype, device=device)
+        if concept_rows is not None:
+            activations = torch.where(
+                concept_rows >= 0, activations,
+                torch.zeros_like(activations))
+        return activations
+
+    # -- idea-stack API (chart compose consumer surface) ------------------
+    #
+    # A5: all operations act on the single live store (the ``_buffer`` /
+    # ``_depth`` / ``_max_depth_host`` properties -> the ``_live_*`` plain
+    # attributes). The former ``ss is None`` branch (SymbolSubSpace-attached
+    # vs standalone ``_fallback_*``) is gone -- the live data is no longer a
+    # registered buffer on either, so the compiled forward never sees it as a
+    # graph input. ``capacity`` still proxies to ``ss._idea_capacity`` when
+    # attached so an externally-grown idea-stack capacity sizes the next
+    # ``begin_forward`` correctly.
+
+    def ensure_batch(self, batch):
+        """Resize the idea-stack to ``batch`` rows. Idempotent."""
+        batch = int(batch)
+        buf = self._buffer
+        if buf is not None and int(buf.shape[0]) == batch:
+            return
+        device = buf.device if buf is not None else None
+        dtype = buf.dtype if buf is not None else torch.float32
+        self._buffer = torch.zeros(
+            batch, int(self.capacity), int(self.concept_dim),
+            device=device, dtype=dtype)
+        self._depth = torch.zeros(batch, dtype=torch.long, device=device)
+        self._orders = torch.full(
+            (batch, int(self.capacity)), -1,
+            dtype=torch.long, device=device)
+        self._grammar_orders = torch.full(
+            (batch, int(self.capacity)), -1,
+            dtype=torch.long, device=device)
+        self._concept_rows = torch.full(
+            (batch, int(self.capacity)), -1,
+            dtype=torch.long, device=device)
+        self._concept_activations = torch.zeros(
+            (batch, int(self.capacity)), dtype=dtype, device=device)
+        self._max_depth_host = 0
+        self._wholes = torch.full(
+            (batch, int(self.capacity), 3), -1,
+            dtype=torch.long, device=device)
+
+    # -- slot-whole provenance (meronomy fold-ladder plan, Phase 2b) --------
+    # One fixed-shape slab ``_wholes`` ``[B, capacity, 3]`` of longs mirrors
+    # the buffer discipline (newest at slot 0): per slot the index of the
+    # coarser analysis whole (the word) the unit belongs to, the unit's loop
+    # position and the clause whole's index; ``-1`` = none / a fold across
+    # wholes.  It is carried through the compiled word loop like the
+    # reference slabs, so the pure ``functional_wholes_*`` primitives below
+    # are the only mutation paths (eager methods wrap them).
+
+    @property
+    def _wholes(self):
+        return self.__dict__.get('_live_wholes')
+
+    @_wholes.setter
+    def _wholes(self, value):
+        self._assign_live(self, '_live_wholes', value)
+
+    def ensure_whole_state(self):
+        """Return the ``[B, capacity, 3]`` provenance slab aligned with the
+        live STM payload (allocated empty when a legacy write dropped it)."""
+        buf = self._buffer
+        shape = (int(buf.shape[0]), int(buf.shape[1]), 3)
+        wholes = getattr(self, "_wholes", None)
+        if (not torch.is_tensor(wholes) or tuple(wholes.shape) != shape
+                or wholes.device != buf.device or wholes.dtype != torch.long):
+            wholes = torch.full(
+                shape, -1, dtype=torch.long, device=buf.device)
+            self._wholes = wholes
+        return wholes
+
+    @staticmethod
+    def functional_wholes_push(wholes, gate_b, whole_b, unit_b, clause_b):
+        """Masked newest-first push of ``(whole, unit, clause)`` at slot 0."""
+        B, cap, _ = wholes.shape
+        gate = gate_b.reshape(B).to(device=wholes.device, dtype=torch.bool)
+        entry = torch.stack(
+            (whole_b.reshape(B).to(dtype=torch.long, device=wholes.device),
+             unit_b.reshape(B).to(dtype=torch.long, device=wholes.device),
+             clause_b.reshape(B).to(dtype=torch.long, device=wholes.device)),
+            dim=-1).reshape(B, 1, 3)
+        shifted = torch.cat((entry, wholes[:, :cap - 1]), dim=1)
+        return torch.where(gate.reshape(B, 1, 1), shifted, wholes)
+
+    @staticmethod
+    def functional_wholes_reduce(wholes, applied_b):
+        """Fold the two newest slots: the parent keeps a whole (and a clause)
+        when both operands shared it, else ``-1``; a fold is no single
+        unit.  Rows where ``applied_b`` is off are bit-identical."""
+        B, cap, _ = wholes.shape
+        if int(cap) < 2:
+            return wholes
+        gate = applied_b.reshape(B).to(
+            device=wholes.device, dtype=torch.bool)
+        newer, older = wholes[:, 0], wholes[:, 1]
+        same_w = torch.logical_and(newer[:, 0] >= 0, newer[:, 0] == older[:, 0])
+        same_c = torch.logical_and(newer[:, 2] >= 0, newer[:, 2] == older[:, 2])
+        minus = torch.full_like(newer[:, 0], -1)
+        parent = torch.stack(
+            (torch.where(same_w, newer[:, 0], minus), minus,
+             torch.where(same_c, newer[:, 2], minus)), dim=-1).reshape(B, 1, 3)
+        shifted = torch.cat(
+            (parent, wholes[:, 2:], torch.full_like(wholes[:, :1], -1)), dim=1)
+        return torch.where(gate.reshape(B, 1, 1), shifted, wholes)
+
+    @staticmethod
+    def functional_wholes_reset(wholes, gate_b):
+        """Clear the provenance of the gated rows (a sentence boundary)."""
+        B = int(wholes.shape[0])
+        gate = gate_b.reshape(B).to(device=wholes.device, dtype=torch.bool)
+        return torch.where(
+            gate.reshape(B, 1, 1), torch.full_like(wholes, -1), wholes)
+
+    @staticmethod
+    def same_whole(wholes):
+        """``[B]`` bool: the two newest slots share a coarser whole at some
+        rung above the unit (the same word, or the same clause)."""
+        if int(wholes.shape[1]) < 2:
+            return torch.zeros(
+                int(wholes.shape[0]), dtype=torch.bool, device=wholes.device)
+        newer, older = wholes[:, 0], wholes[:, 1]
+        same_w = torch.logical_and(newer[:, 0] >= 0, newer[:, 0] == older[:, 0])
+        same_c = torch.logical_and(newer[:, 2] >= 0, newer[:, 2] == older[:, 2])
+        return torch.logical_or(same_w, same_c)
+
+    @staticmethod
+    def shared_whole(wholes):
+        """``[B]`` long: the whole the two newest slots share (the word, else
+        the clause), ``-1`` when none."""
+        B = int(wholes.shape[0])
+        if int(wholes.shape[1]) < 2:
+            return torch.full((B,), -1, dtype=torch.long, device=wholes.device)
+        newer, older = wholes[:, 0], wholes[:, 1]
+        same_w = torch.logical_and(newer[:, 0] >= 0, newer[:, 0] == older[:, 0])
+        same_c = torch.logical_and(newer[:, 2] >= 0, newer[:, 2] == older[:, 2])
+        minus = torch.full_like(newer[:, 0], -1)
+        return torch.where(
+            same_w, newer[:, 0], torch.where(same_c, newer[:, 2], minus))
+
+    @staticmethod
+    def newest_units(wholes):
+        """``[B, 2]`` long: (unit of slot 1, unit of slot 0), ``-1`` unknown."""
+        B = int(wholes.shape[0])
+        if int(wholes.shape[1]) < 2:
+            return torch.full((B, 2), -1, dtype=torch.long, device=wholes.device)
+        return torch.stack((wholes[:, 1, 1], wholes[:, 0, 1]), dim=-1)
+
+    def note_whole_masked(self, gate_rows, wholes, unit=-1, clauses=None):
+        """Eager wrapper: record ``(whole, unit, clause)`` for a slot-0 push
+        on the gated rows (tensors or lists; ``unit`` may be one int)."""
+        slab = self.ensure_whole_state()
+        B = int(slab.shape[0])
+        gate = torch.as_tensor(gate_rows, device=slab.device).reshape(B)
+        whole = torch.as_tensor(wholes, device=slab.device).reshape(B)
+        unit_t = (torch.as_tensor(unit, device=slab.device).reshape(-1)
+                  .expand(B) if torch.is_tensor(unit) or isinstance(unit, (list, tuple))
+                  else torch.full((B,), int(unit), dtype=torch.long, device=slab.device))
+        clause = (torch.as_tensor(clauses, device=slab.device).reshape(B)
+                  if clauses is not None
+                  else torch.full((B,), -1, dtype=torch.long, device=slab.device))
+        self._wholes = self.functional_wholes_push(
+            slab, gate, whole, unit_t, clause)
+
+    def note_reduce_wholes(self, reduced_rows):
+        """Eager wrapper of :meth:`functional_wholes_reduce`."""
+        slab = self.ensure_whole_state()
+        gate = torch.as_tensor(reduced_rows, device=slab.device)
+        self._wholes = self.functional_wholes_reduce(slab, gate)
+
+    def same_whole_rows(self):
+        """Eager wrapper of :meth:`same_whole` on the live slab."""
+        return self.same_whole(self.ensure_whole_state())
+
+
+    def ensure_capacity(self, capacity):
+        """Grow the per-slot capacity to at least ``capacity`` (grow-only)."""
+        capacity = int(capacity)
+        buf = self._buffer
+        old_cap = int(buf.shape[1]) if buf is not None else 0
+        if capacity <= old_cap:
+            # Keep the standalone capacity record in sync (grow-only) so
+            # ``self.capacity`` reflects the request when not attached.
+            if self._word_subspace is None and capacity > self._live_capacity:
+                self._live_capacity = capacity
+            return
+        device = buf.device
+        B = int(buf.shape[0])
+        orders, grammar = self.ensure_order_state()
+        concept_rows, concept_activations = self.ensure_reference_state()
+        new_buf = torch.zeros(
+            B, capacity, int(self.concept_dim),
+            device=device, dtype=buf.dtype)
+        if old_cap > 0:
+            new_buf[:, :old_cap, :] = buf
+        self._buffer = new_buf
+        new_orders = torch.full(
+            (B, capacity), -1, dtype=torch.long, device=device)
+        new_grammar = torch.full(
+            (B, capacity), -1, dtype=torch.long, device=device)
+        new_concept_rows = torch.full(
+            (B, capacity), -1, dtype=torch.long, device=device)
+        new_concept_activations = torch.zeros(
+            (B, capacity), dtype=buf.dtype, device=device)
+        if old_cap > 0:
+            new_orders[:, :old_cap] = orders[:, :old_cap]
+            new_grammar[:, :old_cap] = grammar[:, :old_cap]
+            new_concept_rows[:, :old_cap] = concept_rows[:, :old_cap]
+            new_concept_activations[:, :old_cap] = (
+                concept_activations[:, :old_cap])
+        self._orders = new_orders
+        self._grammar_orders = new_grammar
+        self._concept_rows = new_concept_rows
+        self._concept_activations = new_concept_activations
+        wholes = getattr(self, "_wholes", None)
+        new_wholes = torch.full(
+            (B, capacity, 3), -1, dtype=torch.long, device=device)
+        if torch.is_tensor(wholes) and old_cap > 0:
+            new_wholes[:, :old_cap] = wholes[:, :old_cap]
+        self._wholes = new_wholes
+        if self._word_subspace is None:
+            self._live_capacity = capacity
+
+    def push(self, b, idea, order=None, grammar_order=None,
+             concept_row=None, concept_activation=None):
+        # Newest-at-slot-0: write the new idea at slot 0 and shift the
+        # existing occupants RIGHT. Overflow RAISES (strict-bound
+        # primitive; the rolling-window drop is _stm_shift_and_push).
+        cap = int(self.capacity)
+        depth = int(self._depth[b].item())
+        if depth >= cap:
+            raise RuntimeError(
+                f"ShortTermMemory.push: row {b} is at capacity "
+                f"({cap}); reduce before pushing further.")
+        buf = self._buffer
+        orders, grammar = self.ensure_order_state()
+        concept_rows, concept_activations = self.ensure_reference_state()
+        if depth > 0:
+            buf[b, 1:depth + 1] = buf[b, 0:depth].clone()
+            orders[b, 1:depth + 1] = orders[b, 0:depth].clone()
+            grammar[b, 1:depth + 1] = grammar[b, 0:depth].clone()
+            concept_rows[b, 1:depth + 1] = (
+                concept_rows[b, 0:depth].clone())
+            concept_activations[b, 1:depth + 1] = (
+                concept_activations[b, 0:depth].clone())
+        buf[b, 0] = idea
+        orders[b, 0] = int(-1 if order is None else order)
+        grammar[b, 0] = int(-1 if grammar_order is None else grammar_order)
+        inserted_row = self._coerce_concept_rows(
+            concept_row, 1, buf.device)
+        concept_rows[b, 0] = inserted_row[0]
+        concept_activations[b, 0] = self._coerce_concept_activations(
+            concept_activation, 1, buf.device, buf.dtype,
+            inserted_row)[0]
+        self._depth[b] = depth + 1
+        if depth + 1 > self._max_depth_host:
+            self._max_depth_host = depth + 1
+
+    def push_step(self, ideas, orders=None, grammar_orders=None,
+                  concept_row=None, concept_activation=None):
+        # Newest-at-slot-0: shift RIGHT by one slot, write slot 0.
+        buf = self._buffer
+        cap = int(buf.shape[1])
+        order_slab, grammar_slab = self.ensure_order_state()
+        concept_slab, activation_slab = self.ensure_reference_state()
+        B = int(buf.shape[0])
+        order_rows = self._coerce_order_rows(
+            orders, B, buf.device)
+        grammar_rows = self._coerce_order_rows(
+            grammar_orders, B, buf.device)
+        concept_rows = self._coerce_concept_rows(
+            concept_row, B, buf.device)
+        concept_activations = self._coerce_concept_activations(
+            concept_activation, B, buf.device, buf.dtype, concept_rows)
+        if cap > 1:
+            buf[:, 1:cap] = buf[:, 0:cap - 1].clone()
+            order_slab[:, 1:cap] = order_slab[:, 0:cap - 1].clone()
+            grammar_slab[:, 1:cap] = grammar_slab[:, 0:cap - 1].clone()
+            concept_slab[:, 1:cap] = concept_slab[:, 0:cap - 1].clone()
+            activation_slab[:, 1:cap] = (
+                activation_slab[:, 0:cap - 1].clone())
+        buf[:, 0] = ideas
+        order_slab[:, 0] = order_rows
+        grammar_slab[:, 0] = grammar_rows
+        concept_slab[:, 0] = concept_rows
+        activation_slab[:, 0] = concept_activations
+        self._depth = self._depth + 1
+        self._max_depth_host = self._max_depth_host + 1
+        from ClauseScope import ClauseScope
+        self._clause_state = ClauseScope.push(self.ensure_clause_state(),
+            torch.ones(B, dtype=torch.bool, device=buf.device), torch.full_like(concept_rows, -1))
+
+    def push_step_masked(self, ideas, gate_b_1, orders=None,
+                         grammar_orders=None, concept_row=None,
+                         concept_activation=None):
+        # Newest-at-slot-0 masked push: gated rows shift RIGHT + write
+        # slot 0; un-gated rows are unchanged.
+        B, D = ideas.shape
+        buf = self._buffer
+        order_slab, grammar_slab = self.ensure_order_state()
+        concept_slab, activation_slab = self.ensure_reference_state()
+        inserted_orders = self._coerce_order_rows(
+            orders, B, buf.device)
+        inserted_grammar = self._coerce_order_rows(
+            grammar_orders, B, buf.device)
+        inserted_rows = self._coerce_concept_rows(
+            concept_row, B, buf.device)
+        inserted_activations = self._coerce_concept_activations(
+            concept_activation, B, buf.device, buf.dtype, inserted_rows)
+        state = self.functional_push_step_masked(
+            buf, self._depth, order_slab, grammar_slab,
+            concept_slab, activation_slab,
+            ideas, gate_b_1, inserted_orders, inserted_grammar,
+            inserted_rows, inserted_activations)
+        (self._buffer, self._depth, self._orders,
+         self._grammar_orders, self._concept_rows,
+         self._concept_activations) = state
+        from ClauseScope import ClauseScope
+        self._clause_state = ClauseScope.push(self.ensure_clause_state(),
+            gate_b_1.reshape(B).bool(), torch.full_like(inserted_rows, -1))
+
+    @staticmethod
+    def functional_push_step_masked(
+            buffer, depth, orders, grammar_orders,
+            concept_rows, concept_activations,
+            ideas, gate_b_1, inserted_orders, inserted_grammar_orders,
+            inserted_concept_rows, inserted_concept_activations):
+        """Return a masked newest-first push without mutating an STM object.
+
+        This is the tensor-state primitive used by compiled recurrent
+        schedulers.  Every input and output has fixed metadata, so it is safe
+        to carry through :func:`torch.while_loop`; the ordinary
+        :meth:`push_step_masked` method above is now only the owning-space
+        commit wrapper around this computation.
+
+        ``gate_b_1`` contains one boolean per batch row.  Gated rows shift
+        right and install the supplied value/provenance at slot zero.
+        Ungated rows are bit-identical, including their depth and every
+        provenance slab.
+        """
+        if buffer.dim() != 3 or ideas.dim() != 2:
+            raise ValueError(
+                "functional STM push expects buffer [B,K,D] and ideas [B,D]")
+        B, cap, D = buffer.shape
+        if tuple(ideas.shape) != (B, D):
+            raise ValueError(
+                "functional STM push idea shape must match buffer batch/dim")
+        slab_shape = (B, cap)
+        for name, slab in (
+                ("orders", orders),
+                ("grammar_orders", grammar_orders),
+                ("concept_rows", concept_rows),
+                ("concept_activations", concept_activations)):
+            if tuple(slab.shape) != slab_shape:
+                raise ValueError(
+                    f"functional STM push {name} must have shape {slab_shape}")
+
+        gate_bool = gate_b_1.reshape(B).to(
+            device=buffer.device, dtype=torch.bool)
+        gate_col = gate_bool.reshape(B, 1, 1)
+        gate_slab = gate_bool.reshape(B, 1)
+
+        # Concatenation expresses the shift without slice assignment.  Besides
+        # being easier for functionalization to prove alias-free, it works for
+        # capacity one without a Python special case in the captured body.
+        shifted_buffer = torch.cat(
+            (ideas.unsqueeze(1), buffer[:, :cap - 1, :]), dim=1)
+        shifted_orders = torch.cat(
+            (inserted_orders.reshape(B, 1),
+             orders[:, :cap - 1]), dim=1)
+        shifted_grammar = torch.cat(
+            (inserted_grammar_orders.reshape(B, 1),
+             grammar_orders[:, :cap - 1]), dim=1)
+        shifted_rows = torch.cat(
+            (inserted_concept_rows.reshape(B, 1),
+             concept_rows[:, :cap - 1]), dim=1)
+        shifted_activations = torch.cat(
+            (inserted_concept_activations.reshape(B, 1),
+             concept_activations[:, :cap - 1]), dim=1)
+
+        next_buffer = torch.where(gate_col, shifted_buffer, buffer)
+        next_orders = torch.where(gate_slab, shifted_orders, orders)
+        next_grammar = torch.where(
+            gate_slab, shifted_grammar, grammar_orders)
+        next_rows = torch.where(gate_slab, shifted_rows, concept_rows)
+        next_activations = torch.where(
+            gate_slab, shifted_activations, concept_activations)
+        next_depth = torch.clamp(
+            depth + gate_bool.to(dtype=depth.dtype), max=cap)
+        return (
+            next_buffer, next_depth, next_orders, next_grammar,
+            next_rows, next_activations)
+
+    @staticmethod
+    def functional_snapshot_mask(buffer, depth, active_rows=None):
+        """Return the fixed-capacity STM snapshot and its occupied mask.
+
+        Unlike :meth:`snapshot`, this operation never trims the slot axis
+        using a Python high-water mark.  Consumers use the returned mask, so a
+        single compiled graph supports every runtime sentence length and
+        every independently progressing row in a large batch.
+        """
+        if buffer.dim() != 3 or depth.dim() != 1:
+            raise ValueError(
+                "functional STM snapshot expects [B,K,D] and depth [B]")
+        B, cap = int(buffer.shape[0]), int(buffer.shape[1])
+        if int(depth.shape[0]) != B:
+            raise ValueError(
+                "functional STM snapshot depth must contain one value per row")
+        slots = torch.arange(
+            cap, dtype=depth.dtype, device=depth.device).reshape(1, cap)
+        occupied = slots < depth.reshape(B, 1)
+        if active_rows is not None:
+            occupied = torch.logical_and(
+                occupied,
+                active_rows.reshape(B, 1).to(
+                    device=occupied.device, dtype=torch.bool))
+        return buffer, occupied
+
+    def push_window_batch(self, ideas, orders=None, grammar_orders=None,
+                          concept_rows=None, concept_activations=None):
+        # Newest-at-slot-0: shift RIGHT by W; write the window REVERSED
+        # into slots [0, W) so the window's newest position lands at 0.
+        B, W, D = ideas.shape
+        if W == 0:
+            return
+        buf = self._buffer
+        cap = int(buf.shape[1])
+        order_slab, grammar_slab = self.ensure_order_state()
+        concept_slab, activation_slab = self.ensure_reference_state()
+        if orders is None:
+            order_window = torch.full(
+                (B, W), -1, dtype=torch.long, device=buf.device)
+        elif torch.is_tensor(orders):
+            order_window = orders.to(
+                device=buf.device, dtype=torch.long).reshape(B, W)
+        else:
+            order_window = torch.full(
+                (B, W), int(orders), dtype=torch.long, device=buf.device)
+        if grammar_orders is None:
+            grammar_window = torch.full(
+                (B, W), -1, dtype=torch.long, device=buf.device)
+        elif torch.is_tensor(grammar_orders):
+            grammar_window = grammar_orders.to(
+                device=buf.device, dtype=torch.long).reshape(B, W)
+        else:
+            grammar_window = torch.full(
+                (B, W), int(grammar_orders), dtype=torch.long,
+                device=buf.device)
+        if concept_rows is None:
+            concept_window = torch.full(
+                (B, W), -1, dtype=torch.long, device=buf.device)
+        elif torch.is_tensor(concept_rows):
+            concept_window = concept_rows.to(
+                device=buf.device, dtype=torch.long).reshape(B, W)
+        else:
+            concept_window = torch.full(
+                (B, W), int(concept_rows), dtype=torch.long,
+                device=buf.device)
+        if concept_activations is None:
+            activation_window = torch.zeros(
+                (B, W), dtype=buf.dtype, device=buf.device)
+        elif torch.is_tensor(concept_activations):
+            activation_window = concept_activations.to(
+                device=buf.device, dtype=buf.dtype).reshape(B, W)
+        else:
+            activation_window = torch.full(
+                (B, W), float(concept_activations), dtype=buf.dtype,
+                device=buf.device)
+        activation_window = torch.where(
+            concept_window >= 0, activation_window,
+            torch.zeros_like(activation_window))
+        if cap > W:
+            buf[:, W:cap] = buf[:, 0:cap - W].clone()
+            order_slab[:, W:cap] = order_slab[:, 0:cap - W].clone()
+            grammar_slab[:, W:cap] = grammar_slab[:, 0:cap - W].clone()
+            concept_slab[:, W:cap] = concept_slab[:, 0:cap - W].clone()
+            activation_slab[:, W:cap] = (
+                activation_slab[:, 0:cap - W].clone())
+        buf[:, 0:W] = torch.flip(ideas, dims=[1])
+        order_slab[:, 0:W] = torch.flip(order_window, dims=[1])
+        grammar_slab[:, 0:W] = torch.flip(grammar_window, dims=[1])
+        concept_slab[:, 0:W] = torch.flip(concept_window, dims=[1])
+        activation_slab[:, 0:W] = torch.flip(activation_window, dims=[1])
+        self._depth = self._depth + W
+        self._max_depth_host = self._max_depth_host + int(W)
+
+    def pop(self, b):
+        # Newest-at-slot-0: pop slot 0, shift the rest LEFT.
+        depth = int(self._depth[b].item())
+        if depth == 0:
+            return None
+        buf = self._buffer
+        orders, grammar = self.ensure_order_state()
+        concept_rows, concept_activations = self.ensure_reference_state()
+        idea = buf[b, 0].clone()
+        if depth > 1:
+            buf[b, 0:depth - 1] = buf[b, 1:depth].clone()
+            orders[b, 0:depth - 1] = orders[b, 1:depth].clone()
+            grammar[b, 0:depth - 1] = grammar[b, 1:depth].clone()
+            concept_rows[b, 0:depth - 1] = (
+                concept_rows[b, 1:depth].clone())
+            concept_activations[b, 0:depth - 1] = (
+                concept_activations[b, 1:depth].clone())
+        buf[b, depth - 1].zero_()
+        orders[b, depth - 1] = -1
+        grammar[b, depth - 1] = -1
+        concept_rows[b, depth - 1] = -1
+        concept_activations[b, depth - 1] = 0
+        self._depth[b] = depth - 1
+        return idea
+
+    def peek(self, b, n=0):
+        # Newest-at-slot-0: the n-th-from-newest item is at slot n.
+        depth = int(self._depth[b].item())
+        if depth <= n:
+            return None
+        return self._buffer[b, n]
+
+    def snapshot(self, detach=False):
+        buf = self._buffer
+        if buf is None:
+            return None
+        B = int(buf.shape[0])
+        if B == 0:
+            return None
+        max_depth = int(self._max_depth_host)
+        if max_depth == 0:
+            return None
+        cap = int(self.capacity)
+        if max_depth > cap:
+            max_depth = cap
+        snap = buf[:, :max_depth, :]
+        if detach:
+            snap = snap.detach().clone()
+        else:
+            snap = snap.clone()
+        return snap
+
+    def snapshot_orders(self, detach=False):
+        """Return concept/subsymbolic orders aligned with ``snapshot()``."""
+        self.ensure_order_state()
+        max_depth = min(int(self._max_depth_host), int(self.capacity))
+        if max_depth <= 0:
+            return None
+        snap = self._orders[:, :max_depth]
+        return snap.detach().clone() if detach else snap.clone()
+
+    def snapshot_grammar_orders(self, detach=False):
+        """Return syntactic derivation depths aligned with ``snapshot()``."""
+        self.ensure_order_state()
+        max_depth = min(int(self._max_depth_host), int(self.capacity))
+        if max_depth <= 0:
+            return None
+        snap = self._grammar_orders[:, :max_depth]
+        return snap.detach().clone() if detach else snap.clone()
+
+    def snapshot_concept_rows(self, detach=False):
+        """Return exact concept-row references aligned with ``snapshot()``."""
+        self.ensure_reference_state()
+        max_depth = min(int(self._max_depth_host), int(self.capacity))
+        if max_depth <= 0:
+            return None
+        snap = self._concept_rows[:, :max_depth]
+        return snap.detach().clone() if detach else snap.clone()
+
+    def snapshot_concept_activations(self, detach=False):
+        """Return lexical-row coefficients aligned with ``snapshot()``."""
+        self.ensure_reference_state()
+        max_depth = min(int(self._max_depth_host), int(self.capacity))
+        if max_depth <= 0:
+            return None
+        snap = self._concept_activations[:, :max_depth]
+        return snap.detach().clone() if detach else snap.clone()
+
+    def size(self, b):
+        return int(self._depth[b].item())
+
+    def is_full(self, b):
+        return self.size(b) >= self.capacity
+
+    def is_empty(self, b):
+        return self.size(b) == 0
+
+    def clear(self, b=None):
+        buf = self._buffer
+        if buf is None:
+            return
+        from ClauseScope import ClauseScope
+        reset = torch.ones(buf.shape[0], dtype=torch.bool, device=buf.device) if b is None else (
+            torch.arange(buf.shape[0], device=buf.device) == int(b))
+        self._clause_state = ClauseScope.reset(self.ensure_clause_state(), reset)
+        if b is None:
+            buf.zero_()
+            self._depth.zero_()
+            self.ensure_order_state()
+            self._orders.fill_(-1)
+            self._grammar_orders.fill_(-1)
+            self.ensure_reference_state()
+            self._concept_rows.fill_(-1)
+            self._concept_activations.zero_()
+            self._max_depth_host = 0
+            return
+        b = int(b)
+        if b < 0 or b >= int(buf.shape[0]):
+            return
+        buf[b].zero_()
+        self._depth[b] = 0
+        self.ensure_order_state()
+        self._orders[b].fill_(-1)
+        self._grammar_orders[b].fill_(-1)
+        self.ensure_reference_state()
+        self._concept_rows[b].fill_(-1)
+        self._concept_activations[b].zero_()
+        self._max_depth_host = int(self._depth.max().item())
+
+    # -- STM shift/reduce driver (formerly stm_driver.STMDriver) -----------
+
+#endregion
+
+#region Operations
+
+# The lift/lower kernels require an explicit mode. Their retired positional
+# and smooth analytic paths were removed in the October 1 suite trim.
+
+
+class Ops:
+    """[FROZEN — DEPRECATED FOR GRAMMAR OPS] Pure operations on
+    activation vectors in [-1, +1].
+
+    **Status (2026-04-28):** Ops is frozen. No new methods should be
+    added here. Grammar-relevant operators (``not``, ``non``, ``lift``,
+    ``lower``, ``intersection``, ``union``, ``absorb``, ``swap``,
+    ``equals``, ``part``, ``whole``, ``project``, etc.) belong as
+    ``GrammarLayer`` subclasses with ``rule_name``, ``arity``,
+    ``invertible``, and ``lossy`` fields plus ``forward``/``reverse``
+    methods. The Layer-shaped invocation surface lets the bottom-up
+    forward path (rule-probability gating) and the SyntacticLayer's
+    top-down dispatch use the same Layer instances.
+
+    Existing methods below stay until callers migrate. New operators
+    should derive from GrammarLayer instead. ``GrammarLayer``
+    subclasses are added one at a time as concrete grammars start
+    invoking the corresponding rule — not pre-emptively.
+
+    Tensor utilities (sign, saturate, threshold, distance, what/where/
+    when accessors, minMag/maxMag, ...) that are not grammar operators
+    can stay on Ops indefinitely as a math-kernel namespace.
+
+    Supersedes the legacy ``Activation`` class. Static namespace; ``Basis``
+    (in Spaces.py) delegates its logic, mereology, and metric methods
+    here so each formula has a single source of truth.
+
+    Domain/range conventions:
+        Values live in [-1, +1].
+        monotonic=False (bitonic): sign = direction, magnitude = confidence.
+            +1 = true, 0 = unknown, -1 = false.
+        monotonic=True (unsigned): [0, 1] scale with a tetralemma pair
+            representation for signed ops (negation flips the pair).
+
+    Layout:
+        - Tensor ops (conjunction, disjunction, negation, non, pos, norm,
+          distance, part, whole, equal, overlap, underlap, boundary,
+          copart) expect torch tensors with last-dim semantics.
+        - Scalar/elementwise ops (positive, negative, neutral, sign,
+          saturate, threshold, complement, convertSensation, minMag,
+          maxMag, error, isActive, isEqual, isReducer, true, false,
+          unknown) accept torch tensors or python scalars; non-tensor
+          inputs are coerced via ``torch.as_tensor``.
+    """
+
+    # ---- Tetralemma constants --------------------------------------------
+
+    @staticmethod
+    def true():
+        """True.
+        
+        See class docstring for the operation contract.
+        """
+        return 1
+
+    @staticmethod
+    def false():
+        """False.
+        
+        See class docstring for the operation contract.
+        """
+        return -1
+
+    @staticmethod
+    def unknown():
+        """Unknown.
+
+        See class docstring for the operation contract.
+        """
+        return 0
+
+    # ---- Evaluation chart (MeronomySpec §3; math kernel, not a grammar
+    # op -- permitted on frozen Ops per the class-docstring layout note).
+
+    @staticmethod
+    def eval_chart(a):
+        """χ(a) = (1 + a) / 2: epistemic scalar → assumed membership.
+
+        The evaluation map of MeronomySpec §3 -- beliefs cash into
+        extents when they become membership-fold operands. χ is
+        EVALUATION, not injection: no coordinate-wise map from PS
+        memberships into a signed cube exists anywhere in the
+        architecture. Corners are exact: ``+1 ↦ 1`` (certain-true),
+        ``0 ↦ ½`` (Boole's maximal-vagueness point), ``−1 ↦ 0``
+        (certain-false).
+        """
+        t = torch.as_tensor(a)
+        return (1 + t) / 2
+
+    @staticmethod
+    def eval_chart_inv(m):
+        """χ⁻¹(m) = 2m − 1: assumed membership → epistemic scalar.
+
+        Exact inverse of :func:`eval_chart`; affine, total, no
+        rectification -- the old ReLU-injection law ``max(0, 2m−1)``
+        is retired (the Stage-4 factored interface replaces it; see
+        test_meronomy_laws.py's guard).
+        """
+        t = torch.as_tensor(m)
+        return 2 * t - 1
+
+    # ---- Scalar / elementwise primitives ---------------------------------
+
+    @staticmethod
+    def positive(x):
+        """Positive.
+        
+        See class docstring for the operation contract.
+        """
+        t = torch.as_tensor(x)
+        return torch.relu(t)
+
+    @staticmethod
+    def negative(x):
+        """Negative.
+        
+        See class docstring for the operation contract.
+        """
+        t = torch.as_tensor(x)
+        return -torch.relu(-t)
+
+    @staticmethod
+    def neutral(x):
+        """Neutral.
+        
+        See class docstring for the operation contract.
+        """
+        return 1 - torch.as_tensor(x).abs()
+
+    @staticmethod
+    def sign(v):
+        """Signum with sgn(0) = 1 (not 0)."""
+        t = torch.as_tensor(v).float()
+        y = torch.sign(t)
+        return torch.where(y == 0, torch.ones_like(y), y)
+
+    @staticmethod
+    def saturate(x):
+        """Clamp to [-1, +1]. NaN -> 0."""
+        t = torch.as_tensor(x)
+        return torch.nan_to_num(t.clamp(-1.0, 1.0))
+
+    @staticmethod
+    def threshold(x, activationThreshold=0.01):
+        """Threshold.
+        
+        See class docstring for the operation contract.
+        """
+        t = torch.as_tensor(x)
+        return torch.where(t.abs() < activationThreshold, torch.zeros_like(t), t)
+
+    @staticmethod
+    def complement(x):
+        """Complement.
+        
+        See class docstring for the operation contract.
+        """
+        t = torch.as_tensor(x)
+        return Ops.sign(t) - t
+
+    @staticmethod
+    def convertSensation(x):
+        """Convert sensation.
+        
+        See class docstring for the operation contract.
+        """
+        return 2 * torch.as_tensor(x) - 1
+
+    @staticmethod
+    def minMag(x1, x2):
+        """Min mag.
+        
+        See class docstring for the operation contract.
+        """
+        t1, t2 = torch.as_tensor(x1), torch.as_tensor(x2)
+        return torch.where(t1.abs() <= t2.abs(), t1, t2)
+
+    @staticmethod
+    def maxMag(x1, x2):
+        """Max mag.
+        
+        See class docstring for the operation contract.
+        """
+        t1, t2 = torch.as_tensor(x1), torch.as_tensor(x2)
+        return torch.where(t1.abs() >= t2.abs(), t1, t2)
+
+    @staticmethod
+    def error(x1, x2):
+        """Error.
+        
+        See class docstring for the operation contract.
+        """
+        t1, t2 = torch.as_tensor(x1).float(), torch.as_tensor(x2).float()
+        return torch.linalg.norm(t1 - t2)
+
+    @staticmethod
+    def isActive(x, activationThreshold=0.01):
+        """Is active.
+        
+        See class docstring for the operation contract.
+        """
+        return torch.as_tensor(x).abs() >= activationThreshold
+
+    @staticmethod
+    def isEqual(x1, x2):
+        """Is equal.
+        
+        See class docstring for the operation contract.
+        """
+        return torch.equal(torch.as_tensor(x1), torch.as_tensor(x2))
+
+    @staticmethod
+    def isReducer(x1, x2):
+        """Is reducer.
+        
+        See class docstring for the operation contract.
+        """
+        t1, t2 = torch.as_tensor(x1), torch.as_tensor(x2)
+        return ((t2 - t1).abs().sum() < t2.abs().sum()).item()
+
+    # ---- Tensor primitives -----------------------------------------------
+
+    @staticmethod
+    def pos(x):
+        """Positive projection (ReLU). Domain [-1, 1], range [0, 1]."""
+        return torch.relu(x)
+
+    @staticmethod
+    def norm(x):
+        """Last-dim L2 norm."""
+        return torch.norm(x, dim=-1)
+
+    # ---- Binary fuzzy logic ----------------------------------------------
+
+    # ---- RadMin / RadMax (bitonic same-sign magnitude pooling) -----------
+    # Private helpers so kind='radial' on lift / lower can call them
+    # directly without round-tripping through Ops.conjunction /
+    # Ops.disjunction (which themselves now forward back to lift / lower).
+
+    @staticmethod
+    def _radmin(x, y):
+        """Same-sign minimum magnitude (zero collapse).
+        Pre-Step-2 bitonic conjunction body."""
+        same_sign = (x * y > 0).float()
+        min_mag = torch.min(torch.abs(x), torch.abs(y))
+        return same_sign * torch.sign(x) * min_mag
+
+    @staticmethod
+    def _radmax(x, y):
+        """Same-sign maximum magnitude with zero passthrough.
+        Pre-Step-2 bitonic disjunction body."""
+        same_sign = (x * y > 0).float()
+        max_mag = torch.max(torch.abs(x), torch.abs(y))
+        core = same_sign * torch.sign(x) * max_mag
+        x_zero = (x == 0).float()
+        y_zero = (y == 0).float()
+        return core + x_zero * y + y_zero * x
+
+    # ---- Soft (LogSumExp) RadMin / RadMax -------------------------------
+    # 2026-05-29: LSE is the canonical smooth approximation of ``max`` --
+    # ``max(x) <= tau * LSE(x/tau) <= max(x) + tau * log(n)``; the
+    # gradient is the softmax (every input receives non-zero gradient
+    # proportional to its softmax weight). As ``tau -> 0`` the soft
+    # form approaches the hard ``_radmax`` / ``_radmin`` exactly; at
+    # training-meaningful ``tau`` (default 0.1) both operands receive
+    # gradient through the magnitude pool, which the hard form denies
+    # to the per-cell loser.
+
+    @staticmethod
+    def _soft_radmax(x, y, tau=0.1):
+        """LSE smooth same-sign maximum magnitude. See ``_radmax`` for
+        the hard form; this is the gradient-friendly drop-in.
+
+        ``soft_max_mag = tau * LSE([|x|/tau, |y|/tau])``. The
+        zero-passthrough tail of the hard form is preserved so the
+        function still degenerates correctly when one operand is
+        exactly zero.
+        """
+        same_sign = (x * y > 0).float()
+        sx, sy = torch.abs(x), torch.abs(y)
+        stacked = torch.stack([sx / tau, sy / tau], dim=-1)
+        soft_max_mag = tau * torch.logsumexp(stacked, dim=-1)
+        core = same_sign * torch.sign(x) * soft_max_mag
+        x_zero = (x == 0).float()
+        y_zero = (y == 0).float()
+        return core + x_zero * y + y_zero * x
+
+    @staticmethod
+    def _soft_radmin(x, y, tau=0.1):
+        """LSE smooth same-sign minimum magnitude. Mirror of
+        ``_soft_radmax`` for the conjunction kernel.
+
+        ``soft_min_mag = -tau * LSE([-|x|/tau, -|y|/tau])`` (the
+        canonical soft-min via negation of LSE on negatives).
+        """
+        same_sign = (x * y > 0).float()
+        sx, sy = torch.abs(x), torch.abs(y)
+        stacked = torch.stack([-sx / tau, -sy / tau], dim=-1)
+        soft_min_mag = -tau * torch.logsumexp(stacked, dim=-1)
+        return same_sign * torch.sign(x) * soft_min_mag
+
+    @staticmethod
+    def corner_overlap(a, b):
+        """Pairwise hyperrectangle-overlap measure on bivector leaves.
+
+        Distinct from ``Ops.overlap`` (mereological parthood-based
+        overlap, defined further down). This kernel implements the
+        "overlapping corner in any dimension" criterion used by the
+        contiguity measure on hoc_shape leaves.
+
+        Args:
+            a, b: ``[..., 2]`` tensors -- each is a ``[pos, neg]``
+                bivector defining the hyperrectangle interval
+                ``[-neg, +pos]`` on its dimension-of-origin.
+
+        Returns:
+            tensor of shape ``a.shape[:-1]`` (the leading batch dims
+            with the bivector dim collapsed). Each entry in
+            ``[-1, +1]``:
+              ``+1`` if the intervals overlap (the bivectors share
+                    at least one common corner -- equivalent to
+                    ``max(-a_neg, -b_neg) <= min(a_pos, b_pos)``).
+              ``-1`` if the intervals are disjoint.
+              ``0``  if either input is degenerate (no extent --
+                    both pos and neg ~ 0), so overlap cannot be
+                    decided.
+
+        Vectorized over arbitrary leading dims; no Python iteration.
+        Inputs are interpreted as a *single bivector pair* (last
+        dim == 2). For higher-D regions the caller stacks bivector
+        leaves along an "axis" dim before calling this kernel
+        (``a.shape == [..., n_axes, 2]``); in that case the
+        any-axis aggregation is the caller's choice (typically
+        ``.amax(dim=-1)`` to mark "overlap in any axis = +1").
+        """
+        if a.shape[-1] != 2 or b.shape[-1] != 2:
+            raise ValueError(
+                f"Ops.corner_overlap: expected last dim == 2 "
+                f"bivector pair, got a={tuple(a.shape)} "
+                f"b={tuple(b.shape)}")
+        eps = 1e-9
+        a_lo = -a[..., 1]
+        a_hi =  a[..., 0]
+        b_lo = -b[..., 1]
+        b_hi =  b[..., 0]
+        a_extent = (a[..., 0].abs() + a[..., 1].abs()) > eps
+        b_extent = (b[..., 0].abs() + b[..., 1].abs()) > eps
+        both_extent = a_extent & b_extent
+
+        lo = torch.maximum(a_lo, b_lo)
+        hi = torch.minimum(a_hi, b_hi)
+        # Touching corners count as overlap (lo <= hi, inclusive).
+        dim_overlap = lo <= hi
+
+        # +1 where both have extent and intervals overlap.
+        # -1 where both have extent and intervals are disjoint.
+        #  0 where either is degenerate.
+        zeros = torch.zeros_like(a_hi)
+        ones  = torch.ones_like(a_hi)
+        result = torch.where(both_extent & dim_overlap,  ones,  zeros)
+        result = torch.where(both_extent & ~dim_overlap, -ones, result)
+        return result
+
+    @staticmethod
+    def epsilon_delta(in_boxes, out_boxes, norm='inf', eps_floor=1e-6):
+        """ε-δ continuity ratios over pairs of bivector hyperrectangles.
+
+        Classical pointwise continuity: ``f`` is continuous at ``x``
+        iff ``∀ε > 0, ∃δ > 0`` such that ``‖x' − x‖ < δ ⇒ ‖f(x') −
+        f(x)‖ < ε``. Adapted to a finite set of leaf hyperrectangles:
+        for each pair ``(R_i, R_j)`` the input-side diameter ``δ_ij``
+        and the output-side diameter ``ε_ij`` of the union of the two
+        boxes give the empirical ratio ``ε_ij / δ_ij``. The map is
+        continuous on the leaf set when this ratio stays bounded.
+
+        Hyperrectangle from a bivector ``[pos, neg]``: per-axis
+        interval ``[-|neg|, +pos]``; box diameter on axis ``d`` is
+        ``pos_d + |neg_d|``. Union of two boxes has per-axis spread
+        ``max(pos_i, pos_j) + max(|neg_i|, |neg_j|)``.
+
+        Args:
+            in_boxes:  ``[K, ..., 2]`` -- K leaf input-side bivectors
+                (the active higher-order symbol's bivector at each
+                leaf's source position).
+            out_boxes: ``[K, ..., 2]`` -- matching output-side
+                bivectors (the back-projected leaf bivector).
+            norm: ``'inf'`` (default; per-axis max -- "did any
+                axis blow up") or ``'l2'`` (Euclidean norm of the
+                per-axis spread vector).
+            eps_floor: clamp on δ to keep the ratio finite when
+                input boxes coincide.
+
+        Returns:
+            ratios: ``[K, K]`` -- per-pair ε / δ. Symmetric. The
+                diagonal carries the per-leaf self-pair ratio
+                (``= 1`` when in and out diameters match, e.g. for
+                an identity map; consumers typically mask the
+                diagonal off when aggregating). Pairs whose δ falls
+                below ``eps_floor`` get ``ε / eps_floor``
+                (clamped); callers should mask them out with the
+                input-extent test instead of trusting the ratio.
+
+        Vectorized over arbitrary leading dims; no Python iteration.
+        """
+        if in_boxes.shape[-1] != 2 or out_boxes.shape[-1] != 2:
+            raise ValueError(
+                f"Ops.epsilon_delta: expected last dim == 2 bivector "
+                f"pair, got in={tuple(in_boxes.shape)} "
+                f"out={tuple(out_boxes.shape)}")
+        if in_boxes.shape[0] != out_boxes.shape[0]:
+            raise ValueError(
+                f"Ops.epsilon_delta: leaf-count mismatch -- "
+                f"in_boxes.shape[0]={in_boxes.shape[0]} vs "
+                f"out_boxes.shape[0]={out_boxes.shape[0]}")
+
+        def pair_diam(boxes):
+            """boxes: [K, ..., 2]. Returns [K, K, ...] pairwise per-
+            axis diameters of the union of each box pair."""
+            pos = boxes[..., 0]
+            neg = boxes[..., 1].abs()
+            pos_max = torch.maximum(pos.unsqueeze(0), pos.unsqueeze(1))
+            neg_max = torch.maximum(neg.unsqueeze(0), neg.unsqueeze(1))
+            return pos_max + neg_max
+
+        in_d  = pair_diam(in_boxes)
+        out_d = pair_diam(out_boxes)
+        if norm == 'inf':
+            delta = in_d.amax(dim=-1)
+            eps   = out_d.amax(dim=-1)
+        elif norm == 'l2':
+            delta = in_d.norm(dim=-1)
+            eps   = out_d.norm(dim=-1)
+        else:
+            raise ValueError(
+                f"Ops.epsilon_delta: unknown norm {norm!r}; "
+                f"expected 'inf' or 'l2'")
+
+        return eps / delta.clamp_min(eps_floor)
+
+    @staticmethod
+    def hyperrectangle_volume(boxes, eps=1e-6):
+        """Per-leaf hyperrectangle volume from `[pos, neg]` corner bivectors.
+
+        Companion to :meth:`Ops.corner_overlap` and
+        :meth:`Ops.epsilon_delta`; same input contract.
+
+        Args:
+            boxes: ``[..., n_axes, 2]`` -- last dim is the bivector
+                pair, the preceding dim is the axis count.  Per axis
+                ``d`` the side length is ``pos_d + |neg_d|`` (matching
+                the box-diameter convention used by
+                ``Ops.epsilon_delta.pair_diam``).  Leading dims are
+                preserved.
+            eps: axes whose side ``< eps`` drop out of the active
+                subspace (the rectangle is effectively
+                lower-dimensional in that channel).
+
+        Returns:
+            ``[...]`` scalar volume per leading-batch element.
+            Volume = product of active-axis sides.  An empty active
+            subspace returns ``0``.
+        """
+        if boxes.shape[-1] != 2:
+            raise ValueError(
+                f"Ops.hyperrectangle_volume: expected last dim == 2 "
+                f"bivector pair, got {tuple(boxes.shape)}")
+        sides = boxes[..., 0] + boxes[..., 1].abs()           # [..., n_axes]
+        active = sides > eps
+        # Replace inactive axes' side with 1 so they are neutral in
+        # the product; volume returns 0 only when *no* axis is active.
+        sides_for_product = torch.where(active, sides,
+                                         torch.ones_like(sides))
+        any_active = active.any(dim=-1)
+        vol = sides_for_product.prod(dim=-1)
+        return torch.where(any_active, vol, torch.zeros_like(vol))
+
+    @staticmethod
+    def hyperrectangle_overlap_volume(a, b, eps=1e-6):
+        """Shared volume of two hyperrectangles in ``[pos, neg]`` form.
+
+        Companion to :meth:`Ops.corner_overlap` (binary corner test) —
+        this op returns the actual shared volume, not just an overlap
+        indicator.
+
+        Per axis ``d`` the boxes' intervals are ``[-|a_neg|, +a_pos]``
+        and ``[-|b_neg|, +b_pos]``.  Shared interval =
+        ``max(-|a_neg|, -|b_neg|)`` to ``min(a_pos, b_pos)``;
+        width = ``max(0, hi - lo)``.  Axes where either box's side
+        ``< eps`` drop out (the rectangle has no extent there).
+        Volume = product over the remaining axes' shared widths.
+
+        Args:
+            a, b: ``[..., n_axes, 2]`` bivector tensors with matching
+                leading dims.
+            eps: axis-active threshold.
+
+        Returns:
+            ``[...]`` shared-volume scalar per leading element.
+        """
+        if a.shape[-1] != 2 or b.shape[-1] != 2:
+            raise ValueError(
+                f"Ops.hyperrectangle_overlap_volume: expected last "
+                f"dim == 2 bivector pair, got a={tuple(a.shape)} "
+                f"b={tuple(b.shape)}")
+        a_lo = -a[..., 1].abs()
+        a_hi =  a[..., 0]
+        b_lo = -b[..., 1].abs()
+        b_hi =  b[..., 0]
+        a_side = a[..., 0] + a[..., 1].abs()
+        b_side = b[..., 0] + b[..., 1].abs()
+        active = (a_side > eps) & (b_side > eps)              # [..., n_axes]
+
+        lo = torch.maximum(a_lo, b_lo)
+        hi = torch.minimum(a_hi, b_hi)
+        width = (hi - lo).clamp(min=0.0)                      # [..., n_axes]
+        # Inactive axes are neutral (side = 1) in the product but
+        # only when at least one axis is active overall.
+        widths_for_product = torch.where(active, width,
+                                          torch.ones_like(width))
+        any_active = active.any(dim=-1)
+        vol = widths_for_product.prod(dim=-1)
+        return torch.where(any_active, vol, torch.zeros_like(vol))
+
+    @staticmethod
+    def _code_direction(x):
+        """Identity direction, with an exact zero for an absent code."""
+        norm = torch.linalg.vector_norm(x, dim=-1, keepdim=True)
+        return x / torch.where(norm > 0, norm, torch.ones_like(norm))
+
+    @staticmethod
+    def _presence(x, activation):
+        """Magnitude belongs to activation; a bare nonzero code is present."""
+        present = x.ne(0).any(-1, keepdim=True)
+        if activation is None:
+            return present.to(x)
+        value = torch.as_tensor(activation, device=x.device, dtype=x.dtype)
+        if value.ndim == x.ndim - 1:
+            value = value.unsqueeze(-1)
+        return torch.where(present, value.abs(), 0.)
+
+    @staticmethod
+    def _conjunction_kernel(x, y, same_reference=None, *,
+                            left_activation=None, right_activation=None):
+        """Bind code directions; multiply the separately supplied activations.
+
+        Idempotence is about a shared reference, not equal numerical codes.
+        The caller supplies native-reference equality when it has addresses.
+        An aliased tensor is the same reference at the direct tensor API.
+        """
+        left, right = Ops._code_direction(x), Ops._code_direction(y)
+        a, b = Ops._presence(x, left_activation), Ops._presence(y, right_activation)
+        result = a * b * Ops._code_direction(left * right)
+        if same_reference is None:
+            return a * left if x is y else result
+        return torch.where(same_reference[..., None], a * left, result)
+
+    @staticmethod
+    def _disjunction_kernel(x, y, *, left_activation=None, right_activation=None):
+        """Probabilistic sum of activations; form length carries no certainty."""
+        left, right = Ops._code_direction(x), Ops._code_direction(y)
+        a, b = Ops._presence(x, left_activation), Ops._presence(y, right_activation)
+        return (a + b - a * b) * Ops._code_direction(left + right - left * right)
+
+    @staticmethod
+    def intersection(x, y, monotonic=False):
+        """Exact conceptual meet; a silent coordinate adds no restriction.
+
+        Explicit membership fields retain zero as false. Concept codes use
+        zero for an unspecified coordinate, so only their nonzero values
+        participate in the minimum. The same signed ordering handles evidence
+        against, without discarding it when it meets a positive coordinate.
+        """
+        meet = torch.minimum(x, y)
+        if monotonic:
+            return meet
+        return torch.where(x == 0, y, torch.where(y == 0, x, meet))
+
+    @staticmethod
+    def union(x, y, monotonic=False):
+        """The independent lattice join."""
+        return Ops._lift_kernel(x, y, mode='OR',
+                                kind='strict' if monotonic else 'soft')
+
+    @staticmethod
+    def _negation_kernel(x, monotonic=False):
+        """Negation.
+        Bitonic: sign flip (-x).
+        Monotonic, last-dim == 2: tetralemma swap on a demuxed [aP, aN] bivector.
+        Monotonic, last-dim == 2K: paired-index pair flip."""
+        if not monotonic:
+            return -x
+        n = x.shape[-1]
+        if n == 2:
+            return x.flip(dims=(-1,))
+        if n % 2 == 0:
+            pair = x.reshape(*x.shape[:-1], n // 2, 2)
+            flipped = pair.flip(dims=(-1,))
+            return flipped.reshape(*x.shape)
+        raise ValueError(
+            f"Ops._negation_kernel(monotonic=True) requires even last dim; "
+            f"got shape {tuple(x.shape)}"
+        )
+
+    @staticmethod
+    def _non_kernel(x, monotonic=False, threshold=None):
+        """Non-affirming negation -- the 'indeterminate' commitment.
+
+        Bitonic (default): triangular residual 1 - |clamp(x, -1, 1)|.
+            Completes the S-space_role trinity partition of unity:
+            true(x) + false(x) + non(x) = 1.
+        Monotonic: ReLU(x - threshold) if threshold given, else 0."""
+        if monotonic:
+            if threshold is not None:
+                return torch.relu(x - threshold)
+            return torch.zeros_like(x)
+        return 1.0 - torch.clamp(x, -1.0, 1.0).abs()
+
+    # ---- Inverse logic operations ----------------------------------------
+    # ``intersectionReverse`` / ``unionReverse`` need a codebook ``W``
+    # to invert the lossy binary op via search. ``Basis`` supplies this via
+    # ``self.getW()`` when delegating; standalone callers may pass ``W`` of
+    # shape (K, D) directly.
+
+    @staticmethod
+    def negationReverse(x, monotonic=False):
+        """Inverse of negation. Self-inverse in both modes.
+        Bitonic: sign flip. Monotonic: paired-index flip."""
+        return Ops._negation_kernel(x, monotonic=monotonic)
+
+    @staticmethod
+    def _word_snap(result, W, op_name, left_rows, left_priming):
+        """Dispatch the op-respecting word snap (Alec 2026-07-14,
+        doc/plans/2026-07-14-signed-space-snap-design.md): the dot-metric
+        pair snap over the restricted word rows, replacing the order-filter
+        recommender that returned ⊤ sentinels on trained composites.
+        ``left_priming`` (``[K]`` over W) is indexed to the restricted rows —
+        the present-word bias conjunction's lossy meet leans on."""
+        prime = None
+        if left_priming is not None and torch.is_tensor(left_priming):
+            lr = left_rows.long().to(left_priming.device)
+            prime = left_priming.reshape(-1).index_select(0, lr)
+        return Ops.word_pair_snap(result, W, left_rows, op_name=op_name,
+                                  priming=prime)
+
+    @staticmethod
+    def intersectionReverse(result, y, W, monotonic=False, unit_ball=False,
+                           left_rows=None, right_rows=None,
+                           left_priming=None, right_priming=None,
+                           radial=False, snap=False):
+        """Inverse-recommend ``(x1, x2)`` for ``conjunction(x1, x2) ≈ result``.
+
+        Replaces the prior brute-force codebook search (which returned
+        only the best left operand) with the mereology-guided
+        recommender in :func:`Ops._binary_op_recommend`. Returns the
+        pair drawn from the augmented codebook (learned ``W`` plus the
+        synthetic ⊥ / ⊤ sentinels) — see that function for the
+        algorithm. ``y`` is ignored; kept for backward-compatible
+        signature. Falls back to ``(result, result)`` if ``W`` is None
+        or empty.
+
+        ``left_rows`` / ``right_rows`` (optional ``LongTensor``):
+            restricts which learned-codebook rows are eligible for
+            ``x1`` / ``x2`` selection. Forwarded to
+            ``_binary_op_recommend``. Sentinels remain feasible
+            regardless.
+
+        ``left_priming`` / ``right_priming`` (optional ``FloatTensor``):
+            soft boost-above-unity weights per W-row, biasing argmin /
+            argmax toward primed candidates. Default 1.0 (multiplicative
+            identity, no bias). See ``_binary_op_recommend``.
+
+        ``snap`` (Alec 2026-07-14): when True and ``left_rows`` is given,
+            use the dot-metric MEET-aware snap (priming-led — the meet is
+            lossy) instead of the order-filter recommender. This is the
+            selection conjunction owns, distinct from disjunction's.
+        """
+        if snap and W is not None and left_rows is not None:
+            return Ops._word_snap(result, W, 'intersection',
+                                  left_rows, left_priming)
+        return Ops._binary_op_inverse_impl(
+            result, W, 'intersection', monotonic, unit_ball=unit_ball,
+            left_rows=left_rows, right_rows=right_rows,
+            left_priming=left_priming, right_priming=right_priming,
+            radial=radial)
+
+    @staticmethod
+    def unionReverse(result, y, W, monotonic=False, unit_ball=False,
+                           left_rows=None, right_rows=None,
+                           left_priming=None, right_priming=None,
+                           radial=False, snap=False):
+        """Inverse-recommend ``(x1, x2)`` for ``disjunction(x1, x2) ≈ result``.
+
+        Replaces the prior brute-force codebook search (which returned
+        only the best left operand) with the mereology-guided
+        recommender in :func:`Ops._binary_op_recommend`. Returns the
+        pair drawn from the augmented codebook (learned ``W`` plus the
+        synthetic ⊥ / ⊤ sentinels) — see that function for the
+        algorithm. ``y`` is ignored; kept for backward-compatible
+        signature. Falls back to ``(result, result)`` if ``W`` is None
+        or empty.
+
+        ``left_rows`` / ``right_rows`` (optional ``LongTensor``):
+            restricts which learned-codebook rows are eligible for
+            ``x1`` / ``x2`` selection. Forwarded to
+            ``_binary_op_recommend``.
+
+        ``left_priming`` / ``right_priming`` (optional ``FloatTensor``):
+            soft boost-above-unity weights per W-row, biasing argmin /
+            argmax toward primed candidates. Default 1.0 (multiplicative
+            identity, no bias). See ``_binary_op_recommend``.
+
+        ``snap`` (Alec 2026-07-14): when True and ``left_rows`` is given,
+            use the dot-metric JOIN snap (fit-determined — the join keeps
+            each operand's edge) instead of the order-filter recommender.
+        """
+        if snap and W is not None and left_rows is not None:
+            return Ops._word_snap(result, W, 'union',
+                                  left_rows, left_priming)
+        return Ops._binary_op_inverse_impl(
+            result, W, 'union', monotonic, unit_ball=unit_ball,
+            left_rows=left_rows, right_rows=right_rows,
+            left_priming=left_priming, right_priming=right_priming,
+            radial=radial)
+
+    @staticmethod
+    def _binary_op_inverse_impl(result, W, op, monotonic, unit_ball=False,
+                                left_rows=None, right_rows=None,
+                                left_priming=None, right_priming=None,
+                                radial=False):
+        """Backward-compatible shim for the union / intersection inverse.
+
+        Delegates to :func:`Ops._binary_op_recommend`. Returns the pair
+        ``(x1, x2)`` drawn from the augmented codebook. Falls back to
+        ``(result, result)`` when ``W`` is None / empty.
+
+        ``op`` may be the string ``'union'`` / ``'intersection'``, or one
+        of the legacy callable handles ``Ops.conjunction`` (→ intersection)
+        / ``Ops.disjunction`` (→ union). ``unit_ball`` is accepted for
+        signature parity with the prior implementation but the new
+        mereology-guided recommender is metric-free; the flag is
+        currently ignored.
+
+        ``left_rows`` / ``right_rows`` (optional ``LongTensor``):
+            forwarded to ``_binary_op_recommend`` to restrict the W-row
+            candidate set for each operand. See that function's
+            docstring for the typed restricted-candidate inverse story.
+        """
+        if W is None or (hasattr(W, 'shape') and W.shape[0] == 0):
+            return result, result
+        op_name = Ops._normalize_lattice_op(op)
+        return Ops._binary_op_recommend(
+            result, W, op_name, monotonic=monotonic,
+            left_rows=left_rows, right_rows=right_rows,
+            left_priming=left_priming, right_priming=right_priming,
+            radial=radial)
+
+    @staticmethod
+    def _normalize_lattice_op(op):
+        """Resolve ``op`` to ``'union'`` or ``'intersection'``.
+
+        Accepts the string names directly, the public callables
+        ``Ops.conjunction`` / ``Ops.disjunction`` (or their kernels), and
+        the symmetric ``Ops.intersection`` / ``Ops.union`` aliases. Any
+        other handle raises ``ValueError`` — the recommender is monotonic
+        lattice-only.
+        """
+        if isinstance(op, str):
+            name = op
+        else:
+            name = getattr(op, 'rule_name', None)
+            if name is None:
+                name = getattr(op, '__name__', '') or ''
+            name = name.replace('_kernel', '').replace('_', '')
+        if name in ('conjunction', 'intersection'):
+            return 'intersection'
+        if name in ('disjunction', 'union'):
+            return 'union'
+        raise ValueError(
+            f"Ops._binary_op_inverse_impl: unsupported op {op!r} "
+            "(expected union / intersection / conjunction / disjunction)")
+
+    @staticmethod
+    def word_pair_snap(result, W, rows, op_name='union', priming=None):
+        """Joint pair snap over word rows (Alec's design call, 2026-07-14;
+        doc/plans/2026-07-14-signed-space-snap-design.md).
+
+        ``(x1, x2) = argmax over row pairs of <fold(w_i, w_j), parent>``
+        — RAW dot product, NO feasibility filter: the radial order filter
+        admitted no real row against trained composite parents, so the
+        recommender returned the ⊤ sentinel for EVERY free-derivation
+        operand (measured). Dot ignores dims absent from the parent
+        (annihilation wildcards contribute nothing) and does not penalize
+        a word's support outside the parent — the ADJ(N) rationale.
+
+        ``op_name`` selects the fold AND the selection law (Alec: conjunction
+        may want different selection from disjunction). ``'union'`` (radmax /
+        join) is well-determined by the fit alone. ``'intersection'`` (radmin
+        / meet) is LOSSY — the meet collapses to the dominated operand, so
+        the fit is uninformative and the selection leans on ``priming`` (which
+        words are present) plus a distinctness tie-break (the meet of a word
+        with itself is trivial; two distinct present words is the informative
+        recovery).
+
+        ``priming`` (optional ``[K]``, score-space, default 0): additive
+        per-row boost — a primed pair's members each add their weight, so
+        among fit-tied pairs the most-present pair wins.
+
+        ``x1`` is the higher one-sided-dot member: the symmetric fold cannot
+        recover operand ORDER (recorded limitation; the tie-break is
+        deterministic, not semantic)."""
+        Wr = W.index_select(0, rows.long().to(W.device))       # [K, D]
+        flat = result.reshape(-1, W.shape[1])                  # [N, D]
+        fold = Ops._radmax if op_name == 'union' else Ops._radmin
+        pairs = fold(Wr.unsqueeze(1), Wr.unsqueeze(0))         # [K, K, D]
+        n, k = flat.shape[0], Wr.shape[0]
+        scores = Ops._support_dot(pairs.reshape(-1, W.shape[1]),
+                                  flat).reshape(n, k, k)        # [N, K, K]
+        if priming is not None:
+            p = priming.reshape(-1).to(scores.dtype).to(scores.device)
+            scores = scores + (p.unsqueeze(0) + p.unsqueeze(1)).unsqueeze(0)
+        if op_name != 'union':
+            # Meet-aware distinctness (conjunction only): break fit/priming
+            # ties toward two DISTINCT rows — recovering a word ∧ itself
+            # carries no information the meet did not already destroy.
+            distinct = 1.0 - torch.eye(k, device=scores.device,
+                                       dtype=scores.dtype)
+            scores = scores + 1e-4 * distinct.unsqueeze(0)
+        idx = scores.reshape(n, -1).argmax(dim=-1)
+        i, j = idx // k, idx % k
+        side = Ops._support_dot(Wr, flat)                      # [N, K]
+        ar = torch.arange(n, device=W.device)
+        swap = side[ar, j] > side[ar, i]
+        ii = torch.where(swap, j, i)
+        jj = torch.where(swap, i, j)
+        return (Wr[ii].reshape(result.shape),
+                Wr[jj].reshape(result.shape))
+
+    @staticmethod
+    def _support_dot(cands, flat):
+        """Support-restricted normalized dot: ``<p, c> / ||c||_supp(p)``.
+
+        Scores each candidate ONLY over the parent's support — dims the
+        parent lacks (a modifier's attenuation, annihilation wildcards)
+        cost the candidate nothing (Alec's ADJ(N) rationale), while the
+        support-restricted norm kills raw dot's large-row dominance
+        (measured: every row of every batch snapped to the same two
+        largest-norm words). ``cands [K, D]``, ``flat [N, D]`` →
+        ``[N, K]``."""
+        supp = (flat != 0).to(flat.dtype)                      # [N, D]
+        num = torch.einsum('kd,nd->nk', cands, flat)           # [N, K]
+        c2 = torch.einsum('kd,nd->nk', cands * cands, supp)    # [N, K]
+        return num / c2.clamp_min(1e-12).sqrt()
+
+    @staticmethod
+    def word_side_snap(result, W, rows):
+        """One-sided snap + minimal radial residual (word∧other steps;
+        Alec's design call, 2026-07-14).
+
+        ``w* = argmax_w <parent, w>`` (raw dot — Decision A: absent dims
+        cost nothing, so a modifier-attenuated parent still matches its
+        noun where L2 would prefer a low-magnitude decoy). The residual
+        carries the parent EXACTLY on the dims ``w*`` does not radially
+        dominate and zero elsewhere (MINIMAL residual — the next backward
+        step scores against the unexplained content, not the parent's
+        echo)."""
+        Wr = W.index_select(0, rows.long().to(W.device))       # [K, D]
+        flat = result.reshape(-1, W.shape[1])                  # [N, D]
+        scores = Ops._support_dot(Wr, flat)                    # [N, K]
+        w = Wr[scores.argmax(dim=-1)]                          # [N, D]
+        resid = torch.where(flat.abs() > w.abs(), flat,
+                            torch.zeros_like(flat))
+        return w.reshape(result.shape), resid.reshape(result.shape)
+
+    @staticmethod
+    def _binary_op_recommend(result, W, op_name, monotonic=True,
+                             left_rows=None, right_rows=None,
+                             left_priming=None, right_priming=None,
+                             radial=False):
+        """Inverse-recommend a pair ``(x1, x2)`` from an augmented codebook.
+
+        ``radial`` (Alec 2026-07-13, "min should be a radial min to deal
+        with signed activations"): the elementwise ordering filters and
+        the union residual switch to the RADIAL order (per-dim
+        MAGNITUDE, matching the ``_radmin`` / ``_radmax`` fold kernels)
+        instead of the signed lattice order. Over signed idea vectors
+        the lattice comparisons are ill-posed (no real row is elementwise
+        comparable to a fold parent), while radially each operand of a
+        radmax fold is contained in the parent BY CONSTRUCTION — and the
+        ⊥/⊤ sentinel guarantees are restored (|⊥| ≤ |y| always; |⊤| ≥
+        |r| for tanh-bounded ideas). Default False = the lattice
+        behavior, byte-identical.
+
+        ``op_name``:
+          * ``'union'``        — ``y = max(x1, x2)``; pick ``x1`` as the
+            largest part ``≤ y`` then ``x2`` as the smallest part
+            ``≥ y − x1``.
+          * ``'intersection'`` — ``y = min(x1, x2)``; pick ``x1`` as the
+            smallest part ``≥ y``, then ``x2`` as the smallest part
+            ``≥ y`` distinct from ``x1`` and minimizing
+            ``Ops.overlapOf(x2, x1)`` (tie-break: smaller ``norm(x2)``).
+
+        ``W`` is the learned codebook (``[K, D]``); we augment it
+        non-mutatingly with sentinels ⊥ = zeros and ⊤ = ones so the
+        ordering filters are never empty. Result shape ``(..., D)`` is
+        preserved; the two returned tensors are shaped like ``result``.
+        Size metric is the canonical last-dim L2 ``Ops.norm``.
+
+        ``monotonic`` is accepted for signature symmetry; the algorithm
+        is monotonic-only by construction (the codebase exposes no
+        bitonic inverse for these ops).
+
+        ``left_rows`` / ``right_rows`` (optional ``LongTensor``):
+            indices into ``W`` (0..K-1) restricting which learned
+            codebook rows may be selected for ``x1`` / ``x2``
+            respectively. The ⊥ / ⊤ sentinels remain feasible
+            regardless of restriction (so the algorithm cannot fail to
+            return a pair). When both are ``None`` (default) behavior
+            matches the unrestricted algorithm byte-for-byte.
+
+            Used by the typed restricted-candidate inverse for
+            lift/lower: the call site computes the intersection
+            ``refs_by_category[cat] ∩ refs_by_order[k]`` from the
+            attached ``KnowledgeView`` and passes the result, masking
+            argmin/argmax to admissible refs only. Plan: §Lift/Lower
+            Restricted-Candidate Inverse.
+
+        ``left_priming`` / ``right_priming`` (optional ``FloatTensor``,
+        length ``K``):
+            soft boost-above-unity weights per W-row (default 1.0 =
+            multiplicative identity). For argmax steps, scores are
+            multiplied by the weight (primed rows preferred). For
+            argmin steps, scores are divided by the weight (primed
+            rows look smaller, hence preferred). The ⊥ / ⊤ sentinels
+            are pinned to 1.0 regardless of input. When both are
+            ``None`` (default), behavior matches the un-primed
+            algorithm byte-for-byte.
+
+            Plan: doc/plans/2026-05-20-primed-reverse-generation.md
+            §Application: multiplied onto .activation (A. selection).
+        """
+        if W is None or W.shape[0] == 0:
+            return result, result
+
+        K, D = W.shape
+        bottom = torch.zeros(1, D, dtype=W.dtype, device=W.device)
+        top = torch.ones(1, D, dtype=W.dtype, device=W.device)
+        C = torch.cat([bottom, W, top], dim=0)         # [K+2, D]
+        K_aug = C.shape[0]
+
+        out_shape = result.shape
+        flat = result.reshape(-1, D)                    # [N, D]
+        N = flat.shape[0]
+
+        # Broadcast each result position against the augmented codebook.
+        y = flat.unsqueeze(1)                           # [N, 1, D]
+        S = C.unsqueeze(0).expand(N, K_aug, D)          # [N, K, D]
+
+        sizes = Ops.norm(C)                             # [K]
+        NEG_INF = torch.tensor(
+            float('-inf'), dtype=W.dtype, device=W.device)
+        POS_INF = torch.tensor(
+            float('inf'), dtype=W.dtype, device=W.device)
+
+        # Build per-operand candidate masks over the augmented C-rows.
+        # ⊥ (index 0) and ⊤ (index K_aug-1) are always feasible. W-row
+        # indices from ``left_rows`` / ``right_rows`` shift by +1 to
+        # account for the ⊥ prefix.
+        def _row_mask(rows):
+            if rows is None:
+                return torch.ones(K_aug, dtype=torch.bool, device=W.device)
+            m = torch.zeros(K_aug, dtype=torch.bool, device=W.device)
+            m[0] = True
+            m[K_aug - 1] = True
+            if rows.numel() > 0:
+                c_idx = rows.long().to(W.device) + 1
+                c_idx = c_idx[(c_idx >= 1) & (c_idx <= K)]
+                if c_idx.numel() > 0:
+                    m[c_idx] = True
+            return m
+        left_mask = _row_mask(left_rows)
+        right_mask = _row_mask(right_rows)
+
+        # Build per-operand priming weights over the augmented C-rows.
+        # Default = 1.0 everywhere (multiplicative identity, no bias).
+        # ⊥ (index 0) and ⊤ (index K_aug-1) are pinned to 1.0 regardless
+        # of caller-supplied weights. W-row weights at index i land at
+        # C-row index i+1 to account for the ⊥ prefix.
+        def _row_weights(priming):
+            w = torch.ones(K_aug, dtype=W.dtype, device=W.device)
+            if priming is None:
+                return w
+            p = torch.as_tensor(priming, dtype=W.dtype, device=W.device)
+            if p.ndim != 1:
+                p = p.reshape(-1)
+            # Truncate or pad to K (W's row count); ignore extras.
+            k_in = min(int(p.shape[0]), K)
+            if k_in > 0:
+                w[1:1 + k_in] = p[:k_in]
+            return w
+        left_w = _row_weights(left_priming)
+        right_w = _row_weights(right_priming)
+
+        if op_name == 'union':
+            # 1) x1 = argmax_{S ≤ y, S in left_rows ∪ sentinels}
+            #        norm(S) * priming(S)
+            #    (argmax: multiply by priming so primed rows preferred)
+            #    Radial: containment is |S| ≤ |y| per dim (the radmax
+            #    fold's own order — every operand is radially inside it).
+            if radial:
+                # A zero parent dim is radmax ANNIHILATION (sign
+                # conflict) — a wildcard, not a magnitude bound.
+                ya = y.abs()
+                le_y = (((S.abs() <= ya) | (ya == 0)).all(dim=-1)
+                        & left_mask.unsqueeze(0))       # [N, K]
+            else:
+                le_y = (S <= y).all(dim=-1) & left_mask.unsqueeze(0)
+            primed_sizes = sizes * left_w               # [K_aug]
+            scores = torch.where(
+                le_y, primed_sizes.unsqueeze(0).expand(N, K_aug), NEG_INF)
+            idx1 = scores.argmax(dim=-1)                # [N]
+            x1 = C[idx1]                                # [N, D]
+
+            # 2) residual r = y − x1 (lattice) / the dims x1 did not reach
+            #    (radial: there the co-operand must supply y exactly).
+            if radial:
+                r = torch.where(flat.abs() > x1.abs(), flat,
+                                torch.zeros_like(flat))  # [N, D]
+            else:
+                r = flat - x1                           # [N, D]
+
+            # 3) x2 = argmin_{S ≥ r, S in right_rows ∪ sentinels}
+            #        norm(S) / priming(S)
+            #    (argmin: divide by priming so primed rows look smaller)
+            r_b = r.unsqueeze(1)                        # [N, 1, D]
+            if radial:
+                ge_r = ((S.abs() >= r_b.abs()).all(dim=-1)
+                        & right_mask.unsqueeze(0))
+            else:
+                ge_r = (S >= r_b).all(dim=-1) & right_mask.unsqueeze(0)
+            primed_sizes_r = sizes / right_w            # [K_aug]
+            scores = torch.where(
+                ge_r, primed_sizes_r.unsqueeze(0).expand(N, K_aug), POS_INF)
+            idx2 = scores.argmin(dim=-1)                # [N]
+            x2 = C[idx2]                                # [N, D]
+
+            return x1.reshape(out_shape), x2.reshape(out_shape)
+
+        if op_name == 'intersection':
+            # 1) x1 = argmin_{S ≥ y, S in left_rows ∪ sentinels}
+            #        norm(S) / priming(S)
+            #    Radial: the radmin fold's order — operands contain the
+            #    parent, |S| ≥ |y| per dim.
+            if radial:
+                # Zero parent dims are radmin annihilation wildcards.
+                ya = y.abs()
+                ge_y = ((S.abs() >= ya) | (ya == 0)).all(dim=-1)
+            else:
+                ge_y = (S >= y).all(dim=-1)             # [N, K]
+            ge_y_left = ge_y & left_mask.unsqueeze(0)
+            primed_sizes_l = sizes / left_w             # [K_aug]
+            scores = torch.where(
+                ge_y_left, primed_sizes_l.unsqueeze(0).expand(N, K_aug), POS_INF)
+            idx1 = scores.argmin(dim=-1)                # [N]
+            x1 = C[idx1]                                # [N, D]
+
+            # 2) x2 = argmin_{S ≥ y, S ≠ x1, S in right_rows ∪ sentinels}
+            #    (overlapOf(S, x1).norm + tie) / priming(S)
+            same_as_x1 = (
+                torch.arange(K_aug, device=W.device).unsqueeze(0)
+                == idx1.unsqueeze(1))                   # [N, K]
+            feasible = ge_y & ~same_as_x1 & right_mask.unsqueeze(0)
+            x1_b = x1.unsqueeze(1).expand(N, K_aug, D)  # [N, K, D]
+            overlap = Ops._radmin(S, x1_b)              # [N, K, D]
+            overlap_size = Ops.norm(overlap)            # [N, K]
+            tie_weight = sizes.unsqueeze(0).expand(N, K_aug)
+            primary = overlap_size + 1e-9 * tie_weight
+            primary = primary / right_w.unsqueeze(0)    # primed → smaller
+            scores = torch.where(feasible, primary, POS_INF)
+            # If no S ≠ x1 is feasible (degenerate codebook), fall back
+            # to x1 itself for x2 (still satisfies S ≥ y).
+            any_feasible = feasible.any(dim=-1)         # [N]
+            idx2 = scores.argmin(dim=-1)                # [N]
+            idx2 = torch.where(any_feasible, idx2, idx1)
+            x2 = C[idx2]                                # [N, D]
+
+            return x1.reshape(out_shape), x2.reshape(out_shape)
+
+        raise ValueError(
+            f"Ops._binary_op_recommend: unsupported op_name {op_name!r} "
+            "(expected 'union' or 'intersection')")
+
+    # ---- In-space algebra (lift / lower) ---------------------------------
+    # Unified synthesis / analysis dispatchers (Logic.md §8).
+    #     lift  = synthesis = many → one (∨), default mode='OR'
+    #     lower = analysis  = one → many (∧), default mode='AND'
+    # Mode dispatch covers AND / OR / NOT; mode='NOT' is self-inverse.
+    # Region operands are 2-tuples (lower, upper); points auto-promote to
+    # degenerate regions containing the origin when the body is the region
+    # form. The codebook-search inverse routes through Basis, which owns
+    # the codebook candidates. Standalone Ops inverse helpers recommend
+    # candidates that recompose under the requested lattice operation.
+
+    @staticmethod
+    def _as_region(x):
+        """Promote a point to a degenerate region containing the origin."""
+        if isinstance(x, tuple) and len(x) == 2:
+            return x
+        zero = torch.zeros_like(x)
+        return torch.minimum(x, zero), torch.maximum(x, zero)
+
+    @staticmethod
+    def top2_select_ste(x, dim=-1):
+        """Hard top-2-by-magnitude selection with straight-through gradient.
+
+        Forward: keep only the two largest |x| entries along ``dim``;
+        send the rest to 0 (the neutral element for both PiLayer's
+        multiplicative AND fold and SigmaLayer's additive OR fold).
+        Backward: identity through the mask -- gradient flows to every
+        input as if no selection had occurred, so all candidates can
+        learn even when they aren't currently in the top-2.
+
+        Used by PiLayer.forward / SigmaLayer.forward when
+        ``binary=True`` to realize the 2-operand specialization of the
+        N-ary lattice op (binary grammar rules combine exactly two
+        constituents; the long tail of latent candidates drops to the
+        op's identity element).
+        """
+        n = x.shape[dim]
+        if n <= 2:
+            return x
+        _, idx = torch.topk(x.abs(), k=2, dim=dim)
+        mask = torch.zeros_like(x)
+        mask.scatter_(dim, idx, 1.0)
+        x_hard = x * mask
+        return x + (x_hard - x).detach()
+
+    @staticmethod
+    def _lift_kernel(X1, X2=None, mode='OR', kind='strict', inverse=False,
+             monotonic=False):
+        """Synthesis dispatcher: many → one (∨).  Default mode='OR'.
+
+        Forward bodies (point):
+            mode='OR'  kind='strict' (default): torch.max(X1, X2)
+                       kind='smooth': (X1 + X2) / 2  (arithmetic mean)
+                       kind='radial': RadMax — same-sign max magnitude with
+                                      zero passthrough (Ops._radmax body)
+                       region: (min ℓ, max u) with point auto-promotion
+                               (region body unchanged by kind)
+            mode='NOT' Ops._negation_kernel(X1, monotonic=monotonic) (self-inverse)
+            mode='AND' routes to Ops._lower_kernel(X1, X2, mode='AND', kind=kind)
+                       for symmetry
+
+        Inverse (inverse=True):
+            mode='OR'  codebook-search via Basis (raises here without W)
+            mode='NOT' self-inverse — same as forward
+            mode='AND' routes to Ops._lower_kernel(..., inverse=True)
+
+        """
+        if mode == 'NOT':
+            return Ops._negation_kernel(X1, monotonic=monotonic)
+        if mode == 'AND':
+            return Ops._lower_kernel(
+                X1, X2, mode='AND', kind=kind, inverse=inverse,
+                monotonic=monotonic,
+            )
+        if mode == 'OR':
+            if inverse:
+                raise NotImplementedError(
+                    "Ops._lift_kernel(..., mode='OR', inverse=True) requires a "
+                    "codebook W; use Basis.lift(..., mode='OR', inverse=True) "
+                    "or Ops.unionReverse(result, y, W, ...) directly."
+                )
+            if isinstance(X1, tuple) or isinstance(X2, tuple):
+                l1, u1 = Ops._as_region(X1)
+                l2, u2 = Ops._as_region(X2)
+                return torch.minimum(l1, l2), torch.maximum(u1, u2)
+            if kind == 'strict':
+                return torch.max(X1, X2)
+            if kind == 'smooth':
+                return (X1 + X2) / 2
+            if kind == 'radial':
+                return Ops._radmax(X1, X2)
+            if kind == 'soft':
+                # LSE smooth same-sign max magnitude. Gradient-friendly
+                # drop-in for 'radial'; both operands receive non-zero
+                # softmax-weighted gradient per cell.
+                return Ops._soft_radmax(X1, X2)
+            raise ValueError(f"Ops.lift: unknown kind {kind!r}")
+        raise ValueError(f"Ops.lift: unknown mode {mode!r}")
+
+
+    @staticmethod
+    def liftReverseAll(Y, W=None, monotonic=False,
+                       left_rows=None, right_rows=None,
+                       left_priming=None, right_priming=None):
+        """Multi-return reverse for the lift dispatcher (Step 6).
+
+        Pairs with the parent plan's Layer-2.5 grammar convention
+        ``X1, X2 = liftReverse(Y)``. For mode='OR' (the analysis-of-
+        synthesis direction) the inverse is the mereology-guided
+        recommender ``Ops.unionReverse``; with W supplied, returns
+        the recommended pair ``(x1, x2)`` such that
+        ``disjunction(x1, x2) ≈ Y`` (drawn from the augmented codebook;
+        see ``Ops._binary_op_recommend``). Without W, returns ``(Y, Y)``
+        so callers get a tuple of the expected shape.
+
+        ``left_rows`` / ``right_rows`` and ``left_priming`` /
+        ``right_priming`` are forwarded to ``unionReverse``; see
+        ``Ops._binary_op_recommend`` for semantics.
+        """
+        if W is None or (hasattr(W, 'shape') and W.shape[0] == 0):
+            return (Y, Y)
+        return Ops.unionReverse(
+            Y, Y, W, monotonic=monotonic,
+            left_rows=left_rows, right_rows=right_rows,
+            left_priming=left_priming, right_priming=right_priming)
+
+    @staticmethod
+    def _lower_kernel(X1, X2=None, mode='AND', kind='strict', inverse=False,
+              monotonic=False):
+        """Analysis dispatcher: one → many (∧).  Default mode='AND'.
+
+        Forward bodies (point):
+            mode='AND' kind='strict' (default): torch.min(X1, X2)
+                       kind='smooth': X1 * X2  (elementwise product)
+                       kind='radial': RadMin — same-sign min magnitude with
+                                      zero collapse (Ops._radmin body)
+                       region: (max ℓ, min u) with point auto-promotion
+                               (region body unchanged by kind)
+            mode='NOT' Ops._negation_kernel(X1, monotonic=monotonic) (self-inverse)
+            mode='OR'  routes to Ops._lift_kernel(X1, X2, mode='OR', kind=kind) for symmetry
+
+        Inverse (inverse=True):
+            mode='AND' codebook-search via Basis (raises here without W)
+            mode='NOT' self-inverse — same as forward
+            mode='OR'  routes to Ops._lift_kernel(..., inverse=True)
+
+        """
+        if mode == 'NOT':
+            return Ops._negation_kernel(X1, monotonic=monotonic)
+        if mode == 'OR':
+            return Ops._lift_kernel(
+                X1, X2, mode='OR', kind=kind, inverse=inverse,
+                monotonic=monotonic,
+            )
+        if mode == 'AND':
+            if inverse:
+                raise NotImplementedError(
+                    "Ops._lower_kernel(..., mode='AND', inverse=True) requires a "
+                    "codebook W; use Basis.lower(..., mode='AND', inverse=True) "
+                    "or Ops.intersectionReverse(result, y, W, ...) directly."
+                )
+            if isinstance(X1, tuple) or isinstance(X2, tuple):
+                l1, u1 = Ops._as_region(X1)
+                l2, u2 = Ops._as_region(X2)
+                return torch.maximum(l1, l2), torch.minimum(u1, u2)
+            if kind == 'strict':
+                return torch.min(X1, X2)
+            if kind == 'smooth':
+                return X1 * X2
+            if kind == 'radial':
+                return Ops._radmin(X1, X2)
+            if kind == 'soft':
+                # LSE smooth same-sign min magnitude. Gradient-friendly
+                # drop-in for 'radial'; both operands receive non-zero
+                # softmax-weighted gradient per cell.
+                return Ops._soft_radmin(X1, X2)
+            raise ValueError(f"Ops.lower: unknown kind {kind!r}")
+        raise ValueError(f"Ops.lower: unknown mode {mode!r}")
+
+
+    @staticmethod
+    def lowerReverseAll(Y, W=None, monotonic=False,
+                        left_rows=None, right_rows=None,
+                        left_priming=None, right_priming=None):
+        """Multi-return reverse for the lower dispatcher (Step 6).
+
+        Pairs with the parent plan's Layer-2.5 grammar convention
+        ``X1, X2 = lowerReverse(Y)``. For mode='AND' (the synthesis-of-
+        analysis direction) the inverse is the mereology-guided
+        recommender ``Ops.intersectionReverse``; with W supplied, returns
+        the recommended pair ``(x1, x2)`` such that
+        ``conjunction(x1, x2) ≈ Y`` (drawn from the augmented codebook;
+        see ``Ops._binary_op_recommend``). Without W, returns ``(Y, Y)``
+        so callers get a tuple of the expected shape.
+
+        See ``Ops.liftReverseAll`` for the dual.
+
+        ``left_rows`` / ``right_rows`` and ``left_priming`` /
+        ``right_priming`` are forwarded to ``intersectionReverse``; see
+        ``Ops._binary_op_recommend`` for semantics.
+        """
+        if W is None or (hasattr(W, 'shape') and W.shape[0] == 0):
+            return (Y, Y)
+        return Ops.intersectionReverse(
+            Y, Y, W, monotonic=monotonic,
+            left_rows=left_rows, right_rows=right_rows,
+            left_priming=left_priming, right_priming=right_priming)
+
+    # ---- Axis selectors (what / where / when) ----------------------------
+    # The C -> S boundary demux puts content in the canonical
+    # [what | where | when] layout; these selectors zero the non-selected
+    # blocks. When ``x.ndim < 3`` the block structure isn't accessible
+    # (compose() in scalar mode), so selectors degenerate to identity.
+
+    # ---- Metric ----------------------------------------------------------
+
+    @staticmethod
+    def distance(x, y, monotonic=False, dim=-1):
+        """Distance in [0, 1]. Bitonic: angular. Monotonic: volume-weighted L2.
+
+        Monotonic distance weights each element by max(|x|, |y|) so that
+        matching zeros contribute nothing -- zero-volume elements have no
+        bearing on parthood."""
+        if monotonic:
+            w = torch.max(x.abs(), y.abs())
+            total_weight = w.sum(dim=dim).clamp(min=epsilon)
+            return (w * (x - y) ** 2).sum(dim=dim) / total_weight
+        return (1 - F.cosine_similarity(x, y, dim=dim)) / 2
+
+    # ---- Mereology -------------------------------------------------------
+    # Parthood is the fundamental mereological operation. Each member of
+    # the suite has a vector form (default) and a scalar form (scalar=True).
+    #
+    # Vector forms (scalar=False):
+    #     part(x, y)     = x * (y / ||y||)                     elementwise
+    #     whole(x, y)    = (1 - x) * (y / ||y||)               elementwise
+    #     equal(x, y)    = part(x, y) * part(y, x)             elementwise
+    #     overlap(x, y)  = min(part(x, y), part(y, x))         elementwise
+    #     underlap(x, y) = min(whole(x, y), whole(y, x))       elementwise
+    #     boundary(x, y) = |part(x, y) - part(y, x)|           elementwise
+    #     copart(x, y)   = y - x                               elementwise
+
+    @staticmethod
+    def _part_kernel(x, y, monotonic=False, scalar=False):
+        """Part of x under y.
+
+        Vector form (default): x * (y / ||y||) -- elementwise projection
+        of x into y's unit direction. Returns a tensor shaped like x.
+
+        Scalar form (scalar=True): clipped cosine projection in [0, 1].
+            part(x, y) = max(0, x.y) / (||x|| * ||y||)
+        Satisfies Boole's contrapositive: part(x, y) = part(-y, -x).
+        Empty-set conventions:
+            part(empty, y) = 1, part(x, empty) = 0, part(empty, empty) = 1.
+        """
+        ny_raw = Ops.norm(y)
+        ny = ny_raw.clamp(min=epsilon)
+        if not scalar:
+            return x * (y / ny.unsqueeze(-1))
+        nx = Ops.norm(x)
+        dot = (x * y).sum(dim=-1)
+        clipped = torch.clamp(dot, min=0.0)
+        denom = (nx * ny).clamp(min=epsilon)
+        score = (clipped / denom).clamp(0.0, 1.0)
+        empty_x = nx < epsilon
+        empty_y = ny_raw < epsilon
+        ones = torch.ones_like(score)
+        zeros = torch.zeros_like(score)
+        return torch.where(empty_x, ones, torch.where(empty_y, zeros, score))
+
+    @staticmethod
+    def whole(x, y, monotonic=False, scalar=False):
+        """Whole of x under y: complement of x in y's unit direction.
+
+        Vector form: (1 - x) * (y / ||y||).
+        Scalar form: degree to which x contains y, i.e. part(y, x, scalar=True)."""
+        if scalar:
+            return Ops._part_kernel(y, x, monotonic=monotonic, scalar=True)
+        ny = Ops.norm(y).clamp(min=epsilon).unsqueeze(-1)
+        return (1.0 - x) * (y / ny)
+
+    @staticmethod
+    def _equal_kernel(x, y, monotonic=False, scalar=False):
+        """Mutual parthood.
+
+        Vector form: part(x, y) * part(y, x) (elementwise).
+        Scalar form partitions [0, 1]:
+            equal == 0     -> underlap (disjoint)
+            0 < equal < 1  -> overlap  (strictly partial)
+            equal == 1     -> identity (perfect mutual parthood)."""
+        p_xy = Ops._part_kernel(x, y, monotonic=monotonic, scalar=scalar)
+        p_yx = Ops._part_kernel(y, x, monotonic=monotonic, scalar=scalar)
+        return p_xy * p_yx
+
+    @staticmethod
+    def overlap(x, y, monotonic=False, scalar=False):
+        """Overlap.
+
+        Vector form: elementwise min of part(x, y) and part(y, x).
+        Scalar form: boolean region indicator 0 < equal(..., scalar=True) < 1."""
+        if scalar:
+            e = Ops._equal_kernel(x, y, monotonic=monotonic, scalar=True)
+            return (e > 0) & (e < 1)
+        return torch.minimum(
+            Ops._part_kernel(x, y, monotonic=monotonic),
+            Ops._part_kernel(y, x, monotonic=monotonic),
+        )
+
+    @staticmethod
+    def underlap(x, y, monotonic=False, scalar=False):
+        """Underlap.
+
+        Vector form: elementwise min of whole(x, y) and whole(y, x).
+        Scalar form: boolean region indicator equal(..., scalar=True) == 0."""
+        if scalar:
+            e = Ops._equal_kernel(x, y, monotonic=monotonic, scalar=True)
+            return e == 0
+        return torch.minimum(
+            Ops.whole(x, y, monotonic=monotonic),
+            Ops.whole(y, x, monotonic=monotonic),
+        )
+
+    @staticmethod
+    def boundary(x, y, monotonic=False, scalar=False):
+        """Directional asymmetry of parthood.
+
+        Vector form: |part(x, y) - part(y, x)| (elementwise).
+        Scalar form: zero under clipped-cosine (cosine is symmetric)."""
+        m = monotonic
+        return torch.abs(
+            Ops._part_kernel(x, y, monotonic=m, scalar=scalar)
+            - Ops._part_kernel(y, x, monotonic=m, scalar=scalar)
+        )
+
+    @staticmethod
+    def copart(x, y, monotonic=False, scalar=False):
+        """Copart of x under y: the part of y not accounted for by x.
+
+        Vector form: y - x.
+        Scalar form: 1 - part(x, y, scalar=True), clamped to [0, 1]."""
+        if scalar:
+            return (1.0 - Ops._part_kernel(x, y, monotonic=monotonic, scalar=True)).clamp(0.0, 1.0)
+        return y - x
+
+    @staticmethod
+    def _order_align(a, b):
+        """Broadcast ``a`` / ``b`` to a common last-dim shape.
+
+        This codebase carries no formal multivector grade ladder; the only
+        "orders" present are post-codebook scalar ``[...]`` vs. bivector
+        ``[..., 2]``. Align by upcasting a scalar (last dim 1 or missing)
+        to a bivector via the ``[x, x]`` lift, else broadcast on the last
+        dim. Used by ``partOf`` / ``wholeOf`` / ``overlapOf`` so callers
+        don't have to harmonise shapes manually.
+        """
+        D_a = a.shape[-1]
+        D_b = b.shape[-1]
+        if D_a == D_b:
+            return a, b
+        if D_a == 1 and D_b > 1:
+            return a.expand(*a.shape[:-1], D_b), b
+        if D_b == 1 and D_a > 1:
+            return a, b.expand(*b.shape[:-1], D_a)
+        raise ValueError(
+            f"Ops._order_align: incompatible last dims {D_a} vs {D_b}")
+
+    @staticmethod
+    def partOf(S1, S2):
+        """Elementwise ``S1 ≤ S2`` reduced over the last dim with ``all``.
+
+        Mereological "is part of": True iff every component of S1 is
+        bounded above by the matching component of S2. Order-aligned
+        first so scalar and bivector operands compose. Returns a boolean
+        tensor shaped like ``S1.shape[:-1]`` (broadcast over S2).
+        """
+        a, b = Ops._order_align(S1, S2)
+        return (a <= b).all(dim=-1)
+
+    @staticmethod
+    def wholeOf(S1, S2):
+        """Elementwise ``S1 ≥ S2`` reduced over the last dim with ``all``.
+
+        Mereological "contains": True iff every component of S1 is
+        bounded below by the matching component of S2. Order-aligned
+        first.
+        """
+        a, b = Ops._order_align(S1, S2)
+        return (a >= b).all(dim=-1)
+
+    @staticmethod
+    def overlapOf(S1, S2):
+        """Elementwise zero-directed min — same semantics as ``Ops._radmin``.
+
+        Returns a tensor shaped like the broadcast of S1 and S2, holding
+        the same-sign minimum magnitude (zero collapse on sign
+        disagreement). Used by the binary-op inverse recommender to score
+        candidate operand pairs by their mutual overlap.
+        """
+        a, b = Ops._order_align(S1, S2)
+        return Ops._radmin(a, b)
+#endregion
+
+#region Error Functions
+class Loss(nn.Module):
+    """Base class for loss computation.
+
+    Subclasses override compute() to define how prediction and target
+    tensors are compared. The default compute() is MSE.
+    """
+    def compute(self, pred, target):
+        """Compute loss between pred and target. Override in subclasses."""
+        return nn.functional.mse_loss(pred, target)
+class ModelLoss(Loss):
+    """Weighted reconstruction loss with separate scales for what/where/when.
+
+    Combines a forward task-output loss with a forward reconstruction
+    loss; the reconstruction term is decomposed into per-modality
+    slices so each (what / where / when) modality carries its own
+    weight. Used as the canonical training criterion across the
+    model factory.
+
+    The blend between output and reconstruction is set by
+    ``reconstruction_scale`` (formerly ``reverse_scale``, retired
+    alongside the reverse pipeline 2026-05-14).
+    """
+
+    def __init__(self, reconstruction_scale=0.5,
+                 what_scale=0.7, where_scale=0.2, when_scale=0.1,
+                 embedding_scale=0.1,
+                 certainty=False, nOutput=2,
+                 bindingDepth=0,
+                 nWhere=None, nWhen=None):
+        """Initialize ModelLoss; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__()
+        # None means unset (config default); an explicit 0.0 is honored (the old `or`-default coerced falsy 0.0 back to the default).
+        def _scale(v, default):
+            return default if v is None else float(v)
+        self.reconstruction_scale = _scale(reconstruction_scale, 0.5)
+        self.what_scale = _scale(what_scale, 0.7)
+        self.where_scale = _scale(where_scale, 0.2)
+        self.when_scale = _scale(when_scale, 0.1)
+        self.embedding_scale = _scale(embedding_scale, 0.1)
+        # Loss operates on the OUTPUT space_role, which carries no where/when in the
+        # converged modality architecture; source the what/where/when split
+        # widths from canonical_shape("OutputSpace"). An explicit positive arg
+        # still wins (e.g. for unit tests that drive the where/when loss terms).
+        from architecture import canonical_shape
+        _os_where, _os_when = canonical_shape("OutputSpace")
+        self.nWhere = nWhere if (nWhere is not None and nWhere > 0) else _os_where
+        self.nWhen = nWhen if (nWhen is not None and nWhen > 0) else _os_when
+
+        if certainty:
+            self.output_criterion = CertaintyWeightedCrossEntropy()
+        elif nOutput <= 2:
+            self.output_criterion = nn.MSELoss()
+        elif bindingDepth > 0:
+            self.output_criterion = nn.MSELoss()
+        else:
+            self.output_criterion = nn.CrossEntropyLoss()
+
+    def output(self, pred, target):
+        """Output.
+        
+        See class docstring for the operation contract.
+        """
+        return self.output_criterion(pred, target)
+
+    def compute(self, pred, target, nWhere=None, nWhen=None):
+        """Per-slot MSE with what/where/when weighting (legacy).
+
+        The constructor band defaults to canonical_shape("OutputSpace")
+        == (0, 0) -- right for the lossOut call (output events carry no
+        band), wrong for event comparisons: call sites comparing muxed
+        ``[what|where|when]`` events pass their own layout's widths
+        (the 2026-07-04 nWhere=0 lossRev wiring fix).
+        """
+        embSize = pred.shape[-1]
+        nWhere = self.nWhere if nWhere is None else int(nWhere)
+        nWhen = self.nWhen if nWhen is None else int(nWhen)
+        nWhat = embSize - nWhere - nWhen
+
+        loss = pred.new_tensor(0.0)
+        if nWhat > 0:
+            loss = loss + self.what_scale * F.mse_loss(
+                pred[..., :nWhat], target[..., :nWhat])
+        if nWhere > 0:
+            loss = loss + self.where_scale * F.mse_loss(
+                pred[..., nWhat:nWhat + nWhere], target[..., nWhat:nWhat + nWhere])
+        if nWhen > 0:
+            loss = loss + self.when_scale * F.mse_loss(
+                pred[..., nWhat + nWhere:], target[..., nWhat + nWhere:])
+        return loss
+
+    def compute_masked(self, pred, target, mask, nWhere=None, nWhen=None):
+        """Sync-free equivalent of ``compute(pred[mask], target[mask])``.
+
+        ``pred`` / ``target``: ``[B, K, *]``; ``mask``: ``[B, K]`` bool.
+        Boolean-mask gather (``pred[mask]``) is data-dependent -- its
+        row count must be copied to the host, an implicit
+        cudaMemcpyDtoH that breaks CUDA-graph capture. This computes the
+        identical per-segment weighted-MSE *mean over masked positions*
+        with on-device reductions only (masked-sum / (mask_count *
+        seg_width) == the gather-then-``F.mse_loss`` mean). ``mask_count``
+        stays a device scalar (never ``.item()``-ed). Empty mask -> 0.0
+        with no 0/0 (cleaner than, and replacing, the old
+        ``nan_to_num`` gate). Matches ``compute``'s ``embSize =
+        pred.shape[-1]`` by first clipping to the shared last dim, as
+        the call sites did via ``[:, :D]``. fp reduction order differs
+        from the gather form (ULP-level), not the value. Like ``compute``,
+        per-call ``nWhere``/``nWhen`` override the constructor band
+        (the 2026-07-04 silent-band lossIn wiring fix); ``None`` keeps it.
+        """
+        D = min(pred.shape[-1], target.shape[-1])
+        p = pred[..., :D]
+        t = target[..., :D]
+        nWhere = self.nWhere if nWhere is None else int(nWhere)
+        nWhen = self.nWhen if nWhen is None else int(nWhen)
+        nWhat = D - nWhere - nWhen
+
+        se = (p - t) ** 2                          # [B, K, D]
+        mf = mask.to(se.dtype).unsqueeze(-1)       # [B, K, 1]
+        mcount = mf.sum()                          # device scalar
+
+        def _seg(a, b):
+            denom = (mcount * float(b - a)).clamp(min=1.0)
+            return (se[..., a:b] * mf).sum() / denom
+
+        loss = p.new_zeros(())
+        if nWhat > 0:
+            loss = loss + self.what_scale * _seg(0, nWhat)
+        if nWhere > 0:
+            loss = loss + self.where_scale * _seg(nWhat, nWhat + nWhere)
+        if nWhen > 0:
+            loss = loss + self.when_scale * _seg(nWhat + nWhere, D)
+        return loss
+
+    def register(self, registry, name, pred, target, *, mask=None,
+                 nWhere=None, nWhen=None, weight=1., category='reconstruction',
+                 objective=None, row=None):
+        """Name and normalize each event band; raw metric methods stay raw."""
+        n_where = self.nWhere if nWhere is None else int(nWhere)
+        n_when = self.nWhen if nWhen is None else int(nWhen)
+        width = min(pred.shape[-1], target.shape[-1])
+        n_what = width - n_where - n_when
+        for band, start, stop, priority in (
+                ('what', 0, n_what, self.what_scale),
+                ('where', n_what, n_what+n_where, self.where_scale),
+                ('when', n_what+n_where, width, self.when_scale)):
+            if stop > start:
+                registry.squared(name+'.'+band, pred[..., start:stop], target[..., start:stop],
+                    mask=mask, weight=weight*priority, category=category,
+                    objective=objective, row=row)
+        return registry
+
+    def compute_piecewise(self, pred, target):
+        """Piecewise reconstruction loss via Chamfer distance.
+
+        Instead of per-slot MSE(pred[v], target[v]), uses bidirectional
+        nearest-neighbour matching:
+
+        - **Accuracy**: each predicted token matches its nearest original.
+        - **Coverage**: each original token is covered by some prediction.
+
+        This handles token reordering (the grammar pair-merge may swap
+        vector positions) and eliminates error shadowing when tokens
+        overlap in position space.  The what/where/when component weights
+        are applied before computing L2 distances so the matching respects
+        the relative importance of content vs position vs time.
+        """
+        embSize = pred.shape[-1]
+        nWhere = self.nWhere
+        nWhen = self.nWhen
+        nWhat = embSize - nWhere - nWhen
+
+        # Build per-dim weight vector: sqrt so that L2 distance^2 = weighted MSE
+        w = pred.new_ones(embSize)
+        if nWhat > 0:
+            w[:nWhat] = self.what_scale
+        if nWhere > 0:
+            w[nWhat:nWhat + nWhere] = self.where_scale
+        if nWhen > 0:
+            w[nWhat + nWhere:] = self.when_scale
+        w = w.sqrt()
+
+        p = pred * w
+        t = target * w
+
+        # Ensure 3-D [B, N, D]
+        if p.dim() == 2:
+            p = p.unsqueeze(0)
+            t = t.unsqueeze(0)
+
+        # Pairwise squared L2 distances: [B, N_pred, N_target]
+        # ||a-b||^2 = ||a||^2 + ||b||^2 - 2(a*b)   (MPS-safe, no cdist)
+        p_sq = (p * p).sum(dim=-1, keepdim=True)           # [B, N, 1]
+        t_sq = (t * t).sum(dim=-1, keepdim=True)           # [B, N, 1]
+        dot = torch.bmm(p, t.transpose(1, 2))              # [B, N, N]
+        dists_sq = (p_sq - 2 * dot + t_sq.transpose(1, 2)).clamp(min=0)
+
+        # Accuracy: for each predicted token, squared distance to nearest original
+        accuracy = dists_sq.min(dim=2).values.mean()
+        # Coverage: for each original token, squared distance to nearest prediction
+        coverage = dists_sq.min(dim=1).values.mean()
+
+        return accuracy + coverage
+
+    def forward(self, lossOut, lossIn=None, sbow=None):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
+        total = lossOut
+        if lossIn is not None:
+            # A non-finite reconstruction loss (Inf/NaN) is *divergence*,
+            # not a recoverable edge case -- it must fail LOUD, never be
+            # silently masked (nan_to_num / on-device gate) and left to
+            # corrupt the run. (See memory: fail loud on numerical
+            # divergence.) The prior ``bool(isfinite.all())`` gate did a
+            # per-step cudaMemcpyDtoH. ``torch._assert_async`` keeps the
+            # guarantee without that host sync on CUDA: the assertion is
+            # enqueued on the stream (no DtoH) and a non-finite loss
+            # aborts the process at the next kernel launch -- unmissable,
+            # never a silent success; on CPU it asserts immediately
+            # (tests still catch divergence).
+            #
+            # MPS exception: ``torch._assert_async`` is not implemented
+            # for the MPS backend as of 2026-05-27 (PyTorch issue #141287).
+            # Reduce on CPU, not MPS: radix byte-mode can corrupt MPS
+            # scalar reductions, causing finite fp32 losses to report
+            # non-finite. This remains syncful on Apple Silicon, but
+            # preserves the fail-loud contract without trusting the
+            # affected backend reduction. The compiled / CUDA paths remain
+            # sync-free.
+            if lossIn.device.type == "mps":
+                if not bool(torch.isfinite(lossIn.detach().cpu()).all()):
+                    raise RuntimeError(
+                        "ModelLoss.forward: non-finite reconstruction "
+                        "loss (Inf/NaN) -- divergence. Fail-loud per "
+                        "project numerical contract; do NOT nan_to_num.")
+            else:
+                torch._assert_async(torch.isfinite(lossIn).all())
+            rr = self.reconstruction_scale
+            # Each normalized term has its own priority. Reconstruction no
+            # longer takes weight away from the supplied answer.
+            total = lossOut + rr * lossIn
+        if sbow is not None:
+            total = total + self.embedding_scale * sbow
+        return total
+
+    def total(self, lossOut, lossIn=None, sbow=None):
+        """Total.
+        
+        See class docstring for the operation contract.
+        """
+        return self(lossOut, lossIn, sbow)
+
+class Error:
+    """The owner of named trial and batch costs.
+
+    Targeted errors enter through ``error``, ``squared``, ``categorical`` or
+    ``binary``. Their detached uninformed baselines are respectively target
+    squared norm and log of the outcome count. Contributions combine before
+    division: one ratio of means per named term, without a floor or running
+    loss scale. Zero-target squared terms and targetless regularizers are
+    penalties, with their own strengths. ``add`` registers those penalties
+    or reporting-only metrics; it cannot manufacture an error's baseline.
+
+    ``total`` supplies the trained sum and can select an objective or kind.
+    ``breakdown`` retains raw error, baseline, priority, contextual weight,
+    active count and ownership. Row registries produce selection costs whose
+    active-row mean is the same relative objective used for training.
+    Summation stays chunked to respect Metal's kernel argument bound.
+    """
+
+    _CATEGORIES = (
+        "reconstruction", "prediction", "symbol",
+        "truth", "expectation", "embedding", "other", "expectation",
+        "grammar", "policy", "reg", "count", "intra", "inter",
+    )
+
+    def __init__(self, loss: Loss = None, history_max: int = 1024, *, row_mask=None):
+        """Initialize Error; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        self._loss: Loss = loss
+        self._terms: dict = {}   # name -> {weight, value, space, category, count}
+        self._history: list = []  # each entry is {name: weighted_scalar}
+        self._history_max = int(history_max)
+        self._disabled: set = set()
+        self.row_mask = None if row_mask is None else torch.as_tensor(row_mask, dtype=torch.bool)
+
+    # ---- setup ---------------------------------------------------------
+
+    def attach(self, loss: Loss):
+        """Associate a ``Loss`` instance for ``compute()`` delegation.
+
+        Optional: callers may use ``.add()`` directly and skip ``attach``.
+        """
+        self._loss = loss
+
+    def reset(self):
+        """Clear the per-batch term store.  Preserves history."""
+        self._terms.clear()
+
+    def clear(self):
+        """Alias for ``reset``; used by per-subspace transit accumulators.
+
+        When an ``Error`` instance is attached to a ``SubSpace`` as a
+        pipeline-carried auxiliary-loss sink, ``runBatch`` calls
+        ``clear()`` after harvesting its terms into ``TheError`` so the
+        next forward pass starts fresh.
+        """
+        self._terms.clear()
+
+    def terms(self):
+        """Return the current terms as a list of 5-tuples.
+
+        Each tuple is ``(name, tensor, weight, space, category)``.  Same-name
+        contributions have been summed at ``add()`` time, so each unique
+        name appears once.  Used by ``runBatch`` to fold per-subspace
+        accumulators into the module-level ``TheError`` registry while
+        preserving tensor references for autograd.
+        """
+        return [
+            (name, self._value(rec), rec["weight"], rec["space"],
+             rec["category"])
+            for name, rec in self._terms.items()
+        ]
+
+    def disable(self, category: str):
+        """Exclude all terms of this category from ``.total()``."""
+        if category not in self._CATEGORIES:
+            warnings.warn(f"Error.disable: unknown category {category!r}; "
+                          f"will still work but consider adding it to "
+                          f"Error._CATEGORIES for consistency.")
+        self._disabled.add(category)
+
+    def enable(self, category: str):
+        """Enable.
+        
+        See class docstring for the operation contract.
+        """
+        self._disabled.discard(category)
+
+    # ---- accumulation --------------------------------------------------
+
+    def add(self, name: str, value, *, weight: float = 1.0,
+            space: str = None, category: str = "other", kind="penalty",
+            objective=None, trained=True):
+        """Register a pre-computed scalar term.
+
+        Repeated ``name`` values are summed (useful when a term is
+        contributed from multiple layers).  ``value`` may be ``None``
+        (the call becomes a no-op) or a scalar tensor.
+        """
+        if value is None:
+            return
+        if not isinstance(value, torch.Tensor):
+            value = torch.as_tensor(value)
+        rec = self._terms.get(name)
+        if rec is None:
+            self._terms[name] = {
+                "weight": float(weight),
+                "values": [value],
+                "space": space,
+                "category": category,
+                "count": 1,
+                "kind": kind,
+                "objective": objective or category,
+                "trained": trained,
+            }
+        else:
+            # Same-name contributions are kept as a LIST and summed lazily
+            # at read time (2026-07-08): the old in-place ``value + value``
+            # built a per-contribution add-chain INSIDE the compiled forward
+            # (the serial loop adds e.g. ``symbol_l1`` once per word), which
+            # inductor inlines transitively into ONE kernel with a buffer
+            # argument per contribution -- over Metal's 31-buffer kernel-arg
+            # limit on wide configs (N=64: 34-arg kernels; the fullgraph
+            # blocker, immune to fusion caps). As a list, each per-pass
+            # scalar stays an independent graph output; the sum happens in
+            # the eager read (``_value``), chunked.
+            rec["values"].append(value)
+            # count is telemetry-only; skip the in-trace int bump so dynamo mints no ``count == N`` recompile guard.
+            if not torch.compiler.is_compiling():
+                rec["count"] += 1
+
+    def error(self, name, error, baseline, *, mask=None, weight=1.,
+              space=None, category='other', objective=None, trained=True, row=None,
+              entry_weight=None):
+        """Register active error and uninformed-baseline sums, never an EMA.
+
+        Repeated contributions are combined before division. The baseline is
+        detached. Exactly zero target energy is an ordinary penalty; an empty
+        active set contributes zero. No numerical floor changes a baseline.
+        With ``row_mask``, row contributions average to the one global ratio,
+        so a small-target row cannot acquire its own large normalization.
+        """
+        error = torch.as_tensor(error)
+        baseline = torch.as_tensor(baseline, device=error.device, dtype=error.dtype).detach()
+        error, baseline = torch.broadcast_tensors(error, baseline)
+        valid = torch.ones_like(error, dtype=torch.bool)
+        if mask is not None:
+            mask = mask.to(device=error.device, dtype=torch.bool)
+            while mask.ndim < error.ndim:
+                mask = mask.unsqueeze(-1)
+            valid = valid & mask
+        if self.row_mask is not None and row is None:
+            rows = self.row_mask.to(error.device)
+            if error.ndim == 0:
+                error, baseline, valid = (v.expand(rows.shape[0]) for v in (error, baseline, valid))
+            valid = valid & rows.reshape((-1,) + (1,) * (error.ndim - 1))
+            dims = tuple(range(1, error.ndim))
+            reduce = lambda value: value.sum(dims) if dims else value
+        else:
+            reduce = lambda value: value.sum()
+        weights = valid.to(error.dtype)
+        if entry_weight is not None:
+            weights = weights * torch.as_tensor(entry_weight, device=error.device, dtype=error.dtype).detach()
+        numerator = reduce(torch.where(valid, error, torch.zeros_like(error)) * weights)
+        denominator = reduce(torch.where(valid, baseline, torch.zeros_like(baseline)) * weights)
+        entries = reduce(weights).detach()
+        if row is not None:
+            if self.row_mask is None:
+                raise ValueError('an indexed contribution requires a row registry')
+            selector = (torch.arange(self.row_mask.numel(), device=error.device) == row)
+            selector = (selector & self.row_mask.to(error.device)).to(error.dtype)
+            numerator, denominator, entries = (v * selector for v in (numerator, denominator, entries))
+        rec = self._terms.get(name)
+        if rec is None:
+            rec = dict(weight=float(weight), space=space, category=category,
+                objective=objective or category, trained=trained, kind='relative', count=0,
+                numerators=[], baselines=[], entries=[], row_mask=self.row_mask)
+            self._terms[name] = rec
+        if 'numerators' not in rec or rec['weight'] != float(weight):
+            raise ValueError(f'inconsistent error registration for {name}')
+        rec['numerators'].append(numerator)
+        rec['baselines'].append(denominator)
+        rec['entries'].append(entries)
+        if not torch.compiler.is_compiling():
+            rec['count'] += 1
+        return self._value(rec)
+
+    def squared(self, name, pred, target, **kwargs):
+        return self.error(name, (pred-target).square(), target.detach().square(), **kwargs)
+
+    def categorical(self, name, logits, target, **kwargs):
+        outcomes = logits.shape[-1]
+        error = F.cross_entropy(logits.reshape(-1, outcomes), target.reshape(-1),
+                                reduction='none').reshape(target.shape)
+        # A one-outcome categorical variable has no choice to learn.
+        return self.error(name, error, math.log(outcomes), **kwargs)
+
+    def binary(self, name, logits, target, **kwargs):
+        return self.error(name, F.binary_cross_entropy_with_logits(logits, target,
+                          reduction='none'), math.log(2), **kwargs)
+
+    @staticmethod
+    def squared_value(pred, target, *, mask=None):
+        registry = Error()
+        registry.squared('squared', pred, target, mask=mask)
+        return registry.total()
+
+    def merge(self, other, *, prefix='', weight=1., objective=None, trained=None, detach=False, row=None):
+        """Import named constituents, retaining their baselines and ownership."""
+        if float(weight) == 0.:
+            return
+        for name, source in other._terms.items():
+            if source['category'] in other._disabled:
+                continue
+            rec = dict(source)
+            for key in ('values', 'numerators', 'baselines', 'entries'):
+                if key in rec:
+                    rec[key] = [v.detach() if detach else v for v in rec[key]]
+                    if row is not None:
+                        if self.row_mask is None:
+                            raise ValueError('an indexed merge requires a row registry')
+                        rec[key] = [v.sum() * ((torch.arange(self.row_mask.numel(), device=v.device) == row)
+                                             & self.row_mask.to(v.device)).to(v)
+                                    for v in rec[key]]
+            if row is not None:
+                rec['row_mask'] = self.row_mask
+            if 'numerators' in rec and self.row_mask is None and rec.get('row_mask') is not None:
+                for key in ('numerators', 'baselines', 'entries'):
+                    rec[key] = [v.sum() for v in rec[key]]
+                rec['row_mask'] = None
+            rec['weight'] *= float(weight)
+            if objective is not None:
+                rec['objective'] = objective
+            if trained is not None:
+                rec['trained'] = trained
+            key = prefix + name
+            previous = self._terms.get(key)
+            if previous is None:
+                self._terms[key] = rec
+            else:
+                if (previous['weight'], previous['kind'], previous['trained']) != (
+                        rec['weight'], rec['kind'], rec['trained']):
+                    raise ValueError(f'inconsistent merged error {key}')
+                for field in ('values', 'numerators', 'baselines', 'entries'):
+                    if field in rec:
+                        previous[field].extend(rec[field])
+                previous['count'] += rec['count']
+
+    def scale(self, multiplier):
+        """Apply an explicit detached contextual weight to the current terms."""
+        for rec in self._terms.values():
+            if rec.get('trained', True):
+                rec['multiplier'] = rec.get('multiplier', 1.) * multiplier.detach()
+
+    @staticmethod
+    def _sum(values):
+        total = None
+        for start in range(0, len(values), 8):
+            group = values[start:start+8]
+            part = group[0] if len(group) == 1 else torch.stack(group).sum(0)
+            total = part if total is None else total + part
+        return total
+
+    @staticmethod
+    def _statistics(rec):
+        numerator = Error._sum(rec['numerators'])
+        baseline = Error._sum(rec['baselines'])
+        entries = Error._sum(rec['entries'])
+        count = entries.sum()
+        mean_count = torch.where(count > 0, count, torch.ones_like(count))
+        return numerator, baseline.sum(), count, mean_count
+
+    @staticmethod
+    def _value(rec):
+        """Materialize a term's value: chunked sum of its contributions.
+
+        Chunks of <=8 go through ``torch.stack(...).sum()`` (pointwise-cat
+        realizes as intermediate buffers) so no consumer ever reads every
+        leaf -- the Metal 31-buffer discipline, harmless elsewhere. Scalar
+        0-dim contributions stack; mixed/multi-element ones fall back to a
+        chained add (rare).
+        """
+        if 'numerators' in rec:
+            numerator, baseline, count, mean_count = Error._statistics(rec)
+            # An exactly zero origin baseline is a penalty, not a small
+            # relative-error denominator. Empty masks remain exact zeros.
+            denominator = torch.where(baseline > 0, baseline, mean_count)
+            result = numerator / denominator
+            if rec.get('row_mask') is not None:
+                result = result * rec['row_mask'].sum().to(result)
+            return result
+        vals = rec["values"]
+        if len(vals) == 1:
+            return vals[0]
+        scalars = [v.reshape(()) for v in vals
+                   if isinstance(v, torch.Tensor) and v.numel() == 1]
+        others = [v for v in vals
+                  if not (isinstance(v, torch.Tensor) and v.numel() == 1)]
+        total = None
+        for i in range(0, len(scalars), 8):
+            chunk = scalars[i:i + 8]
+            part = chunk[0] if len(chunk) == 1 else torch.stack(chunk).sum()
+            total = part if total is None else total + part
+        for v in others:
+            total = v if total is None else total + v
+        return total
+
+    def compute(self, name: str, pred, target, *,
+                weight: float = 1.0, method: str = "compute",
+                space: str = None, category: str = "reconstruction"):
+        """Compute a term via the attached ``Loss`` instance, then register it.
+
+        ``method`` names a ``Loss`` method (``"compute"``,
+        ``"compute_piecewise"``, ``"output"``, or a subclass extension).
+        Returns the raw (unweighted) loss tensor for convenience -- the
+        registry stores the unweighted value and applies ``weight`` at
+        ``.total()`` time.
+        """
+        if self._loss is None:
+            raise RuntimeError(
+                "Error.compute() requires an attached Loss instance; "
+                "call TheError.attach(model_loss) first."
+            )
+        fn = getattr(self._loss, method, None)
+        if fn is None:
+            raise AttributeError(
+                f"Error.compute: Loss has no method {method!r}")
+        value = fn(pred, target)
+        self.add(name, value, weight=weight, space=space, category=category)
+        return value
+
+    # ---- aggregation / inspection --------------------------------------
+
+    def total(self, *, kind=None, objective=None):
+        """Return the weighted sum of all enabled terms (or ``None``).
+
+        Chunked accumulation (2026-07-08): a plain add-chain over the 30+
+        scalar terms inlines TRANSITIVELY under torch.compile into one
+        kernel with a buffer argument per leaf -- over Metal's 31-buffer
+        kernel-arg limit (the N=64 fullgraph blocker; immune to the fusion
+        caps because 0-dim inlining happens at lowering). ``torch.stack``
+        chunks of <=8 lower to pointwise-cat (``max_pointwise_cat_inputs``)
+        and realize as intermediate buffers, so no kernel reads every leaf.
+        Float-add reorder: not byte-identical to the chained sum; term
+        order carries no semantics.
+        """
+        if not self._terms:
+            return None
+        scalars, others = [], []
+        for rec in self._terms.values():
+            if (rec["category"] in self._disabled or not rec.get('trained', True)
+                    or (objective is not None and rec.get('objective') != objective)):
+                continue
+            contrib = rec["weight"] * rec.get('multiplier', 1.) * self._value(rec)
+            if kind is not None:
+                if 'numerators' in rec:
+                    _, baseline, _, _ = self._statistics(rec)
+                    selected = baseline > 0 if kind == 'relative' else baseline == 0
+                    contrib = torch.where(selected, contrib, torch.zeros_like(contrib))
+                elif rec.get('kind', 'penalty') != kind:
+                    contrib = torch.zeros_like(contrib)
+            if isinstance(contrib, torch.Tensor) and contrib.numel() == 1:
+                scalars.append(contrib.reshape(()))
+            else:
+                others.append(contrib)
+        total = None
+        for i in range(0, len(scalars), 8):
+            chunk = scalars[i:i + 8]
+            part = chunk[0] if len(chunk) == 1 else torch.stack(chunk).sum()
+            total = part if total is None else total + part
+        for contrib in others:
+            total = contrib if total is None else total + contrib
+        if total is not None and self.row_mask is not None and total.ndim == 0:
+            # A one-row trial still has a row axis. The scalar summation
+            # above must not change its public selection-cost contract.
+            total = total.expand(self.row_mask.shape)
+        return total
+
+    def breakdown(self):
+        """Per-term snapshot keyed by name.
+
+        ``value`` is the trained active-row mean for a row registry, with
+        individual selection values retained in ``row_values``. ``weighted``
+        includes both the configured priority and detached contextual weight.
+        """
+        out = {}
+        for name, rec in self._terms.items():
+            v_tensor = self._value(rec)
+            if isinstance(v_tensor, torch.Tensor) and v_tensor.numel() == 1:
+                value_f = float(v_tensor.detach().item())
+            elif rec.get('row_mask') is not None:
+                active = rec['row_mask'].to(v_tensor)
+                value_f = float((v_tensor.detach() * active).sum() / active.sum().clamp_min(1))
+            else:
+                value_f = None
+            context_weight = float(torch.as_tensor(rec.get('multiplier', 1.)).detach())
+            out[name] = {
+                "weight": rec["weight"],
+                "value": value_f,
+                "weighted": rec["weight"] * context_weight * value_f if value_f is not None else None,
+                "space": rec["space"],
+                "category": rec["category"],
+                "count": rec["count"],
+                "kind": rec.get('kind', 'penalty'),
+                "objective": rec.get('objective'),
+                "trained": rec.get('trained', True),
+                "context_weight": context_weight,
+            }
+            if v_tensor.ndim:
+                out[name]['row_values'] = v_tensor.detach().cpu().tolist()
+            if 'numerators' in rec:
+                numerator, baseline, count, mean_count = self._statistics(rec)
+                out[name].update(raw=float((numerator.sum()/mean_count).detach()),
+                    baseline=float((baseline/mean_count).detach()),
+                    active_entries=float(count.detach()),
+                    kind='relative' if float(baseline.detach()) > 0 else 'penalty')
+        return out
+
+    def snapshot(self):
+        """Record the current weighted breakdown for covariance analysis.
+
+        Only scalar terms are recorded; multi-element tensors are
+        skipped (they contribute to ``.total()`` via backprop but not
+        to the history).
+        """
+        snap = {}
+        for name, rec in self.breakdown().items():
+            if rec['weighted'] is not None:
+                snap[name] = rec['weighted']
+        if snap:
+            self._history.append(snap)
+            if len(self._history) > self._history_max:
+                self._history.pop(0)
+
+    def covariance(self, n_steps: int = None):
+        """Running covariance of weighted term values across recent snapshots.
+
+        Returns ``{"names": [...], "cov": tensor[T,T]}`` where T is the
+        number of terms that appeared in the selected window.  Any term
+        absent from a given snapshot is treated as zero for that step.
+        """
+        if not self._history:
+            return {"names": [], "cov": torch.zeros(0, 0)}
+        hist = self._history if n_steps is None else self._history[-n_steps:]
+        names = sorted({k for s in hist for k in s.keys()})
+        if not names:
+            return {"names": [], "cov": torch.zeros(0, 0)}
+        mat = torch.zeros(len(hist), len(names))
+        for i, s in enumerate(hist):
+            for j, n in enumerate(names):
+                mat[i, j] = s.get(n, 0.0)
+        centered = mat - mat.mean(dim=0, keepdim=True)
+        denom = max(len(hist) - 1, 1)
+        cov = (centered.transpose(0, 1) @ centered) / denom
+        return {"names": names, "cov": cov}
+
+# Module-level singleton.  Callers do ``from Layers import TheError`` and
+# then ``TheError.reset() / .add(...) / .total()``.  A single ``Error``
+# instance is kept at module scope so every space and every loss term
+# registers into the same bookkeeping store per process.
+TheError = Error()
+
+class CertaintyWeightedCrossEntropy(Loss):
+    """Cross-entropy weighted by predicted probability of the true class.
+
+    Hybrid of certainty-weighted CE and plain CE, blended by ``alpha``.
+    ``alpha=0`` collapses to plain CE; ``alpha=1`` is purely weighted.
+    ``epsilon`` floors log inputs to keep gradients finite.
+    """
+    def __init__(self, alpha=0.5, epsilon=1e-8):
+        """Initialize CertaintyWeightedCrossEntropy; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__()
+        self.alpha = alpha
+        self.epsilon = epsilon
+
+    def forward(self, logits, targets):
+        # If targets are one-hot, convert to indices
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
+        if targets.dim() == 2 and targets.size(1) == logits.size(1):
+            targets = targets.argmax(dim=1)
+        # Ensure targets are int64 and on the same device as logits
+        targets = targets.to(dtype=torch.long, device=logits.device)
+        batch_size = logits.size(0)
+        batch_indices = torch.arange(batch_size, device=logits.device)
+
+        log_probs = F.log_softmax(logits, dim=1)  # [batch, num_classes]
+        ce_loss = -log_probs[batch_indices, targets]
+        #norm_logits = torch.norm(logits, dim=1)
+        #cwce_loss = -norm_logits * log_probs[batch_indices, targets]
+        p_true = torch.exp(log_probs[batch_indices, targets])
+        cwce_loss = -p_true * log_probs[batch_indices, targets]  # possibly erroneous
+        hybrid_loss = self.alpha * cwce_loss + (1 - self.alpha) * ce_loss
+        #norm = torch.norm(hybrid_loss, p=2)
+        return hybrid_loss.mean()
+#endregion
+
+#region Various kinds of memory
+# ZOHMem subclass: Zero-Order Hold memory.
+# StateMem subclass: adds a 'state' property.
+# RLSMem subclass: Recursive Least Squares memory.
+        # Optionally update state (commented out in original code):
+        # self.state = self.state + self.momLR * err * in1
+        # self.output = self.output + self.state
+# ProbMem subclass: probabilistic memory update.
+# MeanMem subclass: computes a running mean.
+# GammaMem subclass: blends state with output using a second learning rate.
+# ExponentialMem subclass: exponential memory update.
+# CorrMem subclass: correlational memory update.
+#endregion
+
+
+
+# Two distance modes:
+#   ``use_cosine_sim=False`` (Euclidean, the default):
+#     ``argmin_i ||x - c_i||^2 = argmax_i (x . c_i - 0.5 ||c_i||^2)``
+#     implemented as one matmul + cached row-norm subtract. ``||c_i||^2``
+#     is held in the ``_b_norms_sq`` buffer and refreshed in the
+#     codebook setter and at the end of each EMA update. Same FLOPs as
+#     ``torch.cdist``'s mm-trick path, but skips the sqrt and the
+#     per-row ``||x||^2`` add (both invariant under argmin over codes).
+#     The codebook lives in the [-1, +1] hypercube; magnitude carries
+#     information (feature intensity) and there is no codebook-level
+#     negation operator, so two patterns differ when their coordinates
+#     differ. Right metric for PartSpace and WholeSpace.
+#
+#   ``use_cosine_sim=True`` (dot product, codebook unit-norm):
+#     ``indices = (flat @ codebook.T).argmax(dim=-1)``
+#     The EMA path renormalizes the codebook to unit L2 each step
+#     (see below), so ``a_i`` is unit-norm. For a fixed query ``b``,
+#     ``cos(a_i, b) = (a_i . b) / ||b||`` is monotone in ``a_i . b``
+#     because ``||b|| >= 0`` is constant across i, so ranking by the
+#     raw dot product matches ranking by cosine. The input is NOT
+#     normalized -- in ConceptualSpace the input magnitude in
+#     [-1, +1] encodes belief certainty (1 = known true, 0 = unknown,
+#     -1 = known false) and must be preserved end-to-end.
+#
+# See doc/Spaces.md "Codebook similarity metric" for the full theory.
+class VectorQuantize(nn.Module):
+    """Vector-quantization codebook with EMA / cosine / rotation-trick updates.
+
+    Standard VQ-VAE building block: matches each input vector to its
+    nearest codebook entry under Euclidean or cosine distance, returns
+    a straight-through quantized output, and tracks a commitment loss.
+    EMA decay smooths the codebook; dead-code revival rotates unused
+    rows toward fresh inputs. See module comment for the two distance
+    modes and ``doc/Spaces.md`` "Codebook similarity metric".
+    """
+    def __init__(
+        self,
+        dim,
+        codebook_size,
+        commitment_weight=1.0,
+        use_cosine_sim=False,
+        decay=0.8,
+        threshold_ema_dead_code=0,
+        rotation_trick=False,
+        eps=1e-5,
+        codebook_retire=False,
+        learnable_codebook=False,
+        ema_update=True,
+        allocate_ema_state=True,
+        **kwargs,
+    ):
+        """Initialize VectorQuantize; allocate state for the class contract.
+
+        See class docstring for invariants.
+        """
+        super().__init__()
+        self.dim = dim
+        self.codebook_size = codebook_size
+        self.commitment_weight = commitment_weight
+        self.use_cosine_sim = use_cosine_sim
+        self.decay = float(decay)
+        self.threshold_ema_dead_code = int(threshold_ema_dead_code)
+        self.rotation_trick = bool(rotation_trick)
+        self.eps = float(eps)
+        # Learnable-codebook mode (Phase 1A.1 -- perceptual codebook).
+        # When True the in-call EMA Parameter mutation is suppressed (the
+        # codebook is no longer rewritten in ``forward``) and the STE is
+        # switched to the codebook-attached form so the codebook
+        # ``nn.Parameter`` receives the downstream task-loss gradient and
+        # is trained purely by ``optimizer.step`` (eager, OUTSIDE the
+        # traced/compiled forward). This makes ``forward`` idempotent:
+        # no persistent buffer/Parameter is mutated in-call. Default
+        # False preserves the byte-identical EMA path used by the
+        # Conceptual/Symbolic codebooks (single-writer invariant).
+        self.learnable_codebook = bool(learnable_codebook)
+        # Asymmetric VQ (asymmetric-vq plan sec.3, rev. 2026-06-09): master
+        # gate for the in-forward EMA codebook update. Constructor parameter,
+        # default True (the standard VQ-VAE behavior). The WholeSpace and
+        # category VQs pass False -- EMA is a single-objective crutch replaced
+        # by the reconstruction gradient on the codebook (the input->codebook
+        # leg of the asymmetric routing). Distinct from ``learnable_codebook``
+        # (which also flips the in-forward gradient estimator).
+        self.ema_update = bool(ema_update)
+        # The aligned serial ConceptualSpace dictionary is an indexed-only,
+        # optimizer-trained table.  It never enters the VQ EMA writer, so a
+        # second full ``[V, D]`` copy in ``embed_avg`` would be pure storage
+        # (4.03 GiB at BasicModel's 1M x 1032 shape).  Keep allocation an
+        # explicit constructor contract rather than deleting buffers after
+        # construction: deletion would leave setter/load/growth paths with an
+        # ambiguous half-enabled EMA mode.  The default is deliberately True
+        # so every legacy VectorQuantize remains byte-for-byte unchanged.
+        self.ema_state_enabled = bool(allocate_ema_state)
+        if self.ema_update and not self.ema_state_enabled:
+            raise ValueError(
+                "VectorQuantize cannot enable ema_update when "
+                "allocate_ema_state=False")
+        # Gate for the dead-code replacement path. Off by default because
+        # reseeding expired rows with fresh samples can blow up the effective
+        # number of distinct codes on non-stationary data.
+        self.codebook_retire = bool(codebook_retire)
+        self.codebook = torch.randn(codebook_size, dim)
+        # EMA accumulators used by ``update_ema``. ``cluster_size`` counts
+        # how many inputs snap to each code (bootstrapped at 1.0 to match
+        # the library default so the first-step smoothed divisor is never
+        # zero). ``embed_avg`` is the running sum of the assigned inputs;
+        # the codebook is rewritten as ``embed_avg / cluster_size`` (with
+        # laplace smoothing) each training step.
+        if self.ema_state_enabled:
+            self.register_buffer("cluster_size", torch.ones(codebook_size))
+            self.register_buffer("embed_avg", self.codebook.data.clone())
+        # Cached squared L2 norms of each codebook row, refreshed in the
+        # codebook setter and at the end of each EMA update. Used by the
+        # Euclidean retrieval path to do
+        # ``argmin_i ||x - c_i||^2 = argmax_i (x . c_i - 0.5 ||c_i||^2)``
+        # via a single matmul instead of ``torch.cdist``: same FLOPs as
+        # cdist's mm-trick, but skips the sqrt and the per-row ||x||^2 add
+        # (both invariant under argmin over codes).
+        self.register_buffer(
+            "_b_norms_sq",
+            (self.codebook.data ** 2).sum(dim=-1),
+        )
+        # Physical capacity and logical occupancy are deliberately separate.
+        # ``active_mask`` always has the full, construction-time codebook
+        # shape, so changing the active prefix neither replaces Parameters nor
+        # invalidates optimizer ownership.  The dense VQ reads only the active
+        # prefix for speed, so a new prefix width causes one compiled-graph
+        # specialization; power-of-two activation keeps those boundaries few.
+        # It is persistent
+        # checkpoint state (but never a Parameter).  All rows are active by
+        # default for backward compatibility; fixed-capacity users call
+        # ``set_active_rows`` before the first forward.
+        self.register_buffer(
+            "active_mask",
+            torch.ones(codebook_size, dtype=torch.bool),
+        )
+        # Host-side specialization boundary.  Forward reads this Python int;
+        # it never reduces/copies ``active_mask`` back to the host.  Only the
+        # explicit occupancy API and checkpoint load update it.
+        self._active_rows_count = int(codebook_size)
+        # Owner-space tag for error messages (set post-construction by the
+        # owning Space via ``_tag_vq_name``).
+        self.name = ""
+        # Per-instance row-chunk override for the matmul/argmax intermediate.
+        # ``None`` => derive from ``_VQ_CHUNK_TARGET_BYTES`` at forward time.
+        self._vq_chunk_rows = None
+
+    @property
+    def codebook(self):
+        """Codebook.
+        
+        See class docstring for the operation contract.
+        """
+        external = self.__dict__.get("_external_codebook")
+        if external is not None:
+            return external
+        return self._parameters["_codebook"]
+
+    @codebook.setter
+    def codebook(self, value):
+        """Codebook.
+        
+        See class docstring for the operation contract.
+        """
+        param = value if isinstance(value, nn.Parameter) else nn.Parameter(value.detach().clone())
+        external = self.__dict__.get("_external_codebook")
+        if external is not None:
+            # Preserve the authoritative owner's Parameter identity for the
+            # normal same-shape refresh. A shape change is temporarily held
+            # by reference; Codebook's structural mutation seam rebinds the
+            # newly registered owner Parameter immediately afterward.
+            if tuple(external.shape) == tuple(param.shape):
+                with torch.no_grad():
+                    external.data.copy_(param.data)
+                param = external
+            object.__setattr__(self, "_external_codebook", param)
+        elif "_codebook" in self._parameters:
+            self._parameters["_codebook"] = param
+        else:
+            self.register_parameter("_codebook", param)
+        self.codebook_size = param.shape[0]
+        # Keep EMA buffers consistent when the codebook is reassigned
+        # externally (e.g. the post-init rescale in Codebook.addVectors).
+        # Reset embed_avg to the new values; reshape cluster_size if the
+        # codebook size changed.
+        if "embed_avg" in self._buffers:
+            self._buffers["embed_avg"] = param.data.clone()
+        if "cluster_size" in self._buffers:
+            cs = self._buffers["cluster_size"]
+            if cs.shape[0] != param.shape[0]:
+                self._buffers["cluster_size"] = torch.ones(
+                    param.shape[0], device=cs.device, dtype=cs.dtype
+                )
+        # Refresh the cached ||c_i||^2 buffer so the Euclidean retrieval
+        # path stays consistent with the codebook. Allocate fresh when
+        # the row count changed.
+        if "_b_norms_sq" in self._buffers:
+            self._buffers["_b_norms_sq"] = (param.data ** 2).sum(dim=-1)
+        if "active_mask" in self._buffers:
+            old = self._buffers["active_mask"]
+            if (old.ndim != 1
+                    or int(old.shape[0]) != int(param.shape[0])
+                    or old.device != param.device):
+                old_n = int(old.numel())
+                old_active = int(getattr(
+                    self, "_active_rows_count", old_n))
+                resized = torch.zeros(
+                    int(param.shape[0]), dtype=torch.bool,
+                    device=param.device)
+                # Preserve legacy physical-growth semantics when no logical
+                # active-prefix limit had been installed.  Once a prefix is
+                # limited, newly added physical rows remain inactive until an
+                # explicit set_active_rows call.
+                self._buffers["active_mask"] = resized
+                new_active = (
+                    int(param.shape[0])
+                    if old_active == old_n
+                    else min(old_active, int(param.shape[0])))
+                self.set_active_rows(new_active)
+
+    def bind_external_codebook(self, storage):
+        """Use owner-registered codebook storage without registering it again.
+
+        A standalone VectorQuantize owns ``_codebook``. When embedded in a
+        ``Spaces.Codebook``, the parent Basis is the structural owner and VQ
+        is only an operational client. Both cases expose the same ``codebook``
+        property to the quantization kernels.  Ordinary VQ keeps a Parameter;
+        the contextual ConceptualSpace dictionary may bind a persistent buffer
+        only when EMA mutation has been disabled.
+        """
+        if not isinstance(storage, torch.Tensor) or storage.ndim != 2:
+            raise TypeError("external codebook must be a 2-D tensor")
+        if (not isinstance(storage, nn.Parameter)
+                and bool(getattr(self, "ema_state_enabled", True))):
+            raise TypeError(
+                "external non-Parameter codebook requires EMA updates "
+                "to be disabled")
+        self._parameters.pop("_codebook", None)
+        object.__setattr__(self, "_external_codebook", storage)
+        self.codebook_size = int(storage.shape[0])
+        self._sync_ema_buffers()
+
+    def _require_ema_state(self, operation):
+        """Fail loudly when an EMA-only operation reaches a compact VQ."""
+        if not self.ema_state_enabled:
+            raise RuntimeError(
+                f"VectorQuantize.{operation} requires EMA state, but this "
+                "indexed-only codebook was constructed with "
+                "allocate_ema_state=False")
+
+    def _sync_ema_buffers(self):
+        """Repair EMA buffers when they drift from the live codebook shape.
+
+        Training can reassign the codebook Parameter after construction
+        (for example when resizing or reloading weights). The EMA buffers
+        must stay row-aligned with that Parameter or the dead-code refresh
+        path can end up indexing the wrong rows.
+        """
+        codebook = self.codebook
+        V, D = int(codebook.shape[0]), int(codebook.shape[1])
+        if self.ema_state_enabled:
+            cluster_size = self.cluster_size
+            if (
+                cluster_size.ndim != 1
+                or int(cluster_size.shape[0]) != V
+                or cluster_size.device != codebook.device
+            ):
+                dtype = (cluster_size.dtype
+                         if cluster_size.is_floating_point()
+                         else torch.float32)
+                self._buffers["cluster_size"] = torch.ones(
+                    V, device=codebook.device, dtype=dtype
+                )
+            embed_avg = self.embed_avg
+            if (
+                embed_avg.ndim != 2
+                or tuple(embed_avg.shape) != (V, D)
+                or embed_avg.device != codebook.device
+            ):
+                dtype = (embed_avg.dtype
+                         if embed_avg.is_floating_point()
+                         else codebook.dtype)
+                self._buffers["embed_avg"] = (
+                    codebook.detach().to(dtype=dtype).clone())
+        elif "cluster_size" in self._buffers or "embed_avg" in self._buffers:
+            raise RuntimeError(
+                "VectorQuantize compact EMA contract drifted: an EMA buffer "
+                "was installed after allocate_ema_state=False")
+        b_norms_sq = self._b_norms_sq
+        if (
+            b_norms_sq.ndim != 1
+            or int(b_norms_sq.shape[0]) != V
+            or b_norms_sq.device != codebook.device
+        ):
+            self._buffers["_b_norms_sq"] = (
+                codebook.detach() ** 2
+            ).sum(dim=-1)
+        active_mask = self.active_mask
+        if (
+            active_mask.ndim != 1
+            or int(active_mask.shape[0]) != V
+            or active_mask.device != codebook.device
+        ):
+            raise RuntimeError(
+                "VectorQuantize active mask drifted from its physical "
+                "codebook; rebuild/rebind the module before forward: "
+                f"mask={tuple(active_mask.shape)} on {active_mask.device}, "
+                f"codebook={tuple(codebook.shape)} on {codebook.device}")
+
+    @torch.no_grad()
+    def set_active_rows(self, n):
+        """Activate exactly the prefix ``[0, n)`` of the physical table.
+
+        This is a value-only mutation of the persistent bool mask.  It never
+        resizes or replaces the codebook Parameter, EMA buffers, or the mask
+        itself, which keeps optimizer ownership and every physical tensor
+        shape stable.  Compiled VQ code specializes once for a newly activated
+        prefix width.  At least one row must remain active because nearest-neighbour
+        selection has no meaningful result for an empty dictionary.
+        """
+        n = int(n)
+        V = int(self.codebook.shape[0])
+        if n < 1 or n > V:
+            raise ValueError(
+                f"VectorQuantize.set_active_rows requires 1 <= n <= {V}; "
+                f"got {n}")
+        mask = self.active_mask
+        if mask.ndim != 1 or int(mask.shape[0]) != V:
+            raise RuntimeError(
+                "VectorQuantize active-mask shape drift: "
+                f"mask={tuple(mask.shape)}, codebook={tuple(self.codebook.shape)}")
+        mask.zero_()
+        mask[:n].fill_(True)
+        self._active_rows_count = n
+        return self
+
+    def _load_from_state_dict(
+        self,
+        state_dict,
+        prefix,
+        local_metadata,
+        strict,
+        missing_keys,
+        unexpected_keys,
+        error_msgs,
+    ):
+        """Load active occupancy while accepting pre-mask checkpoints."""
+        if not self.ema_state_enabled:
+            # A pre-compact checkpoint may carry these two derived EMA
+            # tensors.  They are not authoritative for an indexed-only,
+            # optimizer-trained codebook; consume them without allocating a
+            # destination so strict checkpoint restore remains possible.
+            state_dict.pop(prefix + "cluster_size", None)
+            state_dict.pop(prefix + "embed_avg", None)
+        mask_key = prefix + "active_mask"
+        if mask_key not in state_dict:
+            # Preserve the occupancy configured on the newly constructed
+            # module.  The default remains all-active for legacy standalone
+            # VQs, while a model migrating an old smaller checkpoint into a
+            # larger fixed-capacity table can configure the loaded-row prefix
+            # before load without exposing the random reserve.  Supplying the
+            # value here also lets strict=True loads succeed.
+            state_dict[mask_key] = self.active_mask.detach().clone()
+        incoming = state_dict[mask_key]
+        active_count = None
+        if not torch.is_tensor(incoming):
+            error_msgs.append(
+                f"{mask_key} must be a bool tensor, got "
+                f"{type(incoming).__name__}")
+        elif incoming.dtype != torch.bool:
+            error_msgs.append(
+                f"{mask_key} must have dtype bool, got {incoming.dtype}")
+        elif tuple(incoming.shape) != tuple(self.active_mask.shape):
+            # Let nn.Module's ordinary size-mismatch diagnostic report the
+            # exact source/destination shapes too.
+            error_msgs.append(
+                f"{mask_key} must match physical codebook capacity "
+                f"{tuple(self.active_mask.shape)}, got "
+                f"{tuple(incoming.shape)}")
+        else:
+            # This is a checkpoint boundary, not forward: one deliberate host
+            # copy validates the canonical contiguous-prefix representation
+            # and seeds the cached Python specialization boundary.
+            values = incoming.detach().to(device="cpu").tolist()
+            seen_inactive = False
+            prefix_ok = True
+            count = 0
+            for value in values:
+                if bool(value):
+                    if seen_inactive:
+                        prefix_ok = False
+                        break
+                    count += 1
+                else:
+                    seen_inactive = True
+            if count < 1:
+                prefix_ok = False
+            if not prefix_ok:
+                error_msgs.append(
+                    f"{mask_key} must contain one non-empty active prefix "
+                    "followed only by inactive rows")
+            else:
+                active_count = int(count)
+        super()._load_from_state_dict(
+            state_dict,
+            prefix,
+            local_metadata,
+            strict,
+            missing_keys,
+            unexpected_keys,
+            error_msgs,
+        )
+        if active_count is not None:
+            self._active_rows_count = active_count
+
+    @staticmethod
+    def _rotate_to(src, tgt):
+        """Rotation-trick STE from arXiv:2410.06424 -- forwards ``tgt`` but
+        rotates the upstream gradient from ``tgt``'s direction back to
+        ``src``'s direction and rescales by ``||tgt|| / ||src||`` so
+        magnitude is preserved. Mirrors ``vector_quantize_pytorch``'s
+        ``rotate_to`` / ``efficient_rotation_trick_transform``.
+        """
+        eps = 1e-8
+        orig_shape = src.shape
+        e = src.reshape(-1, src.shape[-1])
+        q = tgt.reshape(-1, tgt.shape[-1])
+        norm_e = e.norm(dim=-1, keepdim=True).clamp(min=eps)
+        norm_q = q.norm(dim=-1, keepdim=True).clamp(min=eps)
+        e_hat = e / norm_e
+        q_hat = q / norm_q
+        w = e_hat + q_hat
+        w = w / w.norm(dim=-1, keepdim=True).clamp(min=eps)
+        w = w.detach()
+        e_dot_w = (e * w).sum(dim=-1, keepdim=True)
+        e_dot_u = (e * e_hat.detach()).sum(dim=-1, keepdim=True)
+        out = e - 2.0 * e_dot_w * w + 2.0 * e_dot_u * q_hat.detach()
+        scale = (norm_q / norm_e).detach()
+        return (out * scale).reshape(orig_shape)
+
+    # Default byte budget for one VQ distance/similarity tile.  Keep this
+    # substantially below the bounded worker cap: allocator caching can hold
+    # the preceding matmul tile while the next one is prepared.  Small VQs
+    # (V < 64K) never trigger chunking on first call.  Override per-instance
+    # via ``vq._vq_chunk_rows``.
+    _VQ_CHUNK_TARGET_BYTES = 512 * (1 << 20)  # 512 MiB
+
+    def forward(self, x, return_all_codes=False, freeze_codebook=False, **kwargs):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
+        original_shape = x.shape
+        flat = x.reshape(-1, original_shape[-1])
+        codebook = self.codebook
+        N = flat.shape[0]
+        physical_V = int(codebook.shape[0])
+        V = int(self._active_rows_count)
+        D = codebook.shape[1]
+        active_mask = self.active_mask
+        if (active_mask.ndim != 1
+                or int(active_mask.shape[0]) != physical_V):
+            raise RuntimeError(
+                "VectorQuantize active-mask shape drift before selection: "
+                f"mask={tuple(active_mask.shape)}, "
+                f"codebook={tuple(codebook.shape)}")
+        if active_mask.device != codebook.device:
+            raise RuntimeError(
+                "VectorQuantize active mask and codebook are on different "
+                f"devices: mask={active_mask.device}, "
+                f"codebook={codebook.device}")
+        if V < 1 or V > physical_V:
+            raise RuntimeError(
+                "VectorQuantize cached active-row boundary is invalid: "
+                f"active={V}, physical={physical_V}")
+        # ``V`` is a Python specialization boundary. This slice is a view of
+        # the fixed Parameter, so physical identity/shape stays unchanged
+        # while dense retrieval and its temporaries scale with active rows.
+        codebook_active = codebook[:V]
+        gib = (N * V * 4) / (1024 ** 3)  # float32 bytes -> GiB
+
+        # Chunk over rows of `flat`.  The [chunk, V] intermediate
+        # (cdist or matmul) is the dominant allocation; the EMA path
+        # below avoids the [N, V] one_hot entirely via bincount +
+        # index_add_, so chunk size is bounded only by this matrix.
+        chunk = self._vq_chunk_rows
+        if chunk is None:
+            max_pairs = self._VQ_CHUNK_TARGET_BYTES // 4  # float32 bytes
+            chunk = max(1, max_pairs // max(V, 1))
+        chunk = min(chunk, N) if N > 0 else 1
+
+        # Intent-priming selection boost (GrammarOpsPass §5; author
+        # 2026-06-11). An installed ``selection_boost_fn`` returns
+        # boost-above-unity row weights ``[V]`` (or None = identity),
+        # produced from the single current intent's graded similarity
+        # against this tower's rows. The boost enters the row selection
+        # as an additive LOG-boost on the scores — sign-safe in both
+        # score modes, monotone in the boost, with 1.0 the exact
+        # multiplicative identity. Byte-identical when no producer is
+        # installed (or it returns None): primed RECOGNITION is a
+        # multiplicative factor on the soft selection, never a guard.
+        log_boost = None
+        boost_fn = getattr(self, 'selection_boost_fn', None)
+        if boost_fn is not None:
+            boosts = boost_fn(V, flat.device)
+            if boosts is not None:
+                if tuple(boosts.shape) != (V,):
+                    raise RuntimeError(
+                        "VectorQuantize selection boost must be [A]: "
+                        f"got {tuple(boosts.shape)} for active rows A={V}")
+                log_boost = torch.log(
+                    boosts.to(dtype=flat.dtype, device=flat.device)
+                    .clamp_min(1e-12))
+
+        # ``indices`` is the argmin/argmax of distances; the gather that
+        # follows (codebook[indices]) carries no gradient back through the
+        # selection, so the entire indices computation can run under
+        # ``no_grad`` to skip saving cdist/matmul intermediates for the
+        # backward pass.  EMA update has its own ``no_grad`` block below.
+        try:
+            with torch.no_grad():
+                if self.use_cosine_sim:
+                    # Dot-product mode: codebook is unit-norm (maintained by
+                    # the EMA path below), so ``argmax_i (flat . codebook_i)``
+                    # equals ``argmax_i cos(flat, codebook_i)`` -- the per-row
+                    # ``||flat||`` is a positive constant across i and
+                    # cancels out of the ranking. Skipping the input
+                    # normalization preserves the input magnitude (the
+                    # belief-certainty signal in ConceptualSpace) end-to-end
+                    # and saves an O(N*D) normalize op per chunk.
+                    if N <= chunk:
+                        scores = flat @ codebook_active.T
+                        if log_boost is not None:
+                            scores = scores + log_boost
+                        indices = scores.argmax(dim=-1)
+                    else:
+                        parts = []
+                        for s in range(0, N, chunk):
+                            scores = flat[s:s+chunk] @ codebook_active.T
+                            if log_boost is not None:
+                                scores = scores + log_boost
+                            parts.append(scores.argmax(dim=-1))
+                        indices = torch.cat(parts, dim=0)
+                else:
+                    # Euclidean mode via the matmul / cached-norm trick:
+                    #   ||x - c_i||^2 = ||x||^2 + ||c_i||^2 - 2 (x . c_i)
+                    # ||x||^2 is a constant across i, so it drops from
+                    # argmin. After negation:
+                    #   argmin_i ||x - c_i||^2
+                    #     = argmax_i (x . c_i - 0.5 ||c_i||^2)
+                    # ``self._b_norms_sq`` (refreshed in the codebook
+                    # setter and after every EMA update) is ``[V]``;
+                    # ``flat @ codebook.T`` is ``[chunk, V]``. Same
+                    # FLOPs as cdist's mm-trick path, skips sqrt and
+                    # the per-row ||x||^2 add, and gives Inductor a
+                    # cleaner graph (no autograd plumbing for cdist).
+                    half_b_norms_sq = (
+                        0.5 * self._b_norms_sq[:V]).to(flat.dtype)
+                    if N <= chunk:
+                        scores = flat @ codebook_active.T
+                        scores = scores - half_b_norms_sq
+                        if log_boost is not None:
+                            scores = scores + log_boost
+                        indices = scores.argmax(dim=-1)
+                    else:
+                        parts = []
+                        for s in range(0, N, chunk):
+                            scores = flat[s:s+chunk] @ codebook_active.T
+                            scores = scores - half_b_norms_sq
+                            if log_boost is not None:
+                                scores = scores + log_boost
+                            parts.append(scores.argmax(dim=-1))
+                        indices = torch.cat(parts, dim=0)
+        except RuntimeError as e:
+            owner = self.name or "<unnamed VQ>"
+            raise RuntimeError(
+                f"VectorQuantize[{owner}]: distance matrix allocation "
+                f"failed even after chunking. flat={tuple(flat.shape)}, "
+                f"active_codebook={tuple(codebook_active.shape)} "
+                f"(physical rows={physical_V}), chunk={chunk}, "
+                f"pairwise matrix = [{N}, {V}] float32 = {gib:.2f} GiB. "
+                f"Reduce {owner}.nVectors, reduce batchSize, or set "
+                f"vq._vq_chunk_rows to a smaller value. Original error: {e}"
+            ) from e
+        quantized_raw = codebook_active[indices].reshape(original_shape)
+        commit_loss = self.commitment_weight * F.mse_loss(
+            x, quantized_raw.detach()
+        )
+
+        # EMA codebook update + dead-code replacement. Without these the
+        # codebook gets no gradient (commit_loss detaches the quantized
+        # side and STE is a no-op for the codes) so codes never track the
+        # data distribution. Mirrors ``EuclideanCodebook.update_ema`` and
+        # ``expire_codes_`` in vector_quantize_pytorch.
+        #
+        # ``learnable_codebook`` (Phase 1A.1) suppresses this in-call
+        # Parameter mutation entirely -- the exact same gate as
+        # ``freeze_codebook`` -- because in that mode the codebook is
+        # trained by the downstream task-loss gradient (via the
+        # codebook-attached STE below) in the eager ``optimizer.step``,
+        # not by an in-forward EMA write. This is what makes ``forward``
+        # idempotent for the perceptual codebook.
+        if (self.training and not freeze_codebook
+                and not self.learnable_codebook and self.ema_update):
+            self._require_ema_state("forward EMA update")
+            with torch.no_grad():
+                self._sync_ema_buffers()
+                flat_f = flat.float()
+                # Equivalent to ``one_hot(indices, V).t() @ flat_f`` but
+                # without ever allocating the [N, V] one-hot tensor: at
+                # body-scale microbatch (N in the millions) that matrix
+                # alone passes the GPU per-buffer cap.
+                #
+                # ``torch.bincount`` has a data-dependent output shape
+                # (``max(minlength, indices.max()+1)``) so dynamo graph-
+                # breaks on it ("Dynamic shape operator aten.bincount.
+                # default"). ``indices`` is an argmax/argmin over the V
+                # codebook rows, so every value is in ``[0, V)`` and
+                # ``bincount(minlength=V)`` would always yield exactly
+                # ``[V]``. A fixed ``[V]`` zeros + ``index_add_`` of a
+                # ones source is the identical per-entry count with a
+                # static output shape -- the same idiom ``embed_sum``
+                # uses immediately below.
+                embed_sum = torch.zeros(
+                    V, D, device=flat_f.device, dtype=flat_f.dtype,
+                )
+                embed_sum.index_add_(0, indices, flat_f)
+                cluster_size_batch = torch.zeros(
+                    V, device=flat_f.device, dtype=flat_f.dtype,
+                )
+                cluster_size_batch.index_add_(
+                    0, indices,
+                    torch.ones_like(indices, dtype=flat_f.dtype),
+                )
+                cluster_active = self.cluster_size[:V]
+                embed_active = self.embed_avg[:V]
+                # Reference-partitioned update law (GrammarOpsPass §6d).
+                # ``V`` here is logical A, not physical capacity. A producer
+                # that still returns the physical-width legacy mask is
+                # accepted and sliced, easing migration of installed laws.
+                allowed = None
+                mask_fn = getattr(self, 'update_mask_fn', None)
+                if mask_fn is not None:
+                    partition = mask_fn(V, flat_f.device)
+                    if partition is not None:
+                        partition = partition.to(
+                            device=self.cluster_size.device,
+                            dtype=torch.bool)
+                        if tuple(partition.shape) == (physical_V,):
+                            partition = partition[:V]
+                        elif tuple(partition.shape) != (V,):
+                            raise RuntimeError(
+                                "VectorQuantize update mask must be [A] (or "
+                                "legacy [physical_V]): "
+                                f"got {tuple(partition.shape)}, A={V}, "
+                                f"physical_V={physical_V}")
+                        allowed = partition
+                if allowed is None:
+                    # Preserve the original all-active/no-partition arithmetic
+                    # exactly, merely on the active prefix view.
+                    cluster_active.mul_(self.decay).add_(
+                        cluster_size_batch.to(cluster_active.dtype),
+                        alpha=1.0 - self.decay,
+                    )
+                    embed_active.mul_(self.decay).add_(
+                        embed_sum.to(embed_active.dtype),
+                        alpha=1.0 - self.decay,
+                    )
+                else:
+                    allow_f = allowed.to(cluster_active.dtype)
+                    decay_vec = self.decay * allow_f + (1.0 - allow_f)
+                    cluster_active.mul_(decay_vec).add_(
+                        cluster_size_batch.to(cluster_active.dtype) * allow_f,
+                        alpha=1.0 - self.decay,
+                    )
+                    embed_active.mul_(decay_vec.unsqueeze(-1)).add_(
+                        embed_sum.to(embed_active.dtype)
+                        * allow_f.unsqueeze(-1),
+                        alpha=1.0 - self.decay,
+                    )
+                n = cluster_active.sum()
+                cs_smooth = (
+                    (cluster_active + self.eps)
+                    / (n + V * self.eps)
+                    * n
+                )
+                new_embed = embed_active / cs_smooth.unsqueeze(-1)
+                if self.use_cosine_sim:
+                    new_embed = F.normalize(new_embed, dim=-1)
+                if allowed is not None:
+                    # §6d: partition-frozen active rows remain bit exact.
+                    new_embed = torch.where(
+                        allowed.unsqueeze(-1),
+                        new_embed.to(codebook_active.dtype),
+                        codebook_active,
+                    )
+                codebook_active.copy_(new_embed.to(codebook_active.dtype))
+                # Refresh the cached ||c_i||^2 so the Euclidean retrieval
+                # path on the next forward sees the updated codebook. In
+                # cosine mode every row is unit-norm by construction, so
+                # we still write 1.0 here -- harmless for the dot-product
+                # path (which doesn't read this buffer) and keeps the
+                # invariant true if useDotProduct is later toggled off.
+                self._b_norms_sq[:V].copy_(
+                    (codebook_active.detach() ** 2).sum(dim=-1)
+                )
+                if self.codebook_retire and self.threshold_ema_dead_code > 0:
+                    expired = (
+                        cluster_active < self.threshold_ema_dead_code
+                    ).reshape(-1)
+                    if allowed is not None:
+                        # Reference-frozen rows never expire or get revived.
+                        expired = expired & allowed
+                    if int(expired.numel()) != V:
+                        raise RuntimeError(
+                            "VectorQuantize EMA state corrupt: "
+                            f"expired mask has {int(expired.numel())} rows "
+                            f"for codebook size {V}"
+                        )
+                    expired_idx = torch.nonzero(
+                        expired, as_tuple=False
+                    ).flatten()
+                    if int(expired_idx.numel()) > 0:
+                        n_expired = int(expired_idx.numel())
+                        sample_idx = torch.randint(
+                            0, flat.shape[0], (n_expired,), device=flat.device,
+                        )
+                        sampled = flat[sample_idx].to(codebook_active.dtype)
+                        if self.use_cosine_sim:
+                            sampled = F.normalize(sampled, dim=-1)
+                        codebook_active.index_copy_(0, expired_idx, sampled)
+                        thr = float(self.threshold_ema_dead_code)
+                        cluster_active.index_fill_(0, expired_idx, thr)
+                        embed_active.index_copy_(
+                            0,
+                            expired_idx,
+                            sampled.to(self.embed_avg.dtype) * thr,
+                        )
+
+        # Gradient estimator for the quantized output: rotation trick when
+        # requested and the input carries gradient, otherwise STE.
+        #
+        # Two STE forms, identical in FORWARD VALUE (both equal
+        # ``quantized_raw``) and identical in the encoder gradient
+        # (``d/dx = identity``); they differ only in whether the
+        # codebook ``nn.Parameter`` receives gradient:
+        #
+        #   * vanilla (EMA codebooks): ``x + (quantized_raw - x).detach()``
+        #     -- ``quantized_raw`` is detached, so the codebook gets NO
+        #     gradient from this output (it is trained by the EMA write
+        #     above instead).
+        #   * learnable (Phase 1A.1, perceptual codebook):
+        #     ``quantized_raw + (x - x.detach())`` -- ``quantized_raw``
+        #     stays attached, so the downstream task-loss gradient flows
+        #     into the selected codebook rows. With EMA suppressed this
+        #     is the ONLY codebook training signal; it lands in the eager
+        #     ``optimizer.step`` (outside the traced forward), so the
+        #     forward performs no in-call persistent mutation.
+        if self.rotation_trick and self.training and x.requires_grad:
+            quantized = self._rotate_to(x, quantized_raw)
+        elif self.learnable_codebook:
+            quantized = quantized_raw + (x - x.detach())
+        else:
+            quantized = x + (quantized_raw - x).detach()
+        indices = indices.reshape(original_shape[:-1])
+        if return_all_codes:
+            return quantized, indices, commit_loss, quantized.unsqueeze(0)
+        return quantized, indices, commit_loss
+
+    @torch.no_grad()
+    def grow_on_novelty(self, x, eps, free_threshold=None):
+        """ε-growing codebook: insert novel inputs into dead slots.
+
+        Two-phase logic:
+
+          1. **Dead-slot detection.** A slot is considered "dead"
+             (available for re-use) when its EMA ``cluster_size``
+             falls below ``free_threshold``.  Default threshold is
+             ``self.threshold_ema_dead_code`` if that's > 0, otherwise
+             a small fraction of the codebook's initial unit
+             ``cluster_size`` (``0.5``) so EMA-decayed never-assigned
+             slots count as dead after a few batches.
+
+          2. **Novelty test.** For each row of the flattened encoder
+             output ``x``, compute the min-distance to the **live**
+             entries (cluster_size > threshold).  Rows whose min-
+             distance exceeds ``eps`` are "novel" and get inserted
+             into the available dead slots, seeding
+             ``cluster_size``/``embed_avg`` so subsequent EMA blends
+             pull toward the inserted point.
+
+        Returns the count of inserted slots.  Idempotent when every
+        novel row already maps within ``eps`` of a live entry.
+        No-op when ``eps <= 0`` or the layer is in eval mode.
+        """
+        if eps <= 0.0 or not self.training:
+            return 0
+        self._require_ema_state("grow_on_novelty")
+        if free_threshold is None:
+            free_threshold = (float(self.threshold_ema_dead_code)
+                              if self.threshold_ema_dead_code > 0
+                              else 0.5)
+        flat = x.reshape(-1, x.shape[-1])
+        if self.use_cosine_sim:
+            flat = F.normalize(flat, dim=-1)
+        A = int(self._active_rows_count)
+        physical_V = int(self.cluster_size.shape[0])
+        if A < 1 or A > physical_V:
+            raise RuntimeError(
+                "VectorQuantize.grow_on_novelty cached active-row boundary "
+                f"is invalid: active={A}, physical={physical_V}")
+        cluster_active = self.cluster_size[:A]
+        codebook_active = self.codebook[:A]
+        embed_active = self.embed_avg[:A]
+        live_mask = (cluster_active > free_threshold).reshape(-1)
+        free_idx = torch.nonzero(
+            ~live_mask, as_tuple=False).flatten()
+        if int(free_idx.numel()) == 0:
+            return 0
+        live_idx = torch.nonzero(
+            live_mask, as_tuple=False).flatten()
+        seed_val = max(1.0, float(self.threshold_ema_dead_code))
+        if int(live_idx.numel()) == 0:
+            # No live entries yet -- seed the first n free slots with
+            # the leading rows of x.  Mirrors the dead-code retire's
+            # cold-start path.
+            n_seed = min(int(free_idx.numel()), int(flat.shape[0]))
+            target = free_idx[:n_seed]
+            sampled = flat[:n_seed].to(codebook_active.dtype)
+            codebook_active.index_copy_(0, target, sampled)
+            cluster_active.index_fill_(0, target, seed_val)
+            embed_active.index_copy_(
+                0, target,
+                sampled.to(embed_active.dtype) * seed_val)
+            return n_seed
+        live_codes = codebook_active.index_select(0, live_idx)
+        if self.use_cosine_sim:
+            live_codes = F.normalize(live_codes, dim=-1)
+        # Pairwise squared L2; min over codes per row.
+        x_sq = (flat * flat).sum(dim=-1, keepdim=True)
+        c_sq = (live_codes * live_codes).sum(dim=-1, keepdim=True).T
+        dots = flat @ live_codes.T
+        dists_sq = (x_sq - 2 * dots + c_sq).clamp(min=0.0)
+        min_dist = dists_sq.min(dim=-1).values.sqrt()
+        novel_mask = min_dist > float(eps)
+        novel_rows = torch.nonzero(
+            novel_mask, as_tuple=False).flatten()
+        if int(novel_rows.numel()) == 0:
+            return 0
+        n_insert = min(int(novel_rows.numel()),
+                       int(free_idx.numel()))
+        sampled = flat[novel_rows[:n_insert]].to(
+            codebook_active.dtype)
+        target = free_idx[:n_insert]
+        codebook_active.index_copy_(0, target, sampled)
+        cluster_active.index_fill_(0, target, seed_val)
+        embed_active.index_copy_(
+            0, target, sampled.to(embed_active.dtype) * seed_val)
+        return n_insert
+
+
+def test():
+    """Self-test; verifies the round-trip / invariant."""
+    torch.autograd.set_detect_anomaly(True)
+
+    TruthLayer.test()
+    LinearLayer.test()
+
+
+    InvertibleLinearLayer.test()
+
+    SigmaLayer.test()
+    PiLayer.test()
+
+
+def main():
+    """Main.
+    
+    See class docstring for the operation contract.
+    """
+    try:
+        test()
+    except ImportError as exc:
+        raise SystemExit(str(exc)) from exc
+
+
+# =====================================================================
+# Ops-as-Layer-container (2026-05-02 consolidation pass).
+#
+# Per the user's design intent: Ops should not own grammar operations
+# itself; it should delegate to GrammarLayer instances. Each
+# `Ops.<grammar_op>` is now an `_OpHandle` whose:
+#   * direct call ``Ops.<op>(args, **kwargs)`` routes to the math
+#     kernel (renamed to `Ops._<op>_kernel`) -- preserves backward
+#     compat for callers passing `monotonic=` / `mode=` / `kind=`
+#     flags.
+#   * `.forward(...)` / `.reverse(...)` / `.compose(...)` /
+#     `.generate(...)` route through the corresponding GrammarLayer
+#     subclass (NotLayer, ConjunctionLayer, etc.). These satisfy the
+#     "every Layer has forward and reverse" contract and are the
+#     surfaces SyntacticLayer / Chart use.
+# =====================================================================
+class _OpHandle:
+    """Container that exposes both the legacy kernel signature
+    (callable; takes flags) AND the GrammarLayer interface
+    (forward/reverse/compose/generate)."""
+
+    def __init__(self, kernel, layer):
+        """Initialize _OpHandle; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        self._kernel = kernel
+        self._layer = layer
+
+    def __call__(self, *args, **kwargs):
+        """Invoke this callable."""
+        return self._kernel(*args, **kwargs)
+
+    def forward(self, *args, **kwargs):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
+        return self._layer.forward(*args, **kwargs)
+
+    def reverse(self, *args, **kwargs):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
+        return self._layer.reverse(*args, **kwargs)
+
+    def compose(self, *args, **kwargs):
+        """Compose the input via this layer's parse contract."""
+        return self._layer.compose(*args, **kwargs)
+
+    def generate(self, *args, **kwargs):
+        """Drive the reverse / generation pass."""
+        return self._layer.generate(*args, **kwargs)
+
+    @property
+    def rule_name(self):
+        return self._layer.rule_name
+
+    @property
+    def arity(self):
+        return self._layer.arity
+
+    @property
+    def invertible(self):
+        return self._layer.invertible
+
+    @property
+    def lossy(self):
+        return self._layer.lossy
+
+    @property
+    def layer(self):
+        """The wrapped GrammarLayer instance (singleton)."""
+        return self._layer
+
+
+def _bind_ops_singletons():
+    """Bind `Ops.<grammar_op>` to `_OpHandle` instances so the same
+    name resolves either to the legacy kernel (via __call__) or the
+    GrammarLayer surface (via .forward / .reverse / .compose /
+    .generate).
+
+    Called once at module load. Each `_OpHandle`'s kernel is captured
+    BEFORE rebinding, so internal `Ops._<op>_kernel(...)` self-references
+    inside Ops static methods continue to route directly to the kernel.
+    """
+    # Map: legacy op name -> (kernel staticmethod, GrammarLayer subclass).
+    # ``absorb`` was retired 2026-05-04 -- the marker lives on
+    # ``GrammarLayer.absorb`` (base class) so no kernel/class binding.
+    #
+    # Post-2026-05-29 grammar-file-refactor (\xa75): the negation / non /
+    # conjunction / disjunction / lift / lower / part bindings now live
+    # in Language.py because those layer classes moved there. The
+    # ``equal`` binding stays here because EqualLayer stays here.
+    bindings = (
+        ('equal',       Ops._equal_kernel,       EqualLayer),
+    )
+    for name, kernel, cls in bindings:
+        try:
+            inst = cls()
+        except TypeError:
+            continue
+        setattr(Ops, name, _OpHandle(kernel, inst))
+
+
+_bind_ops_singletons()
+
+
+# Self-test: run the LogicNet smoke test when executed as a script.
+if __name__ == "__main__":
+    main()
+
+
+# Backward-compat: grammar rule operator classes have been moved
+# to Language.py. Provide module-level lazy attribute lookup so old
+# `from Layers import IntersectionLayer` (and similar) continue to
+# work. GRAMMAR_LAYER_CLASSES is delegated the same way. See
+# doc/plans/2026-05-29-grammar-file-refactor.md §5.
+_MOVED_TO_LANGUAGE = frozenset({
+    'NotLayer',
+    'NonLayer',
+    'IntersectionLayer',
+    'UnionLayer',
+    'ChunkLayer',
+    'SumLayer',
+    'ProductLayer',
+    'LiftLayer',
+    'VerbLayer',
+    'AdverbLayer',
+    'LowerLayer',
+    'ConjunctionLayer',
+    'DisjunctionLayer',
+    'IsEqualLayer',
+    'PartLayer',
+    'GRAMMAR_LAYER_CLASSES',
+})
+
+def __getattr__(name):
+    if name in _MOVED_TO_LANGUAGE:
+        import Language
+        return getattr(Language, name)
+    raise AttributeError(
+        f"module 'Layers' has no attribute {name!r}")

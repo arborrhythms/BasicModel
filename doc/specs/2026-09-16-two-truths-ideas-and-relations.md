@@ -124,6 +124,14 @@ Consequences (11c, Alec, September 24):
   `t=min(c⁺,1-c⁻)`, `f=min(c⁻,1-c⁺)`, `both=min(c⁺,c⁻)`, and
   `neither=min(1-c⁺,1-c⁻)`. Store the pair, never just the corners or
   signed collapse, which lose the distinction between both and neither.
+- *Magnitude (Alec, 2026-10-07).* A concept's vector has a direction (its
+  identity, on the sphere), a magnitude (how well-defined it is, growing
+  from 0 toward 1 as it is learned: `m = n/(n+k)` over witnessed
+  occurrences, `k` the admission recurrence threshold) and the pair
+  `(c⁺, c⁻)` (evidence in this reading). `(0,0)` on a concept at `m = 1` is
+  its absence; near `m = 0` it is ignorance; nothing but `m` decides. Reads
+  scale by `m`; a conjunction with an ill-defined concept is small, not
+  false. Forms are definite when read and stay at full presence.
 - Native memberships supply the order-0 read. A present percept weighted
   positively contributes support; weighted negatively, counterevidence.
   Absence supplies neither. Required evidence uses min over nonzero

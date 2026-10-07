@@ -148,18 +148,19 @@ def test_zero_complement_is_identically_zero_at_every_gain():
 
 
 @pytest.mark.parametrize('config',['XOR_grammar','MM_grammar'])
-def test_gate_grammars_have_no_image_complement(config):
+def test_gate_grammars_image_is_confined_to_bipolar_complement(config):
     from test_mm_xor import _fresh_model
     from Meaning import ClosingImage
     model,_,_=_fresh_model('data/'+config+'.xml')
     try:
         derived=model._concept_owner().similarity_codebook.mereology
-        assert derived.percept_width==96 and derived.code_width==104
-        assert derived.context_width==0
+        assert derived.percept_width==96 and derived.code_width==232
+        assert derived.context_width==128
         observed=torch.ones(3,derived.code_width)
         image=ClosingImage.form(observed,observed,torch.ones(3),
             form_width=model._image_form_width)
-        assert image.concept_width==0 and image.image.eq(0).all()
+        assert image.concept_width==128 and image.image[:,:104].eq(0).all()
+        assert image.image[:,104:].eq(-1).all()
     finally:
         model.End();model.symbolSpace.soft_reset()
 
@@ -178,7 +179,7 @@ def test_not_handoff_changes_pole_and_meaning_but_never_form(monkeypatch):
     event=code[None].requires_grad_()
     payload=(event,torch.zeros(1,1),torch.zeros(1,dtype=torch.long),torch.ones(1,1),
         torch.zeros(1,dtype=torch.long),torch.zeros(1,dtype=torch.long),code,
-        torch.ones(1,1,dtype=torch.bool),torch.ones(1,1,dtype=torch.bool),None,None)
+        torch.ones(1,1,dtype=torch.bool),torch.ones(1,1,dtype=torch.bool),None,None,torch.tensor([[1.,0.]]))
     reading=SimpleNamespace(accepted=torch.ones(1,1,dtype=torch.bool),
                             pole_changes=torch.ones(1,1,dtype=torch.bool))
     model=SimpleNamespace(_attention_words=reading,_attention_poles=torch.tensor([[[1.,0.]]]))
@@ -186,18 +187,20 @@ def test_not_handoff_changes_pole_and_meaning_but_never_form(monkeypatch):
     model._attention_poles=model._attention_poles.flip(-1)
     explore=BasicModel._attention_sentence_payload(model,payload,torch.tensor(0))
     torch.testing.assert_close(explore[0],greedy[0],rtol=0,atol=0)
-    assert explore[3].item()==-1 and greedy[3].item()==1
+    assert explore[3].item()==greedy[3].item()==1
+    torch.testing.assert_close(explore[-1], greedy[-1].flip(-1))
     positive=finish_reading(language,replace(leaf,leaf_evidence=torch.tensor([[1.,0.]])),registry=registry)
     negative=finish_reading(language,replace(leaf,leaf_evidence=torch.tensor([[0.,1.]])),registry=registry)
-    assert positive.meaning.polarity and not negative.meaning.polarity
+    assert positive.meaning.polarity and negative.meaning.polarity
+    assert positive.evidence == (1.,0.) and negative.evidence == (0.,1.)
     from Interpret import InterpretLayer
     owner = SimpleNamespace(similarity_codebook=SimpleNamespace(mereology=SimpleNamespace(percept_event_width=1)))
     interpret = InterpretLayer(conceptualSpace=owner)
-    atoms = torch.tensor([[.8, .6]])
-    positive_code = interpret.activate(atoms, greedy[3].reshape(-1))
-    negative_code = interpret.activate(atoms, explore[3].reshape(-1))
+    atoms = torch.tensor([[.8, .6, .2]])
+    positive_code = interpret.activate(atoms, greedy[3].reshape(-1), evidence=greedy[-1])
+    negative_code = interpret.activate(atoms, explore[3].reshape(-1), evidence=explore[-1])
     torch.testing.assert_close(positive_code[:, :1], negative_code[:, :1], rtol=0, atol=0)
-    torch.testing.assert_close(positive_code[:, 1:], -negative_code[:, 1:], rtol=0, atol=0)
+    torch.testing.assert_close(positive_code[:, 1:], negative_code[:, 1:].flip(-1), rtol=0, atol=0)
     assert (negative_code-positive_code).square().sum() > 0
 
 

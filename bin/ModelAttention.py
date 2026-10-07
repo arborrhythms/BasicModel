@@ -18,22 +18,13 @@ def read_poles(model, consumer):
     return None if pair is None else pair.detach()
 
 
-def pole_activation(activation, pair, changed):
-    """A reached field chooses sign only; tied poles retain the prior sign."""
-    net = (pair[..., 0]-pair[..., 1]).reshape_as(activation)
-    changed = changed.reshape_as(activation)
-    return torch.where(changed & net.ne(0), activation.abs()*net.sign(), activation)
-
-
-def reference_evidence(model, activations, consumer):
+def reference_evidence(model, presences, consumer):
+    """Reference provenance is the walk's pair, never a scalar reconstruction."""
     pair = read_poles(model, consumer)
     if pair is None:
-        return None
-    reading = model._attention_words
-    signed = pole_activation(activations, pair, reading.pole_changes).squeeze(-1)
-    # Match Language.commit_word_reference_slab's native scalar conversion
-    # exactly, including its saturation. No field means the landing's pair.
-    return torch.stack((signed.clamp(0, 1), (-signed).clamp(0, 1)), -1).detach()
+        from Interpret import positive_evidence
+        return positive_evidence(presences.squeeze(-1)).detach()
+    return pair
 
 
 def canonical_native_events(model, ids, positions, brackets):
@@ -141,6 +132,7 @@ def stage_input(model):
     slab=getattr(isp,'_ar_embedded_N',None)
     active=getattr(isp,'_word_active_mask',None)
     model._attention_words=None
+    model._attention_poles=None
     model._attention_grammar_mask=None
     model._attention_read=None
     model._word_expectation=None

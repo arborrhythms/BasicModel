@@ -75,7 +75,7 @@
     - *Form only:* the surface operations of 5.5 (morphology, the
       realisation of markers: how a word is written, the marker's meaning
       entering by composition); the mereological reads at order 0 (`part`,
-      `whole` as the cube's order; the lattice interval; the room clamp);
+      `whole` as the cube's order; the lattice interval; the containment projection);
       the identity read-back; `interpret`'s departure (a sign is a form that
       stands for something; the operation leaves form by the DEF lookup and
       lands on the referent's code).
@@ -324,6 +324,16 @@ scalars."
 
 ### 3.8 What was decided earlier in the pass
 
+**Final operators amendment (Alec's ruling, 2026-10-07).** Conceptual meaning is
+bipolar evidence, one for/against pair per coordinate: unknown `(0,0)`,
+false `(0,1)`, true `(1,0)`, conflict `(1,1)`. This supersedes the signed-code
+Kleene description below on the meaning face. Conjunction/intersection are
+`(min⁺, max⁻)`; disjunction/union `(max⁺, min⁻)`; sum averages both poles;
+`not` exchanges them. Negative interpretation exchanges poles and scales by
+`|a|`, preserving form × `|a|`. Form kernels remain as in 3a, normalized
+separately. Order-zero context means fill for only; absent evidence stays
+unknown, so `a ∧ not b` has no for extent and b's extent against.
+
 * **`not` and `non`** (2026-09-28). `not` exchanges the two poles and is
   its own inverse. `non` sets the expressed pole to zero, is non-affirming,
   and has no inverse. Both act at any order, on the pole a concept
@@ -356,6 +366,16 @@ scalars."
   The sentence that *states* a definition, and the choice between `Equals`
   and `Def` for it, are this update's (6.3).
 
+
+*Lanes (Alec, 2026-10-07).* The pole pair is two lanes, for and against,
+each a positively-valued presence of the concept's code; `not` exchanges
+the lanes, `non` clears the for lane, conjunction and disjunction act on
+each lane (`(min⁺, max⁻)`, `(max⁺, min⁻)`), `sum` averages each lane. No
+operator, handoff or interpretation step forms the lanes' difference or
+sign: the implementation that did (`pole_activation`'s net and sign; the
+leaf's single signed activation) is replaced by the pair carried through
+to the leaf, `[form × presence | code × c⁺ | code × c⁻]`.
+
 ### 3.9 Names that are not parts of speech, and alternatives
 
 Rules 8 and 9 above, both proposed by Alec on 2026-09-29. They continue
@@ -369,7 +389,7 @@ computed, `intersection`, `lift`, `lower`, `sum`, or of a relation, `part`,
 `equal`, `implies`. The determiner has no operator of its name; it is
 `lower` by a comment in the grammar file.
 
-**Names are not inert in the code today** *(read and counted)*. The code
+**Historical inventory (2026-09-29; implemented through §12.9).** The code
 tests an operator by its name in about 140 places, 26 of them for the six
 names above. Three kinds of test:
 
@@ -1660,3 +1680,98 @@ completed 5,289 cases with 5,003 passes, 285 skips, one XPASS and no failures;
 the repeated MM bisection confirms the historical RNG-only path, and three
 paired 200-epoch trajectories are identical to accepted round 2e. The
 candidate and all measured results remain uncommitted for review.
+
+### 12.8 Operators update, round 4a (October 7; superseded by §12.9)
+
+The complement bootstrap is a fixed sentence-identity index. Every REL_NONE
+row has a content key; identified text hashes its ordered word bytes, with
+an initial-form fallback for opaque rows. A private generator maps that same
+key to sparse evidence, independent of occurrence namespaces and global RNG.
+The unchanged postings/reference membership and recency weighting supply the
+order-zero mean on the for pole; against starts at zero. Composed meanings
+remain stored as `o`; the pre-forward snapshot remains detached.
+
+Grammar gates use 64 pole pairs with three active identity bits; BasicModel
+uses 448 pairs with six bits in its unchanged 896-float complement. The form
+kernels retain their round-3a behavior. The meaning rules are §3.8's bilattice,
+including negation; the blocks are not normalized together. The expectation
+predictor now trains once on the reconstruction-kept trial's rows only.
+Answer readers retain the 2e exposure rules. Narrowing departures can therefore
+receive nonzero credit, and mixed final compose operators are valid.
+
+The [receipt](../benchmarks/2026-10-07-operators-round4a/README.md) reports static
+certificates for all word pairs and sentence rows, corpus false membership,
+and the unchanged unseeded gates. No centroid or co-activation priming change
+is included. No commit is authorized before Claude's review.
+
+### 12.9 Final operators update (October 7; rejected candidate)
+
+Plan §§30–38 combine the occurrence address, bipolar meanings, adjacent-word
+centroid, membership priming and §§5–6 catalogue work. The [receipt](../benchmarks/2026-10-07-operators-final/)
+retains one complete sweep, the focused repairs it required, and thirty
+unseeded standing trainings on the repaired source. The original sweep and
+both source snapshots remain visible; no sweep or training is replaced.
+
+The mandatory address hashes document, sentence index and ordered word content.
+Re-reading replaces committed vectors, refreshes timestamp and maximizes each
+evidence pole. Relative `.when` uses the source sentence bracket; full stores
+raise. References and checkpoint migration use addresses.
+
+The meaning rules in §3.8 apply independently of form normalization. Meaning
+width is 128 in grammar gates and 896 in BasicModel (64 and 448 pole pairs).
+The fixed content-seeded codes use three or six active bits. `meaningWidth=0`
+disables bootstrap while retaining storage geometry. `symbolCentroid` controls
+placement between the native lower bound and adjacent-word ceiling; its
+containment cap never goes below the lower bound. Indexing reads `[c == 1]`,
+while binding projects `c`. `membershipPriming` adds address-keyed sentence
+edges to one degree-normalized diffusion. All three switches default on.
+
+`lower`'s declared determiner mode mints an addressed member, binds an earlier
+address, or retains the kind (`every`). `generic` retains kind; `lift` forms a
+sentence at its subject's order. The marker contributes no numeric content.
+Relative rows publish their name and retain operands as references; equality
+states both directed PART relations beside the separate lexical DEF row.
+Predicate identity, scope, head, reference mode, order and substrate roles are
+declared properties. The consumer census checks runtime name dispatch.
+
+The receipt reports semantic and form certificates, centroid movement and
+containment, per-word priming, store usage, final operators and narrowing credit
+by action. Mixed connectives are valid. Surface, tense, morphology, aspect,
+null, situation codes and learned before/after remain with 5.5. Review precedes
+any commit; item 6.5 follows review.
+
+The measured candidate passes class 10/10 and MM 10/10, but reconstruction
+is 9/10 and the sum control reaches ¼ in 9/10 (all ten remain additive).
+The exact grammar semantic certificates and centroid identity/containment
+certificates pass. Final XOR roots include 37 conjunctions and three
+disjunctions; the mixed run passes both gates. R ≡ 0 and RNG-only MM
+equivalence do not hold. The receipt preserves the original full-sweep
+failures, focused repairs, all costs and the verified B–D miss bisections.
+These results were rejected under plan §39 and are preserved in the accepted
+repair's history.
+
+### 12.10 Combined repair (October 7; accepted landing)
+
+Plan §§40–42 and the [repair receipt](../benchmarks/2026-10-07-operators-final-b/)
+retain the first combined receipt's source and evidence, with its README
+labelled rejected. Each word has one signless form
+entry for inverse search and readback. Its two positive symbols have
+independent evidence magnitudes; interpretation, the pushed/reference slabs
+and closing carry that pair without taking its difference or sign.
+Meaning and centroid snapshots precede lexical staging and remain fixed
+through committed writes. The numeric reader scales form and meaning
+separately using common snapshot scales, preserving its affine sum control.
+Priming retrieval boosts have neutral 1.0 and a configurable maximum of 2.0;
+the diffusion ledger and the attention walk are unchanged. MM_xor is live:
+its relative `.when` input is the specified address behavior.
+
+The first repair sweep completed 5,354 cases with three failures, retained
+in the receipt. The user authorized a further sweep with the tetralemma
+repair. Its final measured source has a green 5,500-case sweep and all thirty
+standing trainings pass: class 10/10 at zero, reconstruction 10/10 with
+R identically zero, sum 10/10 at ¼ and MM_xor 10/10. The final XOR operators
+include 36 conjunction and 4 disjunction. Narrowing credit is entirely from
+the answer term; the receipt reports each action, including both directions
+of `not` credit. No standing training is replaced. Alec accepted this repair
+as the operators-update landing under plan §45 on October 7, authorizing
+commit, push and the WikiOracle bump. Item 6.5 follows with §44 first.

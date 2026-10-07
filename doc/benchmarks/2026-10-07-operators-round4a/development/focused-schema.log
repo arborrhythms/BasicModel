@@ -1,0 +1,942 @@
+..FF........                                                             [100%]
+=================================== FAILURES ===================================
+_ test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate[XOR_grammar] _
+
+configuration = 'XOR_grammar'
+
+    @pytest.mark.parametrize('configuration', ['XOR_grammar', 'MM_grammar'])
+    def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate(configuration):
+        from test_mm_xor import _fresh_model
+        from MereologicalCodes import occurrence_memberships
+        from MeaningCodes import identity_code, certificate
+>       model, _, _ = _fresh_model(f'data/{configuration}.xml')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_operators_round4a.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_mm_xor.py:40: in _fresh_model
+    m, cfg = Models.BasicModel.from_config(config_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6614: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cfg = {'architecture': {'bindingDepth': 2, 'composeTemperature': 0, 'reducePressure': 1.0, 'attentionPromotion': False, ...}...}, 'PartSpace': {'identityByParts': True, 'identityPairDim': 64, 'identityOnes': 3, 'identityLengthDim': 32, ...}, ...}
+
+    @staticmethod
+    def validate_config(cfg):
+        """Check merged config for known inconsistencies and raise on error.
+    
+        Called after defaults have been merged so all keys are present.
+        Uses get_space_param() to read from space-scoped sections.
+        """
+        gsp = ModelFactory.get_space_param
+        arch = cfg.get("architecture", {})
+        errors = []
+        # Clear any requirements left over from a previous validate_config
+        # call (e.g. one that bailed via ``errors`` before reaching
+        # ``TheXMLConfig.validate()``). Otherwise stale ``require()``
+        # closures from one test leak into the next.
+        TheXMLConfig._requirements.clear()
+    
+        # The old ``hasAttention``-vs-``nInputDim``/``flatten`` reshape guard
+        # (and its ``_has_reshape`` helper) was retired together with the
+        # ``QKVAttentionLayer`` enlistment in PartSpace/ConceptualSpace
+        # (plan 2026-06-06-symbolic-heat-retrieval.md §Handoff addendum). It
+        # only protected the constraint that transformer self-attention needs
+        # 3D multi-vector input; ``<attention>`` is now a symbolic-retrieval
+        # mode (not tensor self-attention), so ``hasAttention=True`` together
+        # with a reshape/flatten is no longer an error.
+    
+        # ``<maskedPrediction>`` retired 2026-05-14: within-sentence
+        # training is IR-only and there's no ARIR mode to validate.
+        # ``<reconstruct>`` enum retired (A1: schema + ``reconstructEnum``
+        # removed). C3 (spec sec 7): reconstruction is unconditionally
+        # concepts-seeded in ``runBatch`` -- there is no mode to validate.
+    
+        def _resolve_dim(space_name, prev_dim):
+            try:
+                raw = gsp(cfg, space_name, "nDim")
+            except KeyError:
+                return prev_dim
+            return prev_dim if raw == 0 else raw
+    
+        def _resolve_count(space_name, prev_count):
+            try:
+                raw = gsp(cfg, space_name, "nOutput")
+            except KeyError:
+                return prev_count
+            return prev_count if raw == 0 else raw
+    
+        # Aligned binding uses ConceptualSpace's concept-reference inventory.
+        # WholeSpace.nVectors is an independent upstream property inventory;
+        # live CS/WS slot counts are separate geometry as well.
+        if str(arch.get("conceptBinding", "mixing")).strip().lower() == "aligned":
+            try:
+                _cs_codes = int(gsp(cfg, "ConceptualSpace", "nVectors"))
+                try:
+                    _cs_active = int(gsp(
+                        cfg, "ConceptualSpace", "activeVectors"))
+                except KeyError:
+                    _cs_active = _cs_codes
+                if not (0 < _cs_active <= _cs_codes):
+                    errors.append(
+                        "ConceptualSpace.activeVectors must be positive and "
+                        f"no larger than its nVectors; got active={_cs_active}, "
+                        f"capacity={_cs_codes}")
+            except (KeyError, TypeError, ValueError):
+                errors.append(
+                    "aligned binding requires explicit positive nVectors in "
+                    "ConceptualSpace")
+    
+        from architecture import canonical_shape as _cshape
+        input_dim = _resolve_dim("InputSpace", 1)
+        percept_dim = _resolve_dim("PartSpace", input_dim)
+        concept_dim = _resolve_dim("ConceptualSpace", percept_dim)
+        # 2026-06-06 uniform-band convention: every space_role carries the same
+        # (nWhere, nWhen) band, so nDim = nWhat + band uniformly. An omitted WS
+        # width still inherits for legacy configs; canonical serialObjectMeta
+        # sets the native WS property width explicitly because WS is a peer,
+        # not a downstream copy of CS.
+        symbol_dim = _resolve_dim("WholeSpace", concept_dim)
+    
+        # Bivector / projection configs let ConceptualSpace output a
+        # narrower activation via ``<nOutputDim>``. Compare nWhat-to-nWhat
+        # across CS and WS (subtract each space_role's own band).
+        try:
+            cs_out_dim = int(gsp(cfg, "ConceptualSpace", "nOutputDim"))
+        except KeyError:
+            cs_out_dim = 0
+        _cs_band = sum(_cshape("ConceptualSpace"))
+        _ws_band = sum(_cshape("WholeSpace"))
+        _cs_event = cs_out_dim if cs_out_dim > 0 else concept_dim
+        effective_concept_dim = _cs_event - _cs_band          # CS nWhat
+        symbol_nwhat = symbol_dim - _ws_band                  # WS nWhat
+    
+        # WholeSpace owns no legacy C->S width-changing bridge. Parallel legacy
+        # configurations that treat WS as a pass-through still require equal
+        # widths; the serial peer architecture below does not.
+        #
+        # Skip only the explicit ``passthrough`` bypass mode. The CS->WS
+        # dimensional pass-through (WS owns no Sigma) is real for both the
+        # simple and embedding pipelines -- ``test_symbol_dim_must_match_
+        # concept_dim`` exercises it in default/simple mode -- so this is
+        # NOT gated as narrowly as the embedding-only flat-slab invariant
+        # below. ``passthrough`` carries arbitrary placeholder per-space
+        # <nDim> (e.g. the config-scoping nOutput-reading fixture, all
+        # nDim=1) and intentionally bypasses dimensional validation; the
+        # "6+2+2" band subtraction would otherwise drive its CS content
+        # negative and trip this check spuriously.
+        # dimensional-governance (doc/specs/2026-06-05-dimensional-
+        # governance.md sec.4/sec.6): SERIAL mode treats WS as an independent
+        # native-width property tower whose sparse codebook activation enters
+        # CS at conceptual width. Therefore ``symbol_dim == concept_dim`` is
+        # relaxed for serial configs. Parallel legacy configs (square Pi/Sigma
+        # over the constant slab) still require the pass-through match.
+        _ws_fold_bridged = int(arch.get('conceptLayers',1)) > 1
+        # This remains only a legacy PASS-THROUGH assumption. An explicit
+        # nInputDim != nOutputDim likewise says WS's recurrent input and native
+        # peer output are distinct interfaces, so output-width equality with
+        # CS must not be imposed.
+        def _ws_dim(key, fallback):
+            try:
+                v = int(gsp(cfg, "WholeSpace", key))
+                return v if v > 0 else int(fallback)
+            except (KeyError, TypeError, ValueError):
+                return int(fallback)
+        _ws_reshapes = (_ws_dim("nInputDim", symbol_dim)
+                        != _ws_dim("nOutputDim", symbol_dim))
+        # The data space_role (was architecture-level <modelType>) now lives under
+        # <data> as <dataType> (embedding | numeric). The flat-slab
+        # WS.nWhat==CS.nWhat invariant below is embedding-only: the numeric
+        # (dense-slab) path carries no lexicon, so it may re-dimension across
+        # space_roles (e.g. MNIST IS=784 -> CS=20). Read from the PASSED cfg (this
+        # validator runs on a merged dict that may not be the global config),
+        # canonical <data><dataType> first then an architecture-level dataType
+        # fallback (dict-based test overrides set it there).
+        _data_sec = arch.get("data") if isinstance(arch.get("data"), dict) else {}
+        data_type = str(_data_sec.get("dataType")
+                        or arch.get("dataType") or "numeric").strip().lower()
+        is_embedding_mode = (data_type == "embedding")
+        if (is_embedding_mode
+                and not _ws_fold_bridged and not _ws_reshapes):
+            # A concept is one opaque code the width of the whole WholeSpace
+            # event (its coordinates included): the concept width equals the
+            # WholeSpace event width, not its band-stripped content.
+            TheXMLConfig.require(
+                lambda cfg, _c=effective_concept_dim, _s=symbol_dim: _c == _s,
+                f"WholeSpace requires WS event width == CS width "
+                f"(got CS width={effective_concept_dim}, "
+                f"WS event width={symbol_dim}). Fix: set <WholeSpace><nDim> "
+                f"to match <ConceptualSpace><nOutputDim> if present, else "
+                f"<ConceptualSpace><nDim>."
+            )
+    
+        # ---- Concept-activation boundary ----------------------------
+        # Stage 1.D refactor (doc/plans/2026-05-26-two-loop-pi-sigma-
+        # substrate.md): legacy PS->CS tensor handoffs require equal flat
+        # content slabs (nOutput * content width). The canonical aligned
+        # serial-word architecture has a different boundary: PS, WS, and SS
+        # remain independent peers, and each source's sparse sigma/codebook
+        # activation reads a conceptual-width row before CS. Thus CS receives
+        # conceptual-width events and performs no feature-width conversion.
+        #
+        # Embedding-mode only: the numeric (dense-slab) path doesn't carry a
+        # lexicon, so the "PS per-word is CS-space" rationale doesn't apply --
+        # the slab can re-dimension across space_roles (e.g. MNIST IS=784 pixels,
+        # CS=20 features). The invariant fires only when
+        # ``<data><dataType>embedding`` (``is_embedding_mode``, resolved above).
+    
+        def _effective_out_dim(space_name, fallback_dim):
+            """Return nOutputDim if set, else nDim, else the chained
+            ``fallback_dim`` from the previous space_role."""
+            try:
+                raw = gsp(cfg, space_name, "nOutputDim")
+                if raw and int(raw) > 0:
+                    return int(raw)
+            except KeyError:
+                pass
+            try:
+                raw = gsp(cfg, space_name, "nDim")
+                if raw and int(raw) > 0:
+                    return int(raw)
+            except KeyError:
+                pass
+            return int(fallback_dim)
+    
+        def _effective_out_count(space_name, fallback_count):
+            try:
+                raw = gsp(cfg, space_name, "nOutput")
+                if raw and int(raw) > 0:
+                    return int(raw)
+            except KeyError:
+                pass
+            return int(fallback_count)
+    
+        # "6+2+2": nDim/nOutputDim are EVENT widths; chain on the event width
+        # but the flat-slab reshape invariant holds on the CONTENT slab
+        # (nDim - band) -- the .where/.when band is per-position overhead, not
+        # part of the reshaped content. Subtract each space_role's band for the slab.
+        from architecture import canonical_shape as _cshape
+        is_dim_e = _effective_out_dim("InputSpace", input_dim)
+        is_n = _effective_out_count("InputSpace", 1)
+        ps_dim_e = _effective_out_dim("PartSpace", is_dim_e)
+        ps_n = _effective_out_count("PartSpace", is_n)
+        cs_dim_e = _effective_out_dim("ConceptualSpace", ps_dim_e)
+        cs_n = _effective_out_count("ConceptualSpace", ps_n)
+        _is_band_shape = tuple(_cshape("InputSpace"))
+        _ps_band_shape = tuple(_cshape("PartSpace"))
+        _cs_band_shape = tuple(_cshape("ConceptualSpace"))
+        is_dim = is_dim_e - sum(_is_band_shape)
+        ps_dim = ps_dim_e - sum(_ps_band_shape)
+        cs_dim = cs_dim_e - sum(_cs_band_shape)
+    
+        is_slab = is_n * is_dim
+        # A concept absorbs the whole percept event (its coordinates too):
+        # with no conceptual band, the percept side of the slab invariant
+        # is the full percept event width, not its band-stripped content.
+        ps_slab = ps_n * (ps_dim if sum(_cs_band_shape) > 0 else ps_dim_e)
+        cs_slab = cs_n * cs_dim
+        # Handoff-consistency (dimensional-governance, 2026-06-06): IS is the
+        # raw input and may be BIGGER than perception -- PS scopes it down via
+        # chunking/embedding ("more input than output"), so the char input is
+        # NOT constrained to the PS/CS content slab. Historically PS->CS then
+        # had to be a pure reshape. The one narrow exception is the canonical
+        # aligned serial-word model: its native PS/WS peers share locations
+        # and width, then each sparse sigma/codebook activation reads the
+        # high-dimensional concept row. Mixing/parallel/legacy paths retain
+        # the flat-slab equality.
+        def _config_true(raw):
+            if isinstance(raw, bool):
+                return raw
+            return str(raw or "").strip().lower() in (
+                "true", "1", "yes", "on")
+    
+        _serial_word_major = (
+            (int(arch.get('conceptLayers', 2)) > 1 or _config_true(arch.get('ltmConsolidation', False)))
+            and _config_true(arch.get("serialObjectMeta", False)))
+        _aligned_serial_word = (
+            _serial_word_major
+            and str(arch.get("conceptBinding", "mixing")).strip().lower()
+            == "aligned")
+        try:
+            _cs_input_dim_raw = int(gsp(
+                cfg, "ConceptualSpace", "nInputDim"))
+        except (KeyError, TypeError, ValueError):
+            _cs_input_dim_raw = 0
+        _cs_input_dim = (
+            _cs_input_dim_raw if _cs_input_dim_raw > 0 else ps_dim_e)
+        try:
+            _cs_input_n_raw = int(gsp(cfg, "ConceptualSpace", "nInput"))
+        except (KeyError, TypeError, ValueError):
+            _cs_input_n_raw = 0
+        _cs_input_n = _cs_input_n_raw if _cs_input_n_raw > 0 else ps_n
+        _ws_band_shape = tuple(_cshape("WholeSpace"))
+        ws_dim_e = _effective_out_dim("WholeSpace", cs_dim_e)
+        ws_n = _effective_out_count("WholeSpace", cs_n)
+        ws_dim = ws_dim_e - sum(_ws_band_shape)
+        _sparse_activation_boundary = (
+            _aligned_serial_word
+            and ps_n == ws_n == cs_n == _cs_input_n
+            and ps_dim_e == ws_dim_e
+            and _ps_band_shape == _ws_band_shape
+            and _cs_input_dim == cs_dim_e
+            and ps_dim == ws_dim
+            and 0 < ps_dim < cs_dim)
+        if (is_embedding_mode and not (ps_slab == cs_slab)
+                and not _sparse_activation_boundary):
+            errors.append(
+                f"flat-slab invariant violated: PS.nOutput*content "
+                f"({ps_n}*{ps_dim}={ps_slab}) must equal CS.nOutput*content "
+                f"({cs_n}*{cs_dim}={cs_slab}), except when aligned "
+                "serialObjectMeta uses equal native PS/WS peers followed by "
+                "sparse sigma/codebook activation. That activation must "
+                "already emit CS-width events. The configured geometry is "
+                f"PS {ps_n}x{ps_dim_e}, WS {ws_n}x{ws_dim_e}, and CS input "
+                f"{_cs_input_n}x{_cs_input_dim} -> output {cs_n}x{cs_dim_e}; "
+                "IS may be larger (PS scopes the input down)."
+            )
+        if is_embedding_mode and _aligned_serial_word:
+            if (ps_n != ws_n or ps_dim_e != ws_dim_e
+                    or _ps_band_shape != _ws_band_shape):
+                errors.append(
+                    "aligned serialObjectMeta requires PS and WS to be "
+                    "independent peers with identical native event geometry; "
+                    f"got PS={ps_n}x{ps_dim_e} with band {_ps_band_shape} and "
+                    f"WS={ws_n}x{ws_dim_e} with band {_ws_band_shape}. The "
+                    "conceptual codebook activation widens both sources only "
+                    "after their native folds; PS must not feed WS.")
+            if (_cs_input_n != cs_n or _cs_input_dim != cs_dim_e):
+                errors.append(
+                    "aligned serialObjectMeta requires ConceptualSpace input "
+                    "to match its conceptual output geometry because source "
+                    "sigma/codebook activation owns the dimension increase; "
+                    f"got CS input={_cs_input_n}x{_cs_input_dim} and output="
+                    f"{cs_n}x{cs_dim_e}.")
+        if is_embedding_mode and _serial_word_major:
+            # The outer word traversal is configured independently by
+            # <serialWordCapacity>.  PS/CS remain the canonical instantaneous
+            # field and STM workspace, so their slot counts stay aligned with
+            # STM capacity rather than expanding to the surface-word cap.
+            try:
+                _stm_cap = int(gsp(cfg, "ConceptualSpace", "stmCapacity"))
+            except (KeyError, TypeError, ValueError):
+                _stm_cap = 8
+            if ps_n != _stm_cap or cs_n != _stm_cap:
+                errors.append(
+                    "serialObjectMeta field/workspace mismatch: "
+                    f"PartSpace.nOutput={ps_n} and "
+                    f"ConceptualSpace.nOutput={cs_n} must both equal "
+                    f"stmCapacity={_stm_cap}. The independent outer sentence "
+                    "limit belongs in <serialWordCapacity>.")
+    
+        # ---- Recurrent WS input and direct CS->OS head (fail-loud) ---
+        # dimensional-governance Task C1 (doc/specs/2026-06-05-dimensional-
+        # governance.md sec.4/sec.6; doc/plans/2026-06-06-dimensional-
+        # governance-completion.md). BasicModel is not a linear
+        # IS->PS->WS->CS->OS chain: PS, WS, and SS are peers feeding CS. Two
+        # explicit shape contracts remain around that peer loop:
+        #
+        #   CS->WS : WS's recurrent INPUT accepts the prior conceptual event.
+        #            WS still emits its native property-width peer state; this
+        #            input compatibility is not a PS->WS dependency.
+        #   CS->OS : the terminal output head consumes terminal CS directly.
+        #            WholeSpace is an upstream property peer and is not an
+        #            intermediate terminal producer.
+        #
+        # An UNSET consumer dim means "inherit the producer's width" (the
+        # resolvers fall back to the producer value), so an omitted
+        # <nInputDim> can never trip these -- only an EXPLICIT mismatching
+        # value RAISES. Gated on embedding mode + non-passthrough to stay
+        # consistent with the flat-slab and nWhat checks (legacy
+        # SimpleModel / numeric / passthrough configs are untouched).
+        def _effective_in_dim(space_name, fallback_dim):
+            """nInputDim if explicitly set (>0), else the chained
+            ``fallback_dim`` (the producer's output width)."""
+            try:
+                raw = gsp(cfg, space_name, "nInputDim")
+                if raw and int(raw) > 0:
+                    return int(raw)
+            except KeyError:
+                pass
+            return int(fallback_dim)
+    
+        def _effective_in_count(space_name, fallback_count):
+            try:
+                raw = gsp(cfg, space_name, "nInput")
+                if raw and int(raw) > 0:
+                    return int(raw)
+            except KeyError:
+                pass
+            return int(fallback_count)
+    
+        if is_embedding_mode:
+            # CS recurrent feedback accepted by WS (event width). cs_dim_e is
+            # CS's effective output event width resolved above.
+            ws_in_dim = _effective_in_dim("WholeSpace", cs_dim_e)
+            if ws_in_dim != cs_dim_e:
+                errors.append(
+                    f"CS->WS recurrent input inconsistent: "
+                    f"WS.nInputDim={ws_in_dim} must equal "
+                    f"CS.nOutputDim={cs_dim_e}. WS may then emit its native "
+                    f"property-width peer state. Fix: set "
+                    f"<WholeSpace><nInputDim> to "
+                    f"{cs_dim_e} (or omit it to inherit CS.nOutputDim)."
+                )
+            # The output head is constructed from terminal CS, not WS. Keep
+            # the direct event geometry exact; a coincidentally equal flattened
+            # product with swapped count/dimension is not the same interface.
+            os_in_dim = _effective_in_dim("OutputSpace", cs_dim_e)
+            os_in_n = _effective_in_count("OutputSpace", cs_n)
+            if os_in_n != cs_n or os_in_dim != cs_dim_e:
+                errors.append(
+                    f"CS->OS handoff inconsistent: terminal CS emits "
+                    f"{cs_n}x{cs_dim_e}, but OutputSpace expects "
+                    f"{os_in_n}x{os_in_dim}. The output head consumes CS "
+                    "directly; WholeSpace is not an intermediate producer."
+                )
+    
+        # Monotonicity ⟹ no ConceptualSpace projection codebook.
+        # ``architecture.monotonic`` makes the subsymbolic loop
+        # order-preserving (W>=0) so the ramsified codebook can match a
+        # symbol mapped across orders via ``Ops.part``. A ConceptualSpace
+        # projection codebook is a basis *expansion* to a wide prototype
+        # space and is not reliably order-preserving, so it breaks that
+        # invariant. Require the projection bypassed when monotonic.
+        if bool(arch.get("monotonic", False)) and Space.normalize_codebook_mode(
+                gsp(cfg, "ConceptualSpace", "codebook")) != "none":
+            errors.append(
+                "architecture.monotonic=True requires "
+                "<ConceptualSpace><codebook>none</codebook>: a basis "
+                "expansion (quantize/project codebook) is not order-"
+                "preserving and breaks the monotone-loop invariant the "
+                "ramsified symbolic match (Ops.part) depends on. Set "
+                "<ConceptualSpace><codebook>none</codebook> or "
+                "<architecture><monotonic>false</monotonic>.")
+    
+        # ---- Respect-explicit endpoint dims (fail-loud) -------------------
+        # Task #11 (architecture-backlog §1, decision (3)). The endpoint space_roles
+        # (InputSpace, OutputSpace) carry author-facing task widths: the input
+        # cardinality and the OUTPUT TARGET cardinality the head must
+        # represent. An EXPLICITLY-set <nDim> on these must be honoured
+        # verbatim by ``_resolve_dim`` -- never silently replaced by the
+        # chained upstream width or a canonical band-derived value. Assert the
+        # resolver returns the explicit value (it does today; this pins the
+        # contract so a future canonical-override regression fails loud here
+        # instead of silently collapsing the head's target cardinality).
+        for _endpoint, _prev in (("InputSpace", 1),
+                                 ("OutputSpace", symbol_dim)):
+            try:
+                _raw = gsp(cfg, _endpoint, "nDim")
+            except KeyError:
+                continue  # omitted -> inherit sentinel, nothing to honour
+            if _raw and int(_raw) > 0:
+                _resolved = _resolve_dim(_endpoint, _prev)
+                if int(_resolved) != int(_raw):
+                    errors.append(
+                        f"{_endpoint} explicit <nDim>={int(_raw)} was "
+                        f"overridden to {int(_resolved)}: endpoint widths are "
+                        f"honoured verbatim (respect-explicit, Task #11). The "
+                        f"config-author-sized {_endpoint} width must not be "
+                        f"silently canonical/chained-overridden.")
+    
+        # Invertible PartSpace shape constraints are registered inside
+        # PartSpace._register_requirements() (not here) to keep them self-contained.
+        percept_inv = gsp(cfg, "PartSpace", "invertible")
+    
+        # Warn only for the legacy naive reverse path. Non-naive inversion
+        # uses the LDU/triangular-solve path and does not use pinv.
+        naive = bool(arch.get("naive", False))
+        if naive and percept_inv:
+            warnings.warn(
+                "PartSpace: architecture.naive=True materializes dense "
+                "inverse weights on the reverse path. This is slower and less "
+                "memory efficient than the non-naive LDU solve path. Consider "
+                "setting <naive>false</naive> unless debugging the dense path.",
+                stacklevel=2)
+    
+        if errors:
+>           raise ValueError(
+                "XML config inconsistencies:\n  - " + "\n  - ".join(errors))
+E           ValueError: XML config inconsistencies:
+E             - flat-slab invariant violated: PS.nOutput*content (6*96=624) must equal CS.nOutput*content (6*232=1392), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 6x104, WS 6x104, and CS input 6x104 -> output 6x232; IS may be larger (PS scopes the input down).
+
+bin/Models.py:24541: ValueError
+_ test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate[MM_grammar] _
+
+configuration = 'MM_grammar'
+
+    @pytest.mark.parametrize('configuration', ['XOR_grammar', 'MM_grammar'])
+    def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate(configuration):
+        from test_mm_xor import _fresh_model
+        from MereologicalCodes import occurrence_memberships
+        from MeaningCodes import identity_code, certificate
+>       model, _, _ = _fresh_model(f'data/{configuration}.xml')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_operators_round4a.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_mm_xor.py:40: in _fresh_model
+    m, cfg = Models.BasicModel.from_config(config_path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6614: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cfg = {'architecture': {'bindingDepth': 3, 'composeTemperature': 0, 'reducePressure': 1.0, 'attentionPromotion': False, ...}...}, 'PartSpace': {'identityByParts': True, 'identityPairDim': 64, 'identityOnes': 3, 'identityLengthDim': 32, ...}, ...}
+
+    @staticmethod
+    def validate_config(cfg):
+        """Check merged config for known inconsistencies and raise on error.
+    
+        Called after defaults have been merged so all keys are present.
+        Uses get_space_param() to read from space-scoped sections.
+        """
+        gsp = ModelFactory.get_space_param
+        arch = cfg.get("architecture", {})
+        errors = []
+        # Clear any requirements left over from a previous validate_config
+        # call (e.g. one that bailed via ``errors`` before reaching
+        # ``TheXMLConfig.validate()``). Otherwise stale ``require()``
+        # closures from one test leak into the next.
+        TheXMLConfig._requirements.clear()
+    
+        # The old ``hasAttention``-vs-``nInputDim``/``flatten`` reshape guard
+        # (and its ``_has_reshape`` helper) was retired together with the
+        # ``QKVAttentionLayer`` enlistment in PartSpace/ConceptualSpace
+        # (plan 2026-06-06-symbolic-heat-retrieval.md §Handoff addendum). It
+        # only protected the constraint that transformer self-attention needs
+        # 3D multi-vector input; ``<attention>`` is now a symbolic-retrieval
+        # mode (not tensor self-attention), so ``hasAttention=True`` together
+        # with a reshape/flatten is no longer an error.
+    
+        # ``<maskedPrediction>`` retired 2026-05-14: within-sentence
+        # training is IR-only and there's no ARIR mode to validate.
+        # ``<reconstruct>`` enum retired (A1: schema + ``reconstructEnum``
+        # removed). C3 (spec sec 7): reconstruction is unconditionally
+        # concepts-seeded in ``runBatch`` -- there is no mode to validate.
+    
+        def _resolve_dim(space_name, prev_dim):
+            try:
+                raw = gsp(cfg, space_name, "nDim")
+            except KeyError:
+                return prev_dim
+            return prev_dim if raw == 0 else raw
+    
+        def _resolve_count(space_name, prev_count):
+            try:
+                raw = gsp(cfg, space_name, "nOutput")
+            except KeyError:
+                return prev_count
+            return prev_count if raw == 0 else raw
+    
+        # Aligned binding uses ConceptualSpace's concept-reference inventory.
+        # WholeSpace.nVectors is an independent upstream property inventory;
+        # live CS/WS slot counts are separate geometry as well.
+        if str(arch.get("conceptBinding", "mixing")).strip().lower() == "aligned":
+            try:
+                _cs_codes = int(gsp(cfg, "ConceptualSpace", "nVectors"))
+                try:
+                    _cs_active = int(gsp(
+                        cfg, "ConceptualSpace", "activeVectors"))
+                except KeyError:
+                    _cs_active = _cs_codes
+                if not (0 < _cs_active <= _cs_codes):
+                    errors.append(
+                        "ConceptualSpace.activeVectors must be positive and "
+                        f"no larger than its nVectors; got active={_cs_active}, "
+                        f"capacity={_cs_codes}")
+            except (KeyError, TypeError, ValueError):
+                errors.append(
+                    "aligned binding requires explicit positive nVectors in "
+                    "ConceptualSpace")
+    
+        from architecture import canonical_shape as _cshape
+        input_dim = _resolve_dim("InputSpace", 1)
+        percept_dim = _resolve_dim("PartSpace", input_dim)
+        concept_dim = _resolve_dim("ConceptualSpace", percept_dim)
+        # 2026-06-06 uniform-band convention: every space_role carries the same
+        # (nWhere, nWhen) band, so nDim = nWhat + band uniformly. An omitted WS
+        # width still inherits for legacy configs; canonical serialObjectMeta
+        # sets the native WS property width explicitly because WS is a peer,
+        # not a downstream copy of CS.
+        symbol_dim = _resolve_dim("WholeSpace", concept_dim)
+    
+        # Bivector / projection configs let ConceptualSpace output a
+        # narrower activation via ``<nOutputDim>``. Compare nWhat-to-nWhat
+        # across CS and WS (subtract each space_role's own band).
+        try:
+            cs_out_dim = int(gsp(cfg, "ConceptualSpace", "nOutputDim"))
+        except KeyError:
+            cs_out_dim = 0
+        _cs_band = sum(_cshape("ConceptualSpace"))
+        _ws_band = sum(_cshape("WholeSpace"))
+        _cs_event = cs_out_dim if cs_out_dim > 0 else concept_dim
+        effective_concept_dim = _cs_event - _cs_band          # CS nWhat
+        symbol_nwhat = symbol_dim - _ws_band                  # WS nWhat
+    
+        # WholeSpace owns no legacy C->S width-changing bridge. Parallel legacy
+        # configurations that treat WS as a pass-through still require equal
+        # widths; the serial peer architecture below does not.
+        #
+        # Skip only the explicit ``passthrough`` bypass mode. The CS->WS
+        # dimensional pass-through (WS owns no Sigma) is real for both the
+        # simple and embedding pipelines -- ``test_symbol_dim_must_match_
+        # concept_dim`` exercises it in default/simple mode -- so this is
+        # NOT gated as narrowly as the embedding-only flat-slab invariant
+        # below. ``passthrough`` carries arbitrary placeholder per-space
+        # <nDim> (e.g. the config-scoping nOutput-reading fixture, all
+        # nDim=1) and intentionally bypasses dimensional validation; the
+        # "6+2+2" band subtraction would otherwise drive its CS content
+        # negative and trip this check spuriously.
+        # dimensional-governance (doc/specs/2026-06-05-dimensional-
+        # governance.md sec.4/sec.6): SERIAL mode treats WS as an independent
+        # native-width property tower whose sparse codebook activation enters
+        # CS at conceptual width. Therefore ``symbol_dim == concept_dim`` is
+        # relaxed for serial configs. Parallel legacy configs (square Pi/Sigma
+        # over the constant slab) still require the pass-through match.
+        _ws_fold_bridged = int(arch.get('conceptLayers',1)) > 1
+        # This remains only a legacy PASS-THROUGH assumption. An explicit
+        # nInputDim != nOutputDim likewise says WS's recurrent input and native
+        # peer output are distinct interfaces, so output-width equality with
+        # CS must not be imposed.
+        def _ws_dim(key, fallback):
+            try:
+                v = int(gsp(cfg, "WholeSpace", key))
+                return v if v > 0 else int(fallback)
+            except (KeyError, TypeError, ValueError):
+                return int(fallback)
+        _ws_reshapes = (_ws_dim("nInputDim", symbol_dim)
+                        != _ws_dim("nOutputDim", symbol_dim))
+        # The data space_role (was architecture-level <modelType>) now lives under
+        # <data> as <dataType> (embedding | numeric). The flat-slab
+        # WS.nWhat==CS.nWhat invariant below is embedding-only: the numeric
+        # (dense-slab) path carries no lexicon, so it may re-dimension across
+        # space_roles (e.g. MNIST IS=784 -> CS=20). Read from the PASSED cfg (this
+        # validator runs on a merged dict that may not be the global config),
+        # canonical <data><dataType> first then an architecture-level dataType
+        # fallback (dict-based test overrides set it there).
+        _data_sec = arch.get("data") if isinstance(arch.get("data"), dict) else {}
+        data_type = str(_data_sec.get("dataType")
+                        or arch.get("dataType") or "numeric").strip().lower()
+        is_embedding_mode = (data_type == "embedding")
+        if (is_embedding_mode
+                and not _ws_fold_bridged and not _ws_reshapes):
+            # A concept is one opaque code the width of the whole WholeSpace
+            # event (its coordinates included): the concept width equals the
+            # WholeSpace event width, not its band-stripped content.
+            TheXMLConfig.require(
+                lambda cfg, _c=effective_concept_dim, _s=symbol_dim: _c == _s,
+                f"WholeSpace requires WS event width == CS width "
+                f"(got CS width={effective_concept_dim}, "
+                f"WS event width={symbol_dim}). Fix: set <WholeSpace><nDim> "
+                f"to match <ConceptualSpace><nOutputDim> if present, else "
+                f"<ConceptualSpace><nDim>."
+            )
+    
+        # ---- Concept-activation boundary ----------------------------
+        # Stage 1.D refactor (doc/plans/2026-05-26-two-loop-pi-sigma-
+        # substrate.md): legacy PS->CS tensor handoffs require equal flat
+        # content slabs (nOutput * content width). The canonical aligned
+        # serial-word architecture has a different boundary: PS, WS, and SS
+        # remain independent peers, and each source's sparse sigma/codebook
+        # activation reads a conceptual-width row before CS. Thus CS receives
+        # conceptual-width events and performs no feature-width conversion.
+        #
+        # Embedding-mode only: the numeric (dense-slab) path doesn't carry a
+        # lexicon, so the "PS per-word is CS-space" rationale doesn't apply --
+        # the slab can re-dimension across space_roles (e.g. MNIST IS=784 pixels,
+        # CS=20 features). The invariant fires only when
+        # ``<data><dataType>embedding`` (``is_embedding_mode``, resolved above).
+    
+        def _effective_out_dim(space_name, fallback_dim):
+            """Return nOutputDim if set, else nDim, else the chained
+            ``fallback_dim`` from the previous space_role."""
+            try:
+                raw = gsp(cfg, space_name, "nOutputDim")
+                if raw and int(raw) > 0:
+                    return int(raw)
+            except KeyError:
+                pass
+            try:
+                raw = gsp(cfg, space_name, "nDim")
+                if raw and int(raw) > 0:
+                    return int(raw)
+            except KeyError:
+                pass
+            return int(fallback_dim)
+    
+        def _effective_out_count(space_name, fallback_count):
+            try:
+                raw = gsp(cfg, space_name, "nOutput")
+                if raw and int(raw) > 0:
+                    return int(raw)
+            except KeyError:
+                pass
+            return int(fallback_count)
+    
+        # "6+2+2": nDim/nOutputDim are EVENT widths; chain on the event width
+        # but the flat-slab reshape invariant holds on the CONTENT slab
+        # (nDim - band) -- the .where/.when band is per-position overhead, not
+        # part of the reshaped content. Subtract each space_role's band for the slab.
+        from architecture import canonical_shape as _cshape
+        is_dim_e = _effective_out_dim("InputSpace", input_dim)
+        is_n = _effective_out_count("InputSpace", 1)
+        ps_dim_e = _effective_out_dim("PartSpace", is_dim_e)
+        ps_n = _effective_out_count("PartSpace", is_n)
+        cs_dim_e = _effective_out_dim("ConceptualSpace", ps_dim_e)
+        cs_n = _effective_out_count("ConceptualSpace", ps_n)
+        _is_band_shape = tuple(_cshape("InputSpace"))
+        _ps_band_shape = tuple(_cshape("PartSpace"))
+        _cs_band_shape = tuple(_cshape("ConceptualSpace"))
+        is_dim = is_dim_e - sum(_is_band_shape)
+        ps_dim = ps_dim_e - sum(_ps_band_shape)
+        cs_dim = cs_dim_e - sum(_cs_band_shape)
+    
+        is_slab = is_n * is_dim
+        # A concept absorbs the whole percept event (its coordinates too):
+        # with no conceptual band, the percept side of the slab invariant
+        # is the full percept event width, not its band-stripped content.
+        ps_slab = ps_n * (ps_dim if sum(_cs_band_shape) > 0 else ps_dim_e)
+        cs_slab = cs_n * cs_dim
+        # Handoff-consistency (dimensional-governance, 2026-06-06): IS is the
+        # raw input and may be BIGGER than perception -- PS scopes it down via
+        # chunking/embedding ("more input than output"), so the char input is
+        # NOT constrained to the PS/CS content slab. Historically PS->CS then
+        # had to be a pure reshape. The one narrow exception is the canonical
+        # aligned serial-word model: its native PS/WS peers share locations
+        # and width, then each sparse sigma/codebook activation reads the
+        # high-dimensional concept row. Mixing/parallel/legacy paths retain
+        # the flat-slab equality.
+        def _config_true(raw):
+            if isinstance(raw, bool):
+                return raw
+            return str(raw or "").strip().lower() in (
+                "true", "1", "yes", "on")
+    
+        _serial_word_major = (
+            (int(arch.get('conceptLayers', 2)) > 1 or _config_true(arch.get('ltmConsolidation', False)))
+            and _config_true(arch.get("serialObjectMeta", False)))
+        _aligned_serial_word = (
+            _serial_word_major
+            and str(arch.get("conceptBinding", "mixing")).strip().lower()
+            == "aligned")
+        try:
+            _cs_input_dim_raw = int(gsp(
+                cfg, "ConceptualSpace", "nInputDim"))
+        except (KeyError, TypeError, ValueError):
+            _cs_input_dim_raw = 0
+        _cs_input_dim = (
+            _cs_input_dim_raw if _cs_input_dim_raw > 0 else ps_dim_e)
+        try:
+            _cs_input_n_raw = int(gsp(cfg, "ConceptualSpace", "nInput"))
+        except (KeyError, TypeError, ValueError):
+            _cs_input_n_raw = 0
+        _cs_input_n = _cs_input_n_raw if _cs_input_n_raw > 0 else ps_n
+        _ws_band_shape = tuple(_cshape("WholeSpace"))
+        ws_dim_e = _effective_out_dim("WholeSpace", cs_dim_e)
+        ws_n = _effective_out_count("WholeSpace", cs_n)
+        ws_dim = ws_dim_e - sum(_ws_band_shape)
+        _sparse_activation_boundary = (
+            _aligned_serial_word
+            and ps_n == ws_n == cs_n == _cs_input_n
+            and ps_dim_e == ws_dim_e
+            and _ps_band_shape == _ws_band_shape
+            and _cs_input_dim == cs_dim_e
+            and ps_dim == ws_dim
+            and 0 < ps_dim < cs_dim)
+        if (is_embedding_mode and not (ps_slab == cs_slab)
+                and not _sparse_activation_boundary):
+            errors.append(
+                f"flat-slab invariant violated: PS.nOutput*content "
+                f"({ps_n}*{ps_dim}={ps_slab}) must equal CS.nOutput*content "
+                f"({cs_n}*{cs_dim}={cs_slab}), except when aligned "
+                "serialObjectMeta uses equal native PS/WS peers followed by "
+                "sparse sigma/codebook activation. That activation must "
+                "already emit CS-width events. The configured geometry is "
+                f"PS {ps_n}x{ps_dim_e}, WS {ws_n}x{ws_dim_e}, and CS input "
+                f"{_cs_input_n}x{_cs_input_dim} -> output {cs_n}x{cs_dim_e}; "
+                "IS may be larger (PS scopes the input down)."
+            )
+        if is_embedding_mode and _aligned_serial_word:
+            if (ps_n != ws_n or ps_dim_e != ws_dim_e
+                    or _ps_band_shape != _ws_band_shape):
+                errors.append(
+                    "aligned serialObjectMeta requires PS and WS to be "
+                    "independent peers with identical native event geometry; "
+                    f"got PS={ps_n}x{ps_dim_e} with band {_ps_band_shape} and "
+                    f"WS={ws_n}x{ws_dim_e} with band {_ws_band_shape}. The "
+                    "conceptual codebook activation widens both sources only "
+                    "after their native folds; PS must not feed WS.")
+            if (_cs_input_n != cs_n or _cs_input_dim != cs_dim_e):
+                errors.append(
+                    "aligned serialObjectMeta requires ConceptualSpace input "
+                    "to match its conceptual output geometry because source "
+                    "sigma/codebook activation owns the dimension increase; "
+                    f"got CS input={_cs_input_n}x{_cs_input_dim} and output="
+                    f"{cs_n}x{cs_dim_e}.")
+        if is_embedding_mode and _serial_word_major:
+            # The outer word traversal is configured independently by
+            # <serialWordCapacity>.  PS/CS remain the canonical instantaneous
+            # field and STM workspace, so their slot counts stay aligned with
+            # STM capacity rather than expanding to the surface-word cap.
+            try:
+                _stm_cap = int(gsp(cfg, "ConceptualSpace", "stmCapacity"))
+            except (KeyError, TypeError, ValueError):
+                _stm_cap = 8
+            if ps_n != _stm_cap or cs_n != _stm_cap:
+                errors.append(
+                    "serialObjectMeta field/workspace mismatch: "
+                    f"PartSpace.nOutput={ps_n} and "
+                    f"ConceptualSpace.nOutput={cs_n} must both equal "
+                    f"stmCapacity={_stm_cap}. The independent outer sentence "
+                    "limit belongs in <serialWordCapacity>.")
+    
+        # ---- Recurrent WS input and direct CS->OS head (fail-loud) ---
+        # dimensional-governance Task C1 (doc/specs/2026-06-05-dimensional-
+        # governance.md sec.4/sec.6; doc/plans/2026-06-06-dimensional-
+        # governance-completion.md). BasicModel is not a linear
+        # IS->PS->WS->CS->OS chain: PS, WS, and SS are peers feeding CS. Two
+        # explicit shape contracts remain around that peer loop:
+        #
+        #   CS->WS : WS's recurrent INPUT accepts the prior conceptual event.
+        #            WS still emits its native property-width peer state; this
+        #            input compatibility is not a PS->WS dependency.
+        #   CS->OS : the terminal output head consumes terminal CS directly.
+        #            WholeSpace is an upstream property peer and is not an
+        #            intermediate terminal producer.
+        #
+        # An UNSET consumer dim means "inherit the producer's width" (the
+        # resolvers fall back to the producer value), so an omitted
+        # <nInputDim> can never trip these -- only an EXPLICIT mismatching
+        # value RAISES. Gated on embedding mode + non-passthrough to stay
+        # consistent with the flat-slab and nWhat checks (legacy
+        # SimpleModel / numeric / passthrough configs are untouched).
+        def _effective_in_dim(space_name, fallback_dim):
+            """nInputDim if explicitly set (>0), else the chained
+            ``fallback_dim`` (the producer's output width)."""
+            try:
+                raw = gsp(cfg, space_name, "nInputDim")
+                if raw and int(raw) > 0:
+                    return int(raw)
+            except KeyError:
+                pass
+            return int(fallback_dim)
+    
+        def _effective_in_count(space_name, fallback_count):
+            try:
+                raw = gsp(cfg, space_name, "nInput")
+                if raw and int(raw) > 0:
+                    return int(raw)
+            except KeyError:
+                pass
+            return int(fallback_count)
+    
+        if is_embedding_mode:
+            # CS recurrent feedback accepted by WS (event width). cs_dim_e is
+            # CS's effective output event width resolved above.
+            ws_in_dim = _effective_in_dim("WholeSpace", cs_dim_e)
+            if ws_in_dim != cs_dim_e:
+                errors.append(
+                    f"CS->WS recurrent input inconsistent: "
+                    f"WS.nInputDim={ws_in_dim} must equal "
+                    f"CS.nOutputDim={cs_dim_e}. WS may then emit its native "
+                    f"property-width peer state. Fix: set "
+                    f"<WholeSpace><nInputDim> to "
+                    f"{cs_dim_e} (or omit it to inherit CS.nOutputDim)."
+                )
+            # The output head is constructed from terminal CS, not WS. Keep
+            # the direct event geometry exact; a coincidentally equal flattened
+            # product with swapped count/dimension is not the same interface.
+            os_in_dim = _effective_in_dim("OutputSpace", cs_dim_e)
+            os_in_n = _effective_in_count("OutputSpace", cs_n)
+            if os_in_n != cs_n or os_in_dim != cs_dim_e:
+                errors.append(
+                    f"CS->OS handoff inconsistent: terminal CS emits "
+                    f"{cs_n}x{cs_dim_e}, but OutputSpace expects "
+                    f"{os_in_n}x{os_in_dim}. The output head consumes CS "
+                    "directly; WholeSpace is not an intermediate producer."
+                )
+    
+        # Monotonicity ⟹ no ConceptualSpace projection codebook.
+        # ``architecture.monotonic`` makes the subsymbolic loop
+        # order-preserving (W>=0) so the ramsified codebook can match a
+        # symbol mapped across orders via ``Ops.part``. A ConceptualSpace
+        # projection codebook is a basis *expansion* to a wide prototype
+        # space and is not reliably order-preserving, so it breaks that
+        # invariant. Require the projection bypassed when monotonic.
+        if bool(arch.get("monotonic", False)) and Space.normalize_codebook_mode(
+                gsp(cfg, "ConceptualSpace", "codebook")) != "none":
+            errors.append(
+                "architecture.monotonic=True requires "
+                "<ConceptualSpace><codebook>none</codebook>: a basis "
+                "expansion (quantize/project codebook) is not order-"
+                "preserving and breaks the monotone-loop invariant the "
+                "ramsified symbolic match (Ops.part) depends on. Set "
+                "<ConceptualSpace><codebook>none</codebook> or "
+                "<architecture><monotonic>false</monotonic>.")
+    
+        # ---- Respect-explicit endpoint dims (fail-loud) -------------------
+        # Task #11 (architecture-backlog §1, decision (3)). The endpoint space_roles
+        # (InputSpace, OutputSpace) carry author-facing task widths: the input
+        # cardinality and the OUTPUT TARGET cardinality the head must
+        # represent. An EXPLICITLY-set <nDim> on these must be honoured
+        # verbatim by ``_resolve_dim`` -- never silently replaced by the
+        # chained upstream width or a canonical band-derived value. Assert the
+        # resolver returns the explicit value (it does today; this pins the
+        # contract so a future canonical-override regression fails loud here
+        # instead of silently collapsing the head's target cardinality).
+        for _endpoint, _prev in (("InputSpace", 1),
+                                 ("OutputSpace", symbol_dim)):
+            try:
+                _raw = gsp(cfg, _endpoint, "nDim")
+            except KeyError:
+                continue  # omitted -> inherit sentinel, nothing to honour
+            if _raw and int(_raw) > 0:
+                _resolved = _resolve_dim(_endpoint, _prev)
+                if int(_resolved) != int(_raw):
+                    errors.append(
+                        f"{_endpoint} explicit <nDim>={int(_raw)} was "
+                        f"overridden to {int(_resolved)}: endpoint widths are "
+                        f"honoured verbatim (respect-explicit, Task #11). The "
+                        f"config-author-sized {_endpoint} width must not be "
+                        f"silently canonical/chained-overridden.")
+    
+        # Invertible PartSpace shape constraints are registered inside
+        # PartSpace._register_requirements() (not here) to keep them self-contained.
+        percept_inv = gsp(cfg, "PartSpace", "invertible")
+    
+        # Warn only for the legacy naive reverse path. Non-naive inversion
+        # uses the LDU/triangular-solve path and does not use pinv.
+        naive = bool(arch.get("naive", False))
+        if naive and percept_inv:
+            warnings.warn(
+                "PartSpace: architecture.naive=True materializes dense "
+                "inverse weights on the reverse path. This is slower and less "
+                "memory efficient than the non-naive LDU solve path. Consider "
+                "setting <naive>false</naive> unless debugging the dense path.",
+                stacklevel=2)
+    
+        if errors:
+>           raise ValueError(
+                "XML config inconsistencies:\n  - " + "\n  - ".join(errors))
+E           ValueError: XML config inconsistencies:
+E             - flat-slab invariant violated: PS.nOutput*content (8*96=832) must equal CS.nOutput*content (8*232=1856), except when aligned serialObjectMeta uses equal native PS/WS peers followed by sparse sigma/codebook activation. That activation must already emit CS-width events. The configured geometry is PS 8x104, WS 8x14, and CS input 8x104 -> output 8x232; IS may be larger (PS scopes the input down).
+
+bin/Models.py:24541: ValueError
+=========================== short test summary info ============================
+FAILED test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate[XOR_grammar]
+FAILED test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate[MM_grammar]
+2 failed, 10 passed in 3.26s

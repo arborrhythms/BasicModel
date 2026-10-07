@@ -1,0 +1,185 @@
+................................................................F....... [ 57%]
+.F...................sF.....F.FFF......F..FF.........                    [100%]
+=================================== FAILURES ===================================
+______ test_query_limits_native_content_reads_and_reports_incompleteness _______
+test/test_query_contract_boundaries.py:31: in test_query_limits_native_content_reads_and_reports_incompleteness
+    assert result['value'][0]['trust'] == pytest.approx(0.2)
+E   assert 0.800000011920929 == 0.2 ± 2.0e-07
+E     
+E     comparison failed
+E     Obtained: 0.800000011920929
+E     Expected: 0.2 ± 2.0e-07
+_______ test_content_query_keeps_all_roles_and_conflicting_fact_sources ________
+test/test_query_executors.py:36: in test_content_query_keeps_all_roles_and_conflicting_fact_sources
+    assert sorted(item['trust'] for item in result['value']) == pytest.approx([-.4, .6])
+E   assert [0.20000001788139343] == approx([-0.4 ....6 ± 6.0e-07])
+E     
+E     Impossible to compare lists with different sizes.
+E     Lengths: 2 and 1
+____ test_checked_executor_is_masked_throughout_each_sentence_path[compose] ____
+test/test_query_phase_permissions.py:96: in test_checked_executor_is_masked_throughout_each_sentence_path
+    call()
+test/test_query_phase_permissions.py:83: in <lambda>
+    call = lambda: model.forward(torch.ones(1, 1, 8))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8331: in forward
+    prepared = getattr(self.inputSpace, '_prepared_source_rows', None)
+                       ^^^^^^^^^^^^^^^
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'inputSpace'
+_______ test_nested_resolution_cannot_override_an_active_sentence_phase ________
+test/test_query_phase_permissions.py:155: in test_nested_resolution_cannot_override_an_active_sentence_phase
+    model.forward(torch.ones(1, 1, 8))
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8331: in forward
+    prepared = getattr(self.inputSpace, '_prepared_source_rows', None)
+                       ^^^^^^^^^^^^^^^
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'inputSpace'
+______ test_legacy_query_entries_are_masked_inside_forward[answer_query] _______
+test/test_query_phase_permissions.py:177: in test_legacy_query_entries_are_masked_inside_forward
+    model.forward(torch.zeros(1, 1, 8))
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8331: in forward
+    prepared = getattr(self.inputSpace, '_prepared_source_rows', None)
+                       ^^^^^^^^^^^^^^^
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'inputSpace'
+______ test_legacy_query_entries_are_masked_inside_forward[reason_about] _______
+test/test_query_phase_permissions.py:177: in test_legacy_query_entries_are_masked_inside_forward
+    model.forward(torch.zeros(1, 1, 8))
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8331: in forward
+    prepared = getattr(self.inputSpace, '_prepared_source_rows', None)
+                       ^^^^^^^^^^^^^^^
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'inputSpace'
+_______ test_legacy_query_entries_are_masked_inside_forward[think_about] _______
+test/test_query_phase_permissions.py:177: in test_legacy_query_entries_are_masked_inside_forward
+    model.forward(torch.zeros(1, 1, 8))
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8331: in forward
+    prepared = getattr(self.inputSpace, '_prepared_source_rows', None)
+                       ^^^^^^^^^^^^^^^
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'inputSpace'
+__________ test_nested_sentence_restores_the_outer_completed_boundary __________
+test/test_query_phase_permissions.py:328: in test_nested_sentence_restores_the_outer_completed_boundary
+    assert model.resolveAnswer(_understanding(True), What.inference(0)) == "complete"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8696: in resolveAnswer
+    return self._resolve_answer(understanding, questions, **({} if score is None else {'score':score}))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_query_phase_permissions.py:322: in resolve
+    model.forward(torch.zeros(1, 1, 8))
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8331: in forward
+    prepared = getattr(self.inputSpace, '_prepared_source_rows', None)
+                       ^^^^^^^^^^^^^^^
+../WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'inputSpace'
+_ test_compiled_input_cannot_execute_queries_during_trace_or_eager_island[False] _
+test/test_query_phase_permissions.py:385: in test_compiled_input_cannot_execute_queries_during_trace_or_eager_island
+    with pytest.raises(Exception, match="queries cannot execute inside a sentence path"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'queries cannot execute inside a sentence path'
+E     Actual message: 'Observed exception\n  Explanation: Dynamo found no exception handler at the top-level compiled function when encountering an exception. Exception will propagate outside the compiled region.\n  Hint: Your code may result in an error when running in eager. Please double check that your code doesn\'t contain a similar error when actually running eager/uncompiled. You can do this by removing the `torch.compile` call, or by using `torch.compiler.set_stance("force_eager")`. \n  Hint: It may be possible to write Dynamo tracing rules for this code. Please report an issue to PyTorch if you encounter this graph break often and it is causing performance issues.\n\n  Developer debug context: raised exception AttributeError("\'BasicModel\' object has no attribute \'inputSpace\'")\n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb0088.html\n\nfrom user code:\n   File "/Users/arogers/github/basicmodel-round4a0/bin/Models.py", line 149, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "/Users/arogers/github/basicmodel-round4a0/bin/Models.py", line 8331, in forward\n    prepared = getattr(self.inputSpace, \'_prepared_source_rows\', None)\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nSet TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you\'re reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"\n'
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+_ test_compiled_input_cannot_execute_queries_during_trace_or_eager_island[True] _
+test/test_query_phase_permissions.py:385: in test_compiled_input_cannot_execute_queries_during_trace_or_eager_island
+    with pytest.raises(Exception, match="queries cannot execute inside a sentence path"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'queries cannot execute inside a sentence path'
+E     Actual message: "'BasicModel' object has no attribute 'inputSpace'"
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:symbolic_convert.py:5342 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:symbolic_convert.py:5342 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+=============================== warnings summary ===============================
+test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_property_configuration.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties
+  /Users/arogers/github/basicmodel-round4a0/bin/Models.py:5039: UserWarning: Shared ConceptualSpace checkpoint migration: selected the stage-0 similarity dictionary as canonical and replaced 21 divergent stage/alias tensor(s).
+    self._canonicalize_shared_concept_checkpoint_state(state, model_state)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_query_contract_boundaries.py::test_query_limits_native_content_reads_and_reports_incompleteness
+FAILED test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources
+FAILED test/test_query_phase_permissions.py::test_checked_executor_is_masked_throughout_each_sentence_path[compose]
+FAILED test/test_query_phase_permissions.py::test_nested_resolution_cannot_override_an_active_sentence_phase
+FAILED test/test_query_phase_permissions.py::test_legacy_query_entries_are_masked_inside_forward[answer_query]
+FAILED test/test_query_phase_permissions.py::test_legacy_query_entries_are_masked_inside_forward[reason_about]
+FAILED test/test_query_phase_permissions.py::test_legacy_query_entries_are_masked_inside_forward[think_about]
+FAILED test/test_query_phase_permissions.py::test_nested_sentence_restores_the_outer_completed_boundary
+FAILED test/test_query_phase_permissions.py::test_compiled_input_cannot_execute_queries_during_trace_or_eager_island[False]
+FAILED test/test_query_phase_permissions.py::test_compiled_input_cannot_execute_queries_during_trace_or_eager_island[True]
+10 failed, 114 passed, 1 skipped, 3 warnings in 8.44s

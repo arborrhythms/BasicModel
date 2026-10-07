@@ -1,0 +1,40 @@
+{
+  "part": "D",
+  "key": "membershipPriming",
+  "value": false,
+  "loads": [
+    {
+      "source": "existing singleton",
+      "actual": false
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/data/model.xml",
+      "actual": false
+    },
+    {
+      "source": "data/XOR_grammar.xml",
+      "actual": false
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/data/model.xml",
+      "actual": false
+    },
+    {
+      "source": "/Users/arogers/github/WikiOracle/basicmodel/data/XOR_grammar.xml",
+      "actual": false
+    }
+  ],
+  "instances": [
+    {
+      "meaning_width": 128,
+      "centroid": true,
+      "membership_priming": false
+    },
+    {
+      "meaning_width": 128,
+      "centroid": true,
+      "membership_priming": false
+    }
+  ],
+  "verified": true
+}
