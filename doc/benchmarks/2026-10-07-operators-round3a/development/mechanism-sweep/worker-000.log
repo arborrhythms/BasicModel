@@ -1,0 +1,262 @@
+........................................................................ [ 56%]
+...........Fs...FFF........FF.................F.........                 [100%]
+=================================== FAILURES ===================================
+_________ test_real_packed_ends_train_before_the_next_sentence[False] __________
+test/test_sentence_compose.py:79: in test_real_packed_ends_train_before_the_next_sentence
+    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
+test/test_compiled_word_chunk.py:409: in _tiny_canonical_model
+    model, _ = Models.BasicModel.from_config(
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6613: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:24469: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - CS->OS handoff inconsistent: terminal CS emits 3x104, but OutputSpace expects 3x16. The output head consumes CS directly; WholeSpace is not an intermediate producer.
+___ test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml] ___
+test/test_grammar_object_leaves.py:41: in test_grammar_resolves_each_word_to_its_full_object_code
+    model(inputs)
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8325: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23485: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17321: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22020: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21573: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20679: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20596: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21280: in stage_cs_lang
+    resolved = FunctionalPeerSTM.resolve_top_reference(
+test/test_grammar_object_leaves.py:34: in observed
+    torch.testing.assert_close(idea[gate], expected, rtol=0, atol=0)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 278 / 416 (66.8%)
+E   Greatest absolute difference: 2.3172237873077393 at index (2, 47)
+E   Greatest relative difference: inf at index (0, 0)
+___ test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml] ____
+test/test_grammar_object_leaves.py:41: in test_grammar_resolves_each_word_to_its_full_object_code
+    model(inputs)
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8325: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23485: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17321: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22020: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21573: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20679: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    exploit = compose(cache, None)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20596: in compose
+    current_lang, current_stm, current_feedback = compose_word(
+bin/Models.py:21280: in stage_cs_lang
+    resolved = FunctionalPeerSTM.resolve_top_reference(
+test/test_grammar_object_leaves.py:34: in observed
+    torch.testing.assert_close(idea[gate], expected, rtol=0, atol=0)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 278 / 416 (66.8%)
+E   Greatest absolute difference: 2.3172237873077393 at index (2, 47)
+E   Greatest relative difference: inf at index (0, 0)
+_______ test_grammar_resolves_each_word_to_its_full_object_code[aligned] _______
+test/test_grammar_object_leaves.py:15: in test_grammar_resolves_each_word_to_its_full_object_code
+    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8')
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_compiled_word_chunk.py:409: in _tiny_canonical_model
+    model, _ = Models.BasicModel.from_config(
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6613: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:24469: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - CS->OS handoff inconsistent: terminal CS emits 8x104, but OutputSpace expects 8x16. The output head consumes CS directly; WholeSpace is not an intermediate producer.
+_______ test_normal_text_reconstruction_updates_the_grammar_chooser[tie] _______
+test/test_grammar_word_learning.py:163: in test_normal_text_reconstruction_updates_the_grammar_chooser
+    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="16", input_width=16)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_compiled_word_chunk.py:409: in _tiny_canonical_model
+    model, _ = Models.BasicModel.from_config(
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6613: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:24469: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - CS->OS handoff inconsistent: terminal CS emits 8x104, but OutputSpace expects 8x16. The output head consumes CS directly; WholeSpace is not an intermediate producer.
+____ test_normal_text_reconstruction_updates_the_grammar_chooser[distinct] _____
+test/test_grammar_word_learning.py:163: in test_normal_text_reconstruction_updates_the_grammar_chooser
+    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="16", input_width=16)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_compiled_word_chunk.py:409: in _tiny_canonical_model
+    model, _ = Models.BasicModel.from_config(
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6613: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:24469: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - CS->OS handoff inconsistent: terminal CS emits 8x104, but OutputSpace expects 8x16. The output head consumes CS directly; WholeSpace is not an intermediate producer.
+__________________ TestPersistence.test_state_dict_roundtrip ___________________
+test/test_ternary_truth_store.py:182: in test_state_dict_roundtrip
+    self.assertIn(k, sd, f"{k} must be in state_dict")
+E   AssertionError: 'trust' not found in OrderedDict({'slots': tensor([[[1., 0., 0., 0.],
+E            [0., 0., 0., 0.],
+E            [0., 0., 0., 0.]],
+E   
+E           [[1., 0., 0., 0.],
+E            [0., 1., 0., 0.],
+E            [0., 0., 1., 0.]],
+E   
+E           [[0., 0., 0., 0.],
+E            [0., 0., 0., 0.],
+E            [0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0.],
+E            [0., 0., 0., 0.],
+E            [0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0.],
+E            [0., 0., 0., 0.],
+E            [0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0.],
+E            [0., 0., 0., 0.],
+E            [0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0.],
+E            [0., 0., 0., 0.],
+E            [0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0.],
+E            [0., 0., 0., 0.],
+E            [0., 0., 0., 0.]]]), 'rel_type': tensor([0, 2, 0, 0, 0, 0, 0, 0]), 'timestamp': tensor([0., 1., 0., 0., 0., 0., 0., 0.]), 'order': tensor([ 0,  0, -1, -1, -1, -1, -1, -1]), 'c_plus': tensor([0.3000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]), 'c_minus': tensor([0.0000, 0.4000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]), 'refs': tensor([[-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1]]), 'row_ids': tensor([-1, -1, -1, -1, -1, -1, -1, -1]), 'where': tensor([[0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.]]), 'when': tensor([[0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.]]), 'truth_schema': tensor(9), 'surprise': tensor([-1., -1., -1., -1., -1., -1., -1., -1.]), 'count': tensor(2), 'origin': tensor([0, 0, 0, 0, 0, 0, 0, 0]), '_next_ts': tensor(2), 'role_mask': tensor([[ True, False, False],
+E           [ True,  True,  True],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False]]), 'record_kind': tensor([1, 1, 0, 0, 0, 0, 0, 0]), 'grammatical_mode': tensor([1, 1, 0, 0, 0, 0, 0, 0]), 'polarity': tensor([True, True, True, True, True, True, True, True]), 'occurrence_id': tensor([ 0,  1, -1, -1, -1, -1, -1, -1]), '_next_occurrence': tensor(2), '_occurrence_namespace': tensor([  6,  28, 214,  17, 251, 192,  67, 188, 140, 209, 242,  27,  59, 222,
+E            51, 245], dtype=torch.uint8), 'metadata_required': tensor([False, False, False, False, False, False, False, False]), 'semantic_fingerprint': tensor([[ 78,   4, 247, 212, 156, 117, 203, 241,  55, 210, 252, 119,  90, 133,
+E              4, 150, 250, 248, 209,  17,  77,  64, 224, 233, 114,  68, 152, 177,
+E            205, 153,  35,  78],
+E           [ 78,   4, 247, 212, 156, 117, 203, 241,  55, 210, 252, 119,  90, 133,
+E              4, 150, 250, 248, 209,  17,  77,  64, 224, 233, 114,  68, 152, 177,
+E            205, 153,  35,  78],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0]], dtype=torch.uint8), 'leaf_complete': tensor([[False,  True,  True],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False]]), 'index_stream': tensor([-1, -1, -1, -1, -1, -1, -1, -1]), 'posting_codes': tensor([], dtype=torch.int64), 'posting_roles': tensor([], dtype=torch.int64), 'posting_rows': tensor([], dtype=torch.int64)}) : trust must be in state_dict
+=============================== warnings summary ===============================
+test/test_operators_round2.py::test_not_handoff_changes_pole_and_meaning_but_never_form
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]
+FAILED test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[XOR_grammar.xml]
+FAILED test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[MM_grammar.xml]
+FAILED test/test_grammar_object_leaves.py::test_grammar_resolves_each_word_to_its_full_object_code[aligned]
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]
+FAILED test/test_ternary_truth_store.py::TestPersistence::test_state_dict_roundtrip
+7 failed, 120 passed, 1 skipped, 1 warning in 10.43s

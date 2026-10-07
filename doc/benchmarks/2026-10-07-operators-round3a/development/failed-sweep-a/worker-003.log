@@ -1,0 +1,129 @@
+........FF.FF........F............FFss.................................. [ 48%]
+..FF...F.....................................ssss.......ssssss.......... [ 97%]
+....                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match[1] _
+test/test_tied_operator_reconstruction.py:56: in test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match
+    ready, atoms, values, valid = BasicModel._snapshot_tables(owner, torch.zeros(1, 1, 2))
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:12345: in _snapshot_tables
+    bank = self._concept_owner().interpret.binding_atoms(bank)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'interpret'
+_ test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match[2] _
+test/test_tied_operator_reconstruction.py:56: in test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match
+    ready, atoms, values, valid = BasicModel._snapshot_tables(owner, torch.zeros(1, 1, 2))
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:12345: in _snapshot_tables
+    bank = self._concept_owner().interpret.binding_atoms(bank)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'interpret'
+_ test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient[False] __
+test/test_tied_operator_reconstruction.py:104: in test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient
+    _, atoms, values, valid = model._snapshot_tables(torch.zeros(1, 1, 2))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:12345: in _snapshot_tables
+    bank = self._concept_owner().interpret.binding_atoms(bank)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:197: in binding_atoms
+    return atoms if identity is None else identity.binding(atoms)
+                                          ^^^^^^^^^^^^^^^^^^^^^^^
+bin/WordIdentity.py:234: in binding
+    projected = atoms[..., :self.width] @ self.projection.to(atoms)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: mat1 and mat2 shapes cannot be multiplied (2x2 and 96x64)
+__ test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient[True] __
+test/test_tied_operator_reconstruction.py:104: in test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient
+    _, atoms, values, valid = model._snapshot_tables(torch.zeros(1, 1, 2))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:12345: in _snapshot_tables
+    bank = self._concept_owner().interpret.binding_atoms(bank)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:197: in binding_atoms
+    return atoms if identity is None else identity.binding(atoms)
+                                          ^^^^^^^^^^^^^^^^^^^^^^^
+bin/WordIdentity.py:234: in binding
+    projected = atoms[..., :self.width] @ self.projection.to(atoms)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: mat1 and mat2 shapes cannot be multiplied (2x2 and 96x64)
+_____ test_snapshot_preserves_backward_after_same_shape_dictionary_update ______
+test/test_tied_operator_reconstruction.py:237: in test_snapshot_preserves_backward_after_same_shape_dictionary_update
+    assert actual.isfinite().all() and actual.abs().sum() > 0
+E   assert (tensor(True) and tensor(0.) > 0)
+E    +  where tensor(True) = <built-in method all of Tensor object at 0x131ba14f0>()
+E    +    where <built-in method all of Tensor object at 0x131ba14f0> = tensor([[[True, True, True, True, True, True, True, True, True, True, True,\n          True, True, True, True, True, Tr...\n          True, True, True, True, True, True, True, True, True, True, True,\n          True, True, True, True, True]]]).all
+E    +      where tensor([[[True, True, True, True, True, True, True, True, True, True, True,\n          True, True, True, True, True, Tr...\n          True, True, True, True, True, True, True, True, True, True, True,\n          True, True, True, True, True]]]) = <built-in method isfinite of Tensor object at 0x131ba0c30>()
+E    +        where <built-in method isfinite of Tensor object at 0x131ba0c30> = tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]).isfinite
+E    +  and   tensor(0.) = <built-in method sum of Tensor object at 0x131ba18b0>()
+E    +    where <built-in method sum of Tensor object at 0x131ba18b0> = tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]).sum
+E    +      where tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]) = <built-in method abs of Tensor object at 0x131ba0c30>()
+E    +        where <built-in method abs of Tensor object at 0x131ba0c30> = tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]).abs
+_____ test_byte_targets_survive_whole_word_and_prefix_promotion[alphabet] ______
+test/test_tied_operator_reconstruction.py:460: in test_byte_targets_survive_whole_word_and_prefix_promotion
+    assert counts[1] < counts[0]
+E   assert 1 < 1
+_______ test_byte_targets_survive_whole_word_and_prefix_promotion[alph] ________
+test/test_tied_operator_reconstruction.py:460: in test_byte_targets_survive_whole_word_and_prefix_promotion
+    assert counts[1] < counts[0]
+E   assert 1 < 1
+________ test_symbolspace_and_grammar_use_conceptual_not_property_width ________
+test/test_wholespace_property_migration.py:231: in test_symbolspace_and_grammar_use_conceptual_not_property_width
+    assert cs.subspace.nWhat == 24 and cs.subspace.muxedSize == 24
+E   assert (112 == 24)
+E    +  where 112 = SubSpace().nWhat
+E    +    where SubSpace() = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...SigmaLayer(\n      (layer): LinearLayer()\n    )\n  )\n  (syntacticLayer): SyntacticLayer(\n    (layers): ModuleList()\n  )\n).subspace
+_______ test_property_model_category_vq_and_parser_context_are_cs_owned ________
+test/test_wholespace_property_migration.py:309: in test_property_model_category_vq_and_parser_context_are_cs_owned
+    assert float(ctx[0, 0, 2]) == 1.0
+E   assert 0.0 == 1.0
+E    +  where 0.0 = float(tensor(0.))
+___________________ test_23_fuse_parts_before_word_admission ___________________
+test/test_word_admission.py:29: in test_23_fuse_parts_before_word_admission
+    assert cs.definitions.word(identity=ps.percept_store.identity.key(ps.percept_store.identity.form(b'love')).hex()) == word
+E   AssertionError: assert None == 1
+E    +  where None = word(identity='004120c8289200c40f000000')
+E    +    where word = <Definitions.DefinitionIndex object at 0x134493200>.word
+E    +      where <Definitions.DefinitionIndex object at 0x134493200> = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n).definitions
+E    +    and   '004120c8289200c40f000000' = <built-in method hex of bytes object at 0x1344d24c0>()
+E    +      where <built-in method hex of bytes object at 0x1344d24c0> = b'\x00A \xc8(\x92\x00\xc4\x0f\x00\x00\x00'.hex
+E    +        where b'\x00A \xc8(\x92\x00\xc4\x0f\x00\x00\x00' = <function WordIdentity.key at 0x11f3bcae0>(tensor([0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 1., 0., 0., 0.,\n        0., 0., 0., 1., 0., 0., 0., 0....., 0.,\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n        0., 0., 0., 0., 0., 0.]))
+E    +          where <function WordIdentity.key at 0x11f3bcae0> = WordIdentity().key
+E    +            where WordIdentity() = RadixLayer(\n  (byte_fallback): BytesFallbackEncoder()\n  (identity): WordIdentity()\n).identity
+E    +              where RadixLayer(\n  (byte_fallback): BytesFallbackEncoder()\n  (identity): WordIdentity()\n) = PartSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook()\n    (wh...ayer()\n  (_percept_store): RadixLayer(\n    (byte_fallback): BytesFallbackEncoder()\n    (identity): WordIdentity()\n  )\n).percept_store
+E    +          and   tensor([0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 1., 0., 0., 0.,\n        0., 0., 0., 1., 0., 0., 0., 0....., 0.,\n        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n        0., 0., 0., 0., 0., 0.]) = form(b'love')
+E    +            where form = WordIdentity().form
+E    +              where WordIdentity() = RadixLayer(\n  (byte_fallback): BytesFallbackEncoder()\n  (identity): WordIdentity()\n).identity
+E    +                where RadixLayer(\n  (byte_fallback): BytesFallbackEncoder()\n  (identity): WordIdentity()\n) = PartSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook()\n    (wh...ayer()\n  (_percept_store): RadixLayer(\n    (byte_fallback): BytesFallbackEncoder()\n    (identity): WordIdentity()\n  )\n).percept_store
+=============================== warnings summary ===============================
+test/test_taxonomy_entry.py::test_public_evaluate_follows_taxonomy_and_retains_record_provenance
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_wholespace_property_migration.py:395: UserWarning: Dropping retired WholeSpace word and META rows; properties retain their a-priori examples (two-truths §11.4).
+    result = migrate_wholespace_checkpoint(checkpoint, live_state)
+
+test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_tied_operator_reconstruction.py::test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match[1]
+FAILED test/test_tied_operator_reconstruction.py::test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match[2]
+FAILED test/test_tied_operator_reconstruction.py::test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient[False]
+FAILED test/test_tied_operator_reconstruction.py::test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient[True]
+FAILED test/test_tied_operator_reconstruction.py::test_snapshot_preserves_backward_after_same_shape_dictionary_update
+FAILED test/test_tied_operator_reconstruction.py::test_byte_targets_survive_whole_word_and_prefix_promotion[alphabet]
+FAILED test/test_tied_operator_reconstruction.py::test_byte_targets_survive_whole_word_and_prefix_promotion[alph]
+FAILED test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width
+FAILED test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned
+FAILED test/test_word_admission.py::test_23_fuse_parts_before_word_admission
+10 failed, 126 passed, 12 skipped, 3 warnings in 70.08s (0:01:10)

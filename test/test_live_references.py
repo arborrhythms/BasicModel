@@ -180,7 +180,9 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         assert int(actions.sum()) == len(entry.leaves)-1
         frame = entry.operation_values[actions][-1]
         torch.testing.assert_close(frame[0], prior, rtol=0, atol=0)
-        torch.testing.assert_close(frame[1], entry.leaves[-1], rtol=0, atol=0)
+        # A fixed projection evaluated as a single word or a bank GEMM can
+        # differ by float32 accumulation order; it retains the same direction.
+        torch.testing.assert_close(frame[1], entry.leaves[-1], rtol=1e-6, atol=2e-7)
         assert entry.operation_refs[actions][-1, 0].item() == cid
         assert clause.refs[0] == cid
         torch.testing.assert_close(clause.point, frame[2], rtol=0, atol=0)

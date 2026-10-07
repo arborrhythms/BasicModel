@@ -1,0 +1,85 @@
+"""Landing-only numerical report from frozen forms and saved trials; no training."""
+import hashlib,json,sys
+from pathlib import Path
+import numpy as np
+import torch
+H=Path(__file__).resolve().parent.parent
+ROOT=H.parents[2]
+sys.path.insert(0,str(ROOT/'bin'))
+from Layers import Ops
+def read(p):return json.loads((H/p).read_text())
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+torch.set_num_threads(1)
+state=torch.random.get_rng_state().clone()
+seed=int.from_bytes(hashlib.sha256(b'word-identity-projection-v1').digest()[:8],'little')
+projection=torch.tensor(np.random.default_rng(seed).normal(size=(96,64))/8,dtype=torch.float32)
+projection_sha=hashlib.sha256(projection.numpy().tobytes()).hexdigest()
+summary=read('measurements/summary.json');aggregate=read('aggregate-audit.json')
+records=[];kernel_roots={};maximum_match=0.
+for gate,agg in zip(summary['xor'],aggregate['xor']['runs'],strict=True):
+    raw=read(gate['run_audit']);end=raw['end']
+    assert end['identity']['projection_sha256']==projection_sha
+    codebook=end['codes'][1]
+    codes={r:torch.tensor(v,dtype=torch.float32) for r,v in zip(codebook['rows'],codebook['values'])}
+    word_rows={}
+    for text,record in zip(end['root_inputs'],raw['final_committed_training_operators']):
+        for word,row in zip(text.split(),record['word_rows']):
+            assert word_rows.setdefault(word,row)==row
+    directions={w:torch.cat((codes[row][:96]@projection,torch.zeros(32),codes[row][96:])) for w,row in word_rows.items()}
+    roots={name:torch.stack([kernel(*[directions[w] for w in text.split()]) for text in end['root_inputs']])
+        for name,kernel in [('conjunction',Ops._conjunction_kernel),('disjunction',Ops._disjunction_kernel)]}
+    actual=torch.tensor(end['roots']['values'])
+    error=float((roots['conjunction']-actual).abs().max());maximum_match=max(maximum_match,error)
+    assert error<3e-7,(gate['run'],error)
+    for name,value in roots.items():
+        if name in kernel_roots:assert torch.equal(kernel_roots[name],value)
+        kernel_roots[name]=value
+    steps={(s['epoch'],s['batch_row']):s for s in raw['compose_score_function_steps']}
+    late={k:[] for k in ('conjunction','disjunction')};relative={k:[] for k in late};advantages=[]
+    for t in raw['sentence_trials']:
+        if not t['training']:continue
+        assert all(p[0]==0. for row in t['components'] for p in row)
+        if t['epoch']<=380:continue
+        for row in range(4):
+            step=steps[t['epoch'],row]
+            if step['walk']!='compose':continue
+            explore=step['action_name'];greedy='conjunction' if explore=='disjunction' else 'disjunction'
+            for trial,name in enumerate((greedy,explore)):
+                late[name].append(t['readers'][trial]['comparison']['mse'][row])
+                relative[name].append(t['components'][row][trial][2])
+            advantages.append(abs(t['advantage'][row]))
+    final=[t for t in raw['sentence_trials'] if t['training']][-1]
+    final_rows=[row for row in range(4) if steps[400,row]['walk']=='compose']
+    final_comparison={}
+    for trial,name in enumerate(('conjunction','disjunction')):
+        final_comparison[name]=dict(rows=len(final_rows),
+            raw_mse=float(np.mean([final['readers'][trial]['comparison']['mse'][row] for row in final_rows])),
+            relative_answer=float(np.mean([final['components'][row][trial][2] for row in final_rows])))
+    records.append(dict(run=gate['run'],final_presented_mse=gate['mse'],
+        conjunction_from_epoch=agg['last_greedy_disjunction_epoch']+1,
+        late_compose_rows=len(advantages),
+        late_comparison_mse={k:float(np.mean(v)) for k,v in late.items()},
+        late_comparison_relative_answer={k:float(np.mean(v)) for k,v in relative.items()},
+        late_mean_absolute_advantage=float(np.mean(advantages)),epoch400_comparison=final_comparison,
+        reconstructed_conjunction_vs_saved_maximum_error=error))
+geometry={}
+labels=np.array([0.,1.,1.,0.])
+for name,roots in kernel_roots.items():
+    values=roots.double().numpy();centered=values-values.mean(0,keepdims=True)
+    sv=np.linalg.svd(centered,compute_uv=False)
+    cutoff=max(centered.shape)*np.finfo(np.float32).eps*sv[0]
+    design=np.column_stack((values,np.ones(4)))
+    weight=np.linalg.pinv(design)@labels
+    geometry[name]=dict(roots=values.tolist(),centered_singular_values=sv.tolist(),
+        float32_rank_cutoff=float(cutoff),centered_rank=int((sv>cutoff).sum()),
+        condition_number_three_nonzero=float(sv[0]/sv[2]),
+        optimal_affine_mse=float(np.mean((design@weight-labels)**2)),
+        minimum_affine_weight_norm=float(np.linalg.norm(weight)))
+assert torch.equal(state,torch.random.get_rng_state())
+result=dict(method='Fixed projection and unchanged kernels on saved float32 forms; float64 SVD after centering the four roots. No optimizer, model construction, or training.',
+    candidate_manifest_sha256=sha(H/'delivered-source/source.json'),projection_sha256=projection_sha,
+    all_ten_final_conjunction_roots_match=True,maximum_match_error=maximum_match,
+    global_torch_rng_unchanged=True,late_window='epochs 381–400, paired compose-departure rows only',
+    geometry=geometry,runs=records,script_sha256=sha(Path(__file__)))
+(H/'landing/root-conditioning.json').write_text(json.dumps(result,indent=2)+'\n')
+print(json.dumps({**{k:{n:v for n,v in g.items() if n!='roots'} for k,g in geometry.items()},'runs':records},indent=2))

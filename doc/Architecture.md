@@ -2617,6 +2617,15 @@ geometry of its own.
 **The form (order 0).** A word's position in perceptual space is the join
 of its parts at full presence: `L = ∨_{p : d_p > 0} c_p`, the coordinate-wise
 max over the part codes whose net evidence `d = relu(e⁺ − e⁻)` is positive.
+The round-3a candidate makes these parts boundary-marked adjacent letter
+pairs and cumulative length atoms. Pair codes have three deterministic bits
+in a 64-coordinate block; length atoms occupy a separate 32-coordinate
+thermometer, exact through length 32. A collision adds each word's own
+positional triple, extending its deterministic bit stream until the forms
+separate, with later positions and then quadruples as the fallback. The
+sparse form is the index key. Binding and pair search use a fixed 96-by-64
+dense projection; the index, containment audit and exact byte read retain
+the sparse form. Byte rows still serve character classes and descent.
 Evidence selects a part; it does not scale it. Certainty is the leaf's
 activation (the projection coefficient `(leaf·c)/(c·c)`), not the code's
 magnitude: full-presence codes replace the earlier unit-length constraint,
@@ -2632,11 +2641,11 @@ genus is its structure (typed parts, arranged), not a location.
 
 **Codes are perception's.** In the conceptual derivation the percept
 prototypes and the 11b evidence are detached: no gradient from the sentence
-path (pair search, byte scorer, answer head) reaches them. Perception's codes
-are trained by perception's reconstruction only. Distinct letter sets then
-give distinct forms by construction; what makes forms far apart is the
-sparsity of the presences (dense codes' joins saturate toward everything,
-cos ≈ .98 at any scale; presences on ~30% of coordinates give ≈ .83).
+path (pair search, byte audit, answer head) reaches them. Identity atoms and
+their dense projection are fixed; only a recorded collision extends a minted
+atom's bit stream. Other percept prototypes retain perception's reconstruction
+owner. Identified words read their exact bytes from the indexed row; their
+rung-zero reconstruction term is an audit, with zero expected error.
 
 **The concept.** An order-0 concept's position in conceptual space is
 context, entirely: the mean of its occurrence rows' roots on the conceptual

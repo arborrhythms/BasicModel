@@ -1,0 +1,40 @@
+{
+  "status": "Accepted by Alec as the round-3a landing; commit, push and parent submodule bump authorized",
+  "date": "2026-10-07",
+  "authority": "Alec\u2019s 2026-10-07 round-3a landing instruction; land the accepted round-2 candidate first if not yet committed.",
+  "candidate_base_commit": "3de37eef500e7e821bed8ec495581641a53bd67a",
+  "candidate_base_manifest_sha256": "3fd07f0cd516da3102867207614e11a9153638d37057bcc82a8c7ff821689106",
+  "runtime_source": "delivered-source/source.json",
+  "runtime_source_manifest_sha256": "84edc57e0ef1c95478a0e17a78a44b23fbafb8bc441031591c5f70bb27d580dc",
+  "runtime_source_unchanged": true,
+  "measurements_repeated": false,
+  "acceptance_document_changes": [
+    {
+      "path": "doc/benchmarks/2026-10-07-operators-round3a/README.md",
+      "at_review_sha256": "a65f9b98c88c341723a90af2e071befdd11be2b68e66e4db7b722ccac478a458",
+      "accepted_sha256": "e6f6eac2c23dc901bdc48ddef5812de74f060b0dd938af5bd6f47630171e962e",
+      "change": "finalize completed gate/per-run/form/storage tables, plan \u00a727 findings, operator cost and singular-value interpretation; acceptance status"
+    }
+  ],
+  "new_acceptance_record": "doc/benchmarks/2026-10-07-operators-round3a/acceptance.json",
+  "packaging_metadata_changes": [
+    {
+      "path": ".gitattributes",
+      "before_sha256": "b8e00d175f79f0ea00cb53c972160c14701a8a45cb5b32e098d02cde7d6749db",
+      "accepted_sha256": "b1500918448088be525f5f6eba0b69dc658eaf242f531a153b48b4047b50594c",
+      "reason": "Git LFS for exact-byte benchmark archives larger than the GitHub blob limit and extracted large data; no receipt byte or source change"
+    }
+  ],
+  "basis": "Plan \u00a729: class 10/10 at-zero band, reconstruction 10/10 with R identically zero, sum 10/10 at quarter, MM_xor 10/10; standing gate exceeded.",
+  "supplemental_landing_reports": {
+    "landing/before.json": "e5a9cd0c15dae116d9da04cf7fb45dda2650e7b1e17214e82950896b448a9228",
+    "landing/root-conditioning.json": "4056020c6cb296577de383c0521d21125cc28075fe7eae2b0c1d86c84553def6",
+    "landing/finalize_receipt.py.txt": "865ef54ccddfb3b64aa10dd211f2f1ba8346c62f2c60ca128f36a1d0102c8455",
+    "landing/temporary-source-cleanup.json": "b545c471a2b15bfd52f13ab3ebee3b8527827b1f75193e2f38df009b3d9d0ffa",
+    "landing/verify_landing.py.txt": "f4ea603ad7e37da4452a4166a88f9eff3a93f7a7018eafc80a1b9b6b1e3b3eaf",
+    "landing/document-updates.json": "7761f492973c41fce78b8536ecb4e1827eb527ebbec98c22129e199c592526b7",
+    "landing/geometry_report.py.txt": "c2236f995d1b494a7f3ace685daca6da20852fb434d9c012909ff757a8e7352d",
+    "landing/stage_round2.py.txt": "cf10cfb9f0c42bd058135eb7498a058470fdae55f84a95cfbbacd776a359e8ed",
+    "landing/archive_temporary_sources.py.txt": "3e2e6dd671f14f29778e07988993c6358d550118cac0bda4499ad7e19320ffff"
+  }
+}

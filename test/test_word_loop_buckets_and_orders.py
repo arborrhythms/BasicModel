@@ -79,13 +79,13 @@ def test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories():
     # PS/WS recurse in native 128-WHAT events. Their sparse codebook
     # activations arrive at CS already decoded to 1024 WHAT; CS performs no
     # feature-width conversion. XML dimensions include the shared 8-D band.
-    assert int(root.findtext("./PartSpace/nDim")) == 136
-    assert int(root.findtext("./PartSpace/nOutputDim")) == 136
-    assert int(root.findtext("./WholeSpace/nDim")) == 136
-    assert int(root.findtext("./WholeSpace/nOutputDim")) == 136
-    assert int(root.findtext("./ConceptualSpace/nInputDim")) == 1032
-    assert int(root.findtext("./ConceptualSpace/nDim")) == 1032
-    assert int(root.findtext("./ConceptualSpace/nOutputDim")) == 1032
+    assert int(root.findtext("./PartSpace/nDim")) == 104
+    assert int(root.findtext("./PartSpace/nOutputDim")) == 104
+    assert int(root.findtext("./WholeSpace/nDim")) == 104
+    assert int(root.findtext("./WholeSpace/nOutputDim")) == 104
+    assert int(root.findtext("./ConceptualSpace/nInputDim")) == 1000
+    assert int(root.findtext("./ConceptualSpace/nDim")) == 1000
+    assert int(root.findtext("./ConceptualSpace/nOutputDim")) == 1000
     assert int(root.findtext("./ConceptualSpace/nOutput")) == 8
     assert int(root.findtext("./WholeSpace/nOutput")) == 8
     assert root.findtext("./architecture/weightsPath") == "BasicModel.ckpt"

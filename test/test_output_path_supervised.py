@@ -136,15 +136,15 @@ def test_output_path_memorizes_supervised_labels_on_the_serial_topology(serial_s
 
 
 _NATIVE_CONCEPT_WIDTHS = [
-    pytest.param(264, id="development"),
-    pytest.param(1032, id="production", marks=pytest.mark.slow),
+    pytest.param(232, id="development"),
+    pytest.param(1000, id="production", marks=pytest.mark.slow),
 ]
 
 
-def _native_answer_model(tmp_path, output_loop, *, concept_width=264):
+def _native_answer_model(tmp_path, output_loop, *, concept_width=232):
     """Distinct concept/percept widths; production width is an explicit slow case."""
     from test_meronomy_ladder import _build_ladder_variant
-    if concept_width <= 136:
+    if concept_width <= 104:
         raise ValueError("native fixture requires concepts wider than percepts")
     src = (_DATA / "MM_ladder.xml").read_text()
     def block(name):
@@ -152,13 +152,16 @@ def _native_answer_model(tmp_path, output_loop, *, concept_width=264):
         end = src.index("</" + name + ">", start) + len(name) + 3
         return src[start:end]
     cs, ws, output = block("ConceptualSpace"), block("WholeSpace"), block("OutputSpace")
+    # The legacy fixture declares a 136-wide native face. Configuration
+    # resolution changes it to 104 while retaining its meaning complement.
+    declared_width = concept_width + 32
     native_cs = cs
     for tag in ("nInputDim", "nDim", "nOutputDim"):
-        native_cs = native_cs.replace(f"<{tag}>136</{tag}>", f"<{tag}>{concept_width}</{tag}>")
+        native_cs = native_cs.replace(f"<{tag}>136</{tag}>", f"<{tag}>{declared_width}</{tag}>")
     native_cs = (native_cs.replace("<nVectors>4096</nVectors>", "<nVectors>256</nVectors>")
                  .replace("<activeVectors>4096</activeVectors>", "<activeVectors>256</activeVectors>"))
-    native_ws = ws.replace("<nInputDim>136</nInputDim>", f"<nInputDim>{concept_width}</nInputDim>")
-    native_output = output.replace("<nInputDim>136</nInputDim>", f"<nInputDim>{concept_width}</nInputDim>")
+    native_ws = ws.replace("<nInputDim>136</nInputDim>", f"<nInputDim>{declared_width}</nInputDim>")
+    native_output = output.replace("<nInputDim>136</nInputDim>", f"<nInputDim>{declared_width}</nInputDim>")
     replacements = [(cs, native_cs), (ws, native_ws), (output, native_output)]
     if output_loop:
         replacements.append(("<training>", "<training>\n      <outputInLoop>true</outputInLoop>"))
@@ -167,7 +170,7 @@ def _native_answer_model(tmp_path, output_loop, *, concept_width=264):
     m._chart_compose_per_word = lambda: None
     m.synthesis_bindings = 0  # named percepts must not hide a dead answer operand
     assert m.answer_synthesis and m.output_in_loop is output_loop
-    assert m.wholeSpace.subspace.muxedSize == 136
+    assert m.wholeSpace.subspace.muxedSize == 104
     assert m.conceptualSpace.stm.concept_dim == concept_width
     return m
 
@@ -470,12 +473,12 @@ def test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer(tmp_path,
         with torch.no_grad():
             u = _capture_program_probe(m, ["1 plus 2", "3 plus 4"])
             base = torch.stack([field.end_state for field in u.sentence_states])
-            module = m._ltm_attention(concept_width, 136, device=base.device, dtype=base.dtype)
+            module = m._ltm_attention(concept_width, 104, device=base.device, dtype=base.dtype)
             module["value"].weight.fill_(0.003)
             module["out"].weight.copy_(torch.eye(concept_width) * 0.1)
-            response = torch.linspace(0.1, 0.3, 136)
+            response = torch.linspace(0.1, 0.3, 104)
             for b in range(2):
-                memory.append_what_slot(LTMSlot(input=torch.zeros(136), output=response), b=b)
+                memory.append_what_slot(LTMSlot(input=torch.zeros(104), output=response), b=b)
             deltas = torch.stack([m._attend_ltm(base[b, 0], [response]) for b in range(2)])
             assert bool(deltas.abs().sum() > 0)
             d = m._resolve_answer(u, questions)
@@ -496,8 +499,8 @@ def test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer(tmp_path,
             torch.testing.assert_close(query[0, 0], expected)
             # Later state changes cannot revise the resolved thinking result.
             _capture_program_probe(m, ["5 plus 6", "7 plus 8"])
-            memory.append_what_slot(LTMSlot(input=torch.ones(136),
-                                           output=torch.full((136,), 8.0)), b=0)
+            memory.append_what_slot(LTMSlot(input=torch.ones(104),
+                                           output=torch.full((104,), 8.0)), b=0)
             again = m._materialize_answer_idea(u, d, questions)[0]
             torch.testing.assert_close(again, idea, rtol=0, atol=0)
     finally:

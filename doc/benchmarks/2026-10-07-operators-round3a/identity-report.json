@@ -1,0 +1,1390 @@
+{
+  "configurations": [
+    {
+      "configuration": "XOR_grammar.xml",
+      "words": 4,
+      "before": 0,
+      "after": 0,
+      "native_comparable_pairs": 0,
+      "native_containment_vacuous": true,
+      "violations": 0,
+      "byte_errors": 0,
+      "mints": [],
+      "projection_sha256": "1119d9d4f413fc861da7f5ecc5de78110a888c1aeaae8fdc9f60b3e0747d65fe",
+      "witness_order": [
+        {
+          "words": [
+            "bana",
+            "banana"
+          ],
+          "parts": true,
+          "form": true
+        },
+        {
+          "words": [
+            "cat",
+            "concat"
+          ],
+          "parts": true,
+          "form": true
+        },
+        {
+          "words": [
+            "aba",
+            "ababa"
+          ],
+          "parts": true,
+          "form": true
+        }
+      ],
+      "not_comparable": [
+        {
+          "words": [
+            "an",
+            "and"
+          ],
+          "parts": false,
+          "missing_atom": "n#"
+        },
+        {
+          "words": [
+            "an",
+            "ant"
+          ],
+          "parts": false,
+          "missing_atom": "n#"
+        }
+      ],
+      "witness_mints": [
+        {
+          "words": [
+            "calaba",
+            "cabala"
+          ],
+          "atoms": [
+            "cal@1",
+            "cab@1"
+          ],
+          "bit_counts": [
+            3,
+            3
+          ],
+          "size": 3,
+          "position": 1
+        }
+      ],
+      "lengths_1_through_32": [
+        {
+          "length": 1,
+          "exact": true
+        },
+        {
+          "length": 2,
+          "exact": true
+        },
+        {
+          "length": 3,
+          "exact": true
+        },
+        {
+          "length": 4,
+          "exact": true
+        },
+        {
+          "length": 5,
+          "exact": true
+        },
+        {
+          "length": 6,
+          "exact": true
+        },
+        {
+          "length": 7,
+          "exact": true
+        },
+        {
+          "length": 8,
+          "exact": true
+        },
+        {
+          "length": 9,
+          "exact": true
+        },
+        {
+          "length": 10,
+          "exact": true
+        },
+        {
+          "length": 11,
+          "exact": true
+        },
+        {
+          "length": 12,
+          "exact": true
+        },
+        {
+          "length": 13,
+          "exact": true
+        },
+        {
+          "length": 14,
+          "exact": true
+        },
+        {
+          "length": 15,
+          "exact": true
+        },
+        {
+          "length": 16,
+          "exact": true
+        },
+        {
+          "length": 17,
+          "exact": true
+        },
+        {
+          "length": 18,
+          "exact": true
+        },
+        {
+          "length": 19,
+          "exact": true
+        },
+        {
+          "length": 20,
+          "exact": true
+        },
+        {
+          "length": 21,
+          "exact": true
+        },
+        {
+          "length": 22,
+          "exact": true
+        },
+        {
+          "length": 23,
+          "exact": true
+        },
+        {
+          "length": 24,
+          "exact": true
+        },
+        {
+          "length": 25,
+          "exact": true
+        },
+        {
+          "length": 26,
+          "exact": true
+        },
+        {
+          "length": 27,
+          "exact": true
+        },
+        {
+          "length": 28,
+          "exact": true
+        },
+        {
+          "length": 29,
+          "exact": true
+        },
+        {
+          "length": 30,
+          "exact": true
+        },
+        {
+          "length": 31,
+          "exact": true
+        },
+        {
+          "length": 32,
+          "exact": true
+        }
+      ],
+      "native_rows": 33,
+      "fits_declared_part_capacity": null
+    },
+    {
+      "configuration": "MM_grammar.xml",
+      "words": 4,
+      "before": 0,
+      "after": 0,
+      "native_comparable_pairs": 0,
+      "native_containment_vacuous": true,
+      "violations": 0,
+      "byte_errors": 0,
+      "mints": [],
+      "projection_sha256": "1119d9d4f413fc861da7f5ecc5de78110a888c1aeaae8fdc9f60b3e0747d65fe",
+      "witness_order": [
+        {
+          "words": [
+            "bana",
+            "banana"
+          ],
+          "parts": true,
+          "form": true
+        },
+        {
+          "words": [
+            "cat",
+            "concat"
+          ],
+          "parts": true,
+          "form": true
+        },
+        {
+          "words": [
+            "aba",
+            "ababa"
+          ],
+          "parts": true,
+          "form": true
+        }
+      ],
+      "not_comparable": [
+        {
+          "words": [
+            "an",
+            "and"
+          ],
+          "parts": false,
+          "missing_atom": "n#"
+        },
+        {
+          "words": [
+            "an",
+            "ant"
+          ],
+          "parts": false,
+          "missing_atom": "n#"
+        }
+      ],
+      "witness_mints": [
+        {
+          "words": [
+            "calaba",
+            "cabala"
+          ],
+          "atoms": [
+            "cal@1",
+            "cab@1"
+          ],
+          "bit_counts": [
+            3,
+            3
+          ],
+          "size": 3,
+          "position": 1
+        }
+      ],
+      "lengths_1_through_32": [
+        {
+          "length": 1,
+          "exact": true
+        },
+        {
+          "length": 2,
+          "exact": true
+        },
+        {
+          "length": 3,
+          "exact": true
+        },
+        {
+          "length": 4,
+          "exact": true
+        },
+        {
+          "length": 5,
+          "exact": true
+        },
+        {
+          "length": 6,
+          "exact": true
+        },
+        {
+          "length": 7,
+          "exact": true
+        },
+        {
+          "length": 8,
+          "exact": true
+        },
+        {
+          "length": 9,
+          "exact": true
+        },
+        {
+          "length": 10,
+          "exact": true
+        },
+        {
+          "length": 11,
+          "exact": true
+        },
+        {
+          "length": 12,
+          "exact": true
+        },
+        {
+          "length": 13,
+          "exact": true
+        },
+        {
+          "length": 14,
+          "exact": true
+        },
+        {
+          "length": 15,
+          "exact": true
+        },
+        {
+          "length": 16,
+          "exact": true
+        },
+        {
+          "length": 17,
+          "exact": true
+        },
+        {
+          "length": 18,
+          "exact": true
+        },
+        {
+          "length": 19,
+          "exact": true
+        },
+        {
+          "length": 20,
+          "exact": true
+        },
+        {
+          "length": 21,
+          "exact": true
+        },
+        {
+          "length": 22,
+          "exact": true
+        },
+        {
+          "length": 23,
+          "exact": true
+        },
+        {
+          "length": 24,
+          "exact": true
+        },
+        {
+          "length": 25,
+          "exact": true
+        },
+        {
+          "length": 26,
+          "exact": true
+        },
+        {
+          "length": 27,
+          "exact": true
+        },
+        {
+          "length": 28,
+          "exact": true
+        },
+        {
+          "length": 29,
+          "exact": true
+        },
+        {
+          "length": 30,
+          "exact": true
+        },
+        {
+          "length": 31,
+          "exact": true
+        },
+        {
+          "length": 32,
+          "exact": true
+        }
+      ],
+      "native_rows": 33,
+      "fits_declared_part_capacity": null
+    },
+    {
+      "configuration": "BasicModel.xml",
+      "words": 67391,
+      "before": 2,
+      "after": 0,
+      "native_comparable_pairs": 18309,
+      "native_containment_vacuous": false,
+      "violations": 0,
+      "byte_errors": 0,
+      "mints": [
+        {
+          "words": [
+            "SPSS",
+            "SSPS"
+          ],
+          "atoms": [
+            "#SP@0",
+            "#SS@0"
+          ],
+          "bit_counts": [
+            3,
+            3
+          ],
+          "size": 3,
+          "position": 0
+        },
+        {
+          "words": [
+            "enteriditis",
+            "enteritidis"
+          ],
+          "atoms": [
+            "rid@5",
+            "rit@5"
+          ],
+          "bit_counts": [
+            3,
+            3
+          ],
+          "size": 3,
+          "position": 5
+        }
+      ],
+      "projection_sha256": "1119d9d4f413fc861da7f5ecc5de78110a888c1aeaae8fdc9f60b3e0747d65fe",
+      "witness_order": [
+        {
+          "words": [
+            "bana",
+            "banana"
+          ],
+          "parts": true,
+          "form": true
+        },
+        {
+          "words": [
+            "cat",
+            "concat"
+          ],
+          "parts": true,
+          "form": true
+        },
+        {
+          "words": [
+            "aba",
+            "ababa"
+          ],
+          "parts": true,
+          "form": true
+        }
+      ],
+      "not_comparable": [
+        {
+          "words": [
+            "an",
+            "and"
+          ],
+          "parts": false,
+          "missing_atom": "n#"
+        },
+        {
+          "words": [
+            "an",
+            "ant"
+          ],
+          "parts": false,
+          "missing_atom": "n#"
+        }
+      ],
+      "witness_mints": [
+        {
+          "words": [
+            "calaba",
+            "cabala"
+          ],
+          "atoms": [
+            "cal@1",
+            "cab@1"
+          ],
+          "bit_counts": [
+            3,
+            3
+          ],
+          "size": 3,
+          "position": 1
+        }
+      ],
+      "lengths_1_through_32": [
+        {
+          "length": 1,
+          "exact": true
+        },
+        {
+          "length": 2,
+          "exact": true
+        },
+        {
+          "length": 3,
+          "exact": true
+        },
+        {
+          "length": 4,
+          "exact": true
+        },
+        {
+          "length": 5,
+          "exact": true
+        },
+        {
+          "length": 6,
+          "exact": true
+        },
+        {
+          "length": 7,
+          "exact": true
+        },
+        {
+          "length": 8,
+          "exact": true
+        },
+        {
+          "length": 9,
+          "exact": true
+        },
+        {
+          "length": 10,
+          "exact": true
+        },
+        {
+          "length": 11,
+          "exact": true
+        },
+        {
+          "length": 12,
+          "exact": true
+        },
+        {
+          "length": 13,
+          "exact": true
+        },
+        {
+          "length": 14,
+          "exact": true
+        },
+        {
+          "length": 15,
+          "exact": true
+        },
+        {
+          "length": 16,
+          "exact": true
+        },
+        {
+          "length": 17,
+          "exact": true
+        },
+        {
+          "length": 18,
+          "exact": true
+        },
+        {
+          "length": 19,
+          "exact": true
+        },
+        {
+          "length": 20,
+          "exact": true
+        },
+        {
+          "length": 21,
+          "exact": true
+        },
+        {
+          "length": 22,
+          "exact": true
+        },
+        {
+          "length": 23,
+          "exact": true
+        },
+        {
+          "length": 24,
+          "exact": true
+        },
+        {
+          "length": 25,
+          "exact": true
+        },
+        {
+          "length": 26,
+          "exact": true
+        },
+        {
+          "length": 27,
+          "exact": true
+        },
+        {
+          "length": 28,
+          "exact": true
+        },
+        {
+          "length": 29,
+          "exact": true
+        },
+        {
+          "length": 30,
+          "exact": true
+        },
+        {
+          "length": 31,
+          "exact": true
+        },
+        {
+          "length": 32,
+          "exact": true
+        }
+      ],
+      "native_rows": 69566,
+      "fits_declared_part_capacity": false
+    }
+  ],
+  "dictionary_stress": {
+    "words": 19986,
+    "before": 1,
+    "after": 0,
+    "mints": [
+      {
+        "words": [
+          "calaba",
+          "cabala"
+        ],
+        "atoms": [
+          "cal@1",
+          "cab@1"
+        ],
+        "bit_counts": [
+          3,
+          3
+        ],
+        "size": 3,
+        "position": 1
+      }
+    ]
+  },
+  "xor": [
+    {
+      "run": 1,
+      "mse": 4.392483589299445e-06,
+      "class_pass": true,
+      "start_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.4487808006652982e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.8431149567785847e-31,
+          "minimum_linear_weight_norm": 1.5838637813250196
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 6.983903460834214e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.8600059674150452e-31,
+          "minimum_linear_weight_norm": 1.5838636365055512
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.5628142851244434e-30,
+          "linear_rank": 4,
+          "optimal_linear_mse": 3.8518598887744717e-31,
+          "minimum_linear_weight_norm": 0.7421303893064932
+        }
+      },
+      "end_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.2402988841853799e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.3737387491126492e-31,
+          "minimum_linear_weight_norm": 2.1654867127604565
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 3.1065250002966114e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 8.22088086818191e-32,
+          "minimum_linear_weight_norm": 2.165486613405173
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 4.5487952168584884e-30,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.367641372108264e-29,
+          "minimum_linear_weight_norm": 1.4204295047795126
+        }
+      },
+      "rung0": {
+        "trials": 801,
+        "identified_reads": 12800,
+        "errors": 0
+      },
+      "final_operators": [
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ]
+      ],
+      "diagnosis": "passes"
+    },
+    {
+      "run": 2,
+      "mse": 0.02072011719737432,
+      "class_pass": true,
+      "start_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 2.1960416190875457e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.615894346963963e-31,
+          "minimum_linear_weight_norm": 3.3845139720301565
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 5.859641855798165e-32,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.1728913361318266e-31,
+          "minimum_linear_weight_norm": 3.3845138249752864
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 8.438991089618228e-29,
+          "linear_rank": 4,
+          "optimal_linear_mse": 6.807931241815552e-29,
+          "minimum_linear_weight_norm": 0.8722208278265572
+        }
+      },
+      "end_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.2402988841853799e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.3737387491126492e-31,
+          "minimum_linear_weight_norm": 2.1654867127604565
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 3.1065250002966114e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 8.22088086818191e-32,
+          "minimum_linear_weight_norm": 2.165486613405173
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 4.5487952168584884e-30,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.367641372108264e-29,
+          "minimum_linear_weight_norm": 1.4204295047795126
+        }
+      },
+      "rung0": {
+        "trials": 801,
+        "identified_reads": 12800,
+        "errors": 0
+      },
+      "final_operators": [
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ]
+      ],
+      "diagnosis": "passes"
+    },
+    {
+      "run": 3,
+      "mse": 0.016024757500976428,
+      "class_pass": true,
+      "start_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.7404243721438573e-29,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.6794109115056697e-30,
+          "minimum_linear_weight_norm": 29.693212520022236
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.188221738489149e-29,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.514494135391975e-30,
+          "minimum_linear_weight_norm": 29.69321264432193
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 8.323869219641633e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 4.417621069237666e-29,
+          "minimum_linear_weight_norm": 11.81945842040727
+        }
+      },
+      "end_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.2402988841853799e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.3737387491126492e-31,
+          "minimum_linear_weight_norm": 2.1654867127604565
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 3.1065250002966114e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 8.22088086818191e-32,
+          "minimum_linear_weight_norm": 2.165486613405173
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 4.5487952168584884e-30,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.367641372108264e-29,
+          "minimum_linear_weight_norm": 1.4204295047795126
+        }
+      },
+      "rung0": {
+        "trials": 801,
+        "identified_reads": 12800,
+        "errors": 0
+      },
+      "final_operators": [
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ]
+      ],
+      "diagnosis": "passes"
+    },
+    {
+      "run": 4,
+      "mse": 7.507328092515309e-13,
+      "class_pass": true,
+      "start_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 2.697505628357372e-32,
+          "linear_rank": 4,
+          "optimal_linear_mse": 5.315566646508771e-32,
+          "minimum_linear_weight_norm": 2.140220133098763
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.8200037974459379e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 9.629649721936179e-32,
+          "minimum_linear_weight_norm": 2.140219953817744
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 3.276161060261516e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.4546548869956792e-30,
+          "minimum_linear_weight_norm": 1.130272947880117
+        }
+      },
+      "end_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.2402988841853799e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.3737387491126492e-31,
+          "minimum_linear_weight_norm": 2.1654867127604565
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 3.1065250002966114e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 8.22088086818191e-32,
+          "minimum_linear_weight_norm": 2.165486613405173
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 4.5487952168584884e-30,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.367641372108264e-29,
+          "minimum_linear_weight_norm": 1.4204295047795126
+        }
+      },
+      "rung0": {
+        "trials": 801,
+        "identified_reads": 12800,
+        "errors": 0
+      },
+      "final_operators": [
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ]
+      ],
+      "diagnosis": "passes"
+    },
+    {
+      "run": 5,
+      "mse": 8.260059303211165e-14,
+      "class_pass": true,
+      "start_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.7404243721438573e-29,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.6794109115056697e-30,
+          "minimum_linear_weight_norm": 29.693212520022236
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.188221738489149e-29,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.514494135391975e-30,
+          "minimum_linear_weight_norm": 29.69321264432193
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 8.323869219641633e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 4.417621069237666e-29,
+          "minimum_linear_weight_norm": 11.81945842040727
+        }
+      },
+      "end_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.2402988841853799e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.3737387491126492e-31,
+          "minimum_linear_weight_norm": 2.1654867127604565
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 3.1065250002966114e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 8.22088086818191e-32,
+          "minimum_linear_weight_norm": 2.165486613405173
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 4.5487952168584884e-30,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.367641372108264e-29,
+          "minimum_linear_weight_norm": 1.4204295047795126
+        }
+      },
+      "rung0": {
+        "trials": 801,
+        "identified_reads": 12800,
+        "errors": 0
+      },
+      "final_operators": [
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ]
+      ],
+      "diagnosis": "passes"
+    },
+    {
+      "run": 6,
+      "mse": 3.649935653271541e-06,
+      "class_pass": true,
+      "start_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 8.088905766426391e-32,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.0723006201606658e-31,
+          "minimum_linear_weight_norm": 3.011880807337572
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.8797076257219422e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 3.4666738998970245e-32,
+          "minimum_linear_weight_norm": 3.0118806841158983
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.0035722423411495e-30,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.7009813268828067e-30,
+          "minimum_linear_weight_norm": 0.9899317954210812
+        }
+      },
+      "end_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.2402988841853799e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.3737387491126492e-31,
+          "minimum_linear_weight_norm": 2.1654867127604565
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 3.1065250002966114e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 8.22088086818191e-32,
+          "minimum_linear_weight_norm": 2.165486613405173
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 4.5487952168584884e-30,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.367641372108264e-29,
+          "minimum_linear_weight_norm": 1.4204295047795126
+        }
+      },
+      "rung0": {
+        "trials": 801,
+        "identified_reads": 12800,
+        "errors": 0
+      },
+      "final_operators": [
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ]
+      ],
+      "diagnosis": "passes"
+    },
+    {
+      "run": 7,
+      "mse": 4.332534331297211e-12,
+      "class_pass": true,
+      "start_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.7404243721438573e-29,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.6794109115056697e-30,
+          "minimum_linear_weight_norm": 29.693212520022236
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.188221738489149e-29,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.514494135391975e-30,
+          "minimum_linear_weight_norm": 29.69321264432193
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 8.323869219641633e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 4.417621069237666e-29,
+          "minimum_linear_weight_norm": 11.81945842040727
+        }
+      },
+      "end_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.2402988841853799e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.3737387491126492e-31,
+          "minimum_linear_weight_norm": 2.1654867127604565
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 3.1065250002966114e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 8.22088086818191e-32,
+          "minimum_linear_weight_norm": 2.165486613405173
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 4.5487952168584884e-30,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.367641372108264e-29,
+          "minimum_linear_weight_norm": 1.4204295047795126
+        }
+      },
+      "rung0": {
+        "trials": 801,
+        "identified_reads": 12800,
+        "errors": 0
+      },
+      "final_operators": [
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ]
+      ],
+      "diagnosis": "passes"
+    },
+    {
+      "run": 8,
+      "mse": 2.0250467969162855e-13,
+      "class_pass": true,
+      "start_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.7404243721438573e-29,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.6794109115056697e-30,
+          "minimum_linear_weight_norm": 29.693212520022236
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.188221738489149e-29,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.514494135391975e-30,
+          "minimum_linear_weight_norm": 29.69321264432193
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 8.323869219641633e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 4.417621069237666e-29,
+          "minimum_linear_weight_norm": 11.81945842040727
+        }
+      },
+      "end_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.2402988841853799e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.3737387491126492e-31,
+          "minimum_linear_weight_norm": 2.1654867127604565
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 3.1065250002966114e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 8.22088086818191e-32,
+          "minimum_linear_weight_norm": 2.165486613405173
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 4.5487952168584884e-30,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.367641372108264e-29,
+          "minimum_linear_weight_norm": 1.4204295047795126
+        }
+      },
+      "rung0": {
+        "trials": 801,
+        "identified_reads": 12800,
+        "errors": 0
+      },
+      "final_operators": [
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ]
+      ],
+      "diagnosis": "passes"
+    },
+    {
+      "run": 9,
+      "mse": 0.0037083533230406474,
+      "class_pass": true,
+      "start_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 3.5846371089907427e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 6.745870556770104e-32,
+          "minimum_linear_weight_norm": 2.3874978776620948
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.144483869452115e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.704568371404228e-31,
+          "minimum_linear_weight_norm": 2.38749766868477
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 8.386871202947401e-30,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.4338163249974093e-29,
+          "minimum_linear_weight_norm": 0.9050326830301572
+        }
+      },
+      "end_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.2402988841853799e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.3737387491126492e-31,
+          "minimum_linear_weight_norm": 2.1654867127604565
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 3.1065250002966114e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 8.22088086818191e-32,
+          "minimum_linear_weight_norm": 2.165486613405173
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 4.5487952168584884e-30,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.367641372108264e-29,
+          "minimum_linear_weight_norm": 1.4204295047795126
+        }
+      },
+      "rung0": {
+        "trials": 801,
+        "identified_reads": 12800,
+        "errors": 0
+      },
+      "final_operators": [
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ]
+      ],
+      "diagnosis": "passes"
+    },
+    {
+      "run": 10,
+      "mse": 8.759345533349006e-07,
+      "class_pass": true,
+      "start_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.2402988841853799e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.3737387491126492e-31,
+          "minimum_linear_weight_norm": 2.1654867127604565
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 3.1065250002966114e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 8.22088086818191e-32,
+          "minimum_linear_weight_norm": 2.165486613405173
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 5.80587004221415e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.0477058897466563e-30,
+          "minimum_linear_weight_norm": 1.4213637219487028
+        }
+      },
+      "end_fit": {
+        "roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 1.2402988841853799e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 2.3737387491126492e-31,
+          "minimum_linear_weight_norm": 2.1654867127604565
+        },
+        "unit_roots": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 3.1065250002966114e-31,
+          "linear_rank": 4,
+          "optimal_linear_mse": 8.22088086818191e-32,
+          "minimum_linear_weight_norm": 2.165486613405173
+        },
+        "reader_features": {
+          "affine_rank": 4,
+          "optimal_affine_mse": 4.5487952168584884e-30,
+          "linear_rank": 4,
+          "optimal_linear_mse": 1.367641372108264e-29,
+          "minimum_linear_weight_norm": 1.4204295047795126
+        }
+      },
+      "rung0": {
+        "trials": 801,
+        "identified_reads": 12800,
+        "errors": 0
+      },
+      "final_operators": [
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ]
+      ],
+      "diagnosis": "passes"
+    }
+  ]
+}

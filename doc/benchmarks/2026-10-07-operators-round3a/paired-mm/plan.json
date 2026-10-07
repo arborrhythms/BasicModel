@@ -1,0 +1,14 @@
+{
+  "landing": "accepted frozen round 2e",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "epochs": 200,
+  "stopping": "all 200 epochs, including after threshold",
+  "retries": 0,
+  "separate_from_gate_trainings": true,
+  "landing_archive_sha256": "822b49c8b966394af66846a60d850ada329f11175cd7c3570fedf31c8ae3e092",
+  "candidate_source_manifest_sha256": "84edc57e0ef1c95478a0e17a78a44b23fbafb8bc441031591c5f70bb27d580dc"
+}

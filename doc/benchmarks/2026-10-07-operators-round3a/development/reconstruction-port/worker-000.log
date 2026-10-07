@@ -1,0 +1,11 @@
+.......F...X                                                             [100%]
+=================================== FAILURES ===================================
+__________ test_reverse_from_cleared_cache_is_drivable_and_decodable ___________
+test/test_stm_recon_from_cleared_cache.py:244: in test_reverse_from_cleared_cache_is_drivable_and_decodable
+    assert recon.dtype == torch.long and bool(((recon >= 0) & (recon <= 255)).all())
+E   assert (torch.float32 == torch.int64)
+E    +  where torch.float32 = tensor([[[0.]]]).dtype
+E    +  and   torch.int64 = torch.long
+=========================== short test summary info ============================
+FAILED test/test_stm_recon_from_cleared_cache.py::test_reverse_from_cleared_cache_is_drivable_and_decodable
+1 failed, 10 passed, 1 xpassed in 2.95s

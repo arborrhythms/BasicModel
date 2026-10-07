@@ -1104,12 +1104,11 @@ Not in the 6.8 rounds; each names its home.
   `not = −d`, replacing the product and probabilistic-sum kernels chosen in
   6.9 §22 for invertibility; the inverses are codebook searches either way.
   Catalogue [§3.8](specs/2026-09-29-operator-catalogue.md#38-what-was-decided-earlier-in-the-pass).
-- **The fold composing forms at every order** (operators update): a sentence's
-  form is the located fold of its words' forms, as a word's is of its
-  letters; the binding kernel does this in the interim. With the fold on the
-  form band the gate configurations need a nonempty conceptual complement,
-  since the connectives would otherwise never reach the root. The located
-  fold also separates anagrams, which the unlocated max does not.
+- **The fold composing forms above words** (operators update): the proposed
+  located word fold is superseded by round 3a's boundary pairs, exact length
+  thermometer and collision mints. A word remains a max over its parts;
+  anagrams need no general positional fold. Higher-order forms still use
+  the binding kernels. Meanings and their connectives remain later work.
 - **The complement's bootstrap** (operators update, the distributional item):
   the conceptual wholes' locations (sets, situation and document codes,
   properties as concepts), trained by co-activation, from which a new word's

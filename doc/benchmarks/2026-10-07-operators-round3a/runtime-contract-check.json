@@ -1,0 +1,29 @@
+{
+  "unchanged_files": {
+    "bin/Language.py": true,
+    "bin/SentenceCredit.py": true,
+    "bin/AnswerComparison.py": true,
+    "bin/WalkTrials.py": true,
+    "bin/ModelAttention.py": true,
+    "bin/Attention.py": true,
+    "bin/Meaning.py": true,
+    "bin/ClauseJournal.py": true,
+    "bin/SentenceCompose.py": true,
+    "test/test_explicit_dimensions.py": true,
+    "test/test_mm_xor.py": true
+  },
+  "presented_reader_computation_unchanged": true,
+  "mechanism": "identity construction and its fixed binding view, exact rung-zero bytes, signed trust ingestion",
+  "changed_runtime_files": [
+    "bin/ClauseRow.py",
+    "bin/Definitions.py",
+    "bin/Interpret.py",
+    "bin/Layers.py",
+    "bin/MereologicalCodes.py",
+    "bin/Models.py",
+    "bin/SentenceUnderstanding.py",
+    "bin/Spaces.py",
+    "bin/WordIdentity.py"
+  ],
+  "gate_selectors_unchanged": true
+}

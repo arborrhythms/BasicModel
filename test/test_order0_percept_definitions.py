@@ -90,28 +90,22 @@ def test_word_group_becomes_a_recurrent_row_without_changing_its_read(tmp_path):
     whole = ws.property_rows_for_bytes(b'love')
     assert whole
     word, A = cs.interpret_word(letters, whole, key='love')
-    assert cs.concept_parts(word) == letters
-    assert ps.percept_store.get_id(b'love') is None
+    identity = ps.percept_store.identity
+    atom_ids = tuple(identity.admit(b'love'))
+    assert set(cs.concept_parts(word)) == set(atom_ids)
+    fused = identity.word_rows[b'love']
     store = Spaces._concept_alloc_of(cs).layer()
     row = cs._csw_row_of(A)
-    assert store.feature_groups[row, 4 * letters[0]] == tuple(letters)
+    assert store.feature_groups[row, 4 * atom_ids[0]] == atom_ids
     raw = torch.tensor([[108, 111, 118, 101]])
     parts = torch.tensor([[[0, 1], [1, 2], [2, 3], [3, 4]]])
     extent = torch.tensor([[[0, 4]]])
     result = cs.cs_read_memberships((torch.tensor([letters]), parts,
         ws.subspace.what.primitive_properties, raw, extent), extent)
     assert result[row, 0, 0, 0] == 1
-    assert ps.fuse_parts(letters) == letters
-    ps.percept_store.promotion_threshold = 2
-    assert ps.percept_store.observe_chunk(b'love') is None
-    fused = ps.percept_store.observe_chunk(b'love')
-    assert fused is not None
     after = cs.cs_read_memberships((torch.tensor([[fused]]), extent,
         ws.subspace.what.primitive_properties, raw, extent), extent)
     torch.testing.assert_close(after, result)
-    assert (row, 4 * fused) in store.features._index
-    assert (row, 4 * letters[0]) not in store.feature_groups
-    assert ps.fuse_parts(letters) == [fused]
     count = (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
     cs.interpret_word([fused], whole, key='love')
     assert count == (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)

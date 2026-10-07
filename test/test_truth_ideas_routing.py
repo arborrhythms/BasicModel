@@ -265,7 +265,7 @@ class TestVerifyRelation(unittest.TestCase):
         eps = [(_v(1, 0), _v(1, 0)), (_v(0, 1), _v(1, 0))]
         new = cs.verify_relation(0, eps, store=st, support_weight=0.5)
         self.assertAlmostEqual(new, 0., places=6)  # equal independent poles
-        self.assertAlmostEqual(float(st.trust[0]), .5, places=6)
+        self.assertAlmostEqual(float(st.trust[0]), 0., places=6)
 
     def test_no_relevant_episode_leaves_trust(self):
         cs = _cs()
@@ -297,7 +297,9 @@ class TestRelativeTrustPersistence(unittest.TestCase):
         idx = st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.7)
         self.assertEqual(idx, 0)
         sd = st.state_dict()
-        self.assertIn('trust', sd, "trust must be a serialized buffer")
+        self.assertNotIn('trust', sd)
+        self.assertIn('c_plus', sd)
+        self.assertIn('c_minus', sd)
 
         fresh = _store()
         self.assertEqual(float(fresh.trust[0]), 0.0)   # zero before load
@@ -328,7 +330,8 @@ class TestRelativeTrustPersistence(unittest.TestCase):
         st = _store()
         st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.7)
         sd = st.state_dict()
-        del sd['trust']   # simulate a pre-fix checkpoint lacking the key
+        del sd['c_plus']
+        del sd['c_minus']  # legacy artifact without recorded evidence
         fresh = _store()
         # non-strict load tolerates the missing key; trust stays zero-init.
         fresh.load_state_dict(sd, strict=False)

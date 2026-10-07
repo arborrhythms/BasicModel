@@ -375,7 +375,7 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
     def test_state_dict_keys_present(self):
         m = _make_model(_ON_CONFIG)
         sd = m.state_dict()
-        for suffix in ("slots", "rel_type", "timestamp", "trust", "count",
+        for suffix in ("slots", "rel_type", "timestamp", "c_plus", "c_minus", "count",
                        "_next_ts"):
             self.assertIn(
                 f"symbolSpace.subspace.ltm_store.{suffix}", sd,

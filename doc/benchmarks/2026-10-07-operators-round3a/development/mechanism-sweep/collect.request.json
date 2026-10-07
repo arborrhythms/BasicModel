@@ -1,0 +1,25 @@
+{
+  "selectors": [
+    "test/test_operators_round1.py",
+    "test/test_operators_round2.py",
+    "test/test_operators_round2b.py",
+    "test/test_operators_round2c.py",
+    "test/test_operators_round2d.py",
+    "test/test_operators_round2e.py",
+    "test/test_operators_round3a.py",
+    "test/test_runtime_split_ingestion.py",
+    "test/test_native_perception.py",
+    "test/test_word_base_mereology.py",
+    "test/test_sentence_compose.py",
+    "test/test_grammar_object_leaves.py",
+    "test/test_grammar_word_learning.py",
+    "test/test_free_reconstruction.py",
+    "test/test_ternary_truth_store.py",
+    "test/test_lies_can_be_learned.py",
+    "test/test_clause_storage.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

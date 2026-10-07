@@ -55,11 +55,10 @@
 
   <!-- Stage 1.D flat-slab invariant (2026-05-27): IS.nOutput aligned
        to PS/CS (6). nVectors stays at 8 for vocab headroom. -->
-  <!-- 6.8 §22 declared capacity increase: event width 14 -> 22, hence
-       content width 6 -> 14 after the four where and four when coordinates.
-       Letter joins have more content coordinates; row capacities stay fixed. -->
+  <!-- Round 3a: 64 pair bits, 32 exact length bits, and the 4+4 band.
+       The binding view has 64 dense coordinates; row counts stay fixed. -->
   <InputSpace>
-    <nDim>22</nDim>
+    <nDim>104</nDim>
     <nVectors>8</nVectors>
     <nOutput>6</nOutput>
     <codebook>quantize</codebook>
@@ -67,14 +66,14 @@
 
   <PartSpace>
     <nOutput>6</nOutput>
-    <nDim>22</nDim>
+    <nDim>104</nDim>
     <nVectors>256</nVectors>
     <invertible>true</invertible>
   </PartSpace>
 
   <ConceptualSpace>
     <nOutput>6</nOutput>
-    <nDim>22</nDim>
+    <nDim>104</nDim>
     <!-- §14 addendum: symbol/concept pairs only; letters stay in PS. -->
     <nVectors>6</nVectors>
     <invertible>true</invertible>
@@ -82,8 +81,8 @@
 
   <WholeSpace>
     <nOutput>6</nOutput>
-    <!-- Event width: fourteen content coordinates plus the 4+4 address band. -->
-    <nDim>22</nDim>
+    <!-- Event width: 96 sparse form coordinates plus the 4+4 address band. -->
+    <nDim>104</nDim>
     <nVectors>9</nVectors>
   </WholeSpace>
 

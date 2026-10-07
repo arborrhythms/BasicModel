@@ -40,9 +40,9 @@ def _make_radix_model():
 
 def _word_concept(model, raw):
     store = model.perceptualSpace.percept_store
-    row = store.insert(raw)
+    parts = store.identity.admit(raw)
     owner = model._concept_owner()
-    return owner.interpret.lookup_word((row,), (), form=raw), row
+    return owner.interpret.lookup_word(parts, (), form=raw), store.identity.word_rows[raw]
 
 
 def _idea_store(model):
@@ -69,8 +69,8 @@ class TestInsertPercept(unittest.TestCase):
         pos, row = _word_concept(m, b"hello")
         self.assertIsInstance(pos, int)
         self.assertGreater(pos, 0)
-        self.assertEqual(m._concept_owner().concept_parts(pos), [row])
-        self.assertEqual(row, starting_size)
+        self.assertEqual(set(m._concept_owner().concept_parts(pos)), set(ps.identity.admit(b"hello")))
+        self.assertGreaterEqual(row, starting_size)
         self.assertEqual(ps.bytes_for(row), b"hello")
         again, _ = _word_concept(m, b"hello")
         self.assertEqual(again, pos)

@@ -177,9 +177,10 @@ class TestPersistence(unittest.TestCase):
                           rel_type=T.REL_IMPLIES, trust=-0.4)
         sd = s.state_dict()
         # every piece of state is a registered buffer -> rides state_dict
-        for k in ('slots', 'rel_type', 'timestamp', 'trust', 'count',
+        for k in ('slots', 'rel_type', 'timestamp', 'c_plus', 'c_minus', 'count',
                   '_next_ts'):
             self.assertIn(k, sd, f"{k} must be in state_dict")
+        self.assertNotIn('trust', sd)
         s2 = _store()
         s2.load_state_dict(sd)
         self.assertEqual(len(s2), 2)

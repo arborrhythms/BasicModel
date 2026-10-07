@@ -1,0 +1,34 @@
+..........................................F..................F......s... [ 59%]
+.................................................                        [100%]
+=================================== FAILURES ===================================
+__ test_unified_query_returns_complete_record_and_does_not_admit_observation ___
+test/test_query_contract_boundaries.py:73: in test_unified_query_returns_complete_record_and_does_not_admit_observation
+    assert found['support_true'] == 0  # authority never invents identification evidence
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   assert 0.8999999761581421 == 0
+____ test_real_sentence_capture_owns_native_object_ids_across_later_staging ____
+test/test_query_native_ids.py:12: in test_real_sentence_capture_owns_native_object_ids_across_later_staging
+    model = _native_answer_model(tmp_path, False)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:165: in _native_answer_model
+    m = _build_ladder_variant(tmp_path, "native_answer", replacements)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_meronomy_ladder.py:466: in _build_ladder_variant
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6613: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:24479: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - CS->WS recurrent input inconsistent: WS.nInputDim=264 must equal CS.nOutputDim=232. WS may then emit its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 232 (or omit it to inherit CS.nOutputDim).
+=========================== short test summary info ============================
+FAILED test/test_query_contract_boundaries.py::test_unified_query_returns_complete_record_and_does_not_admit_observation
+FAILED test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging
+2 failed, 118 passed, 1 skipped in 4.75s

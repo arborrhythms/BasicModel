@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-round3a/landing/verify_landing.py.txt", line 23, in <module>
+    assert all(sha(ROOT/n)==h for n,h in before['documents_before'].items())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

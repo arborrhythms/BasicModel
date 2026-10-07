@@ -1,0 +1,189 @@
+--- before-round3a/doc/Architecture.md
++++ review-round3a/doc/Architecture.md
+@@ -2617,6 +2617,15 @@
+ **The form (order 0).** A word's position in perceptual space is the join
+ of its parts at full presence: `L = ∨_{p : d_p > 0} c_p`, the coordinate-wise
+ max over the part codes whose net evidence `d = relu(e⁺ − e⁻)` is positive.
++The round-3a candidate makes these parts boundary-marked adjacent letter
++pairs and cumulative length atoms. Pair codes have three deterministic bits
++in a 64-coordinate block; length atoms occupy a separate 32-coordinate
++thermometer, exact through length 32. A collision adds each word's own
++positional triple, extending its deterministic bit stream until the forms
++separate, with later positions and then quadruples as the fallback. The
++sparse form is the index key. Binding and pair search use a fixed 96-by-64
++dense projection; the index, containment audit and exact byte read retain
++the sparse form. Byte rows still serve character classes and descent.
+ Evidence selects a part; it does not scale it. Certainty is the leaf's
+ activation (the projection coefficient `(leaf·c)/(c·c)`), not the code's
+ magnitude: full-presence codes replace the earlier unit-length constraint,
+@@ -2632,11 +2641,11 @@
+ 
+ **Codes are perception's.** In the conceptual derivation the percept
+ prototypes and the 11b evidence are detached: no gradient from the sentence
+-path (pair search, byte scorer, answer head) reaches them. Perception's codes
+-are trained by perception's reconstruction only. Distinct letter sets then
+-give distinct forms by construction; what makes forms far apart is the
+-sparsity of the presences (dense codes' joins saturate toward everything,
+-cos ≈ .98 at any scale; presences on ~30% of coordinates give ≈ .83).
++path (pair search, byte audit, answer head) reaches them. Identity atoms and
++their dense projection are fixed; only a recorded collision extends a minted
++atom's bit stream. Other percept prototypes retain perception's reconstruction
++owner. Identified words read their exact bytes from the indexed row; their
++rung-zero reconstruction term is an audit, with zero expected error.
+ 
+ **The concept.** An order-0 concept's position in conceptual space is
+ context, entirely: the mean of its occurrence rows' roots on the conceptual
+--- before-round3a/doc/FutureWork.md
++++ review-round3a/doc/FutureWork.md
+@@ -1104,12 +1104,11 @@
+   `not = −d`, replacing the product and probabilistic-sum kernels chosen in
+   6.9 §22 for invertibility; the inverses are codebook searches either way.
+   Catalogue [§3.8](specs/2026-09-29-operator-catalogue.md#38-what-was-decided-earlier-in-the-pass).
+-- **The fold composing forms at every order** (operators update): a sentence's
+-  form is the located fold of its words' forms, as a word's is of its
+-  letters; the binding kernel does this in the interim. With the fold on the
+-  form band the gate configurations need a nonempty conceptual complement,
+-  since the connectives would otherwise never reach the root. The located
+-  fold also separates anagrams, which the unlocated max does not.
++- **The fold composing forms above words** (operators update): the proposed
++  located word fold is superseded by round 3a's boundary pairs, exact length
++  thermometer and collision mints. A word remains a max over its parts;
++  anagrams need no general positional fold. Higher-order forms still use
++  the binding kernels. Meanings and their connectives remain later work.
+ - **The complement's bootstrap** (operators update, the distributional item):
+   the conceptual wholes' locations (sets, situation and document codes,
+   properties as concepts), trained by co-activation, from which a new word's
+--- before-round3a/doc/GradientFlow.md
++++ review-round3a/doc/GradientFlow.md
+@@ -940,3 +940,63 @@
+ green; ownership conflicts, sentence-path perception gradients and
+ code displacement are zero. All thirty unseeded gate trainings are
+ retained without retries or replacements. No commit or push.
++
++## Operators update round 3a (October 7; review candidate)
++
++[Round-3a receipt](benchmarks/2026-10-07-operators-round3a/README.md).
++The native word form is now fixed by boundary pairs, cumulative length
++parts and recorded collision mints. The pair block has 64 coordinates;
++the separate 32-coordinate length block is a thermometer. Fixed rows are
++read independently of optimizer weight decay or updates to the learned
++byte rows. Atom codes and the dense projection use private generators, so
++admission consumes no global training RNG. The projection is a buffer,
++not an optimizer parameter.
++
++The sparse form addresses the native index and supplies the containment
++and exact rung-zero byte audits. Binding and pair search read its fixed
++96-by-64 dense projection; activation still supplies magnitude. The
++projection changes code directions, not the conjunction or disjunction
++kernels. Resolved live conceptual references already have their binding
++directions and are not projected again. Journal leaves retain the directions
++used by the operation that produced their root.
++
++An identified word's byte reconstruction cost is exactly zero. This term
++audits identity and does not train a byte decoder or the fixed form. Other
++reconstruction terms remain in R, and an R tie keeps the greedy trial.
++The presented reader still trains on the kept root; the comparison reader
++still trains on both compose trials or the kept narrowing trial. Their
++detached roots, independent answer ownership, walk-first proposal,
++K·R_walk·W correction and registration/reduction remain as in round 2e.
++
++Signed ingestion trust now sets the row's positive/negative pair; negation
++exchanges its poles. A derived signed difference replaces the independent
++provenance column. This changes ingestion evidence, not the binding kernels.
++
++The receipt compares measured class results with round 2e and reports root
++geometry (rank and optimal affine fit) separately from the presented reader's
++actual convergence. It records native and witness containment, all mints,
++projection identity, reconstruction audits, reader trajectories and late
++trial costs. The thirty unseeded gate trainings and MM seed-zero bisection
++remain separate; no retry or replacement changes a gate count.
++
++Measured on the frozen candidate: class 10/10, reconstruction 10/10,
++sum 10/10 at ¼ and raw MM 10/10 under the RNG-only amendment. All forty
++final XOR roots are conjunction with all forty labels correct; every run
++is permanently all-conjunction by epoch 41. All 32,000 sum/XOR comparisons
++tie on R and keep greedy. The 8,040 compose departures carry answer credit;
++all narrowing departures have zero advantage. The presented reader's
++rejected-root weight, ownership conflicts, sentence-path perception
++gradients and code displacement remain zero. The rung-zero audit reports
++256,000 identified reads with zero errors. The complete frozen sweep has
++5,003 passes, 285 skips, one XPASS and no failures across 5,289 cases.
++
++Both operators' projected roots are affinely separable. The saved centered
++singular values are (0.877855, 0.800607, 0.482921) for conjunction and
++(0.691670, 0.523711, 0.0588575) for disjunction; their nonzero condition
++numbers are 1.82 and 11.75. Disjunction requires a larger affine read but
++its separating direction is well above rounding noise. These spectra
++support a convergence difficulty difference without proving the cause of
++the comparison reader's preference. Three passing presented readers retain
++late common-offset oscillations; their roots are identical to the other
++runs. The receipt separates those trajectories from geometry and retains
++the sum control at the affine floor. No commit or push has been made.
+--- before-round3a/doc/specs/2026-09-29-operator-catalogue.md
++++ review-round3a/doc/specs/2026-09-29-operator-catalogue.md
+@@ -1598,3 +1598,65 @@
+ green; ownership conflicts, sentence-path perception gradients and
+ code displacement are zero. All thirty unseeded gate trainings are
+ retained without retries or replacements. No commit or push.
++
++### 12.7 Operators update, round 3a (October 7; review candidate)
++
++The [round-3a receipt](../benchmarks/2026-10-07-operators-round3a/README.md)
++applies plan §§25–26 to the accepted frozen round-2e source. A word's
++native parts are its boundary-marked adjacent letter pairs and cumulative
++length atoms. Pair rows have three fixed bits in 64 coordinates, drawn from
++a private generator determined by the atom's bytes. The following 32
++coordinates form an exact length thermometer through length 32. Longer
++length atoms remain in the postings even when their form bits saturate.
++The form is the maximum of the part rows and the key of its indexed word
++row. Byte rows remain available to character classes and native descent.
++
++A collision gives each word its own positional triple atom. The mint checks
++the actual joined forms, extends the atom's bit stream one bit at a time,
++then tries later differing positions and the declared quadruple fallback.
++Only successful mints change the words, and the receipt records both atoms
++and their bit counts. Existing word rows retain their addresses when rekeyed.
++Native-vocabulary containment and separate witness fixtures are reported
++independently; an/and and an/ant are not comparable under boundary pairs.
++
++Binding and pair search use a fixed dense 96-by-64 projection of the sparse
++form, padded within the existing event layout. Indexing, containment and
++the rung-zero reconstruction audit use the sparse form. An identified word
++reads its exact bytes from its indexed row; the corresponding reconstruction
++term is a zero audit, with other trial costs and greedy tie keeping retained.
++An unindexed spelling is assembled from pairs and length; ambiguity requires
++the minted index. Product conjunction, probabilistic-sum disjunction,
++idempotent intersection, narrowing and both answer readers retain their
++round-2 rules. MM_xor receives numeric tensors and explicitly keeps its
++original dimensions without a lexical identity bank.
++
++At ingestion, signed user trust becomes the evidence pair: positive trust
++enters the positive pole, negative trust the negative pole, and sentence
++negation exchanges them. Internal paired evidence can still carry both poles.
++The former stored scalar trust column is retired; its compatibility read is
++the signed difference of the poles. The receipt contains the ported tests,
++form and geometry audits, frozen-source sweep, thirty trainings, and repeated
++MM RNG bisection. Review is required before any commit.
++
++The completed receipt records class 10/10, reconstruction 10/10, sum
++10/10 at ¼ and raw MM 10/10. The thirty measured trainings are unseeded
++and have no retries or replacements. All forty final XOR roots are
++conjunction, with forty correct labels and every run permanently
++all-conjunction by epoch 41. Native forms have zero collisions after
++minting, zero containment violations and zero indexed byte errors. The
++BasicModel census includes 67,391 words, two mints and 18,309 containment
++pairs; its 69,566-row static audit bank exceeds the unchanged 32,768-row
++production capacity, so this is not a full-corpus training or admission
++claim. The gate vocabularies have no native inclusions; separate witnesses
++are nonvacuous and ordered.
++
++Centered root spectra distinguish numerical separability from achieved
++reader fit: conjunction has nonzero singular values 0.877855, 0.800607,
++0.482921; disjunction has 0.691670, 0.523711, 0.0588575. Both are affinely
++separable, with condition numbers 1.82 and 11.75. The finite-step chooser
++preference does not supply a semantic operator certificate. The sum control
++retains rank three at float32 precision and stays at ¼. The full sweep
++completed 5,289 cases with 5,003 passes, 285 skips, one XPASS and no failures;
++the repeated MM bisection confirms the historical RNG-only path, and three
++paired 200-epoch trajectories are identical to accepted round 2e. The
++candidate and all measured results remain uncommitted for review.

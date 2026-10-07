@@ -1,0 +1,24 @@
+{
+  "configurations": 3,
+  "dictionary_words": 19986,
+  "dictionary_before": 1,
+  "dictionary_after": 0,
+  "dictionary_mints": [
+    {
+      "words": [
+        "calaba",
+        "cabala"
+      ],
+      "atoms": [
+        "cal@1",
+        "cab@1"
+      ],
+      "bit_counts": [
+        3,
+        3
+      ],
+      "size": 3,
+      "position": 1
+    }
+  ]
+}

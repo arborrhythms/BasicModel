@@ -10,10 +10,10 @@
     about 118M parameters, while NanoChat d4 has about 36.7M at vocab 32768.
 
     Design budget:
-      * PartSpace and WholeSpace WHAT are 128-D (136-D events including the
-        fixed 8-D band), while ConceptualSpace WHAT is 1024-D (1032-D event).
+      * PartSpace and WholeSpace WHAT are 96-D (104-D events including the
+        fixed 8-D band), while ConceptualSpace retains its 896-D meaning complement after the 104-D form event.
         Input fans one word view to independent PS and WS folds; each fold's
-        sparse sigma/codebook read emits a 1032-D concept activation before CS.
+        sparse sigma/codebook read emits a 1000-D concept activation before CS.
         The codebook read owns the dimension increase. There is no PS->WS edge
         and CS receives conceptual-width events rather than projecting them.
         Across words, that perceptual leg overlaps the prior word's conceptual
@@ -24,8 +24,8 @@
         Conceptual folds share one physical 65536-row high-D dictionary
         (32768 initially active) rather than allocating
         one table per fold. Its indexed-only path omits the unused VQ EMA
-        mirror. The table is initialized on the unit sphere and then trained by
-        reconstruction alone, without a norm constraint (6.9 §20.1).
+        mirror. The native word form is fixed by boundary pairs and the length
+        thermometer; its meaning complement retains the existing derivation.
         Its sparse optimizer stores moments only for touched rows.
       * bindingDepth=4 constructs the four binding layers; conceptLayers=5
         reserves orders zero through four. Neither is an attention work
@@ -74,7 +74,7 @@
          directly through the generic CS compatibility path. Keep it dark for
          this model until it uses the same sparse concept-codebook activation
          seam as the word recursion; otherwise it would reintroduce a hidden
-         136 -> 1032 coordinate pad before the aligned loop begins. -->
+         136 -> 1000 coordinate pad before the aligned loop begins. -->
     <sentenceProtocol>false</sentenceProtocol>
     <serialWordCapacity>256</serialWordCapacity>
     <serialWordBuckets>256</serialWordBuckets>
@@ -143,8 +143,8 @@
 
       <!-- FineWeb is unlabeled. Completed input sentences reconstruct once
            through the identified compose derivation and shared transforms.
-           The byte objective trains the live representation and tied inverse;
-           targets and witness addresses are detached; candidate codes stay live.
+           The rung-zero byte term audits exact indexed identity. Higher inverse
+           costs retain detached targets and witness addresses and live candidate codes.
            The output head receives no fabricated answer labels. -->
       <reconstructionScale>1.0</reconstructionScale>
       <!-- Read-only agreement of weighted objectives per shared operator.
@@ -205,9 +205,9 @@
     <nVectors>32768</nVectors>
     <!-- Fixed physical reserve. Recurrence activates rows without replacing
          the parameter or its optimizer state; exhaustion names nVectors. -->
-    <nDim>136</nDim>
+    <nDim>104</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>136</nOutputDim>
+    <nOutputDim>104</nOutputDim>
 
     <invertible>true</invertible>
     <synthesis>meronomy</synthesis>
@@ -221,7 +221,7 @@
     <nInput>8</nInput>
     <!-- PS/WS sigma folds have already emitted conceptual codebook
          activations here. The CS boundary itself is width-preserving. -->
-    <nInputDim>1032</nInputDim>
+    <nInputDim>1000</nInputDim>
     <!-- Concept and downstream symbol-reference inventory. This is independent
          of PartSpace's allocated prefix, WholeSpace's small property basis,
          and the eight simultaneously live CS/WS locations. All four aligned
@@ -231,16 +231,16 @@
          are an optimizer-owned reserve activated in power-of-two steps. -->
     <activeVectors>32768</activeVectors>
     <stmCapacity>8</stmCapacity>
-    <nDim>1032</nDim>
+    <nDim>1000</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>1032</nOutputDim>
+    <nOutputDim>1000</nOutputDim>
 
     <invertible>true</invertible>
   </ConceptualSpace>
 
   <!-- WholeSpace is the independent upstream analysis/property peer. It
        begins with a small ASCII-oriented property basis and contains no
-       concept, META, or symbol rows. Its 1032-D input is recurrent conceptual
+       concept, META, or symbol rows. Its 1000-D input is recurrent conceptual
        context; its native output remains 136-D and does not receive PS.
        Dynamic property discovery may grow this inventory later at an explicit
        optimizer/compiled-graph reset boundary. -->
@@ -250,11 +250,11 @@
          parallel CS mixing matrix and never mixes word/location slots. -->
     <butterfly>true</butterfly>
     <nInput>8</nInput>
-    <nInputDim>1032</nInputDim>
+    <nInputDim>1000</nInputDim>
     <nVectors>9</nVectors>
-    <nDim>136</nDim>
+    <nDim>104</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>136</nOutputDim>
+    <nOutputDim>104</nOutputDim>
 
     <invertible>true</invertible>
   </WholeSpace>
@@ -263,7 +263,7 @@
        directly; WholeSpace is not an intermediate output producer. -->
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>1032</nInputDim>
+    <nInputDim>1000</nInputDim>
     <nVectors>1</nVectors>
     <nDim>1</nDim>
     <nOutput>1</nOutput>

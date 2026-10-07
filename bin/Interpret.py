@@ -52,11 +52,23 @@ class InterpretLayer(GrammarLayer):
         model = getattr(cs, '_model', None)
         ps = getattr(model, 'perceptualSpace', None)
         native = getattr(ps, 'percept_store', None)
-        if native is not None:
+        identity = getattr(native, 'identity', None)
+        identity_key = None
+        if identity is not None and form is None and parts:
+            atom_rows = set(identity.atoms.values())
+            if all(part in atom_rows for part in parts):
+                form = identity.read_parts(parts)
+        if identity is not None and isinstance(form, (str, bytes)):
+            from WordIdentity import bytes_of
+            raw = bytes_of(form) if isinstance(form, str) else form
+            parts = identity.admit(raw)
+            self._sync_identity(identity)
+            identity_key = identity.key(identity.form(raw)).hex()
+        elif native is not None:
             parts = tuple(ps.fuse_parts(parts))
         cs._canonicalize_part_literals()
         form = form_key(form)
-        word = index.word(unit=parts, form=form)
+        word = index.word(unit=parts, form=form, identity=identity_key)
         for cid, value in self._pending.items():
             if parts in value['parts'] or (form is not None and form in value['forms']):
                 word = cid
@@ -151,7 +163,61 @@ class InterpretLayer(GrammarLayer):
         cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
         cs._csw_concept_row(0, word)
         self._pending[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
+        if identity_key is not None:
+            self._pending[word]['identity_key'] = identity_key
         return word
+
+    def _sync_identity(self, identity):
+        """A collision extends the existing word's parts without changing its row."""
+        if getattr(self, '_identity_revision', -1) == identity.revision:
+            return
+        from WordIdentity import bytes_of
+        cs, index = self.owner, self.owner.definitions
+        for word, old in tuple(self._pending.items()):
+            if not old['forms']:
+                continue
+            raw = old['forms'][0]
+            raw = bytes_of(raw) if isinstance(raw, str) else raw
+            if raw not in identity.words:
+                continue
+            parts = tuple(identity.atoms[a] for a in identity.words[raw])
+            self._pending[word] = dict(old, parts=(parts,), identity_key=identity.key(identity.form(raw)).hex())
+            for part in parts:
+                cs.add_part(word, part)
+            if word not in self._field_pending:
+                cs._populate_concept_weights(word, witness=(parts, old['wholes']), word_reading=True)
+        for word in tuple(index.word_ids):
+            old = index.description(word)
+            if not old or not old['forms']:
+                continue
+            raw = old['forms'][0]
+            raw = bytes_of(raw) if isinstance(raw, str) else raw
+            if raw not in identity.words:
+                continue
+            parts = tuple(identity.atoms[a] for a in identity.words[raw])
+            value = dict(old, parts=(parts,), identity_key=identity.key(identity.form(raw)).hex())
+            for part in parts:
+                cs.add_part(word, part)
+            for obj in index.objects(word):
+                cs._populate_concept_weights(obj, witness=(parts, old['wholes']), word_reading=True)
+                row = index.row(word, obj)
+                store = index._store()
+                store._definition_rows[int(store.occurrence_id[row])] = value
+                store._update_semantic_fingerprint(row)
+        index.rebuild()
+        self._identity_revision = identity.revision
+
+    def binding_atoms(self, atoms):
+        model = getattr(self.owner, '_model', None)
+        store = getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None)
+        identity = getattr(store, 'identity', None)
+        if identity is None or atoms.shape[-1] < identity.width:
+            return atoms
+        form = atoms[..., :identity.width]
+        sparse = ((form == 0) | (form == 1)).all(-1)
+        # A resolved live reference is already a conceptual direction. Only
+        # sparse native forms take the word-identity projection.
+        return torch.where(sparse[..., None], identity.binding(atoms), atoms)
 
     @torch.no_grad()
     def define(self, word, obj, *, description=None):
@@ -212,7 +278,7 @@ class InterpretLayer(GrammarLayer):
             if object_atoms is None or activation is None:
                 raise ValueError('interpret tensor face requires the resolved object bank')
             width = object_atoms.shape[-1]
-            return torch.cat((self.activate(object_atoms, activation), word[..., width:]), -1)
+            return torch.cat((self.activate(self.binding_atoms(object_atoms), activation), word[..., width:]), -1)
         from Spaces import _concept_alloc_of
         cs, word = self.owner, int(word)
         alloc, index = _concept_alloc_of(cs), cs.definitions

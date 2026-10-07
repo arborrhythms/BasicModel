@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_stm_recon_from_cleared_cache.py",
+    "test/test_operators_round3a.py",
+    "test/test_reconstruction_precedence.py",
+    "test/test_prepared_answer_boundary.py",
+    "test/test_review14_contracts.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

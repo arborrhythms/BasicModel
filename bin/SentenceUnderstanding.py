@@ -67,6 +67,7 @@ class PrimedSymbols:
     byte_valid: torch.Tensor
     case_bank: object = None
     percept_width: int | None = None
+    forms: torch.Tensor | None = None
 
     @property
     def valid(self):
@@ -93,7 +94,8 @@ class SentenceUnderstanding:
         Neither the compose journal nor original per-word values are evidence
         for an answer. The code/activation product is fixed at this boundary.
         """
-        bank = (self.primed.codes.detach() * self.primed.weights.detach()[..., None]
+        forms = self.primed.codes if self.primed.forms is None else self.primed.forms
+        bank = (forms.detach() * self.primed.weights.detach()[..., None]
                 * self.primed.valid[..., None]).sum(1)
         positions = torch.arange(self.end_slots.shape[1], device=self.root.device)
         end = self.end_slots * (positions[None] < self.end_depth[:, None])[..., None]

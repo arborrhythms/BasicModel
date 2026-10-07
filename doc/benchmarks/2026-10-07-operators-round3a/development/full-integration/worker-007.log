@@ -1,0 +1,28 @@
+........................................................................ [ 28%]
+.............................................................sssssssssss [ 56%]
+sss..ssss.ssssssss...................................................... [ 84%]
+...........................F...........                                  [100%]
+=================================== FAILURES ===================================
+_________ test_actual_model_checkpoint_preserves_scoped_fact_identity __________
+test/test_existence_metadata.py:194: in test_actual_model_checkpoint_preserves_scoped_fact_identity
+    assert restored.load_weights(path, strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2716/test_actual_model_checkpoint_p0/scoped-fact.pt
+=============================== warnings summary ===============================
+test/test_ensure_microbatch_cascade.py::test_inputspace_forward_triggers_ensure_microbatch
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_existence_metadata.py::test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:2593: UserWarning: Legacy LTM rows have unknown order; decoding requires an explicit order stamp.
+    module._load_from_state_dict(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_existence_metadata.py::test_actual_model_checkpoint_preserves_scoped_fact_identity
+1 failed, 228 passed, 26 skipped, 2 warnings in 18.09s

@@ -2388,6 +2388,9 @@ class Codebook(Tensor):
         """
         if getattr(self, 'mereology', None) is not None:
             return self.lookup_rows(torch.arange(len(self.W), device=self.W.device))
+        if hasattr(self, 'fixed_row_mask'):
+            rows = _unorm_ste(self.W) if getattr(self, 'is_percept_store', False) else self.W
+            return torch.where(self.fixed_row_mask[:, None], self.fixed_row_codes, rows)
         if (self.W is not None
                 and getattr(self, "is_percept_store", False)
                 and meronomy_enabled()):
@@ -2428,6 +2431,10 @@ class Codebook(Tensor):
             rows = _sparse_embedding_eager(idx, self.W)
         else:
             rows = self.W[idx]
+        if hasattr(self, 'fixed_row_mask'):
+            if getattr(self, 'is_percept_store', False):
+                rows = _unorm_ste(rows)
+            return torch.where(self.fixed_row_mask[idx][..., None], self.fixed_row_codes[idx], rows)
         if (getattr(self, "is_percept_store", False)
                 and meronomy_enabled()):
             return _unorm_ste(rows)
@@ -10572,6 +10579,15 @@ class PartSpace(Space):
                 promotion_threshold=self.chunk_promotion_threshold,
                 promotion_min_length=self.chunk_promotion_min_length,
                 word_bounded=True, basis=self.subspace.what)
+            # Standalone dimension fixtures do not construct a full identity
+            # layout. Configured text models reserve D + L before this point.
+            if self.nDim >= 33 and TheXMLConfig.space(section, 'identityByParts', default=True):
+                from WordIdentity import WordIdentity
+                self.percept_store.identity = WordIdentity(self.percept_store,
+                    pair_dim=self.nDim-32,
+                    ones=int(TheXMLConfig.space(section, 'identityOnes', default=3)),
+                    length_dim=32,
+                    binding_dim=min(self.nDim, int(TheXMLConfig.space(section, 'identityBindingDim', default=64))))
         # Numeric carriers have no lexical dictionary. Native text prototype
         # storage has one optimizer owner; admission preserves its moments.
         self._optimize_radix_codebook = self.percept_store is not None
@@ -10764,6 +10780,27 @@ class PartSpace(Space):
                    - torch.maximum(spans[..., 0, None], part_spans[:, None, :, 0])).clamp_min(0)
         size = spans[..., 1] - spans[..., 0]
         complete = ((overlap * valid[:, None]).sum(-1) == size) & (size > 0)
+        identity = getattr(store, 'identity', None)
+        atom_ids = set(identity.atoms.values()) if identity is not None else set()
+        atom_witnesses = None
+        if atom_ids:
+            # Byte descent is still the observed witness. Read its exact
+            # boundary pairs/length (and any recorded positional mint) as
+            # parts; their order in the bank has no evidential significance.
+            from WordIdentity import base_atoms
+            atom_witnesses = []
+            for b, row in enumerate(spans.detach().cpu().tolist()):
+                events = list(zip(part_ids[b].detach().cpu().tolist(),
+                                  part_spans[b].detach().cpu().tolist()))
+                values = []
+                for w, (start, end) in enumerate(row):
+                    selected = [(pid, a, z) for pid, (a, z) in events
+                                if pid >= 0 and start <= a < z <= end]
+                    raw = b''.join(store.bytes_for(pid) for pid, _, _ in selected)
+                    parts = identity.words.get(raw, base_atoms(raw)) if raw else ()
+                    values.append({identity.atoms[a] for a in parts if a in identity.atoms}
+                                  if bool(complete[b, w]) else set())
+                atom_witnesses.append(values)
         pairs, supports = [], []
         for literal in features:
             ids = tuple(int(i) for i in literal) if isinstance(literal, (list, tuple)) else (int(literal),)
@@ -10771,7 +10808,12 @@ class PartSpace(Space):
             present = torch.zeros_like(complete)
             support = torch.zeros(*complete.shape, part_ids.shape[1],
                                   dtype=torch.bool, device=part_ids.device) if return_support else None
-            if count > 0 and ids:
+            if ids and set(ids) <= atom_ids:
+                present = complete.new_tensor([[set(ids) <= members for members in row]
+                                               for row in atom_witnesses])
+                if return_support:
+                    support = present[..., None] & valid[:, None] & (overlap > 0)
+            elif count > 0 and ids:
                 match = valid[:, :count].clone()
                 for offset, pid in enumerate(ids):
                     match &= valid[:, offset:offset + count] & (part_ids[:, offset:offset + count] == pid)
@@ -11227,6 +11269,8 @@ class PartSpace(Space):
 
         import Meronomy
         staged_rows, sentence_truncated_rows, word_texts_rows = [], [], []
+        native_rows, native_spans = [], []
+        identity = getattr(ps, 'identity', None)
         part_capacity = 3
         # Rung-0 admission by recurrence (fold-ladder plan, contract 4,
         # step D-0): a unit seen ``chunk_promotion_threshold`` times gets a
@@ -11263,6 +11307,8 @@ class PartSpace(Space):
                     complete.append((cursor, len(raw)))
                 spans = complete
             word_texts_rows.append([raw[s0:e0].decode("latin1") for s0, e0 in spans])
+            native_rows.append([int(ps.get_id(bytes([value]))) for value in raw])
+            native_spans.append([(i, i+1) for i in range(len(raw))])
             staged_words = []
             for word_index in range(word_capacity):
                 if word_index < len(spans):
@@ -11270,9 +11316,11 @@ class PartSpace(Space):
                     truncated = False
                     stop = end
                     pids = [int(ps.get_id(bytes([raw[i]]))) for i in range(start, stop)]
-                    part_capacity = max(part_capacity, len(pids))
                     unit = raw[start:stop]
-                    if (admit and len(unit) >= 2 and not truncated
+                    if identity is not None:
+                        pids = list(identity.admit(unit))
+                    part_capacity = max(part_capacity, len(pids))
+                    if (identity is None and admit and len(unit) >= 2 and not truncated
                             and ps.get_id(unit) is None
                             and unit not in getattr(ps, "_pending_promotions", {})):
                         hits[unit] = hits.get(unit, 0) + 1
@@ -11286,7 +11334,8 @@ class PartSpace(Space):
                     staged_words.append({
                         "pids": pids, "start": int(start), "end": int(end),
                         "word_index": int(word_index),
-                        "part_spans": [(i, i + 1) for i in range(start, stop)],
+                        "part_spans": ([(start, stop)] * len(pids) if identity is not None
+                                       else [(i, i + 1) for i in range(start, stop)]),
                         "active": True, "truncated": bool(truncated),
                     })
                 else:
@@ -11363,6 +11412,11 @@ class PartSpace(Space):
             "word_active_mask": word_active, "word_truncated_mask": word_truncated,
             "sentence_word_truncated_mask": sentence_truncated,
         }
+        native_capacity = max(map(len, native_rows), default=0)
+        self._forward_input['native_indices'] = torch.tensor(
+            [row + [-1]*(native_capacity-len(row)) for row in native_rows], dtype=torch.long, device=dev)
+        self._forward_input['native_part_spans'] = torch.tensor(
+            [row + [(0,0)]*(native_capacity-len(row)) for row in native_spans], dtype=torch.long, device=dev)
         return self.subspace
 
     def _embed_radix(self, upstream_vspace):
@@ -11936,6 +11990,16 @@ class PartSpace(Space):
         target = self._adopt_reverse_carrier(subspace)
         stash = self._reverse_stash(subspace)
         vspace = subspace
+        identity = getattr(self.percept_store, 'identity', None)
+        if identity is not None:
+            # A conceptual event may append a meaning complement after its
+            # native percept event. Descending to PS selects that native face;
+            # it must not reshape meaning coordinates into extra percepts.
+            event = vspace.materialize()
+            width = int(self.subspace.nWhat + self.subspace.nWhere + self.subspace.nWhen)
+            if event.shape[-1] > width:
+                vspace = vspace.carrier_like()
+                vspace.set_event(event[..., :width])
         # NOTE: When ``self.subspace.what`` is an Embedding (text mode),
         # `_reverse_text` returns earlier and bypasses the numeric
         # inverse chain below.
@@ -14432,7 +14496,7 @@ class ConceptualSpace(Space):
                     and g is not None and g < len(word_texts[b])):
                 value = word_texts[b][g]
                 if value is not None:
-                    return str(value)
+                    return str(value).encode('latin1')
             if (tokens is not None and b < len(tokens)
                     and g is not None and g < len(tokens[b])):
                 value = tokens[b][g]
@@ -15955,7 +16019,7 @@ class ConceptualSpace(Space):
         if any(int(x[1]) == int(concept_id) for x in sym_refs):
             raise ValueError('self-edge: a concept cannot be its own part')
         n_raw = sum(1 for x in (parts + wholes)
-                    if not _is_sym(x) and x not in (_NOTHING, _EVERYTHING))
+                    if not _is_sym(x) and (witness is not None or x not in (_NOTHING, _EVERYTHING)))
         n_poles = int(_NOTHING in parts) + int(_EVERYTHING in wholes)
         # Min-support >= 2, EXCEPT minted singletons: the unit-set's single
         # sym edge IS its weighted reading (Alec 2026-07-02).
@@ -15980,7 +16044,7 @@ class ConceptualSpace(Space):
                     continue
                 for ref in refs:
                     if (isinstance(ref, int) and ref >= 0
-                            and ref not in (_NOTHING, _EVERYTHING)):
+                            and (witness is not None or ref not in (_NOTHING, _EVERYTHING))):
                         literals.append((tower, ref))
             if not literals:
                 return
@@ -17017,10 +17081,17 @@ class ConceptualSpace(Space):
                             dtype=torch.long)
 
     def concept_of_percept(self, pid):
+        model = getattr(self, '_model', None)
+        native = getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None)
+        identity = getattr(native, 'identity', None)
+        if identity is not None:
+            raw = native.bytes_for(int(pid))
+            if identity.word_rows.get(raw) == int(pid):
+                return self.definitions.word(identity=identity.word_keys[raw].hex())
         return self.definitions.word(unit=int(pid))
 
     def object_concept_of_percept(self, pid):
-        word = self.definitions.word(unit=int(pid))
+        word = self.concept_of_percept(pid)
         return None if word is None else self.definitions.deref(word)
 
     def word_concept_of_object(self, cid):

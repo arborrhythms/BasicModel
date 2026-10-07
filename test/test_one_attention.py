@@ -471,7 +471,7 @@ def test_input_priming_reads_live_word_extent_without_changing_prior(monkeypatch
         assert keys.shape[1] == 2, 'padding expanded the priming lookup'
         actual = original(keys, *args)
         reference = original(torch.nn.functional.pad(keys, (0, 0, 0, 7)), *args)
-        torch.testing.assert_close(actual, reference[:, :2], rtol=0, atol=0)
+        torch.testing.assert_close(actual, reference[:, :2], rtol=2e-6, atol=2e-7)  # GEMM reduction width rounding
         assert not reference[:, 2:].count_nonzero()
         return actual
     monkeypatch.setattr(BracketKeys, '_codebook_retrieval_prior', staticmethod(bounded))

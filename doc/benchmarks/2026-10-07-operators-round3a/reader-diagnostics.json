@@ -1,0 +1,1200 @@
+{
+  "protocol": {
+    "candidate": "round3a",
+    "start_manifest": "3fd07f0cd516da3102867207614e11a9153638d37057bcc82a8c7ff821689106",
+    "gate_trainings": 30,
+    "gate_seed": null,
+    "retry": false,
+    "replacement": false,
+    "presented_reader": "one step on reconstruction-kept root only",
+    "comparison_reader": "one step on mean roots for compose, otherwise kept root",
+    "reader_mse_timing": "per sentence before either update, on reconstruction-kept roots",
+    "reader_mse_final_gate": "unchanged ordinary evaluation using presented reader only",
+    "miss_diagnostics": {
+      "late_flip": "stable all-conjunction after epoch 100, with actual epochs remaining reported; descriptive rather than causal attribution",
+      "reader_plateau": "correct labels, early conjunction, and active reader norm changes at most 1 percent in final 50 epochs",
+      "anything_else": "all remaining misses, reporting norm growth, MSE curve and late costs"
+    },
+    "mm_bisection_seed": 0,
+    "paired_mm_diagnostic_seeds": [
+      0,
+      1,
+      2
+    ],
+    "paired_mm_epochs": 200,
+    "commit": false,
+    "identity": {
+      "pair_dim": 64,
+      "pair_ones": 3,
+      "length_dim": 32,
+      "binding_dim": 64,
+      "hash": "SHA256 first eight bytes, little endian; private NumPy generator",
+      "projection": "private generator, SHA256(word-identity-projection-v1), normal (D+L) by d / sqrt(d)",
+      "mint": "first differing positional triple, grow its own bit stream from s to D; next position, then quadruples"
+    },
+    "comparison": {
+      "round2_landing": {
+        "class_pass": 9,
+        "reconstruction_pass": 10,
+        "joint": 9,
+        "sum_pass": 10,
+        "mm_pass": 10
+      },
+      "prior_68_landing": {
+        "class_pass": 7,
+        "reconstruction_pass": 9,
+        "joint": 6,
+        "sum_pass": 10,
+        "mm_pass": 10
+      }
+    },
+    "freeze_before_campaign": true,
+    "full_sweep_before_campaign": true
+  },
+  "runs": [
+    {
+      "kind": "xor",
+      "run": 1,
+      "final_gate_mse": 4.392483589299445e-06,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.24950174987316132,
+          "mse_before_epoch350": 5.758445695391856e-05,
+          "mse_before_epoch400": 3.942910552723333e-06,
+          "mean_mse_final50": 1.128202387249644e-05,
+          "active_weight_norm_epoch350": 3.0746881730451285,
+          "active_weight_norm_epoch400": 3.074689959412839,
+          "active_norm_change_fraction_final50": 5.809915055139198e-07,
+          "active_norm_range_fraction_final50": 4.210691999664002e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.24950174987316132,
+          "mse_before_epoch350": 0.11687588691711426,
+          "mse_before_epoch400": 0.003685622476041317,
+          "mean_mse_final50": 0.030801031379960476,
+          "active_weight_norm_epoch350": 2.9267533941880295,
+          "active_weight_norm_epoch400": 2.9042502907438053,
+          "active_norm_change_fraction_final50": -0.007688759664176381,
+          "active_norm_range_fraction_final50": 0.022997218741895087,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(1.0, 0.0)": 797,
+        "(0.5, 0.5)": 803
+      },
+      "comparison_rejected_weight_fraction": 0.2509375,
+      "presented_rejected_weight_fraction": 0.0,
+      "class_pass": true,
+      "correct": 4,
+      "reconstructed": 4,
+      "final_all_conjunction": true,
+      "first_greedy": [
+        [
+          "conjunction"
+        ],
+        [
+          "disjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ]
+      ],
+      "stable_greedy_conjunction_epoch": 20,
+      "epochs_after_greedy_flip": 381,
+      "last_training_epoch_with_committed_disjunction": 19,
+      "committed_conjunction_rows": 1579,
+      "committed_disjunction_rows": 21
+    },
+    {
+      "kind": "xor",
+      "run": 2,
+      "final_gate_mse": 0.02072011719737432,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.25014427304267883,
+          "mse_before_epoch350": 1.8396044687563062e-09,
+          "mse_before_epoch400": 0.04685401916503906,
+          "mean_mse_final50": 0.01603561653721858,
+          "active_weight_norm_epoch350": 3.2272231983390514,
+          "active_weight_norm_epoch400": 3.227518418308143,
+          "active_norm_change_fraction_final50": 9.147801405360026e-05,
+          "active_norm_range_fraction_final50": 0.000448803133685831,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.25014427304267883,
+          "mse_before_epoch350": 0.00045376940397545695,
+          "mse_before_epoch400": 0.07593148201704025,
+          "mean_mse_final50": 0.0299728402053006,
+          "active_weight_norm_epoch350": 3.0021217449382367,
+          "active_weight_norm_epoch400": 3.0156187711213702,
+          "active_norm_change_fraction_final50": 0.0044958290601939625,
+          "active_norm_range_fraction_final50": 0.008871122054922057,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(1.0, 0.0)": 773,
+        "(0.5, 0.5)": 827
+      },
+      "comparison_rejected_weight_fraction": 0.2584375,
+      "presented_rejected_weight_fraction": 0.0,
+      "class_pass": true,
+      "correct": 4,
+      "reconstructed": 4,
+      "final_all_conjunction": true,
+      "first_greedy": [
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ],
+        [
+          "conjunction"
+        ]
+      ],
+      "stable_greedy_conjunction_epoch": 27,
+      "epochs_after_greedy_flip": 374,
+      "last_training_epoch_with_committed_disjunction": 26,
+      "committed_conjunction_rows": 1537,
+      "committed_disjunction_rows": 63
+    },
+    {
+      "kind": "xor",
+      "run": 3,
+      "final_gate_mse": 0.016024757500976428,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.2500027120113373,
+          "mse_before_epoch350": 5.217604126528386e-12,
+          "mse_before_epoch400": 0.007082030177116394,
+          "mean_mse_final50": 0.025833645674641283,
+          "active_weight_norm_epoch350": 2.938922322998139,
+          "active_weight_norm_epoch400": 2.9389279152528704,
+          "active_norm_change_fraction_final50": 1.9028249530546936e-06,
+          "active_norm_range_fraction_final50": 4.216136383816037e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.2500027120113373,
+          "mse_before_epoch350": 0.018299061805009842,
+          "mse_before_epoch400": 0.011400984600186348,
+          "mean_mse_final50": 0.016229736093664543,
+          "active_weight_norm_epoch350": 3.0292643322661688,
+          "active_weight_norm_epoch400": 3.0601416288887044,
+          "active_norm_change_fraction_final50": 0.01019300174423426,
+          "active_norm_range_fraction_final50": 0.015308065225088895,
+          "plateau_norm": false,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(1.0, 0.0)": 788,
+        "(0.5, 0.5)": 812
+      },
+      "comparison_rejected_weight_fraction": 0.25375,
+      "presented_rejected_weight_fraction": 0.0,
+      "class_pass": true,
+      "correct": 4,
+      "reconstructed": 4,
+      "final_all_conjunction": true,
+      "first_greedy": [
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ]
+      ],
+      "stable_greedy_conjunction_epoch": 33,
+      "epochs_after_greedy_flip": 368,
+      "last_training_epoch_with_committed_disjunction": 32,
+      "committed_conjunction_rows": 1505,
+      "committed_disjunction_rows": 95
+    },
+    {
+      "kind": "xor",
+      "run": 4,
+      "final_gate_mse": 7.507328092515309e-13,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.2500596046447754,
+          "mse_before_epoch350": 1.2815970507062957e-10,
+          "mse_before_epoch400": 2.737809978725636e-13,
+          "mean_mse_final50": 2.914575691903565e-11,
+          "active_weight_norm_epoch350": 3.2039015692803967,
+          "active_weight_norm_epoch400": 3.2038985897234893,
+          "active_norm_change_fraction_final50": -9.299776672266326e-07,
+          "active_norm_range_fraction_final50": 1.6737742387572325e-06,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.2500596046447754,
+          "mse_before_epoch350": 0.03659447655081749,
+          "mse_before_epoch400": 0.0036565065383911133,
+          "mean_mse_final50": 0.04898905668756925,
+          "active_weight_norm_epoch350": 3.1160287989309636,
+          "active_weight_norm_epoch400": 2.9504540627597535,
+          "active_norm_change_fraction_final50": -0.053136458888959855,
+          "active_norm_range_fraction_final50": 0.07068081788426522,
+          "plateau_norm": false,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(1.0, 0.0)": 802,
+        "(0.5, 0.5)": 798
+      },
+      "comparison_rejected_weight_fraction": 0.249375,
+      "presented_rejected_weight_fraction": 0.0,
+      "class_pass": true,
+      "correct": 4,
+      "reconstructed": 4,
+      "final_all_conjunction": true,
+      "first_greedy": [
+        [
+          "conjunction"
+        ],
+        [
+          "disjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "disjunction"
+        ]
+      ],
+      "stable_greedy_conjunction_epoch": 39,
+      "epochs_after_greedy_flip": 362,
+      "last_training_epoch_with_committed_disjunction": 38,
+      "committed_conjunction_rows": 1532,
+      "committed_disjunction_rows": 68
+    },
+    {
+      "kind": "xor",
+      "run": 5,
+      "final_gate_mse": 8.260059303211165e-14,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.2500014305114746,
+          "mse_before_epoch350": 4.3787196091216174e-13,
+          "mse_before_epoch400": 1.687538997430238e-14,
+          "mean_mse_final50": 1.5858869772955587e-13,
+          "active_weight_norm_epoch350": 2.8983599159046616,
+          "active_weight_norm_epoch400": 2.898359847116524,
+          "active_norm_change_fraction_final50": -2.3733469756786062e-08,
+          "active_norm_range_fraction_final50": 2.3750274101799886e-08,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.2500014305114746,
+          "mse_before_epoch350": 0.017435789108276367,
+          "mse_before_epoch400": 0.050653569400310516,
+          "mean_mse_final50": 0.05189172409125604,
+          "active_weight_norm_epoch350": 2.8870983365218583,
+          "active_weight_norm_epoch400": 2.855470197595771,
+          "active_norm_change_fraction_final50": -0.010954991912118423,
+          "active_norm_range_fraction_final50": 0.02286539989483614,
+          "plateau_norm": false,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(0.5, 0.5)": 829,
+        "(1.0, 0.0)": 771
+      },
+      "comparison_rejected_weight_fraction": 0.2590625,
+      "presented_rejected_weight_fraction": 0.0,
+      "class_pass": true,
+      "correct": 4,
+      "reconstructed": 4,
+      "final_all_conjunction": true,
+      "first_greedy": [
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ]
+      ],
+      "stable_greedy_conjunction_epoch": 21,
+      "epochs_after_greedy_flip": 380,
+      "last_training_epoch_with_committed_disjunction": 20,
+      "committed_conjunction_rows": 1560,
+      "committed_disjunction_rows": 40
+    },
+    {
+      "kind": "xor",
+      "run": 6,
+      "final_gate_mse": 3.649935653271541e-06,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.249863862991333,
+          "mse_before_epoch350": 1.047559180733515e-06,
+          "mse_before_epoch400": 3.5150646908732597e-06,
+          "mean_mse_final50": 5.3497266670206045e-05,
+          "active_weight_norm_epoch350": 2.799334641900327,
+          "active_weight_norm_epoch400": 2.799266496499763,
+          "active_norm_change_fraction_final50": -2.4343427736082275e-05,
+          "active_norm_range_fraction_final50": 6.56054872083679e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.249863862991333,
+          "mse_before_epoch350": 0.0038231241051107645,
+          "mse_before_epoch400": 0.005079451482743025,
+          "mean_mse_final50": 0.039386630535591396,
+          "active_weight_norm_epoch350": 3.1976997976126715,
+          "active_weight_norm_epoch400": 3.0470569628901787,
+          "active_norm_change_fraction_final50": -0.047109748962350775,
+          "active_norm_range_fraction_final50": 0.047498228182047436,
+          "plateau_norm": false,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(0.5, 0.5)": 801,
+        "(1.0, 0.0)": 799
+      },
+      "comparison_rejected_weight_fraction": 0.2503125,
+      "presented_rejected_weight_fraction": 0.0,
+      "class_pass": true,
+      "correct": 4,
+      "reconstructed": 4,
+      "final_all_conjunction": true,
+      "first_greedy": [
+        [
+          "conjunction"
+        ],
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ]
+      ],
+      "stable_greedy_conjunction_epoch": 8,
+      "epochs_after_greedy_flip": 393,
+      "last_training_epoch_with_committed_disjunction": 7,
+      "committed_conjunction_rows": 1584,
+      "committed_disjunction_rows": 16
+    },
+    {
+      "kind": "xor",
+      "run": 7,
+      "final_gate_mse": 4.332534331297211e-12,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.25002342462539673,
+          "mse_before_epoch350": 8.30269186735677e-12,
+          "mse_before_epoch400": 4.348521542851813e-12,
+          "mean_mse_final50": 1.3120393660415174e-12,
+          "active_weight_norm_epoch350": 2.838302517813217,
+          "active_weight_norm_epoch400": 2.8383013259585907,
+          "active_norm_change_fraction_final50": -4.199181090188637e-07,
+          "active_norm_range_fraction_final50": 4.199259723777831e-07,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.25002342462539673,
+          "mse_before_epoch350": 0.054763324558734894,
+          "mse_before_epoch400": 0.0027521541342139244,
+          "mean_mse_final50": 0.020865222425200045,
+          "active_weight_norm_epoch350": 2.998543762273913,
+          "active_weight_norm_epoch400": 3.0760589104866196,
+          "active_norm_change_fraction_final50": 0.025850931104611855,
+          "active_norm_range_fraction_final50": 0.03848778277614695,
+          "plateau_norm": false,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(0.5, 0.5)": 797,
+        "(1.0, 0.0)": 803
+      },
+      "comparison_rejected_weight_fraction": 0.2490625,
+      "presented_rejected_weight_fraction": 0.0,
+      "class_pass": true,
+      "correct": 4,
+      "reconstructed": 4,
+      "final_all_conjunction": true,
+      "first_greedy": [
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ]
+      ],
+      "stable_greedy_conjunction_epoch": 41,
+      "epochs_after_greedy_flip": 360,
+      "last_training_epoch_with_committed_disjunction": 40,
+      "committed_conjunction_rows": 1491,
+      "committed_disjunction_rows": 109
+    },
+    {
+      "kind": "xor",
+      "run": 8,
+      "final_gate_mse": 2.0250467969162855e-13,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.2500022351741791,
+          "mse_before_epoch350": 2.277289468111121e-12,
+          "mse_before_epoch400": 5.062616992290714e-14,
+          "mean_mse_final50": 1.4345813426075437e-12,
+          "active_weight_norm_epoch350": 2.8034555921874293,
+          "active_weight_norm_epoch400": 2.80345552329242,
+          "active_norm_change_fraction_final50": -2.4575031416622297e-08,
+          "active_norm_range_fraction_final50": 9.402032461702798e-08,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.2500022351741791,
+          "mse_before_epoch350": 0.044641900807619095,
+          "mse_before_epoch400": 0.07535937428474426,
+          "mean_mse_final50": 0.07657220313791185,
+          "active_weight_norm_epoch350": 3.0312353611254186,
+          "active_weight_norm_epoch400": 3.0189464872020944,
+          "active_norm_change_fraction_final50": -0.004054081078930701,
+          "active_norm_range_fraction_final50": 0.021504998885312213,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(0.5, 0.5)": 784,
+        "(1.0, 0.0)": 816
+      },
+      "comparison_rejected_weight_fraction": 0.245,
+      "presented_rejected_weight_fraction": 0.0,
+      "class_pass": true,
+      "correct": 4,
+      "reconstructed": 4,
+      "final_all_conjunction": true,
+      "first_greedy": [
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ]
+      ],
+      "stable_greedy_conjunction_epoch": 29,
+      "epochs_after_greedy_flip": 372,
+      "last_training_epoch_with_committed_disjunction": 28,
+      "committed_conjunction_rows": 1504,
+      "committed_disjunction_rows": 96
+    },
+    {
+      "kind": "xor",
+      "run": 9,
+      "final_gate_mse": 0.0037083533230406474,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.24969181418418884,
+          "mse_before_epoch350": 9.778577947372469e-11,
+          "mse_before_epoch400": 0.0355457179248333,
+          "mean_mse_final50": 0.018753481086703435,
+          "active_weight_norm_epoch350": 3.164438245251683,
+          "active_weight_norm_epoch400": 3.1642980643312377,
+          "active_norm_change_fraction_final50": -4.429883270930179e-05,
+          "active_norm_range_fraction_final50": 0.0006194713717306738,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.24969181418418884,
+          "mse_before_epoch350": 0.026363924145698547,
+          "mse_before_epoch400": 0.09190139174461365,
+          "mean_mse_final50": 0.033337162885582076,
+          "active_weight_norm_epoch350": 3.1453846034608253,
+          "active_weight_norm_epoch400": 3.1749305677283117,
+          "active_norm_change_fraction_final50": 0.009393434505585557,
+          "active_norm_range_fraction_final50": 0.017072038984660934,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(1.0, 0.0)": 805,
+        "(0.5, 0.5)": 795
+      },
+      "comparison_rejected_weight_fraction": 0.2484375,
+      "presented_rejected_weight_fraction": 0.0,
+      "class_pass": true,
+      "correct": 4,
+      "reconstructed": 4,
+      "final_all_conjunction": true,
+      "first_greedy": [
+        [
+          "disjunction"
+        ],
+        [
+          "disjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "disjunction"
+        ]
+      ],
+      "stable_greedy_conjunction_epoch": 13,
+      "epochs_after_greedy_flip": 388,
+      "last_training_epoch_with_committed_disjunction": 12,
+      "committed_conjunction_rows": 1571,
+      "committed_disjunction_rows": 29
+    },
+    {
+      "kind": "xor",
+      "run": 10,
+      "final_gate_mse": 8.759345533349006e-07,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.2500043511390686,
+          "mse_before_epoch350": 0.00012766658619511873,
+          "mse_before_epoch400": 4.885899329565291e-07,
+          "mean_mse_final50": 1.2958618665059873e-05,
+          "active_weight_norm_epoch350": 3.1835502681519974,
+          "active_weight_norm_epoch400": 3.183537240015191,
+          "active_norm_change_fraction_final50": -4.092329540573475e-06,
+          "active_norm_range_fraction_final50": 1.194591571944119e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.2500043511390686,
+          "mse_before_epoch350": 0.08206663280725479,
+          "mse_before_epoch400": 0.0823177844285965,
+          "mean_mse_final50": 0.03043432491889689,
+          "active_weight_norm_epoch350": 3.0846882007193583,
+          "active_weight_norm_epoch400": 3.0103826721429727,
+          "active_norm_change_fraction_final50": -0.02408850546355296,
+          "active_norm_range_fraction_final50": 0.024339199569321474,
+          "plateau_norm": false,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(0.5, 0.5)": 794,
+        "(1.0, 0.0)": 806
+      },
+      "comparison_rejected_weight_fraction": 0.248125,
+      "presented_rejected_weight_fraction": 0.0,
+      "class_pass": true,
+      "correct": 4,
+      "reconstructed": 4,
+      "final_all_conjunction": true,
+      "first_greedy": [
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ],
+        [
+          "conjunction"
+        ]
+      ],
+      "stable_greedy_conjunction_epoch": 1,
+      "epochs_after_greedy_flip": 400,
+      "last_training_epoch_with_committed_disjunction": 0,
+      "committed_conjunction_rows": 1600,
+      "committed_disjunction_rows": 0
+    },
+    {
+      "kind": "sum",
+      "run": 1,
+      "final_gate_mse": 0.25,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.2500130832195282,
+          "mse_before_epoch350": 0.24999992549419403,
+          "mse_before_epoch400": 0.2500000596046448,
+          "mean_mse_final50": 0.2500000447034836,
+          "active_weight_norm_epoch350": 0.09671238029325152,
+          "active_weight_norm_epoch400": 0.09671047409151685,
+          "active_norm_change_fraction_final50": -1.9710007435310887e-05,
+          "active_norm_range_fraction_final50": 1.9710007435310887e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.2500130832195282,
+          "mse_before_epoch350": 0.24999992549419403,
+          "mse_before_epoch400": 0.2500000596046448,
+          "mean_mse_final50": 0.2500000447034836,
+          "active_weight_norm_epoch350": 0.09671238029325152,
+          "active_weight_norm_epoch400": 0.09671047409151685,
+          "active_norm_change_fraction_final50": -1.9710007435310887e-05,
+          "active_norm_range_fraction_final50": 1.9710007435310887e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_rejected_weight_fraction": 0.0,
+      "presented_rejected_weight_fraction": 0.0
+    },
+    {
+      "kind": "sum",
+      "run": 2,
+      "final_gate_mse": 0.2500000596046448,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.25000157952308655,
+          "mse_before_epoch350": 0.24999994039535522,
+          "mse_before_epoch400": 0.2500000596046448,
+          "mean_mse_final50": 0.25000004887580873,
+          "active_weight_norm_epoch350": 0.11797429866685909,
+          "active_weight_norm_epoch400": 0.11797189712239957,
+          "active_norm_change_fraction_final50": -2.0356505498708826e-05,
+          "active_norm_range_fraction_final50": 2.0356505498708826e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.25000157952308655,
+          "mse_before_epoch350": 0.24999994039535522,
+          "mse_before_epoch400": 0.2500000596046448,
+          "mean_mse_final50": 0.25000004887580873,
+          "active_weight_norm_epoch350": 0.11797429866685909,
+          "active_weight_norm_epoch400": 0.11797189712239957,
+          "active_norm_change_fraction_final50": -2.0356505498708826e-05,
+          "active_norm_range_fraction_final50": 2.0356505498708826e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_rejected_weight_fraction": 0.0,
+      "presented_rejected_weight_fraction": 0.0
+    },
+    {
+      "kind": "sum",
+      "run": 3,
+      "final_gate_mse": 0.25000011920928955,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.25000107288360596,
+          "mse_before_epoch350": 0.2500000298023224,
+          "mse_before_epoch400": 0.2500000298023224,
+          "mean_mse_final50": 0.24999995410442352,
+          "active_weight_norm_epoch350": 0.18569375756479087,
+          "active_weight_norm_epoch400": 0.18569591226306015,
+          "active_norm_change_fraction_final50": 1.1603504057093256e-05,
+          "active_norm_range_fraction_final50": 1.220256558556104e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.25000107288360596,
+          "mse_before_epoch350": 0.2500000298023224,
+          "mse_before_epoch400": 0.2500000298023224,
+          "mean_mse_final50": 0.24999995410442352,
+          "active_weight_norm_epoch350": 0.18569375756479087,
+          "active_weight_norm_epoch400": 0.18569591226306015,
+          "active_norm_change_fraction_final50": 1.1603504057093256e-05,
+          "active_norm_range_fraction_final50": 1.220256558556104e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_rejected_weight_fraction": 0.0,
+      "presented_rejected_weight_fraction": 0.0
+    },
+    {
+      "kind": "sum",
+      "run": 4,
+      "final_gate_mse": 0.24999994039535522,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.2500021755695343,
+          "mse_before_epoch350": 0.2500000596046448,
+          "mse_before_epoch400": 0.24999992549419403,
+          "mean_mse_final50": 0.24999994963407515,
+          "active_weight_norm_epoch350": 0.08533255321701803,
+          "active_weight_norm_epoch400": 0.08533690530615265,
+          "active_norm_change_fraction_final50": 5.100151080147856e-05,
+          "active_norm_range_fraction_final50": 6.080145247199633e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.2500021755695343,
+          "mse_before_epoch350": 0.2500000596046448,
+          "mse_before_epoch400": 0.24999992549419403,
+          "mean_mse_final50": 0.24999994963407515,
+          "active_weight_norm_epoch350": 0.08533255321701803,
+          "active_weight_norm_epoch400": 0.08533690530615265,
+          "active_norm_change_fraction_final50": 5.100151080147856e-05,
+          "active_norm_range_fraction_final50": 6.080145247199633e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_rejected_weight_fraction": 0.0,
+      "presented_rejected_weight_fraction": 0.0
+    },
+    {
+      "kind": "sum",
+      "run": 5,
+      "final_gate_mse": 0.25000011920928955,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.2500019073486328,
+          "mse_before_epoch350": 0.25000324845314026,
+          "mse_before_epoch400": 0.2500000298023224,
+          "mean_mse_final50": 0.25000026792287827,
+          "active_weight_norm_epoch350": 0.23879496455595597,
+          "active_weight_norm_epoch400": 0.23881455565256338,
+          "active_norm_change_fraction_final50": 8.204149800156812e-05,
+          "active_norm_range_fraction_final50": 0.00011378273460867772,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.2500019073486328,
+          "mse_before_epoch350": 0.25000324845314026,
+          "mse_before_epoch400": 0.2500000298023224,
+          "mean_mse_final50": 0.25000026792287827,
+          "active_weight_norm_epoch350": 0.23879496455595597,
+          "active_weight_norm_epoch400": 0.23881455565256338,
+          "active_norm_change_fraction_final50": 8.204149800156812e-05,
+          "active_norm_range_fraction_final50": 0.00011378273460867772,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_rejected_weight_fraction": 0.0,
+      "presented_rejected_weight_fraction": 0.0
+    },
+    {
+      "kind": "sum",
+      "run": 6,
+      "final_gate_mse": 0.24999995529651642,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.25000131130218506,
+          "mse_before_epoch350": 0.2500000596046448,
+          "mse_before_epoch400": 0.24999991059303284,
+          "mean_mse_final50": 0.24999994844198226,
+          "active_weight_norm_epoch350": 0.10305176752873722,
+          "active_weight_norm_epoch400": 0.10305449033690076,
+          "active_norm_change_fraction_final50": 2.642175121133634e-05,
+          "active_norm_range_fraction_final50": 2.6582130759734953e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.25000131130218506,
+          "mse_before_epoch350": 0.2500000596046448,
+          "mse_before_epoch400": 0.24999991059303284,
+          "mean_mse_final50": 0.24999994844198226,
+          "active_weight_norm_epoch350": 0.10305176752873722,
+          "active_weight_norm_epoch400": 0.10305449033690076,
+          "active_norm_change_fraction_final50": 2.642175121133634e-05,
+          "active_norm_range_fraction_final50": 2.6582130759734953e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_rejected_weight_fraction": 0.0,
+      "presented_rejected_weight_fraction": 0.0
+    },
+    {
+      "kind": "sum",
+      "run": 7,
+      "final_gate_mse": 0.2500000298023224,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.2500028908252716,
+          "mse_before_epoch350": 0.24999995529651642,
+          "mse_before_epoch400": 0.2500000596046448,
+          "mean_mse_final50": 0.25000005066394804,
+          "active_weight_norm_epoch350": 0.11695702517620281,
+          "active_weight_norm_epoch400": 0.11695466113711317,
+          "active_norm_change_fraction_final50": -2.0212886622906453e-05,
+          "active_norm_range_fraction_final50": 2.0212886622906453e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.2500028908252716,
+          "mse_before_epoch350": 0.24999995529651642,
+          "mse_before_epoch400": 0.2500000596046448,
+          "mean_mse_final50": 0.25000005066394804,
+          "active_weight_norm_epoch350": 0.11695702517620281,
+          "active_weight_norm_epoch400": 0.11695466113711317,
+          "active_norm_change_fraction_final50": -2.0212886622906453e-05,
+          "active_norm_range_fraction_final50": 2.0212886622906453e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_rejected_weight_fraction": 0.0,
+      "presented_rejected_weight_fraction": 0.0
+    },
+    {
+      "kind": "sum",
+      "run": 8,
+      "final_gate_mse": 0.25000011920928955,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.2500004470348358,
+          "mse_before_epoch350": 0.24999991059303284,
+          "mse_before_epoch400": 0.2500000596046448,
+          "mean_mse_final50": 0.25000005632638933,
+          "active_weight_norm_epoch350": 0.1902064573968445,
+          "active_weight_norm_epoch400": 0.19020120534474644,
+          "active_norm_change_fraction_final50": -2.761237536274289e-05,
+          "active_norm_range_fraction_final50": 4.284553787828383e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.2500004470348358,
+          "mse_before_epoch350": 0.24999991059303284,
+          "mse_before_epoch400": 0.2500000596046448,
+          "mean_mse_final50": 0.25000005632638933,
+          "active_weight_norm_epoch350": 0.1902064573968445,
+          "active_weight_norm_epoch400": 0.19020120534474644,
+          "active_norm_change_fraction_final50": -2.761237536274289e-05,
+          "active_norm_range_fraction_final50": 4.284553787828383e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_rejected_weight_fraction": 0.0,
+      "presented_rejected_weight_fraction": 0.0
+    },
+    {
+      "kind": "sum",
+      "run": 9,
+      "final_gate_mse": 0.2500000596046448,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.25000500679016113,
+          "mse_before_epoch350": 0.24999994039535522,
+          "mse_before_epoch400": 0.2500000596046448,
+          "mean_mse_final50": 0.2500000500679016,
+          "active_weight_norm_epoch350": 0.1179436920841892,
+          "active_weight_norm_epoch400": 0.11794133980344608,
+          "active_norm_change_fraction_final50": -1.9944099608491564e-05,
+          "active_norm_range_fraction_final50": 1.9997440599299783e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.25000500679016113,
+          "mse_before_epoch350": 0.24999994039535522,
+          "mse_before_epoch400": 0.2500000596046448,
+          "mean_mse_final50": 0.2500000500679016,
+          "active_weight_norm_epoch350": 0.1179436920841892,
+          "active_weight_norm_epoch400": 0.11794133980344608,
+          "active_norm_change_fraction_final50": -1.9944099608491564e-05,
+          "active_norm_range_fraction_final50": 1.9997440599299783e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_rejected_weight_fraction": 0.0,
+      "presented_rejected_weight_fraction": 0.0
+    },
+    {
+      "kind": "sum",
+      "run": 10,
+      "final_gate_mse": 0.24999995529651642,
+      "readers": {
+        "presented": {
+          "mse_before_epoch1": 0.25000321865081787,
+          "mse_before_epoch350": 0.25000011920928955,
+          "mse_before_epoch400": 0.2499997913837433,
+          "mean_mse_final50": 0.24999994039535522,
+          "active_weight_norm_epoch350": 0.18489530505854632,
+          "active_weight_norm_epoch400": 0.1848964335374858,
+          "active_norm_change_fraction_final50": 6.103340153126012e-06,
+          "active_norm_range_fraction_final50": 1.0212582288743205e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        },
+        "comparison": {
+          "mse_before_epoch1": 0.25000321865081787,
+          "mse_before_epoch350": 0.25000011920928955,
+          "mse_before_epoch400": 0.2499997913837433,
+          "mean_mse_final50": 0.24999994039535522,
+          "active_weight_norm_epoch350": 0.18489530505854632,
+          "active_weight_norm_epoch400": 0.1848964335374858,
+          "active_norm_change_fraction_final50": 6.103340153126012e-06,
+          "active_norm_range_fraction_final50": 1.0212582288743205e-05,
+          "plateau_norm": true,
+          "updates": 400,
+          "final_adam_steps": [
+            400.0
+          ]
+        }
+      },
+      "presented_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_weights": {
+        "(1.0, 0.0)": 1600
+      },
+      "comparison_rejected_weight_fraction": 0.0,
+      "presented_rejected_weight_fraction": 0.0
+    }
+  ],
+  "misses": [],
+  "miss_counts": {},
+  "note": "MSE is measured before either trial update on reconstruction-kept roots; final gate MSE uses ordinary evaluation after training. Norms include active weight matrices only, excluding unused matrices and bias vectors. The plateau rule uses the epoch-350 to epoch-400 endpoint change; the full tail range is also reported. Flip uses the 2d greedy-policy convention. Actual committed disjunction exposure is reported separately. Categories describe the saved evidence and do not establish causation.",
+  "postprocessor_sha256": "6c1dd6102c27eb6fadec51fd16a07646b81a00bc4a94e3b0a3e52f61ca3e3b5c"
+}

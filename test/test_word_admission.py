@@ -25,7 +25,9 @@ def test_23_fuse_parts_before_word_admission(tmp_path):
     fused = ps.percept_store.observe_chunk(b'love')
     assert ps.fuse_parts(parts) == [fused]
     word = cs.interpret.lookup_word(parts, ws.property_rows_for_bytes('love'), form='love')
-    assert cs.concept_parts(word) == [fused]
+    assert set(cs.concept_parts(word)) == set(ps.percept_store.identity.admit(b'love'))
+    cs.interpret.forward(word)
+    assert cs.definitions.word(identity=ps.percept_store.identity.key(ps.percept_store.identity.form(b'love')).hex()) == word
 
 
 def test_23_same_parts_after_property_change_write_nothing():

@@ -1,0 +1,117 @@
+........................................................................ [ 63%]
+...FFFFFF..F.FFF.........................s                               [100%]
+=================================== FAILURES ===================================
+__________ test_source_trust_does_not_supply_identification_evidence ___________
+test/test_identification_evidence.py:25: in test_source_trust_does_not_supply_identification_evidence
+    assert store.row(row)['evidence'] == (0., 0.)
+E   assert (0.800000011920929, 0.0) == (0.0, 0.0)
+E     
+E     At index 0 diff: 0.800000011920929 != 0.0
+E     Use -v to get more diff
+____________ test_changing_source_trust_preserves_both_and_neither _____________
+test/test_identification_evidence.py:34: in test_changing_source_trust_preserves_both_and_neither
+    assert store.row(both)['evidence'] == pytest.approx((.6, .6))
+E   assert (0.0, 0.30000001192092896) == approx((0.6 ±....6 ± 6.0e-07))
+E     
+E     comparison failed. Mismatched elements: 2 / 2:
+E     Max absolute difference: 0.6
+E     Max relative difference: inf
+E     Index | Obtained            | Expected     
+E     0     | 0.0                 | 0.6 ± 6.0e-07
+E     1     | 0.30000001192092896 | 0.6 ± 6.0e-07
+_________ test_clause_order_and_evidence_are_stored_without_a_program __________
+test/test_identification_evidence.py:46: in test_clause_order_and_evidence_are_stored_without_a_program
+    assert store.row(row)['evidence'] == pytest.approx((.75, .5))
+E   assert (0.8999999761581421, 0.0) == approx((0.75 ....5 ± 5.0e-07))
+E     
+E     comparison failed. Mismatched elements: 2 / 2:
+E     Max absolute difference: 0.5
+E     Max relative difference: inf
+E     Index | Obtained           | Expected      
+E     0     | 0.8999999761581421 | 0.75 ± 7.5e-07
+E     1     | 0.0                | 0.5 ± 5.0e-07
+______________ test_row_compaction_preserves_each_order_and_pole _______________
+test/test_identification_evidence.py:64: in test_row_compaction_preserves_each_order_and_pole
+    assert store.row(0)['evidence'] == pytest.approx((.6, .5))
+E   assert (0.699999988079071, 0.0) == approx((0.6 ±....5 ± 5.0e-07))
+E     
+E     comparison failed. Mismatched elements: 2 / 2:
+E     Max absolute difference: 0.5
+E     Max relative difference: inf
+E     Index | Obtained          | Expected     
+E     0     | 0.699999988079071 | 0.6 ± 6.0e-07
+E     1     | 0.0               | 0.5 ± 5.0e-07
+_________ test_embedded_identification_does_not_grant_source_authority _________
+test/test_identification_evidence.py:74: in test_embedded_identification_does_not_grant_source_authority
+    assert row == 1 and store.row(0)['trust'] == 0.
+E   assert (1 == 1 and 0.4000000059604645 == 0.0)
+_______________ test_open_reading_keeps_both_poles_and_its_order _______________
+test/test_identification_evidence.py:90: in test_open_reading_keeps_both_poles_and_its_order
+    assert fixture.store.row(row)['evidence'] == pytest.approx((.6, .7))
+E   assert (0.0, 0.4000000059604645) == approx((0.6 ±....7 ± 7.0e-07))
+E     
+E     comparison failed. Mismatched elements: 2 / 2:
+E     Max absolute difference: 0.6
+E     Max relative difference: inf
+E     Index | Obtained           | Expected     
+E     0     | 0.0                | 0.6 ± 6.0e-07
+E     1     | 0.4000000059604645 | 0.7 ± 7.0e-07
+_________ test_old_scalar_checkpoint_does_not_invent_evidence_or_order _________
+test/test_identification_evidence.py:136: in test_old_scalar_checkpoint_does_not_invent_evidence_or_order
+    assert restored.row(0)['trust'] == pytest.approx(.8)
+E   assert 0.0 == 0.8 ± 8.0e-07
+E     
+E     comparison failed
+E     Obtained: 0.0
+E     Expected: 0.8 ± 8.0e-07
+_____________ test_withdrawing_authority_preserves_identification ______________
+test/test_identification_evidence.py:156: in test_withdrawing_authority_preserves_identification
+    assert store.row(row)['evidence'] == pytest.approx((.8, .6))
+E   assert (0.0, 0.0) == approx((0.8 ±....6 ± 6.0e-07))
+E     
+E     comparison failed. Mismatched elements: 2 / 2:
+E     Max absolute difference: 0.8
+E     Max relative difference: inf
+E     Index | Obtained | Expected     
+E     0     | 0.0      | 0.8 ± 8.0e-07
+E     1     | 0.0      | 0.6 ± 6.0e-07
+________ test_luminosity_view_does_not_present_identification_as_trust _________
+test/test_identification_evidence.py:166: in test_luminosity_view_does_not_present_identification_as_trust
+    assert light.sync_from_ltm() == 2
+E   assert 1 == 2
+E    +  where 1 = sync_from_ltm()
+E    +    where sync_from_ltm = TruthLayer(nDim=4, truths=1/8).sync_from_ltm
+________ test_native_sentence_carries_paired_identification_to_its_row _________
+test/test_identification_evidence.py:202: in test_native_sentence_carries_paired_identification_to_its_row
+    assert field.evidence == pytest.approx((.8, .6))
+E   assert (1.0, 0.0) == approx((0.8 ±....6 ± 6.0e-07))
+E     
+E     comparison failed. Mismatched elements: 2 / 2:
+E     Max absolute difference: 0.6
+E     Max relative difference: inf
+E     Index | Obtained | Expected     
+E     0     | 1.0      | 0.8 ± 8.0e-07
+E     1     | 0.0      | 0.6 ± 6.0e-07
+=============================== warnings summary ===============================
+test/test_grammar_separator.py::test_mixing_separator_is_perceived_but_not_pushed_or_read_back[False-False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_grounded_xor.py::test_native_unseeded_xor[0-4]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_identification_evidence.py::test_source_trust_does_not_supply_identification_evidence
+FAILED test/test_identification_evidence.py::test_changing_source_trust_preserves_both_and_neither
+FAILED test/test_identification_evidence.py::test_clause_order_and_evidence_are_stored_without_a_program
+FAILED test/test_identification_evidence.py::test_row_compaction_preserves_each_order_and_pole
+FAILED test/test_identification_evidence.py::test_embedded_identification_does_not_grant_source_authority
+FAILED test/test_identification_evidence.py::test_open_reading_keeps_both_poles_and_its_order
+FAILED test/test_identification_evidence.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order
+FAILED test/test_identification_evidence.py::test_withdrawing_authority_preserves_identification
+FAILED test/test_identification_evidence.py::test_luminosity_view_does_not_present_identification_as_trust
+FAILED test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row
+10 failed, 103 passed, 1 skipped, 2 warnings in 57.85s

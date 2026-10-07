@@ -1,0 +1,45 @@
+--- 2e/bin/ClauseRow.py
++++ bin/ClauseRow.py
+@@ -231,7 +231,7 @@
+         return int(self.row_ids[children[reference[1]]]) if isinstance(reference, tuple) else reference
+ 
+     @torch.no_grad()
+-    def write_clause(self, clause, *, trust=0., origin=None, stream=-1, kind='observation',
++    def write_clause(self, clause, *, trust=None, origin=None, stream=-1, kind='observation',
+                     evidence=None, text=None, expectation=None):
+         """Write embedded S rows first, without granting them assertion authority.
+ 
+@@ -248,7 +248,7 @@
+             kind = 'fact'
+             clause = replace(clause, meaning=replace(clause.meaning, mode='assertive'))
+         import math
+-        if not math.isfinite(float(trust)):
++        if trust is not None and not math.isfinite(float(trust)):
+             raise ValueError('clause provenance must be finite')
+         if evidence is not None and (len(evidence) != 2 or any(
+                 not math.isfinite(float(x)) or not 0 <= float(x) <= 1 for x in evidence)):
+@@ -385,11 +385,12 @@
+                 if relation == 'implies' and any(
+                         self.index_of_row(ref) is None for ref in (references[0], references[2])):
+                     raise ValueError('implication operands must be truth rows')
+-            degree = max(-1., min(1., float(trust))) if asserted else 0.
+-            # Identification belongs to the ended field, including an
+-            # embedded field with no assertion authority. Provenance is a
+-            # separate scalar and cannot create or overwrite either pole.
++            degree = max(-1., min(1., float(trust))) if asserted and trust is not None else 0.
+             positive, negative = map(float, value.evidence if evidence is None or not asserted else evidence)
++            if asserted and (assertion is not None or (trust is not None and evidence is None)):
++                positive, negative = max(degree, 0.), max(-degree, 0.)
++                if not value.meaning.polarity:
++                    positive, negative = negative, positive
+ 
+             def append(refs):
+                 tag = tags[relation]
+@@ -397,7 +398,6 @@
+                     self.c_plus[row] = max(float(self.c_plus[row]), positive)
+                     self.c_minus[row] = max(float(self.c_minus[row]), negative)
+                     if asserted:
+-                        self.trust[row] = degree
+                         self.timestamp[row] = self._next_ts
+                         self._next_ts.add_(1)
+                         self.record_kind[row] = self.KINDS.index(kind)

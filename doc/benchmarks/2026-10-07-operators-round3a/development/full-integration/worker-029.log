@@ -1,0 +1,106 @@
+...........sssssssssss.................................................. [ 46%]
+............................FF.FF........F............FF......ssssssss.s [ 92%]
+ssssssss.F.                                                              [100%]
+=================================== FAILURES ===================================
+_ test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match[1] _
+test/test_tied_operator_reconstruction.py:56: in test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match
+    ready, atoms, values, valid = BasicModel._snapshot_tables(owner, torch.zeros(1, 1, 2))
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:12338: in _snapshot_tables
+    bank = self._concept_owner().interpret.binding_atoms(bank)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'interpret'
+_ test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match[2] _
+test/test_tied_operator_reconstruction.py:56: in test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match
+    ready, atoms, values, valid = BasicModel._snapshot_tables(owner, torch.zeros(1, 1, 2))
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:12338: in _snapshot_tables
+    bank = self._concept_owner().interpret.binding_atoms(bank)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'interpret'
+_ test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient[False] __
+test/test_tied_operator_reconstruction.py:104: in test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient
+    _, atoms, values, valid = model._snapshot_tables(torch.zeros(1, 1, 2))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:12338: in _snapshot_tables
+    bank = self._concept_owner().interpret.binding_atoms(bank)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:197: in binding_atoms
+    return atoms if identity is None else identity.binding(atoms)
+                                          ^^^^^^^^^^^^^^^^^^^^^^^
+bin/WordIdentity.py:230: in binding
+    projected = atoms[..., :self.width] @ self.projection.to(atoms)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: mat1 and mat2 shapes cannot be multiplied (2x2 and 96x64)
+__ test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient[True] __
+test/test_tied_operator_reconstruction.py:104: in test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient
+    _, atoms, values, valid = model._snapshot_tables(torch.zeros(1, 1, 2))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:12338: in _snapshot_tables
+    bank = self._concept_owner().interpret.binding_atoms(bank)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Interpret.py:197: in binding_atoms
+    return atoms if identity is None else identity.binding(atoms)
+                                          ^^^^^^^^^^^^^^^^^^^^^^^
+bin/WordIdentity.py:230: in binding
+    projected = atoms[..., :self.width] @ self.projection.to(atoms)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: mat1 and mat2 shapes cannot be multiplied (2x2 and 96x64)
+_____ test_snapshot_preserves_backward_after_same_shape_dictionary_update ______
+test/test_tied_operator_reconstruction.py:230: in test_snapshot_preserves_backward_after_same_shape_dictionary_update
+    expected, = torch.autograd.grad(loss, reference, retain_graph=True)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:540: in grad
+    result_tuple = handle_torch_function(
+.venv/lib/python3.12/site-packages/torch/overrides.py:1773: in handle_torch_function
+    result = mode.__torch_function__(public_api, types, args, kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:594: in grad
+    result = _engine_run_backward(
+.venv/lib/python3.12/site-packages/torch/autograd/graph.py:1072: in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+E   RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn
+_____ test_byte_targets_survive_whole_word_and_prefix_promotion[alphabet] ______
+test/test_tied_operator_reconstruction.py:460: in test_byte_targets_survive_whole_word_and_prefix_promotion
+    assert counts[1] < counts[0]
+E   assert 1 < 1
+_______ test_byte_targets_survive_whole_word_and_prefix_promotion[alph] ________
+test/test_tied_operator_reconstruction.py:460: in test_byte_targets_survive_whole_word_and_prefix_promotion
+    assert counts[1] < counts[0]
+E   assert 1 < 1
+_____ test_student_checkpoint_migrates_shared_weights_and_momentum_by_name _____
+test/test_tied_reconstruction_objective.py:120: in test_student_checkpoint_migrates_shared_weights_and_momentum_by_name
+    assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2736/test_student_checkpoint_migrat0/student.ckpt
+reconstructInLoop: dropped 12 detached reverse-student keys from the checkpoint (declared migration)
+=============================== warnings summary ===============================
+test/test_thought_answer_adapters.py::test_code_answer_uses_the_checked_atom_and_keeps_its_reference
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_tied_operator_reconstruction.py::test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match[1]
+FAILED test/test_tied_operator_reconstruction.py::test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match[2]
+FAILED test/test_tied_operator_reconstruction.py::test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient[False]
+FAILED test/test_tied_operator_reconstruction.py::test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient[True]
+FAILED test/test_tied_operator_reconstruction.py::test_snapshot_preserves_backward_after_same_shape_dictionary_update
+FAILED test/test_tied_operator_reconstruction.py::test_byte_targets_survive_whole_word_and_prefix_promotion[alphabet]
+FAILED test/test_tied_operator_reconstruction.py::test_byte_targets_survive_whole_word_and_prefix_promotion[alph]
+FAILED test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_momentum_by_name
+8 failed, 119 passed, 28 skipped, 1 warning in 32.08s

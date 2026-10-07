@@ -1,0 +1,113 @@
+..FFF................................................................... [ 28%]
+..........................s............................................. [ 56%]
+...................................................ss..F.s.............. [ 84%]
+..............s.......FF................                                 [100%]
+=================================== FAILURES ===================================
+_______ test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0] _______
+test/test_arithmetic_isolation.py:98: in test_numeric_and_renamed_sentence_paths_keep_oracles_out
+    model = _native_answer_model(tmp_path, True)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:170: in _native_answer_model
+    assert m.wholeSpace.subspace.muxedSize == 136
+E   assert 104 == 136
+E    +  where 104 = SubSpace().muxedSize
+E    +    where SubSpace() = WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n).subspace
+E    +      where WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=16, out_features=1, bias=True)\n    )\n  )\n  (comparison_reader): AnswerComparison(\n    (weights): ParameterDict()\n  )\n).wholeSpace
+_______ test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts1] _______
+test/test_arithmetic_isolation.py:98: in test_numeric_and_renamed_sentence_paths_keep_oracles_out
+    model = _native_answer_model(tmp_path, True)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:170: in _native_answer_model
+    assert m.wholeSpace.subspace.muxedSize == 136
+E   assert 104 == 136
+E    +  where 104 = SubSpace().muxedSize
+E    +    where SubSpace() = WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n).subspace
+E    +      where WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=16, out_features=1, bias=True)\n    )\n  )\n  (comparison_reader): AnswerComparison(\n    (weights): ParameterDict()\n  )\n).wholeSpace
+_____ test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes _____
+test/test_arithmetic_isolation.py:119: in test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes
+    model = _native_answer_model(tmp_path, True)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:170: in _native_answer_model
+    assert m.wholeSpace.subspace.muxedSize == 136
+E   assert 104 == 136
+E    +  where 104 = SubSpace().muxedSize
+E    +    where SubSpace() = WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n).subspace
+E    +      where WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=16, out_features=1, bias=True)\n    )\n  )\n  (comparison_reader): AnswerComparison(\n    (weights): ParameterDict()\n  )\n).wholeSpace
+__________________ test_cs_ws_recurrent_input_mismatch_raises __________________
+test/test_dimensional_governance.py:172: in test_cs_ws_recurrent_input_mismatch_raises
+    assert "999" in msg and "1024" in msg, msg
+E   AssertionError: XML config inconsistencies:
+E       - CS->WS recurrent input inconsistent: WS.nInputDim=999 must equal CS.nOutputDim=104. WS may then emit its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 104 (or omit it to inherit CS.nOutputDim).
+E   assert ('999' in 'XML config inconsistencies:\n  - CS->WS recurrent input inconsistent: WS.nInputDim=999 must equal CS.nOutputDim=104. ...t its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 104 (or omit it to inherit CS.nOutputDim).' and '1024' in 'XML config inconsistencies:\n  - CS->WS recurrent input inconsistent: WS.nInputDim=999 must equal CS.nOutputDim=104. ...t its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 104 (or omit it to inherit CS.nOutputDim).')
+_______ test_normal_supervised_output_respects_gradient_contract[False] ________
+test/test_generation_catalog.py:208: in test_normal_supervised_output_respects_gradient_contract
+    model = _native_answer_model(tmp_path, output_loop)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:170: in _native_answer_model
+    assert m.wholeSpace.subspace.muxedSize == 136
+E   assert 104 == 136
+E    +  where 104 = SubSpace().muxedSize
+E    +    where SubSpace() = WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n).subspace
+E    +      where WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=16, out_features=1, bias=True)\n    )\n  )\n  (comparison_reader): AnswerComparison(\n    (weights): ParameterDict()\n  )\n).wholeSpace
+________ test_normal_supervised_output_respects_gradient_contract[True] ________
+test/test_generation_catalog.py:208: in test_normal_supervised_output_respects_gradient_contract
+    model = _native_answer_model(tmp_path, output_loop)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:170: in _native_answer_model
+    assert m.wholeSpace.subspace.muxedSize == 136
+E   assert 104 == 136
+E    +  where 104 = SubSpace().muxedSize
+E    +    where SubSpace() = WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n).subspace
+E    +      where WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=16, out_features=1, bias=True)\n    )\n  )\n  (comparison_reader): AnswerComparison(\n    (weights): ParameterDict()\n  )\n).wholeSpace
+=============================== warnings summary ===============================
+test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestUniversalTrainingContract::test_space_has_training_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_codebook_creates_codebook
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_no_codebook_creates_tensor_basis
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=3 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_readout_reverse_inverts
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=1 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:16720: RuntimeWarning: concept pool order 0 exhausted: cannot reserve 4 provisional rows
+    warnings.warn(f"concept pool order {order} exhausted: cannot reserve {self.concept_pool_size} provisional rows", RuntimeWarning)
+
+test/test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/XOR_exact.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 16, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_existence_metadata.py::test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:2593: UserWarning: Legacy LTM rows have unknown order; decoding requires an explicit order stamp.
+    module._load_from_state_dict(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]
+FAILED test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts1]
+FAILED test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes
+FAILED test/test_dimensional_governance.py::test_cs_ws_recurrent_input_mismatch_raises
+FAILED test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]
+FAILED test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]
+6 failed, 245 passed, 5 skipped, 11 warnings in 44.51s

@@ -1,0 +1,313 @@
+.....sssFsFsssssss.sFsFsFs......FF............F......F.................. [ 40%]
+...F.FF..FFF....s.sss................................................... [ 81%]
+...............................F                                         [100%]
+=================================== FAILURES ===================================
+_ test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development] _
+test/test_output_path_supervised.py:180: in test_native_answer_uses_owned_ideas_without_dense_symbol_state
+    m = _native_answer_model(tmp_path, output_loop, concept_width=concept_width)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:165: in _native_answer_model
+    m = _build_ladder_variant(tmp_path, "native_answer", replacements)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_meronomy_ladder.py:466: in _build_ladder_variant
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6613: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:24479: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - CS->WS recurrent input inconsistent: WS.nInputDim=264 must equal CS.nOutputDim=232. WS may then emit its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 232 (or omit it to inherit CS.nOutputDim).
+_ test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-development] _
+test/test_output_path_supervised.py:180: in test_native_answer_uses_owned_ideas_without_dense_symbol_state
+    m = _native_answer_model(tmp_path, output_loop, concept_width=concept_width)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:165: in _native_answer_model
+    m = _build_ladder_variant(tmp_path, "native_answer", replacements)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_meronomy_ladder.py:466: in _build_ladder_variant
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6613: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:24479: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - CS->WS recurrent input inconsistent: WS.nInputDim=264 must equal CS.nOutputDim=232. WS may then emit its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 232 (or omit it to inherit CS.nOutputDim).
+_ test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development] _
+test/test_output_path_supervised.py:463: in test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer
+    m = _native_answer_model(tmp_path, False, concept_width=concept_width)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:165: in _native_answer_model
+    m = _build_ladder_variant(tmp_path, "native_answer", replacements)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_meronomy_ladder.py:466: in _build_ladder_variant
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6613: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:24479: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - CS->WS recurrent input inconsistent: WS.nInputDim=264 must equal CS.nOutputDim=232. WS may then emit its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 232 (or omit it to inherit CS.nOutputDim).
+___ test_native_checkpoint_restores_active_answer_widths[False-development] ____
+test/test_output_path_supervised.py:513: in test_native_checkpoint_restores_active_answer_widths
+    m = _native_answer_model(tmp_path, False, concept_width=concept_width)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:165: in _native_answer_model
+    m = _build_ladder_variant(tmp_path, "native_answer", replacements)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_meronomy_ladder.py:466: in _build_ladder_variant
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6613: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:24479: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - CS->WS recurrent input inconsistent: WS.nInputDim=264 must equal CS.nOutputDim=232. WS may then emit its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 232 (or omit it to inherit CS.nOutputDim).
+____ test_native_checkpoint_restores_active_answer_widths[True-development] ____
+test/test_output_path_supervised.py:513: in test_native_checkpoint_restores_active_answer_widths
+    m = _native_answer_model(tmp_path, False, concept_width=concept_width)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:165: in _native_answer_model
+    m = _build_ladder_variant(tmp_path, "native_answer", replacements)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_meronomy_ladder.py:466: in _build_ladder_variant
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6613: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:24479: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - CS->WS recurrent input inconsistent: WS.nInputDim=264 must equal CS.nOutputDim=232. WS may then emit its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 232 (or omit it to inherit CS.nOutputDim).
+___________ test_model_checkpoint_preserves_readout_and_adam[False] ____________
+test/test_output_percept_readout.py:68: in test_model_checkpoint_preserves_readout_and_adam
+    model = _native_answer_model(tmp_path, False)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:165: in _native_answer_model
+    m = _build_ladder_variant(tmp_path, "native_answer", replacements)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_meronomy_ladder.py:466: in _build_ladder_variant
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6613: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:24479: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - CS->WS recurrent input inconsistent: WS.nInputDim=264 must equal CS.nOutputDim=232. WS may then emit its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 232 (or omit it to inherit CS.nOutputDim).
+____________ test_model_checkpoint_preserves_readout_and_adam[True] ____________
+test/test_output_percept_readout.py:68: in test_model_checkpoint_preserves_readout_and_adam
+    model = _native_answer_model(tmp_path, False)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:165: in _native_answer_model
+    m = _build_ladder_variant(tmp_path, "native_answer", replacements)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_meronomy_ladder.py:466: in _build_ladder_variant
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6613: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:24479: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - CS->WS recurrent input inconsistent: WS.nInputDim=264 must equal CS.nOutputDim=232. WS may then emit its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 232 (or omit it to inherit CS.nOutputDim).
+___ test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only ___
+test/test_output_synthesis.py:347: in test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only
+    assert not torch.allclose(first.actual, out_after)        # answer path moved
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: assert not True
+E    +  where True = <built-in method allclose of type object at 0x10a6453a0>(tensor([[[0.]],\n\n        [[0.]]]), tensor([[[0.]],\n\n        [[0.]]]))
+E    +    where <built-in method allclose of type object at 0x10a6453a0> = torch.allclose
+E    +    and   tensor([[[0.]],\n\n        [[0.]]]) = AnswerConstruction(actual=tensor([[[0.]],\n\n        [[0.]]]), derivation=AnswerDerivation(answer_symbol=tensor([[[-0., ...eptual', 'shape': (2, 8, 104), 'selections': ()}, {'operation': 'output:from_percepts', 'shape': (2, 1, 1)}), texts=()).actual
+________ test_synthesized_answer_checkpoint_reloads_into_a_fresh_model _________
+test/test_output_synthesis.py:515: in test_synthesized_answer_checkpoint_reloads_into_a_fresh_model
+    assert fresh.load_weights(str(path), require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 0 (Δ=0.083s)
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2724/test_synthesized_answer_checkp0/synth.ckpt
+______ test_question_conditioner_checkpoint_reloads_both_widths_strictly _______
+test/test_output_walk.py:432: in test_question_conditioner_checkpoint_reloads_both_widths_strictly
+    assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2724/test_question_conditioner_chec0/conditioners.ckpt
+____ test_question_conditioner_legacy_singular_checkpoint_reloads_strictly _____
+test/test_output_walk.py:495: in test_question_conditioner_legacy_singular_checkpoint_reloads_strictly
+    assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2724/test_question_conditioner_lega0/legacy-conditioner.ckpt
+________________ test_materialised_idea_follows_the_symbol_rows ________________
+test/test_output_walk.py:539: in test_materialised_idea_follows_the_symbol_rows
+    assert not torch.allclose(idea1, idea0, atol=1e-4)
+E   assert not True
+E    +  where True = <built-in method allclose of type object at 0x10a6453a0>(tensor([[[ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,\n           0.0000e+00,  0.0000e+00,  0.0000...0,  0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,\n           0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]), tensor([[[ 0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,\n           0.0000e+00,  0.0000e+00,  0.0000...0,  0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00,\n           0.0000e+00,  0.0000e+00,  0.0000e+00,  0.0000e+00]]]), atol=0.0001)
+E    +    where <built-in method allclose of type object at 0x10a6453a0> = torch.allclose
+_ test_generate_checkpoint_migrates_action_weights_and_adam_moments[True-False] _
+test/test_output_walk.py:673: in test_generate_checkpoint_migrates_action_weights_and_adam_moments
+    assert fresh.load_weights(str(path), strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2724/test_generate_checkpoint_migra0/generate.ckpt
+_ test_generate_checkpoint_migrates_action_weights_and_adam_moments[False-False] _
+test/test_output_walk.py:673: in test_generate_checkpoint_migrates_action_weights_and_adam_moments
+    assert fresh.load_weights(str(path), strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2724/test_generate_checkpoint_migra1/generate.ckpt
+_ test_generate_checkpoint_migrates_action_weights_and_adam_moments[True-True] _
+test/test_output_walk.py:673: in test_generate_checkpoint_migrates_action_weights_and_adam_moments
+    assert fresh.load_weights(str(path), strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2724/test_generate_checkpoint_migra2/generate.ckpt
+__________ test_checkpoint_restores_fixed_owner_and_optimizer_by_name __________
+test/test_partspace_dynamic_capacity.py:254: in test_checkpoint_restores_fixed_owner_and_optimizer_by_name
+    assert restored.load_weights(str(checkpoint), require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2724/test_checkpoint_restores_fixed0/grown.ckpt
+=============================== warnings summary ===============================
+test/test_order_k_unfold.py::test_order_k_member_missed_at_order0_recovered_by_unfold
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpv_k51amn/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_synthesis.py::test_exact_identity_reconstruction_is_flagged_not_counted
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: reconstruction_identity [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2724/cfg0/MM_xor_synth.xml]: input reconstruction is an exact unmasked identity: zero cost carries no learning signal (mask or degrade the input to create one)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp5igfz9zy/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp5vrjltgu/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp3vgw_m5y/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpplv3xce9/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_partition_pos_codebook.py: 5 warnings
+test/test_partition_reconstruction_stack.py: 2 warnings
+test/test_partition_rule_predictor.py: 6 warnings
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_partition_pos_codebook.py: 5 warnings
+test/test_partition_reconstruction_stack.py: 2 warnings
+test/test_partition_rule_predictor.py: 6 warnings
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_partition_resolve.py::test_symbol_codebook_quantizes_activation_not_what
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development]
+FAILED test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-development]
+FAILED test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]
+FAILED test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-development]
+FAILED test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-development]
+FAILED test/test_output_percept_readout.py::test_model_checkpoint_preserves_readout_and_adam[False]
+FAILED test/test_output_percept_readout.py::test_model_checkpoint_preserves_readout_and_adam[True]
+FAILED test/test_output_synthesis.py::test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only
+FAILED test/test_output_synthesis.py::test_synthesized_answer_checkpoint_reloads_into_a_fresh_model
+FAILED test/test_output_walk.py::test_question_conditioner_checkpoint_reloads_both_widths_strictly
+FAILED test/test_output_walk.py::test_question_conditioner_legacy_singular_checkpoint_reloads_strictly
+FAILED test/test_output_walk.py::test_materialised_idea_follows_the_symbol_rows
+FAILED test/test_output_walk.py::test_generate_checkpoint_migrates_action_weights_and_adam_moments[True-False]
+FAILED test/test_output_walk.py::test_generate_checkpoint_migrates_action_weights_and_adam_moments[False-False]
+FAILED test/test_output_walk.py::test_generate_checkpoint_migrates_action_weights_and_adam_moments[True-True]
+FAILED test/test_partspace_dynamic_capacity.py::test_checkpoint_restores_fixed_owner_and_optimizer_by_name
+16 failed, 141 passed, 19 skipped, 35 warnings in 105.01s (0:01:45)

@@ -8664,7 +8664,6 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
         self.register_buffer('rel_type',
                              torch.zeros(capacity, dtype=torch.long))
         self.register_buffer('timestamp', torch.zeros(capacity))
-        self.register_buffer('trust', torch.zeros(capacity))
         self.register_buffer('order', torch.full((capacity,), -1, dtype=torch.long))
         self.register_buffer('c_plus', torch.zeros(capacity))
         self.register_buffer('c_minus', torch.zeros(capacity))
@@ -8672,7 +8671,7 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
         self.register_buffer('row_ids', torch.full((capacity,), -1, dtype=torch.long))
         self.register_buffer('where', torch.zeros(capacity, 4))
         self.register_buffer('when', torch.zeros(capacity, 4))
-        self.register_buffer('truth_schema', torch.tensor(8, dtype=torch.long))
+        self.register_buffer('truth_schema', torch.tensor(9, dtype=torch.long))
         self.register_buffer('surprise', torch.full((capacity,), -1.))
         self.register_buffer('count', torch.tensor(0, dtype=torch.long))
         # Per-row writer provenance (ORIGIN_*); default 0 = conversation so
@@ -9165,7 +9164,9 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
                 raise ValueError("truth context disagrees with its required-metadata flag")
             definition = record.get("definition")
             if definition is not None:
-                if int(self.rel_type[i]) != self.REL_DEF or set(definition) != {"forms", "parts", "wholes"}:
+                if (int(self.rel_type[i]) != self.REL_DEF
+                        or not {"forms", "parts", "wholes"} <= set(definition)
+                        or set(definition) - {"forms", "parts", "wholes", "identity_key"}):
                     raise ValueError("invalid definition row metadata")
                 definitions[identifier] = definition
             fingerprint_values = self._context_fingerprint(incoming[identifier], text, expectation, definition)
@@ -9199,6 +9200,9 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
                               missing_keys, unexpected_keys, error_msgs):
         self._definition_rows = {}
         self.definitions.rebuild()
+        # Legacy checkpoints retain their recorded pair. The retired scalar
+        # was provenance, so it must not silently overwrite that evidence.
+        state_dict.pop(prefix + 'trust', None)
         # Older checkpoints did not score surprise: unknown is not perfect.
         state_dict.setdefault(prefix + 'surprise', torch.full_like(self.surprise, -1.))
         old_schema = prefix + 'truth_schema' not in state_dict
@@ -9384,7 +9388,13 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
             raise ValueError("surprise must be unknown (-1) or in [0, 1]")
         if type(order) is not int or order < 0:
             raise ValueError('a stored field requires a nonnegative order')
-        evidence = (0., 0.) if evidence is None else tuple(map(float, evidence))
+        if evidence is None:
+            signed = max(-1., min(1., float(trust)))
+            evidence = (max(signed, 0.), max(-signed, 0.))
+            if not meaning.polarity:
+                evidence = evidence[::-1]
+        else:
+            evidence = tuple(map(float, evidence))
         if len(evidence) != 2 or any(not math.isfinite(x) or not 0 <= x <= 1 for x in evidence):
             raise ValueError('evidence poles must be finite and in [0, 1]')
         terms, complete = self._meaning_leaf_terms(meaning, order=order)
@@ -9398,7 +9408,6 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
         if rel_type is None:
             rel_type = self.REL_OPERATOR if bool(meaning.role_mask[1:].any()) else self.REL_NONE
         self.rel_type[n] = int(rel_type)
-        self.trust[n] = max(-1.0, min(1.0, float(trust)))
         self.c_plus[n], self.c_minus[n] = evidence
         self.order[n] = order
         self.surprise[n] = surprise
@@ -9723,15 +9732,21 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
             return self.count.new_zeros(0)
         return (self.rel_type[:c] == self.REL_NONE).nonzero(as_tuple=True)[0]
 
+    @property
+    def trust(self):
+        """Compatibility read of signed evidence; no separate stored column."""
+        return self.c_plus - self.c_minus
+
     @torch.no_grad()
     def set_trust(self, idx: int, trust: float):
-        """Overwrite a row's scalar trust (verification / re-assertion)."""
+        """Set signed evidence through its two poles (verification/reassertion)."""
         i = int(idx)
         if not (0 <= i < int(self.count.item())):
             raise IndexError(f"row {i} of {int(self.count.item())}")
         if not math.isfinite(float(trust)):
             raise ValueError("fact trust must be finite")
-        self.trust[i] = max(-1.0, min(1.0, float(trust)))
+        signed = max(-1.0, min(1.0, float(trust)))
+        self.c_plus[i], self.c_minus[i] = max(signed, 0.), max(-signed, 0.)
 
     @torch.no_grad()
     def set_evidence(self, idx, positive, negative):
@@ -9809,7 +9824,8 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
         facts = selected & (self.record_kind[:count] == self.KINDS.index("fact"))
         self.record_kind[:count].masked_fill_(
             facts, self.KINDS.index("unverified"))
-        self.trust[:count].masked_fill_(selected, 0)
+        self.c_plus[:count].masked_fill_(selected, 0)
+        self.c_minus[:count].masked_fill_(selected, 0)
 
     @torch.no_grad()
     def clear_origin(self, origin: int, *, retained_occurrences=()) -> int:
@@ -9898,7 +9914,6 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
         self.slots[:n_keep] = self.slots[keep]
         self.rel_type[:n_keep] = self.rel_type[keep]
         self.timestamp[:n_keep] = self.timestamp[keep]
-        self.trust[:n_keep] = self.trust[keep]
         self.surprise[:n_keep] = self.surprise[keep]
         self.origin[:n_keep] = self.origin[keep]
         for name in ('role_mask', 'record_kind', 'grammatical_mode', 'polarity',
@@ -9915,7 +9930,6 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
         self.slots[n_keep:c].zero_()
         self.rel_type[n_keep:c].zero_()
         self.timestamp[n_keep:c].zero_()
-        self.trust[n_keep:c].zero_()
         self.surprise[n_keep:c].fill_(-1.)
         self.origin[n_keep:c].zero_()
         self.role_mask[n_keep:c].zero_()
@@ -9943,7 +9957,6 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
         self.slots.zero_()
         self.rel_type.zero_()
         self.timestamp.zero_()
-        self.trust.zero_()
         self.surprise.fill_(-1.)
         self.count.zero_()
         self.origin.zero_()
@@ -13466,6 +13479,8 @@ class RadixLayer(Layer):
         every ``spell_out``-seeded byte.
         """
         sb = standalone_bytes or ()
+        if hasattr(self, 'identity'):
+            return torch.tensor(sorted(self.identity.word_rows.values()), dtype=torch.long)
         ids = [i for i, b in enumerate(self.inverse_table)
                if len(b) >= 2 or (len(b) == 1 and b[0] in sb)]
         return torch.tensor(ids, dtype=torch.long)
@@ -14079,6 +14094,7 @@ class RadixLayer(Layer):
             "chunk_hits": dict(self._chunk_hits),
             "part_groups": dict(self.part_groups),
             "pending_part_groups": dict(self._pending_part_groups),
+            "identity": self.identity.vocab_extras() if hasattr(self, 'identity') else None,
             "pending_promotions": [
                 (chunk, init.detach().to(device="cpu").clone())
                 for chunk, init in self._pending_promotions.items()
@@ -14143,6 +14159,8 @@ class RadixLayer(Layer):
         self.part_groups = dict(extras.get("part_groups", {}))
         self._canonical_group_cache = None
         self._pending_part_groups = dict(extras.get("pending_part_groups", {}))
+        if extras.get('identity') is not None and hasattr(self, 'identity'):
+            self.identity.load_vocab_extras(extras['identity'])
         self._formed_this_turn.clear()
 
 

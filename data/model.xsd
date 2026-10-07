@@ -1008,6 +1008,14 @@
 
   <xs:complexType name="partSpaceType">
     <xs:all>
+      <xs:element name="identityByParts" type="xs:boolean" minOccurs="0"/>
+      <!-- Identity's sparse form is D pair coordinates plus L length bits.
+           Text model construction resolves the native form/event width from
+           these values; numeric models retain their configured dimensions. -->
+      <xs:element name="identityPairDim" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="identityOnes" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="identityLengthDim" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="identityBindingDim" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>

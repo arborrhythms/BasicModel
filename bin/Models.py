@@ -160,7 +160,7 @@ def _append_observed_meaning(store, clause, *, trust=0.0, expectation=None, stre
     """Write the completed field with caller-owned provenance."""
     kind = 'question' if clause.meaning.mode == 'interrogative' else 'observation'
     return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
-        expectation=expectation)
+        evidence=clause.evidence, expectation=expectation)
 
 
 def _is_external_expectation_observation(discourse):
@@ -1837,6 +1837,8 @@ class BaseModel(Mereology, nn.Module):
         defaults_path = os.path.join(ProjectPaths.DATA_DIR, "model.xml")
         init_config(path=config_path, defaults_path=defaults_path)
         cfg = TheXMLConfig.data
+        from WordIdentity import resolve_identity_layout
+        resolve_identity_layout(cfg)
         self.cfg = cfg
 
         arch = cfg["architecture"]
@@ -6855,11 +6857,22 @@ class BasicModel(BaseModel):
                 selected[b, own_width:own_width+k] = torch.where(torch.isfinite(values), extra, -1)
         valid = selected >= 0
         codes = owner.similarity_codebook.lookup_rows(selected.clamp_min(0)).clone()
+        sparse_forms = torch.where(valid[..., None], codes, torch.zeros_like(codes)).detach().clone()
+        codes = owner.interpret.binding_atoms(codes)
         codes = torch.where(valid[..., None], codes, torch.zeros_like(codes))
         weights = heat.gather(1, selected.clamp_min(0)).detach().clone()
         weights = torch.where(valid, weights, torch.zeros_like(weights))
         surfaces = [[owner.word_surface_for_row(row) if row >= 0 else None
                      for row in batch] for batch in selected.cpu().tolist()]
+        identity = getattr(getattr(self.perceptualSpace, 'percept_store', None), 'identity', None)
+        if identity is not None:
+            checks = [dict(word=raw.decode('utf8', 'surrogateescape'),
+                           error=int(identity.read(sparse_forms[b,j,:identity.width]) != raw))
+                      for b,batch in enumerate(surfaces) for j,raw in enumerate(batch) if raw]
+            self._last_rung0_identity_audit = dict(identified_words=len(checks),
+                errors=sum(item['error'] for item in checks), rows=checks)
+            if self._last_rung0_identity_audit['errors']:
+                raise RuntimeError('rung-zero reconstruction identity audit failed')
         nbytes = max(1, max(len(value or b'') for batch in surfaces for value in batch)+1)
         data = torch.zeros(*selected.shape, nbytes, dtype=torch.long)
         byte_valid = torch.zeros_like(data, dtype=torch.bool)
@@ -6877,7 +6890,7 @@ class BasicModel(BaseModel):
             case_bank = stage_case_bank(owner, native, limit=self.reconstruction_basis_limit)
         self._sentence_primed_bank = PrimedSymbols(selected, codes, weights, own,
             data.to(rows.device), byte_valid.to(rows.device), case_bank,
-            getattr(self, '_readback_percept_width', None))
+            getattr(self, '_readback_percept_width', None), sparse_forms if identity is not None else None)
         self._sentence_priming_written = True
 
     def store_truths(self, entries):
@@ -8478,8 +8491,14 @@ class BasicModel(BaseModel):
             object.__setattr__(self, "_recon_completed", True)
         ideas = self._recon_ideas
         with self._synthesis_guard():
-            carrier = self.conceptualSpace.subspace.carrier_like()
-            carrier.set_event(ideas)
+            identity = getattr(getattr(self.perceptualSpace, 'percept_store', None), 'identity', None)
+            if identity is not None and self.word_brackets:
+                # The recovered leaves are already numerical directions.
+                # A codebook-backed carrier would quantize them a second time.
+                carrier = SubSpaceView.snapshot(ideas, owner=self.conceptualSpace)
+            else:
+                carrier = self.conceptualSpace.subspace.carrier_like()
+                carrier.set_event(ideas)
             surface = self._reverse_input_surface(carrier)
             event = surface.materialize() if hasattr(surface, "materialize") else surface
             if not torch.is_tensor(event):
@@ -8497,6 +8516,31 @@ class BasicModel(BaseModel):
         The input's grammar traversal is already complete. No generate policy
         or free chart expansion belongs in this path.
         """
+        identity = getattr(getattr(self.perceptualSpace, 'percept_store', None), 'identity', None)
+        if identity is not None and self.word_brackets:
+            # The grammar inverse has already recovered word leaves. Resolve
+            # their directions in the invocation's dictionary, then read each
+            # sparse identity through its row; no learned byte inverse remains
+            # at rung zero. Neither source bytes nor a saved leaf trace select
+            # the spelling.
+            ideas = carrier.materialize()
+            bank, valid = self._reconstruction_basis_snapshot(ideas)
+            forms = self.inputSpace._ar_concept_lookup_atoms
+            from SentenceUnderstanding import readback_scores
+            scores = torch.stack([readback_scores(ideas[:, w], bank, valid.to(ideas),
+                percept_width=identity.width) for w in range(ideas.shape[1])], dim=1)
+            score, selected = scores.max(-1)
+            known = (score > 1 - 1e-5) & (ideas.norm(dim=-1) > 0)
+            surfaces = []
+            for b in range(len(ideas)):
+                words = [identity.read(forms[b, int(selected[b, w]), :identity.width])
+                         for w in range(ideas.shape[1]) if bool(known[b, w])]
+                surfaces.append(b' '.join(word for word in words if word is not None))
+            width = max(1, max(map(len, surfaces), default=0))
+            event = torch.zeros(len(surfaces), 1, width, device=ideas.device, dtype=torch.long)
+            for b, raw in enumerate(surfaces):
+                event[b, 0, :len(raw)] = torch.tensor(list(raw), device=ideas.device)
+            return SubSpaceView.snapshot(event, owner=self.inputSpace)
         carrier = (self._reverse_body(carrier) if field is None else
                    self._reverse_body(carrier, field=field))
         concepts = getattr(carrier, "_concepts_recon", None)
@@ -11660,6 +11704,8 @@ class BasicModel(BaseModel):
             pieces = {}
             # Match the dynamic target-axis lower bound; the padding is masked.
             width = 3
+            identity = getattr(store, 'identity', None)
+            texts = (getattr(self.perceptualSpace, '_forward_input', None) or {}).get('word_texts', ())
             for b in range(B):
                 for w in range(W):
                     if not live[b][w]:
@@ -11671,6 +11717,11 @@ class BasicModel(BaseModel):
                                 pieces[pid] = store.bytes_for(pid)
                             chunks.append(pieces[pid])
                     raw = b"".join(chunks)
+                    if identity is not None:
+                        # Identity atoms are parts, not substrings. Targets
+                        # retain the separately staged input byte witness.
+                        raw = (str(texts[b][w]).encode('latin1')
+                               if b < len(texts) and w < len(texts[b]) else b'')
                     spellings[b][w] = raw
                     width = max(width, len(raw))
             targets = torch.zeros(B, W, width, dtype=torch.long, device="cpu")
@@ -11973,6 +12024,7 @@ class BasicModel(BaseModel):
         k = min(int(atoms.shape[1]), W, int(rows.shape[1]))
         da = min(int(atoms.shape[-1]), D)
         content = atoms[:, :k, :da].to(device=like.device, dtype=like.dtype)
+        content = self._concept_owner().interpret.binding_atoms(content)
         if torch.is_tensor(activations) and int(activations.numel()) >= B * k:
             act = activations.reshape(B, -1)[:, :k].to(
                 device=like.device, dtype=like.dtype).unsqueeze(-1)
@@ -12301,6 +12353,9 @@ class BasicModel(BaseModel):
                 and torch.is_tensor(rows) and rows.shape == atoms.shape[:2]):
             raise RuntimeError("tied reconstruction requires a staged concept lookup bank")
         bank = atoms.to(reference).clone()
+        interpretation = getattr(self._concept_owner(), 'interpret', None)
+        if interpretation is not None:
+            bank = interpretation.binding_atoms(bank)
         bank = F.pad(bank[..., :D], (0, max(0, D - bank.shape[-1])))
         return bank, rows.detach().to(reference.device).ge(0).clone()
 
@@ -12320,6 +12375,9 @@ class BasicModel(BaseModel):
                 and int(bank_bytes.shape[0]) == B
                 and int(atoms.shape[1]) == int(bank_bytes.shape[1])):
             bank = atoms.to(device=reference.device, dtype=reference.dtype).clone()
+            interpretation = getattr(self._concept_owner(), 'interpret', None)
+            if interpretation is not None:
+                bank = interpretation.binding_atoms(bank)
             valid = bank_valid.detach().to(device=reference.device).clone()
             rows = getattr(isp, "_ar_concept_lookup_rows", None)
             if torch.is_tensor(rows) and rows.shape == bank.shape[:2]:
@@ -12365,7 +12423,12 @@ class BasicModel(BaseModel):
 
     def _byte_word_cost(self, idea, word, bank_n, bank_bytes, bank_valid,
                         target_bytes, target_valid, ready, *, priming=None):
-        """``[B]`` byte/end-of-word cross entropy of a recovered word idea.
+        """``[B]`` rung-zero identity audit, or the legacy byte cross entropy.
+
+        Fixed identities read exact bytes through their sparse index. Their
+        term is zero for an identified bank word and one for an unresolved
+        word. The continuous byte objective below remains for dictionaries
+        without identity by construction.
 
         A derived concept row carries its native perceptual fold. The lexical
         read-back matches that fold to a row whose surface is its bytes: the decoder's
@@ -12389,6 +12452,18 @@ class BasicModel(BaseModel):
         W, P = int(target_bytes.shape[1]), int(target_bytes.shape[2])
         if not ready or P == 0:
             return idea.new_zeros(B)
+        identity = getattr(getattr(getattr(self, 'perceptualSpace', None), 'percept_store', None), 'identity', None)
+        if identity is not None:
+            # A bank leaf names a row whose sparse form is checked at the
+            # eager index boundary. Its bytes are exact, not a learned read.
+            # Unknown/non-bank leaves remain an audit failure, not a soft CE.
+            from SentenceUnderstanding import readback_scores
+            present = bank_valid.any(-1)
+            candidates = torch.where(present[..., None], bank_n.detach(), torch.zeros_like(bank_n))
+            score = readback_scores(idea, candidates, torch.ones_like(present, dtype=idea.dtype),
+                                    percept_width=identity.width)
+            identified = (present & (score > 1.-1e-5)).any(-1)
+            return (present.any(-1) & ~identified).to(idea.dtype) + idea.sum(-1) * 0.
         bank_n = bank_n.detach()
         present = bank_valid.any(dim=-1)                                 # [B, L]
         # Packing may place the same sentence's candidates in different
@@ -12571,6 +12646,9 @@ class BasicModel(BaseModel):
         atoms = lookup(rows.clamp_min(0).to(torch.long))
         if not (torch.is_tensor(atoms) and atoms.dim() == 3):
             return reference
+        interpretation = getattr(owner, 'interpret', None)
+        if interpretation is not None:
+            atoms = interpretation.binding_atoms(atoms)
         da = min(int(atoms.shape[-1]), D)
         indexed = (rows >= 0).reshape(B, W, 1).to(device=reference.device)
         atoms = atoms[..., :da].to(device=reference.device, dtype=reference.dtype)

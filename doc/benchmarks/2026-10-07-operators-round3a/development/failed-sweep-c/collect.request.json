@@ -1,0 +1,21 @@
+{
+  "selectors": [
+    "test/test_operators_round3a.py",
+    "test/test_arithmetic_isolation.py",
+    "test/test_dimensional_governance.py",
+    "test/test_generation_catalog.py",
+    "test/test_identification_evidence.py",
+    "test/test_live_references.py",
+    "test/test_output_path_supervised.py",
+    "test/test_output_percept_readout.py",
+    "test/test_output_walk.py",
+    "test/test_prepared_answer_boundary.py",
+    "test/test_query_contract_boundaries.py",
+    "test/test_query_native_ids.py",
+    "test/test_wholespace_property_migration.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

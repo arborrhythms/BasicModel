@@ -1,0 +1,16 @@
+{
+  "doc/Architecture.md": "03df311a203c269d14305be299ae216ab40964876346b18da6c0d1ae5214df35",
+  "doc/FutureWork.md": "9972a81e67d8d60abaa4d01af614dbe8375a8d9933e0ba6650cb5e42fb64bfb2",
+  "doc/GradientFlow.md": "2084e0e75cc0caeb2881128ce65ce15f99ce17d92bc07d4ce52f9d20b05af3d9",
+  "doc/specs/2026-09-29-operator-catalogue.md": "8d2bb227e81f993205d942f579923dd81dab7e6ffcf384fe707ed7a39af5f207",
+  "doc/benchmarks/2026-10-07-operators-round3a/README.md": "ecf8068fa4d27f05b428344795ed50839b373c7aa03090673746de41f2e4130a",
+  "doc/benchmarks/2026-10-07-operators-round3a/construction-review.md": "6aaa2d55bd481920cf03c5d4d2d13b76e22f9f67300dbebc9577d63761ad3444",
+  "doc/benchmarks/2026-10-07-operators-round3a/identity-report.md": "9c03f8ae6fd723bb7ccf4c773b303139861685f3fefcbd7e85c3c2c13c9ae6a5",
+  "doc/benchmarks/2026-10-07-operators-round3a/measurement-results.md": "069cf76cc653efb4fc3db68aa2e91279c3a6991091412f2290a70e8e01214781",
+  "doc/benchmarks/2026-10-07-operators-round3a/operator-geometry.md": "cd5cce8f1ccc040e30f92d8406652f6ee3ab8ca1b30795cde855f122e42e6260",
+  "doc/benchmarks/2026-10-07-operators-round3a/precision-geometry.md": "3ad2fc7a4e4a15fad0af479ea848156558935d663ae03acb36209bffad0a8586",
+  "doc/benchmarks/2026-10-07-operators-round3a/reader-trajectories.md": "e48250d05c83e84d809258c93ff6f972d04fbe9e6cf5d1cef27453fb234d4800",
+  "doc/benchmarks/2026-10-07-operators-round3a/test-port-notes.md": "cea3c37936b311f1e50c06fd42c8015bce246fec4d9ec1eea3b7104823c893fd",
+  "doc/benchmarks/2026-10-07-operators-round3a/reader-mse.png": "a8acbb730276b202cbb3595647373e5c5eb1bb35abce3b0be5308ef21bbe7c96",
+  "doc/benchmarks/2026-10-07-operators-round3a/reader-norms.png": "97a2c93e3578a73eafc0a82557adfc1fd8490dea993a781104ea7f7a6e0e97db"
+}

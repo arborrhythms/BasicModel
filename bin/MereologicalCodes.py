@@ -221,6 +221,15 @@ class MereologicalCodes(nn.Module):
                 continue  # an unallocated cache row has neither form nor meaning
             (lower, _upper), _, _, _ = self._interval(edges)
             out[row_index[row], :self.percept_width] = lower
+        model = getattr(owner, '_model', None)
+        identity = getattr(getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None), 'identity', None)
+        if identity is not None:
+            for row in unique:
+                raw = owner.word_surface_for_row(row)
+                if raw in identity.words:
+                    # Identification is immutable. Learned support changes a
+                    # reading's evidence, never the named word's sparse key.
+                    out[row_index[row], :identity.width] = identity.form(raw).to(out)
         context = self.occurrence_terms() if self._context is None else self._context
         for row in unique:
             if row in context and self.context_width:

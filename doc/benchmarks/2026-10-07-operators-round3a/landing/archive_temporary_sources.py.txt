@@ -1,0 +1,26 @@
+"""Preserve and verify temporary diagnostic checkouts before removing duplicates."""
+import hashlib,json,shutil,zipfile
+from pathlib import Path
+H=Path(__file__).resolve().parent.parent
+names=('mm-first-forward/landing-source','mm-first-forward/round2e-source','paired-mm/landing-source')
+files={}
+for name in names:
+    for path in (H/name).rglob('*'):
+        if path.is_file() and '__pycache__' not in path.parts and path.suffix!='.pyc':
+            assert not path.is_symlink(),path
+            files[str(path.relative_to(H))]=hashlib.sha256(path.read_bytes()).hexdigest()
+assert files
+archive=H/'landing/temporary-source-copies.zip'
+with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
+    for name in sorted(files):z.write(H/name,name)
+with zipfile.ZipFile(archive) as z:
+    assert set(z.namelist())==set(files)
+    assert all(hashlib.sha256(z.read(n)).hexdigest()==h for n,h in files.items())
+for name in names:shutil.rmtree(H/name)
+result=dict(reason='Temporary diagnostic source copies were already archived as inputs but left extracted. Preserve every non-cache file byte-for-byte in one checked ZIP, then remove duplicate extracted trees whose partial README links fail the repository document check.',
+    archived_directories=names,archive=str(archive.relative_to(H)),
+    archive_sha256=hashlib.sha256(archive.read_bytes()).hexdigest(),files=files,
+    archive_contents_verified=True,source_and_tests_unchanged=True)
+(H/'landing/temporary-source-cleanup.json').write_text(json.dumps(result,indent=2)+'\n')
+print(json.dumps({k:v for k,v in result.items() if k!='files'}))
+print('Preserved files:',len(files))

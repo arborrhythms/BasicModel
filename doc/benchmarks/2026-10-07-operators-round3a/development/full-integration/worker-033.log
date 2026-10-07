@@ -1,0 +1,132 @@
+..........FF....................sF...FFF.......................FF....... [ 56%]
+........F...............ssss.......ssssssFFF............                 [100%]
+=================================== FAILURES ===================================
+________ test_symbolspace_and_grammar_use_conceptual_not_property_width ________
+test/test_wholespace_property_migration.py:222: in test_symbolspace_and_grammar_use_conceptual_not_property_width
+    model = _small_property_model(
+test/test_wholespace_property_migration.py:84: in _small_property_model
+    model, _ = Models.BasicModel.from_config(str(path))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6613: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:24479: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - CS->WS recurrent input inconsistent: WS.nInputDim=24 must equal CS.nOutputDim=112. WS may then emit its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 112 (or omit it to inherit CS.nOutputDim).
+_______ test_property_model_category_vq_and_parser_context_are_cs_owned ________
+test/test_wholespace_property_migration.py:309: in test_property_model_category_vq_and_parser_context_are_cs_owned
+    assert float(ctx[0, 0, 2]) == 1.0
+E   assert 0.0 == 1.0
+E    +  where 0.0 = float(tensor(0.))
+___________________ test_23_fuse_parts_before_word_admission ___________________
+test/test_word_admission.py:28: in test_23_fuse_parts_before_word_admission
+    assert cs.concept_parts(word) == [fused]
+E   assert [10, 11, 12, 13, 5, 6, ...] == [4]
+E     
+E     At index 0 diff: 10 != 4
+E     Left contains 8 more items, first extra item: 11
+E     Use -v to get more diff
+__________ test_29_each_reading_publishes_only_its_words[MM_xor.xml] ___________
+test/test_word_admission.py:108: in test_29_each_reading_publishes_only_its_words
+    assert not torch.equal(symbols[left], symbols[right])
+E   assert not True
+E    +  where True = <built-in method equal of type object at 0x10e5993a0>(tensor([[0., 0., -0., -0., 0., -0., 0., 0., 0., 0., 0., -0., 0., -0., 0., -0., -0., 0., -0., 0., 0., -0., -0., 0.,\n   ... -0., -0., 0., 0., -0., 0., 0., -0., 0., -0., 0., 0., -0., 0., -0., -0.,\n         -0., 0., -0., 0., 0., -0., -0., 0.]]), tensor([[0., 0., -0., -0., 0., -0., 0., 0., 0., 0., 0., -0., 0., -0., 0., -0., -0., 0., -0., 0., 0., -0., -0., 0.,\n   ... -0., -0., 0., 0., -0., 0., 0., -0., 0., -0., 0., 0., -0., 0., -0., -0.,\n         -0., 0., -0., 0., 0., -0., -0., 0.]]))
+E    +    where <built-in method equal of type object at 0x10e5993a0> = torch.equal
+________ test_29_each_reading_publishes_only_its_words[MM_grammar.xml] _________
+test/test_word_admission.py:108: in test_29_each_reading_publishes_only_its_words
+    assert not torch.equal(symbols[left], symbols[right])
+E   assert not True
+E    +  where True = <built-in method equal of type object at 0x10e5993a0>(tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n         0., ...0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0.,\n         -0., -0., -0., -0., -0., -0., -0., -0.]]), tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n         0., ...0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0.,\n         -0., -0., -0., -0., -0., -0., -0., -0.]]))
+E    +    where <built-in method equal of type object at 0x10e5993a0> = torch.equal
+________ test_29_each_reading_publishes_only_its_words[XOR_grammar.xml] ________
+test/test_word_admission.py:108: in test_29_each_reading_publishes_only_its_words
+    assert not torch.equal(symbols[left], symbols[right])
+E   assert not True
+E    +  where True = <built-in method equal of type object at 0x10e5993a0>(tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n         0., ...0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0.,\n         -0., -0., -0., -0., -0., -0., -0., -0.]]), tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n         0., ...0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0.,\n         -0., -0., -0., -0., -0., -0., -0., -0.]]))
+E    +    where <built-in method equal of type object at 0x10e5993a0> = torch.equal
+__________ test_every_read_word_has_a_concept_and_symbol[MM_xor.xml] ___________
+test/test_word_interpretation.py:33: in test_every_read_word_has_a_concept_and_symbol
+    assert symbols.abs().sum() > 0, 'derived concepts must have symbol activations'
+E   AssertionError: derived concepts must have symbol activations
+E   assert tensor(0.) > 0
+E    +  where tensor(0.) = <built-in method sum of Tensor object at 0x129f37570>()
+E    +    where <built-in method sum of Tensor object at 0x129f37570> = tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., ...    [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.]]]).sum
+E    +      where tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., ...    [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.]]]) = <built-in method abs of Tensor object at 0x129f37ca0>()
+E    +        where <built-in method abs of Tensor object at 0x129f37ca0> = tensor([[[-0., 0., -0.,  ..., -0., 0., -0.],\n         [0., -0., 0.,  ..., 0., -0., 0.],\n         [-0., 0., -0.,  ..., ... -0., 0.,  ..., 0., -0., 0.],\n         [-0., 0., -0.,  ..., -0., 0., -0.],\n         [0., -0., 0.,  ..., 0., -0., 0.]]]).abs
+________ test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml] ________
+test/test_word_interpretation.py:33: in test_every_read_word_has_a_concept_and_symbol
+    assert symbols.abs().sum() > 0, 'derived concepts must have symbol activations'
+E   AssertionError: derived concepts must have symbol activations
+E   assert tensor(0.) > 0
+E    +  where tensor(0.) = <built-in method sum of Tensor object at 0x129f86d00>()
+E    +    where <built-in method sum of Tensor object at 0x129f86d00> = tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., ...    [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.]]]).sum
+E    +      where tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., ...    [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.]]]) = <built-in method abs of Tensor object at 0x14631b750>()
+E    +        where <built-in method abs of Tensor object at 0x14631b750> = tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\n         [-0., -0., -0.,  ..., -0., -0., -0.],\n         [0., 0., 0.,  ..., 0....., -0.,  ..., -0., -0., -0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [-0., -0., -0.,  ..., -0., -0., -0.]]]).abs
+__ test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories ___
+test/test_word_loop_buckets_and_orders.py:82: in test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories
+    assert int(root.findtext("./PartSpace/nDim")) == 136
+E   AssertionError: assert 104 == 136
+E    +  where 104 = int('104')
+E    +    where '104' = <built-in method findtext of xml.etree.ElementTree.Element object at 0x14632b060>('./PartSpace/nDim')
+E    +      where <built-in method findtext of xml.etree.ElementTree.Element object at 0x14632b060> = <Element 'model' at 0x14632b060>.findtext
+____ test_dictionary_surface_snapshot_is_independent_of_staged_input_bytes _____
+test/test_word_store.py:757: in test_dictionary_surface_snapshot_is_independent_of_staged_input_bytes
+    assert torch.equal(isp._ar_bank_bytes, before)
+E   assert False
+E    +  where False = <built-in method equal of type object at 0x10e5993a0>(tensor([[[ 49,   0,   0,  ...,   0,   0,   0],\n         [ 50,   0,   0,  ...,   0,   0,   0],\n         [ 32,   0,   0,...,  ...,   0,   0,   0],\n         [  0,   0,   0,  ...,   0,   0,   0],\n         [  0,   0,   0,  ...,   0,   0,   0]]]), tensor([[[ 49,   0,   0,  ...,   0,   0,   0],\n         [ 50,   0,   0,  ...,   0,   0,   0],\n         [ 32,   0,   0,...,  ...,   0,   0,   0],\n         [  0,   0,   0,  ...,   0,   0,   0],\n         [  0,   0,   0,  ...,   0,   0,   0]]]))
+E    +    where <built-in method equal of type object at 0x10e5993a0> = torch.equal
+E    +    and   tensor([[[ 49,   0,   0,  ...,   0,   0,   0],\n         [ 50,   0,   0,  ...,   0,   0,   0],\n         [ 32,   0,   0,...,  ...,   0,   0,   0],\n         [  0,   0,   0,  ...,   0,   0,   0],\n         [  0,   0,   0,  ...,   0,   0,   0]]]) = InputSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n    (whe...yers): ModuleList(\n      (0-1): 2 x LinearLayer()\n    )\n    (linear1): LinearLayer()\n    (linear2): LinearLayer()\n  )\n)._ar_bank_bytes
+___ test_surface_bytes_belong_to_words_and_objects_follow_their_association ____
+test/test_word_store.py:791: in test_surface_bytes_belong_to_words_and_objects_follow_their_association
+    assert _surface_byte_cost(m, reference, target)[0] > before[0] + 1.0
+E   assert tensor(1.) > (tensor(1.) + 1.0)
+_____ test_word_surface_and_reassociated_object_survive_strict_checkpoint ______
+test/test_word_store.py:828: in test_word_surface_and_reassociated_object_survive_strict_checkpoint
+    assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2740/test_word_surface_and_reassoci0/word_surfaces.ckpt
+=============================== warnings summary ===============================
+test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_wholespace_property_migration.py:395: UserWarning: Dropping retired WholeSpace word and META rows; properties retain their a-priori examples (two-truths §11.4).
+    result = migrate_wholespace_checkpoint(checkpoint, live_state)
+
+test/test_within_whole_division.py::test_live_default_on_divides_punct_run
+test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept
+test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span
+test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words
+test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans
+test/test_within_whole_division.py::test_live_no_store_is_inert
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width
+FAILED test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned
+FAILED test/test_word_admission.py::test_23_fuse_parts_before_word_admission
+FAILED test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]
+FAILED test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]
+FAILED test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]
+FAILED test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]
+FAILED test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]
+FAILED test/test_word_loop_buckets_and_orders.py::test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories
+FAILED test/test_word_store.py::test_dictionary_surface_snapshot_is_independent_of_staged_input_bytes
+FAILED test/test_word_store.py::test_surface_bytes_belong_to_words_and_objects_follow_their_association
+FAILED test/test_word_store.py::test_word_surface_and_reassociated_object_survive_strict_checkpoint
+12 failed, 105 passed, 11 skipped, 8 warnings in 46.41s

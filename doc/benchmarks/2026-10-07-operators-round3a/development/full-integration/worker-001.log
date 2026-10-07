@@ -1,0 +1,67 @@
+........................................................................ [ 28%]
+.....................s..............FF.................................. [ 56%]
+..................................................ssssss................ [ 84%]
+..................................sss...                                 [100%]
+=================================== FAILURES ===================================
+________________ TestVocabSaveRestore.test_save_load_with_vocab ________________
+test/test_basicmodel.py:2097: in test_save_load_with_vocab
+    self.assertTrue(m2.load_weights(ckpt_path))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmph5xsjyfa.ckpt
+______ TestTrainingUpdatesWeights.test_xor_weights_change_after_one_epoch ______
+test/test_basicmodel.py:2124: in test_xor_weights_change_after_one_epoch
+    weights_before = {k: v.clone() for k, v in m.state_dict().items()}
+                         ^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'clone'
+=============================== warnings summary ===============================
+test/test_basicmodel.py::TestUniversalTrainingContract::test_space_has_training_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_codebook_creates_codebook
+test/test_basicmodel.py::TestSpaceBasisConstruction::test_no_codebook_creates_tensor_basis
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=3 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_readout_reverse_inverts
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[InputSpace]: nDim=1 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:16694: RuntimeWarning: concept pool order 0 exhausted: cannot reserve 4 provisional rows
+    warnings.warn(f"concept pool order {order} exhausted: cannot reserve {self.concept_pool_size} provisional rows", RuntimeWarning)
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config
+test/test_bivector_retirement_state.py::test_symbolic_codebook_no_longer_pinned_bivector
+test/test_bivector_retirement_state.py::test_symbolic_activation_carries_bivector
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_bivector_retirement_state.py::test_symbolic_codebook_no_longer_pinned_bivector
+test/test_bivector_retirement_state.py::test_symbolic_activation_carries_bivector
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_basicmodel.py::TestVocabSaveRestore::test_save_load_with_vocab
+FAILED test/test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch
+2 failed, 244 passed, 10 skipped, 13 warnings in 116.39s (0:01:56)

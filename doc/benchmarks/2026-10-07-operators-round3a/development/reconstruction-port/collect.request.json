@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_stm_recon_from_cleared_cache.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

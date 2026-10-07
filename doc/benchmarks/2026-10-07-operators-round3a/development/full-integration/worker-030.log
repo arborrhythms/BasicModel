@@ -1,0 +1,296 @@
+....................................FFFF................................ [ 44%]
+.......F...F.F.......................F.................................. [ 88%]
+..................                                                       [100%]
+=================================== FAILURES ===================================
+__________ test_registration_does_not_depend_on_testimony_trust[0.0] ___________
+test/test_truth_criterion_gates_learning.py:16: in test_registration_does_not_depend_on_testimony_trust
+    assert store.row(row)['trust'] == pytest.approx(trust)
+E   assert 0.20000001788139343 == 0.0 ± 1.0e-12
+E     
+E     comparison failed
+E     Obtained: 0.20000001788139343
+E     Expected: 0.0 ± 1.0e-12
+__________ test_registration_does_not_depend_on_testimony_trust[0.3] ___________
+test/test_truth_criterion_gates_learning.py:16: in test_registration_does_not_depend_on_testimony_trust
+    assert store.row(row)['trust'] == pytest.approx(trust)
+E   assert 0.20000001788139343 == 0.3 ± 3.0e-07
+E     
+E     comparison failed
+E     Obtained: 0.20000001788139343
+E     Expected: 0.3 ± 3.0e-07
+__________ test_registration_does_not_depend_on_testimony_trust[1.0] ___________
+test/test_truth_criterion_gates_learning.py:16: in test_registration_does_not_depend_on_testimony_trust
+    assert store.row(row)['trust'] == pytest.approx(trust)
+E   assert 0.20000001788139343 == 1.0 ± 1.0e-06
+E     
+E     comparison failed
+E     Obtained: 0.20000001788139343
+E     Expected: 1.0 ± 1.0e-06
+__________ test_registration_does_not_depend_on_testimony_trust[-0.7] __________
+test/test_truth_criterion_gates_learning.py:16: in test_registration_does_not_depend_on_testimony_trust
+    assert store.row(row)['trust'] == pytest.approx(trust)
+E   assert 0.20000001788139343 == -0.7 ± 7.0e-07
+E     
+E     comparison failed
+E     Obtained: 0.20000001788139343
+E     Expected: -0.7 ± 7.0e-07
+_______ TestVerifyRelation.test_counterevidence_joins_the_negative_pole ________
+test/test_truth_ideas_routing.py:268: in test_counterevidence_joins_the_negative_pole
+    self.assertAlmostEqual(float(st.trust[0]), .5, places=6)
+E   AssertionError: 0.0 != 0.5 within 6 places (0.5 difference)
+_ TestRelativeTrustPersistence.test_old_checkpoint_without_trust_loads_nonstrict _
+test/test_truth_ideas_routing.py:331: in test_old_checkpoint_without_trust_loads_nonstrict
+    del sd['trust']   # simulate a pre-fix checkpoint lacking the key
+        ^^^^^^^^^^^
+E   KeyError: 'trust'
+_______ TestRelativeTrustPersistence.test_trust_in_state_dict_roundtrip ________
+test/test_truth_ideas_routing.py:300: in test_trust_in_state_dict_roundtrip
+    self.assertIn('trust', sd, "trust must be a serialized buffer")
+E   AssertionError: 'trust' not found in OrderedDict({'slots': tensor([[[1., 1., 0., 0., 0., 0.],
+E            [0., 1., 0., 0., 0., 0.],
+E            [0., 0., 1., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.]],
+E   
+E           [[0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.],
+E            [0., 0., 0., 0., 0., 0.]]]), 'rel_type': tensor([3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), 'timestamp': tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]), 'order': tensor([ 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]), 'c_plus': tensor([0.7000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+E           0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]), 'c_minus': tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]), 'refs': tensor([[-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1],
+E           [-1, -1, -1]]), 'row_ids': tensor([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]), 'where': tensor([[0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.]]), 'when': tensor([[0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.],
+E           [0., 0., 0., 0.]]), 'truth_schema': tensor(9), 'surprise': tensor([-1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1., -1.,
+E           -1., -1.]), 'count': tensor(1), 'origin': tensor([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), '_next_ts': tensor(1), 'role_mask': tensor([[ True,  True,  True],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False]]), 'record_kind': tensor([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), 'grammatical_mode': tensor([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), 'polarity': tensor([True, True, True, True, True, True, True, True, True, True, True, True,
+E           True, True, True, True]), 'occurrence_id': tensor([ 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]), '_next_occurrence': tensor(1), '_occurrence_namespace': tensor([198,  42,   0, 198,  34, 211,  66, 112, 158,  28, 124,  91, 248, 137,
+E           239, 196], dtype=torch.uint8), 'metadata_required': tensor([False, False, False, False, False, False, False, False, False, False,
+E           False, False, False, False, False, False]), 'semantic_fingerprint': tensor([[ 78,   4, 247, 212, 156, 117, 203, 241,  55, 210, 252, 119,  90, 133,
+E              4, 150, 250, 248, 209,  17,  77,  64, 224, 233, 114,  68, 152, 177,
+E            205, 153,  35,  78],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0],
+E           [  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+E              0,   0,   0,   0]], dtype=torch.uint8), 'leaf_complete': tensor([[False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False],
+E           [False, False, False]]), 'index_stream': tensor([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]), 'posting_codes': tensor([], dtype=torch.int64), 'posting_roles': tensor([], dtype=torch.int64), 'posting_rows': tensor([], dtype=torch.int64)}) : trust must be a serialized buffer
+_ TestInsertPercept.test_word_concept_has_positive_id_and_owned_percept_inverse _
+test/test_two_codebook_meta_taxonomy.py:72: in test_word_concept_has_positive_id_and_owned_percept_inverse
+    self.assertEqual(m._concept_owner().concept_parts(pos), [row])
+E   AssertionError: Lists differ: [1, 10, 11, 2, 3, 4, 5, 6, 7, 8, 9] != [0]
+E   
+E   First differing element 0:
+E   1
+E   0
+E   
+E   First list contains 10 additional elements.
+E   First extra element 1:
+E   10
+E   
+E   - [1, 10, 11, 2, 3, 4, 5, 6, 7, 8, 9]
+E   + [0]
+=============================== warnings summary ===============================
+test/test_training_diagnostic_contracts.py::test_diagnostic_failure_does_not_abort_real_training
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_truth_layer_record_many.py::test_record_batch_matches_record_loop_high_trust
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [3] contradicts existing truth [0] (cosine similarity -0.795)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [2] contradicts existing truth [1] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [3] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [1] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows
+test/test_type_run_spans.py::test_property_teaching_rows_are_idempotent_on_rebuild
+test/test_type_run_spans.py::test_meronomy_owns_properties_without_a_type_dictionary
+test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys
+test/test_type_run_spans.py::test_live_derived_lut_is_byte_identical_to_module_lut
+test/test_type_run_spans.py::test_derived_cut_byte_identical_across_a_spread_of_inputs
+test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut
+test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.0]
+FAILED test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[0.3]
+FAILED test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[1.0]
+FAILED test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[-0.7]
+FAILED test/test_truth_ideas_routing.py::TestVerifyRelation::test_counterevidence_joins_the_negative_pole
+FAILED test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_old_checkpoint_without_trust_loads_nonstrict
+FAILED test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_trust_in_state_dict_roundtrip
+FAILED test/test_two_codebook_meta_taxonomy.py::TestInsertPercept::test_word_concept_has_positive_id_and_owned_percept_inverse
+8 failed, 154 passed, 13 warnings in 112.77s (0:01:52)

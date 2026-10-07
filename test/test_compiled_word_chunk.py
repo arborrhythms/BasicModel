@@ -334,7 +334,7 @@ def _tiny_canonical_model(
         word_buckets="16,32,64,128,256", forward_grammar_weight=0.0,
         concept_rows=64, dimension=16,
         chooser_depth=None, training_overrides=None, architecture_overrides=None,
-        part_rows=64, stm_capacity=None):
+        part_rows=256, stm_capacity=None):
     """Build the real aligned serial model with 16-coordinate events."""
     tree = ET.parse(_ROOT / "data" / "BasicModel.xml")
     root = tree.getroot()

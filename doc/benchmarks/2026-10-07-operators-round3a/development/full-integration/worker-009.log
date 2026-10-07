@@ -1,0 +1,138 @@
+..FF...FF........ssssss.....sssssss............F........................ [ 51%]
+...................................................................      [100%]
+=================================== FAILURES ===================================
+_____ test_shared_generation_weights_and_adam_survive_strict_reload[False] _____
+test/test_generation_catalog.py:59: in test_shared_generation_weights_and_adam_survive_strict_reload
+    assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2717/test_shared_generation_weights0/shared_catalog.ckpt
+_____ test_shared_generation_weights_and_adam_survive_strict_reload[True] ______
+test/test_generation_catalog.py:59: in test_shared_generation_weights_and_adam_survive_strict_reload
+    assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2717/test_shared_generation_weights1/shared_catalog.ckpt
+_______ test_normal_supervised_output_respects_gradient_contract[False] ________
+test/test_generation_catalog.py:208: in test_normal_supervised_output_respects_gradient_contract
+    model = _native_answer_model(tmp_path, output_loop)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:165: in _native_answer_model
+    m = _build_ladder_variant(tmp_path, "native_answer", replacements)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_meronomy_ladder.py:466: in _build_ladder_variant
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6613: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:24479: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - CS->WS recurrent input inconsistent: WS.nInputDim=264 must equal CS.nOutputDim=232. WS may then emit its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 232 (or omit it to inherit CS.nOutputDim).
+________ test_normal_supervised_output_respects_gradient_contract[True] ________
+test/test_generation_catalog.py:208: in test_normal_supervised_output_respects_gradient_contract
+    model = _native_answer_model(tmp_path, output_loop)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:165: in _native_answer_model
+    m = _build_ladder_variant(tmp_path, "native_answer", replacements)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_meronomy_ladder.py:466: in _build_ladder_variant
+    m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1813: in from_config
+    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6613: in create_from_config
+    return super().create_from_config(config_path, model_type=model_type, data=data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:1845: in create_from_config
+    ModelFactory.validate_config(cfg)
+bin/Models.py:24479: in validate_config
+    raise ValueError(
+E   ValueError: XML config inconsistencies:
+E     - CS->WS recurrent input inconsistent: WS.nInputDim=264 must equal CS.nOutputDim=232. WS may then emit its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 232 (or omit it to inherit CS.nOutputDim).
+_______________ test_normal_batch_logs_owned_optimizer_gradients _______________
+test/test_gradient_factorization.py:135: in test_normal_batch_logs_owned_optimizer_gradients
+    result, _ = model.runBatch(train=True, batchNum=0, batchSize=2, split="train", optimizer=optimizer,
+bin/Models.py:13719: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13857: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14232: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8839: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10337: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8524: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8335: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23478: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13259: in _lex_embed_stem
+    self.perceptualSpace.embed_stem(in_sub)
+bin/Spaces.py:11769: in embed_stem
+    return self._embed_ladder(upstream_vspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:11193: in _embed_ladder
+    return self._embed_ladder_word_major(upstream_vspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:11295: in _embed_ladder_word_major
+    pids = list(identity.admit(unit))
+                ^^^^^^^^^^^^^^^^^^^^
+bin/WordIdentity.py:182: in admit
+    self._atom(atom)
+bin/WordIdentity.py:129: in _atom
+    self.atoms[atom] = self.store.insert(key, init_vector=code)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:13654: in insert
+    raise self._capacity_exhausted(new_id + 1)
+E   RuntimeError: RadixLayer percept codebook capacity exhausted: required 65 rows, PartSpace nVectors=64. No row was allocated. Increase PartSpace <nVectors> before constructing the model and reload the checkpoint.
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+=============================== warnings summary ===============================
+test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[False]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_global_consume.py::test_consume_width_mismatch_slices_to_common
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[False]
+FAILED test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[True]
+FAILED test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]
+FAILED test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]
+FAILED test/test_gradient_factorization.py::test_normal_batch_logs_owned_optimizer_gradients
+5 failed, 121 passed, 13 skipped, 2 warnings in 9.74s

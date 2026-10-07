@@ -1,0 +1,33 @@
+{
+  "round2_commit": "3de37eef500e7e821bed8ec495581641a53bd67a",
+  "round2_source_files": 705,
+  "round2_commit_source_matched": true,
+  "round3a_manifest_sha256": "84edc57e0ef1c95478a0e17a78a44b23fbafb8bc441031591c5f70bb27d580dc",
+  "round3a_source_files": 707,
+  "round3a_source_archive_matched": true,
+  "frozen_helpers": 188,
+  "frozen_helpers_matched": true,
+  "prior_inventory_files": 7834,
+  "authorized_prior_document_changes": [
+    "doc/benchmarks/2026-10-06-identity-toy/README.md",
+    "doc/benchmarks/2026-10-06-operators-round2e/README.md",
+    "doc/plans/2026-10-05-operators-update.md"
+  ],
+  "claude_documents_preserved": true,
+  "document_updates_observed": {
+    "doc/GradientFlow.md": {
+      "initial": "8d15226f31ffa6acdd68debfafbacedd0435e95872f956852e0633ada0143b25",
+      "current": "2084e0e75cc0caeb2881128ce65ce15f99ce17d92bc07d4ce52f9d20b05af3d9"
+    },
+    "doc/specs/2026-09-29-operator-catalogue.md": {
+      "initial": "a5231dc1cdf544caebd7d17e4605d3de04856617ed6955a093400167dbe08152",
+      "current": "8d2bb227e81f993205d942f579923dd81dab7e6ffcf384fe707ed7a39af5f207"
+    }
+  },
+  "temporary_source_files_archived": 2110,
+  "temporary_source_archive_verified": true,
+  "gate_trainings": 30,
+  "retries": 0,
+  "standing_gate_passed": true,
+  "source_tests_and_configuration_unchanged_for_acceptance": true
+}

@@ -1,0 +1,27 @@
+{
+  "selectors": [
+    "test/test_arithmetic_isolation.py",
+    "test/test_dimensional_governance.py",
+    "test/test_generation_catalog.py",
+    "test/test_identification_evidence.py",
+    "test/test_live_references.py",
+    "test/test_mind_generativity.py",
+    "test/test_one_attention.py",
+    "test/test_output_path_supervised.py",
+    "test/test_output_percept_readout.py",
+    "test/test_output_walk.py",
+    "test/test_prepared_answer_boundary.py",
+    "test/test_query_contract_boundaries.py",
+    "test/test_query_native_ids.py",
+    "test/test_review14_contracts.py",
+    "test/test_tied_operator_reconstruction.py",
+    "test/test_wholespace_property_migration.py",
+    "test/test_word_admission.py",
+    "test/test_operators_round3a.py",
+    "test/test_runtime_split_ingestion.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

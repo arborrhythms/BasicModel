@@ -1,0 +1,85 @@
+....................FsssFsFsssssss.s.sFsFs.............................. [ 79%]
+......s...........s                                                      [100%]
+=================================== FAILURES ===================================
+_______ test_public_reading_fuses_the_reference_before_capture_and_write _______
+test/test_live_references.py:183: in test_public_reading_fuses_the_reference_before_capture_and_write
+    torch.testing.assert_close(frame[1], entry.leaves[-1], rtol=0, atol=0)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 39 / 104 (37.5%)
+E   Greatest absolute difference: 1.1920928955078125e-07 at index (12,)
+E   Greatest relative difference: 6.930717404429743e-07 at index (52,)
+_ test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development] _
+test/test_output_path_supervised.py:192: in test_native_answer_uses_owned_ideas_without_dense_symbol_state
+    assert c.concepts.shape[0] == 2 and c.concepts.shape[-1] == concept_width
+E   assert (2 == 2 and 232 == 264)
+_ test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-development] _
+test/test_output_path_supervised.py:192: in test_native_answer_uses_owned_ideas_without_dense_symbol_state
+    assert c.concepts.shape[0] == 2 and c.concepts.shape[-1] == concept_width
+E   assert (2 == 2 and 232 == 264)
+___ test_native_checkpoint_restores_active_answer_widths[False-development] ____
+test/test_output_path_supervised.py:520: in test_native_checkpoint_restores_active_answer_widths
+    m.question_conditioners[str(concept_width)].weight.fill_(0.02)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/container.py:561: in __getitem__
+    return self._modules[key]
+           ^^^^^^^^^^^^^^^^^^
+E   KeyError: '264'
+____ test_native_checkpoint_restores_active_answer_widths[True-development] ____
+test/test_output_path_supervised.py:520: in test_native_checkpoint_restores_active_answer_widths
+    m.question_conditioners[str(concept_width)].weight.fill_(0.02)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/container.py:561: in __getitem__
+    return self._modules[key]
+           ^^^^^^^^^^^^^^^^^^
+E   KeyError: '264'
+=============================== warnings summary ===============================
+test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2750/test_supervised_update_cannot_0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2750/test_normal_supervised_output_0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2750/test_normal_supervised_output_1/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp7_oph6u4/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpckv5y4c0/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp_useew0m/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmptu_gbqg9/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_walk.py::test_question_conditioner_optimizer_steps_both_widths
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpx4mlnj9h/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write
+FAILED test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development]
+FAILED test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-development]
+FAILED test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-development]
+FAILED test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-development]
+5 failed, 69 passed, 17 skipped, 10 warnings in 111.23s (0:01:51)

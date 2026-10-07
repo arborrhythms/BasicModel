@@ -1,0 +1,23 @@
+................................s....................................... [ 56%]
+........................ssss.......ssssss...............                 [100%]
+=============================== warnings summary ===============================
+test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_wholespace_property_migration.py:395: UserWarning: Dropping retired WholeSpace word and META rows; properties retain their a-priori examples (two-truths §11.4).
+    result = migrate_wholespace_checkpoint(checkpoint, live_state)
+
+test/test_within_whole_division.py::test_live_default_on_divides_punct_run
+test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept
+test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span
+test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words
+test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans
+test/test_within_whole_division.py::test_live_no_store_is_inert
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+117 passed, 11 skipped, 8 warnings in 45.70s

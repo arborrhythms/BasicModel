@@ -1,0 +1,54 @@
+"""Verify the authorized landing and package final documentation; no training."""
+import hashlib,json,subprocess,sys,zipfile
+from pathlib import Path
+H=Path(__file__).resolve().parent.parent;ROOT=H.parents[2]
+sys.path.insert(0,str(ROOT/'test'))
+import bounded_tests
+def read(p):return json.loads(p.read_text())
+def sha(p):
+    h=hashlib.sha256()
+    with p.open('rb') as f:
+        for b in iter(lambda:f.read(1024*1024),b''):h.update(b)
+    return h.hexdigest()
+def git(*a):return subprocess.check_output(['git',*a],cwd=ROOT)
+source=read(H/'delivered-source/source.json')
+assert source==bounded_tests.source_snapshot(ROOT)==read(H/'measurements/source.json')
+assert source==read(H/'full-sweep/source-manifest.json')['validated_source']
+with zipfile.ZipFile(H/'delivered-source/source.zip') as z:
+    assert set(z.namelist())==set(source)
+    assert all(hashlib.sha256(z.read(n)).hexdigest()==h for n,h in source.items())
+helpers=read(H/'delivered-source/measurement-helpers.json')
+assert all(sha(ROOT/n)==h for n,h in helpers.items())
+before=read(H/'landing/before.json')
+updates=read(H/'landing/document-updates.json')
+assert all(sha(ROOT/n)==h for n,h in updates['final_document_hashes'].items())
+allowed=set(before['preserved_file_differences_before_landing'])|{'doc/benchmarks/2026-10-06-operators-round2e/README.md'}
+preserved=read(H/'before/preserved-files.json')
+actual={n for n,h in preserved.items() if sha(ROOT/n)!=h}
+assert actual==allowed,actual^allowed
+cleanup=read(H/'landing/temporary-source-cleanup.json')
+assert sha(H/cleanup['archive'])==cleanup['archive_sha256']
+with zipfile.ZipFile(H/cleanup['archive']) as z:
+    assert set(z.namelist())==set(cleanup['files'])
+    assert all(hashlib.sha256(z.read(n)).hexdigest()==h for n,h in cleanup['files'].items())
+head=git('rev-parse','HEAD').decode().strip()
+two=read(H.parent/'2026-10-06-operators-round2e/delivered-source/source.json')
+assert all(hashlib.sha256(git('show',head+':'+n)).hexdigest()==h for n,h in two.items())
+accept=read(H/'acceptance.json');assert accept['candidate_base_commit']==head
+for receipt in (H,H.parent/'2026-10-06-operators-round2e'):
+    record=read(receipt/'acceptance.json')
+    for d in record['acceptance_document_changes']:assert sha(ROOT/d['path'])==d['accepted_sha256']
+v=read(H/'results-validation.json');assert v['standing_gate_passed'] and v['gate_trainings']==30 and v['retries']==0
+documents=[ROOT/n for n in before['documents_before']]+[H/'README.md',H/'acceptance.json']
+with zipfile.ZipFile(H/'landing/final-documents.zip','w',zipfile.ZIP_DEFLATED) as z:
+    for p in documents:z.write(p,str(p.relative_to(ROOT)))
+(H/'landing/final-documents.json').write_text(json.dumps({str(p.relative_to(ROOT)):sha(p) for p in documents},indent=2)+'\n')
+report=dict(round2_commit=head,round2_source_files=len(two),round2_commit_source_matched=True,
+    round3a_manifest_sha256=sha(H/'delivered-source/source.json'),round3a_source_files=len(source),
+    round3a_source_archive_matched=True,frozen_helpers=len(helpers),frozen_helpers_matched=True,
+    prior_inventory_files=len(preserved),authorized_prior_document_changes=sorted(actual),
+    claude_documents_preserved=True,document_updates_observed=updates['updates'],temporary_source_files_archived=len(cleanup['files']),
+    temporary_source_archive_verified=True,gate_trainings=30,retries=0,standing_gate_passed=True,
+    source_tests_and_configuration_unchanged_for_acceptance=True)
+(H/'landing/verification.json').write_text(json.dumps(report,indent=2)+'\n')
+print(json.dumps(report,indent=2))

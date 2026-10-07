@@ -30,6 +30,7 @@ class DefinitionIndex:
     def rebuild(self):
         self._forms, self._units, self._objects, self._words, self._rows = {}, {}, {}, {}, {}
         self._descriptions = {}
+        self._identities = {}
         store = self._store()
         alive = set()
         for row in range(len(store)):
@@ -52,6 +53,8 @@ class DefinitionIndex:
         self._objects[word] = tuple(sorted(set(self._objects.get(word, ())) | {obj}))
         self._words[obj] = tuple(sorted(set(self._words.get(obj, ())) | {word}))
         self._descriptions[word] = value
+        if value.get('identity_key') is not None:
+            self._identities[value['identity_key']] = word
         for form in value['forms']:
             self._forms[form_key(form)] = word
         for parts in value['parts']:
@@ -71,7 +74,9 @@ class DefinitionIndex:
     def bound_objects(self):
         return tuple(self._words)
 
-    def word(self, *, form=None, unit=None):
+    def word(self, *, form=None, unit=None, identity=None):
+        if identity is not None:
+            return self._identities.get(identity)
         if unit is not None:
             key = (int(unit),) if isinstance(unit, int) else tuple(unit)
             got = self._units.get(key)

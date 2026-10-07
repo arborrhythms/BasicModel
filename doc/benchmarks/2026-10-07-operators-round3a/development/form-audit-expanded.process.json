@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-round3a/form_audit.py"
+  ],
+  "pid": 92769,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 965641824,
+  "elapsed_seconds": 47.83709066698793,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-round3a/development/form-audit-expanded.log"
+}

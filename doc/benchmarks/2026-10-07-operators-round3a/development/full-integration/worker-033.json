@@ -1,0 +1,1306 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_wholespace_fixed_capacity.py::test_wholespace_W_identity_is_frozen_and_optimizer_visible",
+    "test/test_wholespace_fixed_capacity.py::test_wholespace_capacity_exhaustion_is_atomic_and_actionable",
+    "test/test_wholespace_fixed_capacity.py::test_property_reads_are_rng_neutral_and_admit_no_rows",
+    "test/test_wholespace_fixed_capacity.py::test_property_split_uses_an_unused_row_without_replacing_parameters",
+    "test/test_wholespace_fixed_capacity.py::test_empty_wholespace_inventory_has_no_parameter_identity_to_freeze",
+    "test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width",
+    "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+    "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
+    "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
+    "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
+    "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
+    "test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned",
+    "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+    "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties",
+    "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables",
+    "test/test_wide_concept_codebook.py::test_codebook_forward_topk_prunes_activation",
+    "test/test_wide_concept_codebook.py::test_codebook_forward_topk_zero_preserves_legacy_activation",
+    "test/test_wide_concept_codebook.py::test_gradient_estimator_snap_forward_is_q_and_zero_grad_to_e",
+    "test/test_wide_concept_codebook.py::test_gradient_estimator_ste_passes_gradient_through_to_e",
+    "test/test_wide_concept_codebook.py::test_gradient_estimator_rotation_scales_norm_and_rotates",
+    "test/test_wide_concept_codebook.py::test_gradient_estimator_invalid_mode_raises",
+    "test/test_wide_concept_codebook.py::test_codebook_commit_loss_basic",
+    "test/test_wide_concept_codebook.py::test_codebook_commit_loss_zero_on_empty_inputs",
+    "test/test_wide_concept_codebook.py::test_codebook_freezing_stable_entry_gets_frozen",
+    "test/test_wide_concept_codebook.py::test_codebook_freezing_noisy_entry_not_frozen",
+    "test/test_wide_concept_codebook.py::test_codebook_freezing_zeros_gradient_of_frozen_entries",
+    "test/test_within_whole_division.py::test_live_default_on_divides_punct_run",
+    "test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept",
+    "test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span",
+    "test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words",
+    "test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans",
+    "test/test_within_whole_division.py::test_live_no_store_is_inert",
+    "test/test_within_whole_division.py::test_xsd_accepts_divide_within_whole",
+    "test/test_word_admission.py::test_23_fuse_parts_before_word_admission",
+    "test/test_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+    "test/test_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+    "test/test_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "test/test_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[True]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[True]",
+    "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[False]",
+    "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[True]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[True]",
+    "test/test_word_base_mereology.py::test_partspace_word_code_is_max_and_anagrams_share_it",
+    "test/test_word_buffer_flush.py::test_buffer_starts_empty",
+    "test/test_word_buffer_flush.py::test_scalar_and_vector_overloads_agree",
+    "test/test_word_buffer_flush.py::test_flush_resets_count_for_next_tick",
+    "test/test_word_buffer_flush.py::test_buffer_lazy_resize",
+    "test/test_word_grain_attention.py::test_primer_fires_retrieval_on_lift_family",
+    "test/test_word_grain_attention.py::test_attention_off_is_plain_reverse",
+    "test/test_word_grain_attention.py::test_real_lift_reverse_completes_under_priming",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+    "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+    "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+    "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+    "test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+    "test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+    "test/test_word_interpretation.py::test_known_word_survives_full_inventory_without_partial_alternative",
+    "test/test_word_loop_buckets_and_orders.py::test_smallest_fixed_word_bucket_is_selected",
+    "test/test_word_loop_buckets_and_orders.py::test_overlong_sentence_is_rejected_not_clipped",
+    "test/test_word_loop_buckets_and_orders.py::test_single_dynamic_capacity_accepts_short_and_long_complete_sentences",
+    "test/test_word_loop_buckets_and_orders.py::test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories",
+    "test/test_word_loop_buckets_and_orders.py::test_one_operation_layer_owns_both_arities",
+    "test/test_word_space_attach_knowledge.py::test_attach_knowledge_stores_view",
+    "test/test_word_space_attach_knowledge.py::test_knowledge_is_none_before_attach",
+    "test/test_word_space_attach_knowledge.py::test_reattach_replaces_previous_view",
+    "test/test_word_space_attach_knowledge.py::test_knowledge_view_queries_through_word_space",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_inherits_attach_knowledge",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_inherits_attach_knowledge",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_sets_wv_ref_ids",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_without_wv_is_noop",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_reattach_updates_ref_ids",
+    "test/test_word_store.py::test_word_ids_are_promoted_multibyte_entries",
+    "test/test_word_store.py::test_single_byte_word_needs_standalone_attestation",
+    "test/test_word_store.py::test_word_ids_index_the_shared_basis_rows",
+    "test/test_word_store.py::test_radial_recommender_recovers_signed_pair",
+    "test/test_word_store.py::test_recommender_row_restriction_recovers_stored_pair",
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+    "test/test_word_store.py::test_word_pair_snap_recovers_folded_pair",
+    "test/test_word_store.py::test_word_pair_snap_orders_by_side_dot",
+    "test/test_word_store.py::test_intersection_snap_priming_recovers_present_words",
+    "test/test_word_store.py::test_grammar_layer_reverse_snap_is_op_respecting",
+    "test/test_word_store.py::test_union_snap_needs_no_priming",
+    "test/test_word_store.py::test_word_side_snap_support_match_beats_l2",
+    "test/test_word_store.py::test_word_side_snap_minimal_residual",
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+    "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+    "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+    "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+    "test/test_word_store.py::test_dictionary_surface_snapshot_is_independent_of_staged_input_bytes",
+    "test/test_word_store.py::test_surface_bytes_belong_to_words_and_objects_follow_their_association",
+    "test/test_word_store.py::test_word_surface_and_reassociated_object_survive_strict_checkpoint",
+    "test/test_word_store.py::test_missing_surface_snapshot_is_a_staging_error_without_input_fallback",
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_divisible_matches_torch",
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_tuple_output_matches_torch",
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_nondivisible_matches_torch",
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_config_loads",
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_grammar_has_not_conjunction_disjunction",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_has_three_rules",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rule_arities",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rules_at_symbolic_space_role",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_chart_router_kind_is_signal",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_has_grammar_ops_attached",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_rule_ids_match_grammar"
+  ],
+  "completed": [
+    "test/test_wholespace_fixed_capacity.py::test_wholespace_W_identity_is_frozen_and_optimizer_visible",
+    "test/test_wholespace_fixed_capacity.py::test_wholespace_capacity_exhaustion_is_atomic_and_actionable",
+    "test/test_wholespace_fixed_capacity.py::test_property_reads_are_rng_neutral_and_admit_no_rows",
+    "test/test_wholespace_fixed_capacity.py::test_property_split_uses_an_unused_row_without_replacing_parameters",
+    "test/test_wholespace_fixed_capacity.py::test_empty_wholespace_inventory_has_no_parameter_identity_to_freeze",
+    "test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width",
+    "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+    "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
+    "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
+    "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
+    "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
+    "test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned",
+    "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+    "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties",
+    "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables",
+    "test/test_wide_concept_codebook.py::test_codebook_forward_topk_prunes_activation",
+    "test/test_wide_concept_codebook.py::test_codebook_forward_topk_zero_preserves_legacy_activation",
+    "test/test_wide_concept_codebook.py::test_gradient_estimator_snap_forward_is_q_and_zero_grad_to_e",
+    "test/test_wide_concept_codebook.py::test_gradient_estimator_ste_passes_gradient_through_to_e",
+    "test/test_wide_concept_codebook.py::test_gradient_estimator_rotation_scales_norm_and_rotates",
+    "test/test_wide_concept_codebook.py::test_gradient_estimator_invalid_mode_raises",
+    "test/test_wide_concept_codebook.py::test_codebook_commit_loss_basic",
+    "test/test_wide_concept_codebook.py::test_codebook_commit_loss_zero_on_empty_inputs",
+    "test/test_wide_concept_codebook.py::test_codebook_freezing_stable_entry_gets_frozen",
+    "test/test_wide_concept_codebook.py::test_codebook_freezing_noisy_entry_not_frozen",
+    "test/test_wide_concept_codebook.py::test_codebook_freezing_zeros_gradient_of_frozen_entries",
+    "test/test_within_whole_division.py::test_live_default_on_divides_punct_run",
+    "test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept",
+    "test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span",
+    "test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words",
+    "test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans",
+    "test/test_within_whole_division.py::test_live_no_store_is_inert",
+    "test/test_within_whole_division.py::test_xsd_accepts_divide_within_whole",
+    "test/test_word_admission.py::test_23_fuse_parts_before_word_admission",
+    "test/test_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+    "test/test_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+    "test/test_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+    "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+    "test/test_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+    "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[True]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[True]",
+    "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[False]",
+    "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[True]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[False]",
+    "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[True]",
+    "test/test_word_base_mereology.py::test_partspace_word_code_is_max_and_anagrams_share_it",
+    "test/test_word_buffer_flush.py::test_buffer_starts_empty",
+    "test/test_word_buffer_flush.py::test_scalar_and_vector_overloads_agree",
+    "test/test_word_buffer_flush.py::test_flush_resets_count_for_next_tick",
+    "test/test_word_buffer_flush.py::test_buffer_lazy_resize",
+    "test/test_word_grain_attention.py::test_primer_fires_retrieval_on_lift_family",
+    "test/test_word_grain_attention.py::test_attention_off_is_plain_reverse",
+    "test/test_word_grain_attention.py::test_real_lift_reverse_completes_under_priming",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+    "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+    "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+    "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+    "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+    "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+    "test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+    "test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+    "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+    "test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+    "test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+    "test/test_word_interpretation.py::test_known_word_survives_full_inventory_without_partial_alternative",
+    "test/test_word_loop_buckets_and_orders.py::test_smallest_fixed_word_bucket_is_selected",
+    "test/test_word_loop_buckets_and_orders.py::test_overlong_sentence_is_rejected_not_clipped",
+    "test/test_word_loop_buckets_and_orders.py::test_single_dynamic_capacity_accepts_short_and_long_complete_sentences",
+    "test/test_word_loop_buckets_and_orders.py::test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories",
+    "test/test_word_loop_buckets_and_orders.py::test_one_operation_layer_owns_both_arities",
+    "test/test_word_space_attach_knowledge.py::test_attach_knowledge_stores_view",
+    "test/test_word_space_attach_knowledge.py::test_knowledge_is_none_before_attach",
+    "test/test_word_space_attach_knowledge.py::test_reattach_replaces_previous_view",
+    "test/test_word_space_attach_knowledge.py::test_knowledge_view_queries_through_word_space",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_inherits_attach_knowledge",
+    "test/test_word_space_attach_knowledge.py::test_symbolic_space_inherits_attach_knowledge",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_sets_wv_ref_ids",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_without_wv_is_noop",
+    "test/test_word_space_attach_knowledge.py::test_perceptual_space_reattach_updates_ref_ids",
+    "test/test_word_store.py::test_word_ids_are_promoted_multibyte_entries",
+    "test/test_word_store.py::test_single_byte_word_needs_standalone_attestation",
+    "test/test_word_store.py::test_word_ids_index_the_shared_basis_rows",
+    "test/test_word_store.py::test_radial_recommender_recovers_signed_pair",
+    "test/test_word_store.py::test_recommender_row_restriction_recovers_stored_pair",
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+    "test/test_word_store.py::test_word_pair_snap_recovers_folded_pair",
+    "test/test_word_store.py::test_word_pair_snap_orders_by_side_dot",
+    "test/test_word_store.py::test_intersection_snap_priming_recovers_present_words",
+    "test/test_word_store.py::test_grammar_layer_reverse_snap_is_op_respecting",
+    "test/test_word_store.py::test_union_snap_needs_no_priming",
+    "test/test_word_store.py::test_word_side_snap_support_match_beats_l2",
+    "test/test_word_store.py::test_word_side_snap_minimal_residual",
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+    "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+    "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+    "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+    "test/test_word_store.py::test_dictionary_surface_snapshot_is_independent_of_staged_input_bytes",
+    "test/test_word_store.py::test_surface_bytes_belong_to_words_and_objects_follow_their_association",
+    "test/test_word_store.py::test_word_surface_and_reassociated_object_survive_strict_checkpoint",
+    "test/test_word_store.py::test_missing_surface_snapshot_is_a_staging_error_without_input_fallback",
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_divisible_matches_torch",
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_tuple_output_matches_torch",
+    "test/test_workarounds.py::test_adaptive_avg_pool1d_nondivisible_matches_torch",
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_config_loads",
+    "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_grammar_has_not_conjunction_disjunction",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_has_three_rules",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rule_arities",
+    "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rules_at_symbolic_space_role",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_chart_router_kind_is_signal",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_has_grammar_ops_attached",
+    "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_rule_ids_match_grammar"
+  ],
+  "slow_selected": [
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+    "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+    "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+    "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+    "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+    "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_wholespace_fixed_capacity.py::test_wholespace_W_identity_is_frozen_and_optimizer_visible",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.053870041971094906,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_fixed_capacity.py::test_wholespace_capacity_exhaustion_is_atomic_and_actionable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03605287498794496,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_fixed_capacity.py::test_property_reads_are_rng_neutral_and_admit_no_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03728241700446233,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_fixed_capacity.py::test_property_split_uses_an_unused_row_without_replacing_parameters",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006036625010892749,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_fixed_capacity.py::test_empty_wholespace_inventory_has_no_parameter_identity_to_freeze",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013941596262156963,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_basicmodel_config_separates_concepts_properties_and_live_width",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032479094807058573,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.044956207973882556,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.043254958000034094,
+      "message": "",
+      "stdout": "[BasicModel] Activated aligned codebook prefix 4 -> 8 rows (physical capacity 16; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)\r\n"
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.042423666978720576,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0442701670108363,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.014574583037756383,
+      "message": "test/test_wholespace_property_migration.py:222: in test_symbolspace_and_grammar_use_conceptual_not_property_width\n    model = _small_property_model(\ntest/test_wholespace_property_migration.py:84: in _small_property_model\n    model, _ = Models.BasicModel.from_config(str(path))\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1813: in from_config\n    cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:6613: in create_from_config\n    return super().create_from_config(config_path, model_type=model_type, data=data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:1845: in create_from_config\n    ModelFactory.validate_config(cfg)\nbin/Models.py:24479: in validate_config\n    raise ValueError(\nE   ValueError: XML config inconsistencies:\nE     - CS->WS recurrent input inconsistent: WS.nInputDim=24 must equal CS.nOutputDim=112. WS may then emit its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 112 (or omit it to inherit CS.nOutputDim).",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_property_model_category_vq_and_parser_context_are_cs_owned",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.047094249981455505,
+      "message": "test/test_wholespace_property_migration.py:309: in test_property_model_category_vq_and_parser_context_are_cs_owned\n    assert float(ctx[0, 0, 2]) == 1.0\nE   assert 0.0 == 1.0\nE    +  where 0.0 = float(tensor(0.))",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04424491699319333,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009647499537095428,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001752499956637621,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_codebook_forward_topk_prunes_activation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008017499931156635,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_codebook_forward_topk_zero_preserves_legacy_activation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004861659836024046,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_gradient_estimator_snap_forward_is_q_and_zero_grad_to_e",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014954101061448455,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_gradient_estimator_ste_passes_gradient_through_to_e",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002900830004364252,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_gradient_estimator_rotation_scales_norm_and_rotates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034370901994407177,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_gradient_estimator_invalid_mode_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011508300667628646,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_codebook_commit_loss_basic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003536669537425041,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_codebook_commit_loss_zero_on_empty_inputs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021270901197567582,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_codebook_freezing_stable_entry_gets_frozen",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006350000039674342,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_codebook_freezing_noisy_entry_not_frozen",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000561417022254318,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_wide_concept_codebook.py::test_codebook_freezing_zeros_gradient_of_frozen_entries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004937920020893216,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_default_on_divides_punct_run",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0075037500355392694,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_attested_whole_stays_one_concept",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013743875024374574,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013300583988893777,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006323083012830466,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006289166980423033,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_live_no_store_is_inert",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0054405409609898925,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_within_whole_division.py::test_xsd_accepts_divide_within_whole",
+      "phase": "call",
+      "outcome": "skipped",
+      "duration": 0.0002716250019147992,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_within_whole_division.py', 170, 'Skipped: lxml not installed')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_23_fuse_parts_before_word_admission",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.04469904204597697,
+      "message": "test/test_word_admission.py:28: in test_23_fuse_parts_before_word_admission\n    assert cs.concept_parts(word) == [fused]\nE   assert [10, 11, 12, 13, 5, 6, ...] == [4]\nE     \nE     At index 0 diff: 10 != 4\nE     Left contains 8 more items, first extra item: 11\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00343445799080655,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0035278330324217677,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014624958042986691,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.14012412499869242,
+      "message": "test/test_word_admission.py:108: in test_29_each_reading_publishes_only_its_words\n    assert not torch.equal(symbols[left], symbols[right])\nE   assert not True\nE    +  where True = <built-in method equal of type object at 0x10e5993a0>(tensor([[0., 0., -0., -0., 0., -0., 0., 0., 0., 0., 0., -0., 0., -0., 0., -0., -0., 0., -0., 0., 0., -0., -0., 0.,\\n   ... -0., -0., 0., 0., -0., 0., 0., -0., 0., -0., 0., 0., -0., 0., -0., -0.,\\n         -0., 0., -0., 0., 0., -0., -0., 0.]]), tensor([[0., 0., -0., -0., 0., -0., 0., 0., 0., 0., 0., -0., 0., -0., 0., -0., -0., 0., -0., 0., 0., -0., -0., 0.,\\n   ... -0., -0., 0., 0., -0., 0., 0., -0., 0., -0., 0., 0., -0., 0., -0., -0.,\\n         -0., 0., -0., 0., 0., -0., -0., 0.]]))\nE    +    where <built-in method equal of type object at 0x10e5993a0> = torch.equal",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.2680147500359453,
+      "message": "test/test_word_admission.py:108: in test_29_each_reading_publishes_only_its_words\n    assert not torch.equal(symbols[left], symbols[right])\nE   assert not True\nE    +  where True = <built-in method equal of type object at 0x10e5993a0>(tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\\n         0., ...0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0.,\\n         -0., -0., -0., -0., -0., -0., -0., -0.]]), tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\\n         0., ...0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0.,\\n         -0., -0., -0., -0., -0., -0., -0., -0.]]))\nE    +    where <built-in method equal of type object at 0x10e5993a0> = torch.equal",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.23060645797522739,
+      "message": "test/test_word_admission.py:108: in test_29_each_reading_publishes_only_its_words\n    assert not torch.equal(symbols[left], symbols[right])\nE   assert not True\nE    +  where True = <built-in method equal of type object at 0x10e5993a0>(tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\\n         0., ...0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0.,\\n         -0., -0., -0., -0., -0., -0., -0., -0.]]), tensor([[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\\n         0., ...0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0.,\\n         -0., -0., -0., -0., -0., -0., -0., -0.]]))\nE    +    where <built-in method equal of type object at 0x10e5993a0> = torch.equal",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0035043329698964953,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.739857124979608,
+      "message": "",
+      "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 64), (25, 72), (26, 80), (27, 88)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 4}\n"
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.20087274996331,
+      "message": "",
+      "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 64), (25, 72), (26, 80), (27, 88)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 4}\n"
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.076941875042394,
+      "message": "",
+      "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 64), (25, 72), (26, 80), (27, 88)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 4}\n"
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 7.219789916998707,
+      "message": "",
+      "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 64), (49, 72), (50, 80), (51, 88)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 8}\n"
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 7.205294708022848,
+      "message": "",
+      "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 64), (49, 72), (50, 80), (51, 88)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 8}\n"
+    },
+    {
+      "nodeid": "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[8-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 7.4984535410185345,
+      "message": "",
+      "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 64), (49, 72), (50, 80), (51, 88)]}\n{'test_33_unrelated_percept_events': 0, 'pool': 8}\n"
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005627920036204159,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000343875028192997,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002482919953763485,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023245898773893714,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005525829619728029,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00037783297011628747,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003798329853452742,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029695802368223667,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_base_mereology.py::test_partspace_word_code_is_max_and_anagrams_share_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004002919886261225,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_buffer_flush.py::test_buffer_starts_empty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.031822208024095744,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_buffer_flush.py::test_scalar_and_vector_overloads_agree",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03208791697397828,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_buffer_flush.py::test_flush_resets_count_for_next_tick",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03223404195159674,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_buffer_flush.py::test_buffer_lazy_resize",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03368395898723975,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_grain_attention.py::test_primer_fires_retrieval_on_lift_family",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012359590036794543,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_grain_attention.py::test_attention_off_is_plain_reverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00044654100202023983,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_grain_attention.py::test_real_lift_reverse_completes_under_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010164170525968075,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.10472341702552512,
+      "message": "test/test_word_interpretation.py:33: in test_every_read_word_has_a_concept_and_symbol\n    assert symbols.abs().sum() > 0, 'derived concepts must have symbol activations'\nE   AssertionError: derived concepts must have symbol activations\nE   assert tensor(0.) > 0\nE    +  where tensor(0.) = <built-in method sum of Tensor object at 0x129f37570>()\nE    +    where <built-in method sum of Tensor object at 0x129f37570> = tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\\n         [0., 0., 0.,  ..., 0., 0., 0.],\\n         [0., 0., 0.,  ..., 0., 0., ...    [0., 0., 0.,  ..., 0., 0., 0.],\\n         [0., 0., 0.,  ..., 0., 0., 0.],\\n         [0., 0., 0.,  ..., 0., 0., 0.]]]).sum\nE    +      where tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\\n         [0., 0., 0.,  ..., 0., 0., 0.],\\n         [0., 0., 0.,  ..., 0., 0., ...    [0., 0., 0.,  ..., 0., 0., 0.],\\n         [0., 0., 0.,  ..., 0., 0., 0.],\\n         [0., 0., 0.,  ..., 0., 0., 0.]]]) = <built-in method abs of Tensor object at 0x129f37ca0>()\nE    +        where <built-in method abs of Tensor object at 0x129f37ca0> = tensor([[[-0., 0., -0.,  ..., -0., 0., -0.],\\n         [0., -0., 0.,  ..., 0., -0., 0.],\\n         [-0., 0., -0.,  ..., ... -0., 0.,  ..., 0., -0., 0.],\\n         [-0., 0., -0.,  ..., -0., 0., -0.],\\n         [0., -0., 0.,  ..., 0., -0., 0.]]]).abs",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.19142095802817494,
+      "message": "test/test_word_interpretation.py:33: in test_every_read_word_has_a_concept_and_symbol\n    assert symbols.abs().sum() > 0, 'derived concepts must have symbol activations'\nE   AssertionError: derived concepts must have symbol activations\nE   assert tensor(0.) > 0\nE    +  where tensor(0.) = <built-in method sum of Tensor object at 0x129f86d00>()\nE    +    where <built-in method sum of Tensor object at 0x129f86d00> = tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\\n         [0., 0., 0.,  ..., 0., 0., 0.],\\n         [0., 0., 0.,  ..., 0., 0., ...    [0., 0., 0.,  ..., 0., 0., 0.],\\n         [0., 0., 0.,  ..., 0., 0., 0.],\\n         [0., 0., 0.,  ..., 0., 0., 0.]]]).sum\nE    +      where tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\\n         [0., 0., 0.,  ..., 0., 0., 0.],\\n         [0., 0., 0.,  ..., 0., 0., ...    [0., 0., 0.,  ..., 0., 0., 0.],\\n         [0., 0., 0.,  ..., 0., 0., 0.],\\n         [0., 0., 0.,  ..., 0., 0., 0.]]]) = <built-in method abs of Tensor object at 0x14631b750>()\nE    +        where <built-in method abs of Tensor object at 0x14631b750> = tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\\n         [-0., -0., -0.,  ..., -0., -0., -0.],\\n         [0., 0., 0.,  ..., 0....., -0.,  ..., -0., -0., -0.],\\n         [0., 0., 0.,  ..., 0., 0., 0.],\\n         [-0., -0., -0.,  ..., -0., -0., -0.]]]).abs",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[aligned]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2002266669878736,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003053750260733068,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_default_interpret_reuses_existing_kind_without_minting",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0028757500112988055,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_default_interpret_reuses_a_witnessed_association",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002463584009092301,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_interpret_reuses_definition_and_reverses_by_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0031817079870961607,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0027970420196652412,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021663749939762056,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002215999993495643,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_every_serial_word_runs_interpret_before_composition",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.4578712920192629,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010745416977442801,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012448458990547806,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_interpretation.py::test_known_word_survives_full_inventory_without_partial_alternative",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0027077089762315154,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_loop_buckets_and_orders.py::test_smallest_fixed_word_bucket_is_selected",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004990409943275154,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_loop_buckets_and_orders.py::test_overlong_sentence_is_rejected_not_clipped",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00035566603764891624,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_loop_buckets_and_orders.py::test_single_dynamic_capacity_accepts_short_and_long_complete_sentences",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007116249762475491,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_loop_buckets_and_orders.py::test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.0003904160112142563,
+      "message": "test/test_word_loop_buckets_and_orders.py:82: in test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories\n    assert int(root.findtext(\"./PartSpace/nDim\")) == 136\nE   AssertionError: assert 104 == 136\nE    +  where 104 = int('104')\nE    +    where '104' = <built-in method findtext of xml.etree.ElementTree.Element object at 0x14632b060>('./PartSpace/nDim')\nE    +      where <built-in method findtext of xml.etree.ElementTree.Element object at 0x14632b060> = <Element 'model' at 0x14632b060>.findtext",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_loop_buckets_and_orders.py::test_one_operation_layer_owns_both_arities",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.038974415976554155,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_attach_knowledge_stores_view",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00039108400233089924,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_knowledge_is_none_before_attach",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.316595969721675e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_reattach_replaces_previous_view",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00044058304047212005,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_knowledge_view_queries_through_word_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026649999199435115,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_perceptual_space_inherits_attach_knowledge",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002666669897735119,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_symbolic_space_inherits_attach_knowledge",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025866698706522584,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_sets_wv_ref_ids",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00031387503258883953,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_without_wv_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002605409827083349,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_space_attach_knowledge.py::test_perceptual_space_reattach_updates_ref_ids",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00046391598880290985,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_ids_are_promoted_multibyte_entries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011341249919496477,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_single_byte_word_needs_standalone_attestation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008425830164924264,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_ids_index_the_shared_basis_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009098749724216759,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_radial_recommender_recovers_signed_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003416670369915664,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_recommender_row_restriction_recovers_stored_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003088749945163727,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_reading_promotes_the_batch_words",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010116701014339924,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 154, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.620800847187638e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 187, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.620898006483912e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 259, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.133398998528719e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 290, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_pair_snap_recovers_folded_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006809159531258047,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_pair_snap_orders_by_side_dot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028808298520743847,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_intersection_snap_priming_recovers_present_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004303749883547425,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_grammar_layer_reverse_snap_is_op_respecting",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005116660031490028,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_union_snap_needs_no_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000641416001599282,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_side_snap_support_match_beats_l2",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023845897521823645,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_side_snap_minimal_residual",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000526999996509403,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_grammar_reverse_ops_from_generate_section",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.054201655089855e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 505, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.683401392772794e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 522, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_percept_concept_reverse_index_and_row",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.862500544637442e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 559, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001461670035496354,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 590, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_concept_index_read_sizes_inventory_by_explicit_nvectors",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.891598554328084e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 605, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_two_epoch_training_severs_cross_batch_graph",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 8.42920271679759e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_word_store.py', 650, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_dictionary_surface_snapshot_is_independent_of_staged_input_bytes",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.3780487910262309,
+      "message": "test/test_word_store.py:757: in test_dictionary_surface_snapshot_is_independent_of_staged_input_bytes\n    assert torch.equal(isp._ar_bank_bytes, before)\nE   assert False\nE    +  where False = <built-in method equal of type object at 0x10e5993a0>(tensor([[[ 49,   0,   0,  ...,   0,   0,   0],\\n         [ 50,   0,   0,  ...,   0,   0,   0],\\n         [ 32,   0,   0,...,  ...,   0,   0,   0],\\n         [  0,   0,   0,  ...,   0,   0,   0],\\n         [  0,   0,   0,  ...,   0,   0,   0]]]), tensor([[[ 49,   0,   0,  ...,   0,   0,   0],\\n         [ 50,   0,   0,  ...,   0,   0,   0],\\n         [ 32,   0,   0,...,  ...,   0,   0,   0],\\n         [  0,   0,   0,  ...,   0,   0,   0],\\n         [  0,   0,   0,  ...,   0,   0,   0]]]))\nE    +    where <built-in method equal of type object at 0x10e5993a0> = torch.equal\nE    +    and   tensor([[[ 49,   0,   0,  ...,   0,   0,   0],\\n         [ 50,   0,   0,  ...,   0,   0,   0],\\n         [ 32,   0,   0,...,  ...,   0,   0,   0],\\n         [  0,   0,   0,  ...,   0,   0,   0],\\n         [  0,   0,   0,  ...,   0,   0,   0]]]) = InputSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n    (whe...yers): ModuleList(\\n      (0-1): 2 x LinearLayer()\\n    )\\n    (linear1): LinearLayer()\\n    (linear2): LinearLayer()\\n  )\\n)._ar_bank_bytes",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_surface_bytes_belong_to_words_and_objects_follow_their_association",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.3741546249948442,
+      "message": "test/test_word_store.py:791: in test_surface_bytes_belong_to_words_and_objects_follow_their_association\n    assert _surface_byte_cost(m, reference, target)[0] > before[0] + 1.0\nE   assert tensor(1.) > (tensor(1.) + 1.0)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_surface_and_reassociated_object_survive_strict_checkpoint",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.7014752920367755,
+      "message": "test/test_word_store.py:828: in test_word_surface_and_reassociated_object_survive_strict_checkpoint\n    assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5056: in load_weights\n    if (saved_v.dim() == 2 and model_v.dim() == 2\n        ^^^^^^^^^^^\nE   AttributeError: 'dict' object has no attribute 'dim'",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2740/test_word_surface_and_reassoci0/word_surfaces.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_missing_surface_snapshot_is_a_staging_error_without_input_fallback",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.37515562504995614,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_workarounds.py::test_adaptive_avg_pool1d_divisible_matches_torch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030204199720174074,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_workarounds.py::test_adaptive_avg_pool1d_tuple_output_matches_torch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002059590187855065,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_workarounds.py::test_adaptive_avg_pool1d_nondivisible_matches_torch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028304202714934945,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_config_loads",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010979198850691319,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_grammar_has_not_conjunction_disjunction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.933298522606492e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_has_three_rules",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.058299474418163e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rule_arities",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.712501196190715e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rules_at_symbolic_space_role",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.716697968542576e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_chart_router_kind_is_signal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001275839749723673,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_has_grammar_ops_attached",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.97919705696404e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_rule_ids_match_grammar",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010108400601893663,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

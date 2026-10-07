@@ -1598,3 +1598,65 @@ final active reader Adam counters of 400. The complete source sweep is
 green; ownership conflicts, sentence-path perception gradients and
 code displacement are zero. All thirty unseeded gate trainings are
 retained without retries or replacements. No commit or push.
+
+### 12.7 Operators update, round 3a (October 7; review candidate)
+
+The [round-3a receipt](../benchmarks/2026-10-07-operators-round3a/README.md)
+applies plan §§25–26 to the accepted frozen round-2e source. A word's
+native parts are its boundary-marked adjacent letter pairs and cumulative
+length atoms. Pair rows have three fixed bits in 64 coordinates, drawn from
+a private generator determined by the atom's bytes. The following 32
+coordinates form an exact length thermometer through length 32. Longer
+length atoms remain in the postings even when their form bits saturate.
+The form is the maximum of the part rows and the key of its indexed word
+row. Byte rows remain available to character classes and native descent.
+
+A collision gives each word its own positional triple atom. The mint checks
+the actual joined forms, extends the atom's bit stream one bit at a time,
+then tries later differing positions and the declared quadruple fallback.
+Only successful mints change the words, and the receipt records both atoms
+and their bit counts. Existing word rows retain their addresses when rekeyed.
+Native-vocabulary containment and separate witness fixtures are reported
+independently; an/and and an/ant are not comparable under boundary pairs.
+
+Binding and pair search use a fixed dense 96-by-64 projection of the sparse
+form, padded within the existing event layout. Indexing, containment and
+the rung-zero reconstruction audit use the sparse form. An identified word
+reads its exact bytes from its indexed row; the corresponding reconstruction
+term is a zero audit, with other trial costs and greedy tie keeping retained.
+An unindexed spelling is assembled from pairs and length; ambiguity requires
+the minted index. Product conjunction, probabilistic-sum disjunction,
+idempotent intersection, narrowing and both answer readers retain their
+round-2 rules. MM_xor receives numeric tensors and explicitly keeps its
+original dimensions without a lexical identity bank.
+
+At ingestion, signed user trust becomes the evidence pair: positive trust
+enters the positive pole, negative trust the negative pole, and sentence
+negation exchanges them. Internal paired evidence can still carry both poles.
+The former stored scalar trust column is retired; its compatibility read is
+the signed difference of the poles. The receipt contains the ported tests,
+form and geometry audits, frozen-source sweep, thirty trainings, and repeated
+MM RNG bisection. Review is required before any commit.
+
+The completed receipt records class 10/10, reconstruction 10/10, sum
+10/10 at ¼ and raw MM 10/10. The thirty measured trainings are unseeded
+and have no retries or replacements. All forty final XOR roots are
+conjunction, with forty correct labels and every run permanently
+all-conjunction by epoch 41. Native forms have zero collisions after
+minting, zero containment violations and zero indexed byte errors. The
+BasicModel census includes 67,391 words, two mints and 18,309 containment
+pairs; its 69,566-row static audit bank exceeds the unchanged 32,768-row
+production capacity, so this is not a full-corpus training or admission
+claim. The gate vocabularies have no native inclusions; separate witnesses
+are nonvacuous and ordered.
+
+Centered root spectra distinguish numerical separability from achieved
+reader fit: conjunction has nonzero singular values 0.877855, 0.800607,
+0.482921; disjunction has 0.691670, 0.523711, 0.0588575. Both are affinely
+separable, with condition numbers 1.82 and 11.75. The finite-step chooser
+preference does not supply a semantic operator certificate. The sum control
+retains rank three at float32 precision and stays at ¼. The full sweep
+completed 5,289 cases with 5,003 passes, 285 skips, one XPASS and no failures;
+the repeated MM bisection confirms the historical RNG-only path, and three
+paired 200-epoch trajectories are identical to accepted round 2e. The
+candidate and all measured results remain uncommitted for review.

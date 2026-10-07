@@ -70,7 +70,8 @@ def test_unified_query_returns_complete_record_and_does_not_admit_observation():
     torch.testing.assert_close(found['value'][0]['meaning'].roles, roles)
     assert found['value'][0]['occurrence'] == store.occurrence_of(row)
     assert found['value'][0]['kind'] == 'observation'
-    assert found['support_true'] == 0  # authority never invents identification evidence
+    assert found['support_true'] == pytest.approx(.9)  # signed ingestion trust is the pair
+    assert found['support_false'] == 0
     assert len(store) == 1
 
 

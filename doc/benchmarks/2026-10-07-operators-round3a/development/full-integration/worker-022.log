@@ -1,0 +1,33 @@
+...F.................................s.................................. [ 64%]
+.............sssss.....................                                  [100%]
+=================================== FAILURES ===================================
+____________ test_missing_candidate_cost_is_zero_with_zero_gradient ____________
+test/test_reconstruction_scope.py:44: in test_missing_candidate_cost_is_zero_with_zero_gradient
+    gradient, = torch.autograd.grad(cost.sum(), idea)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:540: in grad
+    result_tuple = handle_torch_function(
+.venv/lib/python3.12/site-packages/torch/overrides.py:1773: in handle_torch_function
+    result = mode.__torch_function__(public_api, types, args, kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/autograd/__init__.py:594: in grad
+    result = _engine_run_backward(
+.venv/lib/python3.12/site-packages/torch/autograd/graph.py:1072: in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+E   RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn
+=============================== warnings summary ===============================
+test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2729/test_missing_packed_sentence_d0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient
+1 failed, 104 passed, 6 skipped, 2 warnings in 20.04s

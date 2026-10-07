@@ -1,0 +1,44 @@
+.........s.............................................................. [ 34%]
+...............................F...................................F.... [ 69%]
+...............................................................          [100%]
+=================================== FAILURES ===================================
+__________ test_native_progress_and_trained_artifact_evaluation_path ___________
+test/test_learning_readiness.py:179: in test_native_progress_and_trained_artifact_evaluation_path
+    loaded = load_model(tmp_path/'tiny_chunk_model.xml', path, minimum_sentences=3)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/eval_fineweb_learning.py:40: in load_model
+    if not model.load_weights(str(checkpoint), strict=True, require_match=True):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 0 (Δ=0.151s)
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2720/test_native_progress_and_train0/small-native.ckpt
+________ TestLexiconOwnership.test_save_and_load_embeddings_round_trip _________
+test/test_lexicon_ownership.py:72: in test_save_and_load_embeddings_round_trip
+    ok = m.load_weights(path)
+         ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpdw2itprp/weights.ckpt
+=============================== warnings summary ===============================
+test/test_iterated_symbolic_wave.py::test_depth_d_sigma_path_completes_in_one_pass
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_iterated_symbolic_wave.py::test_relate_x_x_merges_to_one_edge
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path
+FAILED test/test_lexicon_ownership.py::TestLexiconOwnership::test_save_and_load_embeddings_round_trip
+2 failed, 204 passed, 1 skipped, 2 warnings in 8.98s

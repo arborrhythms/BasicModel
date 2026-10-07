@@ -230,8 +230,7 @@ def test_cache_clears_and_chart_generate_rederives_from_stm():
 
 def test_reverse_from_cleared_cache_is_drivable_and_decodable():
     """After clearing the cache, reverseReconstruct reads its owned understanding
-    and returns a surface whose width matches the perceptual codebook, so
-    a nearest-word decode is at least well-defined (shape contract). This
+    and returns the indexed word bytes (round 3a's rung-zero contract). This
     pins that the reverse-from-STM leg is DRIVABLE end-to-end; the QUALITY
     of the recovered words is the .8 overlap assertion below."""
     model = _make_serial_model()
@@ -242,11 +241,11 @@ def test_reverse_from_cleared_cache_is_drivable_and_decodable():
         recon, _ = model.reverseReconstruct(model._test_understanding)
     assert recon is not None and torch.is_tensor(recon) and recon.dim() == 3, \
         f"reverse-from-S must return a [B, N, D] surface; got {recon!r}"
-    W = _codebook_W(model)
-    topk = _topk_decode(W, recon)
-    assert topk is not None, \
-        "reconstruction width must match the native percept codebook for word decode."
-    assert topk.shape[-1] == min(TOPK, W.shape[0])
+    assert recon.dtype == torch.long and bool(((recon >= 0) & (recon <= 255)).all())
+    identity = model.perceptualSpace.percept_store.identity
+    words = bytes(recon[0,0].tolist()).rstrip(b'\0').split()
+    assert words, 'the owned inverse must resolve at least one indexed word'
+    assert all(identity.read(identity.form(word)) == word for word in words)
 
 
 def test_reverse_body_preserves_finiteness_on_finite_seed():
@@ -366,7 +365,8 @@ def test_topk_recovered_words_overlap_input():
             or not bool(torch.isfinite(recon).all()):
         overlap = 0.0
     else:
-        W = model._concept_owner().similarity_codebook.getW()
+        owner = model._concept_owner()
+        W = owner.interpret.binding_atoms(owner.similarity_codebook.getW())
         topk = _topk_decode(W, recon)
         overlap = _topk_overlap(fwd_idx, topk)
         overlap = 0.0 if overlap is None else overlap

@@ -1,0 +1,32 @@
+........................................................ss..FFsssss..... [ 28%]
+........................................................................ [ 56%]
+........................................................................ [ 84%]
+........................................                                 [100%]
+=================================== FAILURES ===================================
+__________________ test_cs_ws_recurrent_input_mismatch_raises __________________
+test/test_dimensional_governance.py:172: in test_cs_ws_recurrent_input_mismatch_raises
+    assert "999" in msg and "1024" in msg, msg
+E   AssertionError: XML config inconsistencies:
+E       - CS->WS recurrent input inconsistent: WS.nInputDim=999 must equal CS.nOutputDim=104. WS may then emit its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 104 (or omit it to inherit CS.nOutputDim).
+E   assert ('999' in 'XML config inconsistencies:\n  - CS->WS recurrent input inconsistent: WS.nInputDim=999 must equal CS.nOutputDim=104. ...t its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 104 (or omit it to inherit CS.nOutputDim).' and '1024' in 'XML config inconsistencies:\n  - CS->WS recurrent input inconsistent: WS.nInputDim=999 must equal CS.nOutputDim=104. ...t its native property-width peer state. Fix: set <WholeSpace><nInputDim> to 104 (or omit it to inherit CS.nOutputDim).')
+__________________ test_cs_os_direct_handoff_mismatch_raises ___________________
+test/test_dimensional_governance.py:187: in test_cs_os_direct_handoff_mismatch_raises
+    assert "8x1024" in msg and "7x1024" in msg, msg
+E   AssertionError: XML config inconsistencies:
+E       - CS->OS handoff inconsistent: terminal CS emits 8x104, but OutputSpace expects 7x104. The output head consumes CS directly; WholeSpace is not an intermediate producer.
+E   assert ('8x1024' in 'XML config inconsistencies:\n  - CS->OS handoff inconsistent: terminal CS emits 8x104, but OutputSpace expects 7x104. The output head consumes CS directly; WholeSpace is not an intermediate producer.')
+=============================== warnings summary ===============================
+test/test_definition_attribution.py::test_descent_intersects_cases_with_the_present_field
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_dimensional_governance.py::test_cs_ws_recurrent_input_mismatch_raises
+FAILED test/test_dimensional_governance.py::test_cs_os_direct_handoff_mismatch_raises
+2 failed, 247 passed, 7 skipped, 2 warnings in 9.95s

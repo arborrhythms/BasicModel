@@ -228,9 +228,9 @@ def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
 
     # Concepts are opaque codes: no conceptual band, the whole width is
     # the code (2026-09-14).  Symbols are percepts and keep their band.
-    assert cs.subspace.nWhat == 24 and cs.subspace.muxedSize == 24
-    assert ws.subspace.nWhat == 8
-    assert ws.subspace.muxedSize == 16
+    assert cs.subspace.nWhat == 112 and cs.subspace.muxedSize == 112
+    assert ws.subspace.nWhat == 96
+    assert ws.subspace.muxedSize == 104
 
     assert ss.muxedSize == cs.subspace.muxedSize
     assert ss.nWhat == ss.muxedSize - ss.nWhere - ss.nWhen
@@ -298,7 +298,7 @@ def test_property_model_category_vq_and_parser_context_are_cs_owned(tmp_path):
     # rather than trying the retired WS pid -> taxonomy-META lookup.
     word_concept, _object = cs.interpret_word(
         [7], [0], key="cat")
-    cs._category_last_pid = [[7, -1]]
+    cs._category_last_pid = [[model.perceptualSpace.percept_store.identity.word_rows[b'cat'], -1]]
     cs._category_assign[word_concept] = 0
     cs._category_role[0].zero_()
     cs._category_role[0, 2] = 1.0

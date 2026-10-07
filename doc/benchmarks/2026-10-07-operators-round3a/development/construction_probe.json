@@ -1,0 +1,199 @@
+{
+  "status": "specification diagnostic; no model/gate training",
+  "D": 64,
+  "s": 3,
+  "atom_seed": "little-endian first 8 SHA256 bytes; private torch CPU generator; randperm first s",
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.14.0",
+    "numpy": "2.5.3"
+  },
+  "source_sha256": "56f18d3734b5a93e05083a794bdc4218cbeecd6d8a0ebaad865cde0a3e8e2a67",
+  "dictionary_sha256": "be41ad97963bf8dabedd5871d5d691596175269d540956b0f9965a885c2bbab9",
+  "global_rng_unchanged": true,
+  "dictionary_words": 19986,
+  "collisions": [
+    [
+      "placophora",
+      "placophoran"
+    ],
+    [
+      "calaba",
+      "cabala"
+    ],
+    [
+      "dikaryophase",
+      "dicaryophase"
+    ],
+    [
+      "unpointed",
+      "unjointed"
+    ],
+    [
+      "palpableness",
+      "passableness"
+    ],
+    [
+      "cockneyism",
+      "cockneyish"
+    ]
+  ],
+  "triple_checks": [
+    {
+      "words": [
+        "placophora",
+        "placophoran"
+      ],
+      "first_differing_triples": [
+        "ra#",
+        "ran"
+      ],
+      "resolved": true
+    },
+    {
+      "words": [
+        "calaba",
+        "cabala"
+      ],
+      "first_differing_triples": [
+        "cal",
+        "cab"
+      ],
+      "resolved": false
+    },
+    {
+      "words": [
+        "dikaryophase",
+        "dicaryophase"
+      ],
+      "first_differing_triples": [
+        "dik",
+        "dic"
+      ],
+      "resolved": true
+    },
+    {
+      "words": [
+        "unpointed",
+        "unjointed"
+      ],
+      "first_differing_triples": [
+        "unp",
+        "unj"
+      ],
+      "resolved": true
+    },
+    {
+      "words": [
+        "palpableness",
+        "passableness"
+      ],
+      "first_differing_triples": [
+        "pal",
+        "pas"
+      ],
+      "resolved": true
+    },
+    {
+      "words": [
+        "cockneyism",
+        "cockneyish"
+      ],
+      "first_differing_triples": [
+        "ism",
+        "ish"
+      ],
+      "resolved": true
+    }
+  ],
+  "gate_forms": {
+    "hello": "0x170b82d5524c89bc",
+    "world": "0x5207a051fb46c2f2",
+    "loving": "0x130bd245dbce9af9",
+    "there": "0x9743c8c1725589f0"
+  },
+  "witness_forms": {
+    "an": "0x602025443051090",
+    "and": "0xde0102544b048090",
+    "ant": "0x960122d4630c0092",
+    "bana": "0x1281874957652190",
+    "banana": "0x1283874957e523b1",
+    "circus": "0x130383e152e516b7",
+    "cursic": "0x120398c152c612b5",
+    "cirrus": "0x330382e153e796b7",
+    "calaba": "0x1203954dd6c41bb5",
+    "cabala": "0x1203954dd6c41bb5"
+  },
+  "gate_strict_part_containment": [],
+  "witness_strict_part_containment": [
+    [
+      "bana",
+      "banana"
+    ]
+  ],
+  "repeated_letter_first_collision": {
+    "lengths": [
+      6,
+      7
+    ],
+    "same_triple_set": true,
+    "active_coordinates": 25
+  },
+  "counterexample_proofs": {
+    "length": {
+      "words": [
+        "aaaaaa",
+        "aaaaaaa"
+      ],
+      "forms": [
+        "0x1e03845556c402b3",
+        "0x1e03845556c402b3"
+      ],
+      "extra_atom": "6c656e000000000000000007",
+      "extra_code": "0x400040000000020",
+      "extra_bit_positions": [
+        5,
+        42,
+        58
+      ],
+      "new_bits": "0x0",
+      "triple_sets": [
+        [
+          "#aa",
+          "aa#",
+          "aaa"
+        ],
+        [
+          "#aa",
+          "aa#",
+          "aaa"
+        ]
+      ],
+      "first_differing_positional_triples": [
+        "aa#",
+        "aaa"
+      ],
+      "positional_repair_forms": [
+        "0x1e03845556c402b3",
+        "0x1f03945556c502b3"
+      ],
+      "positional_repair_resolves": true
+    },
+    "triples": [
+      {
+        "word": "calaba",
+        "triple": "cal",
+        "before": "0x1203954dd6c41bb5",
+        "atom_code": "0x20000200004",
+        "after": "0x1203974dd6e41bb5"
+      },
+      {
+        "word": "cabala",
+        "triple": "cab",
+        "before": "0x1203954dd6c41bb5",
+        "atom_code": "0x20004200000",
+        "after": "0x1203974dd6e41bb5"
+      }
+    ]
+  }
+}

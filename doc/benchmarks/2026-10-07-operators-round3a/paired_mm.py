@@ -1,0 +1,98 @@
+"""Three predeclared paired MM replays, separate from the thirty unseeded gates."""
+import hashlib, io, json, os, random, subprocess, sys, zipfile
+from pathlib import Path
+
+HERE=Path(__file__).resolve().parent
+ROOT=HERE.parents[2]
+OUT=HERE/'paired-mm'
+LANDING='accepted frozen round 2e'
+SEEDS=(0,1,2)
+EPOCHS=200
+
+
+def child(seed, output):
+    import numpy as np
+    import torch
+    sys.path[:0]=[str(Path.cwd()/'bin'),str(Path.cwd()/'test')]
+    from test_mm_xor import _fresh_model
+    from util import init_device
+    init_device('cpu')
+    random.seed(seed);np.random.seed(seed);torch.manual_seed(seed)
+    def digest(model):
+        h=hashlib.sha256()
+        for name,p in model.named_parameters():
+            h.update(name.encode());h.update(p.detach().cpu().contiguous().numpy().tobytes())
+        rng=hashlib.sha256(torch.get_rng_state().cpu().numpy().tobytes()).hexdigest()
+        return dict(parameters=h.hexdigest(),torch_rng=rng,
+            python_rng=hashlib.sha256(repr(random.getstate()).encode()).hexdigest(),
+            numpy_rng=hashlib.sha256(repr(np.random.get_state()).encode()).hexdigest())
+    model,_,data=_fresh_model(str(Path.cwd()/'data/MM_xor.xml'))
+    result=dict(seed=seed,epochs=EPOCHS,construction=digest(model),trajectory=[])
+    optimizer=torch.optim.Adam(model.parameters(),lr=.01)
+    loader=data.data_loader(split='train',num_streams=4)
+    for epoch in range(EPOCHS):
+        raw,answer=next(iter(loader))
+        inp=model.inputSpace.prepInput(raw);target=model.outputSpace.prepOutput(answer)
+        optimizer.zero_grad()
+        _,_,value,_=model.forward(inp)
+        target=target.to(value.device)
+        while target.dim()<value.dim():target=target.unsqueeze(-1)
+        loss=torch.nn.functional.mse_loss(value,target.expand_as(value))
+        loss.backward();optimizer.step()
+        result['trajectory'].append(dict(epoch=epoch+1,mse=float(loss.detach()),
+            predictions=value.detach().cpu().flatten().tolist(),**digest(model)))
+    Path(output).write_text(json.dumps(result,indent=2)+'\n')
+    model.End();model.symbolSpace.soft_reset()
+
+
+def main():
+    sys.path.insert(0,str(ROOT/'test'))
+    import bounded_tests as bounded
+    manifest=json.loads((HERE/'delivered-source/source.json').read_text())
+    assert manifest==bounded.source_snapshot(ROOT)
+    OUT.mkdir(exist_ok=False)
+    baseline=OUT/'landing-source';baseline.mkdir()
+    archive=(HERE/'before/source.zip').read_bytes()
+    (OUT/'landing-source.zip').write_bytes(archive)
+    with zipfile.ZipFile(io.BytesIO(archive)) as saved:saved.extractall(baseline)
+    plan=dict(landing=LANDING,
+        seeds=SEEDS,epochs=EPOCHS,stopping='all 200 epochs, including after threshold',
+        retries=0,separate_from_gate_trainings=True,
+        landing_archive_sha256=hashlib.sha256(archive).hexdigest(),
+        candidate_source_manifest_sha256=hashlib.sha256((HERE/'delivered-source/source.json').read_bytes()).hexdigest())
+    (OUT/'plan.json').write_text(json.dumps(plan,indent=2)+'\n')
+    jobs=[]
+    for seed in SEEDS:
+        for version,cwd in (('landing',baseline),('round3a',ROOT)):
+            name=f'{version}-{seed}'
+            env=bounded.worker_environment(cwd)
+            env.update(MODEL_COMPILE='none',BASICMODEL_DEVICE='cpu',BASIC_AUTOLOAD='false',BASIC_AUTOSAVE='false')
+            env.pop('BASIC_SEED',None)
+            command=[sys.executable,str(Path(__file__).resolve()),'child',str(seed),str(OUT/(name+'.json'))]
+            jobs.append((name,command,cwd,env))
+    # Serial bounded children keep the replay separate from gate workers.
+    processes=[]
+    for name,command,cwd,env in jobs:
+        process=bounded.run_guarded(command,cwd=cwd,env=env,log_path=OUT/(name+'.log'),memory_bytes=8*bounded.GIB,timeout=1800)
+        processes.append(dict(name=name,**process))
+        (OUT/'processes.json').write_text(json.dumps(processes,indent=2)+'\n')
+        print(json.dumps(dict(name=name,exit_code=process['exit_code'])),flush=True)
+        assert manifest==bounded.source_snapshot(ROOT)
+    comparisons=[]
+    for seed in SEEDS:
+        a=json.loads((OUT/f'landing-{seed}.json').read_text())
+        b=json.loads((OUT/f'round3a-{seed}.json').read_text())
+        equal=[x==y for x,y in zip(a['trajectory'],b['trajectory'],strict=True)]
+        comparisons.append(dict(seed=seed,construction_equal=a['construction']==b['construction'],
+            trajectory_equal=all(equal),first_different_epoch=next((i+1 for i,v in enumerate(equal) if not v),None),
+            first_forward_equal=a['trajectory'][0]['predictions']==b['trajectory'][0]['predictions'],
+            identical_epochs=sum(equal),epochs=EPOCHS))
+    result=dict(plan=plan,pairs=comparisons,all_trajectories_identical=all(r['trajectory_equal'] for r in comparisons),
+                candidate_source_matched=manifest==bounded.source_snapshot(ROOT))
+    (OUT/'result.json').write_text(json.dumps(result,indent=2)+'\n')
+    print(json.dumps(result),flush=True)
+
+
+if __name__=='__main__':
+    if len(sys.argv)>1:child(int(sys.argv[2]),sys.argv[3])
+    else:main()

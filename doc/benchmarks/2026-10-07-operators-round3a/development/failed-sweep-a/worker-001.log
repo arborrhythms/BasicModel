@@ -1,0 +1,138 @@
+........FF........................................F..................... [ 29%]
+......................................s........s..s.ss.......F.s..ss.... [ 58%]
+...............................................................F........ [ 87%]
+.........sssFsFsssssss.sFsFsFs.                                          [100%]
+=================================== FAILURES ===================================
+________ test_luminosity_view_does_not_present_identification_as_trust _________
+test/test_identification_evidence.py:170: in test_luminosity_view_does_not_present_identification_as_trust
+    assert light.sync_from_ltm() == 2
+E   assert 1 == 2
+E    +  where 1 = sync_from_ltm()
+E    +    where sync_from_ltm = TruthLayer(nDim=4, truths=1/8).sync_from_ltm
+________ test_native_sentence_carries_paired_identification_to_its_row _________
+test/test_identification_evidence.py:206: in test_native_sentence_carries_paired_identification_to_its_row
+    assert field.evidence == pytest.approx((.8, .6))
+E   assert (1.0, 0.0) == approx((0.8 ±....6 ± 6.0e-07))
+E     
+E     comparison failed. Mismatched elements: 2 / 2:
+E     Max absolute difference: 0.6
+E     Max relative difference: inf
+E     Index | Obtained | Expected     
+E     0     | 1.0      | 0.8 ± 8.0e-07
+E     1     | 0.0      | 0.6 ± 6.0e-07
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+_______ test_public_reading_fuses_the_reference_before_capture_and_write _______
+test/test_live_references.py:183: in test_public_reading_fuses_the_reference_before_capture_and_write
+    torch.testing.assert_close(frame[1], entry.leaves[-1], rtol=0, atol=0)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 68 / 104 (65.4%)
+E   Greatest absolute difference: 2.3739516735076904 at index (44,)
+E   Greatest relative difference: inf at index (0,)
+_______ test_current_grammar_recovery_by_depth_training_and_chain_length _______
+test/test_mind_generativity.py:19: in test_current_grammar_recovery_by_depth_training_and_chain_length
+    model = _native_answer_model(tmp_path, True)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:170: in _native_answer_model
+    assert m.wholeSpace.subspace.muxedSize == 136
+E   assert 104 == 136
+E    +  where 104 = SubSpace().muxedSize
+E    +    where SubSpace() = WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n).subspace
+E    +      where WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=16, out_features=1, bias=True)\n    )\n  )\n  (comparison_reader): AnswerComparison(\n    (weights): ParameterDict()\n  )\n).wholeSpace
+_______ test_input_priming_reads_live_word_extent_without_changing_prior _______
+test/test_one_attention.py:479: in test_input_priming_reads_live_word_extent_without_changing_prior
+    model._lex_embed_stem(model.inputSpace.prepInput(['hello world', 'hello']))
+bin/Models.py:13280: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:222: in stage_input
+    prior=BracketKeys._codebook_retrieval_prior(keys[:, :live_width],rows,model._last_gist[None],boosts)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_one_attention.py:474: in bounded
+    torch.testing.assert_close(actual, reference[:, :2], rtol=0, atol=0)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 2 / 4 (50.0%)
+E   Greatest absolute difference: 1.4901161193847656e-08 at index (0, 0)
+E   Greatest relative difference: 1.0499594793600409e-07 at index (0, 0)
+_ test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development] _
+test/test_output_path_supervised.py:180: in test_native_answer_uses_owned_ideas_without_dense_symbol_state
+    m = _native_answer_model(tmp_path, output_loop, concept_width=concept_width)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:170: in _native_answer_model
+    assert m.wholeSpace.subspace.muxedSize == 136
+E   assert 104 == 136
+E    +  where 104 = SubSpace().muxedSize
+E    +    where SubSpace() = WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n).subspace
+E    +      where WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=16, out_features=1, bias=True)\n    )\n  )\n  (comparison_reader): AnswerComparison(\n    (weights): ParameterDict()\n  )\n).wholeSpace
+_ test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-development] _
+test/test_output_path_supervised.py:180: in test_native_answer_uses_owned_ideas_without_dense_symbol_state
+    m = _native_answer_model(tmp_path, output_loop, concept_width=concept_width)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:170: in _native_answer_model
+    assert m.wholeSpace.subspace.muxedSize == 136
+E   assert 104 == 136
+E    +  where 104 = SubSpace().muxedSize
+E    +    where SubSpace() = WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n).subspace
+E    +      where WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=16, out_features=1, bias=True)\n    )\n  )\n  (comparison_reader): AnswerComparison(\n    (weights): ParameterDict()\n  )\n).wholeSpace
+_ test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development] _
+test/test_output_path_supervised.py:463: in test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer
+    m = _native_answer_model(tmp_path, False, concept_width=concept_width)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:170: in _native_answer_model
+    assert m.wholeSpace.subspace.muxedSize == 136
+E   assert 104 == 136
+E    +  where 104 = SubSpace().muxedSize
+E    +    where SubSpace() = WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n).subspace
+E    +      where WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=16, out_features=1, bias=True)\n    )\n  )\n  (comparison_reader): AnswerComparison(\n    (weights): ParameterDict()\n  )\n).wholeSpace
+___ test_native_checkpoint_restores_active_answer_widths[False-development] ____
+test/test_output_path_supervised.py:513: in test_native_checkpoint_restores_active_answer_widths
+    m = _native_answer_model(tmp_path, False, concept_width=concept_width)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:170: in _native_answer_model
+    assert m.wholeSpace.subspace.muxedSize == 136
+E   assert 104 == 136
+E    +  where 104 = SubSpace().muxedSize
+E    +    where SubSpace() = WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n).subspace
+E    +      where WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=16, out_features=1, bias=True)\n    )\n  )\n  (comparison_reader): AnswerComparison(\n    (weights): ParameterDict()\n  )\n).wholeSpace
+____ test_native_checkpoint_restores_active_answer_widths[True-development] ____
+test/test_output_path_supervised.py:513: in test_native_checkpoint_restores_active_answer_widths
+    m = _native_answer_model(tmp_path, False, concept_width=concept_width)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_output_path_supervised.py:170: in _native_answer_model
+    assert m.wholeSpace.subspace.muxedSize == 136
+E   assert 104 == 136
+E    +  where 104 = SubSpace().muxedSize
+E    +    where SubSpace() = WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n).subspace
+E    +      where WholeSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Codebook(\n      (...): EventEncoding()\n    (whatEncoding): WhatEncoding()\n    (wordEncoding): WordEncoding()\n  )\n  (layers): ModuleList()\n) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...=16, out_features=1, bias=True)\n    )\n  )\n  (comparison_reader): AnswerComparison(\n    (weights): ParameterDict()\n  )\n).wholeSpace
+=============================== warnings summary ===============================
+test/test_identification_evidence.py::test_open_reading_keeps_both_poles_and_its_order
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_model_time_when.py::test_clock_increments_once_per_inference_batch
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpnioshgjb/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_identification_evidence.py::test_luminosity_view_does_not_present_identification_as_trust
+FAILED test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row
+FAILED test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write
+FAILED test/test_mind_generativity.py::test_current_grammar_recovery_by_depth_training_and_chain_length
+FAILED test/test_one_attention.py::test_input_priming_reads_live_word_extent_without_changing_prior
+FAILED test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[False-development]
+FAILED test/test_output_path_supervised.py::test_native_answer_uses_owned_ideas_without_dense_symbol_state[True-development]
+FAILED test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]
+FAILED test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[False-development]
+FAILED test/test_output_path_supervised.py::test_native_checkpoint_restores_active_answer_widths[True-development]
+10 failed, 214 passed, 23 skipped, 4 warnings in 53.58s

@@ -1,0 +1,24 @@
+....F...............................ssssssss............................ [ 90%]
+........                                                                 [100%]
+=================================== FAILURES ===================================
+______________________ test_repeated_word_is_not_reminted ______________________
+test/test_sentence_protocol.py:70: in test_repeated_word_is_not_reminted
+    assert not model._attention_words.descended.any()
+E   assert not tensor(True)
+E    +  where tensor(True) = <built-in method any of Tensor object at 0x121766300>()
+E    +    where <built-in method any of Tensor object at 0x121766300> = tensor([[ True, False,  True, False, False, False, False, False]]).any
+E    +      where tensor([[ True, False,  True, False, False, False, False, False]]) = NarrowedWords(table=BracketTable(intervals=tensor([[[ 0,  5],\n         [ 6, 11],\n         [ 0,  0],\n         [ 0,  0],...-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,\n         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]])).descended
+E    +        where NarrowedWords(table=BracketTable(intervals=tensor([[[ 0,  5],\n         [ 6, 11],\n         [ 0,  0],\n         [ 0,  0],...-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,\n         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]])) = BasicModel(\n  (loss): ModelLoss(\n    (output_criterion): MSELoss()\n  )\n  (inputSpace): InputSpace(\n    (subspace): Sub...arison_reader): AnswerComparison(\n    (weights): ParameterDict()\n  )\n  (answer_record_reader): SentenceRecordReader()\n)._attention_words
+=============================== warnings summary ===============================
+test/test_sentence_protocol.py::test_open_read_precedes_every_native_word[MM_xor.xml]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sentence_protocol.py::test_no_mid_sentence_reopening_even_under_conflict
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [1] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_protocol.py::test_repeated_word_is_not_reminted - a...
+1 failed, 71 passed, 8 skipped, 2 warnings in 8.00s

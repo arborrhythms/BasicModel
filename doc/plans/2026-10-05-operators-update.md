@@ -1663,3 +1663,150 @@ rung-0 reconstruction audit; the trust-to-pair port. Documents: catalogue
 FutureWork's located-fold item retired in favour of pairs. Receipt in
 `doc/benchmarks/2026-10-07-operators-round3a/`; measurement protocol as
 before; stop for Claude's review before any commit.
+
+## 26. Codex's construction check of round 3a (2026-10-07), and §25 amended
+
+Codex probed §25 before touching the runtime
+(`doc/benchmarks/2026-10-07-operators-round3a/construction-review.md`) and
+found three defects, all real, two of them mine in construction:
+(1) cumulative length atoms coded as three random bits are not an exact
+thermometer — a join can fail to add a bit (`aaaaaa`/`aaaaaaa` collide), and a
+binary join can grow strictly at most D times; (2) the "first differing
+triple" can be masked by the existing join (`cal`/`cab` leave
+`calaba`/`cabala` equal), so the mint must check the resulting forms and
+continue; (3) `an`/`and`/`ant` are not part-set inclusions under boundary
+pairs (`n#` is a part of `an` and of neither). Verified repairs
+(`identity-toy/sim2_repairs.py`): a reserved thermometer block; a mint that
+draws bits from each word's own positional atom until separation; the
+witnesses `bana`/`banana`, `cat`/`concat`, `aba`/`ababa`.
+
+**§25 is amended as follows** (everything else stands):
+
+- *Item 1, length.* The length atoms `len≥k` are parts for the containment
+  order (postings), but their codes are not random: the form block reserves
+  a thermometer of `L` coordinates after the `D` pair coordinates (`L = 32`
+  in every configuration), and a word of length `n` sets the first
+  `min(n, L)` of them. Exact up to `L`; longer words saturate and rely on
+  minting. The three-random-bits rule applies to pair and minted atoms only.
+- *Item 3, the mint.* When two words' forms coincide, each receives its
+  **own** atom at the first position where their boundary-marked letter
+  triples differ (`cal@1` for `calaba`, `cab@1` for `cabala`); each atom's
+  code is drawn from that atom's seeded bit stream, three bits first, then
+  one more bit at a time, and the mint is complete when the two forms
+  differ; if the position is exhausted without separation, the next
+  differing position is used. A mint is recorded with its atoms and bit
+  counts. Adding the same atom to both words is never a mint.
+- *Item 2, witnesses.* The containment audit reports two things separately:
+  the native vocabulary's census (vacuous where no part-set inclusion
+  exists, as in the four gate words) and the witness fixtures run under
+  each configuration — `bana`/`banana`, `cat`/`concat`, `aba`/`ababa` ordered;
+  `an`/`and` and `an`/`ant` reported as not comparable.
+
+## 27. Two findings during round 3a (Codex, 2026-10-07) and what the gates now mean
+
+1. **Both projected conjunction and disjunction roots are affinely separable
+   on the gate sentences.** A consequence of identity by construction: under
+   a random dense projection the four pair-roots are generic for either
+   kernel, so any four-row truth table is affinely readable. "Disjunction at
+   the floor ¼" (6.8 §22, round 1) was an artifact of the dense max-joined
+   codes, where `u + v` dominated and `u∘v` was nearly collinear. From 3a the
+   XOR class gate certifies identity (anagram and length separation, exact
+   reconstruction) and the reader's convergence on whatever roots the
+   chooser produces — not the operator. The §25 expectation "conjunction
+   preferred by the answer term" is withdrawn; correct behaviour is
+   indifference (compose-departure credit near zero once both roots read).
+   The sum control remains the certificate of the affine floor (the mean of
+   two projections keeps the pairwise dependency) and must stay at ¼. The
+   operator distinction is a semantic one and moves to round 4's meanings
+   gate: a union answers membership of either operand, an intersection of
+   both.
+2. **BasicModel's corpus has 67,391 distinct words against a 32,768-row
+   bank.** Forms collide zero times after two recorded mints at that scale —
+   the construction's purpose. The bank holds admitted rows, not distinct
+   words: the recurrence threshold stays, hapax words are assembled from
+   pairs and length (§25 item 5), and the admitted vocabulary is reported
+   against the capacity; if the recurring vocabulary exceeds the capacity,
+   BasicModel's configured capacity is raised (a value, not a mechanism), and
+   forgetting (sequence item 5) remains the standing answer. The storage
+   report is kept separate from the gate results.
+
+## 28. Round 3b's fixed point (Claude, 2026-10-07): the ceiling is empty at order 0
+
+Computed on the 3a forms over the dictionary sample
+(`identity-toy/sim3b_ceiling.py`). The has-a ceiling of §12.1, weighted
+globally, lifts the mean pairwise cosine of the symbols from .52 to .90 — the
+§14 collapse — and the narrowing rule does not prevent it (.908 → .902),
+because wherever no whole narrows a coordinate `U` is 1 there and any
+positive global weight on a ceiling of ones is a common offset. The
+§14.3 clause "a concept with no wholes yet is the join of its parts" must
+hold per coordinate: a whole weighs on a coordinate only by the narrowing
+it does there. With that rule the collapse is gone (cosine .512 → .512) and
+the centroid moves nothing (mean |c − L| = .001). Both are the same fact,
+the one §8.3 stated in words: the extent of a word's own parts is a
+function of those parts, so a letter-defined has-a whole can bound a word
+with everything or with the word itself, never with new information.
+
+Consequences: (1) the per-coordinate rule is the rule — it reduces exactly
+to `L` where nothing narrows, so a ceiling can never collapse the symbols
+when informative wholes arrive; (2) the containment projection works as
+specified (cap the contained by its containers in decreasing part count:
+violations 566 → 0, never below `L`); (3) the room pass has nothing to
+enforce and is retired; (4) **round 3b has nothing to measure at order 0**
+and folds into round 4, where the wholes that are not functions of a word's
+parts live — membership one order up (the sentences, situations and
+documents containing it), the character classes, counts — and the centroid
+gets its first real test with Alec's condition met by construction.
+
+## 29. Review of round 3a (Claude, 2026-10-07): accepted, pending Alec; the receipt to be finalized
+
+Receipt `doc/benchmarks/2026-10-07-operators-round3a/` (frozen manifest
+`84edc57e…`, 707 files; the README still marked "in progress" at review —
+Codex finalizes it before landing). Sweep green (5,289/5,289). Thirty
+trainings: class **10/10, all at zero** (MSE 0 to .021), reconstruction
+**10/10**, sum **10/10 at ¼** (.25 to six digits, contrast ≤ 1e-6), MM_xor
+**10/10** (bests .177–.198, RNG-only path re-bisected). Against the landing's
+7 / 9 / 10 / 10 and 2e's 9 / 10 / 10 / 10, the standing gate is exceeded.
+
+**Source, against §25 as amended by §26.** `bin/WordIdentity.py`: pair and
+cumulative-length atoms minted on sight, content-addressed through the
+RadixLayer with fixed codes — pair and mint atoms from each atom's
+SHA-seeded bit stream (3 of 64), length atoms as the reserved 32-bit
+thermometer; no global RNG; the form is the join over the word's atoms;
+words keyed by their form; mints positional with recorded atoms and bit
+counts, exhausting triples then quadruples; reconstruction by the index or
+by assembly from pairs and length; the binding through a fixed projection
+(`D+L → 64`, seeded once) with the event layout preserved; fixed rows masked
+from learning. Configuration layout resolved before construction
+(`resolve_identity_layout`): the gates' form block is 96 + the address
+band. Form audit on every configuration: zero collisions, zero containment
+violations, zero byte errors; the witnesses ordered and the invalid ones
+reported not comparable; `calaba`/`cabala` minted at `cal@1`/`cab@1` with 3
+bits; the dictionary sample zero collisions after one mint; BasicModel's
+native census now has genuine containment pairs. Trust-to-pair ported.
+
+**In training.** `R` is identically zero on both trials of every sentence
+— reconstruction is an audit now, as §13 intended — and narrowing
+departures tie (0 nonzero of ~800 per run). Compose departures all carry
+nonzero advantage, mean |ΔC| ≈ .41, entirely from the answer: the
+comparison reader reads conjunction roots at ~.003 and disjunction roots at
+.26–.58 late in every run, so the policy settles on conjunction. This
+differs from §27's static finding (both kernels' four roots affinely
+separable, fit MSE ~1e-30). The likely reason: under a zero-mean projection
+the disjunction kernel's product term is small against `Wu + Wv`, so the
+four disjunction roots are separable only through a tiny, ill-conditioned
+component that a reader trained by finite steps cannot exploit; in practice
+they sit near the floor, and the gate still discriminates the operators.
+Not verified: **Codex reports the singular values of the centered
+disjunction roots** in the landing notes, and §27's reading of the class
+gate is softened accordingly — it certifies identity, the reader's
+convergence, and the operator in practice though not in principle. The
+semantic operator gate on meanings (round 4) remains the proper certificate.
+
+**Verdict.** Accept as the round-3a landing. One housekeeping item: the
+receipt README is finalized with the tables, the storage report (67,391
+distinct words, 69,566 atom/word rows in the audit bank against the
+32,768-row production bank, kept separate from the gates), the two
+findings of §27 and the singular values. Landing as for round 2 — the
+commit includes the plan, the toys (`credit-loop`, `identity`) and all
+uncommitted documents — then push and bump. Round 3b is folded into round
+4 (§28); the round-4 text follows its own fixed-point work.

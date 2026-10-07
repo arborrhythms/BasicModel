@@ -155,7 +155,7 @@ def test_temporary_config_preserves_validated_source(monkeypatch):
 
 
 def test_cs_ws_recurrent_input_mismatch_raises():
-    # Break WS's recurrent conceptual input: MM_20M has CS.nOutputDim=1024 and
+    # Break WS's recurrent conceptual input: MM_20M has CS.nOutputDim=104 and
     # WS.nInputDim=1024. Force WS.nInputDim to mismatch while leaving its
     # native peer output alone.
     src = _ref_text("MM_20M_xor.xml")
@@ -169,7 +169,7 @@ def test_cs_ws_recurrent_input_mismatch_raises():
         _build_from_text(broken, "cs_ws_mismatch")
     msg = str(ei.value)
     assert "CS->WS recurrent input" in msg, msg
-    assert "999" in msg and "1024" in msg, msg
+    assert "999" in msg and "104" in msg, msg
 
 
 def test_cs_os_direct_handoff_mismatch_raises():
@@ -184,7 +184,7 @@ def test_cs_os_direct_handoff_mismatch_raises():
         _build_from_text(broken, "ws_os_mismatch")
     msg = str(ei.value)
     assert "CS->OS handoff" in msg, msg
-    assert "8x1024" in msg and "7x1024" in msg, msg
+    assert "8x104" in msg and "7x104" in msg, msg
 
 
 @pytest.mark.slow

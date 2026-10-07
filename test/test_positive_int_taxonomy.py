@@ -47,7 +47,7 @@ class TestNativeAddresses(unittest.TestCase):
         self.assertGreater(pos, 0)
         again, _ = _word_concept(m, b"alpha")
         self.assertEqual(again, pos)
-        self.assertEqual(m._concept_owner().concept_parts(pos), [row])
+        self.assertEqual(set(m._concept_owner().concept_parts(pos)), set(m.perceptualSpace.percept_store.identity.admit(b"alpha")))
 
     def test_idea_address_resolves_to_its_native_row(self):
         from test_two_codebook_meta_taxonomy import _idea_store, _write_point

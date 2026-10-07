@@ -940,3 +940,63 @@ final active reader Adam counters of 400. The complete source sweep is
 green; ownership conflicts, sentence-path perception gradients and
 code displacement are zero. All thirty unseeded gate trainings are
 retained without retries or replacements. No commit or push.
+
+## Operators update round 3a (October 7; review candidate)
+
+[Round-3a receipt](benchmarks/2026-10-07-operators-round3a/README.md).
+The native word form is now fixed by boundary pairs, cumulative length
+parts and recorded collision mints. The pair block has 64 coordinates;
+the separate 32-coordinate length block is a thermometer. Fixed rows are
+read independently of optimizer weight decay or updates to the learned
+byte rows. Atom codes and the dense projection use private generators, so
+admission consumes no global training RNG. The projection is a buffer,
+not an optimizer parameter.
+
+The sparse form addresses the native index and supplies the containment
+and exact rung-zero byte audits. Binding and pair search read its fixed
+96-by-64 dense projection; activation still supplies magnitude. The
+projection changes code directions, not the conjunction or disjunction
+kernels. Resolved live conceptual references already have their binding
+directions and are not projected again. Journal leaves retain the directions
+used by the operation that produced their root.
+
+An identified word's byte reconstruction cost is exactly zero. This term
+audits identity and does not train a byte decoder or the fixed form. Other
+reconstruction terms remain in R, and an R tie keeps the greedy trial.
+The presented reader still trains on the kept root; the comparison reader
+still trains on both compose trials or the kept narrowing trial. Their
+detached roots, independent answer ownership, walk-first proposal,
+K·R_walk·W correction and registration/reduction remain as in round 2e.
+
+Signed ingestion trust now sets the row's positive/negative pair; negation
+exchanges its poles. A derived signed difference replaces the independent
+provenance column. This changes ingestion evidence, not the binding kernels.
+
+The receipt compares measured class results with round 2e and reports root
+geometry (rank and optimal affine fit) separately from the presented reader's
+actual convergence. It records native and witness containment, all mints,
+projection identity, reconstruction audits, reader trajectories and late
+trial costs. The thirty unseeded gate trainings and MM seed-zero bisection
+remain separate; no retry or replacement changes a gate count.
+
+Measured on the frozen candidate: class 10/10, reconstruction 10/10,
+sum 10/10 at ¼ and raw MM 10/10 under the RNG-only amendment. All forty
+final XOR roots are conjunction with all forty labels correct; every run
+is permanently all-conjunction by epoch 41. All 32,000 sum/XOR comparisons
+tie on R and keep greedy. The 8,040 compose departures carry answer credit;
+all narrowing departures have zero advantage. The presented reader's
+rejected-root weight, ownership conflicts, sentence-path perception
+gradients and code displacement remain zero. The rung-zero audit reports
+256,000 identified reads with zero errors. The complete frozen sweep has
+5,003 passes, 285 skips, one XPASS and no failures across 5,289 cases.
+
+Both operators' projected roots are affinely separable. The saved centered
+singular values are (0.877855, 0.800607, 0.482921) for conjunction and
+(0.691670, 0.523711, 0.0588575) for disjunction; their nonzero condition
+numbers are 1.82 and 11.75. Disjunction requires a larger affine read but
+its separating direction is well above rounding noise. These spectra
+support a convergence difficulty difference without proving the cause of
+the comparison reader's preference. Three passing presented readers retain
+late common-offset oscillations; their roots are identical to the other
+runs. The receipt separates those trajectories from geometry and retains
+the sum control at the affine floor. No commit or push has been made.

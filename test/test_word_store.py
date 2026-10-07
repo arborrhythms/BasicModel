@@ -736,7 +736,7 @@ def _surface_byte_cost(m, reference, target):
     ready, atoms, values, valid = m._snapshot_tables(reference)
     target_ready, target_bytes, target_valid = target
     return m._byte_word_cost(
-        reference[:, 0], torch.tensor(0, device=reference.device),
+        m._concept_owner().interpret.binding_atoms(reference[:, 0]), torch.tensor(0, device=reference.device),
         atoms, values, valid, target_bytes, target_valid, ready and target_ready)
 
 
@@ -788,7 +788,12 @@ def test_surface_bytes_belong_to_words_and_objects_follow_their_association():
         object_col = int((bank == row).nonzero()[0])
         expected = owner.word_surface_for_row(other_row)
         assert bytes(isp._ar_bank_bytes[0, object_col, :len(expected)].tolist()) == expected
-        assert _surface_byte_cost(m, reference, target)[0] > before[0] + 1.0
+        # An identified row's bytes are exact. Reassociation changes the
+        # inverse surface, not a learned byte likelihood.
+        fresh_reference = reference.clone()
+        fresh_reference[0, 0] = owner.similarity_codebook.lookup_rows(row)
+        assert _surface_byte_cost(m, fresh_reference, target)[0] == 0
+        assert before[0] == 0
         store.clear_origin(store.ORIGIN_CONVERSATION)
         m._stage_snapshot_bytes()
         assert not bool(isp._ar_bank_valid[0, object_col].any())

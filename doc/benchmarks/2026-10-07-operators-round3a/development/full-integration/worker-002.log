@@ -1,0 +1,82 @@
+.................................FF..................................... [ 52%]
+.................................................................        [100%]
+=================================== FAILURES ===================================
+_____________ test_codebook_enables_and_em_populates_on_real_model _____________
+test/test_category_em_smoke.py:134: in test_codebook_enables_and_em_populates_on_real_model
+    fired = _run_forwards(model)
+            ^^^^^^^^^^^^^^^^^^^^
+test/test_category_em_smoke.py:112: in _run_forwards
+    model.forward(ipt)
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8335: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23495: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17331: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22030: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21583: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20541: in _run_sentence_word_bricks
+    self._prime_sentence_symbols(sid)
+bin/Models.py:6875: in _prime_sentence_symbols
+    raise RuntimeError('rung-zero reconstruction identity audit failed')
+E   RuntimeError: rung-zero reconstruction identity audit failed
+___________________ test_mlp_chooser_sized_and_context_built ___________________
+test/test_category_em_smoke.py:174: in test_mlp_chooser_sized_and_context_built
+    _run_forwards(model)
+test/test_category_em_smoke.py:112: in _run_forwards
+    model.forward(ipt)
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8335: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23495: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17331: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22030: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21583: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20541: in _run_sentence_word_bricks
+    self._prime_sentence_symbols(sid)
+bin/Models.py:6875: in _prime_sentence_symbols
+    raise RuntimeError('rung-zero reconstruction identity audit failed')
+E   RuntimeError: rung-zero reconstruction identity audit failed
+=============================== warnings summary ===============================
+test/test_category_codebook_retirement.py::test_category_embedding_replaces_codebook
+test/test_category_codebook_retirement.py::test_category_embedding_weight_shape
+test/test_category_codebook_retirement.py::test_category_lookup_returns_embedding_row
+test/test_category_codebook_retirement.py::test_category_lookup_by_int_index
+test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector
+test/test_category_codebook_retirement.py::test_category_embedding_registered_as_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_category_codebook_retirement.py::test_category_embedding_replaces_codebook
+test/test_category_codebook_retirement.py::test_category_embedding_weight_shape
+test/test_category_codebook_retirement.py::test_category_lookup_returns_embedding_row
+test/test_category_codebook_retirement.py::test_category_lookup_by_int_index
+test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector
+test/test_category_codebook_retirement.py::test_category_embedding_registered_as_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_category_collapse.py::test_consumption_is_clean_noop_in_serial_mode_on_live_grammar
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_category_em_smoke.py::test_codebook_enables_and_em_populates_on_real_model
+FAILED test/test_category_em_smoke.py::test_mlp_chooser_sized_and_context_built
+2 failed, 135 passed, 13 warnings in 7.57s

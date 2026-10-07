@@ -1,0 +1,62 @@
+"""Post-hoc numerical interpretation of saved roots; no model or new training.
+
+The frozen observer retains its double-precision ranks. This supplementary
+report applies the input data's float32 precision when deciding rank: otherwise
+a ~1e-7 sum residual is treated as an exact XOR separator with huge weights.
+"""
+import hashlib,json
+from pathlib import Path
+import numpy as np
+
+H=Path(__file__).resolve().parent
+def read(path):return json.loads((H/path).read_text())
+order=['hello world','hello there','loving world','loving there']
+labels=dict(zip(order,[0.,1.,1.,0.]))
+rows=[]
+lines=['# Root geometry at the stored precision','',
+       'The frozen observer computes SVD/pseudoinverse in float64 from float32 data. '
+       'Its raw rank can count float32 rounding residuals as independent directions. '
+       'This saved-data report uses the conventional cutoff '
+       '`max(matrix.shape) × eps(float32) × largest singular value`. '
+       'It changes no measurement, gate prediction, source, or training.', '',
+       '| Kind / run | Presented MSE | Final root rank | Optimal affine MSE at float32 precision | Retained condition number |',
+       '|---|---:|---:|---:|---:|']
+summary=read('measurements/summary.json')
+for kind in ('sum','xor'):
+    for gate in summary[kind]:
+        audit=read(f'measurements/{kind}-{gate["run"]:02}/run-audit.json')
+        phases={}
+        for phase in ('start','end'):
+            geometry=audit[phase]
+            values=np.array(geometry['roots']['values'],dtype=np.float64)
+            target=np.array([labels[text] for text in geometry['root_inputs']])
+            design=np.column_stack((values,np.ones(len(values))))
+            u,s,vh=np.linalg.svd(design,full_matrices=False)
+            cutoff=max(design.shape)*np.finfo(np.float32).eps*s[0]
+            active=s>cutoff
+            weight=vh[active].T@((u[:,active].T@target)/s[active])
+            phases[phase]=dict(rank=int(active.sum()),cutoff=float(cutoff),singular_values=s.tolist(),
+                affine_mse=float(np.mean((design@weight-target)**2)),
+                minimum_weight_norm=float(np.linalg.norm(weight)),
+                retained_condition_number=float(s[0]/s[active][-1]),
+                raw_frozen_observer=geometry['affine_fit']['roots'])
+        row=dict(kind=kind,run=gate['run'],gate_mse=gate['mse'],phases=phases)
+        if kind=='xor':
+            row['class_pass']=gate['class_pass']
+            row['interpretation']=('passes' if gate['class_pass'] else
+                'convergence on numerically separable final roots' if phases['end']['affine_mse']<1e-8 else
+                'final root geometry contributes; inspect the full presented-reader trajectory')
+        rows.append(row)
+        end=phases['end']
+        lines.append(f'| {kind}-{gate["run"]:02} | {gate["mse"]:.9g} | {end["rank"]} | '
+                     f'{end["affine_mse"]:.6g} | {end["retained_condition_number"]:.6g} |')
+lines += ['', 'A full-rank final root matrix establishes that an affine reader has a stable separating '
+          'direction at the precision of the stored roots. It does not establish that the trained '
+          'reader reached that fit in 400 epochs. The sum-control result and the actual class bar '
+          'remain the recorded presented outputs. Raw double-precision diagnostics remain in every run audit.']
+result=dict(source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            method='SVD of saved roots plus bias, rcond=max(shape)*eps(float32)',runs=rows)
+(H/'precision-geometry.json').write_text(json.dumps(result,indent=2)+'\n')
+(H/'precision-geometry.md').write_text('\n'.join(lines)+'\n')
+print(json.dumps(dict(rows=len(rows),sum_ranks=[r['phases']['end']['rank'] for r in rows if r['kind']=='sum'],
+    xor_ranks=[r['phases']['end']['rank'] for r in rows if r['kind']=='xor'])))

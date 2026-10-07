@@ -1,0 +1,2393 @@
+--- round2e/bin/ClauseRow.py
++++ round3a/bin/ClauseRow.py
+@@ -231,7 +231,7 @@
+         return int(self.row_ids[children[reference[1]]]) if isinstance(reference, tuple) else reference
+ 
+     @torch.no_grad()
+-    def write_clause(self, clause, *, trust=0., origin=None, stream=-1, kind='observation',
++    def write_clause(self, clause, *, trust=None, origin=None, stream=-1, kind='observation',
+                     evidence=None, text=None, expectation=None):
+         """Write embedded S rows first, without granting them assertion authority.
+ 
+@@ -248,7 +248,7 @@
+             kind = 'fact'
+             clause = replace(clause, meaning=replace(clause.meaning, mode='assertive'))
+         import math
+-        if not math.isfinite(float(trust)):
++        if trust is not None and not math.isfinite(float(trust)):
+             raise ValueError('clause provenance must be finite')
+         if evidence is not None and (len(evidence) != 2 or any(
+                 not math.isfinite(float(x)) or not 0 <= float(x) <= 1 for x in evidence)):
+@@ -385,11 +385,12 @@
+                 if relation == 'implies' and any(
+                         self.index_of_row(ref) is None for ref in (references[0], references[2])):
+                     raise ValueError('implication operands must be truth rows')
+-            degree = max(-1., min(1., float(trust))) if asserted else 0.
+-            # Identification belongs to the ended field, including an
+-            # embedded field with no assertion authority. Provenance is a
+-            # separate scalar and cannot create or overwrite either pole.
++            degree = max(-1., min(1., float(trust))) if asserted and trust is not None else 0.
+             positive, negative = map(float, value.evidence if evidence is None or not asserted else evidence)
++            if asserted and (assertion is not None or (trust is not None and evidence is None)):
++                positive, negative = max(degree, 0.), max(-degree, 0.)
++                if not value.meaning.polarity:
++                    positive, negative = negative, positive
+ 
+             def append(refs):
+                 tag = tags[relation]
+@@ -397,7 +398,6 @@
+                     self.c_plus[row] = max(float(self.c_plus[row]), positive)
+                     self.c_minus[row] = max(float(self.c_minus[row]), negative)
+                     if asserted:
+-                        self.trust[row] = degree
+                         self.timestamp[row] = self._next_ts
+                         self._next_ts.add_(1)
+                         self.record_kind[row] = self.KINDS.index(kind)
+--- round2e/bin/Definitions.py
++++ round3a/bin/Definitions.py
+@@ -30,6 +30,7 @@
+     def rebuild(self):
+         self._forms, self._units, self._objects, self._words, self._rows = {}, {}, {}, {}, {}
+         self._descriptions = {}
++        self._identities = {}
+         store = self._store()
+         alive = set()
+         for row in range(len(store)):
+@@ -52,6 +53,8 @@
+         self._objects[word] = tuple(sorted(set(self._objects.get(word, ())) | {obj}))
+         self._words[obj] = tuple(sorted(set(self._words.get(obj, ())) | {word}))
+         self._descriptions[word] = value
++        if value.get('identity_key') is not None:
++            self._identities[value['identity_key']] = word
+         for form in value['forms']:
+             self._forms[form_key(form)] = word
+         for parts in value['parts']:
+@@ -71,7 +74,9 @@
+     def bound_objects(self):
+         return tuple(self._words)
+ 
+-    def word(self, *, form=None, unit=None):
++    def word(self, *, form=None, unit=None, identity=None):
++        if identity is not None:
++            return self._identities.get(identity)
+         if unit is not None:
+             key = (int(unit),) if isinstance(unit, int) else tuple(unit)
+             got = self._units.get(key)
+--- round2e/bin/Interpret.py
++++ round3a/bin/Interpret.py
+@@ -52,11 +52,23 @@
+         model = getattr(cs, '_model', None)
+         ps = getattr(model, 'perceptualSpace', None)
+         native = getattr(ps, 'percept_store', None)
+-        if native is not None:
++        identity = getattr(native, 'identity', None)
++        identity_key = None
++        if identity is not None and form is None and parts:
++            atom_rows = set(identity.atoms.values())
++            if all(part in atom_rows for part in parts):
++                form = identity.read_parts(parts)
++        if identity is not None and isinstance(form, (str, bytes)):
++            from WordIdentity import bytes_of
++            raw = bytes_of(form) if isinstance(form, str) else form
++            parts = identity.admit(raw)
++            self._sync_identity(identity)
++            identity_key = identity.key(identity.form(raw)).hex()
++        elif native is not None:
+             parts = tuple(ps.fuse_parts(parts))
+         cs._canonicalize_part_literals()
+         form = form_key(form)
+-        word = index.word(unit=parts, form=form)
++        word = index.word(unit=parts, form=form, identity=identity_key)
+         for cid, value in self._pending.items():
+             if parts in value['parts'] or (form is not None and form in value['forms']):
+                 word = cid
+@@ -151,7 +163,61 @@
+         cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
+         cs._csw_concept_row(0, word)
+         self._pending[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
++        if identity_key is not None:
++            self._pending[word]['identity_key'] = identity_key
+         return word
++
++    def _sync_identity(self, identity):
++        """A collision extends the existing word's parts without changing its row."""
++        if getattr(self, '_identity_revision', -1) == identity.revision:
++            return
++        from WordIdentity import bytes_of
++        cs, index = self.owner, self.owner.definitions
++        for word, old in tuple(self._pending.items()):
++            if not old['forms']:
++                continue
++            raw = old['forms'][0]
++            raw = bytes_of(raw) if isinstance(raw, str) else raw
++            if raw not in identity.words:
++                continue
++            parts = tuple(identity.atoms[a] for a in identity.words[raw])
++            self._pending[word] = dict(old, parts=(parts,), identity_key=identity.key(identity.form(raw)).hex())
++            for part in parts:
++                cs.add_part(word, part)
++            if word not in self._field_pending:
++                cs._populate_concept_weights(word, witness=(parts, old['wholes']), word_reading=True)
++        for word in tuple(index.word_ids):
++            old = index.description(word)
++            if not old or not old['forms']:
++                continue
++            raw = old['forms'][0]
++            raw = bytes_of(raw) if isinstance(raw, str) else raw
++            if raw not in identity.words:
++                continue
++            parts = tuple(identity.atoms[a] for a in identity.words[raw])
++            value = dict(old, parts=(parts,), identity_key=identity.key(identity.form(raw)).hex())
++            for part in parts:
++                cs.add_part(word, part)
++            for obj in index.objects(word):
++                cs._populate_concept_weights(obj, witness=(parts, old['wholes']), word_reading=True)
++                row = index.row(word, obj)
++                store = index._store()
++                store._definition_rows[int(store.occurrence_id[row])] = value
++                store._update_semantic_fingerprint(row)
++        index.rebuild()
++        self._identity_revision = identity.revision
++
++    def binding_atoms(self, atoms):
++        model = getattr(self.owner, '_model', None)
++        store = getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None)
++        identity = getattr(store, 'identity', None)
++        if identity is None or atoms.shape[-1] < identity.width:
++            return atoms
++        form = atoms[..., :identity.width]
++        sparse = ((form == 0) | (form == 1)).all(-1)
++        # A resolved live reference is already a conceptual direction. Only
++        # sparse native forms take the word-identity projection.
++        return torch.where(sparse[..., None], identity.binding(atoms), atoms)
+ 
+     @torch.no_grad()
+     def define(self, word, obj, *, description=None):
+@@ -212,7 +278,7 @@
+             if object_atoms is None or activation is None:
+                 raise ValueError('interpret tensor face requires the resolved object bank')
+             width = object_atoms.shape[-1]
+-            return torch.cat((self.activate(object_atoms, activation), word[..., width:]), -1)
++            return torch.cat((self.activate(self.binding_atoms(object_atoms), activation), word[..., width:]), -1)
+         from Spaces import _concept_alloc_of
+         cs, word = self.owner, int(word)
+         alloc, index = _concept_alloc_of(cs), cs.definitions
+--- round2e/bin/Layers.py
++++ round3a/bin/Layers.py
+@@ -8664,7 +8664,6 @@
+         self.register_buffer('rel_type',
+                              torch.zeros(capacity, dtype=torch.long))
+         self.register_buffer('timestamp', torch.zeros(capacity))
+-        self.register_buffer('trust', torch.zeros(capacity))
+         self.register_buffer('order', torch.full((capacity,), -1, dtype=torch.long))
+         self.register_buffer('c_plus', torch.zeros(capacity))
+         self.register_buffer('c_minus', torch.zeros(capacity))
+@@ -8672,7 +8671,7 @@
+         self.register_buffer('row_ids', torch.full((capacity,), -1, dtype=torch.long))
+         self.register_buffer('where', torch.zeros(capacity, 4))
+         self.register_buffer('when', torch.zeros(capacity, 4))
+-        self.register_buffer('truth_schema', torch.tensor(8, dtype=torch.long))
++        self.register_buffer('truth_schema', torch.tensor(9, dtype=torch.long))
+         self.register_buffer('surprise', torch.full((capacity,), -1.))
+         self.register_buffer('count', torch.tensor(0, dtype=torch.long))
+         # Per-row writer provenance (ORIGIN_*); default 0 = conversation so
+@@ -9165,7 +9164,9 @@
+                 raise ValueError("truth context disagrees with its required-metadata flag")
+             definition = record.get("definition")
+             if definition is not None:
+-                if int(self.rel_type[i]) != self.REL_DEF or set(definition) != {"forms", "parts", "wholes"}:
++                if (int(self.rel_type[i]) != self.REL_DEF
++                        or not {"forms", "parts", "wholes"} <= set(definition)
++                        or set(definition) - {"forms", "parts", "wholes", "identity_key"}):
+                     raise ValueError("invalid definition row metadata")
+                 definitions[identifier] = definition
+             fingerprint_values = self._context_fingerprint(incoming[identifier], text, expectation, definition)
+@@ -9199,6 +9200,9 @@
+                               missing_keys, unexpected_keys, error_msgs):
+         self._definition_rows = {}
+         self.definitions.rebuild()
++        # Legacy checkpoints retain their recorded pair. The retired scalar
++        # was provenance, so it must not silently overwrite that evidence.
++        state_dict.pop(prefix + 'trust', None)
+         # Older checkpoints did not score surprise: unknown is not perfect.
+         state_dict.setdefault(prefix + 'surprise', torch.full_like(self.surprise, -1.))
+         old_schema = prefix + 'truth_schema' not in state_dict
+@@ -9384,7 +9388,13 @@
+             raise ValueError("surprise must be unknown (-1) or in [0, 1]")
+         if type(order) is not int or order < 0:
+             raise ValueError('a stored field requires a nonnegative order')
+-        evidence = (0., 0.) if evidence is None else tuple(map(float, evidence))
++        if evidence is None:
++            signed = max(-1., min(1., float(trust)))
++            evidence = (max(signed, 0.), max(-signed, 0.))
++            if not meaning.polarity:
++                evidence = evidence[::-1]
++        else:
++            evidence = tuple(map(float, evidence))
+         if len(evidence) != 2 or any(not math.isfinite(x) or not 0 <= x <= 1 for x in evidence):
+             raise ValueError('evidence poles must be finite and in [0, 1]')
+         terms, complete = self._meaning_leaf_terms(meaning, order=order)
+@@ -9398,7 +9408,6 @@
+         if rel_type is None:
+             rel_type = self.REL_OPERATOR if bool(meaning.role_mask[1:].any()) else self.REL_NONE
+         self.rel_type[n] = int(rel_type)
+-        self.trust[n] = max(-1.0, min(1.0, float(trust)))
+         self.c_plus[n], self.c_minus[n] = evidence
+         self.order[n] = order
+         self.surprise[n] = surprise
+@@ -9723,15 +9732,21 @@
+             return self.count.new_zeros(0)
+         return (self.rel_type[:c] == self.REL_NONE).nonzero(as_tuple=True)[0]
+ 
++    @property
++    def trust(self):
++        """Compatibility read of signed evidence; no separate stored column."""
++        return self.c_plus - self.c_minus
++
+     @torch.no_grad()
+     def set_trust(self, idx: int, trust: float):
+-        """Overwrite a row's scalar trust (verification / re-assertion)."""
++        """Set signed evidence through its two poles (verification/reassertion)."""
+         i = int(idx)
+         if not (0 <= i < int(self.count.item())):
+             raise IndexError(f"row {i} of {int(self.count.item())}")
+         if not math.isfinite(float(trust)):
+             raise ValueError("fact trust must be finite")
+-        self.trust[i] = max(-1.0, min(1.0, float(trust)))
++        signed = max(-1.0, min(1.0, float(trust)))
++        self.c_plus[i], self.c_minus[i] = max(signed, 0.), max(-signed, 0.)
+ 
+     @torch.no_grad()
+     def set_evidence(self, idx, positive, negative):
+@@ -9809,7 +9824,8 @@
+         facts = selected & (self.record_kind[:count] == self.KINDS.index("fact"))
+         self.record_kind[:count].masked_fill_(
+             facts, self.KINDS.index("unverified"))
+-        self.trust[:count].masked_fill_(selected, 0)
++        self.c_plus[:count].masked_fill_(selected, 0)
++        self.c_minus[:count].masked_fill_(selected, 0)
+ 
+     @torch.no_grad()
+     def clear_origin(self, origin: int, *, retained_occurrences=()) -> int:
+@@ -9898,7 +9914,6 @@
+         self.slots[:n_keep] = self.slots[keep]
+         self.rel_type[:n_keep] = self.rel_type[keep]
+         self.timestamp[:n_keep] = self.timestamp[keep]
+-        self.trust[:n_keep] = self.trust[keep]
+         self.surprise[:n_keep] = self.surprise[keep]
+         self.origin[:n_keep] = self.origin[keep]
+         for name in ('role_mask', 'record_kind', 'grammatical_mode', 'polarity',
+@@ -9915,7 +9930,6 @@
+         self.slots[n_keep:c].zero_()
+         self.rel_type[n_keep:c].zero_()
+         self.timestamp[n_keep:c].zero_()
+-        self.trust[n_keep:c].zero_()
+         self.surprise[n_keep:c].fill_(-1.)
+         self.origin[n_keep:c].zero_()
+         self.role_mask[n_keep:c].zero_()
+@@ -9943,7 +9957,6 @@
+         self.slots.zero_()
+         self.rel_type.zero_()
+         self.timestamp.zero_()
+-        self.trust.zero_()
+         self.surprise.fill_(-1.)
+         self.count.zero_()
+         self.origin.zero_()
+@@ -13466,6 +13479,8 @@
+         every ``spell_out``-seeded byte.
+         """
+         sb = standalone_bytes or ()
++        if hasattr(self, 'identity'):
++            return torch.tensor(sorted(self.identity.word_rows.values()), dtype=torch.long)
+         ids = [i for i, b in enumerate(self.inverse_table)
+                if len(b) >= 2 or (len(b) == 1 and b[0] in sb)]
+         return torch.tensor(ids, dtype=torch.long)
+@@ -14079,6 +14094,7 @@
+             "chunk_hits": dict(self._chunk_hits),
+             "part_groups": dict(self.part_groups),
+             "pending_part_groups": dict(self._pending_part_groups),
++            "identity": self.identity.vocab_extras() if hasattr(self, 'identity') else None,
+             "pending_promotions": [
+                 (chunk, init.detach().to(device="cpu").clone())
+                 for chunk, init in self._pending_promotions.items()
+@@ -14143,6 +14159,8 @@
+         self.part_groups = dict(extras.get("part_groups", {}))
+         self._canonical_group_cache = None
+         self._pending_part_groups = dict(extras.get("pending_part_groups", {}))
++        if extras.get('identity') is not None and hasattr(self, 'identity'):
++            self.identity.load_vocab_extras(extras['identity'])
+         self._formed_this_turn.clear()
+ 
+ 
+--- round2e/bin/MereologicalCodes.py
++++ round3a/bin/MereologicalCodes.py
+@@ -221,6 +221,15 @@
+                 continue  # an unallocated cache row has neither form nor meaning
+             (lower, _upper), _, _, _ = self._interval(edges)
+             out[row_index[row], :self.percept_width] = lower
++        model = getattr(owner, '_model', None)
++        identity = getattr(getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None), 'identity', None)
++        if identity is not None:
++            for row in unique:
++                raw = owner.word_surface_for_row(row)
++                if raw in identity.words:
++                    # Identification is immutable. Learned support changes a
++                    # reading's evidence, never the named word's sparse key.
++                    out[row_index[row], :identity.width] = identity.form(raw).to(out)
+         context = self.occurrence_terms() if self._context is None else self._context
+         for row in unique:
+             if row in context and self.context_width:
+--- round2e/bin/Models.py
++++ round3a/bin/Models.py
+@@ -160,7 +160,7 @@
+     """Write the completed field with caller-owned provenance."""
+     kind = 'question' if clause.meaning.mode == 'interrogative' else 'observation'
+     return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
+-        expectation=expectation)
++        evidence=clause.evidence, expectation=expectation)
+ 
+ 
+ def _is_external_expectation_observation(discourse):
+@@ -1837,6 +1837,8 @@
+         defaults_path = os.path.join(ProjectPaths.DATA_DIR, "model.xml")
+         init_config(path=config_path, defaults_path=defaults_path)
+         cfg = TheXMLConfig.data
++        from WordIdentity import resolve_identity_layout
++        resolve_identity_layout(cfg)
+         self.cfg = cfg
+ 
+         arch = cfg["architecture"]
+@@ -6855,11 +6857,22 @@
+                 selected[b, own_width:own_width+k] = torch.where(torch.isfinite(values), extra, -1)
+         valid = selected >= 0
+         codes = owner.similarity_codebook.lookup_rows(selected.clamp_min(0)).clone()
++        sparse_forms = torch.where(valid[..., None], codes, torch.zeros_like(codes)).detach().clone()
++        codes = owner.interpret.binding_atoms(codes)
+         codes = torch.where(valid[..., None], codes, torch.zeros_like(codes))
+         weights = heat.gather(1, selected.clamp_min(0)).detach().clone()
+         weights = torch.where(valid, weights, torch.zeros_like(weights))
+         surfaces = [[owner.word_surface_for_row(row) if row >= 0 else None
+                      for row in batch] for batch in selected.cpu().tolist()]
++        identity = getattr(getattr(self.perceptualSpace, 'percept_store', None), 'identity', None)
++        if identity is not None:
++            checks = [dict(word=raw.decode('utf8', 'surrogateescape'),
++                           error=int(identity.read(sparse_forms[b,j,:identity.width]) != raw))
++                      for b,batch in enumerate(surfaces) for j,raw in enumerate(batch) if raw]
++            self._last_rung0_identity_audit = dict(identified_words=len(checks),
++                errors=sum(item['error'] for item in checks), rows=checks)
++            if self._last_rung0_identity_audit['errors']:
++                raise RuntimeError('rung-zero reconstruction identity audit failed')
+         nbytes = max(1, max(len(value or b'') for batch in surfaces for value in batch)+1)
+         data = torch.zeros(*selected.shape, nbytes, dtype=torch.long)
+         byte_valid = torch.zeros_like(data, dtype=torch.bool)
+@@ -6877,7 +6890,7 @@
+             case_bank = stage_case_bank(owner, native, limit=self.reconstruction_basis_limit)
+         self._sentence_primed_bank = PrimedSymbols(selected, codes, weights, own,
+             data.to(rows.device), byte_valid.to(rows.device), case_bank,
+-            getattr(self, '_readback_percept_width', None))
++            getattr(self, '_readback_percept_width', None), sparse_forms if identity is not None else None)
+         self._sentence_priming_written = True
+ 
+     def store_truths(self, entries):
+@@ -8478,8 +8491,14 @@
+             object.__setattr__(self, "_recon_completed", True)
+         ideas = self._recon_ideas
+         with self._synthesis_guard():
+-            carrier = self.conceptualSpace.subspace.carrier_like()
+-            carrier.set_event(ideas)
++            identity = getattr(getattr(self.perceptualSpace, 'percept_store', None), 'identity', None)
++            if identity is not None and self.word_brackets:
++                # The recovered leaves are already numerical directions.
++                # A codebook-backed carrier would quantize them a second time.
++                carrier = SubSpaceView.snapshot(ideas, owner=self.conceptualSpace)
++            else:
++                carrier = self.conceptualSpace.subspace.carrier_like()
++                carrier.set_event(ideas)
+             surface = self._reverse_input_surface(carrier)
+             event = surface.materialize() if hasattr(surface, "materialize") else surface
+             if not torch.is_tensor(event):
+@@ -8497,6 +8516,31 @@
+         The input's grammar traversal is already complete. No generate policy
+         or free chart expansion belongs in this path.
+         """
++        identity = getattr(getattr(self.perceptualSpace, 'percept_store', None), 'identity', None)
++        if identity is not None and self.word_brackets:
++            # The grammar inverse has already recovered word leaves. Resolve
++            # their directions in the invocation's dictionary, then read each
++            # sparse identity through its row; no learned byte inverse remains
++            # at rung zero. Neither source bytes nor a saved leaf trace select
++            # the spelling.
++            ideas = carrier.materialize()
++            bank, valid = self._reconstruction_basis_snapshot(ideas)
++            forms = self.inputSpace._ar_concept_lookup_atoms
++            from SentenceUnderstanding import readback_scores
++            scores = torch.stack([readback_scores(ideas[:, w], bank, valid.to(ideas),
++                percept_width=identity.width) for w in range(ideas.shape[1])], dim=1)
++            score, selected = scores.max(-1)
++            known = (score > 1 - 1e-5) & (ideas.norm(dim=-1) > 0)
++            surfaces = []
++            for b in range(len(ideas)):
++                words = [identity.read(forms[b, int(selected[b, w]), :identity.width])
++                         for w in range(ideas.shape[1]) if bool(known[b, w])]
++                surfaces.append(b' '.join(word for word in words if word is not None))
++            width = max(1, max(map(len, surfaces), default=0))
++            event = torch.zeros(len(surfaces), 1, width, device=ideas.device, dtype=torch.long)
++            for b, raw in enumerate(surfaces):
++                event[b, 0, :len(raw)] = torch.tensor(list(raw), device=ideas.device)
++            return SubSpaceView.snapshot(event, owner=self.inputSpace)
+         carrier = (self._reverse_body(carrier) if field is None else
+                    self._reverse_body(carrier, field=field))
+         concepts = getattr(carrier, "_concepts_recon", None)
+@@ -11660,6 +11704,8 @@
+             pieces = {}
+             # Match the dynamic target-axis lower bound; the padding is masked.
+             width = 3
++            identity = getattr(store, 'identity', None)
++            texts = (getattr(self.perceptualSpace, '_forward_input', None) or {}).get('word_texts', ())
+             for b in range(B):
+                 for w in range(W):
+                     if not live[b][w]:
+@@ -11671,6 +11717,11 @@
+                                 pieces[pid] = store.bytes_for(pid)
+                             chunks.append(pieces[pid])
+                     raw = b"".join(chunks)
++                    if identity is not None:
++                        # Identity atoms are parts, not substrings. Targets
++                        # retain the separately staged input byte witness.
++                        raw = (str(texts[b][w]).encode('latin1')
++                               if b < len(texts) and w < len(texts[b]) else b'')
+                     spellings[b][w] = raw
+                     width = max(width, len(raw))
+             targets = torch.zeros(B, W, width, dtype=torch.long, device="cpu")
+@@ -11973,6 +12024,7 @@
+         k = min(int(atoms.shape[1]), W, int(rows.shape[1]))
+         da = min(int(atoms.shape[-1]), D)
+         content = atoms[:, :k, :da].to(device=like.device, dtype=like.dtype)
++        content = self._concept_owner().interpret.binding_atoms(content)
+         if torch.is_tensor(activations) and int(activations.numel()) >= B * k:
+             act = activations.reshape(B, -1)[:, :k].to(
+                 device=like.device, dtype=like.dtype).unsqueeze(-1)
+@@ -12301,6 +12353,9 @@
+                 and torch.is_tensor(rows) and rows.shape == atoms.shape[:2]):
+             raise RuntimeError("tied reconstruction requires a staged concept lookup bank")
+         bank = atoms.to(reference).clone()
++        interpretation = getattr(self._concept_owner(), 'interpret', None)
++        if interpretation is not None:
++            bank = interpretation.binding_atoms(bank)
+         bank = F.pad(bank[..., :D], (0, max(0, D - bank.shape[-1])))
+         return bank, rows.detach().to(reference.device).ge(0).clone()
+ 
+@@ -12320,6 +12375,9 @@
+                 and int(bank_bytes.shape[0]) == B
+                 and int(atoms.shape[1]) == int(bank_bytes.shape[1])):
+             bank = atoms.to(device=reference.device, dtype=reference.dtype).clone()
++            interpretation = getattr(self._concept_owner(), 'interpret', None)
++            if interpretation is not None:
++                bank = interpretation.binding_atoms(bank)
+             valid = bank_valid.detach().to(device=reference.device).clone()
+             rows = getattr(isp, "_ar_concept_lookup_rows", None)
+             if torch.is_tensor(rows) and rows.shape == bank.shape[:2]:
+@@ -12365,7 +12423,12 @@
+ 
+     def _byte_word_cost(self, idea, word, bank_n, bank_bytes, bank_valid,
+                         target_bytes, target_valid, ready, *, priming=None):
+-        """``[B]`` byte/end-of-word cross entropy of a recovered word idea.
++        """``[B]`` rung-zero identity audit, or the legacy byte cross entropy.
++
++        Fixed identities read exact bytes through their sparse index. Their
++        term is zero for an identified bank word and one for an unresolved
++        word. The continuous byte objective below remains for dictionaries
++        without identity by construction.
+ 
+         A derived concept row carries its native perceptual fold. The lexical
+         read-back matches that fold to a row whose surface is its bytes: the decoder's
+@@ -12389,6 +12452,18 @@
+         W, P = int(target_bytes.shape[1]), int(target_bytes.shape[2])
+         if not ready or P == 0:
+             return idea.new_zeros(B)
++        identity = getattr(getattr(getattr(self, 'perceptualSpace', None), 'percept_store', None), 'identity', None)
++        if identity is not None:
++            # A bank leaf names a row whose sparse form is checked at the
++            # eager index boundary. Its bytes are exact, not a learned read.
++            # Unknown/non-bank leaves remain an audit failure, not a soft CE.
++            from SentenceUnderstanding import readback_scores
++            present = bank_valid.any(-1)
++            candidates = torch.where(present[..., None], bank_n.detach(), torch.zeros_like(bank_n))
++            score = readback_scores(idea, candidates, torch.ones_like(present, dtype=idea.dtype),
++                                    percept_width=identity.width)
++            identified = (present & (score > 1.-1e-5)).any(-1)
++            return (present.any(-1) & ~identified).to(idea.dtype) + idea.sum(-1) * 0.
+         bank_n = bank_n.detach()
+         present = bank_valid.any(dim=-1)                                 # [B, L]
+         # Packing may place the same sentence's candidates in different
+@@ -12571,6 +12646,9 @@
+         atoms = lookup(rows.clamp_min(0).to(torch.long))
+         if not (torch.is_tensor(atoms) and atoms.dim() == 3):
+             return reference
++        interpretation = getattr(owner, 'interpret', None)
++        if interpretation is not None:
++            atoms = interpretation.binding_atoms(atoms)
+         da = min(int(atoms.shape[-1]), D)
+         indexed = (rows >= 0).reshape(B, W, 1).to(device=reference.device)
+         atoms = atoms[..., :da].to(device=reference.device, dtype=reference.dtype)
+--- round2e/bin/SentenceUnderstanding.py
++++ round3a/bin/SentenceUnderstanding.py
+@@ -67,6 +67,7 @@
+     byte_valid: torch.Tensor
+     case_bank: object = None
+     percept_width: int | None = None
++    forms: torch.Tensor | None = None
+ 
+     @property
+     def valid(self):
+@@ -93,7 +94,8 @@
+         Neither the compose journal nor original per-word values are evidence
+         for an answer. The code/activation product is fixed at this boundary.
+         """
+-        bank = (self.primed.codes.detach() * self.primed.weights.detach()[..., None]
++        forms = self.primed.codes if self.primed.forms is None else self.primed.forms
++        bank = (forms.detach() * self.primed.weights.detach()[..., None]
+                 * self.primed.valid[..., None]).sum(1)
+         positions = torch.arange(self.end_slots.shape[1], device=self.root.device)
+         end = self.end_slots * (positions[None] < self.end_depth[:, None])[..., None]
+--- round2e/bin/Spaces.py
++++ round3a/bin/Spaces.py
+@@ -2388,6 +2388,9 @@
+         """
+         if getattr(self, 'mereology', None) is not None:
+             return self.lookup_rows(torch.arange(len(self.W), device=self.W.device))
++        if hasattr(self, 'fixed_row_mask'):
++            rows = _unorm_ste(self.W) if getattr(self, 'is_percept_store', False) else self.W
++            return torch.where(self.fixed_row_mask[:, None], self.fixed_row_codes, rows)
+         if (self.W is not None
+                 and getattr(self, "is_percept_store", False)
+                 and meronomy_enabled()):
+@@ -2428,6 +2431,10 @@
+             rows = _sparse_embedding_eager(idx, self.W)
+         else:
+             rows = self.W[idx]
++        if hasattr(self, 'fixed_row_mask'):
++            if getattr(self, 'is_percept_store', False):
++                rows = _unorm_ste(rows)
++            return torch.where(self.fixed_row_mask[idx][..., None], self.fixed_row_codes[idx], rows)
+         if (getattr(self, "is_percept_store", False)
+                 and meronomy_enabled()):
+             return _unorm_ste(rows)
+@@ -10572,6 +10579,15 @@
+                 promotion_threshold=self.chunk_promotion_threshold,
+                 promotion_min_length=self.chunk_promotion_min_length,
+                 word_bounded=True, basis=self.subspace.what)
++            # Standalone dimension fixtures do not construct a full identity
++            # layout. Configured text models reserve D + L before this point.
++            if self.nDim >= 33 and TheXMLConfig.space(section, 'identityByParts', default=True):
++                from WordIdentity import WordIdentity
++                self.percept_store.identity = WordIdentity(self.percept_store,
++                    pair_dim=self.nDim-32,
++                    ones=int(TheXMLConfig.space(section, 'identityOnes', default=3)),
++                    length_dim=32,
++                    binding_dim=min(self.nDim, int(TheXMLConfig.space(section, 'identityBindingDim', default=64))))
+         # Numeric carriers have no lexical dictionary. Native text prototype
+         # storage has one optimizer owner; admission preserves its moments.
+         self._optimize_radix_codebook = self.percept_store is not None
+@@ -10764,6 +10780,27 @@
+                    - torch.maximum(spans[..., 0, None], part_spans[:, None, :, 0])).clamp_min(0)
+         size = spans[..., 1] - spans[..., 0]
+         complete = ((overlap * valid[:, None]).sum(-1) == size) & (size > 0)
++        identity = getattr(store, 'identity', None)
++        atom_ids = set(identity.atoms.values()) if identity is not None else set()
++        atom_witnesses = None
++        if atom_ids:
++            # Byte descent is still the observed witness. Read its exact
++            # boundary pairs/length (and any recorded positional mint) as
++            # parts; their order in the bank has no evidential significance.
++            from WordIdentity import base_atoms
++            atom_witnesses = []
++            for b, row in enumerate(spans.detach().cpu().tolist()):
++                events = list(zip(part_ids[b].detach().cpu().tolist(),
++                                  part_spans[b].detach().cpu().tolist()))
++                values = []
++                for w, (start, end) in enumerate(row):
++                    selected = [(pid, a, z) for pid, (a, z) in events
++                                if pid >= 0 and start <= a < z <= end]
++                    raw = b''.join(store.bytes_for(pid) for pid, _, _ in selected)
++                    parts = identity.words.get(raw, base_atoms(raw)) if raw else ()
++                    values.append({identity.atoms[a] for a in parts if a in identity.atoms}
++                                  if bool(complete[b, w]) else set())
++                atom_witnesses.append(values)
+         pairs, supports = [], []
+         for literal in features:
+             ids = tuple(int(i) for i in literal) if isinstance(literal, (list, tuple)) else (int(literal),)
+@@ -10771,7 +10808,12 @@
+             present = torch.zeros_like(complete)
+             support = torch.zeros(*complete.shape, part_ids.shape[1],
+                                   dtype=torch.bool, device=part_ids.device) if return_support else None
+-            if count > 0 and ids:
++            if ids and set(ids) <= atom_ids:
++                present = complete.new_tensor([[set(ids) <= members for members in row]
++                                               for row in atom_witnesses])
++                if return_support:
++                    support = present[..., None] & valid[:, None] & (overlap > 0)
++            elif count > 0 and ids:
+                 match = valid[:, :count].clone()
+                 for offset, pid in enumerate(ids):
+                     match &= valid[:, offset:offset + count] & (part_ids[:, offset:offset + count] == pid)
+@@ -11227,6 +11269,8 @@
+ 
+         import Meronomy
+         staged_rows, sentence_truncated_rows, word_texts_rows = [], [], []
++        native_rows, native_spans = [], []
++        identity = getattr(ps, 'identity', None)
+         part_capacity = 3
+         # Rung-0 admission by recurrence (fold-ladder plan, contract 4,
+         # step D-0): a unit seen ``chunk_promotion_threshold`` times gets a
+@@ -11263,6 +11307,8 @@
+                     complete.append((cursor, len(raw)))
+                 spans = complete
+             word_texts_rows.append([raw[s0:e0].decode("latin1") for s0, e0 in spans])
++            native_rows.append([int(ps.get_id(bytes([value]))) for value in raw])
++            native_spans.append([(i, i+1) for i in range(len(raw))])
+             staged_words = []
+             for word_index in range(word_capacity):
+                 if word_index < len(spans):
+@@ -11270,9 +11316,11 @@
+                     truncated = False
+                     stop = end
+                     pids = [int(ps.get_id(bytes([raw[i]]))) for i in range(start, stop)]
++                    unit = raw[start:stop]
++                    if identity is not None:
++                        pids = list(identity.admit(unit))
+                     part_capacity = max(part_capacity, len(pids))
+-                    unit = raw[start:stop]
+-                    if (admit and len(unit) >= 2 and not truncated
++                    if (identity is None and admit and len(unit) >= 2 and not truncated
+                             and ps.get_id(unit) is None
+                             and unit not in getattr(ps, "_pending_promotions", {})):
+                         hits[unit] = hits.get(unit, 0) + 1
+@@ -11286,7 +11334,8 @@
+                     staged_words.append({
+                         "pids": pids, "start": int(start), "end": int(end),
+                         "word_index": int(word_index),
+-                        "part_spans": [(i, i + 1) for i in range(start, stop)],
++                        "part_spans": ([(start, stop)] * len(pids) if identity is not None
++                                       else [(i, i + 1) for i in range(start, stop)]),
+                         "active": True, "truncated": bool(truncated),
+                     })
+                 else:
+@@ -11363,6 +11412,11 @@
+             "word_active_mask": word_active, "word_truncated_mask": word_truncated,
+             "sentence_word_truncated_mask": sentence_truncated,
+         }
++        native_capacity = max(map(len, native_rows), default=0)
++        self._forward_input['native_indices'] = torch.tensor(
++            [row + [-1]*(native_capacity-len(row)) for row in native_rows], dtype=torch.long, device=dev)
++        self._forward_input['native_part_spans'] = torch.tensor(
++            [row + [(0,0)]*(native_capacity-len(row)) for row in native_spans], dtype=torch.long, device=dev)
+         return self.subspace
+ 
+     def _embed_radix(self, upstream_vspace):
+@@ -11936,6 +11990,16 @@
+         target = self._adopt_reverse_carrier(subspace)
+         stash = self._reverse_stash(subspace)
+         vspace = subspace
++        identity = getattr(self.percept_store, 'identity', None)
++        if identity is not None:
++            # A conceptual event may append a meaning complement after its
++            # native percept event. Descending to PS selects that native face;
++            # it must not reshape meaning coordinates into extra percepts.
++            event = vspace.materialize()
++            width = int(self.subspace.nWhat + self.subspace.nWhere + self.subspace.nWhen)
++            if event.shape[-1] > width:
++                vspace = vspace.carrier_like()
++                vspace.set_event(event[..., :width])
+         # NOTE: When ``self.subspace.what`` is an Embedding (text mode),
+         # `_reverse_text` returns earlier and bypasses the numeric
+         # inverse chain below.
+@@ -14432,7 +14496,7 @@
+                     and g is not None and g < len(word_texts[b])):
+                 value = word_texts[b][g]
+                 if value is not None:
+-                    return str(value)
++                    return str(value).encode('latin1')
+             if (tokens is not None and b < len(tokens)
+                     and g is not None and g < len(tokens[b])):
+                 value = tokens[b][g]
+@@ -15955,7 +16019,7 @@
+         if any(int(x[1]) == int(concept_id) for x in sym_refs):
+             raise ValueError('self-edge: a concept cannot be its own part')
+         n_raw = sum(1 for x in (parts + wholes)
+-                    if not _is_sym(x) and x not in (_NOTHING, _EVERYTHING))
++                    if not _is_sym(x) and (witness is not None or x not in (_NOTHING, _EVERYTHING)))
+         n_poles = int(_NOTHING in parts) + int(_EVERYTHING in wholes)
+         # Min-support >= 2, EXCEPT minted singletons: the unit-set's single
+         # sym edge IS its weighted reading (Alec 2026-07-02).
+@@ -15980,7 +16044,7 @@
+                     continue
+                 for ref in refs:
+                     if (isinstance(ref, int) and ref >= 0
+-                            and ref not in (_NOTHING, _EVERYTHING)):
++                            and (witness is not None or ref not in (_NOTHING, _EVERYTHING))):
+                         literals.append((tower, ref))
+             if not literals:
+                 return
+@@ -17017,10 +17081,17 @@
+                             dtype=torch.long)
+ 
+     def concept_of_percept(self, pid):
++        model = getattr(self, '_model', None)
++        native = getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None)
++        identity = getattr(native, 'identity', None)
++        if identity is not None:
++            raw = native.bytes_for(int(pid))
++            if identity.word_rows.get(raw) == int(pid):
++                return self.definitions.word(identity=identity.word_keys[raw].hex())
+         return self.definitions.word(unit=int(pid))
+ 
+     def object_concept_of_percept(self, pid):
+-        word = self.definitions.word(unit=int(pid))
++        word = self.concept_of_percept(pid)
+         return None if word is None else self.definitions.deref(word)
+ 
+     def word_concept_of_object(self, cid):
+--- round2e/bin/WordIdentity.py
++++ round3a/bin/WordIdentity.py
+@@ -0,0 +1,313 @@
++"""Rung-zero identity: boundary pairs, exact length parts, collision mints.
++
++Atom rows and word rows belong to the existing RadixLayer. Their codes are
++fixed functions of atom bytes, not parameters. Only a recorded collision
++may extend a minted atom's deterministic bit stream. Binding uses a separate
++fixed dense view; indexes and reconstruction retain the sparse form.
++"""
++import hashlib
++from functools import lru_cache
++
++import numpy as np
++import torch
++from torch import nn
++from torch.nn import functional as F
++
++
++def resolve_identity_layout(config):
++    """Resolve text form storage before constructing any spaces.
++
++    Older XML files described a learned letter width. Identity now owns an
++    explicit pair width plus 32 length bits. Preserve the declared meaning
++    complement and live slot/row counts; numeric configurations are untouched.
++    """
++    from architecture import canonical_shape
++    arch = config.get('architecture', {})
++    if arch.get('data', {}).get('dataType', arch.get('dataType')) != 'embedding':
++        return
++    ps = config.setdefault('PartSpace', {})
++    if not ps.get('identityByParts', True):
++        return
++    pair = int(ps.setdefault('identityPairDim', 64))
++    ones = int(ps.setdefault('identityOnes', 3))
++    length = int(ps.setdefault('identityLengthDim', 32))
++    dense = int(ps.setdefault('identityBindingDim', 64))
++    if pair < ones or ones < 1 or length != 32 or dense < 1:
++        raise ValueError('identity requires D >= s > 0, L = 32 and a positive binding width')
++    width = pair + length
++    if dense > width:
++        raise ValueError('binding width must fit the reserved form block')
++    old_ps = int(ps.get('nDim', 0))
++    old_cs = int(config.get('ConceptualSpace', {}).get('nDim', old_ps)) or old_ps
++    form_event = width + sum(canonical_shape('PartSpace'))
++    complement = max(0, old_cs - old_ps)
++    # Recurrent WS and the output head consume CS events, not their own
++    # native form width. Retain deliberately inconsistent declarations so
++    # normal configuration validation still rejects them.
++    for section in ('WholeSpace', 'OutputSpace'):
++        item = config.get(section, {})
++        if int(item.get('nInputDim', 0) or 0) == old_cs and old_cs > 0:
++            item['nInputDim'] = form_event + complement
++    for section, event in (('InputSpace', form_event), ('PartSpace', form_event),
++                           ('WholeSpace', form_event),
++                           ('ConceptualSpace', form_event + complement)):
++        item = config.setdefault(section, {})
++        old = int(item.get('nDim', 0))
++        item['nDim'] = event
++        for key in ('nInputDim', 'nOutputDim'):
++            if int(item.get(key, 0) or 0) == old and old > 0:
++                item[key] = event
++
++
++def text_of(raw):
++    return bytes(raw).decode('utf8', 'surrogateescape')
++
++
++def bytes_of(text):
++    return text.encode('utf8', 'surrogateescape')
++
++
++@lru_cache(maxsize=16384)
++def bit_stream(atom, dimension):
++    seed = int.from_bytes(hashlib.sha256(atom).digest()[:8], 'little')
++    return tuple(map(int, np.random.default_rng(seed).permutation(dimension)))
++
++
++def base_atoms(raw):
++    word = text_of(raw)
++    marked = '#' + word + '#'
++    return tuple(dict.fromkeys(
++        [('pair', marked[i:i+2]) for i in range(len(marked)-1)] +
++        [('length', str(i)) for i in range(1, len(word)+1)]))
++
++
++class WordIdentity(nn.Module):
++    PREFIX = b'\x00identity/atom/'
++    WORD_PREFIX = b'\x00identity/form/'
++
++    def __init__(self, store, pair_dim=64, ones=3, length_dim=32, binding_dim=64):
++        super().__init__()
++        object.__setattr__(self, 'store', store)
++        self.pair_dim, self.ones = int(pair_dim), int(ones)
++        self.length_dim, self.binding_dim = int(length_dim), int(binding_dim)
++        self.width = self.pair_dim + self.length_dim
++        if store.dim != self.width or not 0 < self.ones <= self.pair_dim:
++            raise ValueError('Radix identity bank width must be D + L, with 0 < s <= D')
++        seed = int.from_bytes(hashlib.sha256(b'word-identity-projection-v1').digest()[:8], 'little')
++        # A local generator cannot move any training's initialization stream.
++        matrix = np.random.default_rng(seed).normal(size=(self.width, self.binding_dim))
++        self.register_buffer('projection', torch.tensor(matrix / self.binding_dim**.5, dtype=torch.float32))
++        self.atoms, self.bits, self.words, self.word_rows, self.forms = {}, {}, {}, {}, {}
++        self.word_keys = {}
++        self.mints = []
++        self.revision = 0
++        basis = store._basis
++        if not hasattr(basis, 'fixed_row_mask'):
++            basis.register_buffer('fixed_row_mask', torch.zeros(store._capacity, dtype=torch.bool, device=basis.W.device))
++            basis.register_buffer('fixed_row_codes', torch.zeros_like(basis.W, requires_grad=False))
++
++    def atom_code(self, atom, bits=None):
++        kind, value = atom
++        result = torch.zeros(self.width)
++        if kind == 'length':
++            k = int(value)
++            if k <= self.length_dim:
++                result[self.pair_dim+k-1] = 1
++        else:
++            n = self.bits.get(atom, self.ones) if bits is None else int(bits)
++            result[list(bit_stream(bytes_of(value), self.pair_dim)[:n])] = 1
++        return result
++
++    @torch.no_grad()
++    def _fixed(self, row, value):
++        basis = self.store._basis
++        value = value.to(basis.W)
++        basis.fixed_row_mask[row] = True
++        basis.fixed_row_codes[row].copy_(value)
++        basis.W[row].copy_(value)
++
++    def _atom(self, atom, bits=None):
++        if bits is not None:
++            self.bits[atom] = max(self.bits.get(atom, self.ones), int(bits))
++        code = self.atom_code(atom)
++        if atom not in self.atoms:
++            key = self.PREFIX + atom[0].encode() + b'/' + bytes_of(atom[1])
++            self.atoms[atom] = self.store.insert(key, init_vector=code)
++        self._fixed(self.atoms[atom], code)
++        return self.atoms[atom]
++
++    def form(self, raw):
++        atoms = self.words.get(bytes(raw), base_atoms(raw))
++        return torch.stack([self.atom_code(a) for a in atoms]).amax(0)
++
++    @staticmethod
++    def key(form):
++        return np.packbits(form.detach().cpu().numpy().astype(np.uint8), bitorder='little').tobytes()
++
++    def _mint(self, left, right):
++        a, b = '#' + text_of(left) + '#', '#' + text_of(right) + '#'
++        old_a, old_b = self.form(left), self.form(right)
++        positions = [pos for pos in range(max(len(a),len(b))-2)
++                     if len(a[pos:pos+3]) == len(b[pos:pos+3]) == 3
++                     and a[pos:pos+3] != b[pos:pos+3]]
++        # Exhaust the differing triple positions, then try quadruples at
++        # those positions. Unsuccessful proposals never alter stored atoms.
++        for size in (3, 4):
++            for pos in positions:
++                x, y = a[pos:pos+size], b[pos:pos+size]
++                if len(x) != size or len(y) != size or x == y:
++                    continue
++                aa, bb = ('mint', f'{x}@{pos}'), ('mint', f'{y}@{pos}')
++                for bits in range(max(self.bits.get(aa, self.ones), self.bits.get(bb, self.ones)), self.pair_dim+1):
++                    ca, cb = self.atom_code(aa, bits), self.atom_code(bb, bits)
++                    if not torch.equal(torch.maximum(old_a, ca), torch.maximum(old_b, cb)):
++                        self._atom(aa, bits); self._atom(bb, bits)
++                        self.words[left] = tuple(dict.fromkeys((*self.words[left], aa)))
++                        self.words[right] = tuple(dict.fromkeys((*self.words[right], bb)))
++                        self.mints.append(dict(words=[text_of(left), text_of(right)],
++                            atoms=[aa[1], bb[1]], bit_counts=[bits, bits], size=size, position=pos))
++                        self.revision += 1
++                        return
++        raise ValueError(f'identity mint exhausted triples and quadruples: {left!r}, {right!r}')
++
++    def _reindex(self):
++        self.forms = {}
++        self.word_keys = {}
++        for raw in self.words:
++            key = self.key(self.form(raw))
++            if key in self.forms and self.forms[key] != raw:
++                return self.forms[key], raw
++            self.forms[key] = raw
++            self.word_keys[raw] = key
++        return None
++
++    def admit(self, raw):
++        raw = bytes(raw)
++        if not raw:
++            raise ValueError('a word identity requires nonempty bytes')
++        if raw not in self.words:
++            self.words[raw] = base_atoms(raw)
++            for atom in self.words[raw]:
++                self._atom(atom)
++            pending, affected = [raw], {raw}
++            while pending:
++                word = pending.pop()
++                key = self.key(self.form(word))
++                other = self.forms.get(key)
++                if other is not None and other != word:
++                    self._mint(other, word)
++                    changed = set(self.words[other][-1:]) | set(self.words[word][-1:])
++                    touched = {w for w, parts in self.words.items() if changed.intersection(parts)}
++                    affected.update(touched)
++                    for w in touched:
++                        old = self.word_keys.pop(w, None)
++                        if old is not None and self.forms.get(old) == w:
++                            del self.forms[old]
++                            self.store.hash_map.pop(self.WORD_PREFIX+old, None)
++                    pending.extend(touched)
++                else:
++                    self.forms[key] = word
++                    self.word_keys[word] = key
++            # Rekey the affected old words too; their row addresses are stable.
++            for word in sorted(affected):
++                value = self.form(word)
++                key = self.WORD_PREFIX + self.key(value)
++                row = self.word_rows.get(word)
++                if row is None:
++                    row = self.store.insert(key, init_vector=value)
++                    self.word_rows[word] = row
++                    self.store.inverse_table[row] = word
++                    # Keep byte rows distinct for one-letter words/descent.
++                    if len(word) > 1:
++                        self.store.hash_map[word] = row
++                        self.store.radix_trie.insert(word, row)
++                self._fixed(row, value)
++                self.store.hash_map[key] = row
++                self.store.radix_trie.insert(key, row)
++        return tuple(self.atoms[a] for a in self.words[raw])
++
++    def row_for_form(self, form):
++        raw = self.forms.get(self.key(form))
++        return None if raw is None else self.word_rows[raw]
++
++    def read(self, form):
++        row = self.row_for_form(form)
++        return None if row is None else self.store.bytes_for(row)
++
++    def read_parts(self, rows, *, form=None):
++        """Read an indexed identity, or assemble an unindexed pair spelling."""
++        atoms = {row: atom for atom, row in self.atoms.items()}
++        parts = [atoms[int(row)] for row in rows]
++        if form is None:
++            form = torch.stack([self.atom_code(atom) for atom in parts]).amax(0)
++        known = self.read(form)
++        if known is not None:
++            return known
++        lengths = [int(value) for kind, value in parts if kind == 'length']
++        if not lengths:
++            raise ValueError('pair reconstruction requires cumulative length parts')
++        return assemble_pairs([value for kind, value in parts if kind == 'pair'],
++                              max(lengths), index=self, form=form)
++
++    def binding(self, atoms):
++        """Preserve the event/meaning layout while changing only code direction."""
++        projected = atoms[..., :self.width] @ self.projection.to(atoms)
++        return torch.cat((F.pad(projected, (0, self.width-self.binding_dim)),
++                          atoms[..., self.width:]), -1)
++
++    def vocab_extras(self):
++        return dict(atoms=self.atoms, bits=self.bits, words=self.words,
++                    word_rows=self.word_rows, mints=self.mints, revision=self.revision)
++
++    def load_vocab_extras(self, value):
++        for name in ('atoms', 'bits', 'words', 'word_rows', 'mints', 'revision'):
++            setattr(self, name, value[name])
++        self._reindex()
++
++    def audit(self):
++        words = sorted(self.words)
++        forms = {w: self.form(w) for w in words}
++        postings = {}
++        for word in words:
++            for atom in self.words[word]:
++                postings.setdefault(atom, set()).add(word)
++        comparable = []
++        for word in words:
++            lists = sorted((postings[a] for a in self.words[word]), key=len)
++            supersets = lists[0].intersection(*lists[1:])
++            comparable.extend((word, other) for other in sorted(supersets) if other != word)
++        return dict(vocabulary=[text_of(w) for w in words], pair_dim=self.pair_dim,
++            length_dim=self.length_dim, ones=self.ones, binding_dim=self.binding_dim,
++            collisions=len(words)-len({self.key(v) for v in forms.values()}),
++            containment_pairs=[(text_of(a), text_of(b)) for a, b in comparable],
++            containment_violations=sum(bool((forms[a] > forms[b]).any()) for a,b in comparable),
++            reconstruction_errors=sum(self.read(forms[w]) != w for w in words), mints=self.mints)
++
++
++def assemble_pairs(pairs, length, *, index=None, form=None):
++    """Assemble an unindexed spelling from its pair set and exact length.
++
++    Pair sets omit multiplicity. Ambiguous sequences require the minted
++    identity index; no arbitrary spelling is substituted for an identity.
++    """
++    if index is not None and form is not None:
++        known = index.read(form)
++        if known is not None:
++            return known
++    pairs = set(pairs)
++    answers = []
++    def walk(text, used):
++        if len(answers) > 1:
++            return
++        if len(text) == length + 1:
++            end = text[-1]+'#'
++            if end in pairs and used | {end} == pairs:
++                answers.append(bytes_of(text[1:]))
++            return
++        for pair in sorted(pairs):
++            if pair[0] == text[-1] and pair[1] != '#':
++                walk(text+pair[1], used | {pair})
++    walk('#', set())
++    if len(answers) != 1:
++        raise ValueError('pair/length spelling is unresolved; a minted index identity is required')
++    return answers[0]
+--- round2e/data/BasicModel.xml
++++ round3a/data/BasicModel.xml
+@@ -10,10 +10,10 @@
+     about 118M parameters, while NanoChat d4 has about 36.7M at vocab 32768.
+ 
+     Design budget:
+-      * PartSpace and WholeSpace WHAT are 128-D (136-D events including the
+-        fixed 8-D band), while ConceptualSpace WHAT is 1024-D (1032-D event).
++      * PartSpace and WholeSpace WHAT are 96-D (104-D events including the
++        fixed 8-D band), while ConceptualSpace retains its 896-D meaning complement after the 104-D form event.
+         Input fans one word view to independent PS and WS folds; each fold's
+-        sparse sigma/codebook read emits a 1032-D concept activation before CS.
++        sparse sigma/codebook read emits a 1000-D concept activation before CS.
+         The codebook read owns the dimension increase. There is no PS->WS edge
+         and CS receives conceptual-width events rather than projecting them.
+         Across words, that perceptual leg overlaps the prior word's conceptual
+@@ -24,8 +24,8 @@
+         Conceptual folds share one physical 65536-row high-D dictionary
+         (32768 initially active) rather than allocating
+         one table per fold. Its indexed-only path omits the unused VQ EMA
+-        mirror. The table is initialized on the unit sphere and then trained by
+-        reconstruction alone, without a norm constraint (6.9 §20.1).
++        mirror. The native word form is fixed by boundary pairs and the length
++        thermometer; its meaning complement retains the existing derivation.
+         Its sparse optimizer stores moments only for touched rows.
+       * bindingDepth=4 constructs the four binding layers; conceptLayers=5
+         reserves orders zero through four. Neither is an attention work
+@@ -74,7 +74,7 @@
+          directly through the generic CS compatibility path. Keep it dark for
+          this model until it uses the same sparse concept-codebook activation
+          seam as the word recursion; otherwise it would reintroduce a hidden
+-         136 -> 1032 coordinate pad before the aligned loop begins. -->
++         136 -> 1000 coordinate pad before the aligned loop begins. -->
+     <sentenceProtocol>false</sentenceProtocol>
+     <serialWordCapacity>256</serialWordCapacity>
+     <serialWordBuckets>256</serialWordBuckets>
+@@ -143,8 +143,8 @@
+ 
+       <!-- FineWeb is unlabeled. Completed input sentences reconstruct once
+            through the identified compose derivation and shared transforms.
+-           The byte objective trains the live representation and tied inverse;
+-           targets and witness addresses are detached; candidate codes stay live.
++           The rung-zero byte term audits exact indexed identity. Higher inverse
++           costs retain detached targets and witness addresses and live candidate codes.
+            The output head receives no fabricated answer labels. -->
+       <reconstructionScale>1.0</reconstructionScale>
+       <!-- Read-only agreement of weighted objectives per shared operator.
+@@ -205,9 +205,9 @@
+     <nVectors>32768</nVectors>
+     <!-- Fixed physical reserve. Recurrence activates rows without replacing
+          the parameter or its optimizer state; exhaustion names nVectors. -->
+-    <nDim>136</nDim>
++    <nDim>104</nDim>
+     <nOutput>8</nOutput>
+-    <nOutputDim>136</nOutputDim>
++    <nOutputDim>104</nOutputDim>
+ 
+     <invertible>true</invertible>
+     <synthesis>meronomy</synthesis>
+@@ -221,7 +221,7 @@
+     <nInput>8</nInput>
+     <!-- PS/WS sigma folds have already emitted conceptual codebook
+          activations here. The CS boundary itself is width-preserving. -->
+-    <nInputDim>1032</nInputDim>
++    <nInputDim>1000</nInputDim>
+     <!-- Concept and downstream symbol-reference inventory. This is independent
+          of PartSpace's allocated prefix, WholeSpace's small property basis,
+          and the eight simultaneously live CS/WS locations. All four aligned
+@@ -231,16 +231,16 @@
+          are an optimizer-owned reserve activated in power-of-two steps. -->
+     <activeVectors>32768</activeVectors>
+     <stmCapacity>8</stmCapacity>
+-    <nDim>1032</nDim>
++    <nDim>1000</nDim>
+     <nOutput>8</nOutput>
+-    <nOutputDim>1032</nOutputDim>
++    <nOutputDim>1000</nOutputDim>
+ 
+     <invertible>true</invertible>
+   </ConceptualSpace>
+ 
+   <!-- WholeSpace is the independent upstream analysis/property peer. It
+        begins with a small ASCII-oriented property basis and contains no
+-       concept, META, or symbol rows. Its 1032-D input is recurrent conceptual
++       concept, META, or symbol rows. Its 1000-D input is recurrent conceptual
+        context; its native output remains 136-D and does not receive PS.
+        Dynamic property discovery may grow this inventory later at an explicit
+        optimizer/compiled-graph reset boundary. -->
+@@ -250,11 +250,11 @@
+          parallel CS mixing matrix and never mixes word/location slots. -->
+     <butterfly>true</butterfly>
+     <nInput>8</nInput>
+-    <nInputDim>1032</nInputDim>
++    <nInputDim>1000</nInputDim>
+     <nVectors>9</nVectors>
+-    <nDim>136</nDim>
++    <nDim>104</nDim>
+     <nOutput>8</nOutput>
+-    <nOutputDim>136</nOutputDim>
++    <nOutputDim>104</nOutputDim>
+ 
+     <invertible>true</invertible>
+   </WholeSpace>
+@@ -263,7 +263,7 @@
+        directly; WholeSpace is not an intermediate output producer. -->
+   <OutputSpace>
+     <nInput>8</nInput>
+-    <nInputDim>1032</nInputDim>
++    <nInputDim>1000</nInputDim>
+     <nVectors>1</nVectors>
+     <nDim>1</nDim>
+     <nOutput>1</nOutput>
+--- round2e/data/MM_grammar.xml
++++ round3a/data/MM_grammar.xml
+@@ -30,21 +30,21 @@
+        content width 6 -> 14 after the four where and four when coordinates.
+        Letter joins have more content coordinates; row capacities stay fixed. -->
+   <InputSpace>
+-    <nDim>22</nDim>
++    <nDim>104</nDim>
+     <nVectors>8</nVectors>
+     <nOutput>8</nOutput>
+   </InputSpace>
+ 
+   <PartSpace>
+     <nOutput>8</nOutput>
+-    <nDim>22</nDim>
++    <nDim>104</nDim>
+     <nVectors>256</nVectors>
+     <invertible>true</invertible>
+   </PartSpace>
+ 
+   <ConceptualSpace>
+     <nOutput>8</nOutput>
+-    <nDim>22</nDim>
++    <nDim>104</nDim>
+     <!-- §14 addendum: symbol/concept pairs only; letters stay in PS. -->
+     <nVectors>8</nVectors>
+     <invertible>true</invertible>
+@@ -52,7 +52,7 @@
+ 
+   <WholeSpace>
+     <nOutput>8</nOutput>
+-    <nDim>22</nDim>
++    <nDim>104</nDim>
+     <!-- The output-width override remains separate from the processing
+          width above, which now has fourteen content coordinates. -->
+     <nOutputDim>14</nOutputDim>
+--- round2e/data/MM_xor.xml
++++ round3a/data/MM_xor.xml
+@@ -38,6 +38,8 @@
+   </InputSpace>
+ 
+   <PartSpace>
++    <!-- This gate receives numeric XOR tensors and has no letter identity. -->
++    <identityByParts>false</identityByParts>
+     <nInput>8</nInput>
+     <nInputDim>14</nInputDim>
+     <nVectors>200</nVectors>
+--- round2e/data/XOR_grammar.xml
++++ round3a/data/XOR_grammar.xml
+@@ -55,11 +55,10 @@
+ 
+   <!-- Stage 1.D flat-slab invariant (2026-05-27): IS.nOutput aligned
+        to PS/CS (6). nVectors stays at 8 for vocab headroom. -->
+-  <!-- 6.8 §22 declared capacity increase: event width 14 -> 22, hence
+-       content width 6 -> 14 after the four where and four when coordinates.
+-       Letter joins have more content coordinates; row capacities stay fixed. -->
++  <!-- Round 3a: 64 pair bits, 32 exact length bits, and the 4+4 band.
++       The binding view has 64 dense coordinates; row counts stay fixed. -->
+   <InputSpace>
+-    <nDim>22</nDim>
++    <nDim>104</nDim>
+     <nVectors>8</nVectors>
+     <nOutput>6</nOutput>
+     <codebook>quantize</codebook>
+@@ -67,14 +66,14 @@
+ 
+   <PartSpace>
+     <nOutput>6</nOutput>
+-    <nDim>22</nDim>
++    <nDim>104</nDim>
+     <nVectors>256</nVectors>
+     <invertible>true</invertible>
+   </PartSpace>
+ 
+   <ConceptualSpace>
+     <nOutput>6</nOutput>
+-    <nDim>22</nDim>
++    <nDim>104</nDim>
+     <!-- §14 addendum: symbol/concept pairs only; letters stay in PS. -->
+     <nVectors>6</nVectors>
+     <invertible>true</invertible>
+@@ -82,8 +81,8 @@
+ 
+   <WholeSpace>
+     <nOutput>6</nOutput>
+-    <!-- Event width: fourteen content coordinates plus the 4+4 address band. -->
+-    <nDim>22</nDim>
++    <!-- Event width: 96 sparse form coordinates plus the 4+4 address band. -->
++    <nDim>104</nDim>
+     <nVectors>9</nVectors>
+   </WholeSpace>
+ 
+--- round2e/data/model.xml
++++ round3a/data/model.xml
+@@ -439,6 +439,11 @@
+   </InputSpace>
+ 
+   <PartSpace>
++    <identityByParts>true</identityByParts>
++    <identityPairDim>64</identityPairDim>
++    <identityOnes>3</identityOnes>
++    <identityLengthDim>32</identityLengthDim>
++    <identityBindingDim>64</identityBindingDim>
+     <nInput>0</nInput>
+     <nOutput>0</nOutput>
+     <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 8. -->
+--- round2e/data/model.xsd
++++ round3a/data/model.xsd
+@@ -1008,6 +1008,14 @@
+ 
+   <xs:complexType name="partSpaceType">
+     <xs:all>
++      <xs:element name="identityByParts" type="xs:boolean" minOccurs="0"/>
++      <!-- Identity's sparse form is D pair coordinates plus L length bits.
++           Text model construction resolves the native form/event width from
++           these values; numeric models retain their configured dimensions. -->
++      <xs:element name="identityPairDim" type="xs:positiveInteger" minOccurs="0"/>
++      <xs:element name="identityOnes" type="xs:positiveInteger" minOccurs="0"/>
++      <xs:element name="identityLengthDim" type="xs:positiveInteger" minOccurs="0"/>
++      <xs:element name="identityBindingDim" type="xs:positiveInteger" minOccurs="0"/>
+       <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+       <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
+       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+--- round2e/test/test_compiled_word_chunk.py
++++ round3a/test/test_compiled_word_chunk.py
+@@ -334,7 +334,7 @@
+         word_buckets="16,32,64,128,256", forward_grammar_weight=0.0,
+         concept_rows=64, dimension=16,
+         chooser_depth=None, training_overrides=None, architecture_overrides=None,
+-        part_rows=64, stm_capacity=None):
++        part_rows=256, stm_capacity=None):
+     """Build the real aligned serial model with 16-coordinate events."""
+     tree = ET.parse(_ROOT / "data" / "BasicModel.xml")
+     root = tree.getroot()
+--- round2e/test/test_dimensional_governance.py
++++ round3a/test/test_dimensional_governance.py
+@@ -155,7 +155,7 @@
+ 
+ 
+ def test_cs_ws_recurrent_input_mismatch_raises():
+-    # Break WS's recurrent conceptual input: MM_20M has CS.nOutputDim=1024 and
++    # Break WS's recurrent conceptual input: MM_20M has CS.nOutputDim=104 and
+     # WS.nInputDim=1024. Force WS.nInputDim to mismatch while leaving its
+     # native peer output alone.
+     src = _ref_text("MM_20M_xor.xml")
+@@ -169,7 +169,7 @@
+         _build_from_text(broken, "cs_ws_mismatch")
+     msg = str(ei.value)
+     assert "CS->WS recurrent input" in msg, msg
+-    assert "999" in msg and "1024" in msg, msg
++    assert "999" in msg and "104" in msg, msg
+ 
+ 
+ def test_cs_os_direct_handoff_mismatch_raises():
+@@ -184,7 +184,7 @@
+         _build_from_text(broken, "ws_os_mismatch")
+     msg = str(ei.value)
+     assert "CS->OS handoff" in msg, msg
+-    assert "8x1024" in msg and "7x1024" in msg, msg
++    assert "8x104" in msg and "7x104" in msg, msg
+ 
+ 
+ @pytest.mark.slow
+--- round2e/test/test_grammar_object_leaves.py
++++ round3a/test/test_grammar_object_leaves.py
+@@ -27,6 +27,7 @@
+         if bool(gate.any()):
+             owner = model._concept_owner()
+             atoms = owner.similarity_codebook.lookup_rows(row[gate])
++            atoms = owner.interpret.binding_atoms(atoms)
+             derived = getattr(owner.similarity_codebook, 'mereology', None)
+             width = atoms.shape[-1] if derived is None else derived.percept_event_width
+             expected = torch.cat((atoms[..., :width] * activation[gate, None].abs(),
+--- round2e/test/test_identification_evidence.py
++++ round3a/test/test_identification_evidence.py
+@@ -1,4 +1,4 @@
+-"""September 28 amendment: source trust, observed evidence, and field order."""
++"""Round 3a: testimony enters the pair; field order and both poles persist."""
+ from dataclasses import replace
+ 
+ import pytest
+@@ -18,51 +18,54 @@
+     return store, Clause(ConceptualMeaning.from_description(point), point=point)
+ 
+ 
+-def test_source_trust_does_not_supply_identification_evidence():
++def test_source_trust_enters_the_positive_pole():
+     store, clause = store_and_clause()
+     row = store.write_clause(clause, trust=.8)
+     assert store.row(row)['trust'] == pytest.approx(.8)
+-    assert store.row(row)['evidence'] == (0., 0.)
+-
+-
+-def test_changing_source_trust_preserves_both_and_neither():
++    assert store.row(row)['evidence'] == pytest.approx((.8, 0.))
++    assert 'trust' not in store.state_dict()
++
++
++def test_pair_retains_both_and_neither_until_explicit_signed_reassertion():
+     store, clause = store_and_clause()
+     both = store.write_clause(clause, trust=.8, evidence=(.6, .6))
+     neither = store.write_clause(clause, trust=.8, evidence=(0., 0.))
++    assert store.row(both)['evidence'] == pytest.approx((.6, .6))
++    assert store.row(neither)['evidence'] == (0., 0.)
+     store.set_trust(both, -.3)
+     store.set_trust(neither, -.3)
+-    assert store.row(both)['evidence'] == pytest.approx((.6, .6))
+-    assert store.row(neither)['evidence'] == (0., 0.)
++    assert store.row(both)['evidence'] == pytest.approx((0., .3))
++    assert store.row(neither)['evidence'] == pytest.approx((0., .3))
+     assert store.row(both)['trust'] == store.row(neither)['trust'] == pytest.approx(-.3)
+     store.set_evidence(both, .9, .2)
+-    assert store.row(both)['trust'] == pytest.approx(-.3)
++    assert store.row(both)['trust'] == pytest.approx(.7)
+ 
+ 
+ def test_clause_order_and_evidence_are_stored_without_a_program():
+     store, clause = store_and_clause()
+     clause = replace(clause, order=3, evidence=(.75, .5))
+-    row = store.write_clause(clause, trust=.9)
++    row = store.write_clause(clause)
+     assert store.row(row)['order'] == 3
+     assert store.row(row)['evidence'] == pytest.approx((.75, .5))
+     restored = TernaryTruthStore(4, capacity=8)
+     restored.load_state_dict(store.state_dict(), strict=True)
+     assert restored.row(row)['order'] == 3
+-    assert restored.row(row)['trust'] == pytest.approx(.9)
++    assert restored.row(row)['trust'] == pytest.approx(.25)
+     assert restored.row(row)['evidence'] == pytest.approx((.75, .5))
+     assert not hasattr(restored, 'clause_derivation')
+ 
+ 
+ def test_row_compaction_preserves_each_order_and_pole():
+     store, clause = store_and_clause()
+-    first = store.write_clause(replace(clause, order=1, evidence=(.2, .1)), trust=.4)
++    first = store.write_clause(replace(clause, order=1, evidence=(.2, .1)))
+     store.set_origin(first, store.ORIGIN_USER)
+-    second = store.write_clause(replace(clause, order=3, evidence=(.6, .5)), trust=.7)
++    second = store.write_clause(replace(clause, order=3, evidence=(.6, .5)))
+     occurrence = store.occurrence_of(second)
+     assert store.clear_origin(store.ORIGIN_USER) == 1
+     assert store.occurrence_of(0) == occurrence
+     assert store.row(0)['order'] == 3
+     assert store.row(0)['evidence'] == pytest.approx((.6, .5))
+-    assert store.row(0)['trust'] == pytest.approx(.7)
++    assert store.row(0)['trust'] == pytest.approx(.1)
+ 
+ 
+ def test_embedded_identification_does_not_grant_source_authority():
+@@ -71,10 +74,10 @@
+     parent = replace(clause, children=(child,), refs=(('clause', 0), -1, -1),
+                      evidence=(.9, .3), order=2)
+     row = store.write_clause(parent, trust=.7)
+-    assert row == 1 and store.row(0)['trust'] == 0.
++    assert row == 1 and store.row(0)['trust'] == pytest.approx(.4)
+     assert store.row(0)['evidence'] == pytest.approx((.8, .4))
+     assert store.row(1)['trust'] == pytest.approx(.7)
+-    assert store.row(1)['evidence'] == pytest.approx((.9, .3))
++    assert store.row(1)['evidence'] == pytest.approx((.7, 0.))
+ 
+ 
+ def test_open_reading_keeps_both_poles_and_its_order(monkeypatch):
+@@ -85,10 +88,10 @@
+         leaf_orders=torch.tensor([3, 3]),
+         leaf_evidence=torch.tensor([[.8, .7], [.6, 0.]]))
+     clause = finish_reading(fixture.language, reading, registry=fixture.registry)
+-    row = fixture.store.write_clause(clause, trust=.4)
++    row = fixture.store.write_clause(clause)
+     assert fixture.store.row(row)['order'] == 3
+     assert fixture.store.row(row)['evidence'] == pytest.approx((.6, .7))
+-    assert fixture.store.row(row)['trust'] == pytest.approx(.4)
++    assert fixture.store.row(row)['trust'] == pytest.approx(-.1)
+ 
+ 
+ def test_index_unfolding_reads_the_stored_order():
+@@ -126,6 +129,7 @@
+     store, clause = store_and_clause()
+     store.write_clause(clause, trust=.8)
+     state = store.state_dict()
++    state['trust'] = torch.full((store.capacity,), .8)  # legacy provenance
+     for name in ('order', 'c_plus', 'c_minus'):
+         del state[name]
+     restored = TernaryTruthStore(4, capacity=8)
+@@ -133,7 +137,7 @@
+         restored.load_state_dict(state, strict=True)
+     assert restored.row(0)['order'] == -1
+     assert restored.row(0)['evidence'] == (0., 0.)
+-    assert restored.row(0)['trust'] == pytest.approx(.8)
++    assert restored.row(0)['trust'] == 0.
+ 
+ 
+ def test_native_word_reference_accepts_both_without_touching_its_signed_value():
+@@ -147,29 +151,30 @@
+     torch.testing.assert_close(owner._word_reference_evidence, torch.tensor([[[.8, .6]]]), rtol=0, atol=0)
+ 
+ 
+-def test_withdrawing_authority_preserves_identification():
++def test_withdrawing_testimony_clears_its_pair():
+     store, clause = store_and_clause()
+     row = store.write_clause(replace(clause, evidence=(.8, .6)), trust=.9,
+                              origin=store.ORIGIN_USER, kind='fact')
+     store.withdraw_origin(store.ORIGIN_USER)
+     assert store.row(row)['trust'] == 0.
+-    assert store.row(row)['evidence'] == pytest.approx((.8, .6))
+-
+-
+-def test_luminosity_view_does_not_present_identification_as_trust():
++    assert store.row(row)['evidence'] == (0., 0.)
++
++
++def test_luminosity_view_reads_signed_testimony_from_the_pair():
+     from Layers import TruthLayer
+     store, clause = store_and_clause()
+     store.write_clause(replace(clause, evidence=(.8, .6)), trust=-.3,
+                        origin=store.ORIGIN_USER, kind='fact')
+     light = TruthLayer(4, max_truths=8)
+     light.attach_ltm(store)
+-    assert light.sync_from_ltm() == 2
+-    assert light._trusts == pytest.approx([-.3, -.3])
++    assert light.sync_from_ltm() == 1
++    assert light._trusts == pytest.approx([-.3])
+     before = light.luminosity()
+     store.set_trust(0, .9)
+     light.sync_from_ltm()
+-    assert light.luminosity() == before
+-    assert light._trusts == pytest.approx([.9, .9])
++    assert before == pytest.approx(-.15)
++    assert light.luminosity() == pytest.approx(.45)
++    assert light._trusts == pytest.approx([.9])
+ 
+ 
+ def test_native_sentence_carries_paired_identification_to_its_row(tmp_path, monkeypatch):
+@@ -202,7 +207,7 @@
+         assert field.evidence == pytest.approx((.8, .6))
+         assert store.row(row)['evidence'] == pytest.approx((.8, .6))
+         assert store.row(row)['order'] == field.order
+-        assert store.row(row)['trust'] == pytest.approx(field.trust)
++        assert store.row(row)['trust'] == pytest.approx(.2)
+     finally:
+         model.End()
+         model.symbolSpace.soft_reset()
+--- round2e/test/test_live_references.py
++++ round3a/test/test_live_references.py
+@@ -180,7 +180,9 @@
+         assert int(actions.sum()) == len(entry.leaves)-1
+         frame = entry.operation_values[actions][-1]
+         torch.testing.assert_close(frame[0], prior, rtol=0, atol=0)
+-        torch.testing.assert_close(frame[1], entry.leaves[-1], rtol=0, atol=0)
++        # A fixed projection evaluated as a single word or a bank GEMM can
++        # differ by float32 accumulation order; it retains the same direction.
++        torch.testing.assert_close(frame[1], entry.leaves[-1], rtol=1e-6, atol=2e-7)
+         assert entry.operation_refs[actions][-1, 0].item() == cid
+         assert clause.refs[0] == cid
+         torch.testing.assert_close(clause.point, frame[2], rtol=0, atol=0)
+--- round2e/test/test_ltm_consolidation.py
++++ round3a/test/test_ltm_consolidation.py
+@@ -375,7 +375,7 @@
+     def test_state_dict_keys_present(self):
+         m = _make_model(_ON_CONFIG)
+         sd = m.state_dict()
+-        for suffix in ("slots", "rel_type", "timestamp", "trust", "count",
++        for suffix in ("slots", "rel_type", "timestamp", "c_plus", "c_minus", "count",
+                        "_next_ts"):
+             self.assertIn(
+                 f"symbolSpace.subspace.ltm_store.{suffix}", sd,
+--- round2e/test/test_meronomy_ladder.py
++++ round3a/test/test_meronomy_ladder.py
+@@ -148,7 +148,7 @@
+         m.symbolSpace.soft_reset()
+ 
+ 
+-def _stage(m, surfaces):
++def _stage(m, surfaces, *, byte_witness=False):
+     """Run the eager stem on raw surfaces; return (units, atom bytes per unit)."""
+     ps = m.perceptualSpace
+     x = m.inputSpace.prepInput(list(surfaces))
+@@ -156,6 +156,27 @@
+         m._lex_embed_stem(x)
+     units = ps._forward_input["word_texts"]
+     ids, mask = m.inputSpace._ar_word_part_ids, m.inputSpace._ar_word_part_mask
++    if byte_witness:
++        fi = ps._forward_input
++        native, spans = fi['native_indices'], fi['native_part_spans']
++        word_ids, word_offsets = [], []
++        for b, row in enumerate(units):
++            start, values, positions = 0, [], []
++            for unit in row:
++                end = start + len(unit.encode('latin1'))
++                keep = (spans[b, :, 0] >= start) & (spans[b, :, 1] <= end) & (spans[b, :, 1] > spans[b, :, 0])
++                values.append(native[b, keep].tolist())
++                positions.append(spans[b, keep, 0].tolist())
++                start = end
++            word_ids.append(values); word_offsets.append(positions)
++        width = max(len(v) for row in word_ids for v in row)
++        words = max(map(len, word_ids))
++        ids = torch.full((len(units), words, width), -1, dtype=torch.long)
++        mask = torch.zeros_like(ids, dtype=torch.bool)
++        for b, row in enumerate(word_ids):
++            for w, values in enumerate(row):
++                ids[b,w,:len(values)] = torch.tensor(values)
++                mask[b,w,:len(values)] = True
+     atoms = [[[ps.percept_store.bytes_for(int(i)) for i in ids[b, w][mask[b, w]].tolist()]
+               for w in range(ids.shape[1]) if bool(mask[b, w].any())]
+              for b in range(ids.shape[0])]
+@@ -165,7 +186,7 @@
+ def test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes(ladder):
+     m = ladder
+     assert m.perceptualSpace._meronomy and m.wholeSpaces[0].digit_wholes
+-    units, atoms, ids, mask, offsets = _stage(m, ["12 plus 1", "hi, there"])
++    units, atoms, ids, mask, offsets = _stage(m, ["12 plus 1", "hi, there"], byte_witness=True)
+     # Digit wholes are units; whitespace runs are units (the null operation).
+     assert units[0] == ["1", "2", " ", "plus", " ", "1"]
+     assert units[1] == ["hi", ",", " ", "there"]         # punctuation is a unit
+@@ -179,12 +200,12 @@
+ @pytest.mark.parametrize("surface", ["21 plus 1", "11 plus 1", "1 plus 12", "aab ba"])
+ def test_witness_replay_is_byte_exact(ladder, surface):
+     m = ladder
+-    units, atoms, ids, mask, offsets = _stage(m, [surface])
++    units, atoms, ids, mask, offsets = _stage(m, [surface], byte_witness=True)
+     replay = b"".join(b"".join(unit) for unit in atoms[0])
+     assert replay == surface.encode("ascii")             # whitespace units included
+     # Every atom has its exact span; spans are in surface order.
+-    spans = m.perceptualSpace._forward_input["part_spans"][0]
+-    live = [tuple(sp) for sp, ok in zip(spans.tolist(), mask[0].reshape(-1).tolist()) if ok]
++    spans = m.perceptualSpace._forward_input["native_part_spans"][0]
++    live = [tuple(sp) for sp in spans.tolist() if sp[1] > sp[0]]
+     assert live == sorted(live) and all(e == s + 1 for s, e in live)
+ 
+ 
+@@ -193,7 +214,7 @@
+     (the compiled loop's fixed capacity keeps its own fail-loud contract)."""
+     m = ladder
+     long_word = "abcdefghijklmnopqrst"
+-    units, atoms, ids, mask, offsets = _stage(m, [long_word + " y"])
++    units, atoms, ids, mask, offsets = _stage(m, [long_word + " y"], byte_witness=True)
+     assert units[0] == [long_word, " ", "y"]
+     assert len(atoms[0][0]) == 20
+     assert b"".join(atoms[0][0]) == long_word.encode("ascii")
+@@ -215,7 +236,7 @@
+     assert store.get_id(b"12") is None                  # digits are separate units
+     row = store._basis.lookup_rows(torch.tensor([store.get_id(b"plus")]))[0]
+     atoms = store._basis.lookup_rows(torch.tensor(
+-        [store.get_id(bytes([c])) for c in b"plus"])).clamp(0.0, 1.0).amax(dim=0)
++        list(store.identity.admit(b"plus")))).clamp(0.0, 1.0).amax(dim=0)
+     assert torch.allclose(row[: atoms.shape[-1]], atoms)   # seeded with the rung-0 max
+     # Evaluation freezes admission.
+     object.__setattr__(ps, "_online_learning_frozen", True)
+@@ -223,7 +244,8 @@
+         for _ in range(threshold + 1):
+             _stage(m, ["hello world"])
+             ps.flush_pending_promotions()
+-        assert store.get_id(b"hello") is None
++        # Fixed atom admission needs no training even in a frozen read.
++        assert store.identity.read(store.identity.form(b"hello")) == b"hello"
+     finally:
+         object.__setattr__(ps, "_online_learning_frozen", False)
+ 
+--- round2e/test/test_meronomy_utf8.py
++++ round3a/test/test_meronomy_utf8.py
+@@ -39,11 +39,10 @@
+ def _witness(model, surface):
+     # Test the eager byte boundary, independent of a dataset string adapter.
+     slab = torch.tensor(list(surface.encode("utf-8")), dtype=torch.long)
+-    units, atoms, ids, mask, offsets = _stage(model, [slab])
++    units, atoms, ids, mask, offsets = _stage(model, [slab], byte_witness=True)
+     raw = b"".join(b"".join(unit) for unit in atoms[0])
+-    spans = model.perceptualSpace._forward_input["part_spans"][0]
+-    live_spans = [tuple(span) for span, valid in
+-                  zip(spans.tolist(), mask[0].reshape(-1).tolist()) if valid]
++    spans = model.perceptualSpace._forward_input["native_part_spans"][0]
++    live_spans = [tuple(span) for span in spans.tolist() if span[1] > span[0]]
+     return raw, live_spans, units[0], atoms[0], ids, mask
+ 
+ 
+--- round2e/test/test_one_attention.py
++++ round3a/test/test_one_attention.py
+@@ -471,7 +471,7 @@
+         assert keys.shape[1] == 2, 'padding expanded the priming lookup'
+         actual = original(keys, *args)
+         reference = original(torch.nn.functional.pad(keys, (0, 0, 0, 7)), *args)
+-        torch.testing.assert_close(actual, reference[:, :2], rtol=0, atol=0)
++        torch.testing.assert_close(actual, reference[:, :2], rtol=2e-6, atol=2e-7)  # GEMM reduction width rounding
+         assert not reference[:, 2:].count_nonzero()
+         return actual
+     monkeypatch.setattr(BracketKeys, '_codebook_retrieval_prior', staticmethod(bounded))
+--- round2e/test/test_operators_round2.py
++++ round3a/test/test_operators_round2.py
+@@ -154,7 +154,7 @@
+     model,_,_=_fresh_model('data/'+config+'.xml')
+     try:
+         derived=model._concept_owner().similarity_codebook.mereology
+-        assert derived.percept_width==14 and derived.code_width==22
++        assert derived.percept_width==96 and derived.code_width==104
+         assert derived.context_width==0
+         observed=torch.ones(3,derived.code_width)
+         image=ClosingImage.form(observed,observed,torch.ones(3),
+--- round2e/test/test_operators_round3a.py
++++ round3a/test/test_operators_round3a.py
+@@ -0,0 +1,194 @@
++"""Identity by construction, dense binding only, and trust as an evidence pair."""
++import copy
++import pytest
++import torch
++
++
++def identity_bank(capacity=512):
++    from Layers import RadixLayer
++    from WordIdentity import WordIdentity
++    store = RadixLayer(96, initial_cap=capacity)
++    store.identity = WordIdentity(store)
++    return store.identity
++
++
++def test_forms_anagrams_length_and_nontrivial_containment():
++    bank = identity_bank()
++    words = [b'circus', b'cursic', b'cirrus', b'bana', b'banana', b'cat',
++             b'concat', b'aba', b'ababa', b'an', b'and', b'ant']
++    for word in words:
++        ids = bank.admit(word)
++        rows = bank.store._basis.lookup_rows(torch.tensor(ids))
++        torch.testing.assert_close(rows.amax(0), bank.form(word), rtol=0, atol=0)
++        assert bank.read(bank.form(word)) == word
++    assert len({bank.key(bank.form(w)) for w in words}) == len(words)
++    for a, b in [(b'bana', b'banana'), (b'cat', b'concat'), (b'aba', b'ababa')]:
++        assert set(bank.words[a]) < set(bank.words[b])
++        assert (bank.form(a) <= bank.form(b)).all()
++    for b in [b'and', b'ant']:
++        assert not set(bank.words[b'an']) <= set(bank.words[b])
++    for n in range(1, 33):
++        bank.admit(b'a'*n)
++        assert bank.form(b'a'*n)[64:].tolist() == [1.]*n + [0.]*(32-n)
++    assert len({bank.key(bank.form(b'a'*n)) for n in range(1, 33)}) == 32
++    assert bank.audit()['containment_violations'] == 0
++
++
++def test_mint_rekeys_existing_word_and_checkpoints_without_global_rng():
++    bank = identity_bank()
++    state = torch.get_rng_state().clone()
++    bank.admit(b'calaba')
++    old_row = bank.word_rows[b'calaba']
++    bank.admit(b'cabala')
++    assert torch.equal(state, torch.get_rng_state())
++    assert bank.mints and bank.mints[0]['atoms'] == ['cal@1', 'cab@1']
++    assert bank.mints[0]['bit_counts'][0] >= 3
++    assert bank.word_rows[b'calaba'] == old_row
++    assert not torch.equal(bank.form(b'calaba'), bank.form(b'cabala'))
++    for word in [b'calaba', b'cabala']:
++        assert bank.read(bank.form(word)) == word
++    restored = identity_bank()
++    restored.store.load_state_dict(bank.store.state_dict())
++    restored.store.load_vocab_extras(bank.store.vocab_extras())
++    assert restored.audit() == bank.audit()
++    assert torch.equal(restored.projection, bank.projection)
++
++
++def test_fixed_atoms_survive_optimizer_and_projection_is_only_binding_view():
++    bank = identity_bank()
++    ids = bank.admit(b'hello')
++    before = bank.form(b'hello')
++    weights = bank.store._basis.W
++    optimizer = torch.optim.AdamW([weights], lr=.1, weight_decay=.1)
++    bank.store._basis.lookup_rows(torch.tensor(ids)).sum().backward()
++    optimizer.step()
++    torch.testing.assert_close(bank.store._basis.lookup_rows(torch.tensor(ids)).amax(0), before, rtol=0, atol=0)
++    other = identity_bank()
++    assert torch.equal(bank.projection, other.projection)
++    assert not list(bank.parameters())
++    dense = bank.binding(before)
++    assert dense[:64].norm() > 0 and dense[64:].count_nonzero() == 0
++    assert (dense[:64] < 0).any()
++    assert bank.read(before) == b'hello'
++
++
++def test_unidentified_pair_assembly_and_index_resolves_ambiguity():
++    from WordIdentity import base_atoms, assemble_pairs
++    for word in [b'circus', b'banana']:
++        pairs = [v for k,v in base_atoms(word) if k == 'pair']
++        assert assemble_pairs(pairs, len(word)) == word
++    bank = identity_bank()
++    bank.admit(b'calaba'); bank.admit(b'cabala')
++    pairs = [v for k,v in base_atoms(b'calaba') if k == 'pair']
++    with pytest.raises(ValueError, match='minted index'):
++        assemble_pairs(pairs, 6)
++    assert assemble_pairs(pairs, 6, index=bank, form=bank.form(b'cabala')) == b'cabala'
++    assert bank.read_parts(bank.admit(b'cabala')) == b'cabala'
++    unseen = identity_bank()
++    rows = [unseen._atom(atom) for atom in base_atoms(b'circus')]
++    assert not unseen.words and unseen.read_parts(rows) == b'circus'
++
++
++@pytest.mark.parametrize('quadruple', [False, True])
++def test_masked_mint_extends_bits_and_has_declared_quadruple_fallback(monkeypatch, quadruple):
++    import WordIdentity
++    bank = identity_bank()
++    bank.admit(b'calaba')
++    form = bank.form(b'calaba')[:64]
++    used = form.nonzero().flatten().tolist()
++    missing = (~form.bool()).nonzero().flatten().tolist()
++    stream = WordIdentity.bit_stream
++    def controlled(atom, dimension):
++        if b'@' not in atom:
++            return stream(atom, dimension)
++        value = atom.decode().split('@')[0]
++        if quadruple and len(value) == 3:
++            return tuple(range(dimension))  # both additions remain identical
++        selected = missing[0] if value.startswith('cal') else missing[1]
++        prefix = used[:3] + [selected]
++        return tuple(prefix+[i for i in range(dimension) if i not in prefix])
++    monkeypatch.setattr(WordIdentity, 'bit_stream', controlled)
++    bank.admit(b'cabala')
++    mint, = bank.mints
++    assert mint['size'] == (4 if quadruple else 3)
++    assert mint['bit_counts'] == [4,4]
++    assert not torch.equal(bank.form(b'calaba'), bank.form(b'cabala'))
++
++
++@pytest.mark.parametrize('complete_first', [False, True])
++def test_live_mint_rekeys_pending_and_completed_definitions(tmp_path, complete_first):
++    from test_grounded_xor import grounded_model
++    model, _ = grounded_model(tmp_path, 8)
++    cs = model._concept_owner()
++    bank = model.perceptualSpace.percept_store.identity
++    try:
++        first = cs.interpret.lookup_word([], [], form='calaba')
++        if complete_first:
++            cs.interpret.forward(first)
++        second = cs.interpret.lookup_word([], [], form='cabala')
++        cs.interpret.forward(first)
++        cs.interpret.forward(second)
++        assert first != second
++        for raw, word in [(b'calaba',first),(b'cabala',second)]:
++            assert cs.definitions.word(identity=bank.key(bank.form(raw)).hex()) == word
++            assert set(cs.definitions.description(word)['parts'][0]) == set(bank.admit(raw))
++            assert bank.read(bank.form(raw)) == raw
++    finally:
++        model.End(); model.symbolSpace.soft_reset()
++
++
++def test_numeric_mm_keeps_its_original_geometry():
++    from test_mm_xor import _fresh_model
++    model, _, _ = _fresh_model('data/MM_xor.xml')
++    try:
++        assert model.perceptualSpace.subspace.muxedSize == 14
++        assert getattr(model.perceptualSpace.percept_store, 'identity', None) is None
++    finally:
++        model.End(); model.symbolSpace.soft_reset()
++
++
++@pytest.mark.parametrize('trust,polarity,expected', [(.7,True,(.7,0.)),(-.4,True,(0.,.4)),
++    (.7,False,(0.,.7)),(-.4,False,(.4,0.)),(0.,True,(0.,0.))])
++def test_trust_to_pair_and_negation(trust, polarity, expected):
++    from Layers import TernaryTruthStore
++    from Meaning import ConceptualMeaning
++    store = TernaryTruthStore(4, capacity=4)
++    meaning = ConceptualMeaning(torch.ones(3,4), torch.tensor([True,False,False]),
++                                mode='assertive', polarity=polarity)
++    row = store.append_meaning(meaning, trust=trust)
++    torch.testing.assert_close(torch.stack((store.c_plus[row],store.c_minus[row])), torch.tensor(expected))
++    assert 'trust' not in store.state_dict()
++    assert float(store.trust[row]) == pytest.approx(expected[0]-expected[1])
++
++
++def test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0():
++    from test_mm_xor import _fresh_model
++    from Language import ConjunctionLayer, DisjunctionLayer
++    model, _, data = _fresh_model('data/XOR_grammar.xml')
++    try:
++        optimizer = model.getOptimizer(lr=.01)
++        model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
++        identity = model.perceptualSpace.percept_store.identity
++        owner = model._concept_owner()
++        words = [b'hello', b'world', b'loving', b'there']
++        dense = []
++        for word in words:
++            key = identity.key(identity.form(word)).hex()
++            native = owner.definitions.word(identity=key)
++            assert native is not None
++            obj = owner.definitions.deref(native)
++            row = owner._csw_row_of(obj)
++            sparse = owner.similarity_codebook.lookup_rows(row)
++            torch.testing.assert_close(sparse[:96],identity.form(word),rtol=0,atol=0)
++            dense.append(owner.interpret.binding_atoms(sparse))
++        for layer in [ConjunctionLayer(), DisjunctionLayer()]:
++            roots = torch.stack([layer.compose(dense[a],dense[b]) for a,b in [(0,1),(0,3),(2,1),(2,3)]])
++            assert (roots.norm(dim=-1)>0).all()
++        record = model._last_sentence_understanding
++        assert record is not None
++        assert record.primed.forms is not None
++        assert model._last_rung0_identity_audit['errors'] == 0
++        assert identity.audit()['reconstruction_errors'] == 0
++        assert model._last_sentence_credit['components'][:,:,0].isfinite().all()
++    finally:
++        model.End(); model.symbolSpace.soft_reset()
+--- round2e/test/test_order0_percept_definitions.py
++++ round3a/test/test_order0_percept_definitions.py
+@@ -90,28 +90,22 @@
+     whole = ws.property_rows_for_bytes(b'love')
+     assert whole
+     word, A = cs.interpret_word(letters, whole, key='love')
+-    assert cs.concept_parts(word) == letters
+-    assert ps.percept_store.get_id(b'love') is None
++    identity = ps.percept_store.identity
++    atom_ids = tuple(identity.admit(b'love'))
++    assert set(cs.concept_parts(word)) == set(atom_ids)
++    fused = identity.word_rows[b'love']
+     store = Spaces._concept_alloc_of(cs).layer()
+     row = cs._csw_row_of(A)
+-    assert store.feature_groups[row, 4 * letters[0]] == tuple(letters)
++    assert store.feature_groups[row, 4 * atom_ids[0]] == atom_ids
+     raw = torch.tensor([[108, 111, 118, 101]])
+     parts = torch.tensor([[[0, 1], [1, 2], [2, 3], [3, 4]]])
+     extent = torch.tensor([[[0, 4]]])
+     result = cs.cs_read_memberships((torch.tensor([letters]), parts,
+         ws.subspace.what.primitive_properties, raw, extent), extent)
+     assert result[row, 0, 0, 0] == 1
+-    assert ps.fuse_parts(letters) == letters
+-    ps.percept_store.promotion_threshold = 2
+-    assert ps.percept_store.observe_chunk(b'love') is None
+-    fused = ps.percept_store.observe_chunk(b'love')
+-    assert fused is not None
+     after = cs.cs_read_memberships((torch.tensor([[fused]]), extent,
+         ws.subspace.what.primitive_properties, raw, extent), extent)
+     torch.testing.assert_close(after, result)
+-    assert (row, 4 * fused) in store.features._index
+-    assert (row, 4 * letters[0]) not in store.feature_groups
+-    assert ps.fuse_parts(letters) == [fused]
+     count = (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
+     cs.interpret_word([fused], whole, key='love')
+     assert count == (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
+--- round2e/test/test_output_path_supervised.py
++++ round3a/test/test_output_path_supervised.py
+@@ -136,15 +136,15 @@
+ 
+ 
+ _NATIVE_CONCEPT_WIDTHS = [
+-    pytest.param(264, id="development"),
+-    pytest.param(1032, id="production", marks=pytest.mark.slow),
++    pytest.param(232, id="development"),
++    pytest.param(1000, id="production", marks=pytest.mark.slow),
+ ]
+ 
+ 
+-def _native_answer_model(tmp_path, output_loop, *, concept_width=264):
++def _native_answer_model(tmp_path, output_loop, *, concept_width=232):
+     """Distinct concept/percept widths; production width is an explicit slow case."""
+     from test_meronomy_ladder import _build_ladder_variant
+-    if concept_width <= 136:
++    if concept_width <= 104:
+         raise ValueError("native fixture requires concepts wider than percepts")
+     src = (_DATA / "MM_ladder.xml").read_text()
+     def block(name):
+@@ -152,13 +152,16 @@
+         end = src.index("</" + name + ">", start) + len(name) + 3
+         return src[start:end]
+     cs, ws, output = block("ConceptualSpace"), block("WholeSpace"), block("OutputSpace")
++    # The legacy fixture declares a 136-wide native face. Configuration
++    # resolution changes it to 104 while retaining its meaning complement.
++    declared_width = concept_width + 32
+     native_cs = cs
+     for tag in ("nInputDim", "nDim", "nOutputDim"):
+-        native_cs = native_cs.replace(f"<{tag}>136</{tag}>", f"<{tag}>{concept_width}</{tag}>")
++        native_cs = native_cs.replace(f"<{tag}>136</{tag}>", f"<{tag}>{declared_width}</{tag}>")
+     native_cs = (native_cs.replace("<nVectors>4096</nVectors>", "<nVectors>256</nVectors>")
+                  .replace("<activeVectors>4096</activeVectors>", "<activeVectors>256</activeVectors>"))
+-    native_ws = ws.replace("<nInputDim>136</nInputDim>", f"<nInputDim>{concept_width}</nInputDim>")
+-    native_output = output.replace("<nInputDim>136</nInputDim>", f"<nInputDim>{concept_width}</nInputDim>")
++    native_ws = ws.replace("<nInputDim>136</nInputDim>", f"<nInputDim>{declared_width}</nInputDim>")
++    native_output = output.replace("<nInputDim>136</nInputDim>", f"<nInputDim>{declared_width}</nInputDim>")
+     replacements = [(cs, native_cs), (ws, native_ws), (output, native_output)]
+     if output_loop:
+         replacements.append(("<training>", "<training>\n      <outputInLoop>true</outputInLoop>"))
+@@ -167,7 +170,7 @@
+     m._chart_compose_per_word = lambda: None
+     m.synthesis_bindings = 0  # named percepts must not hide a dead answer operand
+     assert m.answer_synthesis and m.output_in_loop is output_loop
+-    assert m.wholeSpace.subspace.muxedSize == 136
++    assert m.wholeSpace.subspace.muxedSize == 104
+     assert m.conceptualSpace.stm.concept_dim == concept_width
+     return m
+ 
+@@ -470,12 +473,12 @@
+         with torch.no_grad():
+             u = _capture_program_probe(m, ["1 plus 2", "3 plus 4"])
+             base = torch.stack([field.end_state for field in u.sentence_states])
+-            module = m._ltm_attention(concept_width, 136, device=base.device, dtype=base.dtype)
++            module = m._ltm_attention(concept_width, 104, device=base.device, dtype=base.dtype)
+             module["value"].weight.fill_(0.003)
+             module["out"].weight.copy_(torch.eye(concept_width) * 0.1)
+-            response = torch.linspace(0.1, 0.3, 136)
++            response = torch.linspace(0.1, 0.3, 104)
+             for b in range(2):
+-                memory.append_what_slot(LTMSlot(input=torch.zeros(136), output=response), b=b)
++                memory.append_what_slot(LTMSlot(input=torch.zeros(104), output=response), b=b)
+             deltas = torch.stack([m._attend_ltm(base[b, 0], [response]) for b in range(2)])
+             assert bool(deltas.abs().sum() > 0)
+             d = m._resolve_answer(u, questions)
+@@ -496,8 +499,8 @@
+             torch.testing.assert_close(query[0, 0], expected)
+             # Later state changes cannot revise the resolved thinking result.
+             _capture_program_probe(m, ["5 plus 6", "7 plus 8"])
+-            memory.append_what_slot(LTMSlot(input=torch.ones(136),
+-                                           output=torch.full((136,), 8.0)), b=0)
++            memory.append_what_slot(LTMSlot(input=torch.ones(104),
++                                           output=torch.full((104,), 8.0)), b=0)
+             again = m._materialize_answer_idea(u, d, questions)[0]
+             torch.testing.assert_close(again, idea, rtol=0, atol=0)
+     finally:
+--- round2e/test/test_output_walk.py
++++ round3a/test/test_output_walk.py
+@@ -394,24 +394,24 @@
+     answer actively uses its conceptual width once."""
+     m = _model()
+     dev, dt = torch.device("cpu"), torch.float32
+-    narrow = m._question_conditioner(136, device=dev, dtype=dt)
++    narrow = m._question_conditioner(104, device=dev, dtype=dt)
+     with torch.no_grad():
+         narrow.weight.fill_(0.5)
+-    wide = m._question_conditioner(1032, device=dev, dtype=dt)
+-    assert wide is not narrow and wide.out_features == 1032
+-    again = m._question_conditioner(136, device=dev, dtype=dt)
++    wide = m._question_conditioner(1000, device=dev, dtype=dt)
++    assert wide is not narrow and wide.out_features == 1000
++    again = m._question_conditioner(104, device=dev, dtype=dt)
+     assert again is narrow and float(again.weight.abs().sum()) > 0
+-    assert set(m.question_conditioners.keys()) == {"136", "1032"}
++    assert set(m.question_conditioners.keys()) == {"104", "1000"}
+     keys = [k for k in m.state_dict() if k.startswith("question_conditioners.")]
+-    assert any(k.startswith("question_conditioners.136.") for k in keys)
+-    assert any(k.startswith("question_conditioners.1032.") for k in keys)
++    assert any(k.startswith("question_conditioners.104.") for k in keys)
++    assert any(k.startswith("question_conditioners.1000.") for k in keys)
+     m.End(); m.symbolSpace.soft_reset()
+ 
+ 
+ def _conditioner_pair(m):
+     modules = [m._question_conditioner(width, device=torch.device("cpu"),
+                                        dtype=torch.float32)
+-               for width in (136, 1032)]
++               for width in (104, 1000)]
+     with torch.no_grad():
+         for i, module in enumerate(modules):
+             module.weight.fill_(0.125 * (i + 1))
+@@ -430,11 +430,11 @@
+     fresh = _model()
+     try:
+         assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
+-        assert set(fresh.question_conditioners) == {"136", "1032"}
++        assert set(fresh.question_conditioners) == {"104", "1000"}
+         for module in modules:
+             restored = fresh.question_conditioners[str(module.out_features)]
+             torch.testing.assert_close(restored.weight, module.weight, rtol=0, atol=0)
+-        assert fresh.question_conditioner is fresh.question_conditioners["136"]
++        assert fresh.question_conditioner is fresh.question_conditioners["104"]
+         assert set(fresh.state_dict()) == set(m.state_dict())
+     finally:
+         for model in (m, fresh):
+@@ -495,7 +495,7 @@
+         assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
+         torch.testing.assert_close(fresh.question_conditioner.weight,
+                                    m.question_conditioner.weight, rtol=0, atol=0)
+-        assert fresh.question_conditioner is fresh.question_conditioners["136"]
++        assert fresh.question_conditioner is fresh.question_conditioners["104"]
+     finally:
+         for model in (m, fresh):
+             model.End()
+@@ -532,7 +532,7 @@
+         assert torch.equal(m._word_symbol_rows()[:, (0, 2)], rows[:, (0, 2)].flip(1))
+         held, _r, _s, _t = m._materialize_answer_idea(u, derivation, (What.supervised(0), What.supervised(1)))
+         torch.testing.assert_close(held, idea0, rtol=0, atol=0)
+-        exchanged = _capture_program_probe(m, ["plus one two", "plus three four"])
++        exchanged = _capture_program_probe(m, ["plus one three", "plus two four"])
+         new_derivation = m._resolve_answer(exchanged, (What.supervised(0), What.supervised(1)))
+         idea1, _r, _s, targets1 = m._materialize_answer_idea(
+             exchanged, new_derivation, (What.supervised(0), What.supervised(1)))
+--- round2e/test/test_positive_int_taxonomy.py
++++ round3a/test/test_positive_int_taxonomy.py
+@@ -47,7 +47,7 @@
+         self.assertGreater(pos, 0)
+         again, _ = _word_concept(m, b"alpha")
+         self.assertEqual(again, pos)
+-        self.assertEqual(m._concept_owner().concept_parts(pos), [row])
++        self.assertEqual(set(m._concept_owner().concept_parts(pos)), set(m.perceptualSpace.percept_store.identity.admit(b"alpha")))
+ 
+     def test_idea_address_resolves_to_its_native_row(self):
+         from test_two_codebook_meta_taxonomy import _idea_store, _write_point
+--- round2e/test/test_query_contract_boundaries.py
++++ round3a/test/test_query_contract_boundaries.py
+@@ -70,7 +70,8 @@
+     torch.testing.assert_close(found['value'][0]['meaning'].roles, roles)
+     assert found['value'][0]['occurrence'] == store.occurrence_of(row)
+     assert found['value'][0]['kind'] == 'observation'
+-    assert found['support_true'] == 0  # authority never invents identification evidence
++    assert found['support_true'] == pytest.approx(.9)  # signed ingestion trust is the pair
++    assert found['support_false'] == 0
+     assert len(store) == 1
+ 
+ 
+--- round2e/test/test_review13_subspaces.py
++++ round3a/test/test_review13_subspaces.py
+@@ -93,18 +93,18 @@
+     assert report['minimum_nonzero_absolute_value'] == float(ps.W[4,1])
+ 
+ 
+-def test_actual_serial_code_uses_fourteen_native_coordinates_and_no_context_bootstrap():
++def test_actual_serial_code_uses_ninety_six_native_coordinates_and_no_context_bootstrap():
+     from test_mm_xor import _fresh_model
+     model, _, _ = _fresh_model('data/XOR_grammar.xml')
+     model.forward(model.inputSpace.prepInput(['hello world', 'hello there']))
+     cb = model._concept_owner().similarity_codebook
+-    assert cb.mereology.percept_width == 14
++    assert cb.mereology.percept_width == 96
+     assert cb.mereology.context_width == 0
+     assert not isinstance(cb.W, nn.Parameter) and list(cb.parameters()) == []
+     rows = model.inputSpace._ar_grammar_object_rows
+     atoms = model.inputSpace._ar_grammar_object_atoms
+     torch.testing.assert_close(atoms[rows>=0], cb.lookup_rows(rows[rows>=0]))
+-    assert not cb.lookup_rows(rows[rows>=0])[...,14:].any()
++    assert not cb.lookup_rows(rows[rows>=0])[...,96:].any()
+     groups = model.objective_parameter_groups(model.getOptimizer(lr=.01))
+     parameter = model.perceptualSpace.subspace.what.W
+     assert any(p is parameter for p in groups['reconstruction'])
+--- round2e/test/test_review14_contracts.py
++++ round3a/test/test_review14_contracts.py
+@@ -145,7 +145,7 @@
+     from pathlib import Path
+     from bounded_tests import run_guarded, GIB
+     root=Path(__file__).resolve().parents[1]
+-    receipt=root/'doc/benchmarks/2026-10-06-operators-round2e'
++    receipt=root/'doc/benchmarks/2026-10-07-operators-round3a'
+     prior=root/'doc/benchmarks/2026-10-03-operators-attention'
+     env=os.environ.copy()
+     env.update(PYTEST_PLUGINS='operators_gate_observer', MODEL_COMPILE='none',
+--- round2e/test/test_runtime_split_ingestion.py
++++ round3a/test/test_runtime_split_ingestion.py
+@@ -88,37 +88,31 @@
+             self.assertEqual(loader.dataset.num_streams, 3)
+ 
+     def test_store_truths_records_truths(self):
+-        # Mechanism only: an untrained reading stores provenance, without
+-        # claiming learned meaning. Native word identification reaches the
+-        # closing independently of source trust.
++        # The supplied signed trust is the ingested row's evidence pair.
+         m, Models = _model()
+         store = m.symbolSpace.ltm_store
+         m.store_truths([{"content": "hello world", "trust": 0.9},
+                         {"content": "loving there", "trust": 0.4}])
+         rows = (store.origin[:len(store)] == store.ORIGIN_USER).nonzero().flatten()
+         self.assertEqual(rows.numel(), 2)
+-        torch.testing.assert_close(store.trust[rows], torch.tensor([.9, .4]))
+-        torch.testing.assert_close(store.c_plus[rows], torch.ones(2))
++        torch.testing.assert_close(store.c_plus[rows], torch.tensor([.9, .4]))
+         torch.testing.assert_close(store.c_minus[rows], torch.zeros(2))
++        self.assertNotIn('trust', store.state_dict())
+ 
+     @pytest.mark.usefixtures('eager_reading')
+     def test_store_truths_idempotent_clear_then_record(self):
+-        # Mechanism only: replacement clears user provenance and records the
+-        # new supplied trust. Identification evidence comes from the resolved
+-        # word references and is not scaled by that trust.
++        # Replacement clears the user's old assertion and writes the new pair.
+         m, Models = _model()
+         store = m.symbolSpace.ltm_store
+         m.store_truths([{"content": "hello world", "trust": 0.8}])
+         rows = (store.origin[:len(store)] == store.ORIGIN_USER).nonzero().flatten()
+         self.assertEqual(rows.numel(), 1)
+-        torch.testing.assert_close(store.trust[rows], torch.tensor([.8]))
+-        torch.testing.assert_close(store.c_plus[rows], torch.ones(1))
++        torch.testing.assert_close(store.c_plus[rows], torch.tensor([.8]))
+         torch.testing.assert_close(store.c_minus[rows], torch.zeros(1))
+         m.store_truths([{"content": "loving world", "trust": 0.6}])
+         rows = (store.origin[:len(store)] == store.ORIGIN_USER).nonzero().flatten()
+         self.assertEqual(rows.numel(), 1)
+-        torch.testing.assert_close(store.trust[rows], torch.tensor([.6]))
+-        torch.testing.assert_close(store.c_plus[rows], torch.ones(1))
++        torch.testing.assert_close(store.c_plus[rows], torch.tensor([.6]))
+         torch.testing.assert_close(store.c_minus[rows], torch.zeros(1))
+ 
+ 
+--- round2e/test/test_stm_recon_from_cleared_cache.py
++++ round3a/test/test_stm_recon_from_cleared_cache.py
+@@ -230,8 +230,7 @@
+ 
+ def test_reverse_from_cleared_cache_is_drivable_and_decodable():
+     """After clearing the cache, reverseReconstruct reads its owned understanding
+-    and returns a surface whose width matches the perceptual codebook, so
+-    a nearest-word decode is at least well-defined (shape contract). This
++    and returns the indexed word bytes (round 3a's rung-zero contract). This
+     pins that the reverse-from-STM leg is DRIVABLE end-to-end; the QUALITY
+     of the recovered words is the .8 overlap assertion below."""
+     model = _make_serial_model()
+@@ -242,11 +241,11 @@
+         recon, _ = model.reverseReconstruct(model._test_understanding)
+     assert recon is not None and torch.is_tensor(recon) and recon.dim() == 3, \
+         f"reverse-from-S must return a [B, N, D] surface; got {recon!r}"
+-    W = _codebook_W(model)
+-    topk = _topk_decode(W, recon)
+-    assert topk is not None, \
+-        "reconstruction width must match the native percept codebook for word decode."
+-    assert topk.shape[-1] == min(TOPK, W.shape[0])
++    assert recon.dtype == torch.long and bool(((recon >= 0) & (recon <= 255)).all())
++    identity = model.perceptualSpace.percept_store.identity
++    words = bytes(recon[0,0].tolist()).rstrip(b'\0').split()
++    assert words, 'the owned inverse must resolve at least one indexed word'
++    assert all(identity.read(identity.form(word)) == word for word in words)
+ 
+ 
+ def test_reverse_body_preserves_finiteness_on_finite_seed():
+@@ -366,7 +365,8 @@
+             or not bool(torch.isfinite(recon).all()):
+         overlap = 0.0
+     else:
+-        W = model._concept_owner().similarity_codebook.getW()
++        owner = model._concept_owner()
++        W = owner.interpret.binding_atoms(owner.similarity_codebook.getW())
+         topk = _topk_decode(W, recon)
+         overlap = _topk_overlap(fwd_idx, topk)
+         overlap = 0.0 if overlap is None else overlap
+--- round2e/test/test_ternary_truth_store.py
++++ round3a/test/test_ternary_truth_store.py
+@@ -177,9 +177,10 @@
+                           rel_type=T.REL_IMPLIES, trust=-0.4)
+         sd = s.state_dict()
+         # every piece of state is a registered buffer -> rides state_dict
+-        for k in ('slots', 'rel_type', 'timestamp', 'trust', 'count',
++        for k in ('slots', 'rel_type', 'timestamp', 'c_plus', 'c_minus', 'count',
+                   '_next_ts'):
+             self.assertIn(k, sd, f"{k} must be in state_dict")
++        self.assertNotIn('trust', sd)
+         s2 = _store()
+         s2.load_state_dict(sd)
+         self.assertEqual(len(s2), 2)
+--- round2e/test/test_tied_operator_reconstruction.py
++++ round3a/test/test_tied_operator_reconstruction.py
+@@ -108,7 +108,7 @@
+             torch.tensor([[[97, 98]]]), torch.ones(1, 1, 2, dtype=torch.bool), True)
+         assert cost.isfinite().all()
+         gradient, = torch.autograd.grad(cost.sum(), (idea,))
+-        assert gradient.isfinite().all() and gradient.abs().sum() > 0
++        assert gradient.isfinite().all() and gradient.abs().sum() == 0
+         assert not valid[:, 1].any()
+     finally:
+         model.End()
+@@ -234,7 +234,7 @@
+             isp._ar_bank_valid.logical_not_()
+         actual, = torch.autograd.grad(loss, reference)
+         torch.testing.assert_close(actual, expected)
+-        assert actual.isfinite().all() and actual.abs().sum() > 0
++        assert actual.isfinite().all() and actual.abs().sum() == 0
+     finally:
+         model.End()
+         model.symbolSpace.soft_reset()
+@@ -457,7 +457,7 @@
+             assert not bool(isp._reconstruction_sentence_available.any())
+             model.End()
+             model.symbolSpace.soft_reset()
+-        assert counts[1] < counts[0]
++        assert counts[1] == counts[0] == 1  # identity admits the word on first sight
+     finally:
+         model.End()
+         model.symbolSpace.soft_reset()
+--- round2e/test/test_truth_criterion_gates_learning.py
++++ round3a/test/test_truth_criterion_gates_learning.py
+@@ -9,8 +9,8 @@
+ @pytest.mark.parametrize('trust', [0., .3, 1., -.7])
+ def test_registration_does_not_depend_on_testimony_trust(trust):
+     store, _ = clause_store()
+-    evidence = (.6, .4)
+-    row = store.write_clause(part_clause(), trust=trust, evidence=evidence)
++    evidence = (max(trust, 0.), max(-trust, 0.))
++    row = store.write_clause(part_clause(), trust=trust)
+     assert row == 0 and len(store) == 1
+     assert store.row(row)['evidence'] == pytest.approx(evidence)
+     assert store.row(row)['trust'] == pytest.approx(trust)
+--- round2e/test/test_truth_ideas_routing.py
++++ round3a/test/test_truth_ideas_routing.py
+@@ -265,7 +265,7 @@
+         eps = [(_v(1, 0), _v(1, 0)), (_v(0, 1), _v(1, 0))]
+         new = cs.verify_relation(0, eps, store=st, support_weight=0.5)
+         self.assertAlmostEqual(new, 0., places=6)  # equal independent poles
+-        self.assertAlmostEqual(float(st.trust[0]), .5, places=6)
++        self.assertAlmostEqual(float(st.trust[0]), 0., places=6)
+ 
+     def test_no_relevant_episode_leaves_trust(self):
+         cs = _cs()
+@@ -297,7 +297,9 @@
+         idx = st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.7)
+         self.assertEqual(idx, 0)
+         sd = st.state_dict()
+-        self.assertIn('trust', sd, "trust must be a serialized buffer")
++        self.assertNotIn('trust', sd)
++        self.assertIn('c_plus', sd)
++        self.assertIn('c_minus', sd)
+ 
+         fresh = _store()
+         self.assertEqual(float(fresh.trust[0]), 0.0)   # zero before load
+@@ -328,7 +330,8 @@
+         st = _store()
+         st.append_relation(_v(1, 1), _v(0, 1), _v(0, 0, 1), trust=0.7)
+         sd = st.state_dict()
+-        del sd['trust']   # simulate a pre-fix checkpoint lacking the key
++        del sd['c_plus']
++        del sd['c_minus']  # legacy artifact without recorded evidence
+         fresh = _store()
+         # non-strict load tolerates the missing key; trust stays zero-init.
+         fresh.load_state_dict(sd, strict=False)
+--- round2e/test/test_two_codebook_meta_taxonomy.py
++++ round3a/test/test_two_codebook_meta_taxonomy.py
+@@ -40,9 +40,9 @@
+ 
+ def _word_concept(model, raw):
+     store = model.perceptualSpace.percept_store
+-    row = store.insert(raw)
++    parts = store.identity.admit(raw)
+     owner = model._concept_owner()
+-    return owner.interpret.lookup_word((row,), (), form=raw), row
++    return owner.interpret.lookup_word(parts, (), form=raw), store.identity.word_rows[raw]
+ 
+ 
+ def _idea_store(model):
+@@ -69,8 +69,8 @@
+         pos, row = _word_concept(m, b"hello")
+         self.assertIsInstance(pos, int)
+         self.assertGreater(pos, 0)
+-        self.assertEqual(m._concept_owner().concept_parts(pos), [row])
+-        self.assertEqual(row, starting_size)
++        self.assertEqual(set(m._concept_owner().concept_parts(pos)), set(ps.identity.admit(b"hello")))
++        self.assertGreaterEqual(row, starting_size)
+         self.assertEqual(ps.bytes_for(row), b"hello")
+         again, _ = _word_concept(m, b"hello")
+         self.assertEqual(again, pos)
+--- round2e/test/test_wholespace_property_migration.py
++++ round3a/test/test_wholespace_property_migration.py
+@@ -228,9 +228,9 @@
+ 
+     # Concepts are opaque codes: no conceptual band, the whole width is
+     # the code (2026-09-14).  Symbols are percepts and keep their band.
+-    assert cs.subspace.nWhat == 24 and cs.subspace.muxedSize == 24
+-    assert ws.subspace.nWhat == 8
+-    assert ws.subspace.muxedSize == 16
++    assert cs.subspace.nWhat == 112 and cs.subspace.muxedSize == 112
++    assert ws.subspace.nWhat == 96
++    assert ws.subspace.muxedSize == 104
+ 
+     assert ss.muxedSize == cs.subspace.muxedSize
+     assert ss.nWhat == ss.muxedSize - ss.nWhere - ss.nWhen
+@@ -298,7 +298,7 @@
+     # rather than trying the retired WS pid -> taxonomy-META lookup.
+     word_concept, _object = cs.interpret_word(
+         [7], [0], key="cat")
+-    cs._category_last_pid = [[7, -1]]
++    cs._category_last_pid = [[model.perceptualSpace.percept_store.identity.word_rows[b'cat'], -1]]
+     cs._category_assign[word_concept] = 0
+     cs._category_role[0].zero_()
+     cs._category_role[0, 2] = 1.0
+--- round2e/test/test_word_admission.py
++++ round3a/test/test_word_admission.py
+@@ -25,7 +25,9 @@
+     fused = ps.percept_store.observe_chunk(b'love')
+     assert ps.fuse_parts(parts) == [fused]
+     word = cs.interpret.lookup_word(parts, ws.property_rows_for_bytes('love'), form='love')
+-    assert cs.concept_parts(word) == [fused]
++    assert set(cs.concept_parts(word)) == set(ps.percept_store.identity.admit(b'love'))
++    cs.interpret.forward(word)
++    assert cs.definitions.word(identity=ps.percept_store.identity.key(ps.percept_store.identity.form(b'love')).hex()) == word
+ 
+ 
+ def test_23_same_parts_after_property_change_write_nothing():
+--- round2e/test/test_word_loop_buckets_and_orders.py
++++ round3a/test/test_word_loop_buckets_and_orders.py
+@@ -79,13 +79,13 @@
+     # PS/WS recurse in native 128-WHAT events. Their sparse codebook
+     # activations arrive at CS already decoded to 1024 WHAT; CS performs no
+     # feature-width conversion. XML dimensions include the shared 8-D band.
+-    assert int(root.findtext("./PartSpace/nDim")) == 136
+-    assert int(root.findtext("./PartSpace/nOutputDim")) == 136
+-    assert int(root.findtext("./WholeSpace/nDim")) == 136
+-    assert int(root.findtext("./WholeSpace/nOutputDim")) == 136
+-    assert int(root.findtext("./ConceptualSpace/nInputDim")) == 1032
+-    assert int(root.findtext("./ConceptualSpace/nDim")) == 1032
+-    assert int(root.findtext("./ConceptualSpace/nOutputDim")) == 1032
++    assert int(root.findtext("./PartSpace/nDim")) == 104
++    assert int(root.findtext("./PartSpace/nOutputDim")) == 104
++    assert int(root.findtext("./WholeSpace/nDim")) == 104
++    assert int(root.findtext("./WholeSpace/nOutputDim")) == 104
++    assert int(root.findtext("./ConceptualSpace/nInputDim")) == 1000
++    assert int(root.findtext("./ConceptualSpace/nDim")) == 1000
++    assert int(root.findtext("./ConceptualSpace/nOutputDim")) == 1000
+     assert int(root.findtext("./ConceptualSpace/nOutput")) == 8
+     assert int(root.findtext("./WholeSpace/nOutput")) == 8
+     assert root.findtext("./architecture/weightsPath") == "BasicModel.ckpt"
+--- round2e/test/test_word_store.py
++++ round3a/test/test_word_store.py
+@@ -736,7 +736,7 @@
+     ready, atoms, values, valid = m._snapshot_tables(reference)
+     target_ready, target_bytes, target_valid = target
+     return m._byte_word_cost(
+-        reference[:, 0], torch.tensor(0, device=reference.device),
++        m._concept_owner().interpret.binding_atoms(reference[:, 0]), torch.tensor(0, device=reference.device),
+         atoms, values, valid, target_bytes, target_valid, ready and target_ready)
+ 
+ 
+@@ -788,7 +788,12 @@
+         object_col = int((bank == row).nonzero()[0])
+         expected = owner.word_surface_for_row(other_row)
+         assert bytes(isp._ar_bank_bytes[0, object_col, :len(expected)].tolist()) == expected
+-        assert _surface_byte_cost(m, reference, target)[0] > before[0] + 1.0
++        # An identified row's bytes are exact. Reassociation changes the
++        # inverse surface, not a learned byte likelihood.
++        fresh_reference = reference.clone()
++        fresh_reference[0, 0] = owner.similarity_codebook.lookup_rows(row)
++        assert _surface_byte_cost(m, fresh_reference, target)[0] == 0
++        assert before[0] == 0
+         store.clear_origin(store.ORIGIN_CONVERSATION)
+         m._stage_snapshot_bytes()
+         assert not bool(isp._ar_bank_valid[0, object_col].any())

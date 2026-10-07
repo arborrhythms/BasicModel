@@ -1,0 +1,61 @@
+.................................................................FF..... [ 45%]
+.......................s..............................................F. [ 90%]
+...............                                                          [100%]
+=================================== FAILURES ===================================
+_ test_full_checkpoint_restores_occurrence_owners_before_stateless_withdrawal __
+test/test_nested_retention_owners.py:55: in test_full_checkpoint_restores_occurrence_owners_before_stateless_withdrawal
+    assert restored.load_weights(path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2723/test_full_checkpoint_restores_0/nested.ckpt
+_______ test_full_checkpoint_removes_unreferenced_request_scoped_content _______
+test/test_nested_retention_owners.py:70: in test_full_checkpoint_removes_unreferenced_request_scoped_content
+    assert restored.load_weights(path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5056: in load_weights
+    if (saved_v.dim() == 2 and model_v.dim() == 2
+        ^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'dim'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2723/test_full_checkpoint_removes_u0/unreferenced.ckpt
+____________ test_native_attention_keeps_every_complete_letter_run _____________
+test/test_one_attention.py:250: in test_native_attention_keeps_every_complete_letter_run
+    model._lex_embed_stem(raw)
+bin/Models.py:13259: in _lex_embed_stem
+    self.perceptualSpace.embed_stem(in_sub)
+bin/Spaces.py:11769: in embed_stem
+    return self._embed_ladder(upstream_vspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:11193: in _embed_ladder
+    return self._embed_ladder_word_major(upstream_vspace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:11295: in _embed_ladder_word_major
+    pids = list(identity.admit(unit))
+                ^^^^^^^^^^^^^^^^^^^^
+bin/WordIdentity.py:182: in admit
+    self._atom(atom)
+bin/WordIdentity.py:129: in _atom
+    self.atoms[atom] = self.store.insert(key, init_vector=code)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Layers.py:13654: in insert
+    raise self._capacity_exhausted(new_id + 1)
+E   RuntimeError: RadixLayer percept codebook capacity exhausted: required 65 rows, PartSpace nVectors=64. No row was allocated. Increase PartSpace <nVectors> before constructing the model and reload the checkpoint.
+=============================== warnings summary ===============================
+test/test_nanochat_grammar_eval.py::test_word_gate_matches_full_forward_without_building_unused_answer
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_occurrence_coordinates.py::test_input_event_time_uses_the_subjective_clock
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7186: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2723/test_input_event_time_uses_the0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_nested_retention_owners.py::test_full_checkpoint_restores_occurrence_owners_before_stateless_withdrawal
+FAILED test/test_nested_retention_owners.py::test_full_checkpoint_removes_unreferenced_request_scoped_content
+FAILED test/test_one_attention.py::test_native_attention_keeps_every_complete_letter_run
+3 failed, 155 passed, 1 skipped, 2 warnings in 37.44s

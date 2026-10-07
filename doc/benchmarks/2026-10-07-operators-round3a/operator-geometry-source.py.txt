@@ -1,0 +1,114 @@
+"""Post-hoc centered-root diagnostic requested in plan section 29.
+
+Reads saved gate outputs only. No model, optimizer, RNG, or new training.
+"""
+import hashlib
+import json
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+LABELS = {'hello world': 0., 'hello there': 1.,
+          'loving world': 1., 'loving there': 0.}
+
+
+def read(name):
+    return json.loads((HERE / name).read_text())
+
+
+def geometry(values, targets):
+    values = np.asarray(values, dtype=np.float64)
+    targets = np.asarray(targets, dtype=np.float64)
+    centered = values - values.mean(axis=0, keepdims=True)
+    singular = np.linalg.svd(centered, compute_uv=False)
+    cutoff = max(centered.shape) * np.finfo(np.float32).eps * singular[0]
+    active = singular > cutoff
+    design = np.column_stack((values, np.ones(len(values))))
+    u, s, vh = np.linalg.svd(design, full_matrices=False)
+    retain = s > max(design.shape) * np.finfo(np.float32).eps * s[0]
+    weight = vh[retain].T @ ((u[:, retain].T @ targets) / s[retain])
+    return dict(centered_singular_values=singular.tolist(),
+                centered_rank=int(active.sum()), centered_rank_cutoff=float(cutoff),
+                centered_nonzero_condition_number=float(singular[0] / singular[active][-1]),
+                affine_rank=int(retain.sum()), optimal_affine_mse=float(np.mean((design @ weight - targets)**2)),
+                minimum_affine_weight_norm_including_bias=float(np.linalg.norm(weight)))
+
+
+records = read('reader-diagnostics.json')['runs']
+groups = {'conjunction': [], 'disjunction': []}
+for row in records:
+    if row['kind'] != 'xor':
+        continue
+    name = f'measurements/xor-{row["run"]:02}/run-audit.json'
+    audit = read(name)
+    if row['final_all_conjunction']:
+        groups['conjunction'].append((name, 'end', audit['end']))
+    if {op for ops in row['first_greedy'] for op in ops} == {'disjunction'}:
+        groups['disjunction'].append((name, 'start', audit['start']))
+
+operators = {}
+matrices, labels = [], []
+for operator, samples in groups.items():
+    assert samples
+    reference = {text: root for text, root in zip(samples[0][2]['root_inputs'], samples[0][2]['roots']['values'])}
+    assert set(reference) == set(LABELS)
+    for _, _, sample in samples:
+        actual = dict(zip(sample['root_inputs'], sample['roots']['values']))
+        assert actual == reference, 'fixed root values must match across runs'
+    roots = [reference[text] for text in LABELS]
+    target = list(LABELS.values())
+    operators[operator] = dict(geometry(roots, target),
+        observations=[dict(file=name, phase=phase) for name, phase, _ in samples],
+        roots=roots, inputs=list(LABELS), targets=target,
+        raw_saved_centered_singular_values=samples[0][2]['roots']['centered_singular_values'])
+    assert operators[operator]['centered_rank'] == 3
+    assert operators[operator]['affine_rank'] == 4
+    matrices.extend(roots)
+    labels.extend(target)
+
+residuals = []
+for row in read('measurements/summary.json')['xor']:
+    errors = np.asarray(row['predictions']).reshape(-1) - np.asarray(row['targets']).reshape(-1)
+    residuals.append(dict(run=row['run'], final_mse=row['mse'],
+        mean_prediction_error=float(errors.mean()),
+        centered_error_mse=float(np.mean((errors - errors.mean())**2))))
+
+result = dict(source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+    method='Center saved float32 root values in float64; use max(shape)*eps(float32) for rank.',
+    no_new_training=True, operators=operators,
+    combined_eight_root_affine_fit=geometry(matrices, labels),
+    presented_final_residuals=residuals)
+(HERE / 'operator-geometry.json').write_text(json.dumps(result, indent=2) + '\n')
+lines = ['# Centered operator-root geometry', '',
+    'This post-hoc diagnostic answers plan §29 using saved roots only. The four '
+    'all-disjunction starts (XOR runs 3, 5, 7 and 8) have identical roots. All ten '
+    'final conjunction root sets are identical. Rows are matched by sentence, '
+    'centered in float64, and evaluated at the precision of the stored float32 data. '
+    'There are no new trainings or substituted gate predictions.', '',
+    '| Operator | Centered singular values | Nonzero condition number | Minimum affine weight norm, including bias | Optimal affine MSE |',
+    '|---|---|---:|---:|---:|']
+for name, row in operators.items():
+    values = ', '.join(f'{x:.9g}' for x in row['centered_singular_values'])
+    lines.append(f'| {name} | {values} | {row["centered_nonzero_condition_number"]:.6g} | '
+                 f'{row["minimum_affine_weight_norm_including_bias"]:.6g} | {row["optimal_affine_mse"]:.6g} |')
+ratio = operators['conjunction']['centered_singular_values'][2] / operators['disjunction']['centered_singular_values'][2]
+lines += ['', f'The weakest disjunction direction is {ratio:.3f} times smaller than the '
+    'weakest conjunction direction. Disjunction is less well conditioned, but its '
+    'third singular value is about 0.059, far above float32 rounding. Both root sets '
+    'are stably affinely separable. The spectra support a difference in convergence '
+    'difficulty; they do not prove the cause of the comparison reader’s finite-step '
+    'preference or establish a semantic operator distinction.', '',
+    'The fourth centered singular value is zero up to float64 roundoff by construction: '
+    'four centered rows have rank at most three. The original float32-centered spectra '
+    '(including their roughly 1e-7 fourth residuals) remain unchanged in the raw audits.', '',
+    'The final presented-reader errors in runs 2, 3 and 9 are almost entirely a '
+    'common offset across the four sentences. Their centered error MSEs are '
+    '3.75e-8, 3.91e-8 and 5.79e-9 respectively; the saved training curves show late '
+    'oscillation after much lower earlier errors. These are passing runs, and this '
+    'description does not replace the final gate MSEs or claim that the precise '
+    'optimizer cause has been established.', '',
+    '[Raw spectra, root values, combined-root fit and final residuals](operator-geometry.json).']
+(HERE / 'operator-geometry.md').write_text('\n'.join(lines) + '\n')
+print(json.dumps({name: {key: value for key, value in row.items() if key not in ('observations', 'roots', 'inputs', 'targets')}
+                  for name, row in operators.items()}, indent=2))

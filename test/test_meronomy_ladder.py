@@ -148,7 +148,7 @@ def trained_ladder():
         m.symbolSpace.soft_reset()
 
 
-def _stage(m, surfaces):
+def _stage(m, surfaces, *, byte_witness=False):
     """Run the eager stem on raw surfaces; return (units, atom bytes per unit)."""
     ps = m.perceptualSpace
     x = m.inputSpace.prepInput(list(surfaces))
@@ -156,6 +156,27 @@ def _stage(m, surfaces):
         m._lex_embed_stem(x)
     units = ps._forward_input["word_texts"]
     ids, mask = m.inputSpace._ar_word_part_ids, m.inputSpace._ar_word_part_mask
+    if byte_witness:
+        fi = ps._forward_input
+        native, spans = fi['native_indices'], fi['native_part_spans']
+        word_ids, word_offsets = [], []
+        for b, row in enumerate(units):
+            start, values, positions = 0, [], []
+            for unit in row:
+                end = start + len(unit.encode('latin1'))
+                keep = (spans[b, :, 0] >= start) & (spans[b, :, 1] <= end) & (spans[b, :, 1] > spans[b, :, 0])
+                values.append(native[b, keep].tolist())
+                positions.append(spans[b, keep, 0].tolist())
+                start = end
+            word_ids.append(values); word_offsets.append(positions)
+        width = max(len(v) for row in word_ids for v in row)
+        words = max(map(len, word_ids))
+        ids = torch.full((len(units), words, width), -1, dtype=torch.long)
+        mask = torch.zeros_like(ids, dtype=torch.bool)
+        for b, row in enumerate(word_ids):
+            for w, values in enumerate(row):
+                ids[b,w,:len(values)] = torch.tensor(values)
+                mask[b,w,:len(values)] = True
     atoms = [[[ps.percept_store.bytes_for(int(i)) for i in ids[b, w][mask[b, w]].tolist()]
               for w in range(ids.shape[1]) if bool(mask[b, w].any())]
              for b in range(ids.shape[0])]
@@ -165,7 +186,7 @@ def _stage(m, surfaces):
 def test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes(ladder):
     m = ladder
     assert m.perceptualSpace._meronomy and m.wholeSpaces[0].digit_wholes
-    units, atoms, ids, mask, offsets = _stage(m, ["12 plus 1", "hi, there"])
+    units, atoms, ids, mask, offsets = _stage(m, ["12 plus 1", "hi, there"], byte_witness=True)
     # Digit wholes are units; whitespace runs are units (the null operation).
     assert units[0] == ["1", "2", " ", "plus", " ", "1"]
     assert units[1] == ["hi", ",", " ", "there"]         # punctuation is a unit
@@ -179,12 +200,12 @@ def test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes(ladder):
 @pytest.mark.parametrize("surface", ["21 plus 1", "11 plus 1", "1 plus 12", "aab ba"])
 def test_witness_replay_is_byte_exact(ladder, surface):
     m = ladder
-    units, atoms, ids, mask, offsets = _stage(m, [surface])
+    units, atoms, ids, mask, offsets = _stage(m, [surface], byte_witness=True)
     replay = b"".join(b"".join(unit) for unit in atoms[0])
     assert replay == surface.encode("ascii")             # whitespace units included
     # Every atom has its exact span; spans are in surface order.
-    spans = m.perceptualSpace._forward_input["part_spans"][0]
-    live = [tuple(sp) for sp, ok in zip(spans.tolist(), mask[0].reshape(-1).tolist()) if ok]
+    spans = m.perceptualSpace._forward_input["native_part_spans"][0]
+    live = [tuple(sp) for sp in spans.tolist() if sp[1] > sp[0]]
     assert live == sorted(live) and all(e == s + 1 for s, e in live)
 
 
@@ -193,7 +214,7 @@ def test_long_unit_presents_every_atom(ladder):
     (the compiled loop's fixed capacity keeps its own fail-loud contract)."""
     m = ladder
     long_word = "abcdefghijklmnopqrst"
-    units, atoms, ids, mask, offsets = _stage(m, [long_word + " y"])
+    units, atoms, ids, mask, offsets = _stage(m, [long_word + " y"], byte_witness=True)
     assert units[0] == [long_word, " ", "y"]
     assert len(atoms[0][0]) == 20
     assert b"".join(atoms[0][0]) == long_word.encode("ascii")
@@ -215,7 +236,7 @@ def test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse():
     assert store.get_id(b"12") is None                  # digits are separate units
     row = store._basis.lookup_rows(torch.tensor([store.get_id(b"plus")]))[0]
     atoms = store._basis.lookup_rows(torch.tensor(
-        [store.get_id(bytes([c])) for c in b"plus"])).clamp(0.0, 1.0).amax(dim=0)
+        list(store.identity.admit(b"plus")))).clamp(0.0, 1.0).amax(dim=0)
     assert torch.allclose(row[: atoms.shape[-1]], atoms)   # seeded with the rung-0 max
     # Evaluation freezes admission.
     object.__setattr__(ps, "_online_learning_frozen", True)
@@ -223,7 +244,8 @@ def test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse():
         for _ in range(threshold + 1):
             _stage(m, ["hello world"])
             ps.flush_pending_promotions()
-        assert store.get_id(b"hello") is None
+        # Fixed atom admission needs no training even in a frozen read.
+        assert store.identity.read(store.identity.form(b"hello")) == b"hello"
     finally:
         object.__setattr__(ps, "_online_learning_frozen", False)
 

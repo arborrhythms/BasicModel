@@ -439,6 +439,11 @@
   </InputSpace>
 
   <PartSpace>
+    <identityByParts>true</identityByParts>
+    <identityPairDim>64</identityPairDim>
+    <identityOnes>3</identityOnes>
+    <identityLengthDim>32</identityLengthDim>
+    <identityBindingDim>64</identityBindingDim>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 8. -->

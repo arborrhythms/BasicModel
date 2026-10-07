@@ -27,6 +27,7 @@ def test_grammar_resolves_each_word_to_its_full_object_code(tmp_path, monkeypatc
         if bool(gate.any()):
             owner = model._concept_owner()
             atoms = owner.similarity_codebook.lookup_rows(row[gate])
+            atoms = owner.interpret.binding_atoms(atoms)
             derived = getattr(owner.similarity_codebook, 'mereology', None)
             width = atoms.shape[-1] if derived is None else derived.percept_event_width
             expected = torch.cat((atoms[..., :width] * activation[gate, None].abs(),

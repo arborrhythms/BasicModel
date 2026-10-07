@@ -1,0 +1,52 @@
+{
+  "candidate": "round3a",
+  "start_manifest": "3fd07f0cd516da3102867207614e11a9153638d37057bcc82a8c7ff821689106",
+  "gate_trainings": 30,
+  "gate_seed": null,
+  "retry": false,
+  "replacement": false,
+  "presented_reader": "one step on reconstruction-kept root only",
+  "comparison_reader": "one step on mean roots for compose, otherwise kept root",
+  "reader_mse_timing": "per sentence before either update, on reconstruction-kept roots",
+  "reader_mse_final_gate": "unchanged ordinary evaluation using presented reader only",
+  "miss_diagnostics": {
+    "late_flip": "stable all-conjunction after epoch 100, with actual epochs remaining reported; descriptive rather than causal attribution",
+    "reader_plateau": "correct labels, early conjunction, and active reader norm changes at most 1 percent in final 50 epochs",
+    "anything_else": "all remaining misses, reporting norm growth, MSE curve and late costs"
+  },
+  "mm_bisection_seed": 0,
+  "paired_mm_diagnostic_seeds": [
+    0,
+    1,
+    2
+  ],
+  "paired_mm_epochs": 200,
+  "commit": false,
+  "identity": {
+    "pair_dim": 64,
+    "pair_ones": 3,
+    "length_dim": 32,
+    "binding_dim": 64,
+    "hash": "SHA256 first eight bytes, little endian; private NumPy generator",
+    "projection": "private generator, SHA256(word-identity-projection-v1), normal (D+L) by d / sqrt(d)",
+    "mint": "first differing positional triple, grow its own bit stream from s to D; next position, then quadruples"
+  },
+  "comparison": {
+    "round2_landing": {
+      "class_pass": 9,
+      "reconstruction_pass": 10,
+      "joint": 9,
+      "sum_pass": 10,
+      "mm_pass": 10
+    },
+    "prior_68_landing": {
+      "class_pass": 7,
+      "reconstruction_pass": 9,
+      "joint": 6,
+      "sum_pass": 10,
+      "mm_pass": 10
+    }
+  },
+  "freeze_before_campaign": true,
+  "full_sweep_before_campaign": true
+}

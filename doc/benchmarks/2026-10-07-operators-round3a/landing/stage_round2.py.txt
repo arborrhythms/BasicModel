@@ -1,0 +1,36 @@
+"""Stage the accepted 2e source without replacing the current 3a worktree."""
+import hashlib,json,subprocess,zipfile
+from pathlib import Path
+ROOT=Path.cwd();H=ROOT/'doc/benchmarks/2026-10-07-operators-round3a';R2=H.parent/'2026-10-06-operators-round2e'
+def git(*args,data=None):return subprocess.check_output(['git',*args],input=data)
+def digest(b):return hashlib.sha256(b).hexdigest()
+assert git('rev-parse','HEAD').decode().strip()=='73cd7b71baeb64135c1e2e841b9bfc321339d8bc'
+manifest=json.loads((R2/'delivered-source/source.json').read_text())
+index={}
+for row in git('ls-files','--stage','-z').split(b'\0'):
+    if row:
+        meta,name=row.split(b'\t',1);mode,oid,stage=meta.split();assert stage==b'0'
+        index[name.decode()]=(mode.decode(),oid.decode())
+entries={}
+with zipfile.ZipFile(R2/'delivered-source/source.zip') as z:
+    assert set(z.namelist())==set(manifest)
+    for name,expected in manifest.items():
+        value=z.read(name);assert digest(value)==expected,name
+        entries[name]=(index.get(name,('100644',''))[0],git('hash-object','-w','--stdin',data=value).decode().strip())
+documents={}
+with zipfile.ZipFile(H/'development/round2-working-baseline.zip') as z:
+    for name in z.namelist():
+        if name.startswith('doc/') or name=='todo.md':
+            value=z.read(name);documents[name]=digest(value)
+            entries[name]=('100644',git('hash-object','-w','--stdin',data=value).decode().strip())
+git('update-index','-z','--index-info',data=b''.join(f'{mode} {oid}\t{name}\0'.encode() for name,(mode,oid) in entries.items()))
+for name,expected in manifest.items():assert digest(git('show',':'+name))==expected,name
+source_names={n for n in index|entries if (n.startswith(('bin/','test/')) and n.endswith('.py')) or (n.startswith('data/') and Path(n).suffix in ('.xml','.xsd','.grammar','.json')) or n in ('pytest.ini','Makefile','requirements.txt','README.md')}
+assert source_names==set(manifest),(source_names-set(manifest),set(manifest)-source_names)
+assert not any(n.startswith('doc/benchmarks/2026-10-07-operators-round3a/') for n in index)
+record=dict(round='2',candidate='2e',manifest_sha256=digest((R2/'delivered-source/source.json').read_bytes()),
+    source_files=len(manifest),every_indexed_source_hash_matches=True,no_extra_source_files=True,
+    worktree_left_at_round3a=True,round2_document_snapshot='round3a/development/round2-working-baseline.zip',
+    staged_round2_document_hashes=documents)
+(R2/'landing-index-verification.json').write_text(json.dumps(record,indent=2)+'\n')
+print(json.dumps(record,indent=2))

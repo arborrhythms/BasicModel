@@ -154,7 +154,7 @@ def test_gate_grammars_have_no_image_complement(config):
     model,_,_=_fresh_model('data/'+config+'.xml')
     try:
         derived=model._concept_owner().similarity_codebook.mereology
-        assert derived.percept_width==14 and derived.code_width==22
+        assert derived.percept_width==96 and derived.code_width==104
         assert derived.context_width==0
         observed=torch.ones(3,derived.code_width)
         image=ClosingImage.form(observed,observed,torch.ones(3),

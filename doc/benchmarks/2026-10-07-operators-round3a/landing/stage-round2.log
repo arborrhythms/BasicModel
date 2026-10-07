@@ -1,0 +1,19 @@
+{
+  "round": "2",
+  "candidate": "2e",
+  "manifest_sha256": "3fd07f0cd516da3102867207614e11a9153638d37057bcc82a8c7ff821689106",
+  "source_files": 705,
+  "every_indexed_source_hash_matches": true,
+  "no_extra_source_files": true,
+  "worktree_left_at_round3a": true,
+  "round2_document_snapshot": "round3a/development/round2-working-baseline.zip",
+  "staged_round2_document_hashes": {
+    "doc/Architecture.md": "0aa092958c08245292b3844c70c02a44f89a849fbb0777b3f92fb693713d9fe4",
+    "doc/FutureWork.md": "2634e571a1b873271ca40f176ab8c5ae82241d00e891ccd4cab1b6dd04594ad2",
+    "doc/GradientFlow.md": "5384af8caf296f422947fc7d8a21451e26bdb7432ce58eb87f78e25a94bd2472",
+    "doc/Philosophy.md": "916a293ce48f17fb6dc37d5b07906ebf56c9f8b0dfc937363640792801d51588",
+    "doc/plans/2026-10-05-operators-update.md": "4169a2e458b66843f74775d9f79e0440adcd92f02952a7be690e21df64058e2b",
+    "doc/specs/2026-09-29-operator-catalogue.md": "24e41b1506d71dca4eeafc42a34cd7db7be445fddd8dc077750a331542fa372c",
+    "todo.md": "52c2a5bf51dd21332cf830af703d17500e673d3864d869992a067fce78ea7b51"
+  }
+}

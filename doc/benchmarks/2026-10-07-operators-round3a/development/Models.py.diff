@@ -1,0 +1,86 @@
+--- 2e/bin/Models.py
++++ bin/Models.py
+@@ -1837,6 +1837,8 @@
+         defaults_path = os.path.join(ProjectPaths.DATA_DIR, "model.xml")
+         init_config(path=config_path, defaults_path=defaults_path)
+         cfg = TheXMLConfig.data
++        from WordIdentity import resolve_identity_layout
++        resolve_identity_layout(cfg)
+         self.cfg = cfg
+ 
+         arch = cfg["architecture"]
+@@ -6855,11 +6857,22 @@
+                 selected[b, own_width:own_width+k] = torch.where(torch.isfinite(values), extra, -1)
+         valid = selected >= 0
+         codes = owner.similarity_codebook.lookup_rows(selected.clamp_min(0)).clone()
++        sparse_forms = torch.where(valid[..., None], codes, torch.zeros_like(codes)).detach().clone()
++        codes = owner.interpret.binding_atoms(codes)
+         codes = torch.where(valid[..., None], codes, torch.zeros_like(codes))
+         weights = heat.gather(1, selected.clamp_min(0)).detach().clone()
+         weights = torch.where(valid, weights, torch.zeros_like(weights))
+         surfaces = [[owner.word_surface_for_row(row) if row >= 0 else None
+                      for row in batch] for batch in selected.cpu().tolist()]
++        identity = getattr(getattr(self.perceptualSpace, 'percept_store', None), 'identity', None)
++        if identity is not None:
++            checks = [dict(word=raw.decode('utf8', 'surrogateescape'),
++                           error=int(identity.read(sparse_forms[b,j,:identity.width]) != raw))
++                      for b,batch in enumerate(surfaces) for j,raw in enumerate(batch) if raw]
++            self._last_rung0_identity_audit = dict(identified_words=len(checks),
++                errors=sum(item['error'] for item in checks), rows=checks)
++            if self._last_rung0_identity_audit['errors']:
++                raise RuntimeError('rung-zero reconstruction identity audit failed')
+         nbytes = max(1, max(len(value or b'') for batch in surfaces for value in batch)+1)
+         data = torch.zeros(*selected.shape, nbytes, dtype=torch.long)
+         byte_valid = torch.zeros_like(data, dtype=torch.bool)
+@@ -6877,7 +6890,7 @@
+             case_bank = stage_case_bank(owner, native, limit=self.reconstruction_basis_limit)
+         self._sentence_primed_bank = PrimedSymbols(selected, codes, weights, own,
+             data.to(rows.device), byte_valid.to(rows.device), case_bank,
+-            getattr(self, '_readback_percept_width', None))
++            getattr(self, '_readback_percept_width', None), sparse_forms if identity is not None else None)
+         self._sentence_priming_written = True
+ 
+     def store_truths(self, entries):
+@@ -11973,6 +11986,7 @@
+         k = min(int(atoms.shape[1]), W, int(rows.shape[1]))
+         da = min(int(atoms.shape[-1]), D)
+         content = atoms[:, :k, :da].to(device=like.device, dtype=like.dtype)
++        content = self._concept_owner().interpret.binding_atoms(content)
+         if torch.is_tensor(activations) and int(activations.numel()) >= B * k:
+             act = activations.reshape(B, -1)[:, :k].to(
+                 device=like.device, dtype=like.dtype).unsqueeze(-1)
+@@ -12301,6 +12315,7 @@
+                 and torch.is_tensor(rows) and rows.shape == atoms.shape[:2]):
+             raise RuntimeError("tied reconstruction requires a staged concept lookup bank")
+         bank = atoms.to(reference).clone()
++        bank = self._concept_owner().interpret.binding_atoms(bank)
+         bank = F.pad(bank[..., :D], (0, max(0, D - bank.shape[-1])))
+         return bank, rows.detach().to(reference.device).ge(0).clone()
+ 
+@@ -12320,6 +12335,7 @@
+                 and int(bank_bytes.shape[0]) == B
+                 and int(atoms.shape[1]) == int(bank_bytes.shape[1])):
+             bank = atoms.to(device=reference.device, dtype=reference.dtype).clone()
++            bank = self._concept_owner().interpret.binding_atoms(bank)
+             valid = bank_valid.detach().to(device=reference.device).clone()
+             rows = getattr(isp, "_ar_concept_lookup_rows", None)
+             if torch.is_tensor(rows) and rows.shape == bank.shape[:2]:
+@@ -12389,6 +12405,18 @@
+         W, P = int(target_bytes.shape[1]), int(target_bytes.shape[2])
+         if not ready or P == 0:
+             return idea.new_zeros(B)
++        identity = getattr(getattr(getattr(self, 'perceptualSpace', None), 'percept_store', None), 'identity', None)
++        if identity is not None:
++            # A bank leaf names a row whose sparse form is checked at the
++            # eager index boundary. Its bytes are exact, not a learned read.
++            # Unknown/non-bank leaves remain an audit failure, not a soft CE.
++            from SentenceUnderstanding import readback_scores
++            present = bank_valid.any(-1)
++            candidates = torch.where(present[..., None], bank_n.detach(), torch.zeros_like(bank_n))
++            score = readback_scores(idea, candidates, torch.ones_like(present, dtype=idea.dtype),
++                                    percept_width=identity.width)
++            identified = (present & (score > 1.-1e-5)).any(-1)
++            return (present.any(-1) & ~identified).to(idea.dtype) + idea.sum(-1) * 0.
+         bank_n = bank_n.detach()
+         present = bank_valid.any(dim=-1)                                 # [B, L]
+         # Packing may place the same sentence's candidates in different

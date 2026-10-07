@@ -1,0 +1,12 @@
+[collect] 52 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 6.4s; peak 0.46 GiB
+[worker-000] 256 selectors; limit 1800s, 8.0 GiB
+[worker-001] 247 selectors; limit 1800s, 8.0 GiB
+[worker-002] 157 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 1; 46.4s; peak 2.35 GiB
+[worker-003] 148 selectors; limit 1800s, 8.0 GiB
+[worker-001] exit 1; 55.6s; peak 1.30 GiB
+[worker-003] exit 1; 72.0s; peak 1.57 GiB
+[worker-002] exit 1; 119.8s; peak 1.97 GiB
+Result: test_failure, exit 1; 808/808 cases completed.
+doc/benchmarks/2026-10-07-operators-round3a/development/failed-sweep-a/result.json

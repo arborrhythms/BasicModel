@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-round3a/paired_mm.py",
+    "child",
+    "1",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-round3a/paired-mm/landing-1.json"
+  ],
+  "pid": 97437,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 526452056,
+  "elapsed_seconds": 23.341469042003155,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-round3a/paired-mm/landing-1.log"
+}

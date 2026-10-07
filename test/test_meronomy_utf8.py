@@ -39,11 +39,10 @@ def native_ladder(tmp_path_factory):
 def _witness(model, surface):
     # Test the eager byte boundary, independent of a dataset string adapter.
     slab = torch.tensor(list(surface.encode("utf-8")), dtype=torch.long)
-    units, atoms, ids, mask, offsets = _stage(model, [slab])
+    units, atoms, ids, mask, offsets = _stage(model, [slab], byte_witness=True)
     raw = b"".join(b"".join(unit) for unit in atoms[0])
-    spans = model.perceptualSpace._forward_input["part_spans"][0]
-    live_spans = [tuple(span) for span, valid in
-                  zip(spans.tolist(), mask[0].reshape(-1).tolist()) if valid]
+    spans = model.perceptualSpace._forward_input["native_part_spans"][0]
+    live_spans = [tuple(span) for span in spans.tolist() if span[1] > span[0]]
     return raw, live_spans, units[0], atoms[0], ids, mask
 
 

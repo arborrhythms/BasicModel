@@ -394,24 +394,24 @@ def test_question_conditioners_persist_per_answer_width():
     answer actively uses its conceptual width once."""
     m = _model()
     dev, dt = torch.device("cpu"), torch.float32
-    narrow = m._question_conditioner(136, device=dev, dtype=dt)
+    narrow = m._question_conditioner(104, device=dev, dtype=dt)
     with torch.no_grad():
         narrow.weight.fill_(0.5)
-    wide = m._question_conditioner(1032, device=dev, dtype=dt)
-    assert wide is not narrow and wide.out_features == 1032
-    again = m._question_conditioner(136, device=dev, dtype=dt)
+    wide = m._question_conditioner(1000, device=dev, dtype=dt)
+    assert wide is not narrow and wide.out_features == 1000
+    again = m._question_conditioner(104, device=dev, dtype=dt)
     assert again is narrow and float(again.weight.abs().sum()) > 0
-    assert set(m.question_conditioners.keys()) == {"136", "1032"}
+    assert set(m.question_conditioners.keys()) == {"104", "1000"}
     keys = [k for k in m.state_dict() if k.startswith("question_conditioners.")]
-    assert any(k.startswith("question_conditioners.136.") for k in keys)
-    assert any(k.startswith("question_conditioners.1032.") for k in keys)
+    assert any(k.startswith("question_conditioners.104.") for k in keys)
+    assert any(k.startswith("question_conditioners.1000.") for k in keys)
     m.End(); m.symbolSpace.soft_reset()
 
 
 def _conditioner_pair(m):
     modules = [m._question_conditioner(width, device=torch.device("cpu"),
                                        dtype=torch.float32)
-               for width in (136, 1032)]
+               for width in (104, 1000)]
     with torch.no_grad():
         for i, module in enumerate(modules):
             module.weight.fill_(0.125 * (i + 1))
@@ -430,11 +430,11 @@ def test_question_conditioner_checkpoint_reloads_both_widths_strictly(tmp_path):
     fresh = _model()
     try:
         assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
-        assert set(fresh.question_conditioners) == {"136", "1032"}
+        assert set(fresh.question_conditioners) == {"104", "1000"}
         for module in modules:
             restored = fresh.question_conditioners[str(module.out_features)]
             torch.testing.assert_close(restored.weight, module.weight, rtol=0, atol=0)
-        assert fresh.question_conditioner is fresh.question_conditioners["136"]
+        assert fresh.question_conditioner is fresh.question_conditioners["104"]
         assert set(fresh.state_dict()) == set(m.state_dict())
     finally:
         for model in (m, fresh):
@@ -495,7 +495,7 @@ def test_question_conditioner_legacy_singular_checkpoint_reloads_strictly(tmp_pa
         assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
         torch.testing.assert_close(fresh.question_conditioner.weight,
                                    m.question_conditioner.weight, rtol=0, atol=0)
-        assert fresh.question_conditioner is fresh.question_conditioners["136"]
+        assert fresh.question_conditioner is fresh.question_conditioners["104"]
     finally:
         for model in (m, fresh):
             model.End()
@@ -532,7 +532,7 @@ def test_materialised_idea_follows_the_symbol_rows():
         assert torch.equal(m._word_symbol_rows()[:, (0, 2)], rows[:, (0, 2)].flip(1))
         held, _r, _s, _t = m._materialize_answer_idea(u, derivation, (What.supervised(0), What.supervised(1)))
         torch.testing.assert_close(held, idea0, rtol=0, atol=0)
-        exchanged = _capture_program_probe(m, ["plus one two", "plus three four"])
+        exchanged = _capture_program_probe(m, ["plus one three", "plus two four"])
         new_derivation = m._resolve_answer(exchanged, (What.supervised(0), What.supervised(1)))
         idea1, _r, _s, targets1 = m._materialize_answer_idea(
             exchanged, new_derivation, (What.supervised(0), What.supervised(1)))
