@@ -1,0 +1,484 @@
+{
+  "xor": [
+    {
+      "run": 1,
+      "mse": 0.07023281200944531,
+      "correct": 4,
+      "reconstructed": 4,
+      "predictions": [
+        0.2882528305053711,
+        0.7997586131095886,
+        0.6239972114562988,
+        0.12793296575546265
+      ],
+      "band": "between",
+      "last_greedy_disjunction_epoch": 0,
+      "last_cost_rewarding_greedy_disjunction": null,
+      "last_cost_rewarding_greedy_conjunction": {
+        "epoch": 400,
+        "batch_row": 3,
+        "input": "loving there",
+        "departure": "disjunction",
+        "greedy_components": [
+          0.23185355961322784,
+          0.0,
+          0.029181204736232758
+        ],
+        "explore_components": [
+          0.23185355961322784,
+          0.0,
+          0.465261846780777
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.4360806345939636
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.436080664396286,
+        "deciding": "answer",
+        "K": 1,
+        "R_walk": 1,
+        "W": 2,
+        "probability": 0.08339569717645645
+      }
+    },
+    {
+      "run": 2,
+      "mse": 0.19198663496396984,
+      "correct": 4,
+      "reconstructed": 4,
+      "predictions": [
+        0.39038100838661194,
+        0.6037184000015259,
+        0.5152466297149658,
+        0.47278353571891785
+      ],
+      "band": "between",
+      "last_greedy_disjunction_epoch": 0,
+      "last_cost_rewarding_greedy_disjunction": null,
+      "last_cost_rewarding_greedy_conjunction": {
+        "epoch": 399,
+        "batch_row": 0,
+        "input": "hello world",
+        "departure": "disjunction",
+        "greedy_components": [
+          2.400628851262354e-08,
+          0.0,
+          0.1736527532339096
+        ],
+        "explore_components": [
+          2.400628851262354e-08,
+          0.0,
+          0.3958650231361389
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.2222122699022293
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.2222122699022293,
+        "deciding": "answer",
+        "K": 1,
+        "R_walk": 1,
+        "W": 2,
+        "probability": 0.2905614972114563
+      }
+    },
+    {
+      "run": 3,
+      "mse": 0.1180141500683849,
+      "correct": 4,
+      "reconstructed": 4,
+      "predictions": [
+        0.3187867999076843,
+        0.6385274529457092,
+        0.5781435966491699,
+        0.24860882759094238
+      ],
+      "band": "between",
+      "last_greedy_disjunction_epoch": 21,
+      "last_cost_rewarding_greedy_disjunction": {
+        "epoch": 21,
+        "batch_row": 3,
+        "input": "loving there",
+        "departure": "conjunction",
+        "greedy_components": [
+          0.23759134113788605,
+          0.0,
+          0.4460141658782959
+        ],
+        "explore_components": [
+          0.23759134113788605,
+          0.0,
+          0.4763360023498535
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.030321836471557617
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.030321836471557617,
+        "deciding": "answer",
+        "K": 1,
+        "R_walk": 1,
+        "W": 2,
+        "probability": 0.4998651146888733
+      },
+      "last_cost_rewarding_greedy_conjunction": {
+        "epoch": 399,
+        "batch_row": 3,
+        "input": "loving there",
+        "departure": "disjunction",
+        "greedy_components": [
+          0.25251564383506775,
+          0.0,
+          0.2036634087562561
+        ],
+        "explore_components": [
+          0.25251564383506775,
+          0.0,
+          0.5377472639083862
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.3340838551521301
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.3340838849544525,
+        "deciding": "answer",
+        "K": 1,
+        "R_walk": 1,
+        "W": 2,
+        "probability": 0.11871565133333206
+      }
+    },
+    {
+      "run": 4,
+      "mse": 0.06398153624504843,
+      "correct": 4,
+      "reconstructed": 4,
+      "predictions": [
+        0.2794962525367737,
+        0.7087652087211609,
+        0.7924080491065979,
+        0.22337383031845093
+      ],
+      "band": "between",
+      "last_greedy_disjunction_epoch": 23,
+      "last_cost_rewarding_greedy_disjunction": {
+        "epoch": 16,
+        "batch_row": 0,
+        "input": "hello world",
+        "departure": "conjunction",
+        "greedy_components": [
+          0.0001325812772847712,
+          0.0,
+          0.2181682288646698
+        ],
+        "explore_components": [
+          0.0001325812772847712,
+          0.0,
+          0.23099224269390106
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.012824013829231262
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.012824013829231262,
+        "deciding": "answer",
+        "K": 1,
+        "R_walk": 1,
+        "W": 2,
+        "probability": 0.49952298402786255
+      },
+      "last_cost_rewarding_greedy_conjunction": {
+        "epoch": 400,
+        "batch_row": 3,
+        "input": "loving there",
+        "departure": "disjunction",
+        "greedy_components": [
+          0.33254870772361755,
+          0.0,
+          0.09029478579759598
+        ],
+        "explore_components": [
+          0.33254870772361755,
+          0.0,
+          0.5074272751808167
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.41713249683380127
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.4171324670314789,
+        "deciding": "answer",
+        "K": 1,
+        "R_walk": 1,
+        "W": 2,
+        "probability": 0.07399682700634003
+      }
+    },
+    {
+      "run": 5,
+      "mse": 0.1293142780679455,
+      "correct": 4,
+      "reconstructed": 4,
+      "predictions": [
+        0.45784199237823486,
+        0.7664691209793091,
+        0.6920728087425232,
+        0.39784669876098633
+      ],
+      "band": "between",
+      "last_greedy_disjunction_epoch": 64,
+      "last_cost_rewarding_greedy_disjunction": {
+        "epoch": 62,
+        "batch_row": 3,
+        "input": "loving there",
+        "departure": "conjunction",
+        "greedy_components": [
+          6.601269575412516e-08,
+          0.0,
+          0.30862194299697876
+        ],
+        "explore_components": [
+          6.601269575412516e-08,
+          0.0,
+          0.3509460687637329
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.04232412576675415
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.04232412576675415,
+        "deciding": "answer",
+        "K": 1,
+        "R_walk": 1,
+        "W": 2,
+        "probability": 0.4997434914112091
+      },
+      "last_cost_rewarding_greedy_conjunction": {
+        "epoch": 400,
+        "batch_row": 3,
+        "input": "loving there",
+        "departure": "disjunction",
+        "greedy_components": [
+          6.641276684149489e-08,
+          0.0,
+          0.19985760748386383
+        ],
+        "explore_components": [
+          6.641276684149489e-08,
+          0.0,
+          0.46510621905326843
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.2652485966682434
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.2652485966682434,
+        "deciding": "answer",
+        "K": 1,
+        "R_walk": 1,
+        "W": 2,
+        "probability": 0.14655598998069763
+      }
+    },
+    {
+      "run": 7,
+      "mse": 0.14410905683813557,
+      "correct": 4,
+      "reconstructed": 4,
+      "predictions": [
+        0.470432847738266,
+        0.8027508854866028,
+        0.6663377285003662,
+        0.4526493549346924
+      ],
+      "band": "between",
+      "last_greedy_disjunction_epoch": 0,
+      "last_cost_rewarding_greedy_disjunction": null,
+      "last_cost_rewarding_greedy_conjunction": {
+        "epoch": 400,
+        "batch_row": 3,
+        "input": "loving there",
+        "departure": "disjunction",
+        "greedy_components": [
+          0.1987004280090332,
+          0.0,
+          0.24507085978984833
+        ],
+        "explore_components": [
+          0.1987004280090332,
+          0.0,
+          0.33205172419548035
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.08698086440563202
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.08698087930679321,
+        "deciding": "answer",
+        "K": 1,
+        "R_walk": 1,
+        "W": 2,
+        "probability": 0.1437341421842575
+      }
+    },
+    {
+      "run": 8,
+      "mse": 0.08354295123957756,
+      "correct": 4,
+      "reconstructed": 4,
+      "predictions": [
+        0.39497894048690796,
+        0.8133806586265564,
+        0.6751289367675781,
+        0.1944105327129364
+      ],
+      "band": "between",
+      "last_greedy_disjunction_epoch": 21,
+      "last_cost_rewarding_greedy_disjunction": {
+        "epoch": 18,
+        "batch_row": 2,
+        "input": "loving world",
+        "departure": "conjunction",
+        "greedy_components": [
+          0.09454508870840073,
+          0.0,
+          0.3067398965358734
+        ],
+        "explore_components": [
+          0.09454508870840073,
+          0.0,
+          0.35819005966186523
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.05145016312599182
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.05145016312599182,
+        "deciding": "answer",
+        "K": 1,
+        "R_walk": 1,
+        "W": 2,
+        "probability": 0.4982301592826843
+      },
+      "last_cost_rewarding_greedy_conjunction": {
+        "epoch": 400,
+        "batch_row": 1,
+        "input": "hello there",
+        "departure": "disjunction",
+        "greedy_components": [
+          5.9163580772292335e-06,
+          0.0,
+          0.015139389783143997
+        ],
+        "explore_components": [
+          5.9163580772292335e-06,
+          0.0,
+          0.3327138125896454
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.3175744116306305
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.3175744414329529,
+        "deciding": "answer",
+        "K": 1,
+        "R_walk": 1,
+        "W": 2,
+        "probability": 0.0609327107667923
+      }
+    },
+    {
+      "run": 10,
+      "mse": 0.1420182764384541,
+      "correct": 4,
+      "reconstructed": 4,
+      "predictions": [
+        0.3710874617099762,
+        0.6182319521903992,
+        0.6488387584686279,
+        0.40162935853004456
+      ],
+      "band": "between",
+      "last_greedy_disjunction_epoch": 105,
+      "last_cost_rewarding_greedy_disjunction": {
+        "epoch": 104,
+        "batch_row": 2,
+        "input": "loving world",
+        "departure": "conjunction",
+        "greedy_components": [
+          0.21412746608257294,
+          0.0,
+          0.3008638918399811
+        ],
+        "explore_components": [
+          0.21412746608257294,
+          0.0,
+          0.3341387212276459
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.033274829387664795
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.033274829387664795,
+        "deciding": "answer",
+        "K": 1,
+        "R_walk": 1,
+        "W": 2,
+        "probability": 0.49972009658813477
+      },
+      "last_cost_rewarding_greedy_conjunction": {
+        "epoch": 400,
+        "batch_row": 3,
+        "input": "loving there",
+        "departure": "disjunction",
+        "greedy_components": [
+          0.1864709109067917,
+          0.0,
+          0.21555939316749573
+        ],
+        "explore_components": [
+          0.1864709109067917,
+          0.0,
+          0.4192380905151367
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.203678697347641
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.20367872714996338,
+        "deciding": "answer",
+        "K": 1,
+        "R_walk": 1,
+        "W": 2,
+        "probability": 0.2164933681488037
+      }
+    }
+  ],
+  "mm": []
+}

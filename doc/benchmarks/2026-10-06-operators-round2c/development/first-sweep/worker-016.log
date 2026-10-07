@@ -1,0 +1,29 @@
+........................................................................ [ 39%]
+........................................................................ [ 78%]
+...........sss.s.sssssssFs.s.s.s........                                 [100%]
+=================================== FAILURES ===================================
+___ test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row ____
+test/test_output_path_supervised.py:377: in test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+    assert got["actual_grad"] is not None
+           ^^^^^^^^^^^^^^^^^^
+E   KeyError: 'actual_grad'
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_operator_catalogue.py::test_selected_exclusion_cannot_be_recovered_as_negation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_order0_percept_definitions.py::test_witnesses_write_alternatives_without_conjoining_their_literals
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7170: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp2dhd2czt/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row
+1 failed, 168 passed, 15 skipped, 3 warnings in 17.39s

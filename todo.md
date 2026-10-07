@@ -17,11 +17,12 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current sequence (6.9 closed as the October 3 §25 baseline; Alec,
-2026-10-03: "no conference freeze. We push through to item zero"):**
-the grammatical operators update → 6.8 → 6.5 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0.
-The word-level evaluator once pulled forward for the conference returns to
-its place in items 4 and 6.8. Items 9 and 8 are implemented and
+**Next:** the [grammatical operators update](doc/plans/2026-10-05-operators-update.md), then **6.5**.
+
+**Current sequence (6.8 accepted on October 5; no conference freeze):**
+the grammatical operators update → 6.5 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0.
+The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
+acceptance does not authorize fresh-model bulk scoring. Items 9 and 8 are implemented and
 reviewed; what remains of them is empirical and waits for the
 million-sentence checkpoint that item 0's run provides, so they are not
 in the implementation queue.
@@ -71,8 +72,8 @@ generation is expected at this stage and is recorded, not tuned away.
    causal result, and fused AMP conservatively undercounts exposure. Preserve the
    tiny-run nulls, incomplete reverse programs and 5/56 wording failures as
    development diagnostics ([original receipt](doc/benchmarks/2026-09-26-item9/README.md));
-   old context-free and assertion-thought scores are invalid controls. Item 6.9 is
-   the next implementation task while this empirical gate waits for training.
+   old context-free and assertion-thought scores are invalid controls. The grammatical operators
+   update is next while this empirical gate waits for training.
 - **8. Evidence: learned utility and structural preference.** Prefer
    understandable structural operators when they carry the meaning; any opaque
    operator must be an ordinary grammar-MLP choice, with the structural face
@@ -123,10 +124,55 @@ generation is expected at this stage and is recorded, not tuned away.
    Alec, 2026-09-30: "equal comparison").
    The unchanged depth-three campaign remains red; retain its assertion and
    the XOR/MM evidence ([accepted landing](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).
-- **The grammatical operators update** (not yet numbered. **Decided, Alec,
-   2026-09-29:** after item 7 is accepted and before 6.8 (the conference
-   freeze that once stood between was dropped on 2026-10-03): "let's iron out the operators after getting 7 accepted";
-   later the same day, after item 6.9).
+- **The grammatical operators update** (not yet numbered; next after the
+   accepted 6.8 landing, then 6.5; Alec, 2026-10-05).
+   The [operators update plan](doc/plans/2026-10-05-operators-update.md) orders
+   the remaining catalogue and the work carried from the 6.8 rounds.
+   **Round 1 accepted (Alec, 2026-10-06; plan §5, §9.1):** class 8/10,
+   reconstruction 10/10, sum 10/10, MM_xor 9/10 shown trajectory-identical
+   to the landing (not a regression of the round). **The scheme confirmed
+   the same day** (plan §13; [Architecture](doc/Architecture.md#the-scheme-confirmed-2026-10-06-expectation-and-surprise-through-the-architecture)):
+   the centroid for symbols with has-a wholes weighted by their narrowing;
+   two hard derivations as expectation and surprise, credited at the choice
+   and, once the path is invertible, at every layer by inversion;
+   expectation and output as the criteria, reconstruction retiring to an
+   audit where the transformations are exact. Rounds (plan §9.5, §12.3):
+   **2 credit — rounds 2, 2b, 2c and 2d not accepted; round 2e measured, awaiting review**
+   ([round-2e receipt](doc/benchmarks/2026-10-06-operators-round2e/README.md); no commit):
+   magnitude interpretation preserves forms; each answer-owned reader takes
+   one step under its round-2e rule below. Reconstruction keeps the trial;
+   the total still credits the single departure. Pole consumers and closing
+   evidence, the concept-only image, and inherited-part containment are audited.
+   MM_xor's raw count stays recorded: retired percept sampling shifts its later Bernoulli mask.
+   Its three paired replays remain separate from the thirty unseeded trainings.
+   Round 2c: class **5/10**, reconstruction **10/10**, sum **10/10 at ¼**,
+   MM_xor **9/10**; sweep green, ownership/gradient/displacement zeros.
+   All final grammar roots use conjunction and every narrowing departure ties;
+   the receipt records the class misses' trial costs and the failed MM trajectory.
+   Round 2d changes only the departure proposal to walk first, correcting it
+   by `K·R_walk·W`. The §5 RNG-only amendment applies to MM_xor after its
+   repeated seed-zero bisection; raw counts and paired trajectories stay visible.
+   Round 2d: class **2/10**, reconstruction **10/10**, sum **10/10 at ¼**,
+   raw MM_xor **10/10**. The class gate is missed despite all final roots
+   choosing conjunction and all labels being correct. All-disjunction starts
+   become all-conjunction from epochs 22, 65 and 106; three failed runs use
+   conjunction throughout. Departures split 7,978 compose / 8,022 narrowing,
+   all narrowing credits tie, and reader counters remain one update per batch.
+   Sweep green; ownership/gradient/displacement zeros. No commit before review.
+   Round 2e restores kept-root-only training for the presented reader and
+   retains 2d's mixed-root training in a separate comparison reader used only
+   for the advantage. Both are answer-owned, with one step each on detached
+   roots. The receipt records both readers' MSE, norms, flips and miss costs.
+   Round 2e: class **9/10**, reconstruction **10/10**,
+   sum **10/10 at ¼**, raw MM_xor **10/10** under the RNG-only amendment.
+   The measured standing gate is met; 40/40 final roots are conjunction.
+   Misses: 1 late flip, 0 reader plateau, 0 other.
+   Sweep and owner audits pass. No commit before Claude's review.
+   **3 identity** (pairs plus length as the parts,
+   the content width, the narrowing rule and the centroid), **4 meaning**
+   (membership as properties, co-activation through shared wholes, Kleene
+   connectives, expectation and targets by inversion), **5 attention** (the
+   filter with the factored cost), **6** the catalogue's remaining sections.
    It carries into code what the
    operator pass of 2026-09-27 to 09-29 decided in documents: `not` and `non`
    over evidence poles, the conjunction's reading of poles, words as
@@ -175,12 +221,13 @@ generation is expected at this stage and is recorded, not tuned away.
    adverb cannot write on a dimension their operand is silent on. Open
    there, for when the pass reaches them: `bind`, `expect` in place of
    `arma`, and what says a sentence is absolute once `exist` is retired.
-   **Standing gate (6.9 closing decision, October 3):** no regression
-   against the [accepted 6.9 baseline](doc/benchmarks/2026-10-03-item6-9-closing/README.md);
-   its class and reconstruction gates remain red. First add decoder exploration
-   under [6.9 plan §26.3](doc/plans/2026-09-29-item-6-9-xor-grammar.md#263-for-the-catalog),
-   then implement the remaining catalogue. No configuration is given
-   more rows (decided, spec §17.7). A sentence that states a definition is
+   **Standing gate (accepted 6.8, October 5):** no regression against the
+   [§22 receipt](doc/benchmarks/2026-10-03-operators-attention/README.md):
+   class **7/10**, reconstruction **9/10**, joint **6/10**, MM_xor and sum
+   **10/10**, full sweep **4,917 passed / 0 failed**, zero sentence-path
+   gradient at perception and zero ownership conflicts. Decoder exploration
+   is implemented; the remaining work follows the operators update plan.
+   No configuration is given more rows (decided, spec §17.7). A sentence that states a definition is
    an `equal` (Alec, 2026-09-29: "I guess we only need equal?"; catalogue
    §6.3).
    **Item-7 review residue** (two truths §21 and §23): the predicate identity
@@ -190,126 +237,18 @@ generation is expected at this stage and is recorded, not tuned away.
    outside the accepted item-7 repair.
    Item 5 takes up the bias of forgetting by the kind of truth that Alec
    proposed on 2026-09-29 (forgetting spec §4).
-- **6.8. One attention: brackets, narrowing, and expectation at every bracket**
-   ([plan](doc/plans/2026-09-27-item-6-8-one-attention.md); Alec, 2026-09-27;
-   after 7.5 and 7, before 6.5; three non-blocking questions in plan §6).
-   **October 5 §22 accepted landing:** the §16.3 candidate remains at
-   `eb1fbefb`, tagged `6.8-s16.3-candidate`. Alec accepted the measured
-   §17–§22 state and authorized its commit, push and parent submodule bump.
-   One working tree.
-   **Two declared changes:** admitted percept rows use a Gaussian row,
-   unit-L2 normalization, then the [0,1] clamp. The two grammar fixtures have
-   a declared capacity increase: **nDim 14 → 22**, content **6 → 14** after
-   the eight address coordinates, in IS/PS/CS/WS. Concept rows stay **6 / 8**;
-   MM_xor's configuration is unchanged. The byte-fallback initializer stays
-   as §18. The §20 kernels still take magnitude from activation; the reader
-   remains affine on the raw root. Attention credit stays detached at the
-   sentence handoff; its estimator is the operators update's. The forward
-   score-function K·R term, decomposition chooser, pair search and room rule
-   are unchanged.
-   **Green full sweep:** **5204 cases; 4917 passed,
-   286 skipped, 1 non-strict XPASS,
-   0 XFAIL, zero failed**, ten workers. Two assertions for
-   the old six-coordinate content width were ported, with complete old/new
-   bodies and failures saved; no runtime regression repair was needed.
-   The final focused probe retained both affected files (21/21 passed).
-   Seeds, bars, budgets, optimizers and guards are unchanged.
-   **Once-only frozen campaign:** sum **10/10**, read first; XOR
-   class **7/10**, reconstruction **9/10**,
-   joint **6/10** from ten shared trainings; MM_xor **10/10**.
-   Bands: **7 at 0, 2 at ¼, 1 between,
-   0 above ¼**. No retries or tuning; Alec accepted the measured round.
-   Exact form collisions occurred in **0/10** runs at start or end.
-   Historical class/reconstruction/joint counts: §12 **0/7/0**, §13 **0/0/0**,
-   §14 **1/8/1** (pre-addendum CS 262/264), §17 **1/10/1**, §18 **0/10/0**,
-   §20 **2/8/2**; MM and sum were **10/10**. §§15–16.3 and §19 supplied no
-   gate measurements. Accepted MSE **.114748**, reconstruction **0/4**, zero
-   conflicts and prior **9/10 / 5/10** remain historical. The declared
-   capacity difference and independent random runs preclude attributing a
-   count change to one of this round's two changes.
-   **Audits:** 1600 tenth-run sentence/step records,
-   1600 departures, 80 nonzero advantages;
-   K·R·ΔC·∇p error 1.86265e-09, finite-difference error
-   1.02006e-09. Prototype/evidence sentence gradient
-   maximum 0; ownership conflicts 0.
-   The [receipt](doc/benchmarks/2026-10-03-operators-attention/README.md) retains
-   starting form/root norms, named operators, per-word read-backs, geometry,
-   exact collisions, support, d ranges, room, reader trajectories, decomposition
-   weights/pick rates, decoder margins and kept paths. Empty same-context
-   meanings correctly coincide. Complement bootstrap and the carried operators
-   work remain deferred. Frozen evaluation admits nothing; the trained NanoChat
-   gate waits for item 4. No fresh bulk scoring or native benchmark.
-   **Accepted by Alec on October 5; commit, push and parent submodule bump authorized.**
-   **Item-7 reading residue:** every read word currently runs the complete
-   `interpret` unary under every binding. This forcing stays until reading
-   mode decides when an object is interpreted; its removal is not part of
-   item 7's accepted landing (two truths §15 and §18).
-   **Taken up with this item (Alec, 2026-09-29):** a predefined word
-   whole, "a cut of non-white space letters", so that a word has one whole
-   that learning does not move and WholeSpace's cut agrees with the
-   reader's ([plan §3a](doc/plans/2026-09-27-item-6-8-one-attention.md#3a-the-word-whole-alec-2026-09-29-taken-up-with-this-item)).
-   "Waiting for 6.8 is fine, as long as it's written down." Its extent is a
-   word by the common definition: "punctuation and digits also separate
-   words". To settle there: the reader's rule, which does not separate at
-   digits today, and what reads the runs of digits that the proofs of XOR
-   are made of.
-   The simplification: attention is one mechanism, a bracket over the input.
-   Open awareness is the bracket set to the whole input, read by the field,
-   whose only operations are the order-independent ones — and, or, not —
-   because a pooled reading admits nothing else; that is the criterion for
-   what belongs to the field. Everything order-dependent (lift, lower, verb,
-   preposition) is the grammar and acts *between* brackets, over the
-   sequence of readings that narrowing produces. Mode exclusion stops being
-   a rule and becomes a theorem. The word loop is the narrowing schedule:
-   the four corners give the reading policy already decided in pieces —
-   true or false, move on; *both*, divide the bracket; *neither*, look
-   closer, descend, mint if nothing is there — so serial reading is
-   "narrow until each bracket's encoding is pure". A known word reads
-   purely at its word bracket and narrowing stops; an unknown word reads
-   neither and narrowing continues to bytes, where `interpret` mints; a
-   known multi-word unit reads purely at the wider bracket and is glossed
-   (speed reading that slows at novelty). Parallel-first falls out: the
-   open read is the first bracket. **Expectation** (Alec: the mathematical
-   sense; applied with the opposite sign so that surprise is what is
-   processed; held for any subject of attention — past, current or future
-   frames, a whole sentence, the next concept) becomes one mechanism at
-   every bracket level — next byte in a word, next word in a sentence,
-   next sentence in a document, next row in the chain — the same ARMA
-   machinery, negative image and surprise column with the level as an
-   argument, giving a training target at every bracket instead of one per
-   sentence, and making the pilot's next-word gate this predictor at the
-   word bracket rather than a separate scorer.
-   **Landing 6.8-1 (the fast loop is kept):** the stop is pinned at
-   words, so the compiled per-word step keeps its shape; narrowing and
-   glossing enter as candidates in the 7.5 softmax (the same chooser and
-   straight-through learning, no separate policy), which is why this
-   follows 7.5; the closing's sentence-bracket row with its `.where`/`.when`
-   is the terminal encoding, which is why it follows 7; 6.5 then adds
-   identity binding as further candidates in the same softmax, which is
-   why it precedes 6.5. Deletions, per the no-legacy rule: `modeSchedule`,
-   `serial` as a mode (the bracket schedule replaces it), the
-   subsymbolic-versus-symbolic loop distinction and the two order budgets
-   (one narrowing budget replaces them), and the boundary-only sentence
-   predictor as a separate object (expectation at every bracket replaces
-   it). Exit: the XOR gate and exact-zero controls unchanged; the serial
-   reconstruction baseline within the reviewed-9b tolerance; the
-   word-level predictor scoring the frozen NanoChat item manifest; the
-   both-rate and categorical-discrimination fields logged per level (item
-   4); item 9's prediction gates re-declared at the word bracket. Costs to
-   measure, not assume: the open pass against item 1's per-word baseline;
-   the reliability of the field's *both* that the policy turns on.
-   **6.8-2, after 6.8-1 (FutureWork):** the dynamic stop —
-   glossing above the word bracket and descending below it only at
-   novelty — decided against item 1's throughput baseline.
-   **Conference sequencing (Alec, 2026-09-27), superseded 2026-10-03:**
-   there is no conference freeze; 6.8 follows the operators update, and the
-   word-level predictor is built in 6.8-1 as the first level of expectation
-   (item 4 evaluates with it).
-   *Architecture (Alec, 2026-09-28):* words are a formula for narrowing
-   attention — the bracket narrows the input and the symbols on one shared
-   budget, the words narrow the domain of discourse and keep it as Ground;
-   two attentions, one chooser
-   ([accessible mind §2.0.1](doc/specs/2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention)).
+   **Carried from 6.8:** the [FutureWork list](doc/FutureWork.md#carried-from-the-68-1315-rounds-2026-10-04)
+   and the [operators update plan](doc/plans/2026-10-05-operators-update.md)
+   retain the attention estimator, decomposition exact-fit precedence and
+   feature standardization, form fold, Kleene connectives, complement
+   bootstrap, `not` items, concept-face negative image and form density.
+   The [dynamic stop](doc/FutureWork.md#the-dynamic-stop-glossing-above-words-descending-at-novelty-item-68-2)
+   remains future work. Item 1 retains the open-read cost and teacher-loss
+   host island; item 4 retains the trained-checkpoint evaluator.
+   **Reading residue:** the forced `interpret` at each binding and the word
+   boundary's treatment of digits remain visible in the
+   [6.8 plan](doc/plans/2026-09-27-item-6-8-one-attention.md); reconciliation
+   belongs with the carried operators work, not a repeat of the accepted gate.
 - **6.5. Independent components: identity as columns, verbs as change**
    ([spec](doc/specs/2026-09-26-independent-components.md)), after item 7
    (needs the closing writing every S as a row and §3.5's reference chain).
@@ -534,6 +473,8 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
+- `73cd7b71b` Operators round 1 accepted and pushed, with WikiOracle bumped at `c9670b5` ([receipt](doc/benchmarks/2026-10-05-operators-update/README.md)).
+- `42daf96f` Item 6.8 accepted: one attention, two spaces and one index; tag `6.8-landing`; class **7/10**, reconstruction **9/10**, joint **6/10**, MM_xor **10/10**, sum **10/10**, sweep **4,917 passed / 0 failed**, zero ownership conflicts ([receipt](doc/benchmarks/2026-10-03-operators-attention/README.md)); carried work: [FutureWork](doc/FutureWork.md#carried-from-the-68-1315-rounds-2026-10-04) and the [operators update plan](doc/plans/2026-10-05-operators-update.md).
 - `bfe6a0d7` Item 6.9: the baseline of the composition mechanism (6.8 §12.1), one reconstruction/output decoder and one writer per weight; accepted class MSE .11475 and reconstruction 0/4 remain historical, with zero ownership conflicts ([closing receipt](doc/benchmarks/2026-10-03-item6-9-closing/README.md), [round history](doc/benchmarks/2026-10-03-item6-9-closing/todo-history.md)).
 - `9810fc7` Item 7: two truths, indexed definitions, ended clause state and shared row-free predicates; accepted under review §25 after all three fixture ports and required checks ([landing receipt](doc/benchmarks/2026-09-30-item7-review-round5/landing/README.md)).
 - `6906727` Item 7.5: one-operation exploit/explore derivations trained at each sentence closing, reduction pressure/deadlines and closing-gradient reporting; accepted with the unchanged depth-three campaign red ([receipt](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).

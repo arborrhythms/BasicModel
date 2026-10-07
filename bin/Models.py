@@ -1959,6 +1959,10 @@ class BaseModel(Mereology, nn.Module):
             object.__setattr__(_cs, "_model", self)
         _derived = getattr(self._concept_owner().similarity_codebook, 'mereology', None)
         self._readback_percept_width = None if _derived is None else _derived.percept_width
+        self._image_form_width = None if _derived is None else _derived.percept_event_width
+        store = getattr(self.symbolSpace,"ltm_store",None)
+        if store is not None:
+            store.image_form_width = store.nDim if _derived is None else _derived.percept_event_width
         for _ws in (getattr(self, "wholeSpaces", None) or []):
             # Same non-owning expansion seam for WholeSpace.insert_whole.
             object.__setattr__(_ws, "_model", self)
@@ -2449,6 +2453,8 @@ class BaseModel(Mereology, nn.Module):
         self.reconstruction_scope = self._understanding_reconstruction_scope()
         self.reconstruct_in_loop = self.reconstruction_scope == 'understanding'
         self.answer_record_reader = None
+        from AnswerComparison import AnswerComparison
+        self.comparison_reader = AnswerComparison() if self.word_brackets else None
         if self.word_brackets and not self.answer_synthesis:
             from SentenceUnderstanding import SentenceRecordReader
             width = int(self.conceptualSpace.muxedSize)
@@ -2609,7 +2615,8 @@ class BaseModel(Mereology, nn.Module):
             getattr(discourse, 'predictor', None), getattr(discourse, '_inter_predictor', None),
             getattr(discourse, 'word_predictor', None)])
         output = parameters([getattr(self, 'outputSpace', None),
-            getattr(self, 'answer_attention', None), getattr(self, 'answer_record_reader', None)])
+            getattr(self, 'answer_attention', None), getattr(self, 'answer_record_reader', None),
+            getattr(self, 'comparison_reader', None)])
         synthesis = getattr(self, 'synthesis_parameters', None)
         if synthesis is not None:
             output.update(id(p) for p in synthesis() if id(p) in available)
@@ -2701,8 +2708,12 @@ class BaseModel(Mereology, nn.Module):
         if optimizer is None:
             raise RuntimeError('owned backward requires the live optimizer')
         registry = self._sentence_cost_registry if sentence else self.errors
+        reader = getattr(self, '_sentence_reader_costs', None) if sentence else None
+        rows = getattr(self, '_sentence_reader_rows', None) if sentence else None
         costs = registry_costs(registry, reader_rows=(
-            getattr(self, '_sentence_reader_rows', None) if sentence else None))
+            torch.zeros_like(registry.row_mask) if reader is not None else rows))
+        if reader is not None:
+            costs.update(reader)
         owners = self.objective_parameter_groups(optimizer)
         scale = 1. if amp_scaler is None else amp_scaler.get_scale()
         if amp_scaler is not None:
@@ -2767,7 +2778,7 @@ class BaseModel(Mereology, nn.Module):
         # the ``self.spaces`` walk above misses their params -- collect them
         # explicitly (deduped). Absent / gate-off => the attr is None => no
         # extra params => byte-identical optimizer state.
-        for _att_name in ("answer_attention", "answer_record_reader"):
+        for _att_name in ("answer_attention", "answer_record_reader", "comparison_reader"):
             _att = getattr(self, _att_name, None)
             if _att is not None:
                 for p in _att.parameters():
@@ -5756,7 +5767,6 @@ class BasicModel(BaseModel):
         The active question supplies only its grammatical open-role mask.
         Gain/presence/mask and both paired payloads are detached evidence.
         """
-        from Meaning import negative_image
         from QueryWork import QueryWorkExhausted
         mask = active.roles.new_zeros(3)
         registry = _boundary_registry(self)
@@ -5793,9 +5803,8 @@ class BasicModel(BaseModel):
         observed = active.roles.detach() if comparison is None else comparison.observed.to(active.roles)
         presence = (active.roles.new_zeros(3) if comparison is None
                     else comparison.estimate.presence_logits.sigmoid().to(active.roles))
-        conceived, _image = negative_image(observed,
-            None if comparison is None else comparison.estimate.roles.to(active.roles),
-            presence, gain=getattr(self, "expectation_gain", 1.), object_mask=mask)
+        closing = getattr(self, '_closing_images', {}).get(row)
+        conceived = observed if closing is None else closing.conceived.to(active.roles)
         return torch.cat((conceived.reshape(-1), presence, mask,
                           active.roles.new_tensor([comparison is not None]))).detach()
 
@@ -11933,8 +11942,13 @@ class BasicModel(BaseModel):
         """``[B, W, D]`` retained constituent references: the leaves the
         forward pushed, each word's symbol row's dictionary atom (its
         object concept's where it has one, else its word concept's) scaled
-        by the word's signed activation (the 0-D symbol), on the content
+        by activation magnitude on form and signed activation on meaning,
         channels (zeros elsewhere and where a word has no row)."""
+        if getattr(self, '_attention_pole_representation', False):
+            from ModelAttention import read_poles
+            pair = read_poles(self, '_pushed_word_slab:poles').to(like)
+            valid = self._attention_words.accepted
+            return F.pad(torch.where(valid[...,None],pair,0.),(0,D-2,0,W-pair.shape[1]))
         isp = self.inputSpace
         concept_atoms = getattr(isp, "_ar_word_concept_atoms", None)
         object_atoms = getattr(isp, "_ar_word_object_atoms", None)
@@ -11962,7 +11976,7 @@ class BasicModel(BaseModel):
         if torch.is_tensor(activations) and int(activations.numel()) >= B * k:
             act = activations.reshape(B, -1)[:, :k].to(
                 device=like.device, dtype=like.dtype).unsqueeze(-1)
-            content = content * act
+            content = self._concept_owner().interpret.activate(content, act.squeeze(-1))
         present = (rows[:, :k] >= 0).to(device=like.device, dtype=like.dtype).unsqueeze(-1)
         content = content * present
         return torch.cat(
@@ -12560,10 +12574,13 @@ class BasicModel(BaseModel):
         da = min(int(atoms.shape[-1]), D)
         indexed = (rows >= 0).reshape(B, W, 1).to(device=reference.device)
         atoms = atoms[..., :da].to(device=reference.device, dtype=reference.dtype)
-        # the symbol's value: the word's signed activation scales its row
+        # Match the interpreted leaf: sign belongs only to the meaning face.
         acts = getattr(getattr(self, "symbolSpace", None), "_word_reference_activations", None)
         if torch.is_tensor(acts) and int(acts.numel()) == B * W:
-            atoms = atoms * acts.reshape(B, W, 1).to(device=atoms.device, dtype=atoms.dtype)
+            from Interpret import activate_code
+            derived = getattr(cb, 'mereology', None)
+            width = da if derived is None else derived.percept_event_width
+            atoms = activate_code(atoms, acts.reshape(B, W).to(atoms), width)
         content = torch.where(indexed, atoms, reference[..., :da])
         if da < D:
             band = torch.where(indexed, torch.zeros_like(reference[..., da:]),
@@ -13226,8 +13243,17 @@ class BasicModel(BaseModel):
         # sees fixed tensors and performs no dictionary walk or host sync.
         from ModelAttention import stage_input, stage_expectation
         stage_input(self)
-        self._stage_serial_concept_rows()
-        self._stage_reading_word_concepts()
+        attention = self._attention_words
+        self._attention_words = None
+        try:
+            self._stage_serial_concept_rows()
+            self._stage_reading_word_concepts()
+        finally:
+            self._attention_words = attention
+        self._attention_grammar_mask = self.inputSpace._ar_grammar_leaf_mask
+        if attention is not None:
+            from ModelAttention import handoff
+            handoff(self,attention)
         stage_expectation(self)
         # the snapshot's surfaces need the bank the concept rows just staged
         self._stage_snapshot_bytes()
@@ -13736,9 +13762,13 @@ class BasicModel(BaseModel):
         # A reporting switch must not turn both compose objectives into zero.
         self._sentence_training = bool(training)
         self._sentence_supplied_answers = None
+        self._sentence_credit_audits = []
+        self._sentence_departure = None
         self._sentence_answer_questions = ()
         self._sentence_answer_cost = None
         self._sentence_run_active = True
+        self._sentence_reader_updates = 0
+        self._sentence_comparison_reader_updates = 0
         self._open_sentence_slot = None
         self._sentence_reconstruction = self._sentence_ends and self.reconstruct_in_loop
         keep_ideas = self._recon_keep_ideas
@@ -14345,7 +14375,10 @@ class BasicModel(BaseModel):
                 weight=output_weight,
                 space="OutputSpace", category="prediction", trained=False,
             )
-            self.errors.merge(output_errors)
+            # Supplied answers have already trained their reader once at
+            # each sentence closing. The batch-end read is reporting only.
+            self.errors.merge(output_errors, trained=(False if
+                getattr(self, '_sentence_reader_updates', 0) else None))
 
             # IR masked-LM loss: compare the post-body perceptual event
             # at masked positions against the pre-mask embedding the
@@ -14714,14 +14747,6 @@ class BasicModel(BaseModel):
                 # signal-router rule load-balancing; no consumer yet.
 
             if train:
-                # Field-only training has no sentence owner step. Consume
-                # the same pending attention term at its batch boundary.
-                attention = getattr(self, '_attention_score_term', None)
-                if attention is not None:
-                    self._attention_score_term = None
-                    if attention.requires_grad:
-                        self.errors.add('reconstruction.attention_score_function', attention,
-                                        category='reconstruction')
                 batch_objective = self.errors.total()
                 readout_l1 = self._configure_concept_readout_l1(optimizer,
                     stage=batch_objective is not None and batch_objective.requires_grad)
@@ -14741,6 +14766,8 @@ class BasicModel(BaseModel):
             totalLoss = self.errors.total()
             if totalLoss is None:
                 totalLoss = lossOut + lossIn * 0
+                if getattr(self, '_sentence_reader_updates', 0):
+                    totalLoss = totalLoss.detach()
             gradient_objectives = {name: self.errors.total(objective=name)
                 for name in ('reconstruction', 'output', 'expectation')} if train else None
 
@@ -19641,12 +19668,35 @@ class BasicModel(BaseModel):
                 seen.add(id(derived))
                 derived.project_room(margin)
 
+    def _attention_sentence_payload(self, payload, index):
+        """Field operations change the pole, preserving form and magnitude."""
+        reading = getattr(self, '_attention_words', None)
+        if reading is None:
+            return payload
+        event, orders, row, activation, obj, obj_order, atom, gate, commit, routing, valid = payload
+        w = index.clamp(0,reading.accepted.shape[1]-1)
+        B = event.shape[0]
+        from ModelAttention import read_poles, pole_activation
+        pair = read_poles(self, '_attention_sentence_payload').gather(
+            1,w.reshape(1,1,1).expand(B,1,2)).squeeze(1)
+        changed = reading.pole_changes.gather(1,w.reshape(1,1).expand(B,1))
+        activation = pole_activation(activation, pair, changed)
+        # interpret resolves atom * activation; multiplying atom would apply
+        # the evidence twice and turn a negative witness positive again.
+        pole_representation = getattr(self, '_attention_pole_representation', False)
+        if pole_representation:
+            event = pair[:,None].to(event)
+            atom = pair.to(atom)
+            activation = torch.ones_like(activation)
+        return (event,orders,row,activation,obj,obj_order,atom,gate,
+                commit & reading.accepted.gather(1,w.reshape(1,1).expand(B,1)).reshape_as(commit),routing,valid)
+
     def _compose_score_function_loss(self, path, costs):
         """§16.3: p(departure) times its detached paired cost difference.
 
         Both trials were costed at one parameter version. The uniform
         departure draw is independent of the chooser's probability; this is
-        the importance correction K*R for uniform action and round draws.
+        the correction K*R_walk*W for uniform walk, round and action draws.
         The scorer's features are detached, so the ordinary reconstruction
         owner can train the chooser without writing perception or operators.
         Exact ties register no term and supply no momentum-only update.
@@ -19659,15 +19709,26 @@ class BasicModel(BaseModel):
         probabilities = path[1][27].exp()
         scale = getattr(self, "_compose_sampling_scale", None)
         if scale is None:
-            raise RuntimeError("compose surrogate requires the sampled K*R counts")
+            raise RuntimeError("compose surrogate requires the sampled proposal correction")
         scale = scale.detach().to(probabilities)
-        self._last_compose_score_function = dict(costs=costs, advantage=advantage,
-            mask=mask.detach(), actions=path[1][18].detach(),
-            probabilities=probabilities.detach(), scale=scale)
-        trained = mask & advantage.ne(0)[:, None]
-        if not bool(trained.any()):
+        actions = path[1][18].detach()
+        walks = torch.ones_like(actions)
+        draw = getattr(self, '_sentence_departure', None)
+        reading = getattr(self, '_attention_words', None)
+        if draw is not None and reading is not None:
+            attention_mask = (torch.arange(reading.actions.shape[1],device=costs.device)[None]
+                              == draw['attention_round'][:,None])
+            mask = torch.cat((attention_mask,mask),-1)
+            probabilities = torch.cat((reading.probabilities,probabilities),-1)
+            scale = torch.cat((reading.alternative_counts *
+                (draw['walk_count'] * draw['walk_rounds'])[:,None],scale),-1)
+            actions = torch.cat((reading.actions.detach(),actions),-1)
+            walks = torch.cat((torch.zeros_like(reading.actions),walks),-1)
+        from SentenceCredit import score_function
+        surrogate, record = score_function(probabilities, scale, mask, costs)
+        self._last_compose_score_function = dict(record, actions=actions, walk=walks)
+        if not surrogate.requires_grad:
             return probabilities.new_zeros(())
-        surrogate = torch.where(trained, probabilities * advantage[:, None] * scale, 0.).sum(-1)
         self._sentence_cost_registry.add('reconstruction.compose_score_function', surrogate,
             category='reconstruction')
         active = self._sentence_cost_registry.row_mask
@@ -19748,8 +19809,14 @@ class BasicModel(BaseModel):
         if torch.is_tensor(object_rows) and torch.is_tensor(concept_rows):
             rows = torch.where(object_rows >= 0, object_rows, concept_rows)
             orders = torch.where(object_rows >= 0, isp._ar_word_object_orders, isp._ar_word_concept_orders)
+            grammar_rows = getattr(isp, '_ar_grammar_object_rows', None)
+            if torch.is_tensor(grammar_rows):
+                rows = torch.where(grammar_rows >= 0, grammar_rows, rows)
+                orders = torch.where(grammar_rows >= 0, isp._ar_grammar_object_orders, orders)
+            from ModelAttention import reference_evidence
             self.symbolSpace.commit_word_reference_slab(rows, lang[0],
-                isp._word_active_mask, orders=orders)
+                isp._word_active_mask, orders=orders,
+                evidence=reference_evidence(self, lang[0], 'commit_word_reference_slab:per_word'))
 
     def _sentence_observation(self, state, sid, active, *, admit=False):
         current_stm, lang, _feedback = state
@@ -19966,12 +20033,17 @@ class BasicModel(BaseModel):
                     self._reading_lesson_reports.append(torch.stack(tuple(objectives.values())).sum().detach())
         disc = getattr(self.symbolSpace, 'expectation', None)
         pending = None
+        self._sentence_expectation_comparison = None
         if disc is not None:
             inter, contrast, pending = disc.sentence_prediction_cost(
                 observation['observed_depths'], observation['observed'], observation['mask'],
                 documents=self._expectation_documents_for_slot(sid, B),
                 layout=observation['layout'], role_masks=observation['roles'],
-                sentence_kinds=[None if m is None else m.sentence_kind for m in observation['meanings']])
+                sentence_kinds=[None if m is None else m.sentence_kind for m in observation['meanings']],
+                gain=getattr(self, 'expectation_gain', 1.))
+            gated = disc._sentence_comparison_errors.total()
+            if gated is not None:
+                self._sentence_expectation_comparison = gated * self.inter_loss_weight
             if self.inter_loss_weight > 0:
                 errors.merge(disc._sentence_prediction_errors[0],
                              prefix='expectation.', weight=self.inter_loss_weight)
@@ -20006,6 +20078,29 @@ class BasicModel(BaseModel):
         return cost, reconstruction, observation, pending
 
     def _sentence_answer_error(self, state, sid, active, observation, *, registry=None):
+        """The presented reader supplies output training; its twin supplies A."""
+        presented = Error(row_mask=active)
+        self._sentence_reader_observation = None
+        self._sentence_comparison_registry = Error(row_mask=active)
+        cost = BasicModel._sentence_reader_error(self, state, sid, active, observation,
+                                               registry=presented)
+        if cost is None:
+            return None
+        presented_read = dict(mse=self._sentence_answer_raw_cost.detach(),
+                              predictions=self._sentence_answer_predictions.detach())
+        if registry is not None:
+            registry.merge(presented)
+        reader = getattr(self, 'comparison_reader', None)
+        if reader is not None:
+            cost = reader(self, state, sid, active, observation,
+                          registry=self._sentence_comparison_registry)
+        self._sentence_reader_observation = dict(presented=presented_read,
+            comparison=dict(mse=self._sentence_answer_raw_cost.detach(),
+                            predictions=self._sentence_answer_predictions.detach()))
+        self._sentence_answer_cost = cost
+        return cost
+
+    def _sentence_reader_error(self, state, sid, active, observation, *, registry=None):
         """A supplied answer trains only this trial's reader of the understanding.
 
         The target is loss-side metadata: it never enters composition. Both
@@ -20014,9 +20109,9 @@ class BasicModel(BaseModel):
         """
         self._sentence_answer_cost = None
         destination = registry
-        # Keep the supplied answer distinct from generation lessons. Only
-        # reconstruction enters the comparison. The answer cost remains
-        # separately observable and trains only the rows of the kept trial.
+        # Keep the supplied answer distinct from generation lessons. Its
+        # detached error enters the comparison and remains observable;
+        # the reader's single update is assembled after both trials are scored.
         registry = Error(row_mask=active)
         target = getattr(self, '_sentence_supplied_answers', None)
         if (not getattr(self, '_sentence_training', False)
@@ -20045,6 +20140,7 @@ class BasicModel(BaseModel):
                         mode=meaning.mode, polarity=meaning.polarity, sentence_kind='idea')
                 if clause is not None and clause.relation is None else meaning
                 for meaning, clause in zip(observation['meanings'], observation['clauses'])]
+            meanings = [None if meaning is None else meaning.detached() for meaning in meanings]
             fields = tuple(None if value is None else SentenceEndState(value) for value in meanings)
             idea = torch.stack([root[b].new_zeros(3, root.shape[-1])
                                 if value is None else value.roles
@@ -20078,6 +20174,7 @@ class BasicModel(BaseModel):
                             registry.error(name, numerator/mean_count, baseline/mean_count,
                                 row=b, entry_weight=count, weight=rec['weight'], objective='output')
                 self._sentence_answer_raw_cost = torch.where(mask, error, torch.zeros_like(error))
+                self._sentence_answer_predictions = surface.detach()
                 self._sentence_answer_cost = registry.total(objective='output')
                 if destination is not None:
                     destination.merge(registry)
@@ -20094,6 +20191,7 @@ class BasicModel(BaseModel):
             raise RuntimeError('sentence answer and supplied target do not align')
         error = (pred - target.to(pred)).square().reshape(root.shape[0], -1).mean(-1)
         self._sentence_answer_raw_cost = torch.where(active, error, torch.zeros_like(error))
+        self._sentence_answer_predictions = pred.detach()
         self.loss.register(registry, 'answer', pred, target.to(pred), mask=active, category='prediction', objective='output')
         self._sentence_answer_cost = registry.total(objective='output')
         if destination is not None:
@@ -20206,6 +20304,36 @@ class BasicModel(BaseModel):
                 layout=view['layout'], role_masks=view['roles'], train_prediction=False,
                 sentence_kinds=[None if m is None else m.sentence_kind for m in view['meanings']])
             disc.detach_prediction_context()
+        from Meaning import ClosingImage
+        images = self.__dict__.setdefault('_closing_images', {})
+        for b, meaning in enumerate(view['meanings']):
+            if meaning is None or not bool(active[b]):
+                continue
+            comparison = None if disc is None else disc.last_expectation_comparison(b)
+            estimate = None if comparison is None else comparison.estimate
+            mask = meaning.roles.new_zeros(3)
+            registry = _boundary_registry(self)
+            if registry is not None and meaning.mode == 'interrogative':
+                # An observed question need not yet name an executable thought.
+                # Only a resolved grammatical attention object spares a role.
+                try:
+                    signature = registry.signature_for(meaning)
+                except (TypeError,ValueError):
+                    signature = None
+                if signature is not None:
+                    for role in signature.open_roles:
+                        mask[registry._slot_for_operand(role)] = 1
+            content_width = meaning.roles.shape[-1]
+            form_width = getattr(self, '_image_form_width', None)
+            form_width = content_width if form_width is None else min(content_width,int(form_width))
+            images[b] = ClosingImage.form(meaning.roles,
+                None if estimate is None else estimate.roles.to(meaning.roles),
+                meaning.roles.new_zeros(3) if estimate is None else estimate.presence_logits.sigmoid(),
+                gain=getattr(self,'expectation_gain',1.), object_mask=mask,
+                form_width=form_width, content_width=content_width)
+        self._last_closing_image_audit = dict(
+            concept_widths={b:v.concept_width for b,v in images.items()},
+            image_max={b:float(v.image.abs().max()) for b,v in images.items()})
         store = getattr(self.symbolSpace, 'ltm_store', None)
         row_ids = [-1] * len(rows)
         if store is not None and getattr(self.conceptualSpace, '_ltm_consolidation', False):
@@ -20387,20 +20515,53 @@ class BasicModel(BaseModel):
             self.languageSpace._compose_primed_bank = self._sentence_primed_bank
             before = self._snapshot_sentence_state((stm, lang, feedback))
             observations, predictions, paths = [], [], []
-            paired_costs = []
+            paired_costs, cost_parts, attention_trials = [], [], []
             pending_steps = []
+            reader_registries = []
+            comparison_registries, reader_observations = [], []
+            greedy_attention = getattr(self, '_attention_greedy', None)
+            attention_base = getattr(self, '_attention_words', None)
+            attention_spent = words.new_tensor([m.spent for m in getattr(self,'_attention_meters',())],dtype=torch.long)
+            if greedy_attention is not None:
+                greedy_attention = self._attention_read(sentence=sid,spent_override=attention_spent)
+            self._sentence_departure = None
             def compose(cached, exploit):
                 self._sentence_trial = 'exploit' if exploit is None else 'explore'
                 self._sentence_pullback = None
                 if self._sentence_training and torch.is_grad_enabled():
                     cached, self._sentence_pullback = fork_perception(cached)
+                from ModelAttention import handoff
+                reading = greedy_attention
                 if exploit is not None:
                     self._publish_sentence_scratch(exploit)
-                    actions, forced, owners = self._exploration_constraints()
-                    forced = forced & (owners == sid)
+                    trace = self._reconstruction_stack()
+                    actions = trace._choice_actions.detach().clone()
+                    owners, _, _ = self._compose_round_owners(actions)
+                    eligible = trace._choice_attempted & trace._choice_explorable & (owners == sid)
+                    from SentenceCredit import departure
+                    draw = departure(greedy_attention, eligible, active=present,
+                        sentence_ids=sentence_ids, sentence=sid)
+                    self._sentence_departure = draw
+                    forced = (torch.arange(actions.shape[1],device=words.device)[None]
+                              == draw['compose_round'][:,None])
                     self._compose_exploit_actions = actions
                     self._compose_forced_slots = forced
                     self._compose_prefix_slots = self._exploration_prefix_slots(actions, forced, owners)
+                    # A narrowing departure changes its full continuation. Only
+                    # rows departing in compose replay the old compose prefix.
+                    self._compose_prefix_slots &= ~draw['narrowing'][:,None]
+                    self._compose_sampling_scale = trace._choice_alternative_counts * (
+                        draw['walk_count'] * draw['walk_rounds'])[:,None]
+                    if greedy_attention is not None and bool(draw['narrowing'].any()):
+                        reading = self._attention_read(exploit=greedy_attention,
+                            departure=draw['attention_round'],sentence=sid,spent_override=attention_spent)
+                        # Non-departing rows retain precisely the greedy walk.
+                        from SentenceCompose import select_rows
+                        selected = select_rows(greedy_attention, reading, draw['narrowing'])
+                        reading = type(reading)(type(reading.table)(*selected[0]), *selected[1:])
+                if reading is not None:
+                    handoff(self, reading)
+                attention_trials.append(reading)
                 # Every trial begins with restored history. Give its first
                 # word the same grad contract as subsequent word carries,
                 # without connecting it to a previous optimizer version.
@@ -20413,6 +20574,7 @@ class BasicModel(BaseModel):
                 for index, payload in cached:
                     # Grammar feedback changes with this derivation, while
                     # the cached pre-compose word representation stays fixed.
+                    payload = self._attention_sentence_payload(payload,index)
                     payload = (*payload[:-2], *latches[0])
                     current_lang, current_stm, current_feedback = compose_word(
                         payload, index, None, current_lang, current_stm)
@@ -20445,31 +20607,44 @@ class BasicModel(BaseModel):
                 if self._sentence_training and torch.is_grad_enabled():
                     pending_steps[-1] = (*pending_steps[-1], self._sentence_cost_registry,
                         observation['decomposition_loss'], observation['walk_loss'])
-                # Expectation and grammar lessons train their owners but are
-                # not evidence for preferring one reading over the other.
-                reconstruction_cost = self._sentence_cost_registry.total(objective='reconstruction')
-                cost = path[1][9][:, sid].sum(-1) * 0
-                if reconstruction_cost is not None:
-                    cost = cost + reconstruction_cost
+                    reader_registries.append(self._sentence_cost_registry)
+                    comparison_registries.append(self._sentence_comparison_registry)
+                reader_observations.append(self._sentence_reader_observation)
+                from SentenceCredit import components
+                parts = components(self._sentence_cost_registry,
+                    self._sentence_expectation_comparison, path[1][9][:,sid].sum(-1)*0,
+                    answer=self._sentence_answer_cost)
+                cost_parts.append(parts)
+                cost = parts.sum(-1)
                 observations.append(observation)
                 predictions.append(pending)
                 paired_costs.append(cost.detach().clone())
-                return cost, (path, reconstruction)
+                return parts[:, 0], (path, reconstruction)
             def train_trial(loss):
                 # Both graphs now exist. Restore this trial's perception
                 # pullback and scratch bindings before its own backward.
                 trial, pullback, path, registry, decomposition_loss, walk_loss = pending_steps.pop(0)
                 self._sentence_trial, self._sentence_pullback = trial, pullback
                 self._sentence_cost_registry = registry
+                from SentenceCredit import reader_weights, reader_costs
+                self._sentence_comparison_reader_weights = reader_weights(
+                    torch.stack(cost_parts, 1), present, self._sentence_departure)
+                self._sentence_reader_weights = reader_weights(
+                    torch.stack(cost_parts, 1), present, None)
+                self._sentence_reader_rows = present & (trial == 'explore')
+                self._sentence_reader_costs = (reader_costs(reader_registries,
+                    self._sentence_reader_weights) if trial == 'explore' else {})
+                presented_step = any(v.requires_grad for v in self._sentence_reader_costs.values())
+                comparison_costs = (reader_costs(comparison_registries,
+                    self._sentence_comparison_reader_weights) if trial == 'explore' else {})
+                for name, value in comparison_costs.items():
+                    self._sentence_reader_costs[name] = self._sentence_reader_costs.get(name, 0) + value
+                if greedy_attention is not None:
+                    from ModelAttention import handoff
+                    handoff(self, attention_trials[int(trial == 'explore')])
                 self._restore_sentence_state(path)
-                attention = getattr(self, '_attention_score_term', None)
-                if attention is not None:
-                    self._attention_score_term = None
-                    if attention.requires_grad:
-                        registry.add('reconstruction.attention_score_function', attention,
-                                     category='reconstruction')
-                        live = self.inputSpace._word_active_mask.any(-1)
-                        loss = loss + (attention * live).sum() / live.sum().clamp_min(1)
+                loss = registry.total()
+                loss = (loss * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
                 if decomposition_loss is not None and decomposition_loss.requires_grad:
                     registry.add('reconstruction.decomposition', decomposition_loss, category='reconstruction')
                     loss = loss + (decomposition_loss * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
@@ -20479,15 +20654,21 @@ class BasicModel(BaseModel):
                 if trial == 'explore':
                     loss = loss + self._compose_score_function_loss(path, torch.stack(paired_costs, -1))
                 self._sentence_train_step(loss)
+                if presented_step:
+                    self._sentence_reader_updates += 1
+                if any(value.requires_grad for value in comparison_costs.values()):
+                    self._sentence_comparison_reader_updates += 1
             try:
                 (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
                     train_trial, active=present,
-                    training=self._sentence_training and torch.is_grad_enabled(),
-                    before_step=lambda rows: setattr(self, '_sentence_reader_rows', rows))
+                    training=self._sentence_training and torch.is_grad_enabled())
             finally:
                 pending_steps.clear()
+                reader_registries.clear()
+                comparison_registries.clear()
                 self._sentence_pullback = None
                 self._sentence_reader_rows = None
+                self._sentence_reader_costs = None
                 self._compose_exploit_actions = self._compose_forced_slots = None
                 self._compose_prefix_slots = None
             if len(paths)==2:
@@ -20500,6 +20681,31 @@ class BasicModel(BaseModel):
                 observe_comparison(self,'compose',dict(costs=costs,wins=wins,
                     departure=departure,
                     greedy=torch.where(here,paths[0],-1),explore=torch.where(here,paths[1],-1)),sentence=sid,active=present)
+            if greedy_attention is not None:
+                from SentenceCompose import select_rows
+                selected = select_rows(attention_trials[0], attention_trials[-1], wins)
+                kept = type(greedy_attention)(type(greedy_attention.table)(*selected[0]), *selected[1:])
+                from ModelAttention import handoff
+                here=sentence_ids==sid
+                kept=kept._replace(**{name:torch.where(
+                    here[...,None] if getattr(kept,name).ndim==3 else here,
+                    getattr(kept,name),getattr(attention_base,name))
+                    for name in ('values','accepted','descended','poles','pole_changes')})
+                handoff(self, kept)
+                for b,meter in enumerate(self._attention_meters):
+                    if bool(present[b]):
+                        meter.require('bracket',int(kept.table.spent[b])-meter.spent)
+                self._attention_spent=kept.table.spent.detach().clone()
+            from SentenceCredit import comparison
+            parts = torch.stack((cost_parts[0],cost_parts[-1]),1)
+            audit = comparison(parts,present)
+            audit['sentence'] = sid
+            audit['departure'] = self._sentence_departure
+            audit['actions'] = tuple(path.detach() for path in paths)
+            audit['narrowing_actions'] = tuple(None if r is None else r.actions.detach() for r in attention_trials)
+            audit['readers'] = tuple(reader_observations)
+            self._last_sentence_credit = audit
+            self.__dict__.setdefault('_sentence_credit_audits', []).append(audit)
             from SentenceUnderstanding import SentenceUnderstanding
             self._last_sentence_understanding = SentenceUnderstanding.select(
                 observations[0]['record'], observations[-1]['record'], wins)
@@ -20524,6 +20730,7 @@ class BasicModel(BaseModel):
                       tuple(v.detach() for v in chosen[2]))
             activations = chosen[1][0]
             for index, payload in cache:
+                payload = self._attention_sentence_payload(payload,index)
                 value = torch.where(payload[7], payload[3].reshape(B, 1), 0.)
                 activations = self._tensor_write_word_column(activations, index, value)
             chosen = (chosen[0], (activations, *chosen[1][1:]), chosen[2])
@@ -20648,6 +20855,7 @@ class BasicModel(BaseModel):
         n_locations = int(cs.outputShape[0])
         reducer = self._stm_reducer()
         predictor = cs.intraSentenceLayer
+        interpretation = self._concept_owner().interpret
         language = self.languageSpace
         n_rules = int(language._n_rules)
         trace = self._reconstruction_stack()
@@ -20976,16 +21184,8 @@ class BasicModel(BaseModel):
                 symbolic_event, symbolic_orders, row, activation,
                 object_row, object_order, object_atom, row_gate, commit,
                 routed_feedback, routed_valid)
-            attention=getattr(self,'_attention_words',None)
-            if attention is not None:
-                # Attention and compose share their scorer. The sentence's
-                # byte loss must not train it through the perception cache;
-                # compose learns from its detached paired-cost surrogate.
-                credit=_gather_word(self._attention_credit.detach(),index).reshape(B,1,1)
-                admitted=_gather_word(attention.accepted,index).reshape_as(commit)
-                payload=(symbolic_event*credit,symbolic_orders,row,activation,
-                         object_row,object_order,object_atom*credit[:,0],row_gate,commit&admitted,
-                         routed_feedback,routed_valid)
+            if not sentence_transactions:
+                payload=self._attention_sentence_payload(payload,index)
             return payload, (next_sym,)
 
         scope = language.clause_scope
@@ -21011,7 +21211,7 @@ class BasicModel(BaseModel):
              object_row, object_order, object_atom, row_gate, commit,
              routing, routing_valid) = cs_sym_payload
             word_idea = symbolic_event[:, 0, :]
-            if torch.is_tensor(grammar_leaf_mask):
+            if torch.is_tensor(grammar_leaf_mask) and not sentence_transactions:
                 commit = commit & _gather_word(grammar_leaf_mask, index).reshape_as(commit)
 
             if capture_intra:
@@ -21055,7 +21255,7 @@ class BasicModel(BaseModel):
             # Treating the deposited word concept as a reference resolves its
             # paired object concept before Language observes the stack.  The
             # reference keeps the word's signed activation; concepts are full codes.
-            object_idea = cs.interpret.forward(
+            object_idea = interpretation.forward(
                 word_idea, object_atoms=object_atom,
                 activation=activation.reshape(B))
             object_gate = torch.logical_and(
@@ -21457,8 +21657,13 @@ class BasicModel(BaseModel):
             object_rows >= 0, object_rows, concept_rows)
         symbol_orders = torch.where(
             object_rows >= 0, object_orders, concept_orders)
+        if torch.is_tensor(grammar_rows):
+            symbol_rows = torch.where(grammar_rows >= 0, grammar_rows, symbol_rows)
+            symbol_orders = torch.where(grammar_rows >= 0, grammar_orders, symbol_orders)
+        from ModelAttention import reference_evidence
         ss.commit_word_reference_slab(
-            symbol_rows, final[8], active, orders=symbol_orders)
+            symbol_rows, final[8], active, orders=symbol_orders,
+            evidence=reference_evidence(self, final[8], 'commit_word_reference_slab:whole_slab'))
         if canonical:
             self._per_word_contributions = []
         self._per_word_percept_contributions = final[9]

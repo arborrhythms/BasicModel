@@ -1,0 +1,1253 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_readback_log_probability.py::test_wrong_winner_keeps_leaf_gradient_with_detached_competitor_codes",
+    "test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries[False]",
+    "test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries[True]",
+    "test/test_reader_trial_ownership.py::test_reader_backpropagates_only_kept_rows_and_skips_an_empty_trial",
+    "test/test_reader_trial_ownership.py::test_generation_lesson_merge_trains_reconstruction_rows",
+    "test/test_reading_attention.py::test_shift_bootstrap_selects_each_word_once",
+    "test/test_reading_attention.py::test_scope_is_normalized_unit_range",
+    "test/test_reading_attention.py::test_coverage_mask_excludes_consumed",
+    "test/test_reading_attention.py::test_padding_spans_never_selected",
+    "test/test_reading_attention.py::test_codebook_retrieval_prior_is_the_subsymbolic_term",
+    "test/test_reading_attention.py::test_codebook_path_preserves_gradient_boundary",
+    "test/test_reading_attention.py::test_codebook_path_keeps_complete_word_coverage",
+    "test/test_reading_attention.py::test_no_codebook_falls_back_to_content_choice",
+    "test/test_reading_attention.py::test_next_word_ce_matches_neg_log_alpha",
+    "test/test_reading_attention.py::test_eval_does_not_build_a_training_graph",
+    "test/test_reading_attention.py::test_no_spans_is_noop",
+    "test/test_reading_attention.py::test_gradient_stops_at_primed_symbols",
+    "test/test_reading_attention.py::test_loss_trains_distribution_toward_target",
+    "test/test_reading_attention.py::test_normal_configs_share_bracket_and_expectation_owners[MM_reading.xml]",
+    "test/test_reading_attention.py::test_normal_configs_share_bracket_and_expectation_owners[MM_20M_xor.xml]",
+    "test/test_reading_attention.py::test_forward_is_finite_and_deterministic",
+    "test/test_reading_attention.py::test_train_forward_then_backward_is_finite",
+    "test/test_reading_attention.py::test_producer_writes_bracket_scope_and_registers_loss",
+    "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+    "test/test_reading_attention.py::test_producer_scope_replaces_previous_input",
+    "test/test_reading_attention.py::test_producer_params_reach_the_optimizer",
+    "test/test_reasoning.py::TestOrderPartitions::test_activation_order",
+    "test/test_reasoning.py::TestOrderPartitions::test_geometric_decay",
+    "test/test_reasoning.py::TestOrderPartitions::test_partitions_cover_full_dim",
+    "test/test_reasoning.py::TestOrderPartitions::test_single_order",
+    "test/test_reasoning.py::TestIsConsistent::test_consistent_truths",
+    "test/test_reasoning.py::TestIsConsistent::test_contradictory_truths",
+    "test/test_reasoning.py::TestIsConsistent::test_empty_truth_set_is_consistent",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_isTrue_ungrounded_returns_zero",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_matching_activation_grounded",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_unmatched_activation_not_grounded",
+    "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_empty_truth_set_no_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_penalty_is_differentiable",
+    "test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect",
+    "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty",
+    "test/test_reasoning.py::TestExtrapolate::test_consistent_pair_derives",
+    "test/test_reasoning.py::TestExtrapolate::test_too_few_truths_returns_empty",
+    "test/test_reasoning.py::TestWriteMask::test_partition_isolation",
+    "test/test_reasoning.py::TestReason::test_forward_with_no_target",
+    "test/test_reasoning.py::TestReason::test_reverse_with_no_target",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows",
+    "test/test_recon_bench.py::test_exact_match_rate_is_1_on_identity",
+    "test/test_recon_bench.py::test_run_record_schema_smoke",
+    "test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch",
+    "test/test_recon_bench.py::test_byte_lexer_config_decodes",
+    "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_defaults_off",
+    "test/test_reconstruct_from_idea.py::test_clear_grammar_cache_erases_router_route",
+    "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_rebuilds_after_clearing",
+    "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_can_use_reverse_seed_snapshot",
+    "test/test_reconstruction_bank_contract.py::test_reconstruction_bank_validation_does_not_read_device_scalars",
+    "test/test_reconstruction_bank_contract.py::test_reconstruction_bank_validation_has_no_mps_host_sync",
+    "test/test_reconstruction_bank_contract.py::test_reconstruction_bank_rejects_out_of_range_ownership[_packed_sentence_ids]",
+    "test/test_reconstruction_bank_contract.py::test_reconstruction_bank_rejects_out_of_range_ownership[_ar_concept_lookup_sentence_ids]",
+    "test/test_reconstruction_bank_contract.py::test_first_sight_admits_concepts_before_reconstruction",
+    "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[rows]",
+    "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[atoms]",
+    "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[ownership]",
+    "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[surfaces]",
+    "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[surface_mask]",
+    "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[second_sentence_empty]",
+    "test/test_reconstruction_bank_contract.py::test_failed_first_sight_admission_counts_each_unavailable_reconstruction",
+    "test/test_reconstruction_momentum.py::test_sparse_momentum_matches_dense_sgd_on_selected_rows_and_roundtrips",
+    "test/test_reconstruction_momentum.py::test_first_step_is_proportional_to_gradient_without_adaptive_division",
+    "test/test_reconstruction_precedence.py::test_only_strictly_lower_total_wins_and_tie_keeps_greedy",
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+    "test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output",
+    "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+    "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+    "test/test_reconstruction_roundtrip.py::test_model_loss_honors_explicit_zero_scales",
+    "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+    "test/test_reconstruction_roundtrip.py::test_shape_gate_reconciles_singleton_axes",
+    "test/test_reconstruction_roundtrip.py::test_output_shape_gate_warns_once",
+    "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+    "test/test_reconstruction_roundtrip.py::test_spell_out_respects_tile_cut",
+    "test/test_reconstruction_roundtrip.py::test_word_tiling_survives_promotion",
+    "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+    "test/test_reconstruction_roundtrip.py::test_associate_span_two_arms",
+    "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+    "test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean",
+    "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+    "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]",
+    "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]",
+    "test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones",
+    "test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient",
+    "test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction",
+    "test/test_recorded_compose_dispatch.py::test_recorded_binary_executes_only_selected_operators",
+    "test/test_recorded_compose_dispatch.py::test_recorded_dispatch_preserves_values_and_gradients_for_mixed_rows[False]",
+    "test/test_recorded_compose_dispatch.py::test_recorded_dispatch_preserves_values_and_gradients_for_mixed_rows[True]",
+    "test/test_reduction_pressure.py::test_online_deadline_uses_full_depth_behind_the_two_slot_window",
+    "test/test_reduction_pressure.py::test_full_stack_arrival_is_an_assertion_instead_of_dropping_the_word",
+    "test/test_reduction_pressure.py::test_unary_preference_still_completes_absolute_and_relative_ends[0.0]",
+    "test/test_reduction_pressure.py::test_unary_preference_still_completes_absolute_and_relative_ends[1.0]",
+    "test/test_reduction_pressure.py::test_row_allowance_is_one_or_three_never_two",
+    "test/test_reduction_pressure.py::test_pressure_is_zero_when_empty_and_increases_with_load_and_urgency",
+    "test/test_reduction_pressure.py::test_pressure_enters_credit_but_temperature_does_not",
+    "test/test_reduction_pressure.py::test_deadline_masks_unary_and_stop_in_the_credit_distribution",
+    "test/test_reduction_pressure.py::test_early_stop_cannot_leave_a_small_relative_stack_full",
+    "test/test_reduction_pressure.py::test_pressure_and_deadlines_keep_fullgraph_forward_and_backward",
+    "test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence",
+    "test/test_reduction_pressure.py::test_pressure_weight_must_be_finite_and_nonnegative[-1.0]",
+    "test/test_reduction_pressure.py::test_pressure_weight_must_be_finite_and_nonnegative[inf]",
+    "test/test_reduction_pressure.py::test_pressure_weight_must_be_finite_and_nonnegative[nan]",
+    "test/test_reduction_pressure.py::test_pressure_default_and_xml_override_share_the_compose_layer",
+    "test/test_reference_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+    "test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+    "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface"
+  ],
+  "completed": [
+    "test/test_readback_log_probability.py::test_wrong_winner_keeps_leaf_gradient_with_detached_competitor_codes",
+    "test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries[False]",
+    "test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries[True]",
+    "test/test_reader_trial_ownership.py::test_reader_backpropagates_only_kept_rows_and_skips_an_empty_trial",
+    "test/test_reader_trial_ownership.py::test_generation_lesson_merge_trains_reconstruction_rows",
+    "test/test_reading_attention.py::test_shift_bootstrap_selects_each_word_once",
+    "test/test_reading_attention.py::test_scope_is_normalized_unit_range",
+    "test/test_reading_attention.py::test_coverage_mask_excludes_consumed",
+    "test/test_reading_attention.py::test_padding_spans_never_selected",
+    "test/test_reading_attention.py::test_codebook_retrieval_prior_is_the_subsymbolic_term",
+    "test/test_reading_attention.py::test_codebook_path_preserves_gradient_boundary",
+    "test/test_reading_attention.py::test_codebook_path_keeps_complete_word_coverage",
+    "test/test_reading_attention.py::test_no_codebook_falls_back_to_content_choice",
+    "test/test_reading_attention.py::test_next_word_ce_matches_neg_log_alpha",
+    "test/test_reading_attention.py::test_eval_does_not_build_a_training_graph",
+    "test/test_reading_attention.py::test_no_spans_is_noop",
+    "test/test_reading_attention.py::test_gradient_stops_at_primed_symbols",
+    "test/test_reading_attention.py::test_loss_trains_distribution_toward_target",
+    "test/test_reading_attention.py::test_normal_configs_share_bracket_and_expectation_owners[MM_reading.xml]",
+    "test/test_reading_attention.py::test_normal_configs_share_bracket_and_expectation_owners[MM_20M_xor.xml]",
+    "test/test_reading_attention.py::test_forward_is_finite_and_deterministic",
+    "test/test_reading_attention.py::test_train_forward_then_backward_is_finite",
+    "test/test_reading_attention.py::test_producer_writes_bracket_scope_and_registers_loss",
+    "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+    "test/test_reading_attention.py::test_producer_scope_replaces_previous_input",
+    "test/test_reading_attention.py::test_producer_params_reach_the_optimizer",
+    "test/test_reasoning.py::TestOrderPartitions::test_activation_order",
+    "test/test_reasoning.py::TestOrderPartitions::test_geometric_decay",
+    "test/test_reasoning.py::TestOrderPartitions::test_partitions_cover_full_dim",
+    "test/test_reasoning.py::TestOrderPartitions::test_single_order",
+    "test/test_reasoning.py::TestIsConsistent::test_consistent_truths",
+    "test/test_reasoning.py::TestIsConsistent::test_contradictory_truths",
+    "test/test_reasoning.py::TestIsConsistent::test_empty_truth_set_is_consistent",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_isTrue_ungrounded_returns_zero",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_matching_activation_grounded",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_unmatched_activation_not_grounded",
+    "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_empty_truth_set_no_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_penalty_is_differentiable",
+    "test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect",
+    "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty",
+    "test/test_reasoning.py::TestExtrapolate::test_consistent_pair_derives",
+    "test/test_reasoning.py::TestExtrapolate::test_too_few_truths_returns_empty",
+    "test/test_reasoning.py::TestWriteMask::test_partition_isolation",
+    "test/test_reasoning.py::TestReason::test_forward_with_no_target",
+    "test/test_reasoning.py::TestReason::test_reverse_with_no_target",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows",
+    "test/test_recon_bench.py::test_exact_match_rate_is_1_on_identity",
+    "test/test_recon_bench.py::test_run_record_schema_smoke",
+    "test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch",
+    "test/test_recon_bench.py::test_byte_lexer_config_decodes",
+    "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_defaults_off",
+    "test/test_reconstruct_from_idea.py::test_clear_grammar_cache_erases_router_route",
+    "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_rebuilds_after_clearing",
+    "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_can_use_reverse_seed_snapshot",
+    "test/test_reconstruction_bank_contract.py::test_reconstruction_bank_validation_does_not_read_device_scalars",
+    "test/test_reconstruction_bank_contract.py::test_reconstruction_bank_validation_has_no_mps_host_sync",
+    "test/test_reconstruction_bank_contract.py::test_reconstruction_bank_rejects_out_of_range_ownership[_packed_sentence_ids]",
+    "test/test_reconstruction_bank_contract.py::test_reconstruction_bank_rejects_out_of_range_ownership[_ar_concept_lookup_sentence_ids]",
+    "test/test_reconstruction_bank_contract.py::test_first_sight_admits_concepts_before_reconstruction",
+    "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[rows]",
+    "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[atoms]",
+    "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[ownership]",
+    "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[surfaces]",
+    "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[surface_mask]",
+    "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[second_sentence_empty]",
+    "test/test_reconstruction_bank_contract.py::test_failed_first_sight_admission_counts_each_unavailable_reconstruction",
+    "test/test_reconstruction_momentum.py::test_sparse_momentum_matches_dense_sgd_on_selected_rows_and_roundtrips",
+    "test/test_reconstruction_momentum.py::test_first_step_is_proportional_to_gradient_without_adaptive_division",
+    "test/test_reconstruction_precedence.py::test_only_strictly_lower_total_wins_and_tie_keeps_greedy",
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+    "test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output",
+    "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+    "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+    "test/test_reconstruction_roundtrip.py::test_model_loss_honors_explicit_zero_scales",
+    "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+    "test/test_reconstruction_roundtrip.py::test_shape_gate_reconciles_singleton_axes",
+    "test/test_reconstruction_roundtrip.py::test_output_shape_gate_warns_once",
+    "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+    "test/test_reconstruction_roundtrip.py::test_spell_out_respects_tile_cut",
+    "test/test_reconstruction_roundtrip.py::test_word_tiling_survives_promotion",
+    "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+    "test/test_reconstruction_roundtrip.py::test_associate_span_two_arms",
+    "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+    "test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean",
+    "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+    "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]",
+    "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]",
+    "test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones",
+    "test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient",
+    "test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction",
+    "test/test_recorded_compose_dispatch.py::test_recorded_binary_executes_only_selected_operators",
+    "test/test_recorded_compose_dispatch.py::test_recorded_dispatch_preserves_values_and_gradients_for_mixed_rows[False]",
+    "test/test_recorded_compose_dispatch.py::test_recorded_dispatch_preserves_values_and_gradients_for_mixed_rows[True]",
+    "test/test_reduction_pressure.py::test_online_deadline_uses_full_depth_behind_the_two_slot_window",
+    "test/test_reduction_pressure.py::test_full_stack_arrival_is_an_assertion_instead_of_dropping_the_word",
+    "test/test_reduction_pressure.py::test_unary_preference_still_completes_absolute_and_relative_ends[0.0]",
+    "test/test_reduction_pressure.py::test_unary_preference_still_completes_absolute_and_relative_ends[1.0]",
+    "test/test_reduction_pressure.py::test_row_allowance_is_one_or_three_never_two",
+    "test/test_reduction_pressure.py::test_pressure_is_zero_when_empty_and_increases_with_load_and_urgency",
+    "test/test_reduction_pressure.py::test_pressure_enters_credit_but_temperature_does_not",
+    "test/test_reduction_pressure.py::test_deadline_masks_unary_and_stop_in_the_credit_distribution",
+    "test/test_reduction_pressure.py::test_early_stop_cannot_leave_a_small_relative_stack_full",
+    "test/test_reduction_pressure.py::test_pressure_and_deadlines_keep_fullgraph_forward_and_backward",
+    "test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence",
+    "test/test_reduction_pressure.py::test_pressure_weight_must_be_finite_and_nonnegative[-1.0]",
+    "test/test_reduction_pressure.py::test_pressure_weight_must_be_finite_and_nonnegative[inf]",
+    "test/test_reduction_pressure.py::test_pressure_weight_must_be_finite_and_nonnegative[nan]",
+    "test/test_reduction_pressure.py::test_pressure_default_and_xml_override_share_the_compose_layer",
+    "test/test_reference_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+    "test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+    "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface"
+  ],
+  "slow_selected": [
+    "test/test_reading_attention.py::test_normal_configs_share_bracket_and_expectation_owners[MM_reading.xml]",
+    "test/test_reading_attention.py::test_normal_configs_share_bracket_and_expectation_owners[MM_20M_xor.xml]",
+    "test/test_reading_attention.py::test_forward_is_finite_and_deterministic",
+    "test/test_reading_attention.py::test_train_forward_then_backward_is_finite",
+    "test/test_reading_attention.py::test_producer_writes_bracket_scope_and_registers_loss",
+    "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+    "test/test_reading_attention.py::test_producer_scope_replaces_previous_input",
+    "test/test_reading_attention.py::test_producer_params_reach_the_optimizer",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+    "test/test_recon_bench.py::test_byte_lexer_config_decodes",
+    "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_defaults_off",
+    "test/test_reconstruct_from_idea.py::test_clear_grammar_cache_erases_router_route",
+    "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_rebuilds_after_clearing",
+    "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_can_use_reverse_seed_snapshot",
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+    "test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output",
+    "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+    "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+    "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+    "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+    "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+    "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+    "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_readback_log_probability.py::test_wrong_winner_keeps_leaf_gradient_with_detached_competitor_codes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0033005840377882123,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003056541027035564,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 3.616024417045992,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reader_trial_ownership.py::test_reader_backpropagates_only_kept_rows_and_skips_an_empty_trial",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001164750021416694,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reader_trial_ownership.py::test_generation_lesson_merge_trains_reconstruction_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005459170206449926,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_shift_bootstrap_selects_each_word_once",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02651433297432959,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_scope_is_normalized_unit_range",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02506070799427107,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_coverage_mask_excludes_consumed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02474537503439933,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_padding_spans_never_selected",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.024584874976426363,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_codebook_retrieval_prior_is_the_subsymbolic_term",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007042920333333313,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_codebook_path_preserves_gradient_boundary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.027495249989442527,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_codebook_path_keeps_complete_word_coverage",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.025918667030055076,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_no_codebook_falls_back_to_content_choice",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.024898541974835098,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_next_word_ce_matches_neg_log_alpha",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0026560829719528556,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_eval_does_not_build_a_training_graph",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017575829988345504,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_no_spans_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033599999733269215,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_gradient_stops_at_primed_symbols",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020156250102445483,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_loss_trains_distribution_toward_target",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.026941832969896495,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_normal_configs_share_bracket_and_expectation_owners[MM_reading.xml]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001496670302003622,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reading_attention.py', 166, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_normal_configs_share_bracket_and_expectation_owners[MM_20M_xor.xml]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011845899280160666,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reading_attention.py', 166, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_forward_is_finite_and_deterministic",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011687498772516847,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reading_attention.py', 175, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_train_forward_then_backward_is_finite",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011841603554785252,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reading_attention.py', 184, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_producer_writes_bracket_scope_and_registers_loss",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001228750334121287,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reading_attention.py', 192, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_registered_loss_backprops_to_producer",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012066698400303721,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reading_attention.py', 201, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_producer_scope_replaces_previous_input",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011795799946412444,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reading_attention.py', 208, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reading_attention.py::test_producer_params_reach_the_optimizer",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011295895092189312,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reading_attention.py', 218, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_activation_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002967079635709524,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_geometric_decay",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015420903218910098,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_partitions_cover_full_dim",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018145801732316613,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_single_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014704198110848665,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestIsConsistent::test_consistent_truths",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07964816701132804,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestIsConsistent::test_contradictory_truths",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.059902750013861805,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestIsConsistent::test_empty_truth_set_is_consistent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06023520801682025,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestGroundAndIsTrue::test_isTrue_ungrounded_returns_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.059472499997355044,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestGroundAndIsTrue::test_matching_activation_grounded",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06140100001357496,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestGroundAndIsTrue::test_unmatched_activation_not_grounded",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05850537499645725,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004545829724520445,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004164170240983367,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_empty_truth_set_no_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023870798759162426,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_penalty_is_differentiable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006448749918490648,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05969879199983552,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00048508303007110953,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestExtrapolate::test_consistent_pair_derives",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.061388834030367434,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestExtrapolate::test_too_few_truths_returns_empty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05981487495591864,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestWriteMask::test_partition_isolation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.37461058300687,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestReason::test_forward_with_no_target",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.059550250007305294,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestReason::test_reverse_with_no_target",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.059094541997183114,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.2089845829759724,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_query_reasoning.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014120800187811255,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011492291989270598,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001330830273218453,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reasoning_cde_model.py', 58, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00026983401039615273,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reasoning_cde_model.py', 44, 'Skipped: requires BASICMODEL_FINEWEB_CHECKPOINT with at least 1,000,000 completed FineWeb training sentences')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_recon_bench.py::test_exact_match_rate_is_1_on_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001230000052601099,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_recon_bench.py::test_run_record_schema_smoke",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.21706912497757003,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 0.090s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.081s, 100.00%)\r\nTraining throughput: 1 batches in 0.074s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23484816699055955,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 0.086s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.064s, 50.00%)\r\nbatch = 2 (\u0394=0.056s, 100.00%)\r\nTraining throughput: 2 batches in 0.113s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_recon_bench.py::test_byte_lexer_config_decodes",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00015937502030283213,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_recon_bench.py', 65, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_defaults_off",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00016916601452976465,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruct_from_idea.py', 57, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruct_from_idea.py::test_clear_grammar_cache_erases_router_route",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012033403618261218,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruct_from_idea.py', 63, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_rebuilds_after_clearing",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012287497520446777,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruct_from_idea.py', 88, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruct_from_idea.py::test_reconstruct_from_idea_can_use_reverse_seed_snapshot",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011695799184963107,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruct_from_idea.py', 121, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_bank_contract.py::test_reconstruction_bank_validation_does_not_read_device_scalars",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00533637497574091,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_bank_contract.py::test_reconstruction_bank_validation_has_no_mps_host_sync",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0668769589974545,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_bank_contract.py::test_reconstruction_bank_rejects_out_of_range_ownership[_packed_sentence_ids]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000551207980606705,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_bank_contract.py::test_reconstruction_bank_rejects_out_of_range_ownership[_ar_concept_lookup_sentence_ids]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004362079780548811,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_bank_contract.py::test_first_sight_admits_concepts_before_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.8090754589647986,
+      "message": "",
+      "stdout": "[BasicModel] Activated aligned codebook prefix 1 -> 2 rows (physical capacity 4096; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)\r\n[BasicModel] Activated aligned codebook prefix 2 -> 4 rows (physical capacity 4096; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)\r\n[BasicModel] Activated aligned codebook prefix 4 -> 8 rows (physical capacity 4096; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)\r\n"
+    },
+    {
+      "nodeid": "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[rows]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5862938750069588,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[atoms]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5773167089791968,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[ownership]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5739874169812538,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[surfaces]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6044936669641174,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[surface_mask]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6011902089812793,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_bank_contract.py::test_staging_rejects_missing_or_unusable_reconstruction_bank[second_sentence_empty]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6033217080403119,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_bank_contract.py::test_failed_first_sight_admission_counts_each_unavailable_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5750249170232564,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_momentum.py::test_sparse_momentum_matches_dense_sgd_on_selected_rows_and_roundtrips",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016224999562837183,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_momentum.py::test_first_step_is_proportional_to_gradient_without_adaptive_division",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003209999995306134,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_precedence.py::test_only_strictly_lower_total_wins_and_tie_keeps_greedy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000265665992628783,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00019950000569224358,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 31, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012962502660229802,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 44, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00014287501107901335,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 96, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001486249966546893,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 123, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.000125208985991776,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 175, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_model_loss_honors_explicit_zero_scales",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000622958003077656,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012395798694342375,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 251, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_shape_gate_reconciles_singleton_axes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002833749749697745,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_output_shape_gate_warns_once",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019741704454645514,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012920802691951394,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 307, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_spell_out_respects_tile_cut",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012791670160368085,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_word_tiling_survives_promotion",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023051670286804438,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00016391603276133537,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 404, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00015054200775921345,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 440, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00015079096192494035,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 449, 'Skipped: ~40s (build + 3 epochs + decode) -- RUN_SLOW gates it')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00015058397548273206,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 463, 'Skipped: 160-epoch reconstruction acceptance -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_associate_span_two_arms",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014326670207083225,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012495898408815265,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 494, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.0857879169634543,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 6.25%)\r\nbatch = 1 (\u0394=0.054s, 12.50%)\r\nbatch = 2 (\u0394=0.054s, 18.75%)\r\nbatch = 3 (\u0394=0.057s, 25.00%)\r\nbatch = 4 (\u0394=0.058s, 31.25%)\r\nbatch = 5 (\u0394=0.058s, 37.50%)\r\nbatch = 6 (\u0394=0.056s, 43.75%)\r\nbatch = 7 (\u0394=0.056s, 50.00%)\r\nbatch = 8 (\u0394=0.059s, 56.25%)\r\nbatch = 9 (\u0394=0.057s, 62.50%)\r\nbatch = 10 (\u0394=0.056s, 68.75%)\r\nbatch = 11 (\u0394=0.063s, 75.00%)\r\nbatch = 12 (\u0394=0.061s, 81.25%)\r\nbatch = 13 (\u0394=0.057s, 87.50%)\r\nbatch = 14 (\u0394=0.057s, 93.75%)\r\nbatch = 15 (\u0394=0.057s, 100.00%)\r\nTraining throughput: 16 batches in 0.917s; word units 0.0% of 64 words.\r\nbatch = 0 (\u0394=0.116s, 100.00%)\r\nTraining throughput: 1 batches in 0.115s; word units 0.0% of 16 words.\r\n"
+    },
+    {
+      "nodeid": "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001480000209994614,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 537, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001473749871365726,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-False-perception: no grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013037497410550714,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030695804161950946,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.4248971249908209,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reconstruction_scope.py::test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.2772735829930753,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_recorded_compose_dispatch.py::test_recorded_binary_executes_only_selected_operators",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.29263050004374236,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_recorded_compose_dispatch.py::test_recorded_dispatch_preserves_values_and_gradients_for_mixed_rows[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.29403170803561807,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_recorded_compose_dispatch.py::test_recorded_dispatch_preserves_values_and_gradients_for_mixed_rows[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.456433541025035,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_online_deadline_uses_full_depth_behind_the_two_slot_window",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001486541994381696,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_full_stack_arrival_is_an_assertion_instead_of_dropping_the_word",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003047080244868994,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_unary_preference_still_completes_absolute_and_relative_ends[0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009313374990597367,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_unary_preference_still_completes_absolute_and_relative_ends[1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008832624997012317,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_row_allowance_is_one_or_three_never_two",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014329201076179743,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_pressure_is_zero_when_empty_and_increases_with_load_and_urgency",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004284169990569353,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_pressure_enters_credit_but_temperature_does_not",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0027106250054202974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_deadline_masks_unary_and_stop_in_the_credit_distribution",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008333339937962592,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_early_stop_cannot_leave_a_small_relative_stack_full",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000951915979385376,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_pressure_and_deadlines_keep_fullgraph_forward_and_backward",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.8155968330102041,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_native_packed_unary_preference_still_records_every_sentence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.8883372090058401,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_pressure_weight_must_be_finite_and_nonnegative[-1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025645800633355975,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_pressure_weight_must_be_finite_and_nonnegative[inf]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016799999866634607,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_pressure_weight_must_be_finite_and_nonnegative[nan]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016691599739715457,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reduction_pressure.py::test_pressure_default_and_xml_override_share_the_compose_layer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.039365833974443376,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_index.py::test_native_reference_is_not_a_substitute_for_unfolding_the_stored_value",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009506670176051557,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0024280420038849115,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005293750436976552,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

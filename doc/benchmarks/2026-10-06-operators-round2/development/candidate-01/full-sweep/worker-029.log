@@ -1,0 +1,25 @@
+........................................................................ [ 44%]
+...........F....................ssssssss.sssssssss...................... [ 89%]
+.................                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_snapshot_preserves_backward_after_same_shape_dictionary_update ______
+test/test_tied_operator_reconstruction.py:237: in test_snapshot_preserves_backward_after_same_shape_dictionary_update
+    assert actual.isfinite().all() and actual.abs().sum() > 0
+E   assert (tensor(True) and tensor(0.) > 0)
+E    +  where tensor(True) = <built-in method all of Tensor object at 0x14c7d24e0>()
+E    +    where <built-in method all of Tensor object at 0x14c7d24e0> = tensor([[[True, True, True,  ..., True, True, True],\n         [True, True, True,  ..., True, True, True],\n         [Tr...rue, True],\n         [True, True, True,  ..., True, True, True],\n         [True, True, True,  ..., True, True, True]]]).all
+E    +      where tensor([[[True, True, True,  ..., True, True, True],\n         [True, True, True,  ..., True, True, True],\n         [Tr...rue, True],\n         [True, True, True,  ..., True, True, True],\n         [True, True, True,  ..., True, True, True]]]) = <built-in method isfinite of Tensor object at 0x147cb3a70>()
+E    +        where <built-in method isfinite of Tensor object at 0x147cb3a70> = tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., ...    [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.]]]).isfinite
+E    +  and   tensor(0.) = <built-in method sum of Tensor object at 0x147b5a1c0>()
+E    +    where <built-in method sum of Tensor object at 0x147b5a1c0> = tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., ...    [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.]]]).sum
+E    +      where tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., ...    [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.]]]) = <built-in method abs of Tensor object at 0x147cb3a70>()
+E    +        where <built-in method abs of Tensor object at 0x147cb3a70> = tensor([[[0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., ...    [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.],\n         [0., 0., 0.,  ..., 0., 0., 0.]]]).abs
+=============================== warnings summary ===============================
+test/test_thought_operation_catalog.py::test_ispart_can_have_structural_and_thought_faces_under_one_exact_name
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_tied_operator_reconstruction.py::test_snapshot_preserves_backward_after_same_shape_dictionary_update
+1 failed, 143 passed, 17 skipped, 1 warning in 133.68s (0:02:13)

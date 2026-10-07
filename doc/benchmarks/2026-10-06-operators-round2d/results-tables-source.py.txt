@@ -1,0 +1,65 @@
+"""Make review tables from the saved thirty runs; no model imports or training."""
+import hashlib, json
+from pathlib import Path
+H=Path(__file__).resolve().parent
+def read(name):return json.loads((H/name).read_text())
+S=read('measurements/summary.json'); A=read('aggregate-audit.json'); V=read('results-validation.json')
+lines=['# Round-2d measurement tables', '',
+    'These tables read the saved runs only. Source, budgets, thresholds and runs are unchanged.', '',
+    f"Standing gate passed: **{V['standing_gate_passed']}**. Thirty gate trainings; zero retries or replacements.", '',
+    '## Class and reconstruction', '',
+    'The answer is read from each final greedy committed root. Each row below is one shared training for both gates.', '',
+    '| Run | MSE | §20.5 band | Correct | Multisets | Class | Reconstruction | Final operator | Last epoch with any greedy disjunction |',
+    '| --- | ---: | --- | ---: | ---: | --- | --- | --- | ---: |']
+for x,a in zip(S['xor'],A['xor']['runs'],strict=True):
+    names=', '.join(sorted({n for row in x['operator_names'] for n in row}))
+    lines.append(f"| [{x['run']}](measurements/xor-{x['run']:02}/run.log) | {x['mse']:.9g} | {x['band']} | {x['correct']}/4 | {x['recovered']}/4 | {'pass' if x['class_pass'] else 'fail'} | {'pass' if x['reconstruction_pass'] else 'fail'} | {names} | {a['last_greedy_disjunction_epoch']} |")
+lines+=['', '## Walk proposals', '',
+    'Every recorded proposal is checked against `sampling_scale = K · R_walk · W`. Counts below are sentence rows, from the same trainings.', '',
+    '| Run | Walk | W | R_walk | K | Rows |', '| --- | --- | ---: | ---: | ---: | ---: |']
+for kind in ('sum','xor'):
+    for a in A[kind]['runs']:
+        for p in a['proposal_counts']:
+            lines.append(f"| [{kind}-{a['run']:02}](measurements/{kind}-{a['run']:02}/run-audit.json) | {p['walk']} | {p['W']} | {p['R_walk']} | {p['K']} | {p['count']} |")
+lines+=['', '## Cost and policy audit by run', '',
+    'Negative advantage rewards the explore action; positive advantage rewards greedy. E is separately retained in every raw trial. “Against keep” counts the rows where the total rewards a different trial from strict reconstruction.', '',
+    '| Run | Walk/action | Departures | Nonzero | Reward explore / greedy | Keep explore | Answer against keep | Sum ΔR | Sum ΔE | Sum ΔA |',
+    '| --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: |']
+for a in A['xor']['runs']:
+    for name,c in sorted(a['by_walk_action'].items()):
+        lines.append(f"| [{a['run']}](measurements/xor-{a['run']:02}/run-audit.json) | {name} | {c['departures']} | {c['nonzero']} | {c['reward_explore']} / {c['reward_greedy']} | {c['keep_explore']} | {c['answer_against_keep']} | {c['delta_R_sum']:.9g} | {c['delta_E_sum']:.9g} | {c['delta_A_sum']:.9g} |")
+lines+=['', '### Final training commitments and selecting costs', '',
+    'The paired components are before either trial update. The keep is R alone; the credit uses R+E+A. Evaluation has no supplied answer and its A term is zero. The complete final evaluation derivations and costs are in `measurements/summary.json`.', '',
+    '| Run / row | Kept operator | R greedy / explore | E greedy / explore | A greedy / explore | Keep | Advantage sign |',
+    '| --- | --- | --- | --- | --- | --- | ---: |']
+for a in A['xor']['runs']:
+    for row in a['final_operators']:
+        p=row['trial_components'];names=', '.join(step['rule_name'] for step in row['sequence'])
+        pairs=[' / '.join(f'{p[j][i]:.9g}' for j in (0,1)) for i in range(3)]
+        lines.append(f"| {a['run']} / {row['batch_row']} | {names} | {' | '.join(pairs)} | {row['decision']} | {row['advantage_sign']:g} |")
+lines+=['', '## Sum controls', '',
+    '| Run | MSE | Band | Checkerboard contrast | Max deviation from 0.5 | Floor |',
+    '| --- | ---: | --- | ---: | ---: | --- |']
+for x in S['sum']:
+    lines.append(f"| [{x['run']}](measurements/sum-{x['run']:02}/run.log) | {x['mse']:.10g} | {x['band']} | {x['contrast']:.9g} | {x['max_deviation_from_half']:.9g} | {'pass' if x['floor_bar'] else 'fail'} |")
+lines+=['', '## MM_xor', '',
+    'Raw MM counts remain visible. The repeated first-forward bisection establishes an RNG-only path, so §20 applies §5’s amendment and this count is not a regression test of the round. The separate paired trajectories are also retained.', '',
+    '| Run | Epochs | Best MSE | Final MSE | Gate |',
+    '| --- | ---: | ---: | ---: | --- |']
+for x in S['mm']:
+    trajectory=x.get('trajectory',[])
+    # The observer records the number of epochs and the last loss explicitly.
+    epochs=x.get('epochs',len(trajectory));last=x.get('last',x.get('final',None))
+    if last is None:raise KeyError('MM final loss field: '+str(list(x)))
+    lines.append(f"| [{x['run']}](measurements/mm-{x['run']:02}/run.log) | {epochs} | {x['best']:.9g} | {last:.9g} | {'pass' if x['passed'] else 'fail'} |")
+lines+=['', '## Reader steps and pole consumers', '',
+    '| Run | Reader updates | Final reader Adam steps | Narrowing rows (kept root) | Compose rows (mean roots) |',
+    '| --- | ---: | --- | ---: | ---: |']
+for kind in ('sum','xor'):
+    for a in A[kind]['runs']:
+        w=a['reader_row_weights'];steps=sorted(set(a['reader_optimizer_steps'].values()))
+        lines.append(f"| [{kind}-{a['run']:02}](measurements/{kind}-{a['run']:02}/run-audit.json) | {a['reader_steps']} | {steps} | {w.get('(1.0, 0.0)',0)+w.get('(0.0, 1.0)',0)} | {w.get('(0.5, 0.5)',0)} |")
+lines+=['', 'Each run also records per-epoch logit ranges, every cost and keep decision, both final operators, image widths and values, containment before/after, and sentence-path gradients. The tenth XOR run includes the ownership audit and analytic/finite-difference checks.', '',
+    f"Table postprocessor SHA-256: `{hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}`.", '']
+(H/'measurement-results.md').write_text('\n'.join(lines))
+print('Wrote measurement-results.md from all thirty saved runs.')

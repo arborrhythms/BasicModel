@@ -1,0 +1,42 @@
+ M bin/Attention.py
+ M bin/ClauseJournal.py
+ M bin/Interpret.py
+ M bin/Layers.py
+ M bin/Meaning.py
+ M bin/MereologicalCodes.py
+ M bin/ModelAttention.py
+ M bin/Models.py
+ M bin/SentenceCompose.py
+ M bin/WalkTrials.py
+ M doc/Architecture.md
+ M doc/FutureWork.md
+ M doc/GradientFlow.md
+ M doc/Philosophy.md
+ M doc/specs/2026-09-29-operator-catalogue.md
+ M test/objective_conflicts_probe.py
+ M test/test_arithmetic_isolation.py
+ M test/test_compose_pair_driver.py
+ M test/test_free_reconstruction.py
+ M test/test_generation_catalog.py
+ M test/test_grammar_object_leaves.py
+ M test/test_grammar_word_learning.py
+ M test/test_joint_objectives.py
+ M test/test_negative_expectation.py
+ M test/test_one_attention.py
+ M test/test_operators_round1.py
+ M test/test_output_path_supervised.py
+ M test/test_reconstruction_precedence.py
+ M test/test_review14_contracts.py
+ M test/test_runtime_split_ingestion.py
+ M test/test_sentence_compose.py
+ M test/test_sentence_gradients.py
+ M todo.md
+?? bin/SentenceCredit.py
+?? doc/benchmarks/2026-10-06-operators-round2/
+?? doc/benchmarks/2026-10-06-operators-round2b/
+?? doc/benchmarks/2026-10-06-operators-round2c/
+?? doc/benchmarks/2026-10-06-operators-round2d/
+?? doc/plans/2026-10-05-operators-update.md
+?? test/test_operators_round2.py
+?? test/test_operators_round2b.py
+?? test/test_operators_round2c.py

@@ -1,0 +1,238 @@
+from pathlib import Path
+from collections import Counter
+import json,hashlib,difflib,subprocess
+ROOT=Path('/Users/arogers/github/WikiOracle/basicmodel')
+HERE=ROOT/'doc/benchmarks/2026-10-06-operators-round2b';OUT=HERE/'measurements'
+def read(p):return json.loads(p.read_text())
+def save(p,x):p.write_text(json.dumps(x,indent=2)+'\n')
+s=read(OUT/'summary.json');v=read(HERE/'results-validation.json')
+aggregate={};runs=[]
+for kind in ('sum','xor'):
+ for n in range(1,11):
+  a=read(OUT/f'{kind}-{n:02}/run-audit.json')
+  c=Counter();by=Counter(a['nonzero_advantage_by_walk_action'])
+  for t in a['sentence_trials']:
+   if not t['training']:continue
+   c['sentences']+=len(t['wins']);c['explore_kept']+=sum(t['wins'])
+   c['policy_against_keep']+=sum(t['policy_against_keep']);c['answer_against_keep']+=sum(t['answer_against_keep'])
+   c.update({'advantage:'+str(int(sign)):t['advantage_sign'].count(sign) for sign in set(t['advantage_sign'])})
+  c['nonzero_advantage']=a['nonzero_advantage_sentences']
+  ranges=a['chooser_logit_ranges']
+  row=dict(kind=kind,run=n,counts=dict(c),nonzero_by_walk_action=dict(by),
+   pole_consumers=a['pole_consumers'],containment=a['containment'],
+   reader_trials=len(a['reader_training_rows']),reader_rows=sum(sum(r['rows']) for r in a['reader_training_rows']),
+   both_trials_all_active=all(all(r['rows']) for r in a['reader_training_rows']),
+   first_logit_ranges={k:val for k,val in ranges.items() if k in ('1','narrowing:1')},
+   last_logit_ranges={k:val for k,val in ranges.items() if k in ('400','narrowing:400')},
+   final_operators=a['final_committed_training_operators'])
+  runs.append(row)
+ for_kind=[r for r in runs if r['kind']==kind]
+ aggregate[kind]=dict(counts=dict(sum((Counter(r['counts']) for r in for_kind),Counter())),
+  nonzero_by_walk_action=dict(sum((Counter(r['nonzero_by_walk_action']) for r in for_kind),Counter())),
+  pole_consumers=dict(sum((Counter(r['pole_consumers']) for r in for_kind),Counter())),
+  largest_containment_violation=max(r['containment']['largest'] for r in for_kind),
+  final_comparable_pairs=sum(x['after']['pairs'] for r in for_kind for x in r['containment']['end']),
+  reader_trials=sum(r['reader_trials'] for r in for_kind),reader_rows=sum(r['reader_rows'] for r in for_kind))
+aggregate['mm']=dict(pole_consumers=dict(sum((Counter(r['pole_consumers']) for r in s['mm']),Counter())),
+ largest_containment_violation=max(r['containment']['largest'] for r in s['mm']),
+ final_comparable_pairs=sum(x['after']['pairs'] for r in s['mm'] for x in r['containment']['end']))
+save(HERE/'aggregate-audit.json',dict(aggregate=aggregate,runs=runs))
+base=read(HERE/'before/round2-receipt-hashes.json')
+old=HERE.parent/'2026-10-06-operators-round2'
+changed=[name for name,h in base.items() if not (old/name).exists() or hashlib.sha256((old/name).read_bytes()).hexdigest()!=h]
+assert not changed,changed
+assert subprocess.check_output(['git','diff','--cached','--name-only'],cwd=ROOT,text=True)==''
+state=read(HERE/'before/state.json')
+for name in ('doc/plans/2026-10-05-operators-update.md','doc/Philosophy.md','doc/Architecture.md'):
+ assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==state['docs'][name]
+sourcehash=hashlib.sha256((HERE/'delivered-source/source.json').read_bytes()).hexdigest()
+counts=s['counts'];gate='passed' if v['standing_gate_passed'] else 'failed'
+readme=f'''# Operators update, round 2b
+
+**Status: measured candidate; standing gate {gate}. Held for Claude's review. No commit or push.**
+
+Started from the frozen round-2 manifest
+`63d68a9b9c38d14470293e12e7d7e85103c24bfa7572d605babafed0c7e7043a`.
+All thirty predeclared, unseeded trainings completed without retry, replacement
+or tuning. The delivered source and measurement helpers matched throughout.
+The round-2 receipt is unchanged. The plan, Philosophy and the previously
+corrected Architecture retain their starting hashes.
+
+## Changes
+
+Only strictly lower reconstruction `R` keeps explore; a tie keeps greedy.
+The SCG advantage remains the detached total difference `Δ(R+E+A)`, with the
+same registration, reduction, single joint departure and `K·R` correction.
+The audit records both trial components, the keep's reconstruction decision,
+the advantage sign, and answer-driven credit against the keep. The answer-owned
+reader trains on both detached trial roots. Trial publication restores that
+trial's own narrowing evidence before its training step.
+
+The handoff preserves the leaf event and activation magnitude, changing only
+sign where a field operation reached the word. Tied poles retain the prior
+sign. Explicit-pole grammar retains the pair. Reference-slab evidence uses the
+signed magnitude, saturated exactly as in the landing; an untouched word has
+bitwise-identical evidence to the native scalar conversion. Four consumer
+paths are declared and counted below. The concept-only closing image is
+unchanged: XOR_grammar and MM_grammar have fourteen form-content coordinates
+inside the twenty-two-coordinate carrier, zero concept-complement width and
+an identically zero image.
+
+The order-zero containment audit intersects the postings of every word's
+positive-net parts to enumerate every distinct containing row. Equal sets are
+checked both ways and empty sets against all rows; self pairs are omitted.
+Counts and maximum coordinate violations are reported before and after
+placement snapshots. The current code remains the join `L`; no centroid pass
+or higher-order enforcement is introduced. The focused `a`, `ab`, `ac` fixture
+has two nontrivial comparable pairs, zero violations, and incomparable `ab`/`ac`.
+It also detects an injected pre-placement violation and a zero post-placement
+result. The [catalogue's fold table](../../specs/2026-09-29-operator-catalogue.md#123-operators-update-round-2b-2026-10-06-review-candidate)
+states each fold's monotonicity and the conditions of the guarantee.
+
+## Freeze and verification
+
+The [source manifest](delivered-source/source.json) covers 701 files; SHA-256
+`{sourcehash}`. The [source archive](delivered-source/source.zip),
+[diff from frozen round 2](delivered-source/changes.patch),
+[measurement-helper hashes](delivered-source/measurement-helpers.json),
+[complete old/new test texts](delivered-source/test-ports.json) and
+[seed-call audit](delivered-source/seed-port-audit.json) identify the candidate.
+No existing test seed changed. The only explicit replay seeds belong to the
+separate, requested MM comparison.
+
+The [full sweep](full-sweep/result.json) ran once on this delivered source:
+**{v['sweep']['completed']}/{v['sweep']['selected']} cases completed**, outcomes
+{v['sweep']['outcomes']}, in {v['sweep']['seconds']:.1f} seconds. Normal slow
+exclusions and the weekly slow-record warning remain in the raw result.
+[Focused checks](focused-final.log): 52 passed, one skipped. The initial
+freeze was retained under `development/initial-freeze/` when the ownership
+report's reader-row wording was corrected before the full sweep; no gate
+training used it.
+
+## Gate and all thirty trainings
+
+| Gate | 6.8 landing | Round 2b |
+| --- | ---: | ---: |
+| XOR class | 7/10 | {counts['class_pass']}/10 |
+| XOR reconstruction | 9/10 | {counts['reconstruction_pass']}/10 |
+| XOR joint, reported | 6/10 | {counts['joint']}/10 |
+| Sum control | 10/10 | {counts['sum_pass']}/10 |
+| MM_xor, live | 10/10 | {counts['mm_pass']}/10 |
+| Full sweep | green | green |
+| Sentence-path perception gradient | 0 | {0 if v['zero_sentence_path_gradient'] else 'nonzero'} |
+| Code displacement | 0 | {0 if v['zero_code_displacement'] else 'nonzero'} |
+| Ownership conflicts | 0 | {0 if v['zero_ownership_conflicts'] else 'nonzero'} |
+
+[Validation](results-validation.json), [summary](measurements/summary.json),
+[process plan](measurements/plan.json) and [campaign log](campaign-process.log)
+retain the unchanged bars, budgets, all processes and every failure. Each XOR
+training supplies both original bars; class is read from its committed greedy
+root. Sum was read before XOR and MM. Bands: MSE below .05 is at zero; within
+.02 of .25 is at one quarter; remaining values below/above .25 are between/above.
+
+| XOR run | MSE | Band | Correct | Multisets | Class / reconstruction | Final operators |
+| --- | ---: | --- | ---: | ---: | --- | --- |
+'''
+for x in s['xor']:
+ ops=', '.join(sorted({o for row in x['operator_names'] for o in row}))
+ readme+=f"| [{x['run']}](measurements/xor-{x['run']:02}/run.log) | {x['mse']:.9g} | {x['band']} | {x['correct']}/4 | {x['recovered']}/4 | {'pass' if x['class_pass'] else 'fail'} / {'pass' if x['reconstruction_pass'] else 'fail'} | {ops} |\n"
+readme+='\n| Sum run | MSE | Band | Control |\n| --- | ---: | --- | --- |\n'
+for x in s['sum']:readme+=f"| [{x['run']}](measurements/sum-{x['run']:02}/run.log) | {x['mse']:.9g} | {x['band']} | {'pass' if x['sum_bar'] else 'fail'} |\n"
+readme+='\n| MM run | Epochs | Best MSE | Final MSE | Gate |\n| --- | ---: | ---: | ---: | --- |\n'
+for x in s['mm']:readme+=f"| [{x['run']}](measurements/mm-{x['run']:02}/run.log) | {x['calls']} | {x['best']:.9g} | {x['last']:.9g} | {'pass' if x['passed'] else 'fail'} |\n"
+readme+='''
+## Credit, reader exposure and consumers
+
+Every run's `run-audit.json` retains the two trial components and decisions,
+nonzero departures by walk and action, per-epoch chooser logit ranges, reader
+row masks, and final committed training operators with both the selecting `R`
+and credited total. The evaluation operators and selecting costs are retained
+in each gate observation. The [aggregate audit](aggregate-audit.json) and
+[tenth-run audit](measurements/audit-summary.json) summarize the same trainings.
+
+'''
+for kind in ('xor','sum'):
+ a=aggregate[kind]
+ readme+=f"{kind.upper()}: {a['counts'].get('nonzero_advantage',0):,} nonzero advantages; {a['counts'].get('policy_against_keep',0):,} credits against the keep, including {a['counts'].get('answer_against_keep',0):,} where adding the answer changes the credit direction. Reader exposure: {a['reader_trials']:,} trial steps and {a['reader_rows']:,} active rows.\n\n"
+readme+='| Consumer, calls with a pair available | XOR total | Sum total | MM total |\n| --- | ---: | ---: | ---: |\n'
+for k in ('_attention_sentence_payload','_pushed_word_slab:poles','commit_word_reference_slab:per_word','commit_word_reference_slab:whole_slab'):
+ readme+=f"| `{k}` | {aggregate['xor']['pole_consumers'].get(k,0)} | {aggregate['sum']['pole_consumers'].get(k,0)} | {aggregate['mm']['pole_consumers'].get(k,0)} |\n"
+readme+='\nThe explicit-pole branch is covered by focused tests; these gates use codes. The unchanged MM_xor gate records zero calls to all four consumers. This contradicts the hand-off’s specific reference-slab attribution; the paired trajectory still differs and MM remains a live gate. A separate no-training call-profile check distinguishes MM_xor from MM_grammar and is retained in consumer-path-check.json.\n\n'
+for k in ('xor','sum','mm'):
+ a=aggregate[k];readme+=f"{k.upper()} containment: {a['final_comparable_pairs']} comparable pairs across final banks; maximum observed before/after violation {a['largest_containment_violation']}. Zero pairs in a bank are vacuous; the focused containment fixture supplies the nontrivial check.\n\n"
+readme+='''## Three paired MM replays
+
+[Plan, construction hashes and trajectory comparisons](paired-mm/result.json).
+Seeds 0, 1 and 2 were fixed before execution; both versions ran all 200 epochs
+at the unchanged learning rate .01, even after crossing the convergence bar.
+All three pairs have identical construction parameters and RNG state, but
+all differ at the first forward and every recorded epoch. The 6.8 landing is
+`42daf96f454a30a3633054151e4ba8d498cd3b59`. Its source archive, six complete
+trajectories, process metadata and logs are retained under `paired-mm/`.
+The §5 identity amendment does **not** apply; MM's ten gate trainings count.
+These six replay trajectories are separate from the thirty unseeded gates.
+
+## Disjunction residual and narrowing observation
+
+[Fixture results](disjunction-result.json), [old/new handoff bodies](handoff-bodies.json)
+and [diagnostic log](disjunction-cause-process.log) were recorded before any
+of the thirty trainings. The fixture uses the frozen round-2 configuration,
+one captured initialization reused for each variant, no optimizer steps,
+a forced disjunction, and the observed `not/and/or/descend` field prefix.
+The corrected handoff **does not restore this negative-pole disjunction**:
+its reconstruction costs remain .01148–.01549 and it recovers 0/4 multisets.
+
+The residual is downstream: `InterpretLayer.forward` resolves a reference as
+`object_atoms * activation`. The preserved negative activation still negates
+the object form seen by the binding kernel. For disjunction, the direction
+of `−u−v−u*v` differs from the negation of `u+v−u*v`, so positive dictionary
+pairs cannot exactly recompose it. Two negated operands cancel their signs
+in conjunction's product, which explains why that failure is asymmetric.
+A diagnostic that uses activation magnitude only at interpretation recovers
+4/4 multisets and zero argmin recomposition residual. It is **not installed**:
+interpretation, the binding kernel and pair search remain the frozen-round-2
+mechanisms, as this hand-off permits a residual to be reported. The fresh
+untrained decoder's policy costs are retained separately from exact pair
+recomposition and the grammar multiset readback; no trained landing cost is
+claimed for that untrained diagnostic.
+
+The [saved-trace recheck](round2-narrowing-recheck.json) does not confirm §15's
+passing-run `divide` observation. All 40 final round-2 evaluation sentences
+choose `descend` for the two-word bracket, including every passing run.
+Failing disjunction runs have the field prefix, but passing conjunction run 3
+has it too. Action 0 is divide and action 1 descend in the frozen implementation.
+Divide requires a both-pole bracket; descend is available when the bracket has
+parts. The claimed divide/descend distinction therefore has no supported
+causal explanation in the saved final traces.
+
+## Documents and review boundary
+
+GradientFlow records the reconstruction keep, total-cost credit, both reader
+trials, pole-only handoff, residual and complete consumer census. Catalogue
+§12.3 records containment and fold monotonicity. FutureWork and todo carry the
+remaining interpretation issue, centroid placement and later rounds. The
+round-2 receipt, plan, Philosophy and existing Architecture corrections are
+preserved. Source, tests, archives, all measurements and failures are held for
+Claude's review; no commit, push or parent submodule bump was performed.
+'''
+(HERE/'README.md').write_text(readme)
+# Add final empirical status without replacing the scheme text.
+p=ROOT/'doc/GradientFlow.md';p.write_text(p.read_text()+f"\nThe round-2b campaign completed all thirty unseeded trainings: class {counts['class_pass']}/10, reconstruction {counts['reconstruction_pass']}/10, MM {counts['mm_pass']}/10, sum {counts['sum_pass']}/10. Its standing gate {gate}; the sweep is green and the receipt records all ownership checks. All three paired MM trajectories differ from the landing at the first forward, so MM is live. The candidate remains uncommitted for review.\n")
+p=ROOT/'todo.md';p.write_text(p.read_text().replace('**2 credit — round 2 rejected; round 2b in review preparation**',f"**2 credit — round 2 rejected; round 2b measured, gate {gate}, held for Claude review**"))
+patch=[]
+for name in state['docs']:
+ before=(HERE/'before'/name).with_suffix('.md.txt')
+ if not before.exists():
+  matches=list((HERE/'before').rglob(Path(name).name+'.txt'))
+  if not matches:continue
+  before=matches[0]
+ after=ROOT/name
+ if before.read_bytes()!=after.read_bytes():
+  patch.extend(difflib.unified_diff(before.read_text().splitlines(True),after.read_text().splitlines(True),fromfile='before/'+name,tofile='after/'+name))
+(HERE/'documentation.patch').write_text(''.join(patch))
+(HERE/'review-changes.patch').write_text((HERE/'delivered-source/changes.patch').read_text()+''.join(patch))
+save(HERE/'review-state.json',dict(head=state['head'],candidate_manifest_sha256=sourcehash,
+ round2_receipt_unchanged=True,round2_files_checked=len(base),plan_unchanged=True,philosophy_unchanged=True,
+ architecture_unchanged=True,index_empty=True,commits=False,pushes=False,parent_bump=False,
+ documents={n:hashlib.sha256((ROOT/n).read_bytes()).hexdigest() for n in state['docs']}))
+print(json.dumps(dict(status=gate,counts=counts,aggregate=aggregate)))

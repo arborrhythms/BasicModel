@@ -1,0 +1,408 @@
+--- round2d/bin/AnswerComparison.py
++++ round2e/bin/AnswerComparison.py
+@@ -0,0 +1,68 @@
++"""Independent answer parameters for loss-side comparison of sentence trials."""
++from types import SimpleNamespace
++
++import torch
++from torch import nn
++
++
++class _ReaderCall(nn.Module):
++    """Expose the existing reader method to the public functional-call API."""
++    def __init__(self, model):
++        super().__init__()
++        self.model = model
++
++    def forward(self, *args, **kwargs):
++        return self.model._sentence_reader_error(*args, **kwargs)
++
++
++class AnswerComparison(nn.Module):
++    """Same reading map, independent output-owned weights; never a public head.
++
++    Copies are taken before either reader's first update. Allocation consumes
++    no RNG and preserves tied parameter aliases. The temporary functional
++    call restores all presented parameter bindings before returning.
++    """
++    def __init__(self):
++        super().__init__()
++        self.weights = nn.ParameterDict()
++
++    def sync(self, model):
++        available = tuple(model.parameters())
++        owned = model.objective_parameter_groups(
++            SimpleNamespace(param_groups=[{'params': available}]))['output']
++        comparison = {id(p) for p in self.parameters()}
++        source = {id(p) for p in owned} - comparison
++        fresh = model.__dict__.setdefault('_fresh_synthesis_params', [])
++        for name, parameter in model.named_parameters():
++            if id(parameter) not in source:
++                continue
++            key = name.replace('.', '/')
++            if key not in self.weights:
++                self.weights[key] = nn.Parameter(parameter.detach().clone())
++                fresh.append(self.weights[key])
++
++    def forward(self, model, *args, **kwargs):
++        self.sync(model)
++        copies = {id(model.get_parameter(name.replace('/', '.'))): value
++                  for name, value in self.weights.items()}
++        # Visit each physical module once. functional_call's automatic tied
++        # expansion repeats setters for module aliases and can restore the
++        # replacement rather than the original binding. Explicitly cover all
++        # parameter attributes, including ties across distinct modules.
++        parameters = {'model.' + (path + '.' if path else '') + name: copies[id(value)]
++                      for path, module in model.named_modules()
++                      for name, value in module.named_parameters(recurse=False, remove_duplicate=False)
++                      if id(value) in copies}
++        return torch.func.functional_call(_ReaderCall(model), parameters, args, kwargs,
++                                          tie_weights=False)
++
++    def _load_from_state_dict(self, state, prefix, *args, **kwargs):
++        # The corresponding presented reader can have lazily allocated widths.
++        # Restore the saved comparison bank without drawing an initialization.
++        start = prefix + 'weights.'
++        for name, value in state.items():
++            if name.startswith(start):
++                key = name[len(start):]
++                if key not in self.weights:
++                    self.weights[key] = nn.Parameter(torch.empty_like(value))
++        super()._load_from_state_dict(state, prefix, *args, **kwargs)
+--- round2d/bin/Models.py
++++ round2e/bin/Models.py
+@@ -2453,6 +2453,8 @@
+         self.reconstruction_scope = self._understanding_reconstruction_scope()
+         self.reconstruct_in_loop = self.reconstruction_scope == 'understanding'
+         self.answer_record_reader = None
++        from AnswerComparison import AnswerComparison
++        self.comparison_reader = AnswerComparison() if self.word_brackets else None
+         if self.word_brackets and not self.answer_synthesis:
+             from SentenceUnderstanding import SentenceRecordReader
+             width = int(self.conceptualSpace.muxedSize)
+@@ -2613,7 +2615,8 @@
+             getattr(discourse, 'predictor', None), getattr(discourse, '_inter_predictor', None),
+             getattr(discourse, 'word_predictor', None)])
+         output = parameters([getattr(self, 'outputSpace', None),
+-            getattr(self, 'answer_attention', None), getattr(self, 'answer_record_reader', None)])
++            getattr(self, 'answer_attention', None), getattr(self, 'answer_record_reader', None),
++            getattr(self, 'comparison_reader', None)])
+         synthesis = getattr(self, 'synthesis_parameters', None)
+         if synthesis is not None:
+             output.update(id(p) for p in synthesis() if id(p) in available)
+@@ -2775,7 +2778,7 @@
+         # the ``self.spaces`` walk above misses their params -- collect them
+         # explicitly (deduped). Absent / gate-off => the attr is None => no
+         # extra params => byte-identical optimizer state.
+-        for _att_name in ("answer_attention", "answer_record_reader"):
++        for _att_name in ("answer_attention", "answer_record_reader", "comparison_reader"):
+             _att = getattr(self, _att_name, None)
+             if _att is not None:
+                 for p in _att.parameters():
+@@ -13765,6 +13768,7 @@
+         self._sentence_answer_cost = None
+         self._sentence_run_active = True
+         self._sentence_reader_updates = 0
++        self._sentence_comparison_reader_updates = 0
+         self._open_sentence_slot = None
+         self._sentence_reconstruction = self._sentence_ends and self.reconstruct_in_loop
+         keep_ideas = self._recon_keep_ideas
+@@ -19692,7 +19696,7 @@
+ 
+         Both trials were costed at one parameter version. The uniform
+         departure draw is independent of the chooser's probability; this is
+-        the importance correction K*R for uniform action and round draws.
++        the correction K*R_walk*W for uniform walk, round and action draws.
+         The scorer's features are detached, so the ordinary reconstruction
+         owner can train the chooser without writing perception or operators.
+         Exact ties register no term and supply no momentum-only update.
+@@ -20074,6 +20078,29 @@
+         return cost, reconstruction, observation, pending
+ 
+     def _sentence_answer_error(self, state, sid, active, observation, *, registry=None):
++        """The presented reader supplies output training; its twin supplies A."""
++        presented = Error(row_mask=active)
++        self._sentence_reader_observation = None
++        self._sentence_comparison_registry = Error(row_mask=active)
++        cost = BasicModel._sentence_reader_error(self, state, sid, active, observation,
++                                               registry=presented)
++        if cost is None:
++            return None
++        presented_read = dict(mse=self._sentence_answer_raw_cost.detach(),
++                              predictions=self._sentence_answer_predictions.detach())
++        if registry is not None:
++            registry.merge(presented)
++        reader = getattr(self, 'comparison_reader', None)
++        if reader is not None:
++            cost = reader(self, state, sid, active, observation,
++                          registry=self._sentence_comparison_registry)
++        self._sentence_reader_observation = dict(presented=presented_read,
++            comparison=dict(mse=self._sentence_answer_raw_cost.detach(),
++                            predictions=self._sentence_answer_predictions.detach()))
++        self._sentence_answer_cost = cost
++        return cost
++
++    def _sentence_reader_error(self, state, sid, active, observation, *, registry=None):
+         """A supplied answer trains only this trial's reader of the understanding.
+ 
+         The target is loss-side metadata: it never enters composition. Both
+@@ -20147,6 +20174,7 @@
+                             registry.error(name, numerator/mean_count, baseline/mean_count,
+                                 row=b, entry_weight=count, weight=rec['weight'], objective='output')
+                 self._sentence_answer_raw_cost = torch.where(mask, error, torch.zeros_like(error))
++                self._sentence_answer_predictions = surface.detach()
+                 self._sentence_answer_cost = registry.total(objective='output')
+                 if destination is not None:
+                     destination.merge(registry)
+@@ -20163,6 +20191,7 @@
+             raise RuntimeError('sentence answer and supplied target do not align')
+         error = (pred - target.to(pred)).square().reshape(root.shape[0], -1).mean(-1)
+         self._sentence_answer_raw_cost = torch.where(active, error, torch.zeros_like(error))
++        self._sentence_answer_predictions = pred.detach()
+         self.loss.register(registry, 'answer', pred, target.to(pred), mask=active, category='prediction', objective='output')
+         self._sentence_answer_cost = registry.total(objective='output')
+         if destination is not None:
+@@ -20489,6 +20518,7 @@
+             paired_costs, cost_parts, attention_trials = [], [], []
+             pending_steps = []
+             reader_registries = []
++            comparison_registries, reader_observations = [], []
+             greedy_attention = getattr(self, '_attention_greedy', None)
+             attention_base = getattr(self, '_attention_words', None)
+             attention_spent = words.new_tensor([m.spent for m in getattr(self,'_attention_meters',())],dtype=torch.long)
+@@ -20578,6 +20608,8 @@
+                     pending_steps[-1] = (*pending_steps[-1], self._sentence_cost_registry,
+                         observation['decomposition_loss'], observation['walk_loss'])
+                     reader_registries.append(self._sentence_cost_registry)
++                    comparison_registries.append(self._sentence_comparison_registry)
++                reader_observations.append(self._sentence_reader_observation)
+                 from SentenceCredit import components
+                 parts = components(self._sentence_cost_registry,
+                     self._sentence_expectation_comparison, path[1][9][:,sid].sum(-1)*0,
+@@ -20595,11 +20627,18 @@
+                 self._sentence_trial, self._sentence_pullback = trial, pullback
+                 self._sentence_cost_registry = registry
+                 from SentenceCredit import reader_weights, reader_costs
++                self._sentence_comparison_reader_weights = reader_weights(
++                    torch.stack(cost_parts, 1), present, self._sentence_departure)
+                 self._sentence_reader_weights = reader_weights(
+-                    torch.stack(cost_parts, 1), present, self._sentence_departure)
++                    torch.stack(cost_parts, 1), present, None)
+                 self._sentence_reader_rows = present & (trial == 'explore')
+                 self._sentence_reader_costs = (reader_costs(reader_registries,
+                     self._sentence_reader_weights) if trial == 'explore' else {})
++                presented_step = any(v.requires_grad for v in self._sentence_reader_costs.values())
++                comparison_costs = (reader_costs(comparison_registries,
++                    self._sentence_comparison_reader_weights) if trial == 'explore' else {})
++                for name, value in comparison_costs.items():
++                    self._sentence_reader_costs[name] = self._sentence_reader_costs.get(name, 0) + value
+                 if greedy_attention is not None:
+                     from ModelAttention import handoff
+                     handoff(self, attention_trials[int(trial == 'explore')])
+@@ -20615,8 +20654,10 @@
+                 if trial == 'explore':
+                     loss = loss + self._compose_score_function_loss(path, torch.stack(paired_costs, -1))
+                 self._sentence_train_step(loss)
+-                if any(value.requires_grad for value in self._sentence_reader_costs.values()):
++                if presented_step:
+                     self._sentence_reader_updates += 1
++                if any(value.requires_grad for value in comparison_costs.values()):
++                    self._sentence_comparison_reader_updates += 1
+             try:
+                 (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+                     train_trial, active=present,
+@@ -20624,6 +20665,7 @@
+             finally:
+                 pending_steps.clear()
+                 reader_registries.clear()
++                comparison_registries.clear()
+                 self._sentence_pullback = None
+                 self._sentence_reader_rows = None
+                 self._sentence_reader_costs = None
+@@ -20661,6 +20703,7 @@
+             audit['departure'] = self._sentence_departure
+             audit['actions'] = tuple(path.detach() for path in paths)
+             audit['narrowing_actions'] = tuple(None if r is None else r.actions.detach() for r in attention_trials)
++            audit['readers'] = tuple(reader_observations)
+             self._last_sentence_credit = audit
+             self.__dict__.setdefault('_sentence_credit_audits', []).append(audit)
+             from SentenceUnderstanding import SentenceUnderstanding
+--- round2d/bin/SentenceCredit.py
++++ round2e/bin/SentenceCredit.py
+@@ -96,7 +96,7 @@
+ 
+ 
+ def reader_weights(parts, active, draw):
+-    """One reader update: mean compose roots, otherwise the R-kept root."""
++    """Comparison exposure with a draw; presented kept-only exposure without one."""
+     wins = active & (parts[:, 1, 0] < parts[:, 0, 0])
+     compose = (torch.zeros_like(active) if draw is None else
+                active & (draw['compose_round'] >= 0))
+--- round2d/test/test_operators_round2c.py
++++ round2e/test/test_operators_round2c.py
+@@ -87,8 +87,11 @@
+         else:
+             torch.testing.assert_close(first['activation'],second['activation'],rtol=0,atol=0)
+             assert not torch.equal(first['root'],second['root'])
+-            assert model._sentence_reader_weights.tolist()==[[.5,.5]]*4
++            assert model._sentence_comparison_reader_weights.tolist()==[[.5,.5]]*4
++        kept=torch.stack((~audit['wins'],audit['wins']),-1).to(model._sentence_reader_weights)
++        torch.testing.assert_close(model._sentence_reader_weights,kept)
+         assert model._sentence_reader_updates==1
++        assert model._sentence_comparison_reader_updates==1
+         states=[optimizer.state[p]['step'] for p in model.objective_parameter_groups(optimizer)['output']
+                 if p in optimizer.state and 'step' in optimizer.state[p]]
+         assert states and all(float(s)==1 for s in states)
+--- round2d/test/test_operators_round2e.py
++++ round2e/test/test_operators_round2e.py
+@@ -0,0 +1,124 @@
++"""Two answer-owned readers: kept-only presentation and paired comparison."""
++from types import SimpleNamespace
++
++import torch
++from torch import nn
++
++
++def test_comparison_copies_tied_parameters_without_rng_and_restores_presentation():
++    from AnswerComparison import AnswerComparison
++    class Model(nn.Module):
++        def __init__(self):
++            super().__init__()
++            self.reader=nn.Linear(2,1)
++            self.alias=self.reader
++            self.comparison_reader=AnswerComparison()
++        def objective_parameter_groups(self, optimizer):
++            return dict(output=tuple(self.parameters()))
++        def _sentence_reader_error(self, root):
++            return self.alias(root.detach())
++    model=Model()
++    root=torch.tensor([[1.,2.]],requires_grad=True)
++    before=model._sentence_reader_error(root)
++    rng=torch.get_rng_state().clone()
++    comparison=model.comparison_reader(model,root)
++    assert torch.equal(rng,torch.get_rng_state())
++    torch.testing.assert_close(before,comparison,rtol=0,atol=0)
++    assert len(model.comparison_reader.weights)==2
++    assert not ({id(p) for p in model.reader.parameters()} &
++                {id(p) for p in model.comparison_reader.parameters()})
++    comparison.sum().backward()
++    assert root.grad is None and all(p.grad is None for p in model.reader.parameters())
++    assert all(p.grad is not None for p in model.comparison_reader.parameters())
++    with torch.no_grad():model.comparison_reader.weights['reader/bias'].add_(5.)
++    torch.testing.assert_close(model.comparison_reader(model,root),before+5)
++    torch.testing.assert_close(model._sentence_reader_error(root),before,rtol=0,atol=0)
++    assert model.reader.weight is model.alias.weight
++    restored=Model()
++    restored.load_state_dict(model.state_dict())
++    torch.testing.assert_close(restored.comparison_reader(restored,root),before+5)
++
++
++def test_presented_rejected_root_has_zero_weight_and_each_reader_steps_once():
++    from Layers import Error
++    from SentenceCredit import reader_weights,reader_costs
++    from ObjectiveOwnership import backward_owned
++    active=torch.tensor([True,True,True,False])
++    parts=torch.zeros(4,2,3)
++    parts[1,0,0]=1.
++    draw=dict(compose_round=torch.tensor([0,0,-1,-1]))
++    shown=reader_weights(parts,active,None)
++    judge=reader_weights(parts,active,draw)
++    torch.testing.assert_close(shown,torch.tensor([[1.,0.],[0.,1.],[1.,0.],[0.,0.]]))
++    torch.testing.assert_close(judge,torch.tensor([[.5,.5],[.5,.5],[1.,0.],[0.,0.]]))
++    p=nn.Parameter(torch.tensor(1.));q=nn.Parameter(torch.tensor(1.))
++    roots=[torch.tensor([1.,2.,3.,4.],requires_grad=True),torch.tensor([9.,8.,7.,6.],requires_grad=True)]
++    def costs(parameter,weights):
++        registries=[]
++        for root in roots:
++            registry=Error(row_mask=active)
++            registry.error('answer',(parameter*root.detach()).square(),1.,objective='output')
++            registries.append(registry)
++        return reader_costs(registries,weights)['output']
++    presented,comparison=costs(p,shown),costs(q,judge)
++    actual=torch.autograd.grad(presented+comparison,(p,q),retain_graph=True)
++    torch.testing.assert_close(actual[0],2*(1+64+9)/torch.tensor(3.))
++    torch.testing.assert_close(actual[1],2*((1+81)/2+(4+64)/2+9)/torch.tensor(3.))
++    optimizer=torch.optim.Adam([p,q],lr=.01)
++    backward_owned({'output':presented+comparison},{'output':(p,q)})
++    optimizer.step()
++    assert optimizer.state[p]['step']==optimizer.state[q]['step']==1
++    assert all(root.grad is None for root in roots)
++
++
++def test_sentence_advantage_reads_comparison_and_optimizer_owns_both(monkeypatch):
++    from test_mm_xor import _fresh_model
++    model,_,data=_fresh_model('data/XOR_grammar.xml')
++    try:
++        from AnswerComparison import AnswerComparison
++        compare=AnswerComparison.forward
++        changed=[]
++        def different_reader(reader,model,*args,**kwargs):
++            reader.sync(model)
++            if not changed:
++                key=next(k for k in reader.weights if k.endswith('_readout_bias'))
++                with torch.no_grad():reader.weights[key].add_(.3)
++                changed.append(True)
++            return compare(reader,model,*args,**kwargs)
++        monkeypatch.setattr(AnswerComparison,'forward',different_reader)
++        original=model._sentence_answer_error
++        observations=[]
++        def answer(*args,**kwargs):
++            cost=original(*args,**kwargs)
++            if cost is not None:
++                observations.append((cost.detach().clone(),
++                    model._sentence_comparison_registry.total(objective='output').detach().clone()))
++            return cost
++        # _sentence_path_cost deliberately dispatches the class method.
++        from Models import BasicModel
++        monkeypatch.setattr(BasicModel,'_sentence_answer_error',lambda self,*a,**k:answer(*a,**k))
++        optimizer=model.getOptimizer(lr=.01)
++        model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
++        assert len(observations)==2
++        for returned,judge in observations:torch.testing.assert_close(returned,judge,rtol=0,atol=0)
++        audit=model._last_sentence_credit
++        for i,(_,judge) in enumerate(observations):
++            torch.testing.assert_close(audit['components'][:,i,2],judge,rtol=0,atol=0)
++        bank=tuple(model.comparison_reader.parameters())
++        owners=model.objective_parameter_groups(optimizer)
++        assert bank and all(any(p is q for q in owners['output']) for p in bank)
++        assert not any(p is q for p in bank for q in owners['reconstruction'])
++        assert model._sentence_reader_updates==model._sentence_comparison_reader_updates==1
++        assert {float(optimizer.state[p]['step']) for p in bank if p in optimizer.state}=={1.}
++        assert all(r is not None for r in audit['readers'])
++        assert any(not torch.equal(r['presented']['mse'],r['comparison']['mse']) for r in audit['readers'])
++        # A later comparison read can never become the ordinary forward head.
++        record=model._last_sentence_understanding
++        state=(record.root,record.end_slots,record.end_depth)
++        before=model._forward_head(None,sentence_state=state,understanding=record).materialize().detach().clone()
++        with torch.no_grad():
++            for parameter in bank:parameter.add_(3.)
++        after=model._forward_head(None,sentence_state=state,understanding=record).materialize().detach()
++        torch.testing.assert_close(after,before,rtol=0,atol=0)
++    finally:
++        model.End();model.symbolSpace.soft_reset()
+--- round2d/test/test_review14_contracts.py
++++ round2e/test/test_review14_contracts.py
+@@ -145,7 +145,7 @@
+     from pathlib import Path
+     from bounded_tests import run_guarded, GIB
+     root=Path(__file__).resolve().parents[1]
+-    receipt=root/'doc/benchmarks/2026-10-06-operators-round2d'
++    receipt=root/'doc/benchmarks/2026-10-06-operators-round2e'
+     prior=root/'doc/benchmarks/2026-10-03-operators-attention'
+     env=os.environ.copy()
+     env.update(PYTEST_PLUGINS='operators_gate_observer', MODEL_COMPILE='none',
+--- round2d/test/test_supplied_answer_training.py
++++ round2e/test/test_supplied_answer_training.py
+@@ -74,7 +74,11 @@
+         live = [names[id(p)] for p, g in zip(params, grads) if g is not None and bool(g.abs().any())]
+         assert not any(name.startswith('conceptualSpaces.') for name in live), live
+         assert not any('operation_layer.' in name for name in live), live
+-        readout = {id(p) for p in model.outputSpace.parameters()}
++        # The answer term in the advantage belongs only to the comparison
++        # reader; the presented map has its own kept-root training cost.
++        readout = {id(p) for p in model.comparison_reader.parameters()}
++        assert not any(id(p) in {id(q) for q in model.outputSpace.parameters()}
++                       and g is not None and bool(g.abs().any()) for p,g in zip(params,grads))
+         assert any(id(p) in readout and g is not None and bool(g.abs().any())
+                    for p, g in zip(params, grads)), live
+         measured.append(live)

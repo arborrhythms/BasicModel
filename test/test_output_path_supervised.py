@@ -212,6 +212,13 @@ def _answer_training_probe(m, opt, questions):
     initial_values = [p.detach().clone() for p in initial_params]
     observed, recorded = {}, {}
     backward, record = m._backward_training_loss, m.record_loss
+    constructions=[]
+    reverse_output=m.reverseOutput
+    def capture_construction(*args, **kwargs):
+        value=reverse_output(*args, **kwargs)
+        constructions.append(value)
+        return value
+    m.reverseOutput=capture_construction
 
     def record_probe(name, value, **kwargs):
         recorded[name] = value
@@ -225,17 +232,27 @@ def _answer_training_probe(m, opt, questions):
         return record(name, value, **kwargs)
 
     def backward_probe(total, amp_scaler=None, **kwargs):
-        if getattr(m, '_sentence_backward', False):
+        sentence = getattr(m, '_sentence_backward', False)
+        if sentence:
             assert 'output' not in recorded
-            return backward(total, amp_scaler, **kwargs)
+            reader = m._sentence_reader_costs
+            if not reader:
+                return backward(total, amp_scaler, **kwargs)
+            total = reader['output']
         params = _dedicated_answer_parameters(m)
         observed["params"] = params
         initial = dict(zip(map(id, initial_params), initial_values))
         observed["before"] = [initial.get(id(p), p.detach().clone()) for p in params]
         observed["total_grads"] = torch.autograd.grad(
             total, params, retain_graph=True, allow_unused=True)
+        answer_loss = total if sentence else recorded["output"]
         c = m._last_answer_construction
-        answer_loss = recorded["output"]
+        if sentence:
+            candidates=[value for value in constructions if value.actual.requires_grad]
+            grads=torch.autograd.grad(answer_loss, [value.actual for value in candidates],
+                                      retain_graph=True, allow_unused=True)
+            c=next((value for value,grad in zip(candidates,grads)
+                    if grad is not None and bool(grad.any())),c)
         observed["answer_loss"] = float(answer_loss.detach())
         observed["answer_requires_grad"] = answer_loss.requires_grad
         active = m.question_conditioners[str(m.conceptualSpace.stm.concept_dim)].weight
@@ -258,6 +275,7 @@ def _answer_training_probe(m, opt, questions):
                    batch_override=batch, questions=questions)
     finally:
         m.record_loss, m._backward_training_loss = record, backward
+        m.reverseOutput=reverse_output
     if "answer_loss" not in observed:
         # A no-answer batch can finish with trial steps alone. Keep the same
         # no-credit and unchanged-weight assertions without inventing a step.

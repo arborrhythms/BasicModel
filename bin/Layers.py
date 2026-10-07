@@ -9602,7 +9602,8 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
         residual = observed_roles - estimate.roles
         from Meaning import negative_image
         conceived, image = negative_image(observed_roles, estimate.roles, logits.sigmoid(),
-                                          gain=gain, object_mask=object_mask)
+                                          gain=gain, object_mask=object_mask,
+                                          form_width=getattr(self,"image_form_width",0))
         return {
             "estimate": estimate,
             "observation": observation,
@@ -11661,7 +11662,7 @@ class BracketExpectation(Layer):
         return depth_hat, payload_hat
 
     def sentence_prediction_cost(self, depths, payloads, mask, *,
-                                 documents=None, layout="stm", role_masks=None, sentence_kinds=None):
+                                 documents=None, layout="stm", role_masks=None, sentence_kinds=None, gain=1.):
         """Preview one sentence per row without observing either candidate.
 
         Only the pending predictions are scratch. Context, occurrences, LTM,
@@ -11672,6 +11673,7 @@ class BracketExpectation(Layer):
         like = next((p for p in payloads if p is not None), self._s_history)
         errors, contrast_errors = Error(row_mask=mask), Error(row_mask=mask)
         self._sentence_prediction_errors = (errors, contrast_errors)
+        self._sentence_comparison_errors = Error(row_mask=mask)
         if self._external_observations_suspended or not self.expectation_enabled:
             zero = like.new_zeros(len(payloads))
             return zero, zero.clone(), before
@@ -11722,6 +11724,9 @@ class BracketExpectation(Layer):
                             if kind is not None:
                                 errors.binary('kind', kind_logit, kind_logit.new_tensor(float(kind == 'relation')),
                                               row=b, category='expectation')
+                            from SentenceCredit import expectation_terms
+                            expectation_terms(self._sentence_comparison_errors,
+                                pred, logits, kind_logit, target, occupied, kind, row=b, gain=gain)
                             negatives = [p.detach().to(target).flatten()
                                          for _, p, _ in self._inter_context[b]]
                     else:

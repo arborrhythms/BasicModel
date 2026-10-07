@@ -1,0 +1,24 @@
+{
+  "changed_runtime_files": [
+    "bin/Models.py",
+    "bin/SentenceCredit.py"
+  ],
+  "changed_runtime_functions": {
+    "bin/Models.py": [
+      "BasicModel._compose_score_function_loss",
+      "BasicModel._run_sentence_word_bricks"
+    ],
+    "bin/SentenceCredit.py": [
+      "departure"
+    ]
+  },
+  "unchanged_credit_contract": {
+    "comparison": "b278c577172ea830358bed66bc4ee001ce78b982b752e1736e30bf72866fe494",
+    "components": "fc11449ac2b09db9483ae567c2bf571ec6586ae2fdfc25f304980bb5a207dcf8",
+    "expectation_terms": "72b32311942ddd6d32927d54dce63c29b2772dfd37b35567b307f128768df97a",
+    "score_function": "e848af3581a746ab25bd79a0446d203ab7c0d589bb26a00c65fa8334c52d3aec",
+    "reader_weights": "e6184316e3f6f975cf978a47e48d8281ff7c98879b6aec41114215b326160033",
+    "reader_costs": "c1315c6e70b0d04c43a6c8db6b3e8fd43df0705e5815fc3b6e35d1b9414e6593"
+  },
+  "postprocessor_sha256": "ac40004ba500874a5883177ff3a68dd4be859deaa18d864a30663af50c949d64"
+}

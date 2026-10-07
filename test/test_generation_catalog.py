@@ -223,11 +223,16 @@ def test_normal_supervised_output_respects_gradient_contract(tmp_path, monkeypat
         return record(name, value, **kwargs)
 
     def check_gradients(total, amp_scaler=None, **kwargs):
-        if getattr(model, '_sentence_backward', False):
+        sentence = getattr(model, '_sentence_backward', False)
+        if sentence:
             assert 'output' not in recorded
-            return backward(total, amp_scaler, **kwargs)
+            reader = model._sentence_reader_costs
+            if not reader:
+                return backward(total, amp_scaler, **kwargs)
+            loss = reader['output']
+        else:
+            loss = recorded['output']
         construction = model._last_answer_construction
-        loss = recorded["output"]
         assert loss.requires_grad and float(loss.detach()) > 0
         assert all(not field.end_state.requires_grad
                    for field in construction.derivation.sentence_states if field is not None)
@@ -263,10 +268,11 @@ def test_normal_supervised_output_respects_gradient_contract(tmp_path, monkeypat
                        batch_override=batch, questions=(What.supervised(0), What.supervised(1)))
         owned = [id(p) for group in optimizer.param_groups for p in group["params"]]
         stepped = [(name, norm) for name, p, before, norm in observed["reached"]
-                   if not torch.equal(p, before) and optimizer.state.get(p)]
+                   if 'output' in model._objective_gradient_writers.get(id(p), ())]
         # Generation may differentiate through an inverse to train its
-        # conditioner; the owned backward cannot step that inverse's weights.
+        # conditioner; only reconstruction may write that inverse's weights.
         assert not stepped
+        assert model._sentence_reader_updates == 1
         conditioner, before = observed["conditioner"]
         assert not torch.equal(conditioner, before) and optimizer.state.get(conditioner)
         assert all(owned.count(id(p)) == 1 for _, p, _, _ in observed["reached"])

@@ -1,0 +1,243 @@
+{
+  "jobs": [
+    {
+      "kind": "sum",
+      "run": 1,
+      "name": "sum-01"
+    },
+    {
+      "kind": "sum",
+      "run": 2,
+      "name": "sum-02"
+    },
+    {
+      "kind": "sum",
+      "run": 3,
+      "name": "sum-03"
+    },
+    {
+      "kind": "sum",
+      "run": 4,
+      "name": "sum-04"
+    },
+    {
+      "kind": "sum",
+      "run": 5,
+      "name": "sum-05"
+    },
+    {
+      "kind": "sum",
+      "run": 6,
+      "name": "sum-06"
+    },
+    {
+      "kind": "sum",
+      "run": 7,
+      "name": "sum-07"
+    },
+    {
+      "kind": "sum",
+      "run": 8,
+      "name": "sum-08"
+    },
+    {
+      "kind": "sum",
+      "run": 9,
+      "name": "sum-09"
+    },
+    {
+      "kind": "sum",
+      "run": 10,
+      "name": "sum-10"
+    },
+    {
+      "kind": "xor",
+      "run": 1,
+      "name": "xor-01"
+    },
+    {
+      "kind": "xor",
+      "run": 2,
+      "name": "xor-02"
+    },
+    {
+      "kind": "xor",
+      "run": 3,
+      "name": "xor-03"
+    },
+    {
+      "kind": "xor",
+      "run": 4,
+      "name": "xor-04"
+    },
+    {
+      "kind": "xor",
+      "run": 5,
+      "name": "xor-05"
+    },
+    {
+      "kind": "xor",
+      "run": 6,
+      "name": "xor-06"
+    },
+    {
+      "kind": "xor",
+      "run": 7,
+      "name": "xor-07"
+    },
+    {
+      "kind": "xor",
+      "run": 8,
+      "name": "xor-08"
+    },
+    {
+      "kind": "xor",
+      "run": 9,
+      "name": "xor-09"
+    },
+    {
+      "kind": "xor",
+      "run": 10,
+      "name": "xor-10"
+    },
+    {
+      "kind": "mm",
+      "run": 1,
+      "name": "mm-01"
+    },
+    {
+      "kind": "mm",
+      "run": 2,
+      "name": "mm-02"
+    },
+    {
+      "kind": "mm",
+      "run": 3,
+      "name": "mm-03"
+    },
+    {
+      "kind": "mm",
+      "run": 4,
+      "name": "mm-04"
+    },
+    {
+      "kind": "mm",
+      "run": 5,
+      "name": "mm-05"
+    },
+    {
+      "kind": "mm",
+      "run": 6,
+      "name": "mm-06"
+    },
+    {
+      "kind": "mm",
+      "run": 7,
+      "name": "mm-07"
+    },
+    {
+      "kind": "mm",
+      "run": 8,
+      "name": "mm-08"
+    },
+    {
+      "kind": "mm",
+      "run": 9,
+      "name": "mm-09"
+    },
+    {
+      "kind": "mm",
+      "run": 10,
+      "name": "mm-10"
+    }
+  ],
+  "selectors": {
+    "xor": [
+      "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+      "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+    ],
+    "mm": [
+      "test/test_mm_xor.py::TestMMXorConvergence::test_convergence"
+    ]
+  },
+  "epochs": {
+    "xor": 400,
+    "sum": 400,
+    "mm_maximum": 200
+  },
+  "seed": null,
+  "ownership": "xor-10; same single training consumed by both unchanged bars",
+  "bands": {
+    "at_zero": "MSE < .05",
+    "at_quarter": "abs(MSE - .25) <= .02",
+    "between": "remaining MSE < .25",
+    "above_quarter": "remaining MSE > .25"
+  },
+  "comparison": {
+    "section22": {
+      "xor_class": 7,
+      "xor_reconstruction": 9,
+      "joint": 6,
+      "sum": 10,
+      "mm": 10
+    },
+    "section12": {
+      "xor_class": 0,
+      "xor_reconstruction": 7,
+      "joint": 0,
+      "sum": 10,
+      "mm": 10
+    },
+    "section13": {
+      "xor_class": 0,
+      "xor_reconstruction": 0,
+      "joint": 0,
+      "sum": 10,
+      "mm": 10
+    },
+    "section14": {
+      "xor_class": 1,
+      "xor_reconstruction": 8,
+      "joint": 1,
+      "sum": 10,
+      "mm": 10
+    },
+    "section17": {
+      "xor_class": 1,
+      "xor_reconstruction": 10,
+      "joint": 1,
+      "sum": 10,
+      "mm": 10
+    },
+    "section18": {
+      "xor_class": 0,
+      "xor_reconstruction": 10,
+      "joint": 0,
+      "sum": 10,
+      "mm": 10
+    },
+    "section20": {
+      "xor_class": 2,
+      "xor_reconstruction": 8,
+      "joint": 2,
+      "sum": 10,
+      "mm": 10
+    },
+    "closing69": {
+      "class_mse": 0.1147481948,
+      "reconstructed_sentences": 0,
+      "total_sentences": 4,
+      "ownership_conflicts": 0,
+      "prior_class": 9,
+      "prior_reconstruction": 5
+    }
+  },
+  "order": "Sum ten and read the 10/10 control; XOR ten; then unchanged raw-forward MM ten. Complete every declared run even if a gate misses.",
+  "worker_bytes": 8589934592,
+  "worker_timeout": 1800,
+  "maximum_workers": 3,
+  "aggregate_reservation_bytes": 25769803776,
+  "retries": 0,
+  "commits": false,
+  "script_sha256": "b4f33b45ac103178d69cb01e3351b0392ee1aa5d344a3cf581c85fb638088c34"
+}

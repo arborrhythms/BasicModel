@@ -1,0 +1,314 @@
+{
+  "dictionary": [
+    {
+      "stage": 0,
+      "rows": 6,
+      "dimension": 22,
+      "centered_singular_values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "symbol_concept_pairs": [],
+      "context": [],
+      "word_perceptual_support": [],
+      "cosine_matrix_rows": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "matrix_scope": "all rows",
+      "all_dictionary_pairs": {
+        "count": 30,
+        "mean": 0.0,
+        "mean_square": 0.0
+      },
+      "norms": {
+        "min": 0.0,
+        "max": 0.0,
+        "mean": 0.0
+      },
+      "vq_ema_update": false,
+      "cluster_size_file": null,
+      "cluster_size": null
+    },
+    {
+      "stage": 1,
+      "rows": 6,
+      "dimension": 22,
+      "centered_singular_values": [
+        1.3077760934829712,
+        0.702118992805481,
+        0.5715412497520447,
+        0.4272700548171997,
+        5.2777235026724156e-08,
+        3.722651342741301e-08
+      ],
+      "symbol_concept_pairs": [
+        {
+          "row": 0,
+          "concept": 2,
+          "symbol": "hello"
+        },
+        {
+          "row": 1,
+          "concept": 4,
+          "symbol": "world"
+        },
+        {
+          "row": 2,
+          "concept": 6,
+          "symbol": "there"
+        },
+        {
+          "row": 4,
+          "concept": 8,
+          "symbol": "loving"
+        }
+      ],
+      "context": [
+        {
+          "row": 0,
+          "occurrences": 510,
+          "context_width": 0,
+          "context_norm": 0.0,
+          "bootstrap_learning": false
+        },
+        {
+          "row": 1,
+          "occurrences": 510,
+          "context_width": 0,
+          "context_norm": 0.0,
+          "bootstrap_learning": false
+        },
+        {
+          "row": 2,
+          "occurrences": 510,
+          "context_width": 0,
+          "context_norm": 0.0,
+          "bootstrap_learning": false
+        },
+        {
+          "row": 4,
+          "occurrences": 510,
+          "context_width": 0,
+          "context_norm": 0.0,
+          "bootstrap_learning": false
+        }
+      ],
+      "word_perceptual_support": [
+        {
+          "row": 0,
+          "word": "hello",
+          "dimension": 14,
+          "percept_event_width": 22,
+          "nonzero_coordinates": 13,
+          "nonzero_fraction": 0.9285714285714286,
+          "minimum_absolute_value": 0.0,
+          "minimum_nonzero_absolute_value": 0.008033706806600094
+        },
+        {
+          "row": 1,
+          "word": "world",
+          "dimension": 14,
+          "percept_event_width": 22,
+          "nonzero_coordinates": 14,
+          "nonzero_fraction": 1.0,
+          "minimum_absolute_value": 0.014647685922682285,
+          "minimum_nonzero_absolute_value": 0.014647685922682285
+        },
+        {
+          "row": 2,
+          "word": "there",
+          "dimension": 14,
+          "percept_event_width": 22,
+          "nonzero_coordinates": 12,
+          "nonzero_fraction": 0.8571428571428571,
+          "minimum_absolute_value": 0.0,
+          "minimum_nonzero_absolute_value": 0.07643996179103851
+        },
+        {
+          "row": 4,
+          "word": "loving",
+          "dimension": 14,
+          "percept_event_width": 22,
+          "nonzero_coordinates": 14,
+          "nonzero_fraction": 1.0,
+          "minimum_absolute_value": 0.18102280795574188,
+          "minimum_nonzero_absolute_value": 0.18102280795574188
+        }
+      ],
+      "cosine_matrix_rows": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "matrix_scope": "all rows",
+      "all_dictionary_pairs": {
+        "count": 30,
+        "mean": 0.2980894561382363,
+        "mean_square": 0.22387100644181354
+      },
+      "norms": {
+        "min": 0.0,
+        "max": 1.375535249710083,
+        "mean": 0.7969428896903992
+      },
+      "vq_ema_update": false,
+      "cluster_size_file": null,
+      "cluster_size": null
+    }
+  ],
+  "roots": {
+    "shape": [
+      4,
+      22
+    ],
+    "values": [
+      [
+        0.36145979166030884,
+        0.13029281795024872,
+        0.006875579245388508,
+        0.23698890209197998,
+        0.6869524717330933,
+        0.3514501452445984,
+        0.38944607973098755,
+        0.05338721349835396,
+        0.0,
+        0.08639595657587051,
+        0.16567300260066986,
+        0.101267009973526,
+        0.03130427375435829,
+        0.008572220802307129,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.24216531217098236,
+        0.03910456597805023,
+        0.0871984139084816,
+        0.051789540797472,
+        0.9259908199310303,
+        0.0,
+        0.0,
+        0.04587975889444351,
+        0.0,
+        0.08211113512516022,
+        0.18891601264476776,
+        0.12509313225746155,
+        0.10903993993997574,
+        0.00274873455055058,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.3102825880050659,
+        0.2316626012325287,
+        0.00880217645317316,
+        0.20343486964702606,
+        0.17497989535331726,
+        0.641248881816864,
+        0.33430641889572144,
+        0.2447030246257782,
+        0.2095554918050766,
+        0.09428296983242035,
+        0.11222217977046967,
+        0.15634891390800476,
+        0.04430677369236946,
+        0.32145121693611145,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.39958640933036804,
+        0.1336485743522644,
+        0.21458077430725098,
+        0.08545566350221634,
+        0.4533874988555908,
+        0.0,
+        0.0,
+        0.4042263329029083,
+        0.21190519630908966,
+        0.17224369943141937,
+        0.2459784895181656,
+        0.37124595046043396,
+        0.2966562509536743,
+        0.19813258945941925,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    ],
+    "pairwise_cosines": [
+      [
+        1.0,
+        0.7985594272613525,
+        0.7261525392532349,
+        0.6208246350288391
+      ],
+      [
+        0.7985594272613525,
+        1.0,
+        0.3229740262031555,
+        0.7034522891044617
+      ],
+      [
+        0.7261525392532349,
+        0.3229740262031555,
+        1.0000001192092896,
+        0.5755961537361145
+      ],
+      [
+        0.6208246350288391,
+        0.7034522891044617,
+        0.5755961537361145,
+        1.0
+      ]
+    ],
+    "singular_values": [
+      1.699060082435608,
+      0.8289322853088379,
+      0.6273770928382874,
+      0.18017539381980896
+    ],
+    "centered_singular_values": [
+      0.8305789232254028,
+      0.6285440325737,
+      0.20320317149162292,
+      4.1594518052079366e-08
+    ]
+  },
+  "note": "No new forward or optimizer step; roots from the measured first trial and endpoint; dictionary pairs are cosine, not dot products."
+}

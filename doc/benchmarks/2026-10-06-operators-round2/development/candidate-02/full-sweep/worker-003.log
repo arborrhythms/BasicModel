@@ -1,0 +1,24 @@
+...................ss.sss....s...ss......ssss............F.............. [ 66%]
+....................................                                     [100%]
+=================================== FAILURES ===================================
+___________________ test_pair_trains_twice_and_commits_once ____________________
+test/test_compose_pair_driver.py:108: in test_pair_trains_twice_and_commits_once
+    assert (observed[0][1] != observed[1][1]).any(-1).all()
+E   assert tensor(False)
+E    +  where tensor(False) = <built-in method all of Tensor object at 0x150a32a30>()
+E    +    where <built-in method all of Tensor object at 0x150a32a30> = tensor([ True, False, False,  True]).all
+E    +      where tensor([ True, False, False,  True]) = <built-in method any of Tensor object at 0x14aaf1400>(-1)
+E    +        where <built-in method any of Tensor object at 0x14aaf1400> = tensor([[ 2, -1, -1, -1, -1, -1,  1,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,\n         -1, -1, -1, -1, -1, -1,  2, ...     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,\n         -1, -1, -1, -1, -1, -1, -1, -1]]) != tensor([[ 2, -1, -1, -1, -1, -1,  0,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,\n         -1, -1, -1, -1, -1, -1,  2, ...     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,\n         -1, -1, -1, -1, -1, -1, -1, -1]]).any
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_compiled_word_chunk.py::test_tensor_peer_ws_stages_distinct_word_local_property_views
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once
+1 failed, 95 passed, 12 skipped, 1 warning in 69.59s (0:01:09)

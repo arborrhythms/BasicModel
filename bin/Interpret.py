@@ -4,6 +4,13 @@ from Layers import GrammarLayer
 from Definitions import form_key
 
 
+def activate_code(atoms, activation, form_width):
+    """Interpret signed evidence without an additive inverse on the form."""
+    value = activation.unsqueeze(-1)
+    return torch.cat((atoms[..., :form_width] * value.abs(),
+                      atoms[..., form_width:] * value), -1)
+
+
 class InterpretLayer(GrammarLayer):
     rule_name = 'interpret'
     arity = 1
@@ -192,13 +199,20 @@ class InterpretLayer(GrammarLayer):
         self._field_pending.discard(word)
         return row
 
+    def activate(self, atoms, activation):
+        """Magnitude on form; signed evidence on the contextual complement."""
+        bank = getattr(self.owner, 'similarity_codebook', None)
+        derived = getattr(bank, 'mereology', None)
+        width = atoms.shape[-1] if derived is None else derived.percept_event_width
+        return activate_code(atoms, activation, width)
+
     def forward(self, word, *, order=None, occurrence=None, selected=None,
                 object_atoms=None, activation=None):
         if torch.is_tensor(word):
             if object_atoms is None or activation is None:
                 raise ValueError('interpret tensor face requires the resolved object bank')
             width = object_atoms.shape[-1]
-            return torch.cat((object_atoms * activation.unsqueeze(-1), word[..., width:]), -1)
+            return torch.cat((self.activate(object_atoms, activation), word[..., width:]), -1)
         from Spaces import _concept_alloc_of
         cs, word = self.owner, int(word)
         alloc, index = _concept_alloc_of(cs), cs.definitions
@@ -287,7 +301,7 @@ class InterpretLayer(GrammarLayer):
             if word_atoms is None or activation is None:
                 raise ValueError('interpret reverse requires the owned word bank')
             width = word_atoms.shape[-1]
-            return torch.cat((word_atoms * activation.unsqueeze(-1), obj[..., width:]), -1)
+            return torch.cat((self.activate(word_atoms, activation), obj[..., width:]), -1)
         words = self.owner.definitions.words(int(obj))
         if len(words) != 1:
             raise ValueError('object requires a lexical selection')

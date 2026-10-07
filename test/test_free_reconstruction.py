@@ -58,7 +58,12 @@ def test_free_trial_uses_no_reference_or_offsets_and_only_byte_cost(monkeypatch)
         model.runBatch(train=True,optimizer=optimizer,batchSize=4,split='train',
             batch_override=(model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)))
         assert calls == ['greedy', 'explore', 'greedy', 'explore']
-        assert {name for name in model._sentence_cost_registry._terms if name.startswith('reconstruction.')} == {'reconstruction.free_bytes', 'reconstruction.decomposition', 'reconstruction.walk_policy'}
+        reconstruction = {name for name in model._sentence_cost_registry._terms if name.startswith('reconstruction.')}
+        assert reconstruction - {'reconstruction.compose_score_function'} == {'reconstruction.free_bytes', 'reconstruction.decomposition', 'reconstruction.walk_policy'}
+        # Round 2 credits the single departure only when its owner-step total
+        # differs. The inverse's byte objective above remains witness-free.
+        if model._last_compose_score_function['advantage'].ne(0).any():
+            assert 'reconstruction.compose_score_function' in reconstruction
         audit = model.ownership_gradient_diagnostics(optimizer)
         assert audit['conflicts'] == 0
         decoder = [row for row in audit['parameters'] if 'generate_policy' in row['parameter']]

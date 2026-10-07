@@ -138,6 +138,9 @@ def test_declared_not_is_a_thought_act_not_an_observation(tmp_path, monkeypatch)
     discourse._last_expectation_comparisons[0] = ExpectationComparison(
         estimate, actual.roles, actual.role_mask, actual.roles - estimate.roles,
         actual.role_mask.float() - estimate.presence_logits.sigmoid(), None)
+    from Meaning import ClosingImage
+    model._closing_images = {0: ClosingImage.form(actual.roles,estimate.roles,
+        estimate.presence_logits.sigmoid(),form_width=0)}
     evidence = model._selected_thought_expectation(request, row=0)
     torch.testing.assert_close(evidence[:width], -request.roles[0])
     store = TernaryTruthStore(width, capacity=4)

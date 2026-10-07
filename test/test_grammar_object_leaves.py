@@ -26,7 +26,11 @@ def test_grammar_resolves_each_word_to_its_full_object_code(tmp_path, monkeypatc
     def observed(state, idea, row, order, activation, gate):
         if bool(gate.any()):
             owner = model._concept_owner()
-            expected = owner.similarity_codebook.lookup_rows(row[gate]) * activation[gate, None]
+            atoms = owner.similarity_codebook.lookup_rows(row[gate])
+            derived = getattr(owner.similarity_codebook, 'mereology', None)
+            width = atoms.shape[-1] if derived is None else derived.percept_event_width
+            expected = torch.cat((atoms[..., :width] * activation[gate, None].abs(),
+                                  atoms[..., width:] * activation[gate, None]), -1)
             torch.testing.assert_close(idea[gate], expected, rtol=0, atol=0)
             seen.extend(row[gate].tolist())
         return resolve(state, idea, row, order, activation, gate)

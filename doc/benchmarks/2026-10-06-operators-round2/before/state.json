@@ -1,0 +1,13 @@
+{
+  "head": "73cd7b71baeb64135c1e2e841b9bfc321339d8bc",
+  "parent_head": "c9670b545ff88ee1b8176aa44f6c192ad84b597c",
+  "status": " M doc/Architecture.md\n M doc/FutureWork.md\n M doc/GradientFlow.md\n M doc/Philosophy.md\n M todo.md\n?? doc/benchmarks/2026-10-06-operators-round2/\n?? doc/plans/2026-10-05-operators-update.md\n",
+  "docs": {
+    "doc/Architecture.md": "22c638000c06ad2a7f50ef75ee3aaa1761b498d86d94fcc3ece1f10706374b2a",
+    "doc/FutureWork.md": "b64081a55de5f3401285bbd6dbc5cb54abff89adca1633ca496d351570797d83",
+    "doc/GradientFlow.md": "10a48de1c136cc327d98985ef3f96196b7f3086489e26ad249d5815ae9a1115d",
+    "doc/specs/2026-09-29-operator-catalogue.md": "f7c1fb5adf43d5e0572bbc1492eb5293fbc90c321ad01a4d438e90d87a9059f9",
+    "todo.md": "0484a935f465bf6d8d7ef98be6420253d642113429ed1bcd353bbb8c0b01284a",
+    "doc/plans/2026-10-05-operators-update.md": "6f74be4e198a45c6f84837e04d258b50fc55cb2cddc06891ede3a7e71441c0d4"
+  }
+}

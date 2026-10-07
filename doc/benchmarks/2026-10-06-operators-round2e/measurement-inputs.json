@@ -1,0 +1,19 @@
+{
+  "measurement-protocol.json": "2ae0d85279fba76647961466eeefcea9c2b5f3622704ccedc3ca5fed1d135a6c",
+  "delivered-source/source.json": "3fd07f0cd516da3102867207614e11a9153638d37057bcc82a8c7ff821689106",
+  "delivered-source/source.zip": "822b49c8b966394af66846a60d850ada329f11175cd7c3570fedf31c8ae3e092",
+  "delivered-source/measurement-helpers.json": "e7d7a244bdead6560496157df52bf7eb82660654737cc56716bf709a5ad4e75b",
+  "full-sweep/result.json": "a4cad17314c7772c5fe806c3db20b33f51794ee87e6a6fb88dfa5c9786905302",
+  "full-sweep/initial-result.json": "1f445b9cab93145ac53b41419295e5d3c1fb5f657687a8d01ed3a7e5762dc9f9",
+  "full-sweep/continuation/result.json": "e2bbb934f142a0533041f3106f89a6aae1bf9bfa7098390a76aa3ce4581cac50",
+  "full-sweep/coverage-validation.json": "dc50bef644a8fa0a756ad46261971d2e103f3636fdc80056f52dfcba2cfd5c22",
+  "measurements/plan.json": "05720988dee77f726ea1f77741689975b344e5422beef47ea48d6aa000e5840d",
+  "measurements/source.json": "3fd07f0cd516da3102867207614e11a9153638d37057bcc82a8c7ff821689106",
+  "measurements/complete.json": "1c877783cb23cb1c8fd42c335e1dd5651c4e1df56dbe8af259047273dcc92339",
+  "measurements/sum-read-first.json": "7c43c7300efaef3cd9c6dfd38ccfc18afa5e07573271bbfba691850e3ebd9c8b",
+  "measurements/summary.json": "d5c35483037416e90050e0a53743e9976c440d955a579922cc0bd55924d88d8e",
+  "measurements/audit-summary.json": "4261c737a93cb3db30f722c77050cd212c39019a9b4a4b194c9e2096202a05f4",
+  "mm-first-forward/result.json": "fdf570ccc2f3b1c12e0d321cf226f68c54554b459bea1a1265f99379a869031e",
+  "paired-mm/result.json": "595cc94ac5b8c16fc0894e240413a83c5abab0c81ba06ac7a61a6f095fc8e896",
+  "runtime-contract-check.json": "5411e7820c4b86f5be54d657ed2b9e134cc3d64372232cda2ed069acf153c37d"
+}

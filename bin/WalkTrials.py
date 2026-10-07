@@ -47,38 +47,6 @@ def output_pair(realize,score):
     return result,audit
 
 
-def narrowing_pair(read, score):
-    """Compare complete percept walks before admission or any owner update."""
-    from SentenceCompose import select_rows
-    greedy = read()
-    first = score(greedy)
-    departure = departure_at(greedy.alternatives)
-    explore = read(exploit=greedy, departure=departure)
-    second = score(explore)
-    costs = torch.stack((first, second), -1).detach()
-    wins = (departure >= 0) & (costs[:, 1] < costs[:, 0])
-    table = type(greedy.table)(*select_rows(greedy.table, explore.table, wins))
-    kept = type(greedy)(table, *select_rows(greedy[1:], explore[1:], wins))
-    return kept, dict(costs=costs, wins=wins, departure=departure,
-        greedy=greedy.actions.detach(), explore=explore.actions.detach(),
-        probabilities=explore.probabilities,
-        scale=(greedy.alternative_counts * greedy.alternatives.sum(-1, keepdim=True)).detach())
-
-
-def attention_score_function(audit):
-    """Uniform departure's K*R correction with the greedy walk as baseline."""
-    probability = audit['probabilities']
-    advantage = (audit['costs'][:, 1] - audit['costs'][:, 0]).detach()
-    rounds = torch.arange(probability.shape[1], device=probability.device)
-    mask = rounds[None] == audit['departure'][:, None]
-    trained = mask & advantage.ne(0)[:, None]
-    # Exact ties do not attach a zero gradient to a momentum-owned chooser.
-    term = (torch.where(trained, probability * audit['scale'] * advantage[:, None], 0.).sum(-1)
-            if bool(trained.any()) else probability.new_zeros(probability.shape[0]))
-    return term, dict(costs=audit['costs'], advantage=advantage, mask=mask,
-        actions=audit['explore'], probabilities=probability.detach(), scale=audit['scale'])
-
-
 def _copy_containers(value):
     """Copy mutable scratch containers while retaining each live graph."""
     from collections import deque

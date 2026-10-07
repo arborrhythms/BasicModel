@@ -173,7 +173,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                  and getattr(node['rule'], 'clause_form', None) != 'VP'))
 
     def recover(root, *, top=False):
-        polarity = True
+        pair = metadata(root['leaves'])['evidence']
+        polarity = pair[0] >= pair[1]
         excluded = False
         mode = 'assertive'
         node = head(root, clause=True)

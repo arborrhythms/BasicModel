@@ -1,0 +1,1285 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_per_batch_state_isolation.py::test_last_svo_b2_isolation",
+    "test/test_per_batch_state_isolation.py::test_last_svo_clear_per_row",
+    "test/test_per_batch_state_isolation.py::test_last_svo_ensure_batch_grows_clears",
+    "test/test_per_batch_state_isolation.py::test_sentence_completed_b2_isolation",
+    "test/test_per_batch_state_isolation.py::test_stm_arm_per_row",
+    "test/test_per_batch_state_isolation.py::test_ensure_microbatch_grows_sentence_completed_to_new_B",
+    "test/test_per_batch_state_isolation.py::test_reset_clears_both",
+    "test/test_per_row_hard_reset.py::test_dispatch_per_row_reset_skips_rows_without_hard_eos",
+    "test/test_per_row_hard_reset.py::test_dispatch_per_row_reset_empty_or_all_false_is_noop",
+    "test/test_per_row_hard_reset.py::test_per_row_hard_reset_clears_only_target_row_state",
+    "test/test_per_row_hard_reset.py::test_runEpoch_dispatches_per_row_reset_per_batch",
+    "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+    "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+    "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+    "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_compiles_and_replays_under_cudagraphs",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_actually_uses_cudagraphs",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_emits_no_dtoh_under_profiler",
+    "test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N",
+    "test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix",
+    "test/test_percept_store.py::TestRadixTrie::test_empty_trie_returns_none",
+    "test/test_percept_store.py::TestRadixTrie::test_insert_returns_false_on_duplicate",
+    "test/test_percept_store.py::TestRadixTrie::test_insert_splits_existing_edge_at_partial_overlap",
+    "test/test_percept_store.py::TestRadixTrie::test_longest_match_returns_deepest_terminal",
+    "test/test_percept_store.py::TestRadixTrie::test_longest_match_returns_shorter_when_deep_terminal_missing",
+    "test/test_percept_store.py::TestRadixTrie::test_shared_prefix_forks_correctly",
+    "test/test_percept_store.py::TestRadixTrie::test_single_insert_and_exact_lookup",
+    "test/test_percept_store.py::TestHashMapCache::test_hash_map_mirrors_trie_after_insert",
+    "test/test_percept_store.py::TestHashMapCache::test_hash_map_unknown_keys_return_none",
+    "test/test_percept_store.py::TestInverseTableRoundtrip::test_invalid_percept_id_raises",
+    "test/test_percept_store.py::TestInverseTableRoundtrip::test_inverse_table_indexing_is_exact",
+    "test/test_percept_store.py::TestInverseTableRoundtrip::test_roundtrip_percept_id_to_bytes_to_percept_id",
+    "test/test_percept_store.py::TestByteFallback::test_byte_fallback_increments_hit_counter",
+    "test/test_percept_store.py::TestByteFallback::test_byte_fallback_returns_a_vector",
+    "test/test_percept_store.py::TestByteFallback::test_lookup_via_percept_store_increments_hits",
+    "test/test_percept_store.py::TestPromotion::test_promotion_after_threshold_hits",
+    "test/test_percept_store.py::TestPromotion::test_promotion_respects_min_length",
+    "test/test_percept_store.py::TestCodebookCapacity::test_existing_rows_survive_admission",
+    "test/test_percept_store.py::TestCodebookCapacity::test_insert_activates_preallocated_rows",
+    "test/test_percept_store.py::TestCodebookCapacity::test_overflow_does_not_resize_or_insert",
+    "test/test_percept_store.py::TestForwardLookupPath::test_hashmap_hit_returns_codebook_row",
+    "test/test_percept_store.py::TestForwardLookupPath::test_partial_match_composes_prefix_plus_residual",
+    "test/test_percept_store.py::TestPersistence::test_vocab_extras_dump_and_load_preserves_state",
+    "test/test_perceptual_chunking.py::test_perceptual_space_exposes_synthesis_mode_attribute",
+    "test/test_perceptual_loopback.py::TestForwardArityContract::test_conceptual_forward_arity",
+    "test/test_perceptual_loopback.py::TestForwardArityContract::test_perceptual_forward_arity",
+    "test/test_perceptual_loopback.py::TestForwardArityContract::test_symbolic_forward_arity",
+    "test/test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_forward_produces_percept_event",
+    "test/test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_full_forward_runs_recurrent_cell",
+    "test/test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_terminal_conceptual_exposes_views",
+    "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_perceptualSpace_ref_wired",
+    "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_vocabulary_returns_lexicon",
+    "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_no_c_space_role_rules_in_grammar",
+    "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_no_p_space_role_rules_in_grammar",
+    "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer",
+    "test/test_perceptual_loopback.py::TestPerceptStoreIntegration::test_embed_radix_respects_promotion_threshold",
+    "test/test_perceptual_loopback.py::TestPerceptStoreIntegration::test_radix_config_builds_percept_store",
+    "test/test_perceptual_loopback.py::TestPerceptStoreIntegration::test_radix_percept_store_roundtrips_inserted_words",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_unwired_falls_back_to_private_table",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_store_codebook_is_permanent_parameter",
+    "test/test_phase1_normalizer.py::test_normalizer_input_roundtrip",
+    "test/test_phase1_normalizer.py::test_normalizer_matches_thedata",
+    "test/test_phase1_normalizer.py::test_model_attaches_normalizer_to_every_space",
+    "test/test_phase1_normalizer.py::test_no_thedata_reads_in_pipeline_methods",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_admissibility_uses_loaded_signatures",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_mask_logits_concentrates_on_admissible",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_extend_then_load",
+    "test/test_phase2_pipeline_primitives.py::test_reverse_adapter_calls_reverse_not_forward",
+    "test/test_phase2_pipeline_primitives.py::test_reverse_adapter_no_own_parameters",
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_averages_pairs",
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_is_last_identity",
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_roundtrip_via_diff_cache",
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_empty_passthrough",
+    "test/test_phase2_pipeline_primitives.py::test_space_forward_arities",
+    "test/test_phase2_pipeline_primitives.py::test_all_spaces_have_single_arg_reverse",
+    "test/test_phase2_pipeline_primitives.py::test_build_pipelines_creates_body_stages",
+    "test/test_phase2_sequential_integration.py::test_sequential_non_ar_forward_shape",
+    "test/test_phase2_sequential_integration.py::test_sequential_builds_body_stages_and_invertible_path",
+    "test/test_phase2_sequential_integration.py::test_sequential_unrolls_subsymbolic_order",
+    "test/test_phase2_subspace_empty.py::test_is_empty_true_for_zero_n",
+    "test/test_phase2_subspace_empty.py::test_is_empty_false_for_nonzero_n",
+    "test/test_phase2_subspace_empty.py::test_is_empty_true_for_zero_batch",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[1]",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[2]",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[3]",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[4]",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[5]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[1]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[2]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[3]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[4]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[5]",
+    "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[1]",
+    "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[2]",
+    "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[3]",
+    "test/test_pi2_sigma2_folds.py::test_monotone_transport[1]",
+    "test/test_pi2_sigma2_folds.py::test_monotone_transport[2]",
+    "test/test_pi2_sigma2_folds.py::test_monotone_transport[3]",
+    "test/test_pi2_sigma2_folds.py::test_binary_zero_operand_corner_still_ordered",
+    "test/test_pi2_sigma2_folds.py::test_pi_absorber_is_a_theorem",
+    "test/test_pi2_sigma2_folds.py::test_sigma_absorber_is_a_theorem",
+    "test/test_pi2_sigma2_folds.py::test_pi_identity_at_init",
+    "test/test_pi2_sigma2_folds.py::test_sigma_identity_at_init",
+    "test/test_pi2_sigma2_folds.py::test_de_morgan_exact_with_shared_kernel",
+    "test/test_pi2_sigma2_folds.py::test_sigma_owns_no_weights",
+    "test/test_pi2_sigma2_folds.py::test_sigma_kernel_kwargs_exclusive",
+    "test/test_pi2_sigma2_folds.py::test_unary_roundtrip_interior",
+    "test/test_pi2_sigma2_folds.py::test_pi_roundtrip_at_zero_corner_under_eps_log",
+    "test/test_pi2_sigma2_folds.py::test_sigma_roundtrip_at_zero_corner",
+    "test/test_pi2_sigma2_folds.py::test_reverse_is_total_on_degenerate_input",
+    "test/test_pi2_sigma2_folds.py::test_gradients_flow_through_fold",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_recommender_reversible",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_recommender_reversible",
+    "test/test_pi2_sigma2_folds.py::test_inner_layer_is_contractive",
+    "test/test_pi2_sigma2_folds.py::test_compose_requires_binary_form",
+    "test/test_pi2_sigma2_folds.py::test_compose_is_forward_on_concat",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_class_attr_rule_name_unchanged",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_inherits_empty_rule_name",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_instance_is_grammarlayer",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_is_grammarlayer_subclass",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_mro_direct_parent",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_sigma_class_attr_rule_name_unchanged",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_sigma_inherits_empty_rule_name",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_sigma_instance_is_grammarlayer",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_sigma_is_grammarlayer_subclass",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_sigma_mro_direct_parent"
+  ],
+  "completed": [
+    "test/test_per_batch_state_isolation.py::test_last_svo_b2_isolation",
+    "test/test_per_batch_state_isolation.py::test_last_svo_clear_per_row",
+    "test/test_per_batch_state_isolation.py::test_last_svo_ensure_batch_grows_clears",
+    "test/test_per_batch_state_isolation.py::test_sentence_completed_b2_isolation",
+    "test/test_per_batch_state_isolation.py::test_stm_arm_per_row",
+    "test/test_per_batch_state_isolation.py::test_ensure_microbatch_grows_sentence_completed_to_new_B",
+    "test/test_per_batch_state_isolation.py::test_reset_clears_both",
+    "test/test_per_row_hard_reset.py::test_dispatch_per_row_reset_skips_rows_without_hard_eos",
+    "test/test_per_row_hard_reset.py::test_dispatch_per_row_reset_empty_or_all_false_is_noop",
+    "test/test_per_row_hard_reset.py::test_per_row_hard_reset_clears_only_target_row_state",
+    "test/test_per_row_hard_reset.py::test_runEpoch_dispatches_per_row_reset_per_batch",
+    "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+    "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+    "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+    "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_compiles_and_replays_under_cudagraphs",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_actually_uses_cudagraphs",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_emits_no_dtoh_under_profiler",
+    "test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N",
+    "test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix",
+    "test/test_percept_store.py::TestRadixTrie::test_empty_trie_returns_none",
+    "test/test_percept_store.py::TestRadixTrie::test_insert_returns_false_on_duplicate",
+    "test/test_percept_store.py::TestRadixTrie::test_insert_splits_existing_edge_at_partial_overlap",
+    "test/test_percept_store.py::TestRadixTrie::test_longest_match_returns_deepest_terminal",
+    "test/test_percept_store.py::TestRadixTrie::test_longest_match_returns_shorter_when_deep_terminal_missing",
+    "test/test_percept_store.py::TestRadixTrie::test_shared_prefix_forks_correctly",
+    "test/test_percept_store.py::TestRadixTrie::test_single_insert_and_exact_lookup",
+    "test/test_percept_store.py::TestHashMapCache::test_hash_map_mirrors_trie_after_insert",
+    "test/test_percept_store.py::TestHashMapCache::test_hash_map_unknown_keys_return_none",
+    "test/test_percept_store.py::TestInverseTableRoundtrip::test_invalid_percept_id_raises",
+    "test/test_percept_store.py::TestInverseTableRoundtrip::test_inverse_table_indexing_is_exact",
+    "test/test_percept_store.py::TestInverseTableRoundtrip::test_roundtrip_percept_id_to_bytes_to_percept_id",
+    "test/test_percept_store.py::TestByteFallback::test_byte_fallback_increments_hit_counter",
+    "test/test_percept_store.py::TestByteFallback::test_byte_fallback_returns_a_vector",
+    "test/test_percept_store.py::TestByteFallback::test_lookup_via_percept_store_increments_hits",
+    "test/test_percept_store.py::TestPromotion::test_promotion_after_threshold_hits",
+    "test/test_percept_store.py::TestPromotion::test_promotion_respects_min_length",
+    "test/test_percept_store.py::TestCodebookCapacity::test_existing_rows_survive_admission",
+    "test/test_percept_store.py::TestCodebookCapacity::test_insert_activates_preallocated_rows",
+    "test/test_percept_store.py::TestCodebookCapacity::test_overflow_does_not_resize_or_insert",
+    "test/test_percept_store.py::TestForwardLookupPath::test_hashmap_hit_returns_codebook_row",
+    "test/test_percept_store.py::TestForwardLookupPath::test_partial_match_composes_prefix_plus_residual",
+    "test/test_percept_store.py::TestPersistence::test_vocab_extras_dump_and_load_preserves_state",
+    "test/test_perceptual_chunking.py::test_perceptual_space_exposes_synthesis_mode_attribute",
+    "test/test_perceptual_loopback.py::TestForwardArityContract::test_conceptual_forward_arity",
+    "test/test_perceptual_loopback.py::TestForwardArityContract::test_perceptual_forward_arity",
+    "test/test_perceptual_loopback.py::TestForwardArityContract::test_symbolic_forward_arity",
+    "test/test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_forward_produces_percept_event",
+    "test/test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_full_forward_runs_recurrent_cell",
+    "test/test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_terminal_conceptual_exposes_views",
+    "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_perceptualSpace_ref_wired",
+    "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_vocabulary_returns_lexicon",
+    "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_no_c_space_role_rules_in_grammar",
+    "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_no_p_space_role_rules_in_grammar",
+    "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer",
+    "test/test_perceptual_loopback.py::TestPerceptStoreIntegration::test_embed_radix_respects_promotion_threshold",
+    "test/test_perceptual_loopback.py::TestPerceptStoreIntegration::test_radix_config_builds_percept_store",
+    "test/test_perceptual_loopback.py::TestPerceptStoreIntegration::test_radix_percept_store_roundtrips_inserted_words",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_unwired_falls_back_to_private_table",
+    "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_store_codebook_is_permanent_parameter",
+    "test/test_phase1_normalizer.py::test_normalizer_input_roundtrip",
+    "test/test_phase1_normalizer.py::test_normalizer_matches_thedata",
+    "test/test_phase1_normalizer.py::test_model_attaches_normalizer_to_every_space",
+    "test/test_phase1_normalizer.py::test_no_thedata_reads_in_pipeline_methods",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_admissibility_uses_loaded_signatures",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_mask_logits_concentrates_on_admissible",
+    "test/test_phase2_end_to_end.py::test_phase2_end_to_end_extend_then_load",
+    "test/test_phase2_pipeline_primitives.py::test_reverse_adapter_calls_reverse_not_forward",
+    "test/test_phase2_pipeline_primitives.py::test_reverse_adapter_no_own_parameters",
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_averages_pairs",
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_is_last_identity",
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_roundtrip_via_diff_cache",
+    "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_empty_passthrough",
+    "test/test_phase2_pipeline_primitives.py::test_space_forward_arities",
+    "test/test_phase2_pipeline_primitives.py::test_all_spaces_have_single_arg_reverse",
+    "test/test_phase2_pipeline_primitives.py::test_build_pipelines_creates_body_stages",
+    "test/test_phase2_sequential_integration.py::test_sequential_non_ar_forward_shape",
+    "test/test_phase2_sequential_integration.py::test_sequential_builds_body_stages_and_invertible_path",
+    "test/test_phase2_sequential_integration.py::test_sequential_unrolls_subsymbolic_order",
+    "test/test_phase2_subspace_empty.py::test_is_empty_true_for_zero_n",
+    "test/test_phase2_subspace_empty.py::test_is_empty_false_for_nonzero_n",
+    "test/test_phase2_subspace_empty.py::test_is_empty_true_for_zero_batch",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[1]",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[2]",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[3]",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[4]",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[5]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[1]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[2]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[3]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[4]",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[5]",
+    "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[1]",
+    "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[2]",
+    "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[3]",
+    "test/test_pi2_sigma2_folds.py::test_monotone_transport[1]",
+    "test/test_pi2_sigma2_folds.py::test_monotone_transport[2]",
+    "test/test_pi2_sigma2_folds.py::test_monotone_transport[3]",
+    "test/test_pi2_sigma2_folds.py::test_binary_zero_operand_corner_still_ordered",
+    "test/test_pi2_sigma2_folds.py::test_pi_absorber_is_a_theorem",
+    "test/test_pi2_sigma2_folds.py::test_sigma_absorber_is_a_theorem",
+    "test/test_pi2_sigma2_folds.py::test_pi_identity_at_init",
+    "test/test_pi2_sigma2_folds.py::test_sigma_identity_at_init",
+    "test/test_pi2_sigma2_folds.py::test_de_morgan_exact_with_shared_kernel",
+    "test/test_pi2_sigma2_folds.py::test_sigma_owns_no_weights",
+    "test/test_pi2_sigma2_folds.py::test_sigma_kernel_kwargs_exclusive",
+    "test/test_pi2_sigma2_folds.py::test_unary_roundtrip_interior",
+    "test/test_pi2_sigma2_folds.py::test_pi_roundtrip_at_zero_corner_under_eps_log",
+    "test/test_pi2_sigma2_folds.py::test_sigma_roundtrip_at_zero_corner",
+    "test/test_pi2_sigma2_folds.py::test_reverse_is_total_on_degenerate_input",
+    "test/test_pi2_sigma2_folds.py::test_gradients_flow_through_fold",
+    "test/test_pi2_sigma2_folds.py::test_binary_pi_recommender_reversible",
+    "test/test_pi2_sigma2_folds.py::test_binary_sigma_recommender_reversible",
+    "test/test_pi2_sigma2_folds.py::test_inner_layer_is_contractive",
+    "test/test_pi2_sigma2_folds.py::test_compose_requires_binary_form",
+    "test/test_pi2_sigma2_folds.py::test_compose_is_forward_on_concat",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_class_attr_rule_name_unchanged",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_inherits_empty_rule_name",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_instance_is_grammarlayer",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_is_grammarlayer_subclass",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_mro_direct_parent",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_sigma_class_attr_rule_name_unchanged",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_sigma_inherits_empty_rule_name",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_sigma_instance_is_grammarlayer",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_sigma_is_grammarlayer_subclass",
+    "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_sigma_mro_direct_parent"
+  ],
+  "slow_selected": [
+    "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+    "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+    "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+    "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_compiles_and_replays_under_cudagraphs",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_actually_uses_cudagraphs",
+    "test/test_per_word_capture_gate_cuda.py::test_per_word_step_emits_no_dtoh_under_profiler",
+    "test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N",
+    "test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_per_batch_state_isolation.py::test_last_svo_b2_isolation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006679834041278809,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_state_isolation.py::test_last_svo_clear_per_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005528624984435737,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_state_isolation.py::test_last_svo_ensure_batch_grows_clears",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005734416947234422,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_state_isolation.py::test_sentence_completed_b2_isolation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005392291990574449,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_state_isolation.py::test_stm_arm_per_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005650250008329749,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_state_isolation.py::test_ensure_microbatch_grows_sentence_completed_to_new_B",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005188790964893997,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_batch_state_isolation.py::test_reset_clears_both",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0055944169871509075,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_row_hard_reset.py::test_dispatch_per_row_reset_skips_rows_without_hard_eos",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03988058300456032,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_row_hard_reset.py::test_dispatch_per_row_reset_empty_or_all_false_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02534295798977837,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_row_hard_reset.py::test_per_row_hard_reset_clears_only_target_row_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.025297457992564887,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_row_hard_reset.py::test_runEpoch_dispatches_per_row_reset_per_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.4959561669966206,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 50.00%)\r\nbatch = 2 (\u0394=0.077s, 100.00%)\r\nTraining throughput: 2 batches in 0.470s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate.py::test_per_word_step_runs_eagerly_end_to_end",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001794580020941794,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_per_word_capture_gate.py', 129, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate.py::test_per_word_step_is_extractable_as_a_standalone_callable",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00013095798203721642,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_per_word_capture_gate.py', 155, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate.py::test_per_word_step_compiles_fullgraph_clean",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001157090300694108,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_per_word_capture_gate.py', 171, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate.py::test_per_word_loop_completes_two_steps_under_fullgraph",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001194999786093831,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_per_word_capture_gate.py', 216, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate_cuda.py::test_per_word_step_compiles_and_replays_under_cudagraphs",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011737499153241515,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_per_word_capture_gate_cuda.py', 88, 'Skipped: D8 CUDA capture-gate (metalbaby leg); skipped without CUDA')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate_cuda.py::test_per_word_step_actually_uses_cudagraphs",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011166703188791871,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_per_word_capture_gate_cuda.py', 141, 'Skipped: D8 CUDA capture-gate (metalbaby leg); skipped without CUDA')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_word_capture_gate_cuda.py::test_per_word_step_emits_no_dtoh_under_profiler",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00015358300879597664,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_per_word_capture_gate_cuda.py', 195, 'Skipped: D8 CUDA capture-gate (metalbaby leg); skipped without CUDA')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_word_ss_padding_noop.py::test_stm_depth_tracks_valid_len_not_N",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011629099026322365,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_per_word_ss_padding_noop.py', 37, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_per_word_ss_padding_noop.py::test_concept_buf_zero_past_active_prefix",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001308330101892352,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_per_word_ss_padding_noop.py', 76, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestRadixTrie::test_empty_trie_returns_none",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015537498984485865,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestRadixTrie::test_insert_returns_false_on_duplicate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013808399671688676,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestRadixTrie::test_insert_splits_existing_edge_at_partial_overlap",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001283330493606627,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestRadixTrie::test_longest_match_returns_deepest_terminal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012558302842080593,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestRadixTrie::test_longest_match_returns_shorter_when_deep_terminal_missing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013216695515438914,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestRadixTrie::test_shared_prefix_forks_correctly",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013000000035390258,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestRadixTrie::test_single_insert_and_exact_lookup",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001341670285910368,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestHashMapCache::test_hash_map_mirrors_trie_after_insert",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005067919846624136,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestHashMapCache::test_hash_map_unknown_keys_return_none",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008436670177616179,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestInverseTableRoundtrip::test_invalid_percept_id_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008808750426396728,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestInverseTableRoundtrip::test_inverse_table_indexing_is_exact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005032080225646496,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestInverseTableRoundtrip::test_roundtrip_percept_id_to_bytes_to_percept_id",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004717499832622707,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestByteFallback::test_byte_fallback_increments_hit_counter",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022741599241271615,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestByteFallback::test_byte_fallback_returns_a_vector",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019570899894461036,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestByteFallback::test_lookup_via_percept_store_increments_hits",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000830999983008951,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestPromotion::test_promotion_after_threshold_hits",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009637089679017663,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestPromotion::test_promotion_respects_min_length",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010405000066384673,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestCodebookCapacity::test_existing_rows_survive_admission",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003701249952428043,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestCodebookCapacity::test_insert_activates_preallocated_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004064580425620079,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestCodebookCapacity::test_overflow_does_not_resize_or_insert",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00038712500827386975,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestForwardLookupPath::test_hashmap_hit_returns_codebook_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000385124993044883,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestForwardLookupPath::test_partial_match_composes_prefix_plus_residual",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001126500021200627,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_percept_store.py::TestPersistence::test_vocab_extras_dump_and_load_preserves_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006742500117979944,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_chunking.py::test_perceptual_space_exposes_synthesis_mode_attribute",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017927910084836185,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestForwardArityContract::test_conceptual_forward_arity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013916700845584273,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestForwardArityContract::test_perceptual_forward_arity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011920800898224115,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestForwardArityContract::test_symbolic_forward_arity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011387502308934927,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_forward_produces_percept_event",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0024441250134259462,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_full_forward_runs_recurrent_cell",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08865541697014123,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_terminal_conceptual_exposes_views",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09284433402353898,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_perceptualSpace_ref_wired",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016366702038794756,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_vocabulary_returns_lexicon",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011270795948803425,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_no_c_space_role_rules_in_grammar",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001401669578626752,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_no_p_space_role_rules_in_grammar",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001159579842351377,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002930419868789613,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestPerceptStoreIntegration::test_embed_radix_respects_promotion_threshold",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0283246660255827,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestPerceptStoreIntegration::test_radix_config_builds_percept_store",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02604187501128763,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptual_loopback.py::TestPerceptStoreIntegration::test_radix_percept_store_roundtrips_inserted_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.028211750031914562,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_unwired_falls_back_to_private_table",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017804099479690194,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_store_codebook_is_permanent_parameter",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.034222249989397824,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase1_normalizer.py::test_normalizer_input_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023866700939834118,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase1_normalizer.py::test_normalizer_matches_thedata",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018812494818121195,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase1_normalizer.py::test_model_attaches_normalizer_to_every_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.681320916977711,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_xor.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_phase1_normalizer.py::test_no_thedata_reads_in_pipeline_methods",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005214624979998916,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_end_to_end.py::test_phase2_end_to_end_admissibility_uses_loaded_signatures",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021654999582096934,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_end_to_end.py::test_phase2_end_to_end_mask_logits_concentrates_on_admissible",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013027919922024012,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_end_to_end.py::test_phase2_end_to_end_extend_then_load",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023623749730177224,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_reverse_adapter_calls_reverse_not_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013779097935184836,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_reverse_adapter_no_own_parameters",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024762499378994107,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_averages_pairs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002499170368537307,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_is_last_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014233303954824805,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_roundtrip_via_diff_cache",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001989169977605343,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_empty_passthrough",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012583297211676836,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_space_forward_arities",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018799997633323073,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_all_spaces_have_single_arg_reverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015841703861951828,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_pipeline_primitives.py::test_build_pipelines_creates_body_stages",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6308307910221629,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_xor.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_phase2_sequential_integration.py::test_sequential_non_ar_forward_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06028570799389854,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_sequential_integration.py::test_sequential_builds_body_stages_and_invertible_path",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.025621791020967066,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_sequential_integration.py::test_sequential_unrolls_subsymbolic_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02548779099015519,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_subspace_empty.py::test_is_empty_true_for_zero_n",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003458749852143228,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_subspace_empty.py::test_is_empty_false_for_nonzero_n",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003046669880859554,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_phase2_subspace_empty.py::test_is_empty_true_for_zero_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000299291976261884,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018605419900268316,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009566249791532755,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014530829503200948,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[4]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011587500339373946,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[5]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012836250243708491,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013331249938346446,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011937080416828394,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001262207981199026,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[4]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009904169710353017,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_sigma_above_max[5]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010491250432096422,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001055500004440546,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013866249937564135,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_unary_contraction_and_extension[3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011940409895032644,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_monotone_transport[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012579999747686088,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_monotone_transport[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013463329523801804,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_monotone_transport[3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012475830153562129,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_zero_operand_corner_still_ordered",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008328749681822956,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_pi_absorber_is_a_theorem",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023777090245857835,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_sigma_absorber_is_a_theorem",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023680829908698797,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_pi_identity_at_init",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006832089857198298,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_sigma_identity_at_init",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007907499675638974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_de_morgan_exact_with_shared_kernel",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017005409463308752,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_sigma_owns_no_weights",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003303749836049974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_sigma_kernel_kwargs_exclusive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002380840014666319,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_unary_roundtrip_interior",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009691669838503003,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_pi_roundtrip_at_zero_corner_under_eps_log",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006712909671477973,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_sigma_roundtrip_at_zero_corner",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007282919832505286,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_reverse_is_total_on_degenerate_input",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005879160016775131,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_gradients_flow_through_fold",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009944160119630396,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_pi_recommender_reversible",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015335840289480984,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_binary_sigma_recommender_reversible",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013380000018514693,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_inner_layer_is_contractive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002019170206040144,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_compose_requires_binary_form",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007090410217642784,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi2_sigma2_folds.py::test_compose_is_forward_on_concat",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009839169797487557,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_class_attr_rule_name_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013945798855274916,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_inherits_empty_rule_name",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027837499510496855,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_instance_is_grammarlayer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019954104209318757,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_is_grammarlayer_subclass",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011929200263693929,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_mro_direct_parent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011875003110617399,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_sigma_class_attr_rule_name_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012387498281896114,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_sigma_inherits_empty_rule_name",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021829199977219105,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_sigma_instance_is_grammarlayer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019308400806039572,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_sigma_is_grammarlayer_subclass",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011979200644418597,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_sigma_mro_direct_parent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001170000177808106,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

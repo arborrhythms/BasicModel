@@ -1,0 +1,569 @@
+.......s...FFF
+=================================== FAILURES ===================================
+_ test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_train_mode] _
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2339/test_every_entry_writes_once_w0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x143b34d40>
+entry = 'forward_train_mode'
+
+    @pytest.mark.parametrize('entry', ['forward_train_mode', 'forward_eval_mode', 'batch_eval'])
+    def test_every_entry_writes_once_with_one_trial_and_no_optimizer(tmp_path, monkeypatch, entry):
+        from test_meronomy_ladder import _build_ladder_variant
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model = _build_ladder_variant(tmp_path, 'single_boundary', [
+            ('<architecture>', '<architecture><ltmConsolidation>true</ltmConsolidation>'),
+            ('<serialWordCapacity>8</serialWordCapacity>', '<serialWordCapacity>16</serialWordCapacity>'),
+            ('<serialWordBuckets>8</serialWordBuckets>', '<serialWordBuckets>16</serialWordBuckets>')])
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model._install_unit_span_fn()
+        model.reconstruct_in_loop = False
+        model.loss.reconstruction_scale = 0.
+        def forbidden(*args, **kwargs):
+            raise AssertionError('inference invoked the optimizer')
+        monkeypatch.setattr(model, '_sentence_train_step', forbidden)
+        writes = []
+        store = model.symbolSpace.ltm_store
+        original = store.write_clause
+        def write(*args, **kwargs):
+            writes.append(args[0])
+            return original(*args, **kwargs)
+        monkeypatch.setattr(store, 'write_clause', write)
+        try:
+            inputs = model.inputSpace.prepPackedInput([['1 plus 2', '3 plus 4']])
+            model.train(entry == 'forward_train_mode')
+            before = {name: value.detach().clone() for name, value in model.languageSpace._tree_layer(2).chooser.named_parameters()}
+            if entry == 'batch_eval':
+                model.runBatch(train=False, batchSize=1, split='runtime',
+                               batch_override=(inputs, torch.zeros(1, 1, 0)))
+            else:
+>               model(inputs)
+
+test/test_sentence_boundary.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23354: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17274: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21889: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21447: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20566: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20523: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19981: in _sentence_path_cost
+    observation = self._sentence_observation(state, sid, active)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19801: in _sentence_observation
+    meanings, observed, observed_depths, layout, roles = _boundary_observation_view(
+bin/Models.py:207: in _boundary_observation_view
+    clause = finish_clause(language, entry, meaning=meaning,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+language = LanguageSpace(
+  (decomposition_chooser): DecompositionChooser()
+  (clause_scope): ClauseScope()
+  (generate_policy): Linear(in_features=136, out_features=23, bias=True)
+)
+program = AnswerProgram(rows=tensor([0, 1, 2, 1, 3, 1]), word_rows=tensor([0, 1, 2, 1, 3, 1]), activations=tensor([0.0000, 0.462..._evidence=tensor([[0., 0.],
+        [0., 0.],
+        [0., 0.],
+        [0., 0.],
+        [0., 0.],
+        [0., 0.]]))
+meaning = None, depth = 1
+registry = <Queries.GrammaticalThoughtRegistry object at 0x121bc12b0>
+
+    def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+        """Finish an open reading from the values its operations already produced.
+    
+        The action record supplies grammar metadata only. Numerical values come
+        from the live operation journal, including the operands before fusion.
+        This function never runs a compose operator, and its reading record is
+        not part of the returned field or the row written from it.
+        """
+        if program is None:
+            raise ValueError('cannot finish a reading that is not open')
+        from Language import TheGrammar
+        refs = program.reference_ids if program.reference_ids is not None else program.concept_ids
+        values = list(program.leaves.unbind())
+        frames = program.operation_values
+        if frames is None:
+            raise ValueError('the open reading has no numerical operation journal')
+        stack = []
+        def metadata(words):
+            # These are input identification poles, never the source's authority.
+            evidence = program.leaf_evidence
+            if evidence is None:
+                pair = (0., 0.)
+            else:
+                selected = evidence[list(words)]
+                known = selected > 0
+                minimum = torch.where(known, selected, torch.inf).amin(0)
+                pair = tuple(torch.where(known.any(0), minimum, 0.).detach().tolist())
+            orders = program.leaf_orders
+            if program.reference_orders is not None:
+                orders = (program.reference_orders if orders is None else
+                          torch.where(program.reference_orders >= 0, program.reference_orders, orders))
+            order = 0 if orders is None else max(0, int(orders[list(words)].max()))
+            return dict(order=order, evidence=pair)
+        # Each node owns the exact grammar action and its live operands.
+        for action, (kind, local, word) in enumerate(program.actions.detach().cpu().tolist()):
+            if kind < 0:
+                break
+            if kind == 0:
+                has_point = program.reference_relations is None or not bool(
+                    program.reference_relations[word])
+                stack.append(dict(value=values[word], ref=int(refs[word]), rule=None,
+                                  children=(), leaves=(word,), has_point=has_point))
+                continue
+            arity = 2 if kind == 1 else 1
+            catalog = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
+            if kind not in (1, 2) or not 0 <= local < len(catalog) or len(stack) < arity:
+                raise ValueError('invalid clause derivation')
+            operands = tuple(stack[-arity:])
+            del stack[-arity:]
+            relation_rule = bool(getattr(catalog[local], 'relation_kind', None))
+            selected_refs = (None if program.operation_refs is None else
+                             list(program.operation_refs[action].tolist()))
+            for role, (operand, actual) in enumerate(zip(operands, frames[action, :arity])):
+                operand['value'] = actual
+                if program.operation_relations is not None:
+                    operand['has_point'] = not bool(program.operation_relations[action, role])
+                if program.operation_refs is not None:
+                    selected = operand
+                    while selected['children']:
+                        headed = getattr(selected['rule'], 'head_role', 0)
+                        if not headed:
+                            break
+                        selected = selected['children'][headed-1]
+                    reference = int(program.operation_refs[action, role])
+                    # A trial's newly requested singleton still had its source
+                    # address. Resolve that alias to the winning host's admitted
+                    # identity; an already selected earlier occurrence is unchanged.
+                    pending_order = False
+                    if not selected['children'] and program.reference_orders is not None:
+                        leaf = selected['leaves'][0]
+                        pending_order = (int(program.reference_orders[leaf]) >= 0
+                                         and reference == int(program.concept_ids[leaf]))
+                        if pending_order:
+                            reference = int(refs[leaf])
+                    if reference > 0 or pending_order:
+                        selected['ref'] = reference
+                        selected_refs[role] = reference
+            stack.append(dict(value=frames[action, 2], local=local, ref=-1,
+                              rule=catalog[local], children=operands,
+                              operand_refs=None if selected_refs is None else tuple(selected_refs),
+                              leaves=tuple(i for child in operands for i in child['leaves']),
+                              has_point=not relation_rule and all(child['has_point'] for child in operands)))
+        if len(stack) not in (1, 3):
+>           raise ValueError('a completed field must have one or three slots')
+E           ValueError: a completed field must have one or three slots
+
+bin/ClauseJournal.py:98: ValueError
+_ test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_eval_mode] _
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2339/test_every_entry_writes_once_w1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x143d95e80>
+entry = 'forward_eval_mode'
+
+    @pytest.mark.parametrize('entry', ['forward_train_mode', 'forward_eval_mode', 'batch_eval'])
+    def test_every_entry_writes_once_with_one_trial_and_no_optimizer(tmp_path, monkeypatch, entry):
+        from test_meronomy_ladder import _build_ladder_variant
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model = _build_ladder_variant(tmp_path, 'single_boundary', [
+            ('<architecture>', '<architecture><ltmConsolidation>true</ltmConsolidation>'),
+            ('<serialWordCapacity>8</serialWordCapacity>', '<serialWordCapacity>16</serialWordCapacity>'),
+            ('<serialWordBuckets>8</serialWordBuckets>', '<serialWordBuckets>16</serialWordBuckets>')])
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model._install_unit_span_fn()
+        model.reconstruct_in_loop = False
+        model.loss.reconstruction_scale = 0.
+        def forbidden(*args, **kwargs):
+            raise AssertionError('inference invoked the optimizer')
+        monkeypatch.setattr(model, '_sentence_train_step', forbidden)
+        writes = []
+        store = model.symbolSpace.ltm_store
+        original = store.write_clause
+        def write(*args, **kwargs):
+            writes.append(args[0])
+            return original(*args, **kwargs)
+        monkeypatch.setattr(store, 'write_clause', write)
+        try:
+            inputs = model.inputSpace.prepPackedInput([['1 plus 2', '3 plus 4']])
+            model.train(entry == 'forward_train_mode')
+            before = {name: value.detach().clone() for name, value in model.languageSpace._tree_layer(2).chooser.named_parameters()}
+            if entry == 'batch_eval':
+                model.runBatch(train=False, batchSize=1, split='runtime',
+                               batch_override=(inputs, torch.zeros(1, 1, 0)))
+            else:
+>               model(inputs)
+
+test/test_sentence_boundary.py:39: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23354: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17274: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21889: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21447: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20566: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20523: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19981: in _sentence_path_cost
+    observation = self._sentence_observation(state, sid, active)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19801: in _sentence_observation
+    meanings, observed, observed_depths, layout, roles = _boundary_observation_view(
+bin/Models.py:207: in _boundary_observation_view
+    clause = finish_clause(language, entry, meaning=meaning,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+language = LanguageSpace(
+  (decomposition_chooser): DecompositionChooser()
+  (clause_scope): ClauseScope()
+  (generate_policy): Linear(in_features=136, out_features=23, bias=True)
+)
+program = AnswerProgram(rows=tensor([0, 1, 2, 1, 3, 1]), word_rows=tensor([0, 1, 2, 1, 3, 1]), activations=tensor([0.0000, 0.462..._evidence=tensor([[0., 0.],
+        [0., 0.],
+        [0., 0.],
+        [0., 0.],
+        [0., 0.],
+        [0., 0.]]))
+meaning = None, depth = 1
+registry = <Queries.GrammaticalThoughtRegistry object at 0x143a3c680>
+
+    def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+        """Finish an open reading from the values its operations already produced.
+    
+        The action record supplies grammar metadata only. Numerical values come
+        from the live operation journal, including the operands before fusion.
+        This function never runs a compose operator, and its reading record is
+        not part of the returned field or the row written from it.
+        """
+        if program is None:
+            raise ValueError('cannot finish a reading that is not open')
+        from Language import TheGrammar
+        refs = program.reference_ids if program.reference_ids is not None else program.concept_ids
+        values = list(program.leaves.unbind())
+        frames = program.operation_values
+        if frames is None:
+            raise ValueError('the open reading has no numerical operation journal')
+        stack = []
+        def metadata(words):
+            # These are input identification poles, never the source's authority.
+            evidence = program.leaf_evidence
+            if evidence is None:
+                pair = (0., 0.)
+            else:
+                selected = evidence[list(words)]
+                known = selected > 0
+                minimum = torch.where(known, selected, torch.inf).amin(0)
+                pair = tuple(torch.where(known.any(0), minimum, 0.).detach().tolist())
+            orders = program.leaf_orders
+            if program.reference_orders is not None:
+                orders = (program.reference_orders if orders is None else
+                          torch.where(program.reference_orders >= 0, program.reference_orders, orders))
+            order = 0 if orders is None else max(0, int(orders[list(words)].max()))
+            return dict(order=order, evidence=pair)
+        # Each node owns the exact grammar action and its live operands.
+        for action, (kind, local, word) in enumerate(program.actions.detach().cpu().tolist()):
+            if kind < 0:
+                break
+            if kind == 0:
+                has_point = program.reference_relations is None or not bool(
+                    program.reference_relations[word])
+                stack.append(dict(value=values[word], ref=int(refs[word]), rule=None,
+                                  children=(), leaves=(word,), has_point=has_point))
+                continue
+            arity = 2 if kind == 1 else 1
+            catalog = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
+            if kind not in (1, 2) or not 0 <= local < len(catalog) or len(stack) < arity:
+                raise ValueError('invalid clause derivation')
+            operands = tuple(stack[-arity:])
+            del stack[-arity:]
+            relation_rule = bool(getattr(catalog[local], 'relation_kind', None))
+            selected_refs = (None if program.operation_refs is None else
+                             list(program.operation_refs[action].tolist()))
+            for role, (operand, actual) in enumerate(zip(operands, frames[action, :arity])):
+                operand['value'] = actual
+                if program.operation_relations is not None:
+                    operand['has_point'] = not bool(program.operation_relations[action, role])
+                if program.operation_refs is not None:
+                    selected = operand
+                    while selected['children']:
+                        headed = getattr(selected['rule'], 'head_role', 0)
+                        if not headed:
+                            break
+                        selected = selected['children'][headed-1]
+                    reference = int(program.operation_refs[action, role])
+                    # A trial's newly requested singleton still had its source
+                    # address. Resolve that alias to the winning host's admitted
+                    # identity; an already selected earlier occurrence is unchanged.
+                    pending_order = False
+                    if not selected['children'] and program.reference_orders is not None:
+                        leaf = selected['leaves'][0]
+                        pending_order = (int(program.reference_orders[leaf]) >= 0
+                                         and reference == int(program.concept_ids[leaf]))
+                        if pending_order:
+                            reference = int(refs[leaf])
+                    if reference > 0 or pending_order:
+                        selected['ref'] = reference
+                        selected_refs[role] = reference
+            stack.append(dict(value=frames[action, 2], local=local, ref=-1,
+                              rule=catalog[local], children=operands,
+                              operand_refs=None if selected_refs is None else tuple(selected_refs),
+                              leaves=tuple(i for child in operands for i in child['leaves']),
+                              has_point=not relation_rule and all(child['has_point'] for child in operands)))
+        if len(stack) not in (1, 3):
+>           raise ValueError('a completed field must have one or three slots')
+E           ValueError: a completed field must have one or three slots
+
+bin/ClauseJournal.py:98: ValueError
+___ test_every_entry_writes_once_with_one_trial_and_no_optimizer[batch_eval] ___
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2339/test_every_entry_writes_once_w2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x143a6a1b0>
+entry = 'batch_eval'
+
+    @pytest.mark.parametrize('entry', ['forward_train_mode', 'forward_eval_mode', 'batch_eval'])
+    def test_every_entry_writes_once_with_one_trial_and_no_optimizer(tmp_path, monkeypatch, entry):
+        from test_meronomy_ladder import _build_ladder_variant
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model = _build_ladder_variant(tmp_path, 'single_boundary', [
+            ('<architecture>', '<architecture><ltmConsolidation>true</ltmConsolidation>'),
+            ('<serialWordCapacity>8</serialWordCapacity>', '<serialWordCapacity>16</serialWordCapacity>'),
+            ('<serialWordBuckets>8</serialWordBuckets>', '<serialWordBuckets>16</serialWordBuckets>')])
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model._install_unit_span_fn()
+        model.reconstruct_in_loop = False
+        model.loss.reconstruction_scale = 0.
+        def forbidden(*args, **kwargs):
+            raise AssertionError('inference invoked the optimizer')
+        monkeypatch.setattr(model, '_sentence_train_step', forbidden)
+        writes = []
+        store = model.symbolSpace.ltm_store
+        original = store.write_clause
+        def write(*args, **kwargs):
+            writes.append(args[0])
+            return original(*args, **kwargs)
+        monkeypatch.setattr(store, 'write_clause', write)
+        try:
+            inputs = model.inputSpace.prepPackedInput([['1 plus 2', '3 plus 4']])
+            model.train(entry == 'forward_train_mode')
+            before = {name: value.detach().clone() for name, value in model.languageSpace._tree_layer(2).chooser.named_parameters()}
+            if entry == 'batch_eval':
+>               model.runBatch(train=False, batchSize=1, split='runtime',
+                               batch_override=(inputs, torch.zeros(1, 1, 0)))
+
+test/test_sentence_boundary.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13669: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13805: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14180: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8815: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10313: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8500: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23354: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17274: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21889: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21447: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20566: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:142: in sentence_pair
+    cost_a, state_a = score(exploit, False)
+                      ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20523: in score
+    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19981: in _sentence_path_cost
+    observation = self._sentence_observation(state, sid, active)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:19801: in _sentence_observation
+    meanings, observed, observed_depths, layout, roles = _boundary_observation_view(
+bin/Models.py:207: in _boundary_observation_view
+    clause = finish_clause(language, entry, meaning=meaning,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+language = LanguageSpace(
+  (decomposition_chooser): DecompositionChooser()
+  (clause_scope): ClauseScope()
+  (generate_policy): Linear(in_features=136, out_features=23, bias=True)
+)
+program = AnswerProgram(rows=tensor([0, 1, 2, 1, 3, 1]), word_rows=tensor([0, 1, 2, 1, 3, 1]), activations=tensor([0.0000, 0.462..._evidence=tensor([[0., 0.],
+        [0., 0.],
+        [0., 0.],
+        [0., 0.],
+        [0., 0.],
+        [0., 0.]]))
+meaning = None, depth = 1
+registry = <Queries.GrammaticalThoughtRegistry object at 0x143e47410>
+
+    def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+        """Finish an open reading from the values its operations already produced.
+    
+        The action record supplies grammar metadata only. Numerical values come
+        from the live operation journal, including the operands before fusion.
+        This function never runs a compose operator, and its reading record is
+        not part of the returned field or the row written from it.
+        """
+        if program is None:
+            raise ValueError('cannot finish a reading that is not open')
+        from Language import TheGrammar
+        refs = program.reference_ids if program.reference_ids is not None else program.concept_ids
+        values = list(program.leaves.unbind())
+        frames = program.operation_values
+        if frames is None:
+            raise ValueError('the open reading has no numerical operation journal')
+        stack = []
+        def metadata(words):
+            # These are input identification poles, never the source's authority.
+            evidence = program.leaf_evidence
+            if evidence is None:
+                pair = (0., 0.)
+            else:
+                selected = evidence[list(words)]
+                known = selected > 0
+                minimum = torch.where(known, selected, torch.inf).amin(0)
+                pair = tuple(torch.where(known.any(0), minimum, 0.).detach().tolist())
+            orders = program.leaf_orders
+            if program.reference_orders is not None:
+                orders = (program.reference_orders if orders is None else
+                          torch.where(program.reference_orders >= 0, program.reference_orders, orders))
+            order = 0 if orders is None else max(0, int(orders[list(words)].max()))
+            return dict(order=order, evidence=pair)
+        # Each node owns the exact grammar action and its live operands.
+        for action, (kind, local, word) in enumerate(program.actions.detach().cpu().tolist()):
+            if kind < 0:
+                break
+            if kind == 0:
+                has_point = program.reference_relations is None or not bool(
+                    program.reference_relations[word])
+                stack.append(dict(value=values[word], ref=int(refs[word]), rule=None,
+                                  children=(), leaves=(word,), has_point=has_point))
+                continue
+            arity = 2 if kind == 1 else 1
+            catalog = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
+            if kind not in (1, 2) or not 0 <= local < len(catalog) or len(stack) < arity:
+                raise ValueError('invalid clause derivation')
+            operands = tuple(stack[-arity:])
+            del stack[-arity:]
+            relation_rule = bool(getattr(catalog[local], 'relation_kind', None))
+            selected_refs = (None if program.operation_refs is None else
+                             list(program.operation_refs[action].tolist()))
+            for role, (operand, actual) in enumerate(zip(operands, frames[action, :arity])):
+                operand['value'] = actual
+                if program.operation_relations is not None:
+                    operand['has_point'] = not bool(program.operation_relations[action, role])
+                if program.operation_refs is not None:
+                    selected = operand
+                    while selected['children']:
+                        headed = getattr(selected['rule'], 'head_role', 0)
+                        if not headed:
+                            break
+                        selected = selected['children'][headed-1]
+                    reference = int(program.operation_refs[action, role])
+                    # A trial's newly requested singleton still had its source
+                    # address. Resolve that alias to the winning host's admitted
+                    # identity; an already selected earlier occurrence is unchanged.
+                    pending_order = False
+                    if not selected['children'] and program.reference_orders is not None:
+                        leaf = selected['leaves'][0]
+                        pending_order = (int(program.reference_orders[leaf]) >= 0
+                                         and reference == int(program.concept_ids[leaf]))
+                        if pending_order:
+                            reference = int(refs[leaf])
+                    if reference > 0 or pending_order:
+                        selected['ref'] = reference
+                        selected_refs[role] = reference
+            stack.append(dict(value=frames[action, 2], local=local, ref=-1,
+                              rule=catalog[local], children=operands,
+                              operand_refs=None if selected_refs is None else tuple(selected_refs),
+                              leaves=tuple(i for child in operands for i in child['leaves']),
+                              has_point=not relation_rule and all(child['has_point'] for child in operands)))
+        if len(stack) not in (1, 3):
+>           raise ValueError('a completed field must have one or three slots')
+E           ValueError: a completed field must have one or three slots
+
+bin/ClauseJournal.py:98: ValueError
+=============================== warnings summary ===============================
+test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7162: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2339/test_real_packed_ends_train_be0/tiny_chunk_model.xml]: Data.what target (2, 1) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_train_mode]
+FAILED test/test_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_eval_mode]
+FAILED test/test_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[batch_eval]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 3 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+3 failed, 10 passed, 1 skipped, 1 warning in 8.20s

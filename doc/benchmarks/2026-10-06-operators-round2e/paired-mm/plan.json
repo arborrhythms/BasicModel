@@ -1,0 +1,14 @@
+{
+  "landing": "42daf96f454a30a3633054151e4ba8d498cd3b59",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "epochs": 200,
+  "stopping": "all 200 epochs, including after threshold",
+  "retries": 0,
+  "separate_from_gate_trainings": true,
+  "landing_archive_sha256": "cbe05d25a6d8f91d281bf95c06331bb86fa1efd501b98e9bec2edf9b7c9d1f8e",
+  "candidate_source_manifest_sha256": "3fd07f0cd516da3102867207614e11a9153638d37057bcc82a8c7ff821689106"
+}

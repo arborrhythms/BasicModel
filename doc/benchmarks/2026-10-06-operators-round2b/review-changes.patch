@@ -1,0 +1,630 @@
+--- round2/bin/MereologicalCodes.py
++++ round2b/bin/MereologicalCodes.py
+@@ -128,6 +128,45 @@
+             bound, extreme = values.max(0) if tower == 0 else values.min(0)
+             bounds.append(bound); weights.append(float(d.sum())); extrema.append(extreme)
+         return bounds, weights, extrema, ids
++
++    @torch.no_grad()
++    def containment_audit(self, *, before=None, after=None):
++        """Audit order-zero form containment through positive-part postings.
++
++        Optional row-to-form snapshots expose both sides of the future centroid
++        placement pass. This observer does not project or change any code.
++        Equal part sets are checked in both directions; self pairs are omitted.
++        """
++        from Spaces import _concept_alloc_of
++        rows = sorted(row for row in _concept_alloc_of(self.owner).layer()._tensor_row_keys
++                      if self.owner._order0_inventory_row(row))
++        parts = {row: {pid for tower, pid, net in edges if tower == 0 and net > 0}
++                 for row, edges in self._definitions(rows).items()}
++        postings = {}
++        for row, members in parts.items():
++            for pid in members:
++                postings.setdefault(pid, set()).add(row)
++        pairs = []
++        for row, members in parts.items():
++            extents = sorted((postings[pid] for pid in members), key=len)
++            containers = set.intersection(*extents) if extents else set(rows)
++            pairs.extend((row, other) for other in sorted(containers) if row != other)
++        values = dict(zip(rows, self.derive(rows)[..., :self.percept_width]))
++        def report(snapshot):
++            snapshot = values if snapshot is None else snapshot
++            count = coordinates = 0
++            largest = 0.
++            for contained, container in pairs:
++                violation = (snapshot[contained][:self.percept_width]-
++                             snapshot[container][:self.percept_width]).clamp_min(0)
++                positive = int(violation.gt(0).sum())
++                count += int(positive > 0)
++                coordinates += positive
++                largest = max(largest, float(violation.max()))
++            return dict(pairs=len(pairs), violating_pairs=count,
++                        coordinates=coordinates, largest=largest)
++        return dict(order=0, rows=len(rows), postings=len(postings),
++                    self_pairs=False, before=report(before), after=report(after))
+ 
+     @torch.no_grad()
+     def room_report(self, margin=0.):
+--- round2/bin/ModelAttention.py
++++ round2b/bin/ModelAttention.py
+@@ -3,6 +3,37 @@
+ import math
+ from torch.nn import functional as F
+ from Attention import narrow_words, read_code_field, BracketKeys
++
++
++POLE_CONSUMERS = ('_attention_sentence_payload', '_pushed_word_slab:poles',
++                  'commit_word_reference_slab:per_word',
++                  'commit_word_reference_slab:whole_slab')
++
++
++def read_poles(model, consumer):
++    """Declared handoff seam, also the observer's complete consumer census."""
++    if consumer not in POLE_CONSUMERS:
++        raise ValueError(f'undeclared attention pole consumer: {consumer}')
++    pair = getattr(model, '_attention_poles', None)
++    return None if pair is None else pair.detach()
++
++
++def pole_activation(activation, pair, changed):
++    """A reached field chooses sign only; tied poles retain the prior sign."""
++    net = (pair[..., 0]-pair[..., 1]).reshape_as(activation)
++    changed = changed.reshape_as(activation)
++    return torch.where(changed & net.ne(0), activation.abs()*net.sign(), activation)
++
++
++def reference_evidence(model, activations, consumer):
++    pair = read_poles(model, consumer)
++    if pair is None:
++        return None
++    reading = model._attention_words
++    signed = pole_activation(activations, pair, reading.pole_changes).squeeze(-1)
++    # Match Language.commit_word_reference_slab's native scalar conversion
++    # exactly, including its saturation. No field means the landing's pair.
++    return torch.stack((signed.clamp(0, 1), (-signed).clamp(0, 1)), -1).detach()
+ 
+ 
+ def canonical_native_events(model, ids, positions, brackets):
+--- round2/bin/Models.py
++++ round2b/bin/Models.py
+@@ -11938,7 +11938,8 @@
+         by the word's signed activation (the 0-D symbol), on the content
+         channels (zeros elsewhere and where a word has no row)."""
+         if getattr(self, '_attention_pole_representation', False):
+-            pair = self._attention_poles.detach().to(like)
++            from ModelAttention import read_poles
++            pair = read_poles(self, '_pushed_word_slab:poles').to(like)
+             valid = self._attention_words.accepted
+             return F.pad(torch.where(valid[...,None],pair,0.),(0,D-2,0,W-pair.shape[1]))
+         isp = self.inputSpace
+@@ -19651,21 +19652,18 @@
+                 derived.project_room(margin)
+ 
+     def _attention_sentence_payload(self, payload, index):
+-        """The walk's evidence scales leaf features, never a code's identity."""
++        """Field operations change the pole, preserving form and magnitude."""
+         reading = getattr(self, '_attention_words', None)
+         if reading is None:
+             return payload
+         event, orders, row, activation, obj, obj_order, atom, gate, commit, routing, valid = payload
+         w = index.clamp(0,reading.accepted.shape[1]-1)
+         B = event.shape[0]
+-        pair = self._attention_poles.gather(1,w.reshape(1,1,1).expand(B,1,2)).squeeze(1).detach()
+-        # The full word code is identified already. Both native and operated
+-        # poles supply its net feature evidence at this detached handoff.
+-        net = (pair[:,0]-pair[:,1]).reshape_as(activation)
+-        old = activation.detach()
+-        scale = torch.where(old.ne(0),net/torch.where(old.ne(0),old,1.),0.).reshape(B)
+-        event = event * scale[:,None,None]
+-        activation = net
++        from ModelAttention import read_poles, pole_activation
++        pair = read_poles(self, '_attention_sentence_payload').gather(
++            1,w.reshape(1,1,1).expand(B,1,2)).squeeze(1)
++        changed = reading.pole_changes.gather(1,w.reshape(1,1).expand(B,1))
++        activation = pole_activation(activation, pair, changed)
+         # interpret resolves atom * activation; multiplying atom would apply
+         # the evidence twice and turn a negative witness positive again.
+         pole_representation = getattr(self, '_attention_pole_representation', False)
+@@ -19793,9 +19791,10 @@
+         if torch.is_tensor(object_rows) and torch.is_tensor(concept_rows):
+             rows = torch.where(object_rows >= 0, object_rows, concept_rows)
+             orders = torch.where(object_rows >= 0, isp._ar_word_object_orders, isp._ar_word_concept_orders)
++            from ModelAttention import reference_evidence
+             self.symbolSpace.commit_word_reference_slab(rows, lang[0],
+                 isp._word_active_mask, orders=orders,
+-                evidence=getattr(self, "_attention_poles", None))
++                evidence=reference_evidence(self, lang[0], 'commit_word_reference_slab:per_word'))
+ 
+     def _sentence_observation(self, state, sid, active, *, admit=False):
+         current_stm, lang, _feedback = state
+@@ -20067,7 +20066,7 @@
+         destination = registry
+         # Keep the supplied answer distinct from generation lessons. Its
+         # detached error enters the comparison and remains observable;
+-        # the reader trains only on the rows of the kept trial.
++        # the reader trains on both trials' active rows, with both roots detached.
+         registry = Error(row_mask=active)
+         target = getattr(self, '_sentence_supplied_answers', None)
+         if (not getattr(self, '_sentence_training', False)
+@@ -20566,13 +20565,16 @@
+                 observations.append(observation)
+                 predictions.append(pending)
+                 paired_costs.append(cost.detach().clone())
+-                return cost, (path, reconstruction)
++                return parts[:, 0], (path, reconstruction)
+             def train_trial(loss):
+                 # Both graphs now exist. Restore this trial's perception
+                 # pullback and scratch bindings before its own backward.
+                 trial, pullback, path, registry, decomposition_loss, walk_loss = pending_steps.pop(0)
+                 self._sentence_trial, self._sentence_pullback = trial, pullback
+                 self._sentence_cost_registry = registry
++                if greedy_attention is not None:
++                    from ModelAttention import handoff
++                    handoff(self, attention_trials[int(trial == 'explore')])
+                 self._restore_sentence_state(path)
+                 loss = registry.total()
+                 loss = (loss * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
+@@ -21580,9 +21582,10 @@
+             object_rows >= 0, object_rows, concept_rows)
+         symbol_orders = torch.where(
+             object_rows >= 0, object_orders, concept_orders)
++        from ModelAttention import reference_evidence
+         ss.commit_word_reference_slab(
+             symbol_rows, final[8], active, orders=symbol_orders,
+-            evidence=getattr(self,"_attention_poles",None))
++            evidence=reference_evidence(self, final[8], 'commit_word_reference_slab:whole_slab'))
+         if canonical:
+             self._per_word_contributions = []
+         self._per_word_percept_contributions = final[9]
+--- round2/bin/SentenceCompose.py
++++ round2b/bin/SentenceCompose.py
+@@ -127,14 +127,14 @@
+ 
+ 
+ def sentence_pair(cache, compose, score, step, *, active, training=True, before_step=None):
+-    """Compare owner-step totals at one parameter state, then train both paths.
++    """Compare reconstruction at one parameter state, then train both paths.
+ 
+     ``cache`` is the sentence's one perception. ``compose`` gets the exploit
+     path on its second call so it can replay its prefix and exclude one choice.
+     ``score`` returns a cost per row and the candidate's scratch commit value.
+-    Selection costs contain reconstruction, gated expectation and supplied-answer error; strict improvement keeps
+-    explore and ties keep greedy. ``before_step`` receives the rows whose
+-    reader may train on this trial. Reconstruction and expectation still
++    Selection costs contain reconstruction only; strict improvement keeps
++    explore and ties keep greedy. ``before_step`` receives all active rows:
++    the detached reader trains on both trials. Reconstruction and expectation
+     train on both trials, each with its original forward parameter values.
+     The caller publishes the returned state before perceiving the next sentence.
+     """
+@@ -152,9 +152,9 @@
+     saved_b = cost_b.detach().clone()
+     wins = active & (saved_b < saved_a)
+     if before_step is not None:
+-        before_step(active & ~wins)
++        before_step(active)
+     step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+     if before_step is not None:
+-        before_step(active & wins)
++        before_step(active)
+     step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
+     return select_rows(state_a, state_b, wins), torch.stack((saved_a, saved_b), -1), wins
+--- round2/bin/SentenceCredit.py
++++ round2b/bin/SentenceCredit.py
+@@ -53,18 +53,27 @@
+ 
+ 
+ def comparison(parts, active):
+-    """Strict total keep plus the signed contributions which decided it."""
++    """Reconstruction keeps the derivation; the full total credits its policy."""
+     costs = parts.sum(-1).detach()
+     delta = parts[:, 1] - parts[:, 0]
+-    wins = active & (costs[:, 1] < costs[:, 0])
++    keep_costs = parts[:, :, 0].detach()
++    wins = active & (keep_costs[:, 1] < keep_costs[:, 0])
+     direction = torch.sign(costs[:, 1]-costs[:, 0])
+     supports = delta * direction[:, None] > 0
+     names = ('reconstruction', 'expectation', 'answer')
+     deciding = [('+'.join(name for name, yes in zip(names, row) if yes)
+                  if sign else 'tie:greedy') for row, sign in
+                 zip(supports.tolist(), direction.tolist())]
+-    return dict(costs=costs, components=parts.detach(), delta=delta.detach(),
+-                wins=wins, deciding=deciding)
++    keep_decision = [('explore' if d < 0 else 'greedy' if d > 0 else 'tie:greedy')
++                     for d in delta[:, 0].tolist()]
++    # Negative advantage rewards explore. A positive advantage rewards greedy.
++    against_keep = active & direction.ne(0) & ((direction < 0) != wins)
++    without_answer = torch.sign(delta[:, :2].sum(-1))
++    answer_against_keep = against_keep & (without_answer != direction) & delta[:, 2].ne(0)
++    return dict(costs=costs, keep_costs=keep_costs, components=parts.detach(), delta=delta.detach(),
++                wins=wins, deciding=deciding, keep_decision=keep_decision,
++                advantage=(costs[:, 1]-costs[:, 0]), advantage_sign=direction,
++                policy_against_keep=against_keep, answer_against_keep=answer_against_keep)
+ 
+ 
+ def score_function(probabilities, scale, mask, costs):
+--- round2/test/objective_conflicts_probe.py
++++ round2b/test/objective_conflicts_probe.py
+@@ -607,7 +607,7 @@
+     def metadata(self,model):
+         write('weights.json',dict(configuration=args.config, contract='§15: one objective writer per parameter',
+             terms=model.errors.breakdown(), trial_terms=getattr(model, '_sentence_cost_registry', Layers.Error()).breakdown(),
+-            trial_selection='explore R < greedy R; ties keep greedy; reader trains only kept rows',
++            trial_selection='explore R < greedy R; ties keep greedy; answer cost and reader training count both trials rows; SCG credits total R+E+A',
+             normalizers='Error registry: squared error / detached target energy; CE / log K; penalties separate',
+             regularizers='Own strengths; concept_readout_l1 is a detached report of the proximal step',
+             training_batches=self.training_batches,evaluation_batches=self.evaluation_batches))
+--- round2/test/test_operators_round2.py
++++ round2b/test/test_operators_round2.py
+@@ -4,7 +4,7 @@
+ import torch
+ 
+ 
+-def test_owner_total_strict_keep_and_supplied_answer_only():
++def test_reconstruction_keeps_total_credits_and_supplied_answer_only():
+     from Layers import Error
+     from SentenceCredit import components, comparison
+     active=torch.tensor([True,True,True])
+@@ -15,10 +15,13 @@
+             registry.error('answer',torch.tensor(a),1.,category='output')
+         return components(registry,torch.tensor(e),torch.zeros(3),answer=registry.total(objective='output'))
+     greedy=trial([1.,1.,1.],[0.,0.,0.],[1.,1.,1.])
+-    explore=trial([1.,2.,1.],[0.,0.,0.],[1.,0.,0.])
++    explore=trial([1.,2.,.5],[0.,0.,0.],[0.,0.,3.])
+     audit=comparison(torch.stack((greedy,explore),1),active)
+     assert audit['wins'].tolist()==[False,False,True]
+-    assert audit['deciding']==['tie:greedy','tie:greedy','answer']
++    assert audit['keep_decision']==['tie:greedy','greedy','explore']
++    assert audit['advantage_sign'].tolist()==[-1.,0.,1.]
++    assert audit['policy_against_keep'].tolist()==[True,False,True]
++    assert audit['answer_against_keep'].tolist()==[True,False,True]
+     assert trial([1.,1.,1.],[0.,0.,0.])[:,2].eq(0).all()
+ 
+ 
+@@ -170,13 +173,13 @@
+     greedy=BasicModel._attention_sentence_payload(model,payload,torch.tensor(0))
+     model._attention_poles=model._attention_poles.flip(-1)
+     explore=BasicModel._attention_sentence_payload(model,payload,torch.tensor(0))
+-    torch.testing.assert_close(explore[0],-greedy[0])
++    torch.testing.assert_close(explore[0],greedy[0],rtol=0,atol=0)
+     assert explore[3].item()==-1 and greedy[3].item()==1
+     positive=finish_reading(language,replace(leaf,leaf_evidence=torch.tensor([[1.,0.]])),registry=registry)
+     negative=finish_reading(language,replace(leaf,leaves=-code,leaf_evidence=torch.tensor([[0.,1.]])),registry=registry)
+     assert positive.meaning.polarity and not negative.meaning.polarity
+-    target=greedy[0].detach()
+-    assert (explore[0].detach()-target).square().sum() > (greedy[0].detach()-target).square().sum()
++    target=(greedy[6]*greedy[3]).detach()
++    assert (explore[6]*explore[3]-target).square().sum() > (greedy[6]*greedy[3]-target).square().sum()
+ 
+ 
+ def test_presented_answer_uses_committed_root_and_keeps_reader_cut():
+--- round2/test/test_operators_round2b.py
++++ round2b/test/test_operators_round2b.py
+@@ -0,0 +1,59 @@
++"""Reconstruction keep, unbiased reader exposure, and inherited form order."""
++from types import SimpleNamespace
++import torch
++
++
++def test_reader_trains_on_both_trials_all_active_rows():
++    from SentenceCompose import sentence_pair
++    active = torch.tensor([True, True, False])
++    seen = []
++    sentence_pair(None, lambda _, prior: prior is not None,
++        lambda other, _: (torch.tensor([1., 0., 0.] if other else [0., 1., 0.]),
++                          torch.full((3,), float(other))),
++        lambda _: None, active=active, before_step=lambda rows: seen.append(rows.clone()))
++    assert len(seen) == 2
++    assert all(torch.equal(rows, active) for rows in seen)
++
++
++def test_pole_only_handoff_preserves_magnitude_and_native_reference_evidence():
++    from ModelAttention import pole_activation, reference_evidence
++    activation = torch.tensor([[[.3], [-.6], [.8], [-.4]]], requires_grad=True)
++    pair = torch.tensor([[[0., 1.], [1., 0.], [.5, .5], [1., 0.]]])
++    changed = torch.tensor([[True, True, True, False]])
++    actual = pole_activation(activation, pair, changed)
++    torch.testing.assert_close(actual, torch.tensor([[[-.3], [.6], [.8], [-.4]]]))
++    torch.testing.assert_close(actual.abs(), activation.abs(), rtol=0, atol=0)
++    model = SimpleNamespace(_attention_poles=pair,
++                            _attention_words=SimpleNamespace(pole_changes=changed))
++    evidence = reference_evidence(model, activation, 'commit_word_reference_slab:whole_slab')
++    torch.testing.assert_close(evidence, torch.tensor([[[0., .3], [.6, 0.], [.8, 0.], [0., .4]]]))
++    assert not evidence.requires_grad
++    model._attention_words.pole_changes.zero_()
++    native = torch.stack((activation.squeeze(-1).clamp(0, 1),
++                         (-activation.squeeze(-1)).clamp(0, 1)), -1)
++    torch.testing.assert_close(reference_evidence(model, activation,
++        'commit_word_reference_slab:per_word'), native, rtol=0, atol=0)
++
++
++def test_inherited_parts_form_partial_order_and_before_after_audit():
++    from test_review13_subspaces import fixture, word
++    cs, cb, ps, _ = fixture()
++    with torch.no_grad():
++        ps.W[4] = torch.tensor([.2, .2, .2])
++        ps.W[7] = torch.tensor([.8, .3, .2])
++        ps.W[8] = torch.tensor([.3, .8, .2])
++    a = word(cs, [(4, 1.)])
++    ab = word(cs, [(4, 1.), (7, 1.)])
++    ac = word(cs, [(4, 1.), (8, 1.)])
++    codes = dict(zip((a, ab, ac), cb.lookup_rows(torch.tensor([a, ab, ac]))))
++    assert (codes[a][:3] <= codes[ab][:3]).all()
++    assert (codes[a][:3] <= codes[ac][:3]).all()
++    assert not (codes[ab][:3] <= codes[ac][:3]).all()
++    assert not (codes[ac][:3] <= codes[ab][:3]).all()
++    audit = cb.mereology.containment_audit()
++    assert audit['before'] == audit['after'] == dict(pairs=2, violating_pairs=0, coordinates=0, largest=0.)
++    displaced = {row: code.clone() for row, code in codes.items()}
++    displaced[a][0] = 1.
++    audit = cb.mereology.containment_audit(before=displaced, after=codes)
++    assert audit['before']['violating_pairs'] == 2
++    assert audit['before']['largest'] > .6 and audit['after']['largest'] == 0
+--- round2/test/test_review14_contracts.py
++++ round2b/test/test_review14_contracts.py
+@@ -145,7 +145,7 @@
+     from pathlib import Path
+     from bounded_tests import run_guarded, GIB
+     root=Path(__file__).resolve().parents[1]
+-    receipt=root/'doc/benchmarks/2026-10-06-operators-round2'
++    receipt=root/'doc/benchmarks/2026-10-06-operators-round2b'
+     prior=root/'doc/benchmarks/2026-10-03-operators-attention'
+     env=os.environ.copy()
+     env.update(PYTEST_PLUGINS='operators_gate_observer', MODEL_COMPILE='none',
+--- before/doc/GradientFlow.md
++++ after/doc/GradientFlow.md
+@@ -21,15 +21,14 @@
+ second graph. A batch-end step runs only when its remaining registered total
+ has a derivative. No extra step is added for diagnostics.
+ 
+-Explore is kept only when its owner-step total `C = R + E + A` is **strictly lower**.
+-A tie keeps greedy. `R` is the registry reconstruction total; `E` is sentence
+-expectation error gated per role by gain × predicted presence; `A` is the
+-relative answer error when supplied. Each answer is read from that trial
+-with the understanding detached, before either optimizer step.
+-Reconstruction and expectation train on both trials; the reader trains only
+-the kept rows of each trial. A trial with no kept rows gives the reader no
+-optimizer step, including no momentum-only step. The kept state is committed detached; no gradient crosses that
+-boundary into the next sentence.
++Explore is kept only when its reconstruction total `R` is **strictly lower**.
++A tie keeps greedy. The chooser's detached advantage uses the owner-step total
++`C = R + E + A`: registry reconstruction, sentence expectation gated per role
++by gain × predicted presence, and relative answer error when supplied.
++Each answer is read from that trial with the understanding detached, before
++either optimizer step. Reconstruction, expectation and the supplied-answer
++reader train on both trials' active rows. The kept state is committed detached;
++no gradient crosses that boundary into the next sentence.
+ 
+ Input narrowing and compose share one departure per sentence. The eligible
+ rounds of both greedy walks supply the uniform round draw; the selected
+@@ -665,16 +664,15 @@
+ with the architecture statement in
+ [Architecture](Architecture.md#the-scheme-confirmed-2026-10-06-expectation-and-surprise-through-the-architecture).
+ The sections above describe what is implemented; this one what each round
+-changes in the gradient's ownership and path. Round 2's text is plan §14.
+-
+-- **The trial cost (round 2).** The two derivations are compared on, and the
+-  chooser credited by, the owner-step total `R + E + A`: reconstruction;
+-  expectation gated per role by `g·κ` so an unconfident predictor decides
+-  nothing; the answer where supplied, read on both roots without a step.
+-  Strictly lower keeps explore; a tie keeps greedy; the SCG surrogate and its
+-  registration are unchanged, so the chooser remains reconstruction's in the
+-  audit while the cost it compares sees every objective. This replaces the
+-  sentence "the answer and expectation never enter the comparison" above.
++changes in the gradient's ownership and path. Round 2's text is plan §14,
++corrected by round 2b in §16.
++
++- **The trial cost (round 2, corrected in 2b).** The chooser is credited by
++  the owner-step total `R + E + A`; only reconstruction `R` decides the keep.
++  Expectation is gated per role by `g·κ`; the supplied answer is read on both
++  detached roots before either step. The reader then trains on both trials.
++  Strictly lower reconstruction keeps explore; a tie keeps greedy. The SCG
++  surrogate, reduction, registration and ownership remain unchanged.
+ - **One departure over both walks (round 2).** Narrowing and compose share the
+   sentence's single departure (`R` over both walks' eligible rounds); a
+   narrowing departure runs through the sentence; the percept-stage selection
+@@ -703,7 +701,9 @@
+   a tree; the committed root is what the readers see at test and what the
+   class bar measures; no straight-through, no mixed forward.
+ 
+-## Operators update round 2: credit (October 6; uncommitted candidate)
++<a id="operators-update-round-2-credit-october-6-uncommitted-candidate"></a>
++
++## Operators update round 2: credit (October 6; rejected candidate)
+ 
+ The [receipt](benchmarks/2026-10-06-operators-round2/README.md) starts from the
+ accepted round-1 source. Sentence comparison uses the Error registry's relative
+@@ -744,8 +744,51 @@
+ MM_xor convergence 9/10, sum 10/10; the full sweep is green and the ownership
+ zeros are retained. Across XOR, 5,426 of 16,000 sentence records have nonzero
+ advantage, including 1,074 narrowing departures; both walks' logits move.
+-The unchanged parallel MM caller made no sentence-owner comparison and did
+-not consume the leaf handoff. Its joint-credit coverage requirement remains
+-unfulfilled; trajectory difference from the landing is not established.
+-The receipt retains every failure and the explicit limitation. No round-2
+-commit is made before Claude's review.
++The initial observer omitted both reference-slab consumers and therefore
++incorrectly treated MM as inactive. Plan §15 records a different first forward
++from the landing at identical construction parameters and RNG state. MM's
++9/10 is a live miss. Round 2 was not accepted; its receipt is preserved intact.
++
++
++## Operators update round 2b (October 6; review candidate)
++
++[Round-2b receipt](benchmarks/2026-10-06-operators-round2b/README.md). The keep
++and the policy's credit are distinct: strict improvement in `R` commits explore,
++while `Δ(R+E+A)` supplies the unchanged `K·R·p(a)` score-function surrogate.
++The audit records both components per trial, the reconstruction decision,
++the advantage sign, and whether the answer reverses credit against the keep.
++Both detached roots train the answer-owned reader on every active supplied row.
++The single departure, predictor training, reconstruction teachers and owner
++lists are unchanged.
++
++The handoff changes only activation sign, retaining its magnitude and the
++leaf event exactly. A tied pair retains the prior sign. Explicit-pole grammar
++reads the full pair. Untouched scalar references use the landing's exact
++signed-activation conversion, including saturation to `[0,1]`; reached fields
++choose its expressed pole. `ModelAttention.POLE_CONSUMERS` declares and the
++observer counts the sentence payload, explicit-pole pushed slab, and both
++reference-slab publication paths. The closing reads the resulting evidence.
++The concept-only image is unchanged and remains zero in the two grammar
++configurations whose complement width is zero.
++
++The pre-training disjunction replay exposes a remaining downstream form
++change: `InterpretLayer.forward` multiplies the signed activation into the
++resolved object code. With negative poles, the unchanged disjunction receives
++negative directions, whose composition is not the negative of the positive
++composition. Merely removing handoff rescaling does not repair this inverse.
++The receipt isolates that residual with a diagnostic unsigned interpretation;
++that diagnostic is not installed in the candidate and is not a gate training.
++
++The bank-wide inherited-part audit is read-only and covers order-zero forms.
++It checks all distinct row pairs whose positive-net part sets are included,
++using intersections of the part postings. It reports pair counts and maximum
++coordinatewise violations before and after supplied placement snapshots;
++current codes are `L` on both sides. The conceptual complement is unconstrained.
++No centroid placement or higher-order enforcement is added in this round.
++
++The round-2b campaign completed all thirty unseeded trainings: class 1/10, reconstruction 6/10, MM 10/10, sum 10/10. Its standing gate failed; the sweep is green and the receipt records all ownership checks. All three paired MM trajectories differ from the landing at the first forward, so MM is live. The candidate remains uncommitted for review.
++
++Forward-only tracing distinguishes the MM configurations: `MM_xor` bypasses
++all four declared pole consumers, while `MM_grammar` reaches both reference
++paths. The paired MM_xor trajectory difference is established independently;
++its causal attribution to the reference slab is not supported by that trace.
+--- before/doc/FutureWork.md
++++ after/doc/FutureWork.md
+@@ -606,7 +606,8 @@
+ and targets, and the answer detaches that understanding. Backward is restricted
+ to the owners. Lessons train choosers without moving operators. The current [§22 decision](plans/2026-09-29-item-6-9-xor-grammar.md#223-witnesses-and-the-optimizer-b-decided)
+ selects only by strictly lower reconstruction, ties to greedy, and trains
+-the reader on the kept trial alone. Reconstruction uses momentum descent;
++the reader on the kept trial alone in that historical decision; operators
++round 2b changes reader exposure to both detached trial roots. Reconstruction uses momentum descent;
+ its witnessed inverse is retired. Product and mean replace conjunction
+ and disjunction, while min/max remain separate catalogue operators.
+ [GradientFlow](GradientFlow.md) records the implementation and its audit;
+@@ -1170,8 +1171,9 @@
+ estimator (score-function, found silent by construction — plan §5). Round 2
+ is an uncommitted candidate held for review after its gate missed: class
+ 4/10, reconstruction 6/10, MM_xor convergence 9/10, sum 10/10; sweep green
+-and ownership zeros retained. The required live MM joint-credit path is
+-unfulfilled ([receipt](benchmarks/2026-10-06-operators-round2/README.md)):
++and ownership zeros retained. The initial observer counted only the sentence payload
++([round-2 receipt](benchmarks/2026-10-06-operators-round2/README.md)); the
++round-2b replay establishes a live MM trajectory, so its miss counts:
+ the trial cost as the owner-step total, one departure over both walks with
+ the narrowed poles handed off, the negative image at the closing on the
+ concept face (spec §2.6.1, confidence-gated, so it needs no meanings to
+@@ -1183,3 +1185,19 @@
+ and targets by inversion. Round 5: the attention filter. The dense chooser
+ signal is not wanted: the forward stays a tree (plan §12.2); sparse
+ presences are subsumed by round 3's sparse superposition.
++
++
++Operators round 2b corrects the keep to reconstruction alone and trains the
++answer reader on both detached trials; credit still uses `R+E+A`. It preserves
++activation magnitude at the pole handoff and audits all consumer paths. The
++closing image remains landed as a mechanism, with zero complement in the gate
++fixtures. The [round-2b receipt](benchmarks/2026-10-06-operators-round2b/README.md)
++records the live MM comparison and the residual signed interpretation before
++disjunction. Centroid placement remains round 3; its final containment cap
++will use decreasing part count and the new before/after audit. Higher-order
++order preservation is conditional on monotone folds, not added here.
++
++The round-2b call-profile check distinguishes the configurations: `MM_xor`
++bypasses all four pole consumers; `MM_grammar` reaches both reference-slab paths.
++All three paired MM_xor trajectories still differ from the landing. That
++difference is recorded without attributing it to a consumer that did not run.
+--- before/doc/specs/2026-09-29-operator-catalogue.md
++++ after/doc/specs/2026-09-29-operator-catalogue.md
+@@ -1413,6 +1413,9 @@
+ 
+ ### 12.2 Operators update, round 2: credit (2026-10-06; uncommitted)
+ 
++This round was not accepted (plan §15). This section records the historical
++candidate; §12.3 describes its round-2b correction.
++
+ Round 1 was accepted by Alec on October 6 and landed as `73cd7b71b`; its
+ [acceptance record](../benchmarks/2026-10-05-operators-update/acceptance.json)
+ amends the historical candidate status in §12.1 without replacing the measured
+@@ -1450,8 +1453,51 @@
+ 4/10, reconstruction 6/10, MM_xor convergence 9/10, sum 10/10. The full sweep
+ is green; sentence-path perception gradients, code displacement and audited
+ ownership conflicts are zero. Narrowing and compose receive nonzero credit
+-in XOR. The unchanged parallel MM caller bypasses the sentence owner step
+-and leaf consumer, so the requirement that its joint credit be live remains
+-unfulfilled; a trajectory difference from the landing is not established.
++in XOR. The first observer omitted the two reference-slab consumers. Plan §15 calls
++MM live; round 2b confirms different paired trajectories. Its forward-only
++trace distinguishes the configurations: MM_xor bypasses all four consumers,
++while MM_grammar reaches the reference paths. The MM miss still counts.
+ All runs and failures are retained without retry. This candidate is held
+ for Claude's review and is not committed.
++
++
++### 12.3 Operators update, round 2b (2026-10-06; review candidate)
++
++The [round-2b receipt](../benchmarks/2026-10-06-operators-round2b/README.md)
++starts from the frozen round-2 source. Only strictly lower reconstruction
++keeps explore; ties keep greedy. The unchanged SCG advantage remains the
++relative total difference `Δ(R+E+A)`. The answer-owned reader trains on both
++detached trial roots. The handoff preserves event values and activation
++magnitudes, changing only the expressed pole; tied pairs retain the prior
++sign. All four consumer paths are declared and counted, including both
++reference-slab publications. Untouched reference evidence exactly matches the
++landing's signed-activation conversion. The closing image, one joint departure,
++pair search, reconstruction objective and owners are unchanged.
++
++First-order concepts (allocator order zero) obey inherited-part containment:
++`parts(X) ⊆ parts(Y) ⇒ c(X) ≤ c(Y)` coordinatewise on the form. Positive net
++part evidence selects membership; `L` is their join. The audit intersects the
++postings of X's parts to enumerate its containers, includes equal sets in both
++directions, omits trivial self pairs, and checks empty sets against every row.
++Its before/after views accept placement snapshots. Future centroid placement
++will cap each contained code by all containers in decreasing part count.
++Since each container remains at least its own `L`, the cap preserves the
++contained code's lower bound; lowering never raises a container over its
++ceiling. No placement pass is implemented here, and meanings are unconstrained.
++
++| Fold or composition | Coordinatewise monotone in its inputs? |
++| --- | --- |
++| Native join `max` and ordinary `min` | Yes, with fixed selected evidence and coordinates. |
++| `MeronymicFoldAdapter`, sigma and pi, including butterfly membership cascades | Yes in the forward direction: nonnegative monotone coupling, or the membership kernels below. A common fold preserves same-order comparisons. Its inverse is not generally monotone. |
++| `PiLayer2` | Yes: nonnegative weights act on increasing log memberships, followed by increasing exp/clamp. |
++| `SigmaLayer2` | Yes: complement conjugation of monotone pi reverses order twice. |
++| Legacy signed `SigmaLayer` and `PiLayer`, including signed butterfly folds | No guarantee: signed linear factors can have negative cross-derivatives; operand selection adds another discontinuity. |
++| Legacy `SigmaLayer`/`PiLayer` with `invertible=True`, `monotonic=True`, no signed butterfly, nonnegative gate, and fixed operand selection | Yes: the forward matrix is nonnegative. Sigma’s optional top-two support selection is excluded from this guarantee. |
++| Form conjunction and disjunction binding kernels | No guarantee: normalization couples coordinates; increasing one can lower another. |
++| `ConceptualCombine` signed mixing | No guarantee: unrestricted signed factors. |
++| Silent-coordinate intersection | Monotone for a fixed nonzero support; no global guarantee when zero changes from “no restriction” to a specified value. |
++
++The containment guarantee is enforced by construction and audited only at
++order zero this round. The tests distinguish `a ≤ ab`, `a ≤ ac` and incomparable
++`ab`, `ac`. The receipt preserves the disjunction residual and its isolated
++cause; an unimplemented form/pole separation is not claimed as repaired.
+--- before/todo.md
++++ after/todo.md
+@@ -137,14 +137,19 @@
+    and, once the path is invertible, at every layer by inversion;
+    expectation and output as the criteria, reconstruction retiring to an
+    audit where the transformations are exact. Rounds (plan §9.5, §12.3):
+-   **2 credit — measured candidate, gate failed; Claude review pending**
++   **2 credit — round 2 rejected; round 2b measured, gate failed, held for Claude review**
+    ([receipt](doc/benchmarks/2026-10-06-operators-round2/README.md); no round-2 commit):
+    the owner-step trial cost, one departure over both walks,
+    the narrowed poles handed off, the §2.6.1 image at the closing — the
+    Codex text is plan §14. Thirty trainings: class 4/10, reconstruction 6/10,
+    MM_xor 9/10, sum 10/10; sweep green and ownership zeros retained. The
+-   unchanged parallel MM caller bypasses the new owner-step comparison,
+-   leaving its live-credit requirement unresolved. **3 identity** (pairs plus length as the parts,
++   round-2 observer had incomplete coverage. The paired MM_xor trajectories
++   differ, but its four pole consumers are not reached (MM_grammar reaches
++   the reference paths). Round 2b
++   restores the reconstruction keep, trains both reader trials, preserves
++   pole magnitude, audits all consumers and inherited-part containment, and
++   adds the paired MM replay
++   ([receipt](doc/benchmarks/2026-10-06-operators-round2b/README.md)). **3 identity** (pairs plus length as the parts,
+    the content width, the narrowing rule and the centroid), **4 meaning**
+    (membership as properties, co-activation through shared wholes, Kleene
+    connectives, expectation and targets by inversion), **5 attention** (the

@@ -89,7 +89,8 @@ class TestRuntimeSplitIngestion(unittest.TestCase):
 
     def test_store_truths_records_truths(self):
         # Mechanism only: an untrained reading stores provenance, without
-        # claiming learned meaning or manufacturing either evidence pole.
+        # claiming learned meaning. Native word identification reaches the
+        # closing independently of source trust.
         m, Models = _model()
         store = m.symbolSpace.ltm_store
         m.store_truths([{"content": "hello world", "trust": 0.9},
@@ -97,26 +98,27 @@ class TestRuntimeSplitIngestion(unittest.TestCase):
         rows = (store.origin[:len(store)] == store.ORIGIN_USER).nonzero().flatten()
         self.assertEqual(rows.numel(), 2)
         torch.testing.assert_close(store.trust[rows], torch.tensor([.9, .4]))
-        torch.testing.assert_close(store.c_plus[rows], torch.zeros(2))
+        torch.testing.assert_close(store.c_plus[rows], torch.ones(2))
         torch.testing.assert_close(store.c_minus[rows], torch.zeros(2))
 
     @pytest.mark.usefixtures('eager_reading')
     def test_store_truths_idempotent_clear_then_record(self):
         # Mechanism only: replacement clears user provenance and records the
-        # new supplied trust. Neither row claims learned evidence.
+        # new supplied trust. Identification evidence comes from the resolved
+        # word references and is not scaled by that trust.
         m, Models = _model()
         store = m.symbolSpace.ltm_store
         m.store_truths([{"content": "hello world", "trust": 0.8}])
         rows = (store.origin[:len(store)] == store.ORIGIN_USER).nonzero().flatten()
         self.assertEqual(rows.numel(), 1)
         torch.testing.assert_close(store.trust[rows], torch.tensor([.8]))
-        torch.testing.assert_close(store.c_plus[rows], torch.zeros(1))
+        torch.testing.assert_close(store.c_plus[rows], torch.ones(1))
         torch.testing.assert_close(store.c_minus[rows], torch.zeros(1))
         m.store_truths([{"content": "loving world", "trust": 0.6}])
         rows = (store.origin[:len(store)] == store.ORIGIN_USER).nonzero().flatten()
         self.assertEqual(rows.numel(), 1)
         torch.testing.assert_close(store.trust[rows], torch.tensor([.6]))
-        torch.testing.assert_close(store.c_plus[rows], torch.zeros(1))
+        torch.testing.assert_close(store.c_plus[rows], torch.ones(1))
         torch.testing.assert_close(store.c_minus[rows], torch.zeros(1))
 
 

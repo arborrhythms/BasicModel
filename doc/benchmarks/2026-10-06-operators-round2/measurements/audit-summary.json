@@ -1,0 +1,5412 @@
+{
+  "ownership": {
+    "parameters": [
+      {
+        "parameter": "conceptualSpaces.1.concept_parts_layer.features.values",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 12
+      },
+      {
+        "parameter": "perceptualSpace._owned_bases.what.W",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 3584
+      },
+      {
+        "parameter": "perceptualSpace._percept_store.byte_fallback.byte_codebook",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 3584
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.5.sigma.layer.W",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 9
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.5.sigma.layer.biasWeight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.6.callosum",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 72
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.6.layer.butterfly_L",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 2304
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.6.layer.butterfly_d",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 4608
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.6.layer.butterfly_U",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 2304
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.5.sigma.layer.W",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 9
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.5.sigma.layer.biasWeight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.6.callosum",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 72
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.6.layer.butterfly_L",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 2304
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.6.layer.butterfly_d",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 4608
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.6.layer.butterfly_U",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 2304
+      },
+      {
+        "parameter": "wholeSpaces.0.begins_weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.0.ends_weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.0.atom_level",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.0._owned_bases.what.W",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 126
+      },
+      {
+        "parameter": "wholeSpaces.0._owned_bases.what.primitive_properties.members",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 2304
+      },
+      {
+        "parameter": "wholeSpaces.1.begins_weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.1.ends_weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.1.atom_level",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 265
+      },
+      {
+        "parameter": "wholeSpaces.1._owned_bases.what.W",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 126
+      },
+      {
+        "parameter": "wholeSpaces.1._owned_bases.what.primitive_properties.members",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 2304
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.stop_anchor",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 22
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.reduce_anchor",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 44
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.apply_anchor",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 0
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.bracket_anchor",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 132
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.0.operation_layer.space_prior",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 6
+      },
+      {
+        "parameter": "symbolSpace.subspace.category_embedding.weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 256
+      },
+      {
+        "parameter": "symbolSpace.subspace.rule_predictor.0.weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 576
+      },
+      {
+        "parameter": "symbolSpace.subspace.rule_predictor.0.bias",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 24
+      },
+      {
+        "parameter": "symbolSpace.subspace.rule_predictor.2.weight",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 192
+      },
+      {
+        "parameter": "symbolSpace.subspace.rule_predictor.2.bias",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 8
+      },
+      {
+        "parameter": "symbolSpace.languageSpace.generate_policy.weight",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 66
+      },
+      {
+        "parameter": "symbolSpace.languageSpace.generate_policy.bias",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 3
+      },
+      {
+        "parameter": "symbolSpace.languageSpace.decomposition_chooser.weight",
+        "owner": "reconstruction",
+        "writers": [
+          "reconstruction"
+        ],
+        "elements": 5
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.4.coefficients",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 54
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.4.coefficients",
+        "owner": "reconstruction",
+        "writers": [],
+        "elements": 54
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.pi.layer.raw_L",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 484
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.pi.layer.d",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 22
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.pi.layer.raw_U",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 484
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.pi.layer.biasWeight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 22
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.sigma.layer.raw_L",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 484
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.sigma.layer.d",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 22
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.sigma.layer.raw_U",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 484
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.sigma.layer.biasWeight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 22
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.routing_proj.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 176
+      },
+      {
+        "parameter": "conceptualSpaces.0.layers.0.routing_proj.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 22
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.pi.layer.raw_L",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 484
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.pi.layer.d",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 22
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.pi.layer.raw_U",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 484
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.pi.layer.biasWeight",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 22
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.sigma.layer.raw_L",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 484
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.sigma.layer.d",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 22
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.sigma.layer.raw_U",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 484
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.sigma.layer.biasWeight",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 22
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.routing_proj.weight",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 176
+      },
+      {
+        "parameter": "conceptualSpaces.1.layers.0.routing_proj.bias",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 22
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.predictor.0.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 6776
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.predictor.0.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 44
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.predictor.2.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 968
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.predictor.2.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 22
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.kind_weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 138
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.kind_bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.0.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 76176
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.0.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 138
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.2.weight",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 9522
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2._inter_predictor.network.2.bias",
+        "owner": "expectation",
+        "writers": [],
+        "elements": 69
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.word_predictor.0.weight",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 6776
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.word_predictor.0.bias",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 44
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.word_predictor.2.weight",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 968
+      },
+      {
+        "parameter": "symbolSpace.subspace.layers.2.word_predictor.2.bias",
+        "owner": "expectation",
+        "writers": [
+          "expectation"
+        ],
+        "elements": 22
+      },
+      {
+        "parameter": "inputSpace.outputSpace._readout_bias",
+        "owner": "output",
+        "writers": [
+          "output"
+        ],
+        "elements": 1
+      },
+      {
+        "parameter": "inputSpace.outputSpace.layers.0.W",
+        "owner": "output",
+        "writers": [
+          "output"
+        ],
+        "elements": 132
+      },
+      {
+        "parameter": "inputSpace.outputSpace.layers.0.biasWeight",
+        "owner": "output",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "inputSpace.outputSpace.layers.1.W",
+        "owner": "output",
+        "writers": [],
+        "elements": 132
+      },
+      {
+        "parameter": "inputSpace.outputSpace.layers.1.biasWeight",
+        "owner": "output",
+        "writers": [],
+        "elements": 132
+      },
+      {
+        "parameter": "answer_attention.space_bias",
+        "owner": "output",
+        "writers": [],
+        "elements": 6
+      },
+      {
+        "parameter": "answer_attention.consume_gate",
+        "owner": "output",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "answer_attention.scorer.0.weight",
+        "owner": "output",
+        "writers": [],
+        "elements": 64
+      },
+      {
+        "parameter": "answer_attention.scorer.0.bias",
+        "owner": "output",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "answer_attention.scorer.2.weight",
+        "owner": "output",
+        "writers": [],
+        "elements": 16
+      },
+      {
+        "parameter": "answer_attention.scorer.2.bias",
+        "owner": "output",
+        "writers": [],
+        "elements": 1
+      },
+      {
+        "parameter": "answer_record_reader.weight",
+        "owner": "output",
+        "writers": [
+          "output"
+        ],
+        "elements": 110
+      }
+    ],
+    "conflicts": 0,
+    "active": 25,
+    "inactive": 61,
+    "backward_steps": 1200,
+    "scope": "all training backwards; endpoint excluded"
+  },
+  "chooser": {
+    "records": 1600,
+    "nonzero_advantage_sentences": 554,
+    "by_walk_action": {
+      "compose:disjunction": 507,
+      "narrowing:not": 36,
+      "compose:conjunction": 9,
+      "narrowing:descend": 2
+    },
+    "per_epoch_ranges": {
+      "narrowing:1": {
+        "minimum": 0.0,
+        "maximum": 0.0,
+        "calls": 96
+      },
+      "1": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.2767796814441681,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:2": {
+        "minimum": 0.0,
+        "maximum": 1.161271572113037,
+        "calls": 96
+      },
+      "2": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.2767781913280487,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:3": {
+        "minimum": 0.0,
+        "maximum": 1.6217883825302124,
+        "calls": 96
+      },
+      "3": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.31372666358947754,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:4": {
+        "minimum": 0.0,
+        "maximum": 2.015084743499756,
+        "calls": 96
+      },
+      "4": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.3162483274936676,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:5": {
+        "minimum": 0.0,
+        "maximum": 2.352311134338379,
+        "calls": 96
+      },
+      "5": {
+        "minimum": -0.011669979430735111,
+        "maximum": 0.3149884045124054,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:6": {
+        "minimum": 0.0,
+        "maximum": 2.6425673961639404,
+        "calls": 96
+      },
+      "6": {
+        "minimum": 0.0017169038765132427,
+        "maximum": 0.31385448575019836,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:7": {
+        "minimum": 0.0,
+        "maximum": 2.893312931060791,
+        "calls": 96
+      },
+      "7": {
+        "minimum": 0.0017169038765132427,
+        "maximum": 0.31385448575019836,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:8": {
+        "minimum": 0.0,
+        "maximum": 3.110684871673584,
+        "calls": 96
+      },
+      "8": {
+        "minimum": 0.0017169038765132427,
+        "maximum": 0.31385448575019836,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:9": {
+        "minimum": 0.0,
+        "maximum": 3.2997493743896484,
+        "calls": 96
+      },
+      "9": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.31385448575019836,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:10": {
+        "minimum": 0.0,
+        "maximum": 3.464700222015381,
+        "calls": 96
+      },
+      "10": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.3120883107185364,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:11": {
+        "minimum": 0.0,
+        "maximum": 3.6090304851531982,
+        "calls": 96
+      },
+      "11": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.30293288826942444,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:12": {
+        "minimum": 0.0,
+        "maximum": 3.735656261444092,
+        "calls": 96
+      },
+      "12": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.29606184363365173,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:13": {
+        "minimum": 0.0,
+        "maximum": 3.84702205657959,
+        "calls": 96
+      },
+      "13": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.29606184363365173,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:14": {
+        "minimum": 0.0,
+        "maximum": 3.9451892375946045,
+        "calls": 96
+      },
+      "14": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.30284109711647034,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:15": {
+        "minimum": 0.0,
+        "maximum": 4.086012840270996,
+        "calls": 96
+      },
+      "15": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.3089806139469147,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:16": {
+        "minimum": 0.0,
+        "maximum": 4.159985542297363,
+        "calls": 96
+      },
+      "16": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.3089806139469147,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:17": {
+        "minimum": 0.0,
+        "maximum": 4.282832622528076,
+        "calls": 96
+      },
+      "17": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.3145517408847809,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:18": {
+        "minimum": 0.0,
+        "maximum": 4.405058860778809,
+        "calls": 96
+      },
+      "18": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.3195657730102539,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:19": {
+        "minimum": 0.0,
+        "maximum": 4.488613128662109,
+        "calls": 96
+      },
+      "19": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.32406044006347656,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:20": {
+        "minimum": 0.0,
+        "maximum": 4.575407028198242,
+        "calls": 96
+      },
+      "20": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.328326940536499,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:21": {
+        "minimum": 0.0,
+        "maximum": 4.65300989151001,
+        "calls": 96
+      },
+      "21": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.33216264843940735,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:22": {
+        "minimum": 0.0,
+        "maximum": 4.6894121170043945,
+        "calls": 96
+      },
+      "22": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.33216264843940735,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:23": {
+        "minimum": 0.0,
+        "maximum": 4.721852779388428,
+        "calls": 96
+      },
+      "23": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.33216264843940735,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:24": {
+        "minimum": 0.0,
+        "maximum": 4.783689498901367,
+        "calls": 96
+      },
+      "24": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.3358605206012726,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:25": {
+        "minimum": 0.0,
+        "maximum": 4.8593573570251465,
+        "calls": 96
+      },
+      "25": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.33942657709121704,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:26": {
+        "minimum": 0.0,
+        "maximum": 4.860039234161377,
+        "calls": 96
+      },
+      "26": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.33942657709121704,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:27": {
+        "minimum": 0.0,
+        "maximum": 4.880440711975098,
+        "calls": 96
+      },
+      "27": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.33942657709121704,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:28": {
+        "minimum": 0.0,
+        "maximum": 4.923415184020996,
+        "calls": 96
+      },
+      "28": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.34278759360313416,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:29": {
+        "minimum": 0.0,
+        "maximum": 4.939530849456787,
+        "calls": 96
+      },
+      "29": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.34278759360313416,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:30": {
+        "minimum": 0.0,
+        "maximum": 4.953852653503418,
+        "calls": 96
+      },
+      "30": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.34278759360313416,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:31": {
+        "minimum": 0.0,
+        "maximum": 4.966558933258057,
+        "calls": 96
+      },
+      "31": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.34278759360313416,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:32": {
+        "minimum": 0.0,
+        "maximum": 4.977819919586182,
+        "calls": 96
+      },
+      "32": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.34278759360313416,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:33": {
+        "minimum": 0.0,
+        "maximum": 5.009879112243652,
+        "calls": 96
+      },
+      "33": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.3458092212677002,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:34": {
+        "minimum": 0.0,
+        "maximum": 5.038458824157715,
+        "calls": 96
+      },
+      "34": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.34883809089660645,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:35": {
+        "minimum": 0.0,
+        "maximum": 5.063904762268066,
+        "calls": 96
+      },
+      "35": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.35194337368011475,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:36": {
+        "minimum": 0.0,
+        "maximum": 5.113646030426025,
+        "calls": 96
+      },
+      "36": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.35512030124664307,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:37": {
+        "minimum": 0.0,
+        "maximum": 5.10661506652832,
+        "calls": 96
+      },
+      "37": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.3583110272884369,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:38": {
+        "minimum": 0.0,
+        "maximum": 5.124410629272461,
+        "calls": 96
+      },
+      "38": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.36116331815719604,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:39": {
+        "minimum": 0.0,
+        "maximum": 5.169171333312988,
+        "calls": 96
+      },
+      "39": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.364177942276001,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:40": {
+        "minimum": 0.0,
+        "maximum": 5.143645286560059,
+        "calls": 96
+      },
+      "40": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.364177942276001,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:41": {
+        "minimum": 0.0,
+        "maximum": 5.1864495277404785,
+        "calls": 96
+      },
+      "41": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.36679208278656006,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:42": {
+        "minimum": 0.0,
+        "maximum": 5.168550491333008,
+        "calls": 96
+      },
+      "42": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.3691022992134094,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:43": {
+        "minimum": 0.0,
+        "maximum": 5.178734302520752,
+        "calls": 96
+      },
+      "43": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.3711089491844177,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:44": {
+        "minimum": 0.0,
+        "maximum": 5.187601089477539,
+        "calls": 96
+      },
+      "44": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.37288039922714233,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:45": {
+        "minimum": 0.0,
+        "maximum": 5.195279598236084,
+        "calls": 96
+      },
+      "45": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.3749927282333374,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:46": {
+        "minimum": 0.0,
+        "maximum": 5.201888084411621,
+        "calls": 96
+      },
+      "46": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.37743425369262695,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:47": {
+        "minimum": 0.0,
+        "maximum": 5.2075300216674805,
+        "calls": 96
+      },
+      "47": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.38079527020454407,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:48": {
+        "minimum": 0.0,
+        "maximum": 5.207467079162598,
+        "calls": 96
+      },
+      "48": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.38079527020454407,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:49": {
+        "minimum": 0.0,
+        "maximum": 5.211946964263916,
+        "calls": 96
+      },
+      "49": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.38501599431037903,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:50": {
+        "minimum": 0.0,
+        "maximum": 5.215663909912109,
+        "calls": 96
+      },
+      "50": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.38920724391937256,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:51": {
+        "minimum": 0.0,
+        "maximum": 5.214827537536621,
+        "calls": 96
+      },
+      "51": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.38920724391937256,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:52": {
+        "minimum": 0.0,
+        "maximum": 5.217635631561279,
+        "calls": 96
+      },
+      "52": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.39370930194854736,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:53": {
+        "minimum": 0.0,
+        "maximum": 5.219842433929443,
+        "calls": 96
+      },
+      "53": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.3985177278518677,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:54": {
+        "minimum": 0.0,
+        "maximum": 5.221502780914307,
+        "calls": 96
+      },
+      "54": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.40292856097221375,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:55": {
+        "minimum": 0.0,
+        "maximum": 5.222673416137695,
+        "calls": 96
+      },
+      "55": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.40786534547805786,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:56": {
+        "minimum": 0.0,
+        "maximum": 5.223402500152588,
+        "calls": 96
+      },
+      "56": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.4129767417907715,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:57": {
+        "minimum": 0.0,
+        "maximum": 5.223729133605957,
+        "calls": 96
+      },
+      "57": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.41966432332992554,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:58": {
+        "minimum": 0.0,
+        "maximum": 5.223695755004883,
+        "calls": 96
+      },
+      "58": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.4254997670650482,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:59": {
+        "minimum": 0.0,
+        "maximum": 5.223336219787598,
+        "calls": 96
+      },
+      "59": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.4315846264362335,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:60": {
+        "minimum": 0.0,
+        "maximum": 5.222682476043701,
+        "calls": 96
+      },
+      "60": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.4389841556549072,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:61": {
+        "minimum": 0.0,
+        "maximum": 5.220328330993652,
+        "calls": 96
+      },
+      "61": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.4389841556549072,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:62": {
+        "minimum": 0.0,
+        "maximum": 5.219316005706787,
+        "calls": 96
+      },
+      "62": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.4455782175064087,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:63": {
+        "minimum": 0.0,
+        "maximum": 5.216795921325684,
+        "calls": 96
+      },
+      "63": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.4455782175064087,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:64": {
+        "minimum": 0.0,
+        "maximum": 5.2154765129089355,
+        "calls": 96
+      },
+      "64": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.4513232707977295,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:65": {
+        "minimum": 0.0,
+        "maximum": 5.213955879211426,
+        "calls": 96
+      },
+      "65": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.45792025327682495,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:66": {
+        "minimum": 0.0,
+        "maximum": 5.245916366577148,
+        "calls": 96
+      },
+      "66": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.464754194021225,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:67": {
+        "minimum": 0.0,
+        "maximum": 5.210385322570801,
+        "calls": 96
+      },
+      "67": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.47161126136779785,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:68": {
+        "minimum": 0.0,
+        "maximum": 5.208371162414551,
+        "calls": 96
+      },
+      "68": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.4801630973815918,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:69": {
+        "minimum": 0.0,
+        "maximum": 5.205491542816162,
+        "calls": 96
+      },
+      "69": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.4801630973815918,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:70": {
+        "minimum": 0.0,
+        "maximum": 5.203306674957275,
+        "calls": 96
+      },
+      "70": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.4876394271850586,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:71": {
+        "minimum": 0.0,
+        "maximum": 5.2010087966918945,
+        "calls": 96
+      },
+      "71": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.4949868619441986,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:72": {
+        "minimum": 0.0,
+        "maximum": 5.198610305786133,
+        "calls": 96
+      },
+      "72": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.5013700127601624,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:73": {
+        "minimum": 0.0,
+        "maximum": 5.196117401123047,
+        "calls": 96
+      },
+      "73": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.5086967945098877,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:74": {
+        "minimum": 0.0,
+        "maximum": 5.193549633026123,
+        "calls": 96
+      },
+      "74": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.5164151191711426,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:75": {
+        "minimum": 0.0,
+        "maximum": 5.1909098625183105,
+        "calls": 96
+      },
+      "75": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.5241256952285767,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:76": {
+        "minimum": 0.0,
+        "maximum": 5.188211441040039,
+        "calls": 96
+      },
+      "76": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.5326138734817505,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:77": {
+        "minimum": 0.0,
+        "maximum": 5.185460090637207,
+        "calls": 96
+      },
+      "77": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.541628360748291,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:78": {
+        "minimum": 0.0,
+        "maximum": 5.182664394378662,
+        "calls": 96
+      },
+      "78": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.5509081482887268,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:79": {
+        "minimum": 0.0,
+        "maximum": 5.179827690124512,
+        "calls": 96
+      },
+      "79": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.5614630579948425,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:80": {
+        "minimum": 0.0,
+        "maximum": 5.17695426940918,
+        "calls": 96
+      },
+      "80": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.5720991492271423,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:81": {
+        "minimum": 0.0,
+        "maximum": 5.174060344696045,
+        "calls": 96
+      },
+      "81": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.5816174149513245,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:82": {
+        "minimum": 0.0,
+        "maximum": 5.171141147613525,
+        "calls": 96
+      },
+      "82": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.5913476943969727,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:83": {
+        "minimum": 0.0,
+        "maximum": 5.1682047843933105,
+        "calls": 96
+      },
+      "83": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.600027322769165,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:84": {
+        "minimum": 0.0,
+        "maximum": 5.1652607917785645,
+        "calls": 96
+      },
+      "84": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.6093424558639526,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:85": {
+        "minimum": 0.0,
+        "maximum": 5.162306785583496,
+        "calls": 96
+      },
+      "85": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.6187245845794678,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:86": {
+        "minimum": 0.0,
+        "maximum": 5.159348964691162,
+        "calls": 96
+      },
+      "86": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.6270975470542908,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:87": {
+        "minimum": 0.0,
+        "maximum": 5.1563897132873535,
+        "calls": 96
+      },
+      "87": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.6372474431991577,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:88": {
+        "minimum": 0.0,
+        "maximum": 5.153436660766602,
+        "calls": 96
+      },
+      "88": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.6478425860404968,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:89": {
+        "minimum": 0.0,
+        "maximum": 5.150491714477539,
+        "calls": 96
+      },
+      "89": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.6590641736984253,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:90": {
+        "minimum": 0.0,
+        "maximum": 5.147554397583008,
+        "calls": 96
+      },
+      "90": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.668858528137207,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:91": {
+        "minimum": 0.0,
+        "maximum": 5.144561290740967,
+        "calls": 96
+      },
+      "91": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.668858528137207,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:92": {
+        "minimum": 0.0,
+        "maximum": 5.141595363616943,
+        "calls": 96
+      },
+      "92": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.668858528137207,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:93": {
+        "minimum": 0.0,
+        "maximum": 5.172858238220215,
+        "calls": 96
+      },
+      "93": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.677498459815979,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:94": {
+        "minimum": 0.0,
+        "maximum": 5.135879039764404,
+        "calls": 96
+      },
+      "94": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.6851828098297119,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:95": {
+        "minimum": 0.0,
+        "maximum": 5.133051872253418,
+        "calls": 96
+      },
+      "95": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.6931657195091248,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:96": {
+        "minimum": 0.0,
+        "maximum": 5.164396286010742,
+        "calls": 96
+      },
+      "96": {
+        "minimum": -0.012781205587089062,
+        "maximum": 0.7020876407623291,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:97": {
+        "minimum": 0.0,
+        "maximum": 5.127480506896973,
+        "calls": 96
+      },
+      "97": {
+        "minimum": -0.01635301113128662,
+        "maximum": 0.7100725173950195,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:98": {
+        "minimum": 0.0,
+        "maximum": 5.12470006942749,
+        "calls": 96
+      },
+      "98": {
+        "minimum": -0.01635301113128662,
+        "maximum": 0.7100725173950195,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:99": {
+        "minimum": 0.0,
+        "maximum": 5.121997356414795,
+        "calls": 96
+      },
+      "99": {
+        "minimum": -0.02548348903656006,
+        "maximum": 0.718813419342041,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:100": {
+        "minimum": 0.0,
+        "maximum": 5.119330406188965,
+        "calls": 96
+      },
+      "100": {
+        "minimum": -0.033503711223602295,
+        "maximum": 0.7264881730079651,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:101": {
+        "minimum": 0.0,
+        "maximum": 5.11669921875,
+        "calls": 96
+      },
+      "101": {
+        "minimum": -0.042358219623565674,
+        "maximum": 0.7350318431854248,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:102": {
+        "minimum": 0.0,
+        "maximum": 5.114108562469482,
+        "calls": 96
+      },
+      "102": {
+        "minimum": -0.05023947358131409,
+        "maximum": 0.742651104927063,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:103": {
+        "minimum": 0.0,
+        "maximum": 5.111557960510254,
+        "calls": 96
+      },
+      "103": {
+        "minimum": -0.05931365489959717,
+        "maximum": 0.7514894008636475,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:104": {
+        "minimum": 0.0,
+        "maximum": 5.109048366546631,
+        "calls": 96
+      },
+      "104": {
+        "minimum": -0.06739848852157593,
+        "maximum": 0.7593785524368286,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:105": {
+        "minimum": 0.0,
+        "maximum": 5.106566905975342,
+        "calls": 96
+      },
+      "105": {
+        "minimum": -0.06739848852157593,
+        "maximum": 0.7593785524368286,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:106": {
+        "minimum": 0.0,
+        "maximum": 5.104149341583252,
+        "calls": 96
+      },
+      "106": {
+        "minimum": -0.07460600137710571,
+        "maximum": 0.7664238214492798,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:107": {
+        "minimum": 0.0,
+        "maximum": 5.101784706115723,
+        "calls": 96
+      },
+      "107": {
+        "minimum": -0.08103525638580322,
+        "maximum": 0.7727186679840088,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:108": {
+        "minimum": 0.0,
+        "maximum": 5.09946870803833,
+        "calls": 96
+      },
+      "108": {
+        "minimum": -0.08817023038864136,
+        "maximum": 0.7797402143478394,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:109": {
+        "minimum": 0.0,
+        "maximum": 5.097200393676758,
+        "calls": 96
+      },
+      "109": {
+        "minimum": -0.0963132381439209,
+        "maximum": 0.7877810001373291,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:110": {
+        "minimum": 0.0,
+        "maximum": 5.094973564147949,
+        "calls": 96
+      },
+      "110": {
+        "minimum": -0.0963132381439209,
+        "maximum": 0.7877810001373291,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:111": {
+        "minimum": 0.0,
+        "maximum": 5.0928168296813965,
+        "calls": 96
+      },
+      "111": {
+        "minimum": -0.10546591877937317,
+        "maximum": 0.7965613603591919,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:112": {
+        "minimum": 0.0,
+        "maximum": 5.0907111167907715,
+        "calls": 96
+      },
+      "112": {
+        "minimum": -0.11660262942314148,
+        "maximum": 0.8071600198745728,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:113": {
+        "minimum": 0.0,
+        "maximum": 5.0886688232421875,
+        "calls": 96
+      },
+      "113": {
+        "minimum": -0.12987816333770752,
+        "maximum": 0.8197108507156372,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:114": {
+        "minimum": 0.0,
+        "maximum": 5.086673736572266,
+        "calls": 96
+      },
+      "114": {
+        "minimum": -0.12987816333770752,
+        "maximum": 0.8197108507156372,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:115": {
+        "minimum": 0.0,
+        "maximum": 5.084743499755859,
+        "calls": 96
+      },
+      "115": {
+        "minimum": -0.14173656702041626,
+        "maximum": 0.8309351205825806,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:116": {
+        "minimum": 0.0,
+        "maximum": 5.082866668701172,
+        "calls": 64
+      },
+      "116": {
+        "minimum": -0.14173656702041626,
+        "maximum": 0.8309351205825806,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:117": {
+        "minimum": 0.0,
+        "maximum": 5.081061363220215,
+        "calls": 96
+      },
+      "117": {
+        "minimum": -0.15601840615272522,
+        "maximum": 0.8443882465362549,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:118": {
+        "minimum": 0.0,
+        "maximum": 5.113484859466553,
+        "calls": 96
+      },
+      "118": {
+        "minimum": -0.1705540418624878,
+        "maximum": 0.8581993579864502,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:119": {
+        "minimum": 0.0,
+        "maximum": 5.077639102935791,
+        "calls": 96
+      },
+      "119": {
+        "minimum": -0.18482977151870728,
+        "maximum": 0.8718620538711548,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:120": {
+        "minimum": 0.0,
+        "maximum": 5.076016426086426,
+        "calls": 96
+      },
+      "120": {
+        "minimum": -0.18482977151870728,
+        "maximum": 0.8718620538711548,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:121": {
+        "minimum": 0.0,
+        "maximum": 5.074468612670898,
+        "calls": 96
+      },
+      "121": {
+        "minimum": -0.20195993781089783,
+        "maximum": 0.8881326913833618,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:122": {
+        "minimum": 0.0,
+        "maximum": 5.0729827880859375,
+        "calls": 96
+      },
+      "122": {
+        "minimum": -0.20195993781089783,
+        "maximum": 0.8881326913833618,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:123": {
+        "minimum": 0.0,
+        "maximum": 5.071568965911865,
+        "calls": 96
+      },
+      "123": {
+        "minimum": -0.21884086728096008,
+        "maximum": 0.9040133953094482,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:124": {
+        "minimum": 0.0,
+        "maximum": 5.07022762298584,
+        "calls": 96
+      },
+      "124": {
+        "minimum": -0.23785904049873352,
+        "maximum": 0.9218572378158569,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:125": {
+        "minimum": 0.0,
+        "maximum": 5.068950176239014,
+        "calls": 96
+      },
+      "125": {
+        "minimum": -0.25697776675224304,
+        "maximum": 0.9399218559265137,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:126": {
+        "minimum": 0.0,
+        "maximum": 5.067745685577393,
+        "calls": 96
+      },
+      "126": {
+        "minimum": -0.2757982909679413,
+        "maximum": 0.9577938318252563,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:127": {
+        "minimum": 0.0,
+        "maximum": 5.06660270690918,
+        "calls": 96
+      },
+      "127": {
+        "minimum": -0.2757982909679413,
+        "maximum": 0.9577938318252563,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:128": {
+        "minimum": 0.0,
+        "maximum": 5.0655388832092285,
+        "calls": 96
+      },
+      "128": {
+        "minimum": -0.2947598993778229,
+        "maximum": 0.9759042263031006,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:129": {
+        "minimum": 0.0,
+        "maximum": 5.064548015594482,
+        "calls": 96
+      },
+      "129": {
+        "minimum": -0.3117389976978302,
+        "maximum": 0.9921348094940186,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:130": {
+        "minimum": 0.0,
+        "maximum": 5.06362771987915,
+        "calls": 96
+      },
+      "130": {
+        "minimum": -0.329762727022171,
+        "maximum": 1.009291172027588,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:131": {
+        "minimum": 0.0,
+        "maximum": 5.062778472900391,
+        "calls": 96
+      },
+      "131": {
+        "minimum": -0.34965595602989197,
+        "maximum": 1.028141736984253,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:132": {
+        "minimum": 0.0,
+        "maximum": 5.062004566192627,
+        "calls": 96
+      },
+      "132": {
+        "minimum": -0.3695525825023651,
+        "maximum": 1.0470997095108032,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:133": {
+        "minimum": 0.0,
+        "maximum": 5.0613017082214355,
+        "calls": 96
+      },
+      "133": {
+        "minimum": -0.3695525825023651,
+        "maximum": 1.0470997095108032,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:134": {
+        "minimum": 0.0,
+        "maximum": 5.060674667358398,
+        "calls": 96
+      },
+      "134": {
+        "minimum": -0.3887355625629425,
+        "maximum": 1.0652447938919067,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:135": {
+        "minimum": 0.0,
+        "maximum": 5.060120105743408,
+        "calls": 96
+      },
+      "135": {
+        "minimum": -0.3887355625629425,
+        "maximum": 1.0652447938919067,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:136": {
+        "minimum": 0.0,
+        "maximum": 5.093814849853516,
+        "calls": 96
+      },
+      "136": {
+        "minimum": -0.40594813227653503,
+        "maximum": 1.0815337896347046,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:137": {
+        "minimum": 0.0,
+        "maximum": 5.093413829803467,
+        "calls": 96
+      },
+      "137": {
+        "minimum": -0.4229221045970917,
+        "maximum": 1.0976765155792236,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:138": {
+        "minimum": 0.0,
+        "maximum": 5.058916091918945,
+        "calls": 96
+      },
+      "138": {
+        "minimum": -0.4229221045970917,
+        "maximum": 1.0976765155792236,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:139": {
+        "minimum": 0.0,
+        "maximum": 5.058664321899414,
+        "calls": 96
+      },
+      "139": {
+        "minimum": -0.4398069679737091,
+        "maximum": 1.1135554313659668,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:140": {
+        "minimum": 0.0,
+        "maximum": 5.058486461639404,
+        "calls": 96
+      },
+      "140": {
+        "minimum": -0.4549090564250946,
+        "maximum": 1.127771258354187,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:141": {
+        "minimum": 0.0,
+        "maximum": 5.058380603790283,
+        "calls": 96
+      },
+      "141": {
+        "minimum": -0.4696862995624542,
+        "maximum": 1.141567349433899,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:142": {
+        "minimum": 0.0,
+        "maximum": 5.058351516723633,
+        "calls": 96
+      },
+      "142": {
+        "minimum": -0.4847968518733978,
+        "maximum": 1.1557947397232056,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:143": {
+        "minimum": 0.0,
+        "maximum": 5.0583953857421875,
+        "calls": 96
+      },
+      "143": {
+        "minimum": -0.4847968518733978,
+        "maximum": 1.1557947397232056,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:144": {
+        "minimum": 0.0,
+        "maximum": 5.058515548706055,
+        "calls": 96
+      },
+      "144": {
+        "minimum": -0.49819323420524597,
+        "maximum": 1.1684150695800781,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:145": {
+        "minimum": 0.0,
+        "maximum": 5.058712959289551,
+        "calls": 96
+      },
+      "145": {
+        "minimum": -0.511128306388855,
+        "maximum": 1.1805158853530884,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:146": {
+        "minimum": 0.0,
+        "maximum": 5.058983325958252,
+        "calls": 96
+      },
+      "146": {
+        "minimum": -0.5227688550949097,
+        "maximum": 1.1914057731628418,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:147": {
+        "minimum": 0.0,
+        "maximum": 5.059331893920898,
+        "calls": 96
+      },
+      "147": {
+        "minimum": -0.5349925756454468,
+        "maximum": 1.2026818990707397,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:148": {
+        "minimum": 0.0,
+        "maximum": 5.059746265411377,
+        "calls": 96
+      },
+      "148": {
+        "minimum": -0.546497106552124,
+        "maximum": 1.2132269144058228,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:149": {
+        "minimum": 0.0,
+        "maximum": 5.060237407684326,
+        "calls": 96
+      },
+      "149": {
+        "minimum": -0.5567785501480103,
+        "maximum": 1.2226592302322388,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:150": {
+        "minimum": 0.0,
+        "maximum": 5.060801982879639,
+        "calls": 96
+      },
+      "150": {
+        "minimum": -0.5660327672958374,
+        "maximum": 1.2311493158340454,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:151": {
+        "minimum": 0.0,
+        "maximum": 5.095617294311523,
+        "calls": 96
+      },
+      "151": {
+        "minimum": -0.5743029117584229,
+        "maximum": 1.2387434244155884,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:152": {
+        "minimum": 0.0,
+        "maximum": 5.0621562004089355,
+        "calls": 96
+      },
+      "152": {
+        "minimum": -0.5816009044647217,
+        "maximum": 1.2454625368118286,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:153": {
+        "minimum": 0.0,
+        "maximum": 5.062938213348389,
+        "calls": 96
+      },
+      "153": {
+        "minimum": -0.5896950960159302,
+        "maximum": 1.2527990341186523,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:154": {
+        "minimum": 0.0,
+        "maximum": 5.063792705535889,
+        "calls": 96
+      },
+      "154": {
+        "minimum": -0.598530650138855,
+        "maximum": 1.2607120275497437,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:155": {
+        "minimum": 0.0,
+        "maximum": 5.064715385437012,
+        "calls": 96
+      },
+      "155": {
+        "minimum": -0.6064196825027466,
+        "maximum": 1.267783522605896,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:156": {
+        "minimum": 0.0,
+        "maximum": 5.065708160400391,
+        "calls": 96
+      },
+      "156": {
+        "minimum": -0.6142067909240723,
+        "maximum": 1.2747143507003784,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:157": {
+        "minimum": 0.0,
+        "maximum": 5.066771984100342,
+        "calls": 96
+      },
+      "157": {
+        "minimum": -0.6142067909240723,
+        "maximum": 1.2747143507003784,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:158": {
+        "minimum": 0.0,
+        "maximum": 5.067898750305176,
+        "calls": 96
+      },
+      "158": {
+        "minimum": -0.6226454973220825,
+        "maximum": 1.2821564674377441,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:159": {
+        "minimum": 0.0,
+        "maximum": 5.103270530700684,
+        "calls": 96
+      },
+      "159": {
+        "minimum": -0.6313169002532959,
+        "maximum": 1.2899504899978638,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:160": {
+        "minimum": 0.0,
+        "maximum": 5.0703654289245605,
+        "calls": 96
+      },
+      "160": {
+        "minimum": -0.6400786638259888,
+        "maximum": 1.2979224920272827,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:161": {
+        "minimum": 0.0,
+        "maximum": 5.07169771194458,
+        "calls": 96
+      },
+      "161": {
+        "minimum": -0.6496331691741943,
+        "maximum": 1.3067668676376343,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:162": {
+        "minimum": 0.0,
+        "maximum": 5.073092937469482,
+        "calls": 96
+      },
+      "162": {
+        "minimum": -0.6600422859191895,
+        "maximum": 1.3165366649627686,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:163": {
+        "minimum": 0.0,
+        "maximum": 5.203433990478516,
+        "calls": 96
+      },
+      "163": {
+        "minimum": -0.670311450958252,
+        "maximum": 1.3260912895202637,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:164": {
+        "minimum": 0.0,
+        "maximum": 5.320907115936279,
+        "calls": 96
+      },
+      "164": {
+        "minimum": -0.679323673248291,
+        "maximum": 1.3344831466674805,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:165": {
+        "minimum": 0.0,
+        "maximum": 5.426771640777588,
+        "calls": 96
+      },
+      "165": {
+        "minimum": -0.6874182224273682,
+        "maximum": 1.3420228958129883,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:166": {
+        "minimum": 0.0,
+        "maximum": 5.522162437438965,
+        "calls": 96
+      },
+      "166": {
+        "minimum": -0.6958259344100952,
+        "maximum": 1.3497486114501953,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:167": {
+        "minimum": 0.0,
+        "maximum": 5.608102798461914,
+        "calls": 96
+      },
+      "167": {
+        "minimum": -0.7041633129119873,
+        "maximum": 1.3573415279388428,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:168": {
+        "minimum": 0.0,
+        "maximum": 5.68551778793335,
+        "calls": 96
+      },
+      "168": {
+        "minimum": -0.7126737833023071,
+        "maximum": 1.3651978969573975,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:169": {
+        "minimum": 0.0,
+        "maximum": 5.755237579345703,
+        "calls": 96
+      },
+      "169": {
+        "minimum": -0.7215040922164917,
+        "maximum": 1.3734419345855713,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:170": {
+        "minimum": 0.0,
+        "maximum": 5.818014144897461,
+        "calls": 96
+      },
+      "170": {
+        "minimum": -0.7318598031997681,
+        "maximum": 1.3830955028533936,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:171": {
+        "minimum": 0.0,
+        "maximum": 5.874527931213379,
+        "calls": 96
+      },
+      "171": {
+        "minimum": -0.7411717176437378,
+        "maximum": 1.3917772769927979,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:172": {
+        "minimum": 0.0,
+        "maximum": 5.925386905670166,
+        "calls": 96
+      },
+      "172": {
+        "minimum": -0.7494821548461914,
+        "maximum": 1.399522304534912,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:173": {
+        "minimum": 0.0,
+        "maximum": 5.995116233825684,
+        "calls": 96
+      },
+      "173": {
+        "minimum": -0.7580385208129883,
+        "maximum": 1.4075701236724854,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:174": {
+        "minimum": 0.0,
+        "maximum": 5.996129989624023,
+        "calls": 96
+      },
+      "174": {
+        "minimum": -0.7580385208129883,
+        "maximum": 1.4075701236724854,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:175": {
+        "minimum": 0.0,
+        "maximum": 6.058751106262207,
+        "calls": 96
+      },
+      "175": {
+        "minimum": -0.767096996307373,
+        "maximum": 1.4159588813781738,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:176": {
+        "minimum": 0.0,
+        "maximum": 6.1150360107421875,
+        "calls": 96
+      },
+      "176": {
+        "minimum": -0.7761354446411133,
+        "maximum": 1.4242600202560425,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:177": {
+        "minimum": 0.0,
+        "maximum": 6.11578369140625,
+        "calls": 96
+      },
+      "177": {
+        "minimum": -0.7761354446411133,
+        "maximum": 1.4242600202560425,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:178": {
+        "minimum": 0.0,
+        "maximum": 6.166230201721191,
+        "calls": 96
+      },
+      "178": {
+        "minimum": -0.7842841148376465,
+        "maximum": 1.4317398071289062,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:179": {
+        "minimum": 0.0,
+        "maximum": 6.224427700042725,
+        "calls": 96
+      },
+      "179": {
+        "minimum": -0.7942384481430054,
+        "maximum": 1.440900206565857,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:180": {
+        "minimum": 0.0,
+        "maximum": 6.2892584800720215,
+        "calls": 96
+      },
+      "180": {
+        "minimum": -0.8039901256561279,
+        "maximum": 1.4498010873794556,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:181": {
+        "minimum": 0.0,
+        "maximum": 6.347446918487549,
+        "calls": 96
+      },
+      "181": {
+        "minimum": -0.8137292861938477,
+        "maximum": 1.4587857723236084,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:182": {
+        "minimum": 0.0,
+        "maximum": 6.347590923309326,
+        "calls": 96
+      },
+      "182": {
+        "minimum": -0.8137292861938477,
+        "maximum": 1.4587857723236084,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:183": {
+        "minimum": 0.0,
+        "maximum": 6.361939430236816,
+        "calls": 96
+      },
+      "183": {
+        "minimum": -0.8137292861938477,
+        "maximum": 1.4587857723236084,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:184": {
+        "minimum": 0.0,
+        "maximum": 6.416382789611816,
+        "calls": 96
+      },
+      "184": {
+        "minimum": -0.8235037326812744,
+        "maximum": 1.4677252769470215,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:185": {
+        "minimum": 0.0,
+        "maximum": 6.446022987365723,
+        "calls": 96
+      },
+      "185": {
+        "minimum": -0.8322471380233765,
+        "maximum": 1.475718379020691,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:186": {
+        "minimum": 0.0,
+        "maximum": 6.487600803375244,
+        "calls": 96
+      },
+      "186": {
+        "minimum": -0.841283917427063,
+        "maximum": 1.4840824604034424,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:187": {
+        "minimum": 0.0,
+        "maximum": 6.52476167678833,
+        "calls": 96
+      },
+      "187": {
+        "minimum": -0.8493794202804565,
+        "maximum": 1.4915801286697388,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:188": {
+        "minimum": 0.0,
+        "maximum": 6.659736633300781,
+        "calls": 96
+      },
+      "188": {
+        "minimum": -0.8576525449752808,
+        "maximum": 1.4991624355316162,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:189": {
+        "minimum": 0.0,
+        "maximum": 6.690725326538086,
+        "calls": 96
+      },
+      "189": {
+        "minimum": -0.8650718927383423,
+        "maximum": 1.5059608221054077,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:190": {
+        "minimum": 0.0,
+        "maximum": 6.61379861831665,
+        "calls": 96
+      },
+      "190": {
+        "minimum": -0.8716760873794556,
+        "maximum": 1.5120116472244263,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:191": {
+        "minimum": 0.0,
+        "maximum": 6.637158393859863,
+        "calls": 96
+      },
+      "191": {
+        "minimum": -0.8783031702041626,
+        "maximum": 1.5180346965789795,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:192": {
+        "minimum": 0.0,
+        "maximum": 6.657856464385986,
+        "calls": 96
+      },
+      "192": {
+        "minimum": -0.8853508234024048,
+        "maximum": 1.5243679285049438,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:193": {
+        "minimum": 0.0,
+        "maximum": 6.676149368286133,
+        "calls": 96
+      },
+      "193": {
+        "minimum": -0.8930875062942505,
+        "maximum": 1.5314537286758423,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:194": {
+        "minimum": 0.0,
+        "maximum": 6.692263126373291,
+        "calls": 96
+      },
+      "194": {
+        "minimum": -0.9008876085281372,
+        "maximum": 1.5386701822280884,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:195": {
+        "minimum": 0.0,
+        "maximum": 6.706403732299805,
+        "calls": 96
+      },
+      "195": {
+        "minimum": -0.9078034162521362,
+        "maximum": 1.5450632572174072,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:196": {
+        "minimum": 0.0,
+        "maximum": 6.828683853149414,
+        "calls": 96
+      },
+      "196": {
+        "minimum": -0.914027214050293,
+        "maximum": 1.5508168935775757,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:197": {
+        "minimum": 0.0,
+        "maximum": 6.716657638549805,
+        "calls": 96
+      },
+      "197": {
+        "minimum": -0.914027214050293,
+        "maximum": 1.5508168935775757,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:198": {
+        "minimum": 0.0,
+        "maximum": 6.727250099182129,
+        "calls": 96
+      },
+      "198": {
+        "minimum": -0.920391321182251,
+        "maximum": 1.5566301345825195,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:199": {
+        "minimum": 0.0,
+        "maximum": 6.736377716064453,
+        "calls": 96
+      },
+      "199": {
+        "minimum": -0.9280810356140137,
+        "maximum": 1.5636812448501587,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:200": {
+        "minimum": 0.0,
+        "maximum": 6.744180679321289,
+        "calls": 96
+      },
+      "200": {
+        "minimum": -0.9360761642456055,
+        "maximum": 1.5709340572357178,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:201": {
+        "minimum": 0.0,
+        "maximum": 6.786097526550293,
+        "calls": 96
+      },
+      "201": {
+        "minimum": -0.9454529285430908,
+        "maximum": 1.579480528831482,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:202": {
+        "minimum": 0.0,
+        "maximum": 6.7920122146606445,
+        "calls": 96
+      },
+      "202": {
+        "minimum": -0.9549055099487305,
+        "maximum": 1.5881859064102173,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:203": {
+        "minimum": 0.0,
+        "maximum": 6.8657941818237305,
+        "calls": 96
+      },
+      "203": {
+        "minimum": -0.9549055099487305,
+        "maximum": 1.5881859064102173,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:204": {
+        "minimum": 0.0,
+        "maximum": 6.7503204345703125,
+        "calls": 96
+      },
+      "204": {
+        "minimum": -0.9549055099487305,
+        "maximum": 1.5881859064102173,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:205": {
+        "minimum": 0.0,
+        "maximum": 6.754570007324219,
+        "calls": 96
+      },
+      "205": {
+        "minimum": -0.9643993377685547,
+        "maximum": 1.5968540906906128,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:206": {
+        "minimum": 0.0,
+        "maximum": 6.757925033569336,
+        "calls": 96
+      },
+      "206": {
+        "minimum": -0.9748579263687134,
+        "maximum": 1.6064302921295166,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:207": {
+        "minimum": 0.0,
+        "maximum": 6.760467529296875,
+        "calls": 96
+      },
+      "207": {
+        "minimum": -0.9850974082946777,
+        "maximum": 1.615881323814392,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:208": {
+        "minimum": 0.0,
+        "maximum": 6.762271881103516,
+        "calls": 96
+      },
+      "208": {
+        "minimum": -0.9942773580551147,
+        "maximum": 1.624359130859375,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:209": {
+        "minimum": 0.0,
+        "maximum": 6.800556182861328,
+        "calls": 96
+      },
+      "209": {
+        "minimum": -1.003535509109497,
+        "maximum": 1.6329851150512695,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:210": {
+        "minimum": 0.0,
+        "maximum": 6.763914108276367,
+        "calls": 96
+      },
+      "210": {
+        "minimum": -1.0138752460479736,
+        "maximum": 1.6426092386245728,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:211": {
+        "minimum": 0.0,
+        "maximum": 6.7638678550720215,
+        "calls": 96
+      },
+      "211": {
+        "minimum": -1.0241457223892212,
+        "maximum": 1.6522361040115356,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:212": {
+        "minimum": 0.0,
+        "maximum": 6.768210411071777,
+        "calls": 96
+      },
+      "212": {
+        "minimum": -1.0340672731399536,
+        "maximum": 1.6614736318588257,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:213": {
+        "minimum": 0.0,
+        "maximum": 6.764095306396484,
+        "calls": 96
+      },
+      "213": {
+        "minimum": -1.0340672731399536,
+        "maximum": 1.6614736318588257,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:214": {
+        "minimum": 0.0,
+        "maximum": 6.887059211730957,
+        "calls": 96
+      },
+      "214": {
+        "minimum": -1.0439867973327637,
+        "maximum": 1.6706253290176392,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:215": {
+        "minimum": 0.0,
+        "maximum": 6.7781453132629395,
+        "calls": 96
+      },
+      "215": {
+        "minimum": -1.0538285970687866,
+        "maximum": 1.6797759532928467,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:216": {
+        "minimum": 0.0,
+        "maximum": 6.7737250328063965,
+        "calls": 96
+      },
+      "216": {
+        "minimum": -1.0538285970687866,
+        "maximum": 1.6797759532928467,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:217": {
+        "minimum": 0.0,
+        "maximum": 6.778803825378418,
+        "calls": 96
+      },
+      "217": {
+        "minimum": -1.0626916885375977,
+        "maximum": 1.6880160570144653,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:218": {
+        "minimum": 0.0,
+        "maximum": 6.782815933227539,
+        "calls": 96
+      },
+      "218": {
+        "minimum": -1.0716699361801147,
+        "maximum": 1.696433424949646,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:219": {
+        "minimum": 0.0,
+        "maximum": 6.785850524902344,
+        "calls": 96
+      },
+      "219": {
+        "minimum": -1.0797231197357178,
+        "maximum": 1.7039872407913208,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:220": {
+        "minimum": 0.0,
+        "maximum": 6.788002967834473,
+        "calls": 96
+      },
+      "220": {
+        "minimum": -1.0876280069351196,
+        "maximum": 1.7113412618637085,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:221": {
+        "minimum": 0.0,
+        "maximum": 6.78935432434082,
+        "calls": 96
+      },
+      "221": {
+        "minimum": -1.0957372188568115,
+        "maximum": 1.7189544439315796,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:222": {
+        "minimum": 0.0,
+        "maximum": 6.907890319824219,
+        "calls": 96
+      },
+      "222": {
+        "minimum": -1.1039153337478638,
+        "maximum": 1.726549744606018,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:223": {
+        "minimum": 0.0,
+        "maximum": 6.789937973022461,
+        "calls": 96
+      },
+      "223": {
+        "minimum": -1.1120325326919556,
+        "maximum": 1.7341461181640625,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:224": {
+        "minimum": 0.0,
+        "maximum": 6.784778594970703,
+        "calls": 96
+      },
+      "224": {
+        "minimum": -1.1120325326919556,
+        "maximum": 1.7341461181640625,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:225": {
+        "minimum": 0.0,
+        "maximum": 6.820916175842285,
+        "calls": 96
+      },
+      "225": {
+        "minimum": -1.1120325326919556,
+        "maximum": 1.7341461181640625,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:226": {
+        "minimum": 0.0,
+        "maximum": 6.8971333503723145,
+        "calls": 96
+      },
+      "226": {
+        "minimum": -1.120249629020691,
+        "maximum": 1.7417550086975098,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:227": {
+        "minimum": 0.0,
+        "maximum": 6.773386001586914,
+        "calls": 96
+      },
+      "227": {
+        "minimum": -1.120249629020691,
+        "maximum": 1.7417550086975098,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:228": {
+        "minimum": 0.0,
+        "maximum": 6.767947196960449,
+        "calls": 96
+      },
+      "228": {
+        "minimum": -1.120249629020691,
+        "maximum": 1.7417550086975098,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:229": {
+        "minimum": 0.0,
+        "maximum": 6.76244592666626,
+        "calls": 96
+      },
+      "229": {
+        "minimum": -1.120249629020691,
+        "maximum": 1.7417550086975098,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:230": {
+        "minimum": 0.0,
+        "maximum": 6.760903835296631,
+        "calls": 96
+      },
+      "230": {
+        "minimum": -1.1284821033477783,
+        "maximum": 1.7493106126785278,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:231": {
+        "minimum": 0.0,
+        "maximum": 6.758884429931641,
+        "calls": 96
+      },
+      "231": {
+        "minimum": -1.1358683109283447,
+        "maximum": 1.7560878992080688,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:232": {
+        "minimum": 0.0,
+        "maximum": 6.756435394287109,
+        "calls": 96
+      },
+      "232": {
+        "minimum": -1.143025279045105,
+        "maximum": 1.7626147270202637,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:233": {
+        "minimum": 0.0,
+        "maximum": 6.872641086578369,
+        "calls": 96
+      },
+      "233": {
+        "minimum": -1.1494536399841309,
+        "maximum": 1.7684780359268188,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:234": {
+        "minimum": 0.0,
+        "maximum": 6.750404357910156,
+        "calls": 96
+      },
+      "234": {
+        "minimum": -1.1552248001098633,
+        "maximum": 1.773741602897644,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:235": {
+        "minimum": 0.0,
+        "maximum": 6.789310455322266,
+        "calls": 96
+      },
+      "235": {
+        "minimum": -1.1609721183776855,
+        "maximum": 1.7789466381072998,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:236": {
+        "minimum": 0.0,
+        "maximum": 6.74100399017334,
+        "calls": 96
+      },
+      "236": {
+        "minimum": -1.1609721183776855,
+        "maximum": 1.7789466381072998,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:237": {
+        "minimum": 0.0,
+        "maximum": 6.737168312072754,
+        "calls": 96
+      },
+      "237": {
+        "minimum": -1.1670864820480347,
+        "maximum": 1.7845724821090698,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:238": {
+        "minimum": 0.0,
+        "maximum": 6.7330780029296875,
+        "calls": 96
+      },
+      "238": {
+        "minimum": -1.1725802421569824,
+        "maximum": 1.7896265983581543,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:239": {
+        "minimum": 0.0,
+        "maximum": 6.728762149810791,
+        "calls": 96
+      },
+      "239": {
+        "minimum": -1.177483081817627,
+        "maximum": 1.794142484664917,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:240": {
+        "minimum": 0.0,
+        "maximum": 6.724234580993652,
+        "calls": 96
+      },
+      "240": {
+        "minimum": -1.1819008588790894,
+        "maximum": 1.7982100248336792,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:241": {
+        "minimum": 0.0,
+        "maximum": 6.7262725830078125,
+        "calls": 96
+      },
+      "241": {
+        "minimum": -1.185876727104187,
+        "maximum": 1.801870584487915,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:242": {
+        "minimum": 0.0,
+        "maximum": 6.727470874786377,
+        "calls": 96
+      },
+      "242": {
+        "minimum": -1.1907470226287842,
+        "maximum": 1.8063627481460571,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:243": {
+        "minimum": 0.0,
+        "maximum": 6.727912902832031,
+        "calls": 96
+      },
+      "243": {
+        "minimum": -1.195106863975525,
+        "maximum": 1.810382604598999,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:244": {
+        "minimum": 0.0,
+        "maximum": 6.734662055969238,
+        "calls": 96
+      },
+      "244": {
+        "minimum": -1.1997714042663574,
+        "maximum": 1.8147412538528442,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:245": {
+        "minimum": 0.0,
+        "maximum": 6.7400946617126465,
+        "calls": 96
+      },
+      "245": {
+        "minimum": -1.2039724588394165,
+        "maximum": 1.8186650276184082,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:246": {
+        "minimum": 0.0,
+        "maximum": 6.866635799407959,
+        "calls": 96
+      },
+      "246": {
+        "minimum": -1.2077257633209229,
+        "maximum": 1.822170615196228,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:247": {
+        "minimum": 0.0,
+        "maximum": 6.747539520263672,
+        "calls": 96
+      },
+      "247": {
+        "minimum": -1.2116658687591553,
+        "maximum": 1.8258874416351318,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:248": {
+        "minimum": 0.0,
+        "maximum": 6.74976921081543,
+        "calls": 96
+      },
+      "248": {
+        "minimum": -1.2152315378189087,
+        "maximum": 1.8292485475540161,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:249": {
+        "minimum": 0.0,
+        "maximum": 6.743558406829834,
+        "calls": 96
+      },
+      "249": {
+        "minimum": -1.2152315378189087,
+        "maximum": 1.8292485475540161,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:250": {
+        "minimum": 0.0,
+        "maximum": 6.744917869567871,
+        "calls": 96
+      },
+      "250": {
+        "minimum": -1.2190313339233398,
+        "maximum": 1.832769513130188,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:251": {
+        "minimum": 0.0,
+        "maximum": 6.738703727722168,
+        "calls": 96
+      },
+      "251": {
+        "minimum": -1.2190313339233398,
+        "maximum": 1.832769513130188,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:252": {
+        "minimum": 0.0,
+        "maximum": 6.746062278747559,
+        "calls": 96
+      },
+      "252": {
+        "minimum": -1.2233173847198486,
+        "maximum": 1.8368051052093506,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:253": {
+        "minimum": 0.0,
+        "maximum": 6.758660316467285,
+        "calls": 96
+      },
+      "253": {
+        "minimum": -1.227174997329712,
+        "maximum": 1.8404370546340942,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:254": {
+        "minimum": 0.0,
+        "maximum": 6.769361972808838,
+        "calls": 96
+      },
+      "254": {
+        "minimum": -1.2312664985656738,
+        "maximum": 1.8443255424499512,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:255": {
+        "minimum": 0.0,
+        "maximum": 6.76315975189209,
+        "calls": 96
+      },
+      "255": {
+        "minimum": -1.2312664985656738,
+        "maximum": 1.8443255424499512,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:256": {
+        "minimum": 0.0,
+        "maximum": 6.778913497924805,
+        "calls": 96
+      },
+      "256": {
+        "minimum": -1.2365635633468628,
+        "maximum": 1.8493205308914185,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:257": {
+        "minimum": 0.0,
+        "maximum": 6.792457580566406,
+        "calls": 96
+      },
+      "257": {
+        "minimum": -1.2413640022277832,
+        "maximum": 1.8538438081741333,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:258": {
+        "minimum": 0.0,
+        "maximum": 6.785276889801025,
+        "calls": 96
+      },
+      "258": {
+        "minimum": -1.2413640022277832,
+        "maximum": 1.8538438081741333,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:259": {
+        "minimum": 0.0,
+        "maximum": 6.795699119567871,
+        "calls": 96
+      },
+      "259": {
+        "minimum": -1.2456814050674438,
+        "maximum": 1.857912302017212,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:260": {
+        "minimum": 0.0,
+        "maximum": 6.8043975830078125,
+        "calls": 96
+      },
+      "260": {
+        "minimum": -1.2502412796020508,
+        "maximum": 1.8621433973312378,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:261": {
+        "minimum": 0.0,
+        "maximum": 6.811606407165527,
+        "calls": 96
+      },
+      "261": {
+        "minimum": -1.255473017692566,
+        "maximum": 1.8669978380203247,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:262": {
+        "minimum": 0.0,
+        "maximum": 6.817513465881348,
+        "calls": 96
+      },
+      "262": {
+        "minimum": -1.2608921527862549,
+        "maximum": 1.8720773458480835,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:263": {
+        "minimum": 0.0,
+        "maximum": 6.8222432136535645,
+        "calls": 96
+      },
+      "263": {
+        "minimum": -1.265794277191162,
+        "maximum": 1.8766688108444214,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:264": {
+        "minimum": 0.0,
+        "maximum": 6.825932502746582,
+        "calls": 96
+      },
+      "264": {
+        "minimum": -1.27021062374115,
+        "maximum": 1.8808046579360962,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:265": {
+        "minimum": 0.0,
+        "maximum": 6.828676700592041,
+        "calls": 96
+      },
+      "265": {
+        "minimum": -1.274735450744629,
+        "maximum": 1.8849916458129883,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:266": {
+        "minimum": 0.0,
+        "maximum": 6.822175025939941,
+        "calls": 96
+      },
+      "266": {
+        "minimum": -1.274735450744629,
+        "maximum": 1.8849916458129883,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:267": {
+        "minimum": 0.0,
+        "maximum": 6.824161529541016,
+        "calls": 96
+      },
+      "267": {
+        "minimum": -1.2794842720031738,
+        "maximum": 1.8893321752548218,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:268": {
+        "minimum": 0.0,
+        "maximum": 6.825381755828857,
+        "calls": 96
+      },
+      "268": {
+        "minimum": -1.2843540906906128,
+        "maximum": 1.8937417268753052,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:269": {
+        "minimum": 0.0,
+        "maximum": 6.825915336608887,
+        "calls": 96
+      },
+      "269": {
+        "minimum": -1.289292812347412,
+        "maximum": 1.898179054260254,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:270": {
+        "minimum": 0.0,
+        "maximum": 6.959136009216309,
+        "calls": 96
+      },
+      "270": {
+        "minimum": -1.2949265241622925,
+        "maximum": 1.9032747745513916,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:271": {
+        "minimum": 0.0,
+        "maximum": 6.958759784698486,
+        "calls": 96
+      },
+      "271": {
+        "minimum": -1.3006845712661743,
+        "maximum": 1.9085469245910645,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:272": {
+        "minimum": 0.0,
+        "maximum": 6.957863807678223,
+        "calls": 96
+      },
+      "272": {
+        "minimum": -1.3065792322158813,
+        "maximum": 1.9140013456344604,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:273": {
+        "minimum": 0.0,
+        "maximum": 6.859179496765137,
+        "calls": 96
+      },
+      "273": {
+        "minimum": -1.3118891716003418,
+        "maximum": 1.918936014175415,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:274": {
+        "minimum": 0.0,
+        "maximum": 6.816622257232666,
+        "calls": 96
+      },
+      "274": {
+        "minimum": -1.3118891716003418,
+        "maximum": 1.918936014175415,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:275": {
+        "minimum": 0.0,
+        "maximum": 6.9489336013793945,
+        "calls": 96
+      },
+      "275": {
+        "minimum": -1.3173432350158691,
+        "maximum": 1.9240316152572632,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:276": {
+        "minimum": 0.0,
+        "maximum": 6.943180084228516,
+        "calls": 96
+      },
+      "276": {
+        "minimum": -1.3173432350158691,
+        "maximum": 1.9240316152572632,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:277": {
+        "minimum": 0.0,
+        "maximum": 6.81410026550293,
+        "calls": 96
+      },
+      "277": {
+        "minimum": -1.3228644132614136,
+        "maximum": 1.9292068481445312,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:278": {
+        "minimum": 0.0,
+        "maximum": 6.818188667297363,
+        "calls": 96
+      },
+      "278": {
+        "minimum": -1.3284566402435303,
+        "maximum": 1.9345080852508545,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:279": {
+        "minimum": 0.0,
+        "maximum": 6.821359157562256,
+        "calls": 96
+      },
+      "279": {
+        "minimum": -1.3341087102890015,
+        "maximum": 1.9398983716964722,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:280": {
+        "minimum": 0.0,
+        "maximum": 6.815884590148926,
+        "calls": 96
+      },
+      "280": {
+        "minimum": -1.3341087102890015,
+        "maximum": 1.9398983716964722,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:281": {
+        "minimum": 0.0,
+        "maximum": 6.818318843841553,
+        "calls": 96
+      },
+      "281": {
+        "minimum": -1.3397891521453857,
+        "maximum": 1.9452507495880127,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:282": {
+        "minimum": 0.0,
+        "maximum": 6.857829570770264,
+        "calls": 96
+      },
+      "282": {
+        "minimum": -1.3454591035842896,
+        "maximum": 1.9505386352539062,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:283": {
+        "minimum": 0.0,
+        "maximum": 6.821096897125244,
+        "calls": 96
+      },
+      "283": {
+        "minimum": -1.3511700630187988,
+        "maximum": 1.9559061527252197,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:284": {
+        "minimum": 0.0,
+        "maximum": 6.828866481781006,
+        "calls": 96
+      },
+      "284": {
+        "minimum": -1.3568170070648193,
+        "maximum": 1.9611655473709106,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:285": {
+        "minimum": 0.0,
+        "maximum": 6.835415840148926,
+        "calls": 96
+      },
+      "285": {
+        "minimum": -1.362444519996643,
+        "maximum": 1.9663596153259277,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:286": {
+        "minimum": 0.0,
+        "maximum": 6.840857028961182,
+        "calls": 96
+      },
+      "286": {
+        "minimum": -1.3675258159637451,
+        "maximum": 1.9710476398468018,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:287": {
+        "minimum": 0.0,
+        "maximum": 6.983922958374023,
+        "calls": 96
+      },
+      "287": {
+        "minimum": -1.3726942539215088,
+        "maximum": 1.9758620262145996,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:288": {
+        "minimum": 0.0,
+        "maximum": 6.855799198150635,
+        "calls": 96
+      },
+      "288": {
+        "minimum": -1.3779048919677734,
+        "maximum": 1.9807541370391846,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:289": {
+        "minimum": 0.0,
+        "maximum": 6.851008415222168,
+        "calls": 96
+      },
+      "289": {
+        "minimum": -1.3779048919677734,
+        "maximum": 1.9807541370391846,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:290": {
+        "minimum": 0.0,
+        "maximum": 6.860104560852051,
+        "calls": 96
+      },
+      "290": {
+        "minimum": -1.383154034614563,
+        "maximum": 1.985629916191101,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:291": {
+        "minimum": 0.0,
+        "maximum": 6.874499320983887,
+        "calls": 96
+      },
+      "291": {
+        "minimum": -1.3878751993179321,
+        "maximum": 1.990014910697937,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:292": {
+        "minimum": 0.0,
+        "maximum": 6.887049198150635,
+        "calls": 96
+      },
+      "292": {
+        "minimum": -1.3925989866256714,
+        "maximum": 1.9944382905960083,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:293": {
+        "minimum": 0.0,
+        "maximum": 6.897963047027588,
+        "calls": 96
+      },
+      "293": {
+        "minimum": -1.3972725868225098,
+        "maximum": 1.9987763166427612,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:294": {
+        "minimum": 0.0,
+        "maximum": 6.9074015617370605,
+        "calls": 96
+      },
+      "294": {
+        "minimum": -1.402050495147705,
+        "maximum": 2.003251075744629,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:295": {
+        "minimum": 0.0,
+        "maximum": 6.960578441619873,
+        "calls": 96
+      },
+      "295": {
+        "minimum": -1.406894564628601,
+        "maximum": 2.0077381134033203,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:296": {
+        "minimum": 0.0,
+        "maximum": 6.922486305236816,
+        "calls": 96
+      },
+      "296": {
+        "minimum": -1.4117614030838013,
+        "maximum": 2.0122740268707275,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:297": {
+        "minimum": 0.0,
+        "maximum": 6.928391456604004,
+        "calls": 96
+      },
+      "297": {
+        "minimum": -1.4171680212020874,
+        "maximum": 2.01731538772583,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:298": {
+        "minimum": 0.0,
+        "maximum": 6.933369159698486,
+        "calls": 96
+      },
+      "298": {
+        "minimum": -1.422041416168213,
+        "maximum": 2.0218584537506104,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:299": {
+        "minimum": 0.0,
+        "maximum": 6.937518119812012,
+        "calls": 96
+      },
+      "299": {
+        "minimum": -1.4269359111785889,
+        "maximum": 2.0264155864715576,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:300": {
+        "minimum": 0.0,
+        "maximum": 6.94093132019043,
+        "calls": 96
+      },
+      "300": {
+        "minimum": -1.4318310022354126,
+        "maximum": 2.0309672355651855,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:301": {
+        "minimum": 0.0,
+        "maximum": 7.082817077636719,
+        "calls": 96
+      },
+      "301": {
+        "minimum": -1.4318310022354126,
+        "maximum": 2.0309672355651855,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:302": {
+        "minimum": 0.0,
+        "maximum": 6.93998908996582,
+        "calls": 96
+      },
+      "302": {
+        "minimum": -1.4367865324020386,
+        "maximum": 2.035583257675171,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:303": {
+        "minimum": 0.0,
+        "maximum": 6.942268371582031,
+        "calls": 96
+      },
+      "303": {
+        "minimum": -1.4412535429000854,
+        "maximum": 2.039743185043335,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:304": {
+        "minimum": 0.0,
+        "maximum": 6.9440412521362305,
+        "calls": 96
+      },
+      "304": {
+        "minimum": -1.445273756980896,
+        "maximum": 2.043487071990967,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:305": {
+        "minimum": 0.0,
+        "maximum": 6.951005458831787,
+        "calls": 96
+      },
+      "305": {
+        "minimum": -1.4493534564971924,
+        "maximum": 2.047292947769165,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:306": {
+        "minimum": 0.0,
+        "maximum": 6.957019805908203,
+        "calls": 96
+      },
+      "306": {
+        "minimum": -1.4530190229415894,
+        "maximum": 2.0507118701934814,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:307": {
+        "minimum": 0.0,
+        "maximum": 7.011559009552002,
+        "calls": 96
+      },
+      "307": {
+        "minimum": -1.4567768573760986,
+        "maximum": 2.054211139678955,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:308": {
+        "minimum": 0.0,
+        "maximum": 6.966601371765137,
+        "calls": 96
+      },
+      "308": {
+        "minimum": -1.4605683088302612,
+        "maximum": 2.0577361583709717,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:309": {
+        "minimum": 0.0,
+        "maximum": 6.970353603363037,
+        "calls": 96
+      },
+      "309": {
+        "minimum": -1.4644054174423218,
+        "maximum": 2.0612986087799072,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:310": {
+        "minimum": 0.0,
+        "maximum": 6.973516941070557,
+        "calls": 96
+      },
+      "310": {
+        "minimum": -1.4678648710250854,
+        "maximum": 2.064509630203247,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:311": {
+        "minimum": 0.0,
+        "maximum": 6.970696449279785,
+        "calls": 96
+      },
+      "311": {
+        "minimum": -1.4678648710250854,
+        "maximum": 2.064509630203247,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:312": {
+        "minimum": 0.0,
+        "maximum": 6.973449230194092,
+        "calls": 96
+      },
+      "312": {
+        "minimum": -1.4709900617599487,
+        "maximum": 2.067408800125122,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:313": {
+        "minimum": 0.0,
+        "maximum": 7.026576042175293,
+        "calls": 96
+      },
+      "313": {
+        "minimum": -1.473802924156189,
+        "maximum": 2.0700178146362305,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:314": {
+        "minimum": 0.0,
+        "maximum": 6.9776458740234375,
+        "calls": 96
+      },
+      "314": {
+        "minimum": -1.4767510890960693,
+        "maximum": 2.072749614715576,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:315": {
+        "minimum": 0.0,
+        "maximum": 6.9792022705078125,
+        "calls": 96
+      },
+      "315": {
+        "minimum": -1.4799350500106812,
+        "maximum": 2.0757105350494385,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:316": {
+        "minimum": 0.0,
+        "maximum": 6.980456352233887,
+        "calls": 96
+      },
+      "316": {
+        "minimum": -1.4828158617019653,
+        "maximum": 2.078387498855591,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:317": {
+        "minimum": 0.0,
+        "maximum": 6.978264808654785,
+        "calls": 96
+      },
+      "317": {
+        "minimum": -1.4828158617019653,
+        "maximum": 2.078387498855591,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:318": {
+        "minimum": 0.0,
+        "maximum": 6.976189613342285,
+        "calls": 96
+      },
+      "318": {
+        "minimum": -1.4828158617019653,
+        "maximum": 2.078387498855591,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:319": {
+        "minimum": 0.0,
+        "maximum": 6.977407455444336,
+        "calls": 96
+      },
+      "319": {
+        "minimum": -1.485904574394226,
+        "maximum": 2.081251621246338,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:320": {
+        "minimum": 0.0,
+        "maximum": 6.978410720825195,
+        "calls": 96
+      },
+      "320": {
+        "minimum": -1.4886919260025024,
+        "maximum": 2.083834648132324,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:321": {
+        "minimum": 0.0,
+        "maximum": 6.9766693115234375,
+        "calls": 96
+      },
+      "321": {
+        "minimum": -1.4886919260025024,
+        "maximum": 2.083834648132324,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:322": {
+        "minimum": 0.0,
+        "maximum": 6.9820966720581055,
+        "calls": 96
+      },
+      "322": {
+        "minimum": -1.4921894073486328,
+        "maximum": 2.087083578109741,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:323": {
+        "minimum": 0.0,
+        "maximum": 6.986916542053223,
+        "calls": 96
+      },
+      "323": {
+        "minimum": -1.4963730573654175,
+        "maximum": 2.090975284576416,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:324": {
+        "minimum": 0.0,
+        "maximum": 6.995783805847168,
+        "calls": 96
+      },
+      "324": {
+        "minimum": -1.5005371570587158,
+        "maximum": 2.0948450565338135,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:325": {
+        "minimum": 0.0,
+        "maximum": 7.003727912902832,
+        "calls": 96
+      },
+      "325": {
+        "minimum": -1.5046863555908203,
+        "maximum": 2.0986971855163574,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:326": {
+        "minimum": 0.0,
+        "maximum": 7.162866592407227,
+        "calls": 96
+      },
+      "326": {
+        "minimum": -1.5088937282562256,
+        "maximum": 2.102599859237671,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:327": {
+        "minimum": 0.0,
+        "maximum": 7.0172319412231445,
+        "calls": 96
+      },
+      "327": {
+        "minimum": -1.5126920938491821,
+        "maximum": 2.106121778488159,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:328": {
+        "minimum": 0.0,
+        "maximum": 7.175647735595703,
+        "calls": 96
+      },
+      "328": {
+        "minimum": -1.516930103302002,
+        "maximum": 2.1100575923919678,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:329": {
+        "minimum": 0.0,
+        "maximum": 7.022084712982178,
+        "calls": 96
+      },
+      "329": {
+        "minimum": -1.516930103302002,
+        "maximum": 2.1100575923919678,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:330": {
+        "minimum": 0.0,
+        "maximum": 7.0273566246032715,
+        "calls": 96
+      },
+      "330": {
+        "minimum": -1.521239995956421,
+        "maximum": 2.1140694618225098,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:331": {
+        "minimum": 0.0,
+        "maximum": 7.032121658325195,
+        "calls": 96
+      },
+      "331": {
+        "minimum": -1.5251295566558838,
+        "maximum": 2.117687940597534,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:332": {
+        "minimum": 0.0,
+        "maximum": 7.036439418792725,
+        "calls": 96
+      },
+      "332": {
+        "minimum": -1.5286298990249634,
+        "maximum": 2.1209447383880615,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:333": {
+        "minimum": 0.0,
+        "maximum": 7.1981682777404785,
+        "calls": 96
+      },
+      "333": {
+        "minimum": -1.5317734479904175,
+        "maximum": 2.1238691806793213,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:334": {
+        "minimum": 0.0,
+        "maximum": 7.0439910888671875,
+        "calls": 96
+      },
+      "334": {
+        "minimum": -1.5317734479904175,
+        "maximum": 2.1238691806793213,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:335": {
+        "minimum": 0.0,
+        "maximum": 7.051252365112305,
+        "calls": 96
+      },
+      "335": {
+        "minimum": -1.5350642204284668,
+        "maximum": 2.1269381046295166,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:336": {
+        "minimum": 0.0,
+        "maximum": 7.0511155128479,
+        "calls": 96
+      },
+      "336": {
+        "minimum": -1.5350642204284668,
+        "maximum": 2.1269381046295166,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:337": {
+        "minimum": 0.0,
+        "maximum": 7.051089286804199,
+        "calls": 96
+      },
+      "337": {
+        "minimum": -1.5350642204284668,
+        "maximum": 2.1269381046295166,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:338": {
+        "minimum": 0.0,
+        "maximum": 7.057888031005859,
+        "calls": 96
+      },
+      "338": {
+        "minimum": -1.5384397506713867,
+        "maximum": 2.1300811767578125,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:339": {
+        "minimum": 0.0,
+        "maximum": 7.064104080200195,
+        "calls": 96
+      },
+      "339": {
+        "minimum": -1.5423409938812256,
+        "maximum": 2.133716344833374,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:340": {
+        "minimum": 0.0,
+        "maximum": 7.069803237915039,
+        "calls": 96
+      },
+      "340": {
+        "minimum": -1.5458532571792603,
+        "maximum": 2.1369895935058594,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:341": {
+        "minimum": 0.0,
+        "maximum": 7.075046539306641,
+        "calls": 96
+      },
+      "341": {
+        "minimum": -1.5490188598632812,
+        "maximum": 2.139939069747925,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:342": {
+        "minimum": 0.0,
+        "maximum": 7.137121200561523,
+        "calls": 96
+      },
+      "342": {
+        "minimum": -1.5527229309082031,
+        "maximum": 2.1433913707733154,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:343": {
+        "minimum": 0.0,
+        "maximum": 7.084375381469727,
+        "calls": 96
+      },
+      "343": {
+        "minimum": -1.5564922094345093,
+        "maximum": 2.1469109058380127,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:344": {
+        "minimum": 0.0,
+        "maximum": 7.085022926330566,
+        "calls": 96
+      },
+      "344": {
+        "minimum": -1.5564922094345093,
+        "maximum": 2.1469109058380127,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:345": {
+        "minimum": 0.0,
+        "maximum": 7.08929443359375,
+        "calls": 64
+      },
+      "345": {
+        "minimum": -1.5598925352096558,
+        "maximum": 2.15008544921875,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:346": {
+        "minimum": 0.0,
+        "maximum": 7.249263763427734,
+        "calls": 96
+      },
+      "346": {
+        "minimum": -1.563792109489441,
+        "maximum": 2.1537256240844727,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:347": {
+        "minimum": 0.0,
+        "maximum": 7.100095748901367,
+        "calls": 96
+      },
+      "347": {
+        "minimum": -1.5673012733459473,
+        "maximum": 2.1570017337799072,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:348": {
+        "minimum": 0.0,
+        "maximum": 7.101108074188232,
+        "calls": 96
+      },
+      "348": {
+        "minimum": -1.5673012733459473,
+        "maximum": 2.1570017337799072,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:349": {
+        "minimum": 0.0,
+        "maximum": 7.107491970062256,
+        "calls": 96
+      },
+      "349": {
+        "minimum": -1.5712852478027344,
+        "maximum": 2.16072154045105,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:350": {
+        "minimum": 0.0,
+        "maximum": 7.113424301147461,
+        "calls": 96
+      },
+      "350": {
+        "minimum": -1.5752595663070679,
+        "maximum": 2.1644275188446045,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:351": {
+        "minimum": 0.0,
+        "maximum": 7.118958473205566,
+        "calls": 96
+      },
+      "351": {
+        "minimum": -1.5792216062545776,
+        "maximum": 2.1681172847747803,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:352": {
+        "minimum": 0.0,
+        "maximum": 7.179030418395996,
+        "calls": 96
+      },
+      "352": {
+        "minimum": -1.5792216062545776,
+        "maximum": 2.1681172847747803,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:353": {
+        "minimum": 0.0,
+        "maximum": 7.125570297241211,
+        "calls": 96
+      },
+      "353": {
+        "minimum": -1.5831732749938965,
+        "maximum": 2.1717934608459473,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:354": {
+        "minimum": 0.0,
+        "maximum": 7.130522727966309,
+        "calls": 96
+      },
+      "354": {
+        "minimum": -1.5875294208526611,
+        "maximum": 2.175848960876465,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:355": {
+        "minimum": 0.0,
+        "maximum": 7.289370059967041,
+        "calls": 96
+      },
+      "355": {
+        "minimum": -1.5875294208526611,
+        "maximum": 2.175848960876465,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:356": {
+        "minimum": 0.0,
+        "maximum": 7.13686990737915,
+        "calls": 96
+      },
+      "356": {
+        "minimum": -1.5914560556411743,
+        "maximum": 2.1795036792755127,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:357": {
+        "minimum": 0.0,
+        "maximum": 7.141387462615967,
+        "calls": 96
+      },
+      "357": {
+        "minimum": -1.5953731536865234,
+        "maximum": 2.183145523071289,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:358": {
+        "minimum": 0.0,
+        "maximum": 7.205181121826172,
+        "calls": 96
+      },
+      "358": {
+        "minimum": -1.5993096828460693,
+        "maximum": 2.186811923980713,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:359": {
+        "minimum": 0.0,
+        "maximum": 7.150084018707275,
+        "calls": 96
+      },
+      "359": {
+        "minimum": -1.6032594442367554,
+        "maximum": 2.1904971599578857,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:360": {
+        "minimum": 0.0,
+        "maximum": 7.154293060302734,
+        "calls": 96
+      },
+      "360": {
+        "minimum": -1.6068203449249268,
+        "maximum": 2.1938183307647705,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:361": {
+        "minimum": 0.0,
+        "maximum": 7.158333778381348,
+        "calls": 96
+      },
+      "361": {
+        "minimum": -1.6108002662658691,
+        "maximum": 2.197531223297119,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:362": {
+        "minimum": 0.0,
+        "maximum": 7.162235736846924,
+        "calls": 96
+      },
+      "362": {
+        "minimum": -1.6151477098464966,
+        "maximum": 2.201587438583374,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:363": {
+        "minimum": 0.0,
+        "maximum": 7.166018486022949,
+        "calls": 96
+      },
+      "363": {
+        "minimum": -1.6194294691085815,
+        "maximum": 2.2055773735046387,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:364": {
+        "minimum": 0.0,
+        "maximum": 7.169694423675537,
+        "calls": 96
+      },
+      "364": {
+        "minimum": -1.6232911348342896,
+        "maximum": 2.2091753482818604,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:365": {
+        "minimum": 0.0,
+        "maximum": 7.171975135803223,
+        "calls": 96
+      },
+      "365": {
+        "minimum": -1.6232911348342896,
+        "maximum": 2.2091753482818604,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:366": {
+        "minimum": 0.0,
+        "maximum": 7.175628662109375,
+        "calls": 96
+      },
+      "366": {
+        "minimum": -1.6275177001953125,
+        "maximum": 2.2131152153015137,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:367": {
+        "minimum": 0.0,
+        "maximum": 7.337513446807861,
+        "calls": 96
+      },
+      "367": {
+        "minimum": -1.6316813230514526,
+        "maximum": 2.216991901397705,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:368": {
+        "minimum": 0.0,
+        "maximum": 7.182706356048584,
+        "calls": 96
+      },
+      "368": {
+        "minimum": -1.6354362964630127,
+        "maximum": 2.2204880714416504,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:369": {
+        "minimum": 0.0,
+        "maximum": 7.3468122482299805,
+        "calls": 96
+      },
+      "369": {
+        "minimum": -1.63919997215271,
+        "maximum": 2.2239980697631836,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:370": {
+        "minimum": 0.0,
+        "maximum": 7.193641185760498,
+        "calls": 96
+      },
+      "370": {
+        "minimum": -1.6429694890975952,
+        "maximum": 2.2275192737579346,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:371": {
+        "minimum": 0.0,
+        "maximum": 7.198741912841797,
+        "calls": 96
+      },
+      "371": {
+        "minimum": -1.6467442512512207,
+        "maximum": 2.2310502529144287,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:372": {
+        "minimum": 0.0,
+        "maximum": 7.20363712310791,
+        "calls": 96
+      },
+      "372": {
+        "minimum": -1.6504868268966675,
+        "maximum": 2.234546184539795,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:373": {
+        "minimum": 0.0,
+        "maximum": 7.2103590965271,
+        "calls": 96
+      },
+      "373": {
+        "minimum": -1.6538552045822144,
+        "maximum": 2.237692356109619,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:374": {
+        "minimum": 0.0,
+        "maximum": 7.213090896606445,
+        "calls": 96
+      },
+      "374": {
+        "minimum": -1.6538552045822144,
+        "maximum": 2.237692356109619,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:375": {
+        "minimum": 0.0,
+        "maximum": 7.219485282897949,
+        "calls": 96
+      },
+      "375": {
+        "minimum": -1.6572345495224,
+        "maximum": 2.2408432960510254,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:376": {
+        "minimum": 0.0,
+        "maximum": 7.225549697875977,
+        "calls": 96
+      },
+      "376": {
+        "minimum": -1.6606494188308716,
+        "maximum": 2.244032859802246,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:377": {
+        "minimum": 0.0,
+        "maximum": 7.292715072631836,
+        "calls": 96
+      },
+      "377": {
+        "minimum": -1.664067029953003,
+        "maximum": 2.2472198009490967,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:378": {
+        "minimum": 0.0,
+        "maximum": 7.236811637878418,
+        "calls": 96
+      },
+      "378": {
+        "minimum": -1.6674795150756836,
+        "maximum": 2.2503976821899414,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:379": {
+        "minimum": 0.0,
+        "maximum": 7.239706993103027,
+        "calls": 96
+      },
+      "379": {
+        "minimum": -1.6674795150756836,
+        "maximum": 2.2503976821899414,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:380": {
+        "minimum": 0.0,
+        "maximum": 7.40472412109375,
+        "calls": 96
+      },
+      "380": {
+        "minimum": -1.670888066291809,
+        "maximum": 2.2535691261291504,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:381": {
+        "minimum": 0.0,
+        "maximum": 7.247930526733398,
+        "calls": 96
+      },
+      "381": {
+        "minimum": -1.670888066291809,
+        "maximum": 2.2535691261291504,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:382": {
+        "minimum": 0.0,
+        "maximum": 7.253204345703125,
+        "calls": 96
+      },
+      "382": {
+        "minimum": -1.6743196249008179,
+        "maximum": 2.256767511367798,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:383": {
+        "minimum": 0.0,
+        "maximum": 7.418398857116699,
+        "calls": 96
+      },
+      "383": {
+        "minimum": -1.677769422531128,
+        "maximum": 2.259988307952881,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:384": {
+        "minimum": 0.0,
+        "maximum": 7.263484954833984,
+        "calls": 96
+      },
+      "384": {
+        "minimum": -1.6808773279190063,
+        "maximum": 2.262890100479126,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:385": {
+        "minimum": 0.0,
+        "maximum": 7.26850700378418,
+        "calls": 96
+      },
+      "385": {
+        "minimum": -1.6840344667434692,
+        "maximum": 2.265843152999878,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:386": {
+        "minimum": 0.0,
+        "maximum": 7.273331165313721,
+        "calls": 96
+      },
+      "386": {
+        "minimum": -1.6868818998336792,
+        "maximum": 2.268505334854126,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:387": {
+        "minimum": 0.0,
+        "maximum": 7.277976036071777,
+        "calls": 96
+      },
+      "387": {
+        "minimum": -1.6894525289535522,
+        "maximum": 2.2709081172943115,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:388": {
+        "minimum": 0.0,
+        "maximum": 7.2824625968933105,
+        "calls": 96
+      },
+      "388": {
+        "minimum": -1.6917718648910522,
+        "maximum": 2.2730753421783447,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:389": {
+        "minimum": 0.0,
+        "maximum": 7.286798477172852,
+        "calls": 96
+      },
+      "389": {
+        "minimum": -1.6938620805740356,
+        "maximum": 2.2750284671783447,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:390": {
+        "minimum": 0.0,
+        "maximum": 7.292573928833008,
+        "calls": 96
+      },
+      "390": {
+        "minimum": -1.696096658706665,
+        "maximum": 2.277121067047119,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:391": {
+        "minimum": -0.0069122314453125,
+        "maximum": 7.360624313354492,
+        "calls": 96
+      },
+      "391": {
+        "minimum": -1.6984620094299316,
+        "maximum": 2.27933931350708,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:392": {
+        "minimum": 0.0,
+        "maximum": 7.365962505340576,
+        "calls": 96
+      },
+      "392": {
+        "minimum": -1.7009131908416748,
+        "maximum": 2.281632661819458,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:393": {
+        "minimum": 0.0,
+        "maximum": 7.469314098358154,
+        "calls": 96
+      },
+      "393": {
+        "minimum": -1.703468680381775,
+        "maximum": 2.284027576446533,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:394": {
+        "minimum": 0.0,
+        "maximum": 7.311458587646484,
+        "calls": 96
+      },
+      "394": {
+        "minimum": -1.703468680381775,
+        "maximum": 2.284027576446533,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:395": {
+        "minimum": 0.0,
+        "maximum": 7.316381454467773,
+        "calls": 96
+      },
+      "395": {
+        "minimum": -1.7060911655426025,
+        "maximum": 2.2864792346954346,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:396": {
+        "minimum": 0.0,
+        "maximum": 7.322704315185547,
+        "calls": 96
+      },
+      "396": {
+        "minimum": -1.7084543704986572,
+        "maximum": 2.288688898086548,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:397": {
+        "minimum": 0.0,
+        "maximum": 7.328667640686035,
+        "calls": 96
+      },
+      "397": {
+        "minimum": -1.7105867862701416,
+        "maximum": 2.2906816005706787,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:398": {
+        "minimum": 0.0,
+        "maximum": 7.334456443786621,
+        "calls": 96
+      },
+      "398": {
+        "minimum": -1.7128527164459229,
+        "maximum": 2.292802572250366,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:399": {
+        "minimum": -0.0834503173828125,
+        "maximum": 7.340081691741943,
+        "calls": 96
+      },
+      "399": {
+        "minimum": -1.7148922681808472,
+        "maximum": 2.2947113513946533,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      },
+      "narrowing:400": {
+        "minimum": 0.0,
+        "maximum": 7.506992816925049,
+        "calls": 96
+      },
+      "400": {
+        "minimum": -1.7170478105545044,
+        "maximum": 2.2967236042022705,
+        "calls": 8,
+        "nan_count": 0,
+        "positive_infinity_count": 0
+      }
+    },
+    "maximum_gradient_error": 2.384185791015625e-07,
+    "maximum_finite_difference_error": 3.043895722143475e-07
+  },
+  "steps_reaching_decoder": 0,
+  "closing_image": {
+    "concept_widths": {
+      "0": 0,
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "image_max": {
+      "0": 0.0,
+      "1": 0.0,
+      "2": 0.0,
+      "3": 0.0
+    }
+  },
+  "sentence_trials": 401,
+  "deciding_components": {
+    "answer": 549,
+    "tie:greedy": 1046,
+    "reconstruction+answer": 5
+  }
+}

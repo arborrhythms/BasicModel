@@ -1,0 +1,12 @@
+{
+  "doc/Architecture.md": "0aa092958c08245292b3844c70c02a44f89a849fbb0777b3f92fb693713d9fe4",
+  "doc/FutureWork.md": "2634e571a1b873271ca40f176ab8c5ae82241d00e891ccd4cab1b6dd04594ad2",
+  "doc/GradientFlow.md": "5384af8caf296f422947fc7d8a21451e26bdb7432ce58eb87f78e25a94bd2472",
+  "doc/specs/2026-09-29-operator-catalogue.md": "24e41b1506d71dca4eeafc42a34cd7db7be445fddd8dc077750a331542fa372c",
+  "todo.md": "52c2a5bf51dd21332cf830af703d17500e673d3864d869992a067fce78ea7b51",
+  "doc/benchmarks/2026-10-06-operators-round2e/README.md": "8ddb2b93db2a844e0824deb60d553101b2a4462d5183d833aff0653a4c1c436a",
+  "doc/benchmarks/2026-10-06-operators-round2e/measurement-results.md": "7be2bb2be7be2a36a04f43431bb3fc330f5dbd4f5c480b181f8606a4a1b9e1f9",
+  "doc/benchmarks/2026-10-06-operators-round2e/reader-trajectories.md": "fc4e5286e875e4430a0bfdf7bedd4a6edcf1f6267e233977f767d7561006885f",
+  "doc/benchmarks/2026-10-06-operators-round2e/reader-mse.png": "2a1fa035bbe66dd841e8758b46847db1936ae5e49dbaf845e1de4dee8e7d84ea",
+  "doc/benchmarks/2026-10-06-operators-round2e/reader-norms.png": "fa14121e7faadb541c9672f078176d3429370dd6dbf0cc85a00e0d6195152822"
+}

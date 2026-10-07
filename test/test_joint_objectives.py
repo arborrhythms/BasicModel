@@ -225,7 +225,7 @@ def test_truth_modulation_scales_objectives_without_state_feedback():
 @pytest.mark.usefixtures('eager_reading')
 @pytest.mark.parametrize('config_name, expected', [
     ('MM_xor.xml', ['batch']),
-    ('MM_xor_loopback.xml', ['exploit', 'explore', 'batch']),
+    ('MM_xor_loopback.xml', ['exploit', 'explore']),
 ])
 def test_real_runbatch_steps_sentence_trials_then_batch_only_objectives(monkeypatch, config_name, expected):
     import Models

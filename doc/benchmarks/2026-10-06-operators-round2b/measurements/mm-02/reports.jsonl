@@ -1,0 +1,3 @@
+{"nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence", "phase": "setup", "outcome": "passed", "seconds": 0.047172625025268644, "failure": null}
+{"nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence", "phase": "call", "outcome": "passed", "seconds": 4.654348834010307, "failure": null}
+{"nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence", "phase": "teardown", "outcome": "passed", "seconds": 0.07111887499922886, "failure": null}

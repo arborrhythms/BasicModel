@@ -1,0 +1,2586 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_basicmodel.py::TestLinearLayer::test_forward_shape",
+    "test/test_basicmodel.py::TestLinearLayer::test_with_identity_weight",
+    "test/test_basicmodel.py::TestInvertibleLinearLayer::test_forward_reverse_ergodic",
+    "test/test_basicmodel.py::TestInvertibleLinearLayer::test_forward_reverse_square",
+    "test/test_basicmodel.py::TestSigmaLayer::test_forward_shape",
+    "test/test_basicmodel.py::TestPiLayer::test_factorize_over_set_is_log_domain_dual_of_sigma_split",
+    "test/test_basicmodel.py::TestPiLayer::test_forward_shape",
+    "test/test_basicmodel.py::TestInvertibleSigmaLayer::test_forward_shape",
+    "test/test_basicmodel.py::TestInvertibleSigmaLayer::test_reverse_shape",
+    "test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_creation",
+    "test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_ergodic",
+    "test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_traditional",
+    "test/test_basicmodel.py::TestBasicModelCreation::test_config_loading",
+    "test/test_basicmodel.py::TestBasicModelCreation::test_encodings",
+    "test/test_basicmodel.py::TestWeightPersistence::test_save_load_roundtrip",
+    "test/test_basicmodel.py::TestWhereEncodingRoundTrip::test_content_preserved",
+    "test/test_basicmodel.py::TestWhereEncodingRoundTrip::test_forward_decode_round_trip",
+    "test/test_basicmodel.py::TestWhereEncodingRoundTrip::test_stamp_round_trip",
+    "test/test_basicmodel.py::TestWhenEncodingRoundTrip::test_content_preserved",
+    "test/test_basicmodel.py::TestWhenEncodingRoundTrip::test_forward_stamps_present_and_reverse_recovers_it",
+    "test/test_basicmodel.py::TestWhenEncodingRoundTrip::test_onset_round_trip",
+    "test/test_basicmodel.py::TestSubSpaceDerivedSizes::test_getEncodedIO_no_reshape",
+    "test/test_basicmodel.py::TestSubSpaceDerivedSizes::test_getEncodedIO_reshape",
+    "test/test_basicmodel.py::TestSubSpaceDerivedSizes::test_getEncodingSize_returns_muxedSize",
+    "test/test_basicmodel.py::TestSubSpaceDerivedSizes::test_zero_nWhere_nWhen",
+    "test/test_basicmodel.py::TestSubSpaceMaterialize::test_materialize_none_when_unset",
+    "test/test_basicmodel.py::TestSubSpaceMaterialize::test_materialize_tensor",
+    "test/test_basicmodel.py::TestSubSpaceMaterialize::test_shape_property",
+    "test/test_basicmodel.py::TestSubSpaceMaterialize::test_shape_property_none",
+    "test/test_basicmodel.py::TestSubSpaceProperties::test_batch_from_tensor",
+    "test/test_basicmodel.py::TestSubSpaceProperties::test_batch_zero_when_empty",
+    "test/test_basicmodel.py::TestSubSpaceConstruction::test_from_components",
+    "test/test_basicmodel.py::TestSubSpaceConstruction::test_from_components_defaults_initialized",
+    "test/test_basicmodel.py::TestSubSpaceConstruction::test_from_tensor",
+    "test/test_basicmodel.py::TestSubSpaceActiveEncoding::test_activation_stored_and_retrievable",
+    "test/test_basicmodel.py::TestSubSpaceActiveEncoding::test_two_spaces_independent_encoding",
+    "test/test_basicmodel.py::TestCanonicalSpaceShapes::test_conceptual_space_forward_shape",
+    "test/test_basicmodel.py::TestCanonicalSpaceShapes::test_conceptual_space_reverse_shape",
+    "test/test_basicmodel.py::TestCanonicalSpaceShapes::test_output_space_forward_shape",
+    "test/test_basicmodel.py::TestSimpleModel::test_simple_model_ergodic_shapes",
+    "test/test_basicmodel.py::TestSimpleModel::test_simple_model_traditional_shapes",
+    "test/test_basicmodel.py::TestCodebookVariants::test_codebook_shape",
+    "test/test_basicmodel.py::TestBasisContract::test_invalid_geometry_requires_2d_prototype_matrix",
+    "test/test_basicmodel.py::TestBasisContract::test_tensor_identity_materialization",
+    "test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_ergodic_shapes",
+    "test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_loss_runs",
+    "test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_traditional_shapes",
+    "test/test_basicmodel.py::TestUniversalTrainingContract::test_conceptual_space_has_training_contract",
+    "test/test_basicmodel.py::TestUniversalTrainingContract::test_space_has_training_contract",
+    "test/test_basicmodel.py::TestSigmaLayerDeterministic::test_deterministic_matches_linear_tanh",
+    "test/test_basicmodel.py::TestSigmaLayerDeterministic::test_deterministic_same_train_eval",
+    "test/test_basicmodel.py::TestSigmaLayerDeterministic::test_non_ergodic_default",
+    "test/test_basicmodel.py::TestSpaceBasisConstruction::test_codebook_creates_codebook",
+    "test/test_basicmodel.py::TestSpaceBasisConstruction::test_no_codebook_creates_tensor_basis",
+    "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_canonical_forward_still_works",
+    "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_ergodic_exposes_params",
+    "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_ergodic_flag_stored",
+    "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_ergodic_forward_shape",
+    "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_ergodic_reverse_shape",
+    "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_non_ergodic_forward_shape",
+    "test/test_basicmodel.py::TestInputSpaceNoCodebook::test_no_codebook_forward_shape",
+    "test/test_basicmodel.py::TestOutputSpaceZeroObjectSize::test_forward_shape_zero_object_size",
+    "test/test_basicmodel.py::TestOutputSpaceZeroObjectSize::test_reverse_shape_zero_object_size",
+    "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_multivector_codebook_keeps_quantized_head",
+    "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_one_vector_is_regression_head",
+    "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_quantize_one_vector_never_snaps",
+    "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_readout_reverse_inverts",
+    "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_regression_head_is_linear_and_separable",
+    "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_regression_head_zero_init_bias_matches_bare_linear",
+    "test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_basic_model",
+    "test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_mental_model",
+    "test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_simple_model",
+    "test/test_basicmodel.py::TestDataTextStorage::test_train_input_strings_for_text",
+    "test/test_basicmodel.py::TestDataTextStorage::test_train_input_tensors_for_numeric",
+    "test/test_basicmodel.py::TestSymbolDimZero::test_objectencoding_adds_canonical_overhead",
+    "test/test_basicmodel.py::TestSymbolDimZero::test_symbolic_space_zero_dim_produces_zero_encoding",
+    "test/test_basicmodel.py::TestInputSpaceLexIntegration::test_forward_produces_correct_shape",
+    "test/test_basicmodel.py::TestInputSpaceLexIntegration::test_object_encoding_applied",
+    "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_forward_reverse_shapes_unchanged",
+    "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_numeric_output_unchanged",
+    "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_consecutive_no_nwhere",
+    "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_to_buffer",
+    "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_text_mode_false_without_lex",
+    "test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reconstruct_data_joins_words",
+    "test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged",
+    "test/test_basicmodel.py::TestEmbeddingLexDelegation::test_forward_returns_token_metadata",
+    "test/test_basicmodel.py::TestEmbeddingLexDelegation::test_tokenize_returns_word_list",
+    "test/test_basicmodel.py::TestEmbeddingLexDelegation::test_tokenize_splits_sentence_ending_punctuation",
+    "test/test_basicmodel.py::TestMaskCodebookEntry::test_mask_codebook_entry_is_zero",
+    "test/test_basicmodel.py::TestEmbeddingErgodicForward::test_embedding_owns_exploration_state",
+    "test/test_basicmodel.py::TestEmbeddingErgodicForward::test_forward_adds_ergodic_noise_from_sigma",
+    "test/test_basicmodel.py::TestEmbeddingErgodicForward::test_forward_sigma_zero_suppresses_ergodic_noise",
+    "test/test_basicmodel.py::TestInputSpaceParseEmbeddings::test_loads_parse_artifact",
+    "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_enwiki",
+    "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_missing_file",
+    "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_none_path",
+    "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_pt_format",
+    "test/test_basicmodel.py::TestXorForwardPass::test_xor_forward_produces_output",
+    "test/test_basicmodel.py::TestErgodicMnistReport::test_forward_layer_weight_accessible",
+    "test/test_basicmodel.py::TestModelTypeVariants::test_concept_with_attention",
+    "test/test_basicmodel.py::TestModelTypeVariants::test_conceptual_order_1",
+    "test/test_basicmodel.py::TestModelTypeVariants::test_percept_no_attention",
+    "test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged",
+    "test/test_basicmodel.py::TestWeightShapeMismatch::test_load_ignores_unexpected_keys_when_all_current_keys_match",
+    "test/test_basicmodel.py::TestWeightShapeMismatch::test_require_match_raises_on_shape_mismatch",
+    "test/test_basicmodel.py::TestWeightShapeMismatch::test_require_match_raises_on_unexpected_key",
+    "test/test_basicmodel.py::TestWeightShapeMismatch::test_save_load_same_shape",
+    "test/test_basicmodel.py::TestWeightShapeMismatch::test_save_load_vocab_mismatch_fails",
+    "test/test_basicmodel.py::TestVocabSaveRestore::test_save_load_with_vocab",
+    "test/test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch",
+    "test/test_basicmodel.py::TestRuntimeBatch::test_runtime_batch_restores_on_exception",
+    "test/test_basicmodel.py::TestRuntimeBatch::test_runtime_batch_sets_and_restores",
+    "test/test_basicmodel.py::TestRuntimeBatch::test_runtime_batch_stores_strings",
+    "test/test_basicmodel.py::TestRuntimeDataLoader::test_runtime_data_loader_returns_batch",
+    "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_activation_mode_computes_from_event",
+    "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_activation_mode_no_data_asserts",
+    "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_activation_mode_with_stored",
+    "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_default_mode_unchanged",
+    "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_k_geq_nspace",
+    "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_k_none",
+    "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_topk",
+    "test/test_basicmodel.py::TestSubspaceActivation::test_set_get_activation",
+    "test/test_basicmodel.py::TestGrammar::test_arity",
+    "test/test_basicmodel.py::TestGrammar::test_configure_from_dict",
+    "test/test_basicmodel.py::TestGrammar::test_configure_multi_lhs_keys",
+    "test/test_basicmodel.py::TestGrammar::test_configure_s_first_ordering",
+    "test/test_basicmodel.py::TestGrammar::test_configure_single_rule_string",
+    "test/test_basicmodel.py::TestGrammar::test_configure_unknown_rule_raises",
+    "test/test_basicmodel.py::TestGrammar::test_indexing",
+    "test/test_basicmodel.py::TestGrammar::test_length",
+    "test/test_basicmodel.py::TestGrammar::test_space_partitions",
+    "test/test_basicmodel.py::TestGrammar::test_symbolic_transition_none",
+    "test/test_basicmodel.py::TestBasisMereology::test_boundary_zero_under_clipped_cosine",
+    "test/test_basicmodel.py::TestBasisMereology::test_equal_is_mutual_parthood",
+    "test/test_basicmodel.py::TestBasisMereology::test_equal_three_region_partition",
+    "test/test_basicmodel.py::TestBasisMereology::test_overlap_false_when_parallel",
+    "test/test_basicmodel.py::TestBasisMereology::test_overlap_true_when_both_strictly_partial",
+    "test/test_basicmodel.py::TestBasisMereology::test_part_is_clipped_cosine",
+    "test/test_basicmodel.py::TestBasisMereology::test_part_opposite_directions_zero",
+    "test/test_basicmodel.py::TestBasisMereology::test_part_satisfies_boole_contrapositive",
+    "test/test_basicmodel.py::TestBasisMereology::test_region_mereology_respects_boole_contrapositive",
+    "test/test_basicmodel.py::TestBasisMereology::test_scalar_mereology_respects_boole_contrapositive",
+    "test/test_basicmodel.py::TestBasisMereology::test_underlap_false_when_partially_overlapping",
+    "test/test_basicmodel.py::TestBasisMereology::test_underlap_true_when_disjoint",
+    "test/test_basicmodel.py::TestBasisMereology::test_whole_is_part_reversed",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_boundary_vector_is_elementwise_abs_diff",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_copart_scalar_is_complement_of_part",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_copart_scalar_one_when_orthogonal",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_copart_scalar_zero_when_identical_directions",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_copart_vector_is_y_minus_x",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_equal_vector_is_elementwise_product_of_parts",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_overlap_vector_is_elementwise_min_of_parts",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_part_orthogonal_unit_axes_is_zero_vector",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_part_parallel_unit_axes_preserves_direction",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_part_plus_whole_equals_yhat",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_part_vector_equals_x_times_yhat",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_part_vector_has_same_shape_as_x",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_underlap_vector_is_elementwise_min_of_wholes",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_whole_vector_equals_one_minus_x_times_yhat",
+    "test/test_basicmodel.py::TestWordEncoding::test_encode_decode_roundtrip",
+    "test/test_basicmodel.py::TestWordEncoding::test_encode_validates_negative_batch",
+    "test/test_basicmodel.py::TestWordEncoding::test_encode_validates_negative_vector",
+    "test/test_basicmodel.py::TestWordEncoding::test_encode_validates_rule",
+    "test/test_basicmodel.py::TestSubspaceWords::test_set_words",
+    "test/test_basicmodel.py::TestSubspaceWords::test_words_default_empty",
+    "test/test_basicmodel.py::TestSubspaceNormalize::test_concept_endpoints_reverse_without_atanh",
+    "test/test_basicmodel.py::TestSubspaceNormalize::test_concepts_range",
+    "test/test_basicmodel.py::TestSubspaceNormalize::test_invalid_kind_raises",
+    "test/test_basicmodel.py::TestSubspaceNormalize::test_percept_event_preserves_signed_auxiliary_band",
+    "test/test_basicmodel.py::TestSubspaceNormalize::test_percepts_range",
+    "test/test_basicmodel.py::TestSubspaceNormalize::test_percepts_reverse_normalize_roundtrip",
+    "test/test_basicmodel.py::TestSubspaceNormalize::test_reverse_requires_normalize_true",
+    "test/test_basicmodel.py::TestSubspaceNormalize::test_symbols_discrete",
+    "test/test_basicmodel.py::TestDataScaling::test_degenerate_range_noop",
+    "test/test_basicmodel.py::TestDataScaling::test_normalize_denormalize_roundtrip",
+    "test/test_basicmodel.py::TestDataScaling::test_xor_data_ranges",
+    "test/test_basicmodel.py::TestNormalizeFlag::test_normalize_false_does_not_modify",
+    "test/test_basicmodel.py::TestNormalizeFlag::test_normalize_true_preserves_valid_percepts",
+    "test/test_basicmodel.py::TestInputSpaceScaling::test_simple_input_scaled_to_unit",
+    "test/test_basicmodel.py::TestSubspaceActivationPipeline::test_simple_model_subspace_activation",
+    "test/test_basicmodel.py::TestSubspaceActivationPipeline::test_subspace_activation_stored",
+    "test/test_basicmodel.py::TestInputSpaceDemuxed::test_demuxed_slots_populated",
+    "test/test_basicmodel.py::TestInputSpaceDemuxed::test_equivalence_with_muxed_input_space",
+    "test/test_basicmodel.py::TestInputSpaceDemuxed::test_materialize_produces_muxed",
+    "test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config",
+    "test/test_bench_concepts_from_percepts.py::test_problem_support_and_exact_target_decode[2]",
+    "test/test_bench_concepts_from_percepts.py::test_problem_support_and_exact_target_decode[6]",
+    "test/test_bench_concepts_from_percepts.py::test_plain_sigma_learns_and_weak_lasso_retains_pair_but_strong_lasso_loses_it",
+    "test/test_bench_concepts_from_percepts.py::test_reproducible_smoke_run_and_parameter_count[gated]",
+    "test/test_bench_concepts_from_percepts.py::test_reproducible_smoke_run_and_parameter_count[sigma]",
+    "test/test_bench_concepts_from_percepts.py::test_invalid_benchmark_settings_rejected",
+    "test/test_bivector_retirement_state.py::test_symbolic_codebook_no_longer_pinned_bivector",
+    "test/test_bivector_retirement_state.py::test_symbolic_nwhat_equals_ndim",
+    "test/test_bivector_retirement_state.py::test_symbolic_activation_carries_bivector",
+    "test/test_blind_decode.py::test_blind_rate_default_is_scaffold",
+    "test/test_blind_decode.py::test_blind_decode_ignores_scaffold_spans",
+    "test/test_blind_decode.py::test_blind_size_hypotheses_from_claim_diffs",
+    "test/test_blind_decode.py::test_curriculum_fraction_masks_some_tiles",
+    "test/test_blind_decode.py::test_recon_bench_blind_flag",
+    "test/test_blind_decode.py::test_mm20m_xor_blind_roundtrip",
+    "test/test_boolean_reverse_recommender.py::test_conjunction_reverse_no_basis_fails_loud",
+    "test/test_boolean_reverse_recommender.py::test_disjunction_reverse_no_basis_fails_loud",
+    "test/test_boolean_reverse_recommender.py::test_conjunction_reverse_with_basis_recovers_pair",
+    "test/test_boolean_reverse_recommender.py::test_disjunction_reverse_with_basis_recovers_pair",
+    "test/test_bounded_charts.py::test_bounded_atanh_forward_is_exact_and_slope_is_capped",
+    "test/test_bounded_charts.py::test_log_odds_chart_forward_is_exact_and_slope_is_capped",
+    "test/test_bounded_charts.py::test_space_level_layers_keep_the_exact_chart",
+    "test/test_bounded_charts.py::test_nested_lift_folds_over_saturated_operands_keep_gradients_bounded",
+    "test/test_bounded_stm_fold.py::test_stm_never_exceeds_cap_after_forward",
+    "test/test_bounded_stm_fold.py::test_sentence_end_reduces_toward_root",
+    "test/test_bounded_stm_fold.py::test_compose_single_reduction_space_role",
+    "test/test_bounded_stm_fold.py::test_lift_lower_stay_invertible_cs_ops",
+    "test/test_bounded_stm_fold.py::test_closing_budget_is_fixed_even_when_unary_choices_do_not_shrink",
+    "test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once",
+    "test/test_bounded_test_recycling.py::test_explicit_zero_exit_does_not_erase_an_earlier_failed_test",
+    "test/test_bounded_test_recycling.py::test_time_pressure_recycles_after_complete_cases_without_dropping_coverage",
+    "test/test_bounded_test_recycling.py::test_live_worker_receipt_keeps_completed_cases_when_a_later_case_times_out",
+    "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+    "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+    "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+    "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+    "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+    "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+    "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+    "test/test_bounded_test_runner.py::test_shared_training_group_survives_batch_and_recycle_boundaries",
+    "test/test_bounded_test_runner.py::test_default_test_budget_reserves_eight_gib_for_the_machine",
+    "test/test_bounded_test_runner.py::test_fast_pool_uses_cpu_minus_four_workers",
+    "test/test_bounded_test_runner.py::test_macos_worker_keeps_memory_cap_without_background_throttling",
+    "test/test_bounded_test_runner.py::test_selected_runs_skip_the_full_receipt_lock",
+    "test/test_bounded_test_runner.py::test_full_sweep_warns_for_missing_stale_or_incomplete_slow_record",
+    "test/test_bounded_test_runner.py::test_documentation_is_recorded_without_invalidating_code_snapshot",
+    "test/test_bounded_test_runner.py::test_weekly_continues_only_unattempted_cases_after_a_guard_stop",
+    "test/test_bounded_test_runner.py::test_weekly_collection_failure_cannot_spin_or_claim_attempts",
+    "test/test_bounded_test_runner.py::test_weekly_snapshot_copies_sources_and_shares_only_the_runtime",
+    "test/test_bounded_test_runner.py::test_bounded_workers_ignore_iteration_xdist_request",
+    "test/test_bounded_test_runner.py::test_parallel_workers_share_the_aggregate_budget_and_overlap",
+    "test/test_bounded_test_runner.py::test_aggregate_cap_terminates_parallel_workers_before_host_pressure",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+    "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+    "test/test_bounded_test_runner.py::test_xpass_respects_pytest_strictness[False-0]",
+    "test/test_bounded_test_runner.py::test_xpass_respects_pytest_strictness[True-1]",
+    "test/test_bounded_test_runner.py::test_test_failure_does_not_cancel_remaining_worker_coverage",
+    "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+    "test/test_bounded_test_runner.py::test_aborted_peer_preserves_completed_and_active_cases",
+    "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+    "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+    "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_xor]",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_grammar]",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_20M_xor]",
+    "test/test_byte_reconstruction.py::test_byte_scoring_ignores_empty_candidate_columns",
+    "test/test_byte_reconstruction.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul",
+    "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[False-0.0]"
+  ],
+  "completed": [
+    "test/test_basicmodel.py::TestLinearLayer::test_forward_shape",
+    "test/test_basicmodel.py::TestLinearLayer::test_with_identity_weight",
+    "test/test_basicmodel.py::TestInvertibleLinearLayer::test_forward_reverse_ergodic",
+    "test/test_basicmodel.py::TestInvertibleLinearLayer::test_forward_reverse_square",
+    "test/test_basicmodel.py::TestSigmaLayer::test_forward_shape",
+    "test/test_basicmodel.py::TestPiLayer::test_factorize_over_set_is_log_domain_dual_of_sigma_split",
+    "test/test_basicmodel.py::TestPiLayer::test_forward_shape",
+    "test/test_basicmodel.py::TestInvertibleSigmaLayer::test_forward_shape",
+    "test/test_basicmodel.py::TestInvertibleSigmaLayer::test_reverse_shape",
+    "test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_creation",
+    "test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_ergodic",
+    "test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_traditional",
+    "test/test_basicmodel.py::TestBasicModelCreation::test_config_loading",
+    "test/test_basicmodel.py::TestBasicModelCreation::test_encodings",
+    "test/test_basicmodel.py::TestWeightPersistence::test_save_load_roundtrip",
+    "test/test_basicmodel.py::TestWhereEncodingRoundTrip::test_content_preserved",
+    "test/test_basicmodel.py::TestWhereEncodingRoundTrip::test_forward_decode_round_trip",
+    "test/test_basicmodel.py::TestWhereEncodingRoundTrip::test_stamp_round_trip",
+    "test/test_basicmodel.py::TestWhenEncodingRoundTrip::test_content_preserved",
+    "test/test_basicmodel.py::TestWhenEncodingRoundTrip::test_forward_stamps_present_and_reverse_recovers_it",
+    "test/test_basicmodel.py::TestWhenEncodingRoundTrip::test_onset_round_trip",
+    "test/test_basicmodel.py::TestSubSpaceDerivedSizes::test_getEncodedIO_no_reshape",
+    "test/test_basicmodel.py::TestSubSpaceDerivedSizes::test_getEncodedIO_reshape",
+    "test/test_basicmodel.py::TestSubSpaceDerivedSizes::test_getEncodingSize_returns_muxedSize",
+    "test/test_basicmodel.py::TestSubSpaceDerivedSizes::test_zero_nWhere_nWhen",
+    "test/test_basicmodel.py::TestSubSpaceMaterialize::test_materialize_none_when_unset",
+    "test/test_basicmodel.py::TestSubSpaceMaterialize::test_materialize_tensor",
+    "test/test_basicmodel.py::TestSubSpaceMaterialize::test_shape_property",
+    "test/test_basicmodel.py::TestSubSpaceMaterialize::test_shape_property_none",
+    "test/test_basicmodel.py::TestSubSpaceProperties::test_batch_from_tensor",
+    "test/test_basicmodel.py::TestSubSpaceProperties::test_batch_zero_when_empty",
+    "test/test_basicmodel.py::TestSubSpaceConstruction::test_from_components",
+    "test/test_basicmodel.py::TestSubSpaceConstruction::test_from_components_defaults_initialized",
+    "test/test_basicmodel.py::TestSubSpaceConstruction::test_from_tensor",
+    "test/test_basicmodel.py::TestSubSpaceActiveEncoding::test_activation_stored_and_retrievable",
+    "test/test_basicmodel.py::TestSubSpaceActiveEncoding::test_two_spaces_independent_encoding",
+    "test/test_basicmodel.py::TestCanonicalSpaceShapes::test_conceptual_space_forward_shape",
+    "test/test_basicmodel.py::TestCanonicalSpaceShapes::test_conceptual_space_reverse_shape",
+    "test/test_basicmodel.py::TestCanonicalSpaceShapes::test_output_space_forward_shape",
+    "test/test_basicmodel.py::TestSimpleModel::test_simple_model_ergodic_shapes",
+    "test/test_basicmodel.py::TestSimpleModel::test_simple_model_traditional_shapes",
+    "test/test_basicmodel.py::TestCodebookVariants::test_codebook_shape",
+    "test/test_basicmodel.py::TestBasisContract::test_invalid_geometry_requires_2d_prototype_matrix",
+    "test/test_basicmodel.py::TestBasisContract::test_tensor_identity_materialization",
+    "test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_ergodic_shapes",
+    "test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_loss_runs",
+    "test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_traditional_shapes",
+    "test/test_basicmodel.py::TestUniversalTrainingContract::test_conceptual_space_has_training_contract",
+    "test/test_basicmodel.py::TestUniversalTrainingContract::test_space_has_training_contract",
+    "test/test_basicmodel.py::TestSigmaLayerDeterministic::test_deterministic_matches_linear_tanh",
+    "test/test_basicmodel.py::TestSigmaLayerDeterministic::test_deterministic_same_train_eval",
+    "test/test_basicmodel.py::TestSigmaLayerDeterministic::test_non_ergodic_default",
+    "test/test_basicmodel.py::TestSpaceBasisConstruction::test_codebook_creates_codebook",
+    "test/test_basicmodel.py::TestSpaceBasisConstruction::test_no_codebook_creates_tensor_basis",
+    "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_canonical_forward_still_works",
+    "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_ergodic_exposes_params",
+    "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_ergodic_flag_stored",
+    "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_ergodic_forward_shape",
+    "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_ergodic_reverse_shape",
+    "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_non_ergodic_forward_shape",
+    "test/test_basicmodel.py::TestInputSpaceNoCodebook::test_no_codebook_forward_shape",
+    "test/test_basicmodel.py::TestOutputSpaceZeroObjectSize::test_forward_shape_zero_object_size",
+    "test/test_basicmodel.py::TestOutputSpaceZeroObjectSize::test_reverse_shape_zero_object_size",
+    "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_multivector_codebook_keeps_quantized_head",
+    "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_one_vector_is_regression_head",
+    "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_quantize_one_vector_never_snaps",
+    "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_readout_reverse_inverts",
+    "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_regression_head_is_linear_and_separable",
+    "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_regression_head_zero_init_bias_matches_bare_linear",
+    "test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_basic_model",
+    "test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_mental_model",
+    "test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_simple_model",
+    "test/test_basicmodel.py::TestDataTextStorage::test_train_input_strings_for_text",
+    "test/test_basicmodel.py::TestDataTextStorage::test_train_input_tensors_for_numeric",
+    "test/test_basicmodel.py::TestSymbolDimZero::test_objectencoding_adds_canonical_overhead",
+    "test/test_basicmodel.py::TestSymbolDimZero::test_symbolic_space_zero_dim_produces_zero_encoding",
+    "test/test_basicmodel.py::TestInputSpaceLexIntegration::test_forward_produces_correct_shape",
+    "test/test_basicmodel.py::TestInputSpaceLexIntegration::test_object_encoding_applied",
+    "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_forward_reverse_shapes_unchanged",
+    "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_numeric_output_unchanged",
+    "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_consecutive_no_nwhere",
+    "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_to_buffer",
+    "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_text_mode_false_without_lex",
+    "test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reconstruct_data_joins_words",
+    "test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged",
+    "test/test_basicmodel.py::TestEmbeddingLexDelegation::test_forward_returns_token_metadata",
+    "test/test_basicmodel.py::TestEmbeddingLexDelegation::test_tokenize_returns_word_list",
+    "test/test_basicmodel.py::TestEmbeddingLexDelegation::test_tokenize_splits_sentence_ending_punctuation",
+    "test/test_basicmodel.py::TestMaskCodebookEntry::test_mask_codebook_entry_is_zero",
+    "test/test_basicmodel.py::TestEmbeddingErgodicForward::test_embedding_owns_exploration_state",
+    "test/test_basicmodel.py::TestEmbeddingErgodicForward::test_forward_adds_ergodic_noise_from_sigma",
+    "test/test_basicmodel.py::TestEmbeddingErgodicForward::test_forward_sigma_zero_suppresses_ergodic_noise",
+    "test/test_basicmodel.py::TestInputSpaceParseEmbeddings::test_loads_parse_artifact",
+    "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_enwiki",
+    "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_missing_file",
+    "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_none_path",
+    "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_pt_format",
+    "test/test_basicmodel.py::TestXorForwardPass::test_xor_forward_produces_output",
+    "test/test_basicmodel.py::TestErgodicMnistReport::test_forward_layer_weight_accessible",
+    "test/test_basicmodel.py::TestModelTypeVariants::test_concept_with_attention",
+    "test/test_basicmodel.py::TestModelTypeVariants::test_conceptual_order_1",
+    "test/test_basicmodel.py::TestModelTypeVariants::test_percept_no_attention",
+    "test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged",
+    "test/test_basicmodel.py::TestWeightShapeMismatch::test_load_ignores_unexpected_keys_when_all_current_keys_match",
+    "test/test_basicmodel.py::TestWeightShapeMismatch::test_require_match_raises_on_shape_mismatch",
+    "test/test_basicmodel.py::TestWeightShapeMismatch::test_require_match_raises_on_unexpected_key",
+    "test/test_basicmodel.py::TestWeightShapeMismatch::test_save_load_same_shape",
+    "test/test_basicmodel.py::TestWeightShapeMismatch::test_save_load_vocab_mismatch_fails",
+    "test/test_basicmodel.py::TestVocabSaveRestore::test_save_load_with_vocab",
+    "test/test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch",
+    "test/test_basicmodel.py::TestRuntimeBatch::test_runtime_batch_restores_on_exception",
+    "test/test_basicmodel.py::TestRuntimeBatch::test_runtime_batch_sets_and_restores",
+    "test/test_basicmodel.py::TestRuntimeBatch::test_runtime_batch_stores_strings",
+    "test/test_basicmodel.py::TestRuntimeDataLoader::test_runtime_data_loader_returns_batch",
+    "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_activation_mode_computes_from_event",
+    "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_activation_mode_no_data_asserts",
+    "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_activation_mode_with_stored",
+    "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_default_mode_unchanged",
+    "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_k_geq_nspace",
+    "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_k_none",
+    "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_topk",
+    "test/test_basicmodel.py::TestSubspaceActivation::test_set_get_activation",
+    "test/test_basicmodel.py::TestGrammar::test_arity",
+    "test/test_basicmodel.py::TestGrammar::test_configure_from_dict",
+    "test/test_basicmodel.py::TestGrammar::test_configure_multi_lhs_keys",
+    "test/test_basicmodel.py::TestGrammar::test_configure_s_first_ordering",
+    "test/test_basicmodel.py::TestGrammar::test_configure_single_rule_string",
+    "test/test_basicmodel.py::TestGrammar::test_configure_unknown_rule_raises",
+    "test/test_basicmodel.py::TestGrammar::test_indexing",
+    "test/test_basicmodel.py::TestGrammar::test_length",
+    "test/test_basicmodel.py::TestGrammar::test_space_partitions",
+    "test/test_basicmodel.py::TestGrammar::test_symbolic_transition_none",
+    "test/test_basicmodel.py::TestBasisMereology::test_boundary_zero_under_clipped_cosine",
+    "test/test_basicmodel.py::TestBasisMereology::test_equal_is_mutual_parthood",
+    "test/test_basicmodel.py::TestBasisMereology::test_equal_three_region_partition",
+    "test/test_basicmodel.py::TestBasisMereology::test_overlap_false_when_parallel",
+    "test/test_basicmodel.py::TestBasisMereology::test_overlap_true_when_both_strictly_partial",
+    "test/test_basicmodel.py::TestBasisMereology::test_part_is_clipped_cosine",
+    "test/test_basicmodel.py::TestBasisMereology::test_part_opposite_directions_zero",
+    "test/test_basicmodel.py::TestBasisMereology::test_part_satisfies_boole_contrapositive",
+    "test/test_basicmodel.py::TestBasisMereology::test_region_mereology_respects_boole_contrapositive",
+    "test/test_basicmodel.py::TestBasisMereology::test_scalar_mereology_respects_boole_contrapositive",
+    "test/test_basicmodel.py::TestBasisMereology::test_underlap_false_when_partially_overlapping",
+    "test/test_basicmodel.py::TestBasisMereology::test_underlap_true_when_disjoint",
+    "test/test_basicmodel.py::TestBasisMereology::test_whole_is_part_reversed",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_boundary_vector_is_elementwise_abs_diff",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_copart_scalar_is_complement_of_part",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_copart_scalar_one_when_orthogonal",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_copart_scalar_zero_when_identical_directions",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_copart_vector_is_y_minus_x",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_equal_vector_is_elementwise_product_of_parts",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_overlap_vector_is_elementwise_min_of_parts",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_part_orthogonal_unit_axes_is_zero_vector",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_part_parallel_unit_axes_preserves_direction",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_part_plus_whole_equals_yhat",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_part_vector_equals_x_times_yhat",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_part_vector_has_same_shape_as_x",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_underlap_vector_is_elementwise_min_of_wholes",
+    "test/test_basicmodel.py::TestBasisMereologyVector::test_whole_vector_equals_one_minus_x_times_yhat",
+    "test/test_basicmodel.py::TestWordEncoding::test_encode_decode_roundtrip",
+    "test/test_basicmodel.py::TestWordEncoding::test_encode_validates_negative_batch",
+    "test/test_basicmodel.py::TestWordEncoding::test_encode_validates_negative_vector",
+    "test/test_basicmodel.py::TestWordEncoding::test_encode_validates_rule",
+    "test/test_basicmodel.py::TestSubspaceWords::test_set_words",
+    "test/test_basicmodel.py::TestSubspaceWords::test_words_default_empty",
+    "test/test_basicmodel.py::TestSubspaceNormalize::test_concept_endpoints_reverse_without_atanh",
+    "test/test_basicmodel.py::TestSubspaceNormalize::test_concepts_range",
+    "test/test_basicmodel.py::TestSubspaceNormalize::test_invalid_kind_raises",
+    "test/test_basicmodel.py::TestSubspaceNormalize::test_percept_event_preserves_signed_auxiliary_band",
+    "test/test_basicmodel.py::TestSubspaceNormalize::test_percepts_range",
+    "test/test_basicmodel.py::TestSubspaceNormalize::test_percepts_reverse_normalize_roundtrip",
+    "test/test_basicmodel.py::TestSubspaceNormalize::test_reverse_requires_normalize_true",
+    "test/test_basicmodel.py::TestSubspaceNormalize::test_symbols_discrete",
+    "test/test_basicmodel.py::TestDataScaling::test_degenerate_range_noop",
+    "test/test_basicmodel.py::TestDataScaling::test_normalize_denormalize_roundtrip",
+    "test/test_basicmodel.py::TestDataScaling::test_xor_data_ranges",
+    "test/test_basicmodel.py::TestNormalizeFlag::test_normalize_false_does_not_modify",
+    "test/test_basicmodel.py::TestNormalizeFlag::test_normalize_true_preserves_valid_percepts",
+    "test/test_basicmodel.py::TestInputSpaceScaling::test_simple_input_scaled_to_unit",
+    "test/test_basicmodel.py::TestSubspaceActivationPipeline::test_simple_model_subspace_activation",
+    "test/test_basicmodel.py::TestSubspaceActivationPipeline::test_subspace_activation_stored",
+    "test/test_basicmodel.py::TestInputSpaceDemuxed::test_demuxed_slots_populated",
+    "test/test_basicmodel.py::TestInputSpaceDemuxed::test_equivalence_with_muxed_input_space",
+    "test/test_basicmodel.py::TestInputSpaceDemuxed::test_materialize_produces_muxed",
+    "test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config",
+    "test/test_bench_concepts_from_percepts.py::test_problem_support_and_exact_target_decode[2]",
+    "test/test_bench_concepts_from_percepts.py::test_problem_support_and_exact_target_decode[6]",
+    "test/test_bench_concepts_from_percepts.py::test_plain_sigma_learns_and_weak_lasso_retains_pair_but_strong_lasso_loses_it",
+    "test/test_bench_concepts_from_percepts.py::test_reproducible_smoke_run_and_parameter_count[gated]",
+    "test/test_bench_concepts_from_percepts.py::test_reproducible_smoke_run_and_parameter_count[sigma]",
+    "test/test_bench_concepts_from_percepts.py::test_invalid_benchmark_settings_rejected",
+    "test/test_bivector_retirement_state.py::test_symbolic_codebook_no_longer_pinned_bivector",
+    "test/test_bivector_retirement_state.py::test_symbolic_nwhat_equals_ndim",
+    "test/test_bivector_retirement_state.py::test_symbolic_activation_carries_bivector",
+    "test/test_blind_decode.py::test_blind_rate_default_is_scaffold",
+    "test/test_blind_decode.py::test_blind_decode_ignores_scaffold_spans",
+    "test/test_blind_decode.py::test_blind_size_hypotheses_from_claim_diffs",
+    "test/test_blind_decode.py::test_curriculum_fraction_masks_some_tiles",
+    "test/test_blind_decode.py::test_recon_bench_blind_flag",
+    "test/test_blind_decode.py::test_mm20m_xor_blind_roundtrip",
+    "test/test_boolean_reverse_recommender.py::test_conjunction_reverse_no_basis_fails_loud",
+    "test/test_boolean_reverse_recommender.py::test_disjunction_reverse_no_basis_fails_loud",
+    "test/test_boolean_reverse_recommender.py::test_conjunction_reverse_with_basis_recovers_pair",
+    "test/test_boolean_reverse_recommender.py::test_disjunction_reverse_with_basis_recovers_pair",
+    "test/test_bounded_charts.py::test_bounded_atanh_forward_is_exact_and_slope_is_capped",
+    "test/test_bounded_charts.py::test_log_odds_chart_forward_is_exact_and_slope_is_capped",
+    "test/test_bounded_charts.py::test_space_level_layers_keep_the_exact_chart",
+    "test/test_bounded_charts.py::test_nested_lift_folds_over_saturated_operands_keep_gradients_bounded",
+    "test/test_bounded_stm_fold.py::test_stm_never_exceeds_cap_after_forward",
+    "test/test_bounded_stm_fold.py::test_sentence_end_reduces_toward_root",
+    "test/test_bounded_stm_fold.py::test_compose_single_reduction_space_role",
+    "test/test_bounded_stm_fold.py::test_lift_lower_stay_invertible_cs_ops",
+    "test/test_bounded_stm_fold.py::test_closing_budget_is_fixed_even_when_unary_choices_do_not_shrink",
+    "test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once",
+    "test/test_bounded_test_recycling.py::test_explicit_zero_exit_does_not_erase_an_earlier_failed_test",
+    "test/test_bounded_test_recycling.py::test_time_pressure_recycles_after_complete_cases_without_dropping_coverage",
+    "test/test_bounded_test_recycling.py::test_live_worker_receipt_keeps_completed_cases_when_a_later_case_times_out",
+    "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+    "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+    "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+    "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+    "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+    "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+    "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+    "test/test_bounded_test_runner.py::test_shared_training_group_survives_batch_and_recycle_boundaries",
+    "test/test_bounded_test_runner.py::test_default_test_budget_reserves_eight_gib_for_the_machine",
+    "test/test_bounded_test_runner.py::test_fast_pool_uses_cpu_minus_four_workers",
+    "test/test_bounded_test_runner.py::test_macos_worker_keeps_memory_cap_without_background_throttling",
+    "test/test_bounded_test_runner.py::test_selected_runs_skip_the_full_receipt_lock",
+    "test/test_bounded_test_runner.py::test_full_sweep_warns_for_missing_stale_or_incomplete_slow_record",
+    "test/test_bounded_test_runner.py::test_documentation_is_recorded_without_invalidating_code_snapshot",
+    "test/test_bounded_test_runner.py::test_weekly_continues_only_unattempted_cases_after_a_guard_stop",
+    "test/test_bounded_test_runner.py::test_weekly_collection_failure_cannot_spin_or_claim_attempts",
+    "test/test_bounded_test_runner.py::test_weekly_snapshot_copies_sources_and_shares_only_the_runtime",
+    "test/test_bounded_test_runner.py::test_bounded_workers_ignore_iteration_xdist_request",
+    "test/test_bounded_test_runner.py::test_parallel_workers_share_the_aggregate_budget_and_overlap",
+    "test/test_bounded_test_runner.py::test_aggregate_cap_terminates_parallel_workers_before_host_pressure",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+    "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+    "test/test_bounded_test_runner.py::test_xpass_respects_pytest_strictness[False-0]",
+    "test/test_bounded_test_runner.py::test_xpass_respects_pytest_strictness[True-1]",
+    "test/test_bounded_test_runner.py::test_test_failure_does_not_cancel_remaining_worker_coverage",
+    "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+    "test/test_bounded_test_runner.py::test_aborted_peer_preserves_completed_and_active_cases",
+    "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+    "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+    "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_xor]",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_grammar]",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_20M_xor]",
+    "test/test_byte_reconstruction.py::test_byte_scoring_ignores_empty_candidate_columns",
+    "test/test_byte_reconstruction.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul",
+    "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[False-0.0]"
+  ],
+  "slow_selected": [
+    "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_enwiki",
+    "test/test_blind_decode.py::test_blind_rate_default_is_scaffold",
+    "test/test_blind_decode.py::test_blind_decode_ignores_scaffold_spans",
+    "test/test_blind_decode.py::test_blind_size_hypotheses_from_claim_diffs",
+    "test/test_blind_decode.py::test_curriculum_fraction_masks_some_tiles",
+    "test/test_blind_decode.py::test_recon_bench_blind_flag",
+    "test/test_blind_decode.py::test_mm20m_xor_blind_roundtrip",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_xor]",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_grammar]",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_20M_xor]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_basicmodel.py::TestLinearLayer::test_forward_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00047916697803884745,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestLinearLayer::test_with_identity_weight",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027662498177960515,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInvertibleLinearLayer::test_forward_reverse_ergodic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008555829990655184,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInvertibleLinearLayer::test_forward_reverse_square",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00037291599437594414,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSigmaLayer::test_forward_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025170802837237716,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestPiLayer::test_factorize_over_set_is_log_domain_dual_of_sigma_split",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017621670267544687,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestPiLayer::test_forward_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034245802089571953,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInvertibleSigmaLayer::test_forward_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003394169616512954,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInvertibleSigmaLayer::test_reverse_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00031887501245364547,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_creation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007680829730816185,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_ergodic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.019772083032876253,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_traditional",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.017195000022184104,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasicModelCreation::test_config_loading",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011974998051300645,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasicModelCreation::test_encodings",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011236249702051282,
+      "message": "",
+      "stdout": "Positions decoded: tensor([[0.0000, 1.0000, 2.0000, 3.0000],\n        [4.0000, 5.0000, 6.0000, 7.0000]])\n.when v2 decodes 731257 -> 731257.0 (residue 0.0625)\n"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestWeightPersistence::test_save_load_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019947499968111515,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestWhereEncodingRoundTrip::test_content_preserved",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005350830033421516,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestWhereEncodingRoundTrip::test_forward_decode_round_trip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003086659708060324,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestWhereEncodingRoundTrip::test_stamp_round_trip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010247919708490372,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestWhenEncodingRoundTrip::test_content_preserved",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00041020801290869713,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestWhenEncodingRoundTrip::test_forward_stamps_present_and_reverse_recovers_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00037037499714642763,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestWhenEncodingRoundTrip::test_onset_round_trip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003662079689092934,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubSpaceDerivedSizes::test_getEncodedIO_no_reshape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00035737501457333565,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubSpaceDerivedSizes::test_getEncodedIO_reshape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002952920040115714,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubSpaceDerivedSizes::test_getEncodingSize_returns_muxedSize",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030754099134355783,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubSpaceDerivedSizes::test_zero_nWhere_nWhen",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034770899219438434,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubSpaceMaterialize::test_materialize_none_when_unset",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002851249882951379,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubSpaceMaterialize::test_materialize_tensor",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029437500052154064,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubSpaceMaterialize::test_shape_property",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002895829966291785,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubSpaceMaterialize::test_shape_property_none",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002727080136537552,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubSpaceProperties::test_batch_from_tensor",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003475419944152236,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubSpaceProperties::test_batch_zero_when_empty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002584169851616025,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubSpaceConstruction::test_from_components",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003077919827774167,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubSpaceConstruction::test_from_components_defaults_initialized",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026241695741191506,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubSpaceConstruction::test_from_tensor",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000279792002402246,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubSpaceActiveEncoding::test_activation_stored_and_retrievable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005019590025767684,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubSpaceActiveEncoding::test_two_spaces_independent_encoding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005150829674676061,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestCanonicalSpaceShapes::test_conceptual_space_forward_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00282775005325675,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestCanonicalSpaceShapes::test_conceptual_space_reverse_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0029714590054936707,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestCanonicalSpaceShapes::test_output_space_forward_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010321669979020953,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSimpleModel::test_simple_model_ergodic_shapes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015401666983962059,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSimpleModel::test_simple_model_traditional_shapes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014967208029702306,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestCodebookVariants::test_codebook_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001113500038627535,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisContract::test_invalid_geometry_requires_2d_prototype_matrix",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017545802984386683,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisContract::test_tensor_identity_materialization",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013283296721056104,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_ergodic_shapes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01578962500207126,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_loss_runs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.029134958051145077,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_traditional_shapes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01632312498986721,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestUniversalTrainingContract::test_conceptual_space_has_training_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023679169826209545,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestUniversalTrainingContract::test_space_has_training_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008174160029739141,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSigmaLayerDeterministic::test_deterministic_matches_linear_tanh",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032699998700991273,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSigmaLayerDeterministic::test_deterministic_same_train_eval",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030820799292996526,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSigmaLayerDeterministic::test_non_ergodic_default",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017974997172132134,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSpaceBasisConstruction::test_codebook_creates_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015677079791203141,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSpaceBasisConstruction::test_no_codebook_creates_tensor_basis",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001128625008277595,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_canonical_forward_still_works",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002802666975185275,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_ergodic_exposes_params",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002376625023316592,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_ergodic_flag_stored",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004321666026953608,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_ergodic_forward_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002375582989770919,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_ergodic_reverse_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002265000017359853,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_non_ergodic_forward_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002357124991249293,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInputSpaceNoCodebook::test_no_codebook_forward_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001185875036753714,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceZeroObjectSize::test_forward_shape_zero_object_size",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014102080021984875,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceZeroObjectSize::test_reverse_shape_zero_object_size",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011832499876618385,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_multivector_codebook_keeps_quantized_head",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014234590344130993,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_one_vector_is_regression_head",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001090999983716756,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_quantize_one_vector_never_snaps",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00103329197736457,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_readout_reverse_inverts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010850410326384008,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_regression_head_is_linear_and_separable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013367089559324086,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_regression_head_zero_init_bias_matches_bare_linear",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013470830162987113,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_basic_model",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.030534958001226187,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_mental_model",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02242087497143075,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_simple_model",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.02351066702976823,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestDataTextStorage::test_train_input_strings_for_text",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002311249845661223,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestDataTextStorage::test_train_input_tensors_for_numeric",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.7340388750308193,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSymbolDimZero::test_objectencoding_adds_canonical_overhead",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006523749907501042,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSymbolDimZero::test_symbolic_space_zero_dim_produces_zero_encoding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005919579998590052,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInputSpaceLexIntegration::test_forward_produces_correct_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0051991670043207705,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInputSpaceLexIntegration::test_object_encoding_applied",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004843834030907601,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_forward_reverse_shapes_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017064170097000897,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_numeric_output_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010648330207914114,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_consecutive_no_nwhere",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00434945902088657,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_to_buffer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004375166026875377,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_text_mode_false_without_lex",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009014579700306058,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reconstruct_data_joins_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007392042025458068,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInputSpaceTextRoundTrip::test_reverse_numeric_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001390207966323942,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestEmbeddingLexDelegation::test_forward_returns_token_metadata",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004065416986122727,
+      "message": "",
+      "stdout": "Starting with dynamic 10-dim embedding (words added at runtime)\n  Building span table: 0/1 docs\n"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestEmbeddingLexDelegation::test_tokenize_returns_word_list",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020591600332409143,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestEmbeddingLexDelegation::test_tokenize_splits_sentence_ending_punctuation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001866659731604159,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestMaskCodebookEntry::test_mask_codebook_entry_is_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0033908329787664115,
+      "message": "",
+      "stdout": "Starting with dynamic 10-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestEmbeddingErgodicForward::test_embedding_owns_exploration_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019287504255771637,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestEmbeddingErgodicForward::test_forward_adds_ergodic_noise_from_sigma",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004203958029393107,
+      "message": "",
+      "stdout": "Starting with dynamic 10-dim embedding (words added at runtime)\n  Building span table: 0/1 docs\n"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestEmbeddingErgodicForward::test_forward_sigma_zero_suppresses_ergodic_noise",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003762542037293315,
+      "message": "",
+      "stdout": "Starting with dynamic 10-dim embedding (words added at runtime)\n  Building span table: 0/1 docs\n"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInputSpaceParseEmbeddings::test_loads_parse_artifact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001463332970160991,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_enwiki",
+      "phase": "call",
+      "outcome": "skipped",
+      "duration": 0.00018625002121552825,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_basicmodel.py', 1688, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_missing_file",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012441701255738735,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_none_path",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011825002729892731,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_pt_format",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012986250221729279,
+      "message": "",
+      "stdout": "Loading embeddings from /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpfkozkkos.pt...\n"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestXorForwardPass::test_xor_forward_produces_output",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005004624952562153,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestErgodicMnistReport::test_forward_layer_weight_accessible",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012681660009548068,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestModelTypeVariants::test_concept_with_attention",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.016217292053624988,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestModelTypeVariants::test_conceptual_order_1",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01614349998999387,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestModelTypeVariants::test_percept_no_attention",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014257957984227687,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.10913970798719674,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestWeightShapeMismatch::test_load_ignores_unexpected_keys_when_all_current_keys_match",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001912832958623767,
+      "message": "",
+      "stdout": "[TestModel] Legacy checkpoint at /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpdoreltd3.pt has no embedding bundle; embeddings stay at random init.\r\n[TestModel] Ignored 1 stale checkpoint keys not present in the current model\r\n[TestModel] Weights loaded from /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpdoreltd3.pt\r\n"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestWeightShapeMismatch::test_require_match_raises_on_shape_mismatch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002287917013745755,
+      "message": "",
+      "stdout": "[TestModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxxnpaln4.pt\r\n[TestModel] Legacy checkpoint at /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxxnpaln4.pt has no embedding bundle; embeddings stay at random init.\r\n[TestModel] Weight file mismatch -- cannot load /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxxnpaln4.pt\n  Shape mismatches:\n    emb.weight                                          saved=[50, 8]  model=[80, 8]\n  The model config likely changed since this checkpoint was saved.\n  To fix: correct the model XML to match the saved weights,\n          or delete/move /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxxnpaln4.pt to start fresh.\r\n[TestModel] Legacy checkpoint at /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxxnpaln4.pt has no embedding bundle; embeddings stay at random init.\r\n[TestModel] Weight file mismatch -- cannot load /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxxnpaln4.pt\n  Shape mismatches:\n    emb.weight                                          saved=[50, 8]  model=[80, 8]\n  The model config likely changed since this checkpoint was saved.\n  To fix: correct the model XML to match the saved weights,\n          or delete/move /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxxnpaln4.pt to start fresh.\r\n[TestModel] Legacy checkpoint at /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxxnpaln4.pt has no embedding bundle; embeddings stay at random init.\r\n"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestWeightShapeMismatch::test_require_match_raises_on_unexpected_key",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014035829808562994,
+      "message": "",
+      "stdout": "[TestModel] Legacy checkpoint at /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpnkj3us_f.pt has no embedding bundle; embeddings stay at random init.\r\n[TestModel] Ignored 1 stale checkpoint keys not present in the current model\r\n[TestModel] Weights loaded from /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpnkj3us_f.pt\r\n[TestModel] Legacy checkpoint at /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpnkj3us_f.pt has no embedding bundle; embeddings stay at random init.\r\n"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestWeightShapeMismatch::test_save_load_same_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021035419777035713,
+      "message": "",
+      "stdout": "[TestModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpjcjh2fhp.pt\r\n[TestModel] Legacy checkpoint at /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpjcjh2fhp.pt has no embedding bundle; embeddings stay at random init.\r\n[TestModel] Weights loaded from /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpjcjh2fhp.pt\r\n"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestWeightShapeMismatch::test_save_load_vocab_mismatch_fails",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016220000106841326,
+      "message": "",
+      "stdout": "[TestModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxnlpbccu.pt\r\n[TestModel] Legacy checkpoint at /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxnlpbccu.pt has no embedding bundle; embeddings stay at random init.\r\n[TestModel] Weight file mismatch -- cannot load /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxnlpbccu.pt\n  Shape mismatches:\n    emb.weight                                          saved=[50, 8]  model=[80, 8]\n  The model config likely changed since this checkpoint was saved.\n  To fix: correct the model XML to match the saved weights,\n          or delete/move /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxnlpbccu.pt to start fresh.\r\n"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestVocabSaveRestore::test_save_load_with_vocab",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0724239589762874,
+      "message": "",
+      "stdout": "[BasicModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp_120waoj.ckpt\r\n[BasicModel] Weights loaded from /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp_120waoj.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 4.425014625012409,
+      "message": "",
+      "stdout": "Baseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.\r\nEpoch [1/1]\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 0.646s; word units 100.0% of 4 words.\r\nTrain Loss: output=0.3500, reconstruction=0.0000\r\nFinal Stats:\r\n=== Selected operation grammar ===\r\n  compose space_role='subsymbolic':\r\n    row[0] = ['0:P -> sigma(P)']\r\n  compose space_role='CS':\r\n    row[0] = ['1:C -> pi(C)']\r\n  compose space_role='SS':\r\n    row[0] = ['2:S -> sigma(S)']\r\n  generate space_role='subsymbolic':\r\n    row[0] = ['8:P -> sigma.reverse(P)']\r\n  generate space_role='SS':\r\n    row[0] = ['10:S -> sigma.reverse(S)']\r\n  generate space_role='CS':\r\n    row[0] = ['9:C -> pi.reverse(C)']\r\nbatch = 0 (\u0394=0.207s, 100.00%)\r\nTraining throughput: 1 batches in 0.127s; word units 100.0% of 4 words.\r\n=== Input Reconstruction (test) ===\r\n  row[0] input='00' -> reconstructed='00' label=0.0000 predicted=0.0000 OK\r\n  row[1] input='01' -> reconstructed='01' label=1.0000 predicted=1.0000 OK\r\n  row[2] input='10' -> reconstructed='10' label=1.0000 predicted=1.0000 OK\r\n  row[3] input='11' -> reconstructed='11' label=0.0000 predicted=0.0000 OK\r\n"
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestRuntimeBatch::test_runtime_batch_restores_on_exception",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003076670109294355,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestRuntimeBatch::test_runtime_batch_sets_and_restores",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023433298338204622,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestRuntimeBatch::test_runtime_batch_stores_strings",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022425001952797174,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestRuntimeDataLoader::test_runtime_data_loader_returns_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05155337502947077,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_activation_mode_computes_from_event",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005228330264799297,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_activation_mode_no_data_asserts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004083749954588711,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_activation_mode_with_stored",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00041083298856392503,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_default_mode_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003577499883249402,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_k_geq_nspace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00037029205122962594,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_k_none",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00037445896305143833,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_topk",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005766669637523592,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceActivation::test_set_get_activation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032350001856684685,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestGrammar::test_arity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026766600785776973,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestGrammar::test_configure_from_dict",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022012495901435614,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestGrammar::test_configure_multi_lhs_keys",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001792920520529151,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestGrammar::test_configure_s_first_ordering",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016858294839039445,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestGrammar::test_configure_single_rule_string",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016362499445676804,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestGrammar::test_configure_unknown_rule_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001367499935440719,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestGrammar::test_indexing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022204098058864474,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestGrammar::test_length",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024529098300263286,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestGrammar::test_space_partitions",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002216250286437571,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestGrammar::test_symbolic_transition_none",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000674333015922457,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereology::test_boundary_zero_under_clipped_cosine",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003339170361869037,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereology::test_equal_is_mutual_parthood",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029533402994275093,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereology::test_equal_three_region_partition",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006883750320412219,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereology::test_overlap_false_when_parallel",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002050410257652402,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereology::test_overlap_true_when_both_strictly_partial",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003054160042665899,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereology::test_part_is_clipped_cosine",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029137503588572145,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereology::test_part_opposite_directions_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018841703422367573,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereology::test_part_satisfies_boole_contrapositive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028837501304224133,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereology::test_region_mereology_respects_boole_contrapositive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004404580104164779,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereology::test_scalar_mereology_respects_boole_contrapositive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005377090419642627,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereology::test_underlap_false_when_partially_overlapping",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023075001081451774,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereology::test_underlap_true_when_disjoint",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003315829671919346,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereology::test_whole_is_part_reversed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023329199757426977,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereologyVector::test_boundary_vector_is_elementwise_abs_diff",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026054203044623137,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereologyVector::test_copart_scalar_is_complement_of_part",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002519579720683396,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereologyVector::test_copart_scalar_one_when_orthogonal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020816700998693705,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereologyVector::test_copart_scalar_zero_when_identical_directions",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018170796101912856,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereologyVector::test_copart_vector_is_y_minus_x",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016058399342000484,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereologyVector::test_equal_vector_is_elementwise_product_of_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020925002172589302,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereologyVector::test_overlap_vector_is_elementwise_min_of_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002002500114031136,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereologyVector::test_part_orthogonal_unit_axes_is_zero_vector",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016841699834913015,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereologyVector::test_part_parallel_unit_axes_preserves_direction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016241701086983085,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereologyVector::test_part_plus_whole_equals_yhat",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019350001821294427,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereologyVector::test_part_vector_equals_x_times_yhat",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021412497153505683,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereologyVector::test_part_vector_has_same_shape_as_x",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015841703861951828,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereologyVector::test_underlap_vector_is_elementwise_min_of_wholes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023433298338204622,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasisMereologyVector::test_whole_vector_equals_one_minus_x_times_yhat",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017558399122208357,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestWordEncoding::test_encode_decode_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005608329665847123,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestWordEncoding::test_encode_validates_negative_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014545803423970938,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestWordEncoding::test_encode_validates_negative_vector",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001319580478593707,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestWordEncoding::test_encode_validates_rule",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005489999894052744,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceWords::test_set_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00035908404970541596,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceWords::test_words_default_empty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032525003189221025,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceNormalize::test_concept_endpoints_reverse_without_atanh",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004737080307677388,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceNormalize::test_concepts_range",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00042441696859896183,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceNormalize::test_invalid_kind_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00037208403227850795,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceNormalize::test_percept_event_preserves_signed_auxiliary_band",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004003749927505851,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceNormalize::test_percepts_range",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00047912501031532884,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceNormalize::test_percepts_reverse_normalize_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00048383401008322835,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceNormalize::test_reverse_requires_normalize_true",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003491670358926058,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceNormalize::test_symbols_discrete",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005430000019259751,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestDataScaling::test_degenerate_range_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014879199443385005,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestDataScaling::test_normalize_denormalize_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002203750191256404,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestDataScaling::test_xor_data_ranges",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002390409936197102,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestNormalizeFlag::test_normalize_false_does_not_modify",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011822080123238266,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestNormalizeFlag::test_normalize_true_preserves_valid_percepts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000897624995559454,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInputSpaceScaling::test_simple_input_scaled_to_unit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015090000233612955,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceActivationPipeline::test_simple_model_subspace_activation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01776837499346584,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestSubspaceActivationPipeline::test_subspace_activation_stored",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.016127999988384545,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInputSpaceDemuxed::test_demuxed_slots_populated",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014639580040238798,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInputSpaceDemuxed::test_equivalence_with_muxed_input_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021957920398563147,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestInputSpaceDemuxed::test_materialize_produces_muxed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001565875019878149,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012081083958037198,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bench_concepts_from_percepts.py::test_problem_support_and_exact_target_decode[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006606249953620136,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bench_concepts_from_percepts.py::test_problem_support_and_exact_target_decode[6]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003714999766089022,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bench_concepts_from_percepts.py::test_plain_sigma_learns_and_weak_lasso_retains_pair_but_strong_lasso_loses_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.17340941698057577,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bench_concepts_from_percepts.py::test_reproducible_smoke_run_and_parameter_count[gated]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0040748329483903944,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bench_concepts_from_percepts.py::test_reproducible_smoke_run_and_parameter_count[sigma]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003278832999058068,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bench_concepts_from_percepts.py::test_invalid_benchmark_settings_rejected",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003997089806944132,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bivector_retirement_state.py::test_symbolic_codebook_no_longer_pinned_bivector",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006897207989823073,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bivector_retirement_state.py::test_symbolic_nwhat_equals_ndim",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006963666994124651,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bivector_retirement_state.py::test_symbolic_activation_carries_bivector",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006896541977766901,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_blind_decode.py::test_blind_rate_default_is_scaffold",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00019149994477629662,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_blind_decode.py', 55, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_blind_decode.py::test_blind_decode_ignores_scaffold_spans",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00014991703210398555,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_blind_decode.py', 102, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_blind_decode.py::test_blind_size_hypotheses_from_claim_diffs",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00013720797142013907,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_blind_decode.py', 125, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_blind_decode.py::test_curriculum_fraction_masks_some_tiles",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001484589884057641,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_blind_decode.py', 156, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_blind_decode.py::test_recon_bench_blind_flag",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012066599447280169,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_blind_decode.py', 179, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_blind_decode.py::test_mm20m_xor_blind_roundtrip",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011754099978134036,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_blind_decode.py', 196, 'Skipped: ~24s (build + declared epochs) -- RUN_SLOW gates the bar')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_boolean_reverse_recommender.py::test_conjunction_reverse_no_basis_fails_loud",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022395799169316888,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_boolean_reverse_recommender.py::test_disjunction_reverse_no_basis_fails_loud",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016854197019711137,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_boolean_reverse_recommender.py::test_conjunction_reverse_with_basis_recovers_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0026336670271120965,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_boolean_reverse_recommender.py::test_disjunction_reverse_with_basis_recovers_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009598750039003789,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_charts.py::test_bounded_atanh_forward_is_exact_and_slope_is_capped",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003869999782182276,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_charts.py::test_log_odds_chart_forward_is_exact_and_slope_is_capped",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00043658295180648565,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_charts.py::test_space_level_layers_keep_the_exact_chart",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003513330011628568,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_charts.py::test_nested_lift_folds_over_saturated_operands_keep_gradients_bounded",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021011250209994614,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_stm_fold.py::test_stm_never_exceeds_cap_after_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.17500304197892547,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_stm_fold.py::test_sentence_end_reduces_toward_root",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.19133483403129503,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_stm_fold.py::test_compose_single_reduction_space_role",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03406533400993794,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_stm_fold.py::test_lift_lower_stay_invertible_cs_ops",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012054102262482047,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_stm_fold.py::test_closing_budget_is_fixed_even_when_unary_choices_do_not_shrink",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.033309292048215866,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 10.343058625003323,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 20s, 0.1 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 5 selectors; limit 20s, 0.1 GiB\n[worker-000] exit 0; 1.8s; peak 0.08 GiB\n[worker-001] 4 selectors; limit 20s, 0.1 GiB\n[worker-001] exit 0; 1.8s; peak 0.08 GiB\n[worker-002] 3 selectors; limit 20s, 0.1 GiB\n[worker-002] exit 0; 1.8s; peak 0.08 GiB\n[worker-003] 2 selectors; limit 20s, 0.1 GiB\n[worker-003] exit 0; 1.8s; peak 0.08 GiB\n[worker-004] 1 selectors; limit 20s, 0.1 GiB\n[worker-004] exit 0; 1.8s; peak 0.08 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_recycling.py::test_explicit_zero_exit_does_not_erase_an_earlier_failed_test",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.836217999982182,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 20s, 0.5 GiB\n[collect] exit 0; 1.4s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 20s, 0.5 GiB\n[worker-000] exit 0; 1.4s; peak 0.06 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_recycling.py::test_time_pressure_recycles_after_complete_cases_without_dropping_coverage",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 28.17664566700114,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 20s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 8 selectors; limit 20s, 0.5 GiB\n[worker-000] exit 0; 19.5s; peak 0.05 GiB\n[worker-001] 2 selectors; limit 20s, 0.5 GiB\n[worker-001] exit 0; 7.4s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_recycling.py::test_live_worker_receipt_keeps_completed_cases_when_a_later_case_times_out",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 22.377588582981844,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 20s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 20s, 0.5 GiB\n[worker-000] timeout 124; 21.0s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1903246670262888,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.7426772919716313,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23114275000989437,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.20760604197857901,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2079326660023071,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.054885042016394436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001907499972730875,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_shared_training_group_survives_batch_and_recycle_boundaries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.773894417041447,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 30s, 0.5 GiB\n[collect] exit 0; 1.4s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 30s, 0.5 GiB\n[worker-000] exit 1; 1.4s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_default_test_budget_reserves_eight_gib_for_the_machine",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001366669894196093,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_fast_pool_uses_cpu_minus_four_workers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012029201025143266,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_macos_worker_keeps_memory_cap_without_background_throttling",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014412502059713006,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_selected_runs_skip_the_full_receipt_lock",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011566601460799575,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_full_sweep_warns_for_missing_stale_or_incomplete_slow_record",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006237910129129887,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_documentation_is_recorded_without_invalidating_code_snapshot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013191670295782387,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_weekly_continues_only_unattempted_cases_after_a_guard_stop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005879169912077487,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_weekly_collection_failure_cannot_spin_or_claim_attempts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015158404130488634,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_weekly_snapshot_copies_sources_and_shares_only_the_runtime",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.021215875050984323,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_bounded_workers_ignore_iteration_xdist_request",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019112502923235297,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_parallel_workers_share_the_aggregate_budget_and_overlap",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 6.215376208012458,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 30s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 30s, 0.5 GiB\n[worker-001] 1 selectors; limit 30s, 0.5 GiB\n[worker-000] exit 0; 1.5s; peak 0.04 GiB\n[worker-001] exit 0; 2.5s; peak 0.04 GiB\n[worker-002] 1 selectors; limit 30s, 0.5 GiB\n[worker-003] 1 selectors; limit 30s, 0.5 GiB\n[worker-002] exit 0; 1.4s; peak 0.04 GiB\n[worker-003] exit 0; 2.4s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_aggregate_cap_terminates_parallel_workers_before_host_pressure",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 3.6745060000102967,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 30s, 0.2 GiB\n[collect] exit 0; 1.4s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 30s, 0.2 GiB\n[worker-001] 1 selectors; limit 30s, 0.2 GiB\n[worker-001] aggregate_memory 137; 1.3s; peak 0.17 GiB\n[worker-000] aborted 125; 2.3s; peak 0.17 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027608295204117894,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001855829614214599,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024199998006224632,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002263750066049397,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.138769540993962,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.4s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 0; 1.3s; peak 0.04 GiB\n[worker-001] 1 selectors; limit 60s, 0.5 GiB\n[worker-001] exit 0; 1.3s; peak 0.04 GiB\n[worker-002] 1 selectors; limit 60s, 0.5 GiB\n[worker-002] exit 0; 1.3s; peak 0.04 GiB\n[worker-003] 1 selectors; limit 60s, 0.5 GiB\n[worker-003] exit 0; 1.4s; peak 0.04 GiB\n[worker-004] 1 selectors; limit 60s, 0.5 GiB\n[worker-004] exit 1; 1.4s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_xpass_respects_pytest_strictness[False-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.7087111659930088,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 0; 1.4s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_xpass_respects_pytest_strictness[True-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.758444250037428,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.4s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 1; 1.4s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_test_failure_does_not_cancel_remaining_worker_coverage",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.294390291033778,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 1; 1.3s; peak 0.04 GiB\n[worker-001] 1 selectors; limit 60s, 0.5 GiB\n[worker-001] exit 0; 1.3s; peak 0.04 GiB\n[worker-002] 1 selectors; limit 60s, 0.5 GiB\n[worker-002] exit 0; 1.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.3232060830341652,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 5; 1.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_aborted_peer_preserves_completed_and_active_cases",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 3.6146272919722833,
+      "message": "",
+      "stdout": "[collect] 2 selectors; limit 20s, 0.2 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 20s, 0.2 GiB\n[worker-001] 2 selectors; limit 20s, 0.2 GiB\n[worker-000] exit 42; 1.3s; peak 0.04 GiB\n[worker-001] aborted 125; 2.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.6572365410393104,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 15s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 15s, 0.5 GiB\n[worker-000] exit 0; 1.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021275004837661982,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.649458916974254,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_xor]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00018137501319870353,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_brick_no_sync.py', 55, 'Skipped: CUDA profiler trace requires a CUDA device')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_grammar]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011454103514552116,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_brick_no_sync.py', 55, 'Skipped: CUDA profiler trace requires a CUDA device')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_20M_xor]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012016703840345144,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_brick_no_sync.py', 55, 'Skipped: CUDA profiler trace requires a CUDA device')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_byte_reconstruction.py::test_byte_scoring_ignores_empty_candidate_columns",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021702920203097165,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_byte_reconstruction.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.792282916023396,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[False-0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.042612334014847875,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

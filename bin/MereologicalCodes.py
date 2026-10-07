@@ -130,6 +130,45 @@ class MereologicalCodes(nn.Module):
         return bounds, weights, extrema, ids
 
     @torch.no_grad()
+    def containment_audit(self, *, before=None, after=None):
+        """Audit order-zero form containment through positive-part postings.
+
+        Optional row-to-form snapshots expose both sides of the future centroid
+        placement pass. This observer does not project or change any code.
+        Equal part sets are checked in both directions; self pairs are omitted.
+        """
+        from Spaces import _concept_alloc_of
+        rows = sorted(row for row in _concept_alloc_of(self.owner).layer()._tensor_row_keys
+                      if self.owner._order0_inventory_row(row))
+        parts = {row: {pid for tower, pid, net in edges if tower == 0 and net > 0}
+                 for row, edges in self._definitions(rows).items()}
+        postings = {}
+        for row, members in parts.items():
+            for pid in members:
+                postings.setdefault(pid, set()).add(row)
+        pairs = []
+        for row, members in parts.items():
+            extents = sorted((postings[pid] for pid in members), key=len)
+            containers = set.intersection(*extents) if extents else set(rows)
+            pairs.extend((row, other) for other in sorted(containers) if row != other)
+        values = dict(zip(rows, self.derive(rows)[..., :self.percept_width]))
+        def report(snapshot):
+            snapshot = values if snapshot is None else snapshot
+            count = coordinates = 0
+            largest = 0.
+            for contained, container in pairs:
+                violation = (snapshot[contained][:self.percept_width]-
+                             snapshot[container][:self.percept_width]).clamp_min(0)
+                positive = int(violation.gt(0).sum())
+                count += int(positive > 0)
+                coordinates += positive
+                largest = max(largest, float(violation.max()))
+            return dict(pairs=len(pairs), violating_pairs=count,
+                        coordinates=coordinates, largest=largest)
+        return dict(order=0, rows=len(rows), postings=len(postings),
+                    self_pairs=False, before=report(before), after=report(after))
+
+    @torch.no_grad()
     def room_report(self, margin=0.):
         from Spaces import _concept_alloc_of
         rows = sorted(_concept_alloc_of(self.owner).layer()._tensor_row_keys)

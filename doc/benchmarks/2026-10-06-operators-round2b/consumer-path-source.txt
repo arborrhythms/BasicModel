@@ -1,0 +1,30 @@
+from pathlib import Path
+import sys,json
+from collections import Counter
+import torch
+from test_mm_xor import _fresh_model
+import ModelAttention
+records=[]
+for config in ('MM_xor','MM_grammar','XOR_grammar'):
+ model,_,data=_fresh_model('data/'+config+'.xml')
+ counts=Counter()
+ names={'reference_evidence','read_poles','commit_word_reference_slab','_attention_sentence_payload','_pushed_word_slab','_run_tensor_peer_word_pipeline','_publish_sentence_scratch'}
+ def observe(frame,event,arg):
+  if event=='call' and frame.f_code.co_name in names:
+   counts[frame.f_code.co_name]+=1
+  return observe
+ before=dict(configuration=config,model_type=type(model).__name__,word_brackets=model.word_brackets,
+   spaces=len(model.conceptualSpaces),concept_spaces=[type(x).__name__ for x in model.conceptualSpaces])
+ raw,target=next(iter(data.data_loader(split='train',num_streams=4)))
+ inp=model.inputSpace.prepInput(raw)
+ sys.setprofile(observe)
+ try:
+  with torch.no_grad():output=model.forward(inp)[2]
+ finally:sys.setprofile(None)
+ before.update(calls=dict(counts),pole_pair_exists=getattr(model,'_attention_poles',None) is not None,
+    reference_evidence_exists=getattr(model.symbolSpace,'_word_reference_evidence',None) is not None,
+    output=output.detach().cpu().tolist(),training_steps=0)
+ records.append(before)
+ model.End();model.symbolSpace.soft_reset()
+Path('doc/benchmarks/2026-10-06-operators-round2b/consumer-path-check.json').write_text(json.dumps(records,indent=2)+'\n')
+print(json.dumps(records))

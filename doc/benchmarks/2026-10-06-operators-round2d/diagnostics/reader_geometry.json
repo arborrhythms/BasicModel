@@ -1,0 +1,511 @@
+{
+  "method": "Linear algebra and aggregation of the original saved runs only.",
+  "gate_trainings_added": 0,
+  "source_changes": 0,
+  "runs": [
+    {
+      "run": 1,
+      "measured_mse": 0.07023281200944531,
+      "measured_class_pass": false,
+      "last_greedy_disjunction_epoch": 0,
+      "reconstructed_conjunction_max_error": 5.499230926186982e-08,
+      "conjunction_only_affine_fit": {
+        "slope_norm": 10.419993975860784,
+        "bias": -4.315150917799649,
+        "mse": 0.0,
+        "affine_rank": 4,
+        "centered_singular_values": [
+          0.6880468246529682,
+          0.4093520879330376,
+          0.09108030261515195,
+          3.553459449892242e-17
+        ]
+      },
+      "both_roots_affine_fit": {
+        "slope_norm": 59.36754410483123,
+        "bias": -45.81627817164946,
+        "mse": 5.679798517591285e-29,
+        "affine_rank": 8,
+        "centered_singular_values": [
+          0.7568242246001895,
+          0.46873479299210236,
+          0.28712174712864863,
+          0.11087305560921419,
+          0.08731484406627338,
+          0.022402133789653285,
+          0.017284920598599096,
+          6.991963750001012e-17
+        ]
+      },
+      "joint_to_single_slope_norm": 5.697464340417428,
+      "greedy_answer_cost_last_twenty_epochs": {
+        "100": 0.25362606812268496,
+        "200": 0.17885967884212733,
+        "300": 0.13854598489706405,
+        "400": 0.11930043656570888
+      },
+      "active_reader_matrix_norms": {
+        "350": 4.222091009612578,
+        "400": 4.559156695803953
+      },
+      "reader_norm_growth_last_fifty_epochs": 0.07983382769911063
+    },
+    {
+      "run": 2,
+      "measured_mse": 0.19198663496396984,
+      "measured_class_pass": false,
+      "last_greedy_disjunction_epoch": 0,
+      "reconstructed_conjunction_max_error": 6.593214929573321e-08,
+      "conjunction_only_affine_fit": {
+        "slope_norm": 26.197250127540645,
+        "bias": 11.788977331742881,
+        "mse": 0.0,
+        "affine_rank": 4,
+        "centered_singular_values": [
+          0.446888590257233,
+          0.2628976423999492,
+          0.03778884331739558,
+          1.6511536496924375e-17
+        ]
+      },
+      "both_roots_affine_fit": {
+        "slope_norm": 299.80447791193416,
+        "bias": 156.67167627608143,
+        "mse": 4.0389678347315804e-28,
+        "affine_rank": 8,
+        "centered_singular_values": [
+          0.5909246432131716,
+          0.39755045011504825,
+          0.2523274475189326,
+          0.045899635040142606,
+          0.040646765019330025,
+          0.01770479540779106,
+          0.0036344971574729084,
+          9.725156143679919e-17
+        ]
+      },
+      "joint_to_single_slope_norm": 11.444120144379417,
+      "greedy_answer_cost_last_twenty_epochs": {
+        "100": 0.3328994087874889,
+        "200": 0.31202473659068347,
+        "300": 0.29314203280955553,
+        "400": 0.2759561397135258
+      },
+      "active_reader_matrix_norms": {
+        "350": 2.9153911078134502,
+        "400": 3.3049860745400395
+      },
+      "reader_norm_growth_last_fifty_epochs": 0.13363385985586906
+    },
+    {
+      "run": 3,
+      "measured_mse": 0.1180141500683849,
+      "measured_class_pass": false,
+      "last_greedy_disjunction_epoch": 21,
+      "reconstructed_conjunction_max_error": 4.312454293664558e-08,
+      "conjunction_only_affine_fit": {
+        "slope_norm": 15.352130620941132,
+        "bias": -2.2605269772097927,
+        "mse": 1.2276647837501996e-29,
+        "affine_rank": 4,
+        "centered_singular_values": [
+          0.6134107589340536,
+          0.2953291470230698,
+          0.06488200067742812,
+          1.8747214702791633e-17
+        ]
+      },
+      "both_roots_affine_fit": {
+        "slope_norm": 267.69031927909543,
+        "bias": -229.75224145733827,
+        "mse": 6.058451752097371e-28,
+        "affine_rank": 8,
+        "centered_singular_values": [
+          0.648267457325033,
+          0.3804700020947974,
+          0.20317549303537005,
+          0.08549448606442016,
+          0.06509774797984491,
+          0.043902826009683815,
+          0.004259283201063025,
+          1.9051370998649782e-16
+        ]
+      },
+      "joint_to_single_slope_norm": 17.436688488954847,
+      "greedy_answer_cost_last_twenty_epochs": {
+        "100": 0.31238732039928435,
+        "200": 0.2525916377082467,
+        "300": 0.2029983946122229,
+        "400": 0.16805636663921178
+      },
+      "active_reader_matrix_norms": {
+        "350": 4.96814901711155,
+        "400": 5.554797979764839
+      },
+      "reader_norm_growth_last_fifty_epochs": 0.11808199807065423
+    },
+    {
+      "run": 4,
+      "measured_mse": 0.06398153624504843,
+      "measured_class_pass": false,
+      "last_greedy_disjunction_epoch": 23,
+      "reconstructed_conjunction_max_error": 4.71221643927322e-08,
+      "conjunction_only_affine_fit": {
+        "slope_norm": 10.878509193676484,
+        "bias": 4.771606631966612,
+        "mse": 4.437342591868191e-31,
+        "affine_rank": 4,
+        "centered_singular_values": [
+          0.4603135831741893,
+          0.2097769885178258,
+          0.08941609979997112,
+          5.3318942162445496e-17
+        ]
+      },
+      "both_roots_affine_fit": {
+        "slope_norm": 72.4546699253431,
+        "bias": 67.40580281639973,
+        "mse": 0.0,
+        "affine_rank": 8,
+        "centered_singular_values": [
+          0.5738400408431175,
+          0.2851948696321141,
+          0.22714494450191017,
+          0.1386163691233929,
+          0.083406007504298,
+          0.019158884831184227,
+          0.015257071553443437,
+          2.0082725660948633e-16
+        ]
+      },
+      "joint_to_single_slope_norm": 6.660349192650398,
+      "greedy_answer_cost_last_twenty_epochs": {
+        "100": 0.2645413210615516,
+        "200": 0.19231934488052502,
+        "300": 0.13203311406541615,
+        "400": 0.09639123845845461
+      },
+      "active_reader_matrix_norms": {
+        "350": 4.554362647818221,
+        "400": 4.96230749245778
+      },
+      "reader_norm_growth_last_fifty_epochs": 0.08957232354673961
+    },
+    {
+      "run": 5,
+      "measured_mse": 0.1293142780679455,
+      "measured_class_pass": false,
+      "last_greedy_disjunction_epoch": 64,
+      "reconstructed_conjunction_max_error": 5.799530511385598e-08,
+      "conjunction_only_affine_fit": {
+        "slope_norm": 13.802924775327263,
+        "bias": 5.9202199726987645,
+        "mse": 5.9164567891575885e-31,
+        "affine_rank": 4,
+        "centered_singular_values": [
+          0.5704568237677704,
+          0.3691951240264564,
+          0.07201050009799932,
+          3.5309418325175095e-17
+        ]
+      },
+      "both_roots_affine_fit": {
+        "slope_norm": 117.69986024098277,
+        "bias": 99.60595360943266,
+        "mse": 1.7670484276950664e-28,
+        "affine_rank": 8,
+        "centered_singular_values": [
+          0.6234387583402123,
+          0.45773109189173145,
+          0.28562067386057494,
+          0.09407984663489126,
+          0.05042249300864407,
+          0.036052222649076156,
+          0.009241410856288025,
+          2.3985707070989115e-16
+        ]
+      },
+      "joint_to_single_slope_norm": 8.527168129711997,
+      "greedy_answer_cost_last_twenty_epochs": {
+        "100": 0.3097875488922,
+        "200": 0.2531211514957249,
+        "300": 0.20790927149355412,
+        "400": 0.1821260739117861
+      },
+      "active_reader_matrix_norms": {
+        "350": 4.275552510425328,
+        "400": 4.756334752248548
+      },
+      "reader_norm_growth_last_fifty_epochs": 0.11244914912187376
+    },
+    {
+      "run": 6,
+      "measured_mse": 0.028434632406765914,
+      "measured_class_pass": true,
+      "last_greedy_disjunction_epoch": 7,
+      "reconstructed_conjunction_max_error": 5.753308018885406e-08,
+      "conjunction_only_affine_fit": {
+        "slope_norm": 5.491980245650212,
+        "bias": 2.0449727457943716,
+        "mse": 1.1093356479670479e-31,
+        "affine_rank": 4,
+        "centered_singular_values": [
+          0.7170986348340016,
+          0.3388250982647862,
+          0.17721633885227658,
+          1.0056311725428403e-16
+        ]
+      },
+      "both_roots_affine_fit": {
+        "slope_norm": 35.26874299196675,
+        "bias": 30.536032472514908,
+        "mse": 7.888609052210118e-30,
+        "affine_rank": 8,
+        "centered_singular_values": [
+          0.8142615804860659,
+          0.6474540455342045,
+          0.37387467661775337,
+          0.1776040588957241,
+          0.09915607370050596,
+          0.045571032262894794,
+          0.02940582958382153,
+          1.5640104325638298e-16
+        ]
+      },
+      "joint_to_single_slope_norm": 6.42186268239047,
+      "greedy_answer_cost_last_twenty_epochs": {
+        "100": 0.1791953906416893,
+        "200": 0.09164029693929479,
+        "300": 0.05769081365855513,
+        "400": 0.05811363940511001
+      },
+      "active_reader_matrix_norms": {
+        "350": 4.9461902438908085,
+        "400": 5.195692664290261
+      },
+      "reader_norm_growth_last_fifty_epochs": 0.05044335298417213
+    },
+    {
+      "run": 7,
+      "measured_mse": 0.14410905683813557,
+      "measured_class_pass": false,
+      "last_greedy_disjunction_epoch": 0,
+      "reconstructed_conjunction_max_error": 7.679853963882266e-08,
+      "conjunction_only_affine_fit": {
+        "slope_norm": 20.896074772281715,
+        "bias": 6.890490393401529,
+        "mse": 2.3784156292413506e-28,
+        "affine_rank": 4,
+        "centered_singular_values": [
+          0.4091548644250514,
+          0.27334905131609816,
+          0.04686816884154729,
+          1.5004372640149012e-17
+        ]
+      },
+      "both_roots_affine_fit": {
+        "slope_norm": 465.8786228274555,
+        "bias": 406.5767949018017,
+        "mse": 1.0097419586828951e-26,
+        "affine_rank": 8,
+        "centered_singular_values": [
+          0.5127558762416112,
+          0.4472283402313298,
+          0.2535305237175403,
+          0.12483976220893617,
+          0.07748144816196056,
+          0.04211083472832741,
+          0.002489111657174846,
+          1.211609426407107e-16
+        ]
+      },
+      "joint_to_single_slope_norm": 22.295030425782908,
+      "greedy_answer_cost_last_twenty_epochs": {
+        "100": 0.3050922561436892,
+        "200": 0.25434205690398815,
+        "300": 0.22208086354658008,
+        "400": 0.19314278718084096
+      },
+      "active_reader_matrix_norms": {
+        "350": 4.275821347933909,
+        "400": 4.703328720979389
+      },
+      "reader_norm_growth_last_fifty_epochs": 0.09998251523115043
+    },
+    {
+      "run": 8,
+      "measured_mse": 0.08354295123957756,
+      "measured_class_pass": false,
+      "last_greedy_disjunction_epoch": 21,
+      "reconstructed_conjunction_max_error": 3.614509330729376e-08,
+      "conjunction_only_affine_fit": {
+        "slope_norm": 9.92760242207718,
+        "bias": 3.916152829061393,
+        "mse": 4.437342591868191e-31,
+        "affine_rank": 4,
+        "centered_singular_values": [
+          0.5702154598322441,
+          0.41999649295479674,
+          0.09877433813259119,
+          8.673569801264722e-17
+        ]
+      },
+      "both_roots_affine_fit": {
+        "slope_norm": 69.68462287483179,
+        "bias": 58.54660804958709,
+        "mse": 6.310887241768095e-30,
+        "affine_rank": 8,
+        "centered_singular_values": [
+          0.6485463589609314,
+          0.47749630579756425,
+          0.24469627205075084,
+          0.10542032240114349,
+          0.08928738933020593,
+          0.03926734594893574,
+          0.014913799285647282,
+          1.7359537806106755e-16
+        ]
+      },
+      "joint_to_single_slope_norm": 7.019280175832371,
+      "greedy_answer_cost_last_twenty_epochs": {
+        "100": 0.25027080355212095,
+        "200": 0.17986823408864439,
+        "300": 0.15720742189732845,
+        "400": 0.13044853191750008
+      },
+      "active_reader_matrix_norms": {
+        "350": 4.085826841747536,
+        "400": 4.362858422340241
+      },
+      "reader_norm_growth_last_fifty_epochs": 0.0678030644280112
+    },
+    {
+      "run": 9,
+      "measured_mse": 0.0483400879341771,
+      "measured_class_pass": true,
+      "last_greedy_disjunction_epoch": 0,
+      "reconstructed_conjunction_max_error": 4.8034819344344726e-08,
+      "conjunction_only_affine_fit": {
+        "slope_norm": 7.444238963825737,
+        "bias": 1.3294431311637638,
+        "mse": 2.0954117794933126e-31,
+        "affine_rank": 4,
+        "centered_singular_values": [
+          0.7715923317069404,
+          0.42397546449609896,
+          0.13200500472092647,
+          4.2658223818071903e-17
+        ]
+      },
+      "both_roots_affine_fit": {
+        "slope_norm": 138.0245891838762,
+        "bias": 106.35684532612072,
+        "mse": 2.524354896707238e-29,
+        "affine_rank": 8,
+        "centered_singular_values": [
+          0.8342142678267532,
+          0.49038451901263513,
+          0.3961092003549082,
+          0.13954684399449596,
+          0.11077902270566096,
+          0.040468710785529174,
+          0.008435543334551737,
+          1.4156213143462033e-16
+        ]
+      },
+      "joint_to_single_slope_norm": 18.54112822742363,
+      "greedy_answer_cost_last_twenty_epochs": {
+        "100": 0.20153786824084818,
+        "200": 0.12038080852516372,
+        "300": 0.06859914560191101,
+        "400": 0.04850290988709958
+      },
+      "active_reader_matrix_norms": {
+        "350": 5.271095783145241,
+        "400": 5.609770625023372
+      },
+      "reader_norm_growth_last_fifty_epochs": 0.06425131619900948
+    },
+    {
+      "run": 10,
+      "measured_mse": 0.1420182764384541,
+      "measured_class_pass": false,
+      "last_greedy_disjunction_epoch": 105,
+      "reconstructed_conjunction_max_error": 6.386846618244846e-08,
+      "conjunction_only_affine_fit": {
+        "slope_norm": 16.54206183319888,
+        "bias": 0.43471750187611463,
+        "mse": 1.1108763919225576e-30,
+        "affine_rank": 4,
+        "centered_singular_values": [
+          0.576600529332353,
+          0.2181899378157648,
+          0.060138604712192234,
+          1.7626897901592866e-17
+        ]
+      },
+      "both_roots_affine_fit": {
+        "slope_norm": 610.8088429392349,
+        "bias": 543.725015557366,
+        "mse": 0.0,
+        "affine_rank": 8,
+        "centered_singular_values": [
+          0.6472858930329033,
+          0.5271679356610194,
+          0.25136359394748276,
+          0.12413720931044415,
+          0.06342638511725095,
+          0.05659336285535641,
+          0.0019125318642731618,
+          1.0763126701831744e-16
+        ]
+      },
+      "joint_to_single_slope_norm": 36.92458951600458,
+      "greedy_answer_cost_last_twenty_epochs": {
+        "100": 0.3519091621041298,
+        "200": 0.29346653651446103,
+        "300": 0.24400210231542588,
+        "400": 0.20505348714068533
+      },
+      "active_reader_matrix_norms": {
+        "350": 3.947949908504943,
+        "400": 4.598999707072597
+      },
+      "reader_norm_growth_last_fifty_epochs": 0.1649083229665902
+    }
+  ],
+  "settled_reader_objective": {
+    "condition": "Greedy conjunction; narrowing leaves the same root; compose offers disjunction.",
+    "round2c": {
+      "conjunction": 0.8333333333333334,
+      "disjunction": 0.16666666666666666
+    },
+    "round2d": {
+      "conjunction": 0.75,
+      "disjunction": 0.25
+    },
+    "explanation": "Reader weights are not corrected for the changed departure proposal; the chooser surrogate is."
+  },
+  "measured_mse_vs_smallest_nonzero_conjunction_singular_value_correlation": -0.90447259952589,
+  "limitations": [
+    "Fits use fixed root vectors and a free affine intercept, not the full reader feature bank or Adam.",
+    "Additional reader features can change conditioning; joint root fit norms are diagnostic, not full-model bounds.",
+    "Exact fits establish representability, not convergence within the unchanged 400-epoch budget.",
+    "Unpaired campaigns do not identify the causal share of sampling, native-code geometry, and optimization."
+  ],
+  "input_sha256": {
+    "doc/benchmarks/2026-10-06-operators-round2d/measurements/summary.json": "e9a58ff4e1783dc930a772040f8ee313f0c0517df7aa0e8721c713fc7fe6afbb",
+    "doc/benchmarks/2026-10-06-operators-round2d/aggregate-audit.json": "44acc53bc3a1be994bacb2fb5086ccb974f2a34c904a25fe860c12bfcdb2f91d",
+    "doc/benchmarks/2026-10-06-operators-round2d/measurements/xor-01/run-audit.json": "15b799c15e76cf92d6c392766df02a179e8447da29b4411f67ba414c96e2cafe",
+    "doc/benchmarks/2026-10-06-operators-round2d/measurements/xor-02/run-audit.json": "b1835abfe54d868166347ee73e5a45dde7e6ad4284b35a9f50b16cce3b3af085",
+    "doc/benchmarks/2026-10-06-operators-round2d/measurements/xor-03/run-audit.json": "69c94aad1b7e45f3712745ec95b032bdac5169ba360fc042aa66cd3206b30d6e",
+    "doc/benchmarks/2026-10-06-operators-round2d/measurements/xor-04/run-audit.json": "86be6dcf824c43c5880c0ea2750cf0aa5907c7a0d1c74367a24d99cfbec67126",
+    "doc/benchmarks/2026-10-06-operators-round2d/measurements/xor-05/run-audit.json": "421abb8b77a8c276b75f55d8420df50ec12ff544cf5c297d47e5b7a75ce5b7e7",
+    "doc/benchmarks/2026-10-06-operators-round2d/measurements/xor-06/run-audit.json": "d429c39de86f65efb8e9c86551486605c49d99f4468b2894920349c9f2c109e9",
+    "doc/benchmarks/2026-10-06-operators-round2d/measurements/xor-07/run-audit.json": "dac258326fde9e526acf7f32b6ab48b83190d9295b63af0b9424688dedb906c1",
+    "doc/benchmarks/2026-10-06-operators-round2d/measurements/xor-08/run-audit.json": "20779da9e0c74f3e6f381e605f3738cee943ee29ff6174f0b49370000fb23560",
+    "doc/benchmarks/2026-10-06-operators-round2d/measurements/xor-09/run-audit.json": "910d64285e6ae94d8244c61edf38dd888b2e5dc725af4bafcf6fd3268a4cc349",
+    "doc/benchmarks/2026-10-06-operators-round2d/measurements/xor-10/run-audit.json": "689c367efcbab13e5205c902232aeaa5ebf9f70e9d3822ed4e4a9a7bf675df74"
+  },
+  "script_sha256": "4acfaa2be2c58a64e82592cb3719839f390976bb7772b09be4a50aea18c51258"
+}

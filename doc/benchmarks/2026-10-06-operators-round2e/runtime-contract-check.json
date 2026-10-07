@@ -1,0 +1,40 @@
+{
+  "changed_runtime_files": [
+    "bin/AnswerComparison.py",
+    "bin/Models.py",
+    "bin/SentenceCredit.py"
+  ],
+  "changed_runtime_functions": {
+    "bin/AnswerComparison.py": [
+      "_ReaderCall.__init__",
+      "_ReaderCall.forward",
+      "AnswerComparison.__init__",
+      "AnswerComparison.sync",
+      "AnswerComparison.forward",
+      "AnswerComparison._load_from_state_dict"
+    ],
+    "bin/Models.py": [
+      "BaseModel.create_from_config",
+      "BaseModel.objective_parameter_groups",
+      "BaseModel.getOptimizer",
+      "BasicModel._sentence_run",
+      "BasicModel._sentence_answer_error",
+      "BasicModel._sentence_reader_error",
+      "BasicModel._run_sentence_word_bricks"
+    ],
+    "bin/SentenceCredit.py": []
+  },
+  "unchanged_credit_contract": {
+    "expectation_terms": "72b32311942ddd6d32927d54dce63c29b2772dfd37b35567b307f128768df97a",
+    "departure": "63c5922c04700afb3f09440bdf9dd41334ea79a0af000e15675302bb1085635e",
+    "components": "fc11449ac2b09db9483ae567c2bf571ec6586ae2fdfc25f304980bb5a207dcf8",
+    "comparison": "b278c577172ea830358bed66bc4ee001ce78b982b752e1736e30bf72866fe494",
+    "score_function": "e848af3581a746ab25bd79a0446d203ab7c0d589bb26a00c65fa8334c52d3aec",
+    "reader_weights": "e6184316e3f6f975cf978a47e48d8281ff7c98879b6aec41114215b326160033",
+    "reader_costs": "c1315c6e70b0d04c43a6c8db6b3e8fd43df0705e5815fc3b6e35d1b9414e6593"
+  },
+  "same_reader_form_except_detached_prediction_audit": true,
+  "public_forward_head_unchanged": true,
+  "score_function_consumer_unchanged": true,
+  "postprocessor_sha256": "a49066bfcd57c726b0eff9d677798ed005b0fba15266a27b4c883c89741e7e3b"
+}

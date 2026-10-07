@@ -1,0 +1,382 @@
+.FF...F
+=================================== FAILURES ===================================
+___________ test_sentence_trials_keep_their_own_perception_pullbacks ___________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2338/test_sentence_trials_keep_thei0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1275f4530>
+eager_reading = None
+
+    def test_sentence_trials_keep_their_own_perception_pullbacks(tmp_path, monkeypatch, eager_reading):
+        from test_compiled_word_chunk import _tiny_canonical_model
+        import SentenceCompose
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
+            training_overrides={'reconstructInLoop': False})
+        model._tensor_peer_while_eager = True
+        optimizer = model.getOptimizer(lr=1e-4)
+        model.inputSpace.data.has_supervised_outputs=False
+        created, called, versions = [], [], []
+        original = SentenceCompose.fork_perception
+        def observed(cache):
+            trial, pullback = original(cache)
+            index = len(created)
+            created.append(index)
+            versions.append(tuple(parameter._version for parameter in model.parameters()))
+            def owned():
+                called.append(index)
+                pullback()
+            def gradients(*args, **kwargs):
+                called.append(index)
+                return pullback.gradients(*args, **kwargs)
+            owned.gradients = gradients
+            return trial, owned
+        monkeypatch.setattr(SentenceCompose, 'fork_perception', observed)
+        try:
+            raw = model.inputSpace.prepInput(['a b', 'c d'])
+>           model.runBatch(train=True, optimizer=optimizer, batchSize=2, split='runtime',
+                batch_override=(raw, torch.empty(2, 0)))
+
+test/test_sentence_comparison.py:59: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13669: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13805: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14180: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8815: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10313: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8500: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23354: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17274: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21889: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21447: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20629: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20261: in _commit_sentence
+    content_width = min(meaning.roles.shape[-1], int(self.conceptualSpace.stm.nWhat))
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ShortTermMemory(), name = 'nWhat'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ShortTermMemory' object has no attribute 'nWhat'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+___________ test_replaying_real_greedy_derivation_ties_in_every_row ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x145db40b0>
+
+    def test_replaying_real_greedy_derivation_ties_in_every_row(monkeypatch):
+        from pathlib import Path
+        import Models
+        import SentenceCompose
+        import util
+        from test_mm_xor import _fresh_model
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
+        optimizer = model.getOptimizer(lr=.01)
+        pair = SentenceCompose.sentence_pair
+        comparisons = []
+        def repeat(cache, compose, score, step, **kwargs):
+            # This diagnostic deliberately replays greedy. The production
+            # exploration-integrity assertion is about different actions; the
+            # ordinary score's reconstruction/expectation arithmetic is identical.
+            result = pair(cache, lambda value, prior: compose(value, None),
+                          lambda path, alternative: score(path, False), step, **kwargs)
+            comparisons.append((result[1], result[2]))
+            return result
+        monkeypatch.setattr(SentenceCompose, 'sentence_pair', repeat)
+        try:
+            batch = next(iter(data.data_loader(split='train', num_streams=4)))
+            raw = model.inputSpace.prepInput(batch[0])
+            target = model.outputSpace.prepOutput(batch[1])
+>           model.runBatch(train=True, optimizer=optimizer, batchSize=4,
+                           split='runtime', batch_override=(raw, target))
+
+test/test_sentence_comparison.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13669: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13805: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14180: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8815: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10313: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8500: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23354: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17274: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21889: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21447: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20629: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20261: in _commit_sentence
+    content_width = min(meaning.roles.shape[-1], int(self.conceptualSpace.stm.nWhat))
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ShortTermMemory(), name = 'nWhat'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ShortTermMemory' object has no attribute 'nWhat'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_________ test_real_packed_ends_train_before_the_next_sentence[False] __________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2338/test_real_packed_ends_train_be0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x145db48c0>
+compiled = False
+
+    @pytest.mark.parametrize('compiled', [False, pytest.param(True, marks=pytest.mark.slow)])
+    def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, compiled):
+        from test_compiled_word_chunk import _tiny_canonical_model
+        from test_reverse_traversal import _select_completed_binary_path
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
+            concept_rows=128, part_rows=64, input_width=16, training_overrides={'intraLossWeight': 0},
+            stm_capacity=3, chooser_depth=1,
+            architecture_overrides={'ltmConsolidation': True, 'conceptLayers': 2})
+        # Completion is a fixture for this causal mechanism test. Both winners
+        # must leave a real predecessor, regardless of the untrained chooser.
+        _select_completed_binary_path(model)
+        optimizer = model.getOptimizer(lr=1e-4)
+        import util
+        monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+        model.reconstruction_placement = 'eager'
+        def eager_while(condition, body, values):
+            while bool(condition(*values)):
+                values = body(*values)
+            return values
+        monkeypatch.setattr(torch, 'while_loop', eager_while)
+        if compiled:
+            import SentenceCompose
+            monkeypatch.setattr(SentenceCompose, 'compile_word_brick',
+                lambda fn: torch.compile(fn, backend='eager', fullgraph=True))
+        # Sentence ends land at different word columns in the two rows; the
+        # first row's one-word sentence also exercises its dedicated closing trace.
+        raw = model.inputSpace.prepPackedInput([['a', 'c d'], ['e f', 'g']])
+        events = []
+        candidates, prior_context = {}, []
+        path_cost = model._sentence_path_cost
+        def controlled_cost(path, sid, active):
+            cost, recon, observation, pending = path_cost(path, sid, active)
+            alternative = model._sentence_trial == 'explore'
+            candidates[sid, alternative] = observation
+            if sid == 1:
+                # The second sentence sees exactly the chain committed by the
+                # first, including its occurrence identity, in both trials.
+                disc = model.symbolSpace.expectation
+                assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
+            fixed = cost.new_tensor([1., 2.] if alternative else [2., 1.])
+            # Fix only the reconstruction comparison, preserving the trained
+            # registry entries and their live derivatives. The answer no longer
+            # participates in the choice under §22.
+            registry = model._sentence_cost_registry
+            original_total = registry.total
+            def fixed_total(*args, **kwargs):
+                value = original_total(*args, **kwargs)
+                return (value - value.detach() + fixed
+                        if kwargs.get('objective') == 'reconstruction' else value)
+            registry.total = fixed_total
+            return cost - cost.detach() + fixed, recon, observation, pending
+        monkeypatch.setattr(model, '_sentence_path_cost', controlled_cost)
+        perceived = []
+        # The perception owner must see the committed predecessor before it is
+        # called for the next sentence. The second compose must not call it again.
+        perceive = model.perceptualSpace.synthesize_word_parts
+        def perception(*args, **kwargs):
+            # Input staging also builds a detached reporting slab. Count the
+            # live word perception shared by the two compose/backward paths.
+            if torch.is_grad_enabled() and not torch.compiler.is_compiling():
+                perceived.append(len(model._sentence_fields))
+                if len(model._sentence_fields) == 1:
+                    disc = model.symbolSpace.expectation
+                    assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
+            return perceive(*args, **kwargs)
+        if not compiled:
+            monkeypatch.setattr(model.perceptualSpace, 'synthesize_word_parts', perception)
+        original = model._sentence_train_step
+        def step(loss):
+            events.append(('step', float(loss.detach())))
+            return original(loss)
+        monkeypatch.setattr(model, '_sentence_train_step', step)
+        commit = model._commit_sentence
+        def observe(*args):
+            events.append(('commit', args[1]))
+            result = commit(*args)
+            disc = model.symbolSpace.expectation
+            context = tuple(tuple(row) for row in disc._inter_context_occurrences)
+            assert [len(row) for row in context] == [args[1] + 1] * 2
+            assert all(occurrence is not None for row in context for occurrence in row)
+            for b, alternative in enumerate((True, False)):
+                expected = candidates[args[1], alternative]
+                roles, occupied = disc._canonical_meaning(
+                    expected['observed'][b], expected['observed_depths'][b], expected['layout'],
+                    None if expected['roles'] is None else expected['roles'][b])
+                depth, payload, mask = disc._inter_context[b][-1]
+                assert depth == int(occupied.sum())
+                torch.testing.assert_close(payload, roles)
+                torch.testing.assert_close(mask, occupied)
+            if args[1] == 0:
+                prior_context.append(context)
+            return result
+        monkeypatch.setattr(model, '_commit_sentence', observe)
+        try:
+>           model.runBatch(train=True, optimizer=optimizer, batchSize=2,
+                batch_override=(raw, torch.empty(2, 0)), split='runtime')
+
+test/test_sentence_compose.py:169: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13669: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13805: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14180: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8815: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10313: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8500: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23354: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17274: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21889: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21447: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20629: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_sentence_compose.py:150: in observe
+    result = commit(*args)
+             ^^^^^^^^^^^^^
+bin/Models.py:20261: in _commit_sentence
+    content_width = min(meaning.roles.shape[-1], int(self.conceptualSpace.stm.nWhat))
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ShortTermMemory(), name = 'nWhat'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ShortTermMemory' object has no attribute 'nWhat'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+=========================== short test summary info ============================
+FAILED test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks
+FAILED test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row
+FAILED test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 3 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+3 failed, 4 passed in 6.44s

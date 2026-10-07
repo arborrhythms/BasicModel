@@ -13,7 +13,8 @@ from torch.nn import functional as F
 
 
 @torch.no_grad()
-def negative_image(observed, estimate, presence, *, gain=1., object_mask=None):
+def negative_image(observed, estimate, presence, *, gain=1., object_mask=None,
+                   form_width=0, content_width=None):
     """Closing-time subtraction, detached from all reading and policy choices.
 
     These are derived serial values, never writes to a presence field or a
@@ -39,8 +40,33 @@ def negative_image(observed, estimate, presence, *, gain=1., object_mask=None):
     if not bool(torch.isfinite(estimate).all() and torch.isfinite(presence).all()
                 and ((presence >= 0) & (presence <= 1)).all()):
         raise ValueError("estimate must be finite and presence in [0, 1]")
+    content_width = observed.shape[-1] if content_width is None else int(content_width)
+    if not 0 <= form_width <= content_width <= observed.shape[-1]:
+        raise ValueError('image requires form, complement, then address coordinates')
+    coordinate = torch.arange(observed.shape[-1],device=observed.device)
+    concept_face = (coordinate >= form_width) & (coordinate < content_width)
     image = -gain * ((1 - mask) * presence)[:, None] * estimate.detach().to(observed)
+    image = torch.where(concept_face, image, 0.)
     return observed.detach() + image, image
+
+
+@dataclass(frozen=True)
+class ClosingImage:
+    """One detached change of origin; storage and prediction targets keep o."""
+    observed: torch.Tensor
+    conceived: torch.Tensor
+    image: torch.Tensor
+    concept_width: int
+
+    @classmethod
+    def form(cls, observed, estimate, presence, *, form_width, content_width=None, **kwargs):
+        end = observed.shape[-1] if content_width is None else content_width
+        conceived, image = negative_image(observed, estimate, presence,
+            form_width=form_width, content_width=end, **kwargs)
+        return cls(observed.detach().clone(), conceived, image, end-form_width)
+
+    def restore(self):
+        return self.conceived-self.image
 
 
 @torch.no_grad()

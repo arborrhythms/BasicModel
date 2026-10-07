@@ -1,0 +1,25 @@
+{
+  "head": "73cd7b71baeb64135c1e2e841b9bfc321339d8bc",
+  "candidate_manifest_sha256": "d99b205afba2e1db0dbd0197d2506fdb100f71cd9cd3f2b0161bccdcea19ddba",
+  "round2_receipt_unchanged": true,
+  "round2_files_checked": 1928,
+  "plan_unchanged": true,
+  "philosophy_unchanged": true,
+  "architecture_unchanged": true,
+  "index_empty": true,
+  "commits": false,
+  "pushes": false,
+  "parent_bump": false,
+  "documents": {
+    "doc/Architecture.md": "bc2f94d06081a976a306f68ef072f53ee1c45d6de3c0c70b9ca3f8dc01bcdb06",
+    "doc/GradientFlow.md": "9c49c0cafaf225e6632da27c0e02678ff54295eca3f1d0a61151f854eb285f76",
+    "doc/FutureWork.md": "0b2231a12f2e39ecc53a35dd5c7d26e96e5621919ef4557b2151f061580897d9",
+    "doc/Philosophy.md": "916a293ce48f17fb6dc37d5b07906ebf56c9f8b0dfc937363640792801d51588",
+    "doc/specs/2026-09-29-operator-catalogue.md": "a082feabde1cce808fe67dbd77b59a85ee96dc0fc129964b9c67b6c5f9af21f7",
+    "doc/plans/2026-10-05-operators-update.md": "e5a3ac408d8827ff441e18f685afceb8cc2fbad8b69a994ecf80ec5a098965ad",
+    "todo.md": "38a3397b4431f01ec59d97c3b96261f7ff5497114dfb891af78a0df350f0352a"
+  },
+  "receipt_readme_sha256": "8d64aa81039af602329035e563071d59ef555082956fb5c3e52246843a264fe7",
+  "source_archive_verified": true,
+  "doc_link_tests_passed": 295
+}

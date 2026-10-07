@@ -1,0 +1,1171 @@
+{
+  "source_matched": true,
+  "measurement_helpers_matched": true,
+  "gate_trainings": 30,
+  "retries": 0,
+  "paired_mm": {
+    "plan": {
+      "landing": "42daf96f454a30a3633054151e4ba8d498cd3b59",
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "epochs": 200,
+      "stopping": "all 200 epochs, including after threshold",
+      "retries": 0,
+      "separate_from_gate_trainings": true,
+      "landing_archive_sha256": "cbe05d25a6d8f91d281bf95c06331bb86fa1efd501b98e9bec2edf9b7c9d1f8e",
+      "candidate_source_manifest_sha256": "3fd07f0cd516da3102867207614e11a9153638d37057bcc82a8c7ff821689106"
+    },
+    "pairs": [
+      {
+        "seed": 0,
+        "construction_equal": true,
+        "trajectory_equal": false,
+        "first_different_epoch": 1,
+        "first_forward_equal": false,
+        "identical_epochs": 0,
+        "epochs": 200
+      },
+      {
+        "seed": 1,
+        "construction_equal": true,
+        "trajectory_equal": false,
+        "first_different_epoch": 1,
+        "first_forward_equal": false,
+        "identical_epochs": 0,
+        "epochs": 200
+      },
+      {
+        "seed": 2,
+        "construction_equal": true,
+        "trajectory_equal": false,
+        "first_different_epoch": 1,
+        "first_forward_equal": false,
+        "identical_epochs": 0,
+        "epochs": 200
+      }
+    ],
+    "all_trajectories_identical": false,
+    "candidate_source_matched": true
+  },
+  "mm_rng_only_amendment": {
+    "seed": 0,
+    "training_steps": 0,
+    "source_manifest_sha256": "3fd07f0cd516da3102867207614e11a9153638d37057bcc82a8c7ff821689106",
+    "construction_equal": true,
+    "scope_equal": true,
+    "kept_actions_equal": true,
+    "landing_percept_explore_wins": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "old_percept_stage_matches_landing": true,
+    "rng_after_greedy_restoration_matches_candidate": true,
+    "open_scope_matches_candidate": true,
+    "candidate_matches_round2c_bisection": true,
+    "first_forward_differs_from_landing": true,
+    "sentence_departure_calls": 0,
+    "mask_changed_positions": 12,
+    "random_operations": {
+      "landing": 52,
+      "round2e": 19
+    },
+    "current_source_matched": true,
+    "path": [
+      "ModelAttention.stage_input",
+      "retired WalkTrials.narrowing_pair draws",
+      "Torch global RNG state",
+      "BasicModel.create_ir_mask: Bernoulli",
+      "masked perceptual forward",
+      "answer head"
+    ],
+    "rng_only_path_confirmed": true
+  },
+  "effective_below_comparison": [],
+  "sweep": {
+    "selected": 5269,
+    "completed": 5269,
+    "outcomes": {
+      "passed": 4983,
+      "skipped": 285,
+      "xpassed": 1
+    },
+    "seconds": 340.4432016250212,
+    "warnings": []
+  },
+  "counts": {
+    "class_pass": 9,
+    "reconstruction_pass": 10,
+    "joint": 9,
+    "mm_pass": 10,
+    "sum_pass": 10,
+    "sum_floor_pass": 10,
+    "xor_bands": {
+      "at 0": 9,
+      "at 1/4": 0,
+      "between": 1,
+      "above 1/4": 0
+    },
+    "sum_bands": {
+      "at 0": 0,
+      "at 1/4": 10,
+      "between": 0,
+      "above 1/4": 0
+    }
+  },
+  "below_comparison": [],
+  "xor_runs": [
+    {
+      "run": 1,
+      "mse": 3.728950481729498e-11,
+      "band": "at 0",
+      "correct": 4,
+      "recovered": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "operators": [
+        "conjunction"
+      ]
+    },
+    {
+      "run": 2,
+      "mse": 0.006875942635036658,
+      "band": "at 0",
+      "correct": 4,
+      "recovered": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "operators": [
+        "conjunction"
+      ]
+    },
+    {
+      "run": 3,
+      "mse": 0.020207540391250944,
+      "band": "at 0",
+      "correct": 4,
+      "recovered": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "operators": [
+        "conjunction"
+      ]
+    },
+    {
+      "run": 4,
+      "mse": 0.00015355443625630905,
+      "band": "at 0",
+      "correct": 4,
+      "recovered": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "operators": [
+        "conjunction"
+      ]
+    },
+    {
+      "run": 5,
+      "mse": 0.0003185842068678113,
+      "band": "at 0",
+      "correct": 4,
+      "recovered": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "operators": [
+        "conjunction"
+      ]
+    },
+    {
+      "run": 6,
+      "mse": 0.08011151139954586,
+      "band": "between",
+      "correct": 4,
+      "recovered": 4,
+      "class_pass": false,
+      "reconstruction_pass": true,
+      "operators": [
+        "conjunction"
+      ]
+    },
+    {
+      "run": 7,
+      "mse": 0.001467269166551155,
+      "band": "at 0",
+      "correct": 4,
+      "recovered": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "operators": [
+        "conjunction"
+      ]
+    },
+    {
+      "run": 8,
+      "mse": 0.006520754514057092,
+      "band": "at 0",
+      "correct": 4,
+      "recovered": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "operators": [
+        "conjunction"
+      ]
+    },
+    {
+      "run": 9,
+      "mse": 0.001101065652386879,
+      "band": "at 0",
+      "correct": 4,
+      "recovered": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "operators": [
+        "conjunction"
+      ]
+    },
+    {
+      "run": 10,
+      "mse": 3.2542848593664075e-07,
+      "band": "at 0",
+      "correct": 4,
+      "recovered": 4,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "operators": [
+        "conjunction"
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "kind": "sum",
+      "run": 1,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "sum",
+      "run": 2,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "sum",
+      "run": 3,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "sum",
+      "run": 4,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "sum",
+      "run": 5,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "sum",
+      "run": 6,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "sum",
+      "run": 7,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "sum",
+      "run": 8,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "sum",
+      "run": 9,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "sum",
+      "run": 10,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "xor",
+      "run": 1,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "xor",
+      "run": 2,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "xor",
+      "run": 3,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "xor",
+      "run": 4,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "xor",
+      "run": 5,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "xor",
+      "run": 6,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "xor",
+      "run": 7,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "xor",
+      "run": 8,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "xor",
+      "run": 9,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    },
+    {
+      "kind": "xor",
+      "run": 10,
+      "codebooks": [
+        {
+          "rows": 0,
+          "code_maximum_change": 0.0
+        },
+        {
+          "rows": 4,
+          "code_maximum_change": 0.0
+        }
+      ],
+      "zero_sentence_path_gradient": true,
+      "gradients": {
+        "perceptualSpace._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 0,
+          "zero": 800,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "conceptualSpaces.1.concept_parts_layer.features.values": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.0._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        },
+        "wholeSpaces.1._owned_bases.what.W": {
+          "backwards": 800,
+          "absent": 800,
+          "zero": 0,
+          "nonzero": 0,
+          "maximum": 0.0
+        }
+      },
+      "reader_epochs": 400
+    }
+  ],
+  "zero_code_displacement": true,
+  "zero_sentence_path_gradient": true,
+  "zero_ownership_conflicts": true,
+  "sum_floor_passed": true,
+  "standing_gate_passed": true,
+  "postprocessor_sha256": "a0efa97c7db5bfd50aea53c8798f1fd3585ebbfe0f064710bcae29d4f821862d"
+}

@@ -1,0 +1,128 @@
+[
+  {
+    "configuration": "MM_xor",
+    "model_type": "BasicModel",
+    "word_brackets": false,
+    "spaces": 3,
+    "concept_spaces": [
+      "ConceptualSpace",
+      "ConceptualSpace",
+      "ConceptualSpace"
+    ],
+    "calls": {},
+    "pole_pair_exists": true,
+    "reference_evidence_exists": false,
+    "output": [
+      [
+        [
+          0.5072358250617981
+        ]
+      ],
+      [
+        [
+          0.5072304606437683
+        ]
+      ],
+      [
+        [
+          0.5071582198143005
+        ]
+      ],
+      [
+        [
+          0.5070910453796387
+        ]
+      ]
+    ],
+    "training_steps": 0
+  },
+  {
+    "configuration": "MM_grammar",
+    "model_type": "BasicModel",
+    "word_brackets": true,
+    "spaces": 3,
+    "concept_spaces": [
+      "ConceptualSpace",
+      "ConceptualSpace",
+      "ConceptualSpace"
+    ],
+    "calls": {
+      "_run_tensor_peer_word_pipeline": 1,
+      "_publish_sentence_scratch": 5,
+      "_pushed_word_slab": 6,
+      "reference_evidence": 6,
+      "read_poles": 12,
+      "commit_word_reference_slab": 6,
+      "_attention_sentence_payload": 6
+    },
+    "pole_pair_exists": true,
+    "reference_evidence_exists": true,
+    "output": [
+      [
+        [
+          0.5013667345046997
+        ]
+      ],
+      [
+        [
+          0.5004217624664307
+        ]
+      ],
+      [
+        [
+          0.5016764402389526
+        ]
+      ],
+      [
+        [
+          0.500722348690033
+        ]
+      ]
+    ],
+    "training_steps": 0
+  },
+  {
+    "configuration": "XOR_grammar",
+    "model_type": "BasicModel",
+    "word_brackets": true,
+    "spaces": 2,
+    "concept_spaces": [
+      "ConceptualSpace",
+      "ConceptualSpace"
+    ],
+    "calls": {
+      "_run_tensor_peer_word_pipeline": 1,
+      "_publish_sentence_scratch": 5,
+      "_pushed_word_slab": 6,
+      "reference_evidence": 6,
+      "read_poles": 12,
+      "commit_word_reference_slab": 6,
+      "_attention_sentence_payload": 6
+    },
+    "pole_pair_exists": true,
+    "reference_evidence_exists": true,
+    "output": [
+      [
+        [
+          0.500623345375061
+        ]
+      ],
+      [
+        [
+          0.4996128976345062
+        ]
+      ],
+      [
+        [
+          0.500575840473175
+        ]
+      ],
+      [
+        [
+          0.49954351782798767
+        ]
+      ]
+    ],
+    "training_steps": 0
+  }
+]

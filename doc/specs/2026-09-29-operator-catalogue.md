@@ -1409,3 +1409,192 @@ are zero. **The standing gate failed** because MM_xor must remain 10/10:
 run 5 reached best MSE 0.220072806 within 200 epochs against the unchanged
 0.20 threshold. The receipt retains that miss without a retry. This is an
 uncommitted review candidate, not an accepted landing.
+
+
+### 12.2 Operators update, round 2: credit (2026-10-06; uncommitted)
+
+This round was not accepted (plan §15). This section records the historical
+candidate; §12.3 describes its round-2b correction.
+
+Round 1 was accepted by Alec on October 6 and landed as `73cd7b71b`; its
+[acceptance record](../benchmarks/2026-10-05-operators-update/acceptance.json)
+amends the historical candidate status in §12.1 without replacing the measured
+MM miss. Round 2 starts from that source and is held for Claude's review.
+
+The two derivations now compare the owner-step relative total `R+E+A`.
+Expectation contributes role, presence and kind errors gated by `g·κ`; its own
+training targets and loss are unchanged. A supplied answer reads both complete
+trials without a step and trains its reader only on kept rows. Strictly lower
+keeps explore; a tie keeps greedy. The existing reconstruction-owned SCG
+registration credits one departure drawn uniformly over the eligible narrowing
+and compose rounds, with the `K·R` correction and unchanged active-row reduction.
+The percept-stage byte comparison and separate attention term are retired.
+
+The walk's field poles cross the sentence handoff with scope. Bracket `and`
+and `or` use the bilattice, and `not` exchanges poles. Each affected word
+carries that pair; the sentence uses an explicit pair or detached net feature
+evidence, and closing polarity reflects it. The word's stored code is unchanged.
+No meaning-value connective or negation in the binding kernel is introduced.
+
+At closing, `n=−g·(1−m)⊙κ⊙ê` and `c=o+n` operate on the concept face only.
+Thought reads `c`; storage and detached prediction targets retain `o`;
+`o=c−n` restores the observation. The mechanism adds no loss, optimizer or
+owner. XOR_grammar and MM_grammar have zero concept-complement width and an
+identically zero image. The nonzero-complement fixture checks all six cases.
+
+The pair search, decomposition teachers, owner lists, reconstruction objective,
+training budgets and bands remain unchanged. Later identity, meaning, attention
+filter and catalogue work follows the current plan §9.5/§12.3 schedule.
+[Gradient flow](../GradientFlow.md#operators-update-round-2-credit-october-6-uncommitted-candidate)
+and the [round-2 receipt](../benchmarks/2026-10-06-operators-round2/README.md)
+record the implementation, old/new test texts, source freeze and measurements.
+
+The complete thirty-training campaign **fails the standing gate**: class
+4/10, reconstruction 6/10, MM_xor convergence 9/10, sum 10/10. The full sweep
+is green; sentence-path perception gradients, code displacement and audited
+ownership conflicts are zero. Narrowing and compose receive nonzero credit
+in XOR. The first observer omitted the two reference-slab consumers. Plan §15 calls
+MM live; round 2b confirms different paired trajectories. Its forward-only
+trace distinguishes the configurations: MM_xor bypasses all four consumers,
+while MM_grammar reaches the reference paths. The MM miss still counts.
+All runs and failures are retained without retry. This candidate is held
+for Claude's review and is not committed.
+
+
+### 12.3 Operators update, round 2b (2026-10-06; rejected candidate)
+
+The [round-2b receipt](../benchmarks/2026-10-06-operators-round2b/README.md)
+starts from the frozen round-2 source. Only strictly lower reconstruction
+keeps explore; ties keep greedy. The unchanged SCG advantage remains the
+relative total difference `Δ(R+E+A)`. The answer-owned reader trains on both
+detached trial roots. The handoff preserves event values and activation
+magnitudes, changing only the expressed pole; tied pairs retain the prior
+sign. All four consumer paths are declared and counted, including both
+reference-slab publications. Untouched reference evidence exactly matches the
+landing's signed-activation conversion. The closing image, one joint departure,
+pair search, reconstruction objective and owners are unchanged.
+
+First-order concepts (allocator order zero) obey inherited-part containment:
+`parts(X) ⊆ parts(Y) ⇒ c(X) ≤ c(Y)` coordinatewise on the form. Positive net
+part evidence selects membership; `L` is their join. The audit intersects the
+postings of X's parts to enumerate its containers, includes equal sets in both
+directions, omits trivial self pairs, and checks empty sets against every row.
+Its before/after views accept placement snapshots. Future centroid placement
+will cap each contained code by all containers in decreasing part count.
+Since each container remains at least its own `L`, the cap preserves the
+contained code's lower bound; lowering never raises a container over its
+ceiling. No placement pass is implemented here, and meanings are unconstrained.
+
+| Fold or composition | Coordinatewise monotone in its inputs? |
+| --- | --- |
+| Native join `max` and ordinary `min` | Yes, with fixed selected evidence and coordinates. |
+| `MeronymicFoldAdapter`, sigma and pi, including butterfly membership cascades | Yes in the forward direction: nonnegative monotone coupling, or the membership kernels below. A common fold preserves same-order comparisons. Its inverse is not generally monotone. |
+| `PiLayer2` | Yes: nonnegative weights act on increasing log memberships, followed by increasing exp/clamp. |
+| `SigmaLayer2` | Yes: complement conjugation of monotone pi reverses order twice. |
+| Legacy signed `SigmaLayer` and `PiLayer`, including signed butterfly folds | No guarantee: signed linear factors can have negative cross-derivatives; operand selection adds another discontinuity. |
+| Legacy `SigmaLayer`/`PiLayer` with `invertible=True`, `monotonic=True`, no signed butterfly, nonnegative gate, and fixed operand selection | Yes: the forward matrix is nonnegative. Sigma’s optional top-two support selection is excluded from this guarantee. |
+| Form conjunction and disjunction binding kernels | No guarantee: normalization couples coordinates; increasing one can lower another. |
+| `ConceptualCombine` signed mixing | No guarantee: unrestricted signed factors. |
+| Silent-coordinate intersection | Monotone for a fixed nonzero support; no global guarantee when zero changes from “no restriction” to a specified value. |
+
+The containment guarantee is enforced by construction and audited only at
+order zero this round. The tests distinguish `a ≤ ab`, `a ≤ ac` and incomparable
+`ab`, `ac`. The receipt preserves the disjunction residual and its isolated
+cause; an unimplemented form/pole separation is not claimed as repaired.
+
+
+### 12.4 Operators update, round 2c (2026-10-06; not accepted)
+
+The [round-2c receipt](../benchmarks/2026-10-06-operators-round2c/README.md)
+starts from the frozen round-2b source. Negation does not enter the form:
+interpretation uses `[form × |a| | meaning × a]`, with the sign carried by
+`(relu(a), relu(−a))` and the closing polarity. Retained reconstruction leaves
+use the same interpretation. Reference publication keeps the resolved grammar
+identity so its pole evidence reaches the closing. No binding kernel changes.
+
+The answer-owned reader takes one step per supplied sentence: the mean loss
+on both detached roots for compose departures, the kept root's loss for
+narrowing departures. The batch-end answer is reporting only after this step.
+The keep remains strict reconstruction improvement; the single SCG advantage
+remains `Δ(R+E+A)`, with its existing reduction, registration and owners.
+With zero meaning width, a narrowing `not` changes no root or trial cost.
+The disjunction fixture verifies four recovered multisets and exact pair
+recomposition before training. The concept-only image and §12.3's containment
+audit, a/ab/ac fixture and fold monotonicity table remain unchanged.
+
+MM_xor reaches no declared pole consumer. Retiring percept-stage sampling
+changes the RNG state consumed by its later Bernoulli input-reconstruction
+mask; a seed-zero first-forward bisection isolates this path. Scope and the
+kept walk match at that boundary. MM is live; the three paired replays and
+thirty unseeded trainings are separate records, without retries or replacements.
+
+Measured: class **5/10**, reconstruction **10/10**, sum **10/10 at ¼**, MM_xor
+**9/10**. Class misses the standing gate. The original reading also counted
+MM's miss; §20 subsequently excludes its bisection-proven RNG-only path.
+This candidate is not accepted. All final grammar roots choose conjunction and
+all narrowing departures tie. Reader counters confirm one step per supplied
+sentence, and the perception-gradient, displacement and ownership audits are
+zero. The full sweep is green. Every run and its deciding costs are retained
+in the receipt; no further training changes the count.
+
+### 12.5 Operators update, round 2d (2026-10-06; review candidate)
+
+The [round-2d receipt](../benchmarks/2026-10-06-operators-round2d/README.md)
+starts from the frozen round-2c source. Draw the departure's walk uniformly
+among the `W` walks with an eligible round in this sentence, then its round
+uniformly among that walk's `R_walk` eligible rounds. Draw the alternative
+uniformly among the round's `K` eligible alternatives, as before. The SCG
+correction `K·R_walk·W` cancels the proposal `1/(W·R_walk·K)`; the greedy
+baseline, active-row reduction and registration are unchanged.
+
+The reconstruction keep, answer/expectation components, one reader step,
+unsigned forms and signed meanings, pole consumers, image and containment
+audit remain unchanged. The receipt records the walk and all three counts,
+and verifies analytic gradients against finite differences for both walks.
+Under plan §20's §5 amendment, a bisection-proven RNG-only path is not a
+regression gate. MM_xor's seed-zero bisection is repeated; all ten raw MM
+outcomes and the separate three-seed paired replays remain visible.
+
+Measured round 2d: class **2/10** against the landing's 7/10, reconstruction
+**10/10**, sum **10/10 at ¼**, and raw MM_xor **10/10**. The repeated bisection
+confirms the RNG-only MM path. Every final grammar root is conjunction and
+every run gets all four labels right, but eight miss the class MSE bar.
+The all-disjunction starts become all-conjunction from epochs 22, 65 and 106.
+XOR departures divide 7,978 compose / 8,022 narrowing; all narrowing credits
+tie. The reader takes one update per batch, all proposal corrections match,
+and analytic/finite-difference checks pass. The full sweep is green and the
+ownership, perception-gradient and displacement audits remain zero. This
+candidate misses the standing gate and is held uncommitted for Claude's review.
+
+### 12.6 Operators update, round 2e (2026-10-06; review candidate)
+
+The [round-2e receipt](../benchmarks/2026-10-06-operators-round2e/README.md)
+starts from frozen 2d. The presented reader returns to one update per
+sentence on the reconstruction-kept root only. A separate reader of the same
+form, also answer-owned, trains by 2d's rule: mean root losses for a compose
+departure, kept root for a narrowing departure. Only this comparison
+reader supplies the answer component of the chooser's advantage. It never
+supplies a presented answer, written output or gate prediction.
+
+Both readers see detached roots and each takes one step. Initial comparison
+parameters copy the presented reader without a random draw. The keep,
+walk-first proposal and correction, other advantage components, ownership
+boundaries, registration and reduction are unchanged. The receipt records
+both MSE trajectories on kept roots, reader norms, flip epochs, exact row
+weights and optimizer counters. It retains every gate outcome and class
+miss's late component costs, with the repeated MM bisection under §5.
+
+Measured round 2e: class **9/10**, reconstruction
+**10/10**, sum **10/10 at ¼**, and raw MM_xor
+**10/10** under the repeated RNG-only bisection. The measured
+standing gate is met; acceptance remains pending Claude's review.
+Final evaluation has 40/40 conjunction roots and 40/40 correct labels.
+Every run uses greedy conjunction throughout from epoch 140 at the latest.
+The receipt separates 1 miss categorized as late flip,
+0 reader plateaus and 0 other misses, with both
+reader trajectories and late trial costs. All twenty sum/XOR runs have
+400 updates per reader, zero presented weight on the rejected root, and
+final active reader Adam counters of 400. The complete source sweep is
+green; ownership conflicts, sentence-path perception gradients and
+code displacement are zero. All thirty unseeded gate trainings are
+retained without retries or replacements. No commit or push.

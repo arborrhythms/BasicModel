@@ -1,0 +1,210 @@
+--- before-round2e/doc/Architecture.md
++++ review-round2e/doc/Architecture.md
+@@ -2749,3 +2749,22 @@
+ readers — train by expectation and output along one path. Where a
+ transformation is only approximately invertible, reconstruction stays a
+ loss for that part.
++
++### Operators round 2e: two answer-owned readers
++
++The [round-2e candidate](benchmarks/2026-10-06-operators-round2e/README.md)
++separates the answer read used for presentation from the read used to compare
++sentence trials. The presented reader trains once per sentence on the
++reconstruction-kept root alone. Its rejected-root weight is exactly zero.
++The comparison reader has the same form and independent parameters; it
++trains once on the mean of the detached trial roots' losses for a compose
++departure, or on the kept root for a narrowing departure. Only its answer
++cost enters the chooser's `R + E + A` comparison. It supplies no presented
++answer, written output or gate prediction.
++
++Both readers belong to the answer owner. The comparison parameters begin
++as copies of the presented parameters without another random draw. The
++existing output objective sums their independently reduced losses, giving
++each reader one update. The strict reconstruction keep, walk-first proposal,
++score-function correction, and detached understanding boundary are unchanged.
++The candidate is held for Claude's review before any commit.
+--- before-round2e/doc/FutureWork.md
++++ review-round2e/doc/FutureWork.md
+@@ -1239,5 +1239,30 @@
+ use conjunction throughout. The eight class MSE misses remain in the receipt
+ with their cost comparisons. Walk proposals are balanced, narrowing advantages
+ tie, reader counters confirm one update, the sweep is green, and the ownership,
+-gradient and displacement audits are zero. Round 2d remains an uncommitted
+-review candidate that has not met the gate; later-round work stays carried.
++gradient and displacement audits are zero. Round 2d is not accepted under
++plan §21; later-round work stays carried.
++
++Operators round 2e separates the presented reader from the comparison
++reader. The former trains once on the reconstruction-kept root only; the
++latter retains 2d's paired compose-root training and supplies only the
++advantage's answer cost. Both remain answer-owned and read detached roots.
++The [round-2e receipt](benchmarks/2026-10-06-operators-round2e/README.md)
++records their MSE on the same kept roots, reader norms, operator flips and
++the late cost comparisons. The keep, walk-first departure and SCG correction
++remain unchanged. Earlier receipts, Claude's plan and Philosophy are preserved.
++The candidate is held uncommitted for Claude's review.
++
++Measured round 2e: class **9/10**, reconstruction
++**10/10**, sum **10/10 at ¼**, and raw MM_xor
++**10/10** under the repeated RNG-only bisection. The measured
++standing gate is met; acceptance remains pending Claude's review.
++Final evaluation has 40/40 conjunction roots and 40/40 correct labels.
++Every run uses greedy conjunction throughout from epoch 140 at the latest.
++The receipt separates 1 miss categorized as late flip,
++0 reader plateaus and 0 other misses, with both
++reader trajectories and late trial costs. All twenty sum/XOR runs have
++400 updates per reader, zero presented weight on the rejected root, and
++final active reader Adam counters of 400. The complete source sweep is
++green; ownership conflicts, sentence-path perception gradients and
++code displacement are zero. All thirty unseeded gate trainings are
++retained without retries or replacements. No commit or push.
+--- before-round2e/doc/GradientFlow.md
++++ review-round2e/doc/GradientFlow.md
+@@ -27,9 +27,12 @@
+ by gain × predicted presence, and relative answer error when supplied.
+ Each answer is read from that trial with the understanding detached, before
+ either optimizer step. Reconstruction and expectation train on both trials.
+-The supplied-answer reader takes one step per sentence: the mean of both
+-root losses for compose departures, the kept root for narrowing departures.
+-The batch-end answer read reports its error without another reader update. The kept state is committed detached;
++Round 2e gives the answer owner two independent readers of the same form.
++The presented reader takes one step on the reconstruction-kept root only.
++The comparison reader supplies A and takes one step on the mean of both root
++losses for compose departures, or the kept root for narrowing departures.
++Both readers see detached roots. The batch-end answer read uses the presented
++reader and reports its error without another update. The kept state is committed detached;
+ no gradient crosses that boundary into the next sentence.
+ 
+ Input narrowing and compose share one departure per sentence. Round 2d draws
+@@ -47,7 +50,7 @@
+ |---|---|
+ | Reconstruction (R) | Perception (the sole writer of native PS/WS prototypes and 11b evidence), field dictionaries, compose operators and tied inverses, compose chooser, and the shared generate decoder (chooser and parameterized generate faces). Grammar lessons train only their chooser, never an operator. Momentum descent; codes have no EMA refresh or contextual rotation. |
+ | Expectation (E) | Within-sentence, between-sentence, ARMA and contrastive predictors; the predictive reading-attention module where enabled. All sources, routing evidence and targets are detached. |
+-| Answer (A) | Numeric head and affine root/end/echoic-bank reader; learned memory retrieval for thought and generation, question conditioners and answer adapters/controllers. The concluded understanding is detached. The generate chooser belongs to reconstruction. |
++| Answer (A) | Numeric head and affine root/end/echoic-bank reader, plus its independent comparison copy on the sentence path; learned memory retrieval for thought and generation, question conditioners and answer adapters/controllers. Only the presented reader supplies outputs; the comparison copy supplies the chooser's answer cost. The concluded understanding is detached. The generate chooser belongs to reconstruction. |
+ 
+ [ObjectiveOwnership](../bin/ObjectiveOwnership.py) reads the trained named
+ terms from `Layers.Error` and obtains gradients only for their owner lists.
+@@ -894,3 +897,46 @@
+ the RNG-only path and all three paired trajectories differ. All results and
+ the class misses' component costs are retained in the receipt; no retry or
+ replacement changes the count. The candidate remains uncommitted for review.
++
++## Operators update round 2e (October 6; review candidate)
++
++[Round-2e receipt](benchmarks/2026-10-06-operators-round2e/README.md).
++Plan §22 separates two uses of the answer read. The presented reader takes
++one step on the reconstruction-kept root alone. The comparison reader has
++the same form and independent answer-owned parameters; it retains 2d's one
++step on the mean of both root losses for compose departures, or the kept
++root for narrowing departures. Only the comparison reader's answer cost
++enters `Δ(R+E+A)`. Presentation, writing and the class gate use the presented
++reader. Its weight on the rejected root is exactly zero.
++
++The comparison weights are cloned before the first update without consuming
++RNG. Both roots remain detached. Each reader's independently reduced loss
++enters the existing answer objective, so each takes one update without an
++extra batch-end step. The strict reconstruction keep, walk-first draw,
++`K·R_walk·W` correction, other components, registration, reduction and owner
++boundaries remain as in 2d. The frozen AST comparison verifies the unchanged
++reader computation and credit functions; focused tests verify separate
++gradients, tied-parameter restoration, counters and public-output isolation.
++
++Each run records both readers' MSE before the trial updates on the same kept
++roots, their active weight norms and the stable greedy conjunction epoch.
++Final class evaluation remains the ordinary presented read after training.
++The receipt separates any misses by late flip, flat reader norm with correct
++labels, or other evidence, and retains the late R/E/A comparisons. The MM
++seed-zero bisection is repeated and the paired diagnostics remain separate
++from the thirty unseeded gate trainings. There is no retry or replacement.
++
++Measured round 2e: class **9/10**, reconstruction
++**10/10**, sum **10/10 at ¼**, and raw MM_xor
++**10/10** under the repeated RNG-only bisection. The measured
++standing gate is met; acceptance remains pending Claude's review.
++Final evaluation has 40/40 conjunction roots and 40/40 correct labels.
++Every run uses greedy conjunction throughout from epoch 140 at the latest.
++The receipt separates 1 miss categorized as late flip,
++0 reader plateaus and 0 other misses, with both
++reader trajectories and late trial costs. All twenty sum/XOR runs have
++400 updates per reader, zero presented weight on the rejected root, and
++final active reader Adam counters of 400. The complete source sweep is
++green; ownership conflicts, sentence-path perception gradients and
++code displacement are zero. All thirty unseeded gate trainings are
++retained without retries or replacements. No commit or push.
+--- before-round2e/doc/specs/2026-09-29-operator-catalogue.md
++++ review-round2e/doc/specs/2026-09-29-operator-catalogue.md
+@@ -1565,3 +1565,36 @@
+ and analytic/finite-difference checks pass. The full sweep is green and the
+ ownership, perception-gradient and displacement audits remain zero. This
+ candidate misses the standing gate and is held uncommitted for Claude's review.
++
++### 12.6 Operators update, round 2e (2026-10-06; review candidate)
++
++The [round-2e receipt](../benchmarks/2026-10-06-operators-round2e/README.md)
++starts from frozen 2d. The presented reader returns to one update per
++sentence on the reconstruction-kept root only. A separate reader of the same
++form, also answer-owned, trains by 2d's rule: mean root losses for a compose
++departure, kept root for a narrowing departure. Only this comparison
++reader supplies the answer component of the chooser's advantage. It never
++supplies a presented answer, written output or gate prediction.
++
++Both readers see detached roots and each takes one step. Initial comparison
++parameters copy the presented reader without a random draw. The keep,
++walk-first proposal and correction, other advantage components, ownership
++boundaries, registration and reduction are unchanged. The receipt records
++both MSE trajectories on kept roots, reader norms, flip epochs, exact row
++weights and optimizer counters. It retains every gate outcome and class
++miss's late component costs, with the repeated MM bisection under §5.
++
++Measured round 2e: class **9/10**, reconstruction
++**10/10**, sum **10/10 at ¼**, and raw MM_xor
++**10/10** under the repeated RNG-only bisection. The measured
++standing gate is met; acceptance remains pending Claude's review.
++Final evaluation has 40/40 conjunction roots and 40/40 correct labels.
++Every run uses greedy conjunction throughout from epoch 140 at the latest.
++The receipt separates 1 miss categorized as late flip,
++0 reader plateaus and 0 other misses, with both
++reader trajectories and late trial costs. All twenty sum/XOR runs have
++400 updates per reader, zero presented weight on the rejected root, and
++final active reader Adam counters of 400. The complete source sweep is
++green; ownership conflicts, sentence-path perception gradients and
++code displacement are zero. All thirty unseeded gate trainings are
++retained without retries or replacements. No commit or push.
+--- before-round2e/todo.md
++++ review-round2e/todo.md
+@@ -137,13 +137,13 @@
+    and, once the path is invertible, at every layer by inversion;
+    expectation and output as the criteria, reconstruction retiring to an
+    audit where the transformations are exact. Rounds (plan §9.5, §12.3):
+-   **2 credit — rounds 2, 2b and 2c not accepted; round 2d measured, gate missed, awaiting review**
+-   ([round-2d receipt](doc/benchmarks/2026-10-06-operators-round2d/README.md); no commit):
+-   magnitude interpretation preserves forms; one reader step averages compose
+-   roots or trains the kept narrowing root. Reconstruction keeps the trial;
++   **2 credit — rounds 2, 2b, 2c and 2d not accepted; round 2e measured, awaiting review**
++   ([round-2e receipt](doc/benchmarks/2026-10-06-operators-round2e/README.md); no commit):
++   magnitude interpretation preserves forms; each answer-owned reader takes
++   one step under its round-2e rule below. Reconstruction keeps the trial;
+    the total still credits the single departure. Pole consumers and closing
+    evidence, the concept-only image, and inherited-part containment are audited.
+-   MM_xor stays live: retired percept sampling shifts its later Bernoulli mask.
++   MM_xor's raw count stays recorded: retired percept sampling shifts its later Bernoulli mask.
+    Its three paired replays remain separate from the thirty unseeded trainings.
+    Round 2c: class **5/10**, reconstruction **10/10**, sum **10/10 at ¼**,
+    MM_xor **9/10**; sweep green, ownership/gradient/displacement zeros.
+@@ -159,6 +159,15 @@
+    conjunction throughout. Departures split 7,978 compose / 8,022 narrowing,
+    all narrowing credits tie, and reader counters remain one update per batch.
+    Sweep green; ownership/gradient/displacement zeros. No commit before review.
++   Round 2e restores kept-root-only training for the presented reader and
++   retains 2d's mixed-root training in a separate comparison reader used only
++   for the advantage. Both are answer-owned, with one step each on detached
++   roots. The receipt records both readers' MSE, norms, flips and miss costs.
++   Round 2e: class **9/10**, reconstruction **10/10**,
++   sum **10/10 at ¼**, raw MM_xor **10/10** under the RNG-only amendment.
++   The measured standing gate is met; 40/40 final roots are conjunction.
++   Misses: 1 late flip, 0 reader plateau, 0 other.
++   Sweep and owner audits pass. No commit before Claude's review.
+    **3 identity** (pairs plus length as the parts,
+    the content width, the narrowing rule and the centroid), **4 meaning**
+    (membership as properties, co-activation through shared wholes, Kleene

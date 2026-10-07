@@ -1187,16 +1187,34 @@ overwritten from the derivation each forward. Perception reconstruction alone
 trains native PS/WS prototypes and 11b evidence; the sentence reading detaches
 both. Its root remains live to train the sentence choosers.
 
-A word symbol's position in perceptual space is the evidence-weighted midpoint
-of its lattice interval over letters and WS types.
+A word symbol's position in perceptual space is the join of its parts.
 Net evidence is `d = relu(e_for-e_against)`; the attention-only both corner is
-excluded. Parts give `L = max(d_part * part_code)`. WS property wholes give
-`U = min(1-d_whole*(1-whole_code))`, or one with no wholes. With weights
-`W_P = sum(d_part)` and `W_W = sum(d_whole)`, the form is
-`(W_P*L + W_W*U)/(W_P+W_W)`, and is `L` without wholes. A deterministic
-post-step room projection moves the maximal part down and minimal whole up
-by half each positive `L-U+m` violation, clamped to [0,1]; `m` defaults to zero.
-The exact remaining violations are measured, not assumed absent.
+excluded. Parts with `d > 0` give `L = max(part_code)` (evidence selects a
+part; it does not scale it), and `L` is the form. WS property wholes give
+`U = min(1-d_whole*(1-whole_code))`, or one with no wholes; `U` bounds the
+form and does not enter it. A deterministic post-step room projection moves
+only the minimal whole, up by the full positive `L-U+m` violation, clamped to
+[0,1]; parts never shrink to fit their types; `m` defaults to zero. The exact
+remaining violations are measured, not assumed absent. (6.8 plan §15.2: the
+midpoint of the interval blended each word with its type, since the only
+wholes a word had — the alphabet cuts — were common to every word of a type.)
+
+The round-2 closing image acts only after the complete perceptual block:
+its form content and reserved coordinates are untouched. Interpretation and
+retained leaves multiply form by activation magnitude and meaning by signed
+activation; poles carry the sign into the closing (operators round 2c). With a zero-width
+concept complement (XOR_grammar and MM_grammar), the image is exactly zero;
+thought reads the conceived complement while storage keeps the observation.
+
+The midpoint returns under the scheme confirmed on 2026-10-06 (operators
+update plan §12–§13): the wholes that bound a word are the alphabet cuts
+together with the has-a concepts one order up (for each part `p`, the things
+containing `p`, by the sigma fold over `p`'s occurrences), each whole weighing
+in `U` in proportion to how much it narrows the domain, `d_w · s_w` with
+`s_w = 1 - |extent(w)| / |domain|`; a whole that excludes nothing bounds
+nothing. The symbol is then the evidence-weighted centroid between `L` and
+`U`. It is informative only in a wide sparse content block, so it arrives with
+the pairs and the width of round 3.
 
 Generally characterized codes have zero location/time coordinates in the
 native perceptual event block. Occurrences carry their own bracket and time.
@@ -1221,9 +1239,9 @@ conceptual wholes' locations, the catalogue's `not` items, and expectation's
 negative image acting on the concept face only (item 2) remain for the operators
 update. No bootstrap or co-activation objective is added here.
 
-XOR_grammar and MM_grammar retain 14-dimensional native events and paired
-representations, with six form content coordinates and an empty meaning
-complement. Their concepts are empty: identical contexts with no bootstrap.
+XOR_grammar and MM_grammar have 22-dimensional native events and paired
+representations since 6.8 §22: fourteen form content coordinates, the
+eight-coordinate address band, and an empty meaning complement. Their concepts are empty: identical contexts with no bootstrap.
 The XOR class and reconstruction table measures perception's composition of
 forms, its inverse, the affine read at unit norm, and one owner. The connectives
 over meanings are measured where meanings exist, as in MM_xor's field path.
@@ -2658,3 +2676,95 @@ written there and read by no gate.
 **Footprints.** Each operator declares what it reads and writes over form
 (perceptual space), meaning (conceptual space) and the poles (the symbol's
 activation): catalogue §1 rule 10.
+
+## The scheme confirmed 2026-10-06: expectation and surprise through the architecture
+
+Decided in the operators update plan, [§6–§13](plans/2026-10-05-operators-update.md);
+scheduled by its [§9.5](plans/2026-10-05-operators-update.md#95-proposed-round-sequence-replaces-2)
+and [§12.3](plans/2026-10-05-operators-update.md#123-round-2-as-it-now-stands).
+This section states the target; the sections above and
+[GradientFlow](GradientFlow.md) state what is implemented at each round.
+
+**One bank, two relations.** A shared bank of codes `{X, …}` with two
+relations over it: *contains X* from the segmentation (a word's parts; a
+sentence's words) and *is X* from the predicates (a thing's own row, its
+classes, the has-a concepts one order up, later "occurs in S"). The bank
+grows only when two things would otherwise coincide: a new row for a new
+identity, a distinguishing feature (an unshared pair, a count, the length)
+when a new thing collides with an old one, and otherwise nothing.
+Containment is exact in the index (references and leaf postings); the code
+is the evidence-weighted centroid between the join of what the thing
+contains and the meet of what contains it, each whole weighing in
+proportion to how much it narrows (round 3).
+
+**Parts: pairs and length.** The parts of a word are its boundary-marked
+adjacent letter pairs (`#c ci ir rc cu us s#`) plus its letter count; the
+fold is unchanged (the join of the parts). Anagrams separate without
+position, repetition separates by length, "ends in s" is a part, and the
+derivation is one parallel join over the slab rather than a serial walk;
+the same rule serves the sentence rung with adjacent word pairs. The
+content block must hold the inventory as a sparse superposition (round 3).
+
+**Attention is a filter.** A weight per word on detached percepts, trained
+pathwise by the owner-step cost factored into attended and unattended
+regions — `C = Σ m_i·C_i^S + (1 − m_i)·C_i^P`, so a word is attended where
+the sentence path explains it better than perception alone — with a graded
+budget; soft in training, hard at test; the field's `and`/`or`/`not` are
+continuous in the poles (round 5). Until then the narrowing walk's poles are
+handed off with the scope (round 2).
+
+**Two hard derivations as expectation and surprise.** The forward is always
+a tree. The greedy derivation is what the model expects of itself; one
+departure, drawn first uniformly among eligible walks (narrowing and compose),
+then uniformly among the selected walk's eligible rounds, is the question
+(operators round 2d); both are completed and costed at
+the owner step on the total of reconstruction, expectation (gated by the
+predictor's confidence) and, where supplied, the answer. The strict
+reconstruction keep commits the lower-R trial, with ties keeping greedy;
+the full total supplies the chooser's advantage. The committed trial is
+written to its row and presented; the chooser is credited by the score-function
+term at the departure, corrected by `K·R_walk·W` — the surprise at the choice. The
+choice stays discrete; no mixed forward, no straight-through.
+
+**Surprise at every layer.** The one unconditioned prediction is the next
+row from the previous rows (the world-model; conditioning it on the current
+input would copy it). Inverted through the committed operations of the
+actual derivation it yields an expected operand at every round, conditioned
+on the actual structure; the actual operand against it is that layer's
+surprise, deterministic and local, exact for an invertible layer; from
+below, the teacher-forced next-step predictor conditions on the propagated
+input. Expectation completes no derivation of its own — one inverse pass on
+the reverse path. This is predictive coding's two directions, and
+equilibrium propagation's two phases, with the only sampled estimate left
+being the chooser's (rounds 3–4; the confidence-gated image at the closing,
+spec §2.6.1, lands in round 2).
+
+**The invertible path.** The projections (SVD-factored), the butterflies,
+the LDU readout and the operators' tied inverses are invertible now; the
+form from bytes (round 3) and binding through the bank at sufficient width
+(rounds 3–4) are made exact. Reconstruction then retires to a structural
+audit that must read zero, the decomposition chooser becomes a lookup, the
+collapse channel closes (an invertible path cannot discard information),
+and the trainable surfaces — the chooser, the maps, the predictors, the
+readers — train by expectation and output along one path. Where a
+transformation is only approximately invertible, reconstruction stays a
+loss for that part.
+
+### Operators round 2e: two answer-owned readers
+
+The [round-2e candidate](benchmarks/2026-10-06-operators-round2e/README.md)
+separates the answer read used for presentation from the read used to compare
+sentence trials. The presented reader trains once per sentence on the
+reconstruction-kept root alone. Its rejected-root weight is exactly zero.
+The comparison reader has the same form and independent parameters; it
+trains once on the mean of the detached trial roots' losses for a compose
+departure, or on the kept root for a narrowing departure. Only its answer
+cost enters the chooser's `R + E + A` comparison. It supplies no presented
+answer, written output or gate prediction.
+
+Both readers belong to the answer owner. The comparison parameters begin
+as copies of the presented parameters without another random draw. The
+existing output objective sums their independently reduced losses, giving
+each reader one update. The strict reconstruction keep, walk-first proposal,
+score-function correction, and detached understanding boundary are unchanged.
+The candidate is held for Claude's review before any commit.

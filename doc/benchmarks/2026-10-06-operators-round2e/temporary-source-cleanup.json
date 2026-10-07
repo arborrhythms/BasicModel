@@ -1,0 +1,16 @@
+[
+  {
+    "directory": "doc/benchmarks/2026-10-06-operators-round2e/mm-first-forward/landing-source",
+    "archive": "doc/benchmarks/2026-10-06-operators-round2e/mm-first-forward/landing-source.tar",
+    "archive_sha256": "cbe05d25a6d8f91d281bf95c06331bb86fa1efd501b98e9bec2edf9b7c9d1f8e",
+    "archived_files": 700,
+    "verified_before_removing_extraction": true
+  },
+  {
+    "directory": "doc/benchmarks/2026-10-06-operators-round2e/paired-mm/landing-source",
+    "archive": "doc/benchmarks/2026-10-06-operators-round2e/paired-mm/landing-source.tar",
+    "archive_sha256": "cbe05d25a6d8f91d281bf95c06331bb86fa1efd501b98e9bec2edf9b7c9d1f8e",
+    "archived_files": 700,
+    "verified_before_removing_extraction": true
+  }
+]

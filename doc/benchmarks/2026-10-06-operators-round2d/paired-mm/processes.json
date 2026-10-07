@@ -1,0 +1,98 @@
+[
+  {
+    "name": "landing-0",
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired_mm.py",
+      "child",
+      "0",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired-mm/landing-0.json"
+    ],
+    "pid": 63082,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 592315736,
+    "elapsed_seconds": 25.41347329202108,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired-mm/landing-0.log"
+  },
+  {
+    "name": "round2d-0",
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired_mm.py",
+      "child",
+      "0",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired-mm/round2d-0.json"
+    ],
+    "pid": 63127,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 519800128,
+    "elapsed_seconds": 19.702034459041897,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired-mm/round2d-0.log"
+  },
+  {
+    "name": "landing-1",
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired_mm.py",
+      "child",
+      "1",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired-mm/landing-1.json"
+    ],
+    "pid": 63139,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 525272408,
+    "elapsed_seconds": 24.90038279100554,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired-mm/landing-1.log"
+  },
+  {
+    "name": "round2d-1",
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired_mm.py",
+      "child",
+      "1",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired-mm/round2d-1.json"
+    ],
+    "pid": 63168,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 519423296,
+    "elapsed_seconds": 19.701057916972786,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired-mm/round2d-1.log"
+  },
+  {
+    "name": "landing-2",
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired_mm.py",
+      "child",
+      "2",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired-mm/landing-2.json"
+    ],
+    "pid": 63177,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 525337896,
+    "elapsed_seconds": 25.151417207962368,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired-mm/landing-2.log"
+  },
+  {
+    "name": "round2d-2",
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired_mm.py",
+      "child",
+      "2",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired-mm/round2d-2.json"
+    ],
+    "pid": 63213,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 520176936,
+    "elapsed_seconds": 19.444976291968487,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2d/paired-mm/round2d-2.log"
+  }
+]

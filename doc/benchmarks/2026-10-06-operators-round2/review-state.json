@@ -1,0 +1,24 @@
+{
+  "source_manifest_sha256": "63d68a9b9c38d14470293e12e7d7e85103c24bfa7572d605babafed0c7e7043a",
+  "source_matched": true,
+  "helper_hashes_matched": true,
+  "plan_and_philosophy_unchanged_since_finished_snapshot": true,
+  "round1_commit": "73cd7b71baeb64135c1e2e841b9bfc321339d8bc",
+  "round2_committed": false,
+  "staged_paths": [],
+  "review_files": {
+    "doc/GradientFlow.md": "4a9c78f2f244653de2c10390f157564203d81a8e901abbcc4e42221503777cd5",
+    "doc/Architecture.md": "bc2f94d06081a976a306f68ef072f53ee1c45d6de3c0c70b9ca3f8dc01bcdb06",
+    "doc/FutureWork.md": "55dac44bb4f39e7bda3dd4c2232cac1d5b0f163b548b0e629c2295284b2f38da",
+    "doc/Philosophy.md": "916a293ce48f17fb6dc37d5b07906ebf56c9f8b0dfc937363640792801d51588",
+    "doc/specs/2026-09-29-operator-catalogue.md": "80fbf152a8a478562da25a0c93967a708ecb8ffc69473779a6a4dd99c13df881",
+    "todo.md": "c3657ce94c7683f783218269567131e404e46b7b24d112231369879cbdc39dec",
+    "doc/plans/2026-10-05-operators-update.md": "6f74be4e198a45c6f84837e04d258b50fc55cb2cddc06891ede3a7e71441c0d4",
+    "doc/benchmarks/2026-10-06-operators-round2/README.md": "8f27e6e9ca646858510a46b50b1015cfd0880ad7b2ba302284af33fa75ee9865",
+    "doc/benchmarks/2026-10-06-operators-round2/review-changes.patch": "a75ff3b1ac482f6d8e7195288b9f33a5e5a81b4f0c25cd79c1c09bd50b945e3c",
+    "doc/benchmarks/2026-10-06-operators-round2/documentation-from-finished.patch": "44f7e8b20b75c894f804008c66fc138957c3292afcc92bb0f229fc28c42d5230",
+    "doc/benchmarks/2026-10-06-operators-round2/results-validation.json": "123e7da6f552d0ae8dff813a92f229e7df9cc2f8414bfc0d2d2efb1da2455157",
+    "doc/benchmarks/2026-10-06-operators-round2/aggregate-credit-audit.json": "21e201b9d1ace7e9499f3c023845e78e36ccc15c7ac0e89a7235cff9ebd29f7c"
+  },
+  "source_archive_matches_manifest": true
+}

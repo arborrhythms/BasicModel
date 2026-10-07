@@ -1,0 +1,955 @@
+{
+  "action_order": [
+    "divide",
+    "descend",
+    "gloss",
+    "and",
+    "or",
+    "not"
+  ],
+  "runs": [
+    {
+      "run": 1,
+      "class_pass": false,
+      "reconstruction_pass": false,
+      "paths": [
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ]
+      ],
+      "source_sha256": "5f070c29287589bb9c0bcd8e0e3ded94956d0638cf6fd4c86564eceda049c6eb",
+      "two_word_structural_actions": [
+        "descend",
+        "descend",
+        "descend",
+        "descend"
+      ]
+    },
+    {
+      "run": 2,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "paths": [
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ]
+      ],
+      "source_sha256": "566d0fdf4fec6c8c8506d0d32e62937349021899acc44f7ed831bdee5578ea22",
+      "two_word_structural_actions": [
+        "descend",
+        "descend",
+        "descend",
+        "descend"
+      ]
+    },
+    {
+      "run": 3,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "paths": [
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ]
+      ],
+      "source_sha256": "db3376899be9bfff14fb1e2993d55157325e5dd343fd0b293ad06708323237e1",
+      "two_word_structural_actions": [
+        "descend",
+        "descend",
+        "descend",
+        "descend"
+      ]
+    },
+    {
+      "run": 4,
+      "class_pass": false,
+      "reconstruction_pass": false,
+      "paths": [
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ]
+      ],
+      "source_sha256": "c50fa416cb97cbf150e1b299c7c09e1ffdf2298408c64925b8231418281ab8eb",
+      "two_word_structural_actions": [
+        "descend",
+        "descend",
+        "descend",
+        "descend"
+      ]
+    },
+    {
+      "run": 5,
+      "class_pass": false,
+      "reconstruction_pass": false,
+      "paths": [
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          }
+        ]
+      ],
+      "source_sha256": "81e4fc0f355cc6434ace3564e5dcf30504635663fec76d896d96dc39c632adf5",
+      "two_word_structural_actions": [
+        "descend",
+        "descend",
+        "descend",
+        "descend"
+      ]
+    },
+    {
+      "run": 6,
+      "class_pass": false,
+      "reconstruction_pass": true,
+      "paths": [
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ]
+      ],
+      "source_sha256": "2535640c2aef1c6d2461e536e05e344652374e7a64e6ff9ca5283fe33c803994",
+      "two_word_structural_actions": [
+        "descend",
+        "descend",
+        "descend",
+        "descend"
+      ]
+    },
+    {
+      "run": 7,
+      "class_pass": false,
+      "reconstruction_pass": false,
+      "paths": [
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "not"
+          },
+          {
+            "slot": 0,
+            "action": "and"
+          },
+          {
+            "slot": 0,
+            "action": "or"
+          },
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ]
+      ],
+      "source_sha256": "36e71846df04723f2be2f5962d2f02821e8489da1d51c6d5207e4728f38e95e9",
+      "two_word_structural_actions": [
+        "descend",
+        "descend",
+        "descend",
+        "descend"
+      ]
+    },
+    {
+      "run": 8,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "paths": [
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ]
+      ],
+      "source_sha256": "b5da427ed4e9452b89918311b6f511da47bb79eb6bd3f60b3ae45d3e3dbb1f39",
+      "two_word_structural_actions": [
+        "descend",
+        "descend",
+        "descend",
+        "descend"
+      ]
+    },
+    {
+      "run": 9,
+      "class_pass": false,
+      "reconstruction_pass": true,
+      "paths": [
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ]
+      ],
+      "source_sha256": "f1d9f202646dda97059b4f0fa0bcc841af62c24930f711124f17373ca3f129b7",
+      "two_word_structural_actions": [
+        "descend",
+        "descend",
+        "descend",
+        "descend"
+      ]
+    },
+    {
+      "run": 10,
+      "class_pass": true,
+      "reconstruction_pass": true,
+      "paths": [
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ],
+        [
+          {
+            "slot": 0,
+            "action": "descend"
+          },
+          {
+            "slot": 0,
+            "action": "gloss"
+          },
+          {
+            "slot": 1,
+            "action": "gloss"
+          }
+        ]
+      ],
+      "source_sha256": "b17672504ef71b57ff59cced83b39b0a23164eb9ffd11235d52ce865e1595010",
+      "two_word_structural_actions": [
+        "descend",
+        "descend",
+        "descend",
+        "descend"
+      ]
+    }
+  ],
+  "descend_sentences": 40,
+  "divide_sentences": 0,
+  "conclusion": "The final saved evaluation traces have descend in all 40 sentences, including every passing run. The alleged passing-run divide distinction is absent from this evidence. Failing disjunction runs have not/and/or before descend; passing conjunction run 3 has the same field prefix."
+}

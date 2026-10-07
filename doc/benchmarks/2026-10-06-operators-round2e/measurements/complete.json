@@ -1,0 +1,608 @@
+{
+  "jobs": [
+    {
+      "kind": "sum",
+      "run": 2,
+      "name": "sum-02",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-02"
+        ],
+        "pid": 74308,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 667256296,
+        "elapsed_seconds": 132.68209720798768,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-02/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 3,
+      "name": "sum-03",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-03"
+        ],
+        "pid": 74309,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 596575624,
+        "elapsed_seconds": 133.6932272920385,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-03/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 1,
+      "name": "sum-01",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-01"
+        ],
+        "pid": 74307,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 622249400,
+        "elapsed_seconds": 135.26591983396793,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-01/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 4,
+      "name": "sum-04",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-04"
+        ],
+        "pid": 74740,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 633161120,
+        "elapsed_seconds": 131.97221987496596,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-04/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 5,
+      "name": "sum-05",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-05"
+        ],
+        "pid": 74741,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 596297096,
+        "elapsed_seconds": 132.96905608300585,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-05/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 6,
+      "name": "sum-06",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-06"
+        ],
+        "pid": 74750,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 594757000,
+        "elapsed_seconds": 132.41461270902073,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-06/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 7,
+      "name": "sum-07",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-07"
+        ],
+        "pid": 75207,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 629048736,
+        "elapsed_seconds": 132.78549999999814,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-07/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 8,
+      "name": "sum-08",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-08"
+        ],
+        "pid": 75209,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 669222424,
+        "elapsed_seconds": 133.79168079199735,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-08/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 9,
+      "name": "sum-09",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-09"
+        ],
+        "pid": 75213,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 656934352,
+        "elapsed_seconds": 134.79930708301254,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-09/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 10,
+      "name": "sum-10",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-10"
+        ],
+        "pid": 75670,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 665437624,
+        "elapsed_seconds": 115.45361754205078,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/sum-10/run.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "run": 1,
+      "name": "xor-01",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+        ],
+        "pid": 76035,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 662423016,
+        "elapsed_seconds": 142.46099687501555,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/xor-01/run.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "run": 2,
+      "name": "xor-02",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+        ],
+        "pid": 76036,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 664110592,
+        "elapsed_seconds": 143.47067795798648,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/xor-02/run.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "run": 3,
+      "name": "xor-03",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+        ],
+        "pid": 76037,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 668878288,
+        "elapsed_seconds": 144.48273587500444,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/xor-03/run.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "run": 6,
+      "name": "xor-06",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+        ],
+        "pid": 76497,
+        "exit_code": 1,
+        "reason": "exit",
+        "peak_memory_bytes": 668239360,
+        "elapsed_seconds": 140.8483897500555,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/xor-06/run.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "run": 4,
+      "name": "xor-04",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+        ],
+        "pid": 76495,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 659342848,
+        "elapsed_seconds": 142.40883637499064,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/xor-04/run.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "run": 5,
+      "name": "xor-05",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+        ],
+        "pid": 76496,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 624264656,
+        "elapsed_seconds": 143.4134206249728,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/xor-05/run.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "run": 7,
+      "name": "xor-07",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+        ],
+        "pid": 76956,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 666109392,
+        "elapsed_seconds": 141.6214748339844,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/xor-07/run.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "run": 8,
+      "name": "xor-08",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+        ],
+        "pid": 76965,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 665945672,
+        "elapsed_seconds": 141.1616508339648,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/xor-08/run.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "run": 9,
+      "name": "xor-09",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+        ],
+        "pid": 76966,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 665404928,
+        "elapsed_seconds": 142.16980279196287,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/xor-09/run.log"
+      }
+    },
+    {
+      "kind": "xor",
+      "run": 10,
+      "name": "xor-10",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy",
+          "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct"
+        ],
+        "pid": 77413,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 728565368,
+        "elapsed_seconds": 131.25827404198935,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/xor-10/run.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "run": 2,
+      "name": "mm-02",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_mm_xor.py::TestMMXorConvergence::test_convergence"
+        ],
+        "pid": 77974,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 533611912,
+        "elapsed_seconds": 9.780778167012613,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/mm-02/run.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "run": 3,
+      "name": "mm-03",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_mm_xor.py::TestMMXorConvergence::test_convergence"
+        ],
+        "pid": 77975,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 536872304,
+        "elapsed_seconds": 11.337640582991298,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/mm-03/run.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "run": 1,
+      "name": "mm-01",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_mm_xor.py::TestMMXorConvergence::test_convergence"
+        ],
+        "pid": 77973,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 539346288,
+        "elapsed_seconds": 13.460240625019651,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/mm-01/run.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "run": 4,
+      "name": "mm-04",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_mm_xor.py::TestMMXorConvergence::test_convergence"
+        ],
+        "pid": 78008,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 535299512,
+        "elapsed_seconds": 10.72361558303237,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/mm-04/run.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "run": 5,
+      "name": "mm-05",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_mm_xor.py::TestMMXorConvergence::test_convergence"
+        ],
+        "pid": 78013,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 532874536,
+        "elapsed_seconds": 10.168259374971967,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/mm-05/run.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "run": 6,
+      "name": "mm-06",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_mm_xor.py::TestMMXorConvergence::test_convergence"
+        ],
+        "pid": 78019,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 537789784,
+        "elapsed_seconds": 9.611145666975062,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/mm-06/run.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "run": 8,
+      "name": "mm-08",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_mm_xor.py::TestMMXorConvergence::test_convergence"
+        ],
+        "pid": 78042,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 533562736,
+        "elapsed_seconds": 7.495694666984491,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/mm-08/run.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "run": 10,
+      "name": "mm-10",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_mm_xor.py::TestMMXorConvergence::test_convergence"
+        ],
+        "pid": 78073,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 536069464,
+        "elapsed_seconds": 9.209048291028012,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/mm-10/run.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "run": 7,
+      "name": "mm-07",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_mm_xor.py::TestMMXorConvergence::test_convergence"
+        ],
+        "pid": 78041,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 547980632,
+        "elapsed_seconds": 18.809287458017934,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/mm-07/run.log"
+      }
+    },
+    {
+      "kind": "mm",
+      "run": 9,
+      "name": "mm-09",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "test/test_mm_xor.py::TestMMXorConvergence::test_convergence"
+        ],
+        "pid": 78051,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 542180768,
+        "elapsed_seconds": 19.34320404200116,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/mm-09/run.log"
+      }
+    }
+  ],
+  "source_matched": true,
+  "completed": true,
+  "seconds": 1119.2124638329842,
+  "retries": 0
+}

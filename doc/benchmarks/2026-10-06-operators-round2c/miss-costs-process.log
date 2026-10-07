@@ -1,0 +1,352 @@
+{
+  "xor": [
+    {
+      "run": 1,
+      "mse": 0.21850896959831134,
+      "correct": 3,
+      "reconstructed": 4,
+      "predictions": [
+        0.4527711868286133,
+        0.5719271898269653,
+        0.48657169938087463,
+        0.47135886549949646
+      ],
+      "band": "between",
+      "last_greedy_disjunction_epoch": 308,
+      "last_cost_rewarding_greedy_disjunction": {
+        "epoch": 307,
+        "batch_row": 3,
+        "input": "loving there",
+        "departure": "conjunction",
+        "greedy_components": [
+          0.1836080253124237,
+          0.0,
+          0.2788739502429962
+        ],
+        "explore_components": [
+          0.1836080253124237,
+          0.0,
+          0.4278213381767273
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.14894738793373108
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.1489473581314087,
+        "deciding": "answer",
+        "K": 1,
+        "R": 3,
+        "probability": 0.49891987442970276
+      },
+      "last_cost_rewarding_greedy_conjunction": {
+        "epoch": 400,
+        "batch_row": 2,
+        "input": "loving world",
+        "departure": "disjunction",
+        "greedy_components": [
+          0.09250813722610474,
+          0.0,
+          0.2933654487133026
+        ],
+        "explore_components": [
+          0.09250813722610474,
+          0.0,
+          0.3478181064128876
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.05445265769958496
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.05445265769958496,
+        "deciding": "answer",
+        "K": 1,
+        "R": 3,
+        "probability": 0.45311179757118225
+      }
+    },
+    {
+      "run": 2,
+      "mse": 0.05158523509688884,
+      "correct": 4,
+      "reconstructed": 4,
+      "predictions": [
+        0.1672174334526062,
+        0.7567300796508789,
+        0.6710669994354248,
+        0.10489088296890259
+      ],
+      "band": "between",
+      "last_greedy_disjunction_epoch": 150,
+      "last_cost_rewarding_greedy_disjunction": {
+        "epoch": 144,
+        "batch_row": 3,
+        "input": "loving there",
+        "departure": "conjunction",
+        "greedy_components": [
+          0.44881582260131836,
+          0.0,
+          0.24969728291034698
+        ],
+        "explore_components": [
+          0.44881582260131836,
+          0.0,
+          0.28942427039146423
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.03972698748111725
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.03972703218460083,
+        "deciding": "answer",
+        "K": 1,
+        "R": 3,
+        "probability": 0.4992896020412445
+      },
+      "last_cost_rewarding_greedy_conjunction": {
+        "epoch": 400,
+        "batch_row": 2,
+        "input": "loving world",
+        "departure": "disjunction",
+        "greedy_components": [
+          0.2843979299068451,
+          0.0,
+          0.2532751262187958
+        ],
+        "explore_components": [
+          0.2843979299068451,
+          0.0,
+          0.38611456751823425
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.13283944129943848
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.13283944129943848,
+        "deciding": "answer",
+        "K": 1,
+        "R": 3,
+        "probability": 0.12985600531101227
+      }
+    },
+    {
+      "run": 4,
+      "mse": 0.07126495842811797,
+      "correct": 4,
+      "reconstructed": 4,
+      "predictions": [
+        0.2126775085926056,
+        0.6551806926727295,
+        0.7895063757896423,
+        0.27680352330207825
+      ],
+      "band": "between",
+      "last_greedy_disjunction_epoch": 4,
+      "last_cost_rewarding_greedy_disjunction": null,
+      "last_cost_rewarding_greedy_conjunction": {
+        "epoch": 400,
+        "batch_row": 2,
+        "input": "loving world",
+        "departure": "disjunction",
+        "greedy_components": [
+          0.16828657686710358,
+          0.0,
+          0.14000852406024933
+        ],
+        "explore_components": [
+          0.16828657686710358,
+          0.0,
+          0.9686476588249207
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.8286391496658325
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.8286391496658325,
+        "deciding": "answer",
+        "K": 1,
+        "R": 3,
+        "probability": 0.09516309201717377
+      }
+    },
+    {
+      "run": 7,
+      "mse": 0.1762369553113725,
+      "correct": 4,
+      "reconstructed": 4,
+      "predictions": [
+        0.42849379777908325,
+        0.6651592254638672,
+        0.5489252209663391,
+        0.45360124111175537
+      ],
+      "band": "between",
+      "last_greedy_disjunction_epoch": 290,
+      "last_cost_rewarding_greedy_disjunction": {
+        "epoch": 289,
+        "batch_row": 3,
+        "input": "loving there",
+        "departure": "conjunction",
+        "greedy_components": [
+          3.3924021636266843e-07,
+          0.0,
+          0.28877222537994385
+        ],
+        "explore_components": [
+          3.3924021636266843e-07,
+          0.0,
+          0.337570458650589
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.04879823327064514
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.04879823327064514,
+        "deciding": "answer",
+        "K": 1,
+        "R": 3,
+        "probability": 0.4997294545173645
+      },
+      "last_cost_rewarding_greedy_conjunction": {
+        "epoch": 399,
+        "batch_row": 1,
+        "input": "hello there",
+        "departure": "disjunction",
+        "greedy_components": [
+          1.235649392583582e-06,
+          0.0,
+          0.18378040194511414
+        ],
+        "explore_components": [
+          1.235649392583582e-06,
+          0.0,
+          0.5751298666000366
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.3913494646549225
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.3913494944572449,
+        "deciding": "answer",
+        "K": 1,
+        "R": 3,
+        "probability": 0.39958977699279785
+      }
+    },
+    {
+      "run": 10,
+      "mse": 0.15953106533701056,
+      "correct": 3,
+      "reconstructed": 4,
+      "predictions": [
+        0.1427030861377716,
+        0.5154502391815186,
+        0.3900667130947113,
+        0.10465660691261292
+      ],
+      "band": "between",
+      "last_greedy_disjunction_epoch": 331,
+      "last_cost_rewarding_greedy_disjunction": {
+        "epoch": 327,
+        "batch_row": 2,
+        "input": "loving world",
+        "departure": "conjunction",
+        "greedy_components": [
+          0.07656306773424149,
+          0.0,
+          0.4106086790561676
+        ],
+        "explore_components": [
+          0.07656306773424149,
+          0.0,
+          0.42455801367759705
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.013949334621429443
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.013949364423751831,
+        "deciding": "answer",
+        "K": 1,
+        "R": 3,
+        "probability": 0.4987024664878845
+      },
+      "last_cost_rewarding_greedy_conjunction": {
+        "epoch": 400,
+        "batch_row": 3,
+        "input": "loving there",
+        "departure": "disjunction",
+        "greedy_components": [
+          0.31602713465690613,
+          0.0,
+          0.038670241832733154
+        ],
+        "explore_components": [
+          0.31602713465690613,
+          0.0,
+          0.400249183177948
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.36157894134521484
+        ],
+        "keep": "tie:greedy",
+        "advantage": 0.36157891154289246,
+        "deciding": "answer",
+        "K": 1,
+        "R": 3,
+        "probability": 0.3187193274497986
+      }
+    }
+  ],
+  "mm": [
+    {
+      "run": 1,
+      "epochs": 200,
+      "best": {
+        "epoch": 35,
+        "mse": 0.20093002915382385,
+        "predictions": [
+          0.3694320619106293,
+          0.5188785195350647,
+          0.5111026167869568,
+          0.44355565309524536
+        ]
+      },
+      "last": {
+        "epoch": 200,
+        "mse": 0.2521708309650421,
+        "predictions": [
+          0.49781742691993713,
+          0.4922628104686737,
+          0.49361395835876465,
+          0.4966259300708771
+        ]
+      },
+      "pole_consumers": {
+        "_attention_sentence_payload": 0,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 0,
+        "commit_word_reference_slab:whole_slab": 0
+      },
+      "owner_step_comparisons": 0,
+      "statement": "No sentence trial costs or keep decisions run on this MM_xor path. The changed mechanism is the retired sampling draws followed by the Bernoulli mask; the failed 200-epoch convergence run remains counted."
+    }
+  ]
+}

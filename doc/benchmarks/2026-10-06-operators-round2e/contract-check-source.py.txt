@@ -1,0 +1,73 @@
+"""Inspect frozen ASTs only; no model execution and no new training."""
+import ast
+import copy
+import hashlib
+import json
+from pathlib import Path
+import zipfile
+
+H = Path(__file__).resolve().parent
+before = json.loads((H/'before/source.json').read_text())
+after = json.loads((H/'delivered-source/source.json').read_text())
+changed = [p for p in after if p.startswith('bin/') and before.get(p) != after[p]]
+assert changed == ['bin/AnswerComparison.py', 'bin/Models.py', 'bin/SentenceCredit.py']
+
+def functions(text):
+    out = {}
+    def walk(node, prefix=''):
+        for child in getattr(node, 'body', []):
+            if isinstance(child, ast.ClassDef):
+                walk(child, prefix+child.name+'.')
+            elif isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if (child.body and isinstance(child.body[0], ast.Expr)
+                        and isinstance(child.body[0].value, ast.Constant)
+                        and isinstance(child.body[0].value.value, str)):
+                    child.body = child.body[1:]
+                out[prefix+child.name] = child
+    walk(ast.parse(text))
+    return out
+
+def dump(node):
+    return ast.dump(node, include_attributes=False)
+
+class RemovePredictionAudit(ast.NodeTransformer):
+    def visit_Assign(self, node):
+        if any(isinstance(t, ast.Attribute) and t.attr == '_sentence_answer_predictions'
+               for t in node.targets):
+            return None
+        return self.generic_visit(node)
+
+result = dict(changed_runtime_files=changed, changed_runtime_functions={},
+              unchanged_credit_contract={})
+texts = {}
+with zipfile.ZipFile(H/'before/source.zip') as old, zipfile.ZipFile(H/'delivered-source/source.zip') as new:
+    for name in changed:
+        prior = old.read(name).decode() if name in old.namelist() else ''
+        final = new.read(name).decode()
+        texts[name] = dict(old=prior, new=final)
+        a, b = functions(prior), functions(final)
+        result['changed_runtime_functions'][name] = [k for k in b if k not in a or dump(a[k]) != dump(b[k])]
+        if name == 'bin/SentenceCredit.py':
+            assert set(a) == set(b)
+            for key in b:
+                assert dump(a[key]) == dump(b[key]), key
+                result['unchanged_credit_contract'][key] = hashlib.sha256(dump(b[key]).encode()).hexdigest()
+        if name == 'bin/Models.py':
+            original = copy.deepcopy(a['BasicModel._sentence_answer_error'])
+            current = RemovePredictionAudit().visit(copy.deepcopy(b['BasicModel._sentence_reader_error']))
+            current.name = original.name
+            assert dump(original) == dump(current)
+            result['same_reader_form_except_detached_prediction_audit'] = True
+            for key in ('BasicModel._compose_score_function_loss', 'BasicModel._forward_head'):
+                assert dump(a[key]) == dump(b[key]), key
+            result['public_forward_head_unchanged'] = True
+            result['score_function_consumer_unchanged'] = True
+assert result['changed_runtime_functions']['bin/SentenceCredit.py'] == []
+assert set(result['changed_runtime_functions']['bin/Models.py']) == {
+    'BaseModel.create_from_config', 'BaseModel.objective_parameter_groups', 'BaseModel.getOptimizer',
+    'BasicModel._sentence_run', 'BasicModel._sentence_answer_error',
+    'BasicModel._sentence_reader_error', 'BasicModel._run_sentence_word_bricks'}
+result['postprocessor_sha256'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+(H/'changed-runtime-texts.json').write_text(json.dumps(texts, indent=2)+'\n')
+(H/'runtime-contract-check.json').write_text(json.dumps(result, indent=2)+'\n')
+print(json.dumps(result, indent=2))

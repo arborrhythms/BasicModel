@@ -1,0 +1,30 @@
+{
+  "sum": {
+    "narrowing": {
+      "records": 16000,
+      "nonzero": 0,
+      "analytic_records": 16000,
+      "finite_difference_records": 16000,
+      "maximum_gradient_error": 0.0,
+      "maximum_finite_difference_error": 0.0
+    }
+  },
+  "xor": {
+    "narrowing": {
+      "records": 8022,
+      "nonzero": 0,
+      "analytic_records": 8022,
+      "finite_difference_records": 8022,
+      "maximum_gradient_error": 0.0,
+      "maximum_finite_difference_error": 0.0
+    },
+    "compose": {
+      "records": 7978,
+      "nonzero": 7978,
+      "analytic_records": 7978,
+      "finite_difference_records": 7978,
+      "maximum_gradient_error": 2.2351741790771484e-08,
+      "maximum_finite_difference_error": 1.761658166565816e-08
+    }
+  }
+}

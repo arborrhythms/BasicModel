@@ -1,0 +1,27 @@
+import sys,tempfile
+from pathlib import Path
+sys.path[:0]=['bin','test']
+from util import init_device
+init_device('cpu')
+from Models import BasicModel
+from Interpret import InterpretLayer
+import pytest, torch
+from test_live_references import test_public_reading_fuses_the_reference_before_capture_and_write
+activate=InterpretLayer.activate
+observe=BasicModel._sentence_observation
+
+def act(m,atoms,activation):
+ d=getattr(m.owner.similarity_codebook,'mereology',None)
+ print('ACT',m.owner.name, id(m.owner), atoms.shape, activation.flatten().tolist(), None if d is None else d.percept_event_width, atoms.flatten()[-4:].tolist())
+ return activate(m,atoms,activation)
+def observation(m,*a,**kw):
+ v=observe(m,*a,**kw)
+ for e in v['entries']:
+  if e is not None:
+   print('ROWS',e.rows,e.word_rows,e.activations)
+   print('LEAVES',e.leaves[:,:5],e.leaves[:,-5:]);print('FRAMES',e.operation_values[-1,:,:5], e.operation_values[-1,:,-5:])
+ return v
+with tempfile.TemporaryDirectory() as tmp, pytest.MonkeyPatch.context() as patch:
+ patch.setattr(InterpretLayer,'activate',act)
+ patch.setattr(BasicModel,'_sentence_observation',observation)
+ test_public_reading_fuses_the_reference_before_capture_and_write(Path(tmp),patch)

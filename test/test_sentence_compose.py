@@ -83,6 +83,7 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
     # Completion is a fixture for this causal mechanism test. Both winners
     # must leave a real predecessor, regardless of the untrained chooser.
     _select_completed_binary_path(model)
+    model.inputSpace.data.has_supervised_outputs = False
     optimizer = model.getOptimizer(lr=1e-4)
     import util
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
@@ -112,9 +113,9 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
             disc = model.symbolSpace.expectation
             assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
         fixed = cost.new_tensor([1., 2.] if alternative else [2., 1.])
-        # Fix only the reconstruction comparison, preserving the trained
-        # registry entries and their live derivatives. The answer no longer
-        # participates in the choice under §22.
+        # Fix the comparison's reconstruction component and zero its gated
+        # expectation view, preserving both owners' live training entries.
+        model._sentence_expectation_comparison = None
         registry = model._sentence_cost_registry
         original_total = registry.total
         def fixed_total(*args, **kwargs):
@@ -218,7 +219,9 @@ def test_disabled_sentence_prediction_leaves_adam_momentum_unused():
     optimizer.step()
     optimizer.zero_grad(set_to_none=True)
     before = predictor.detach().clone()
-    disc = SimpleNamespace(sentence_prediction_cost=lambda *a, **k:
+    from Layers import Error
+    disc = SimpleNamespace(_sentence_comparison_errors=Error(row_mask=torch.tensor([True])),
+        sentence_prediction_cost=lambda *a, **k:
         (predictor.square().reshape(1), predictor.square().reshape(1), None))
     observation = dict(observed_depths=[1], observed=[root],
         mask=torch.tensor([True]), layout='stm', roles=None, meanings=[None])

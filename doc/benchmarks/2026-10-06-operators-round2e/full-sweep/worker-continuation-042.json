@@ -1,0 +1,1738 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_stm_substrate.py::test_typed_stack_is_nn_module",
+    "test/test_stm_substrate.py::test_typed_stack_tensors_are_registered_buffers",
+    "test/test_stm_substrate.py::test_typed_stack_to_moves_all_tensors",
+    "test/test_stm_substrate.py::test_word_space_params_include_category_embedding",
+    "test/test_stream_dataset.py::test_contiguous_streams_basic",
+    "test/test_stream_dataset.py::test_truncates_tail_when_not_divisible",
+    "test/test_stream_dataset.py::test_empty_sentences_raises",
+    "test/test_stream_dataset.py::test_num_streams_larger_than_sentences_raises",
+    "test/test_stream_dataset.py::test_dataloader_prefetch_preserves_stream_order",
+    "test/test_stream_dataset.py::test_tick_prefetcher_preserves_exhaustion_after_full_queue",
+    "test/test_stream_dataset.py::test_packed_streams_preserve_row_chronology_and_whole_sentences",
+    "test/test_stream_dataset.py::test_packed_stream_progress_tracks_consumed_sentences",
+    "test/test_stream_dataset.py::test_packed_stream_refuses_one_oversized_sentence",
+    "test/test_stream_dataset.py::test_packed_stream_skips_zero_word_separators_in_place",
+    "test/test_stream_dataset.py::test_packed_stream_respects_raw_byte_capacity",
+    "test/test_stream_dataset.py::test_packed_stream_respects_fixed_root_slot_capacity",
+    "test/test_stream_dataset.py::test_loadshards_preserves_order",
+    "test/test_stream_dataset.py::test_loadshards_word_limit_excludes_whole_sentence_without_clipping",
+    "test/test_stream_dataset.py::test_data_loader_uses_train_input_in_order",
+    "test/test_stream_dataset.py::test_data_loader_caps_num_streams_to_split_length",
+    "test/test_stream_dataset.py::test_dataset_yields_tensor_slices_for_tensor_input",
+    "test/test_stream_dataset.py::test_prep_sentence_batch_delegates_to_prepinput",
+    "test/test_stream_dataset.py::test_codebook_setw_preserves_parameter_against_activation",
+    "test/test_stream_dataset.py::test_todevice_keeps_list_of_tensor_outputs_on_cpu",
+    "test/test_stream_dataset.py::test_data_loader_list_outputs_survive_worker_pickling",
+    "test/test_stream_smoke.py::test_stream_slot_identity",
+    "test/test_stream_smoke.py::test_stream_smoke_runs_one_epoch",
+    "test/test_streaming_ar_training.py::test_layer_has_start_method",
+    "test/test_streaming_ar_training.py::test_layer_start_cascades_to_children",
+    "test/test_streaming_ar_training.py::test_subspace_has_reset_event",
+    "test/test_streaming_ar_training.py::test_space_has_start_method",
+    "test/test_streaming_ar_training.py::test_mentalmodel_forward_populates_inputs_and_symbolic_state",
+    "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+    "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+    "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail",
+    "test/test_structural_preference.py::test_binary_equal_fit_prefers_structural_face_in_the_ordinary_mlp",
+    "test/test_structural_preference.py::test_compose_probability_rounding_does_not_overturn_a_better_logit",
+    "test/test_structural_preference.py::test_thought_equal_fit_uses_the_same_mlp_and_keeps_live_credit",
+    "test/test_structural_preference.py::test_six_word_legacy_pipeline_retains_every_stage_and_feedback_delay",
+    "test/test_structural_preference.py::test_preference_never_overturns_a_better_score_or_unmasks_a_rule[dtype0]",
+    "test/test_structural_preference.py::test_preference_never_overturns_a_better_score_or_unmasks_a_rule[dtype1]",
+    "test/test_structural_preference.py::test_preference_never_overturns_a_better_score_or_unmasks_a_rule[dtype2]",
+    "test/test_structural_preference.py::test_opaque_candidates_cannot_select_an_anchor_only_scorer",
+    "test/test_structural_preference.py::test_unary_and_generate_use_the_same_exact_tie_order",
+    "test/test_structural_preference.py::test_preference_compiles_fullgraph_without_host_reads",
+    "test/test_structural_preference.py::test_tie_preference_preserves_all_candidate_gradients_and_parameter_layout",
+    "test/test_structural_preference.py::test_coverage_counts_only_committed_rules_and_refuses_missing_evidence",
+    "test/test_structural_preference.py::test_coverage_comparison_reuses_maturity_and_matches_corpus_before_quality",
+    "test/test_structural_preference.py::test_trace_records_the_choice_without_another_argmax",
+    "test/test_subspace_context.py::test_error_total_returns_none_when_empty",
+    "test/test_subspace_context.py::test_error_add_none_is_noop",
+    "test/test_subspace_context.py::test_error_add_accumulates_and_total_sums_weighted",
+    "test/test_subspace_context.py::test_error_add_same_name_sums_at_add_time",
+    "test/test_subspace_context.py::test_error_clear_empties_terms",
+    "test/test_subspace_context.py::test_error_count_not_bumped_while_compiling",
+    "test/test_subspace_context.py::test_error_count_does_not_grow_across_forward_cycles",
+    "test/test_subspace_context.py::test_error_terms_shape_is_five_tuples",
+    "test/test_subspace_context.py::test_subspace_has_context_fields",
+    "test/test_subspace_context.py::test_subspace_copy_context_copies_errors_and_serial_cache",
+    "test/test_subspace_context.py::test_subspace_copy_context_none_is_noop",
+    "test/test_subspace_context.py::test_subspace_copy_context_preserves_downstream_writes",
+    "test/test_subspace_context.py::test_wordspace_last_svo_default_invalid",
+    "test/test_subspace_context.py::test_wordspace_reset_clears_last_svo",
+    "test/test_subspace_context.py::test_last_svo_lives_on_wordspace_not_conceptualspace",
+    "test/test_subspace_context.py::test_codebook_reference_is_immutable",
+    "test/test_subspace_context.py::test_input_space_has_symbolSpace_after_set",
+    "test/test_subspace_context.py::test_output_space_carries_symbolSpace",
+    "test/test_subspace_context.py::test_pipeline_spaces_carry_symbolSpace",
+    "test/test_subspace_what_stm_contract.py::test_subspace_has_no_parallel_stack_fields",
+    "test/test_subspace_what_stm_contract.py::test_subspace_exposes_required_stack_modalities",
+    "test/test_subspace_what_stm_contract.py::test_subspace_setters_exist",
+    "test/test_subspace_what_stm_contract.py::test_what_roundtrip_through_setter",
+    "test/test_subspace_what_stm_contract.py::test_where_roundtrip_through_setter",
+    "test/test_subspace_what_stm_contract.py::test_activation_roundtrip_through_setter",
+    "test/test_subspace_what_stm_contract.py::test_dead_stack_slots_zero_in_materialized_event",
+    "test/test_subspace_what_stm_contract.py::test_zero_activation_does_not_corrupt_raw_what",
+    "test/test_subspace_what_stm_contract.py::test_grammar_registry_surface_exists",
+    "test/test_subspace_what_stm_contract.py::test_grammar_registry_where_id_namespaces_do_not_collide",
+    "test/test_subspace_what_stm_contract.py::test_grammar_registry_accessors_on_configured_grammar",
+    "test/test_subspace_what_stm_contract.py::test_execute_arity1_dispatches_to_layer_forward",
+    "test/test_subspace_what_stm_contract.py::test_execute_arity2_requires_right",
+    "test/test_subspace_what_stm_contract.py::test_execute_superposed_independent_then_weighted_sum",
+    "test/test_subspace_what_stm_contract.py::test_rule_codebook_class_basics",
+    "test/test_subspace_what_stm_contract.py::test_rule_codebook_attached_grammar_routes_through_namespace",
+    "test/test_subspace_what_stm_contract.py::test_rule_codebook_with_embedding_initializes_xavier",
+    "test/test_subspace_what_stm_contract.py::test_shift_writes_into_first_empty_slot",
+    "test/test_subspace_what_stm_contract.py::test_shift_appends_after_existing_live_slots",
+    "test/test_subspace_what_stm_contract.py::test_shift_raises_on_full_stack",
+    "test/test_subspace_what_stm_contract.py::test_reduce_writes_parent_in_left_zeros_right",
+    "test/test_subspace_what_stm_contract.py::test_reduce_raises_on_stack_underflow",
+    "test/test_subspace_what_stm_contract.py::test_reduce_gradient_flows_to_child_payloads_and_op_params",
+    "test/test_subspace_what_stm_contract.py::test_grammar_decode_where_roundtrips_through_namespace",
+    "test/test_subspace_what_stm_contract.py::test_grammar_decode_where_tolerates_float_carrier",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_calls_layer_reverse_and_writes_children",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_is_noop_on_terminal_slot",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_empty_stack",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_full_stack",
+    "test/test_subspace_what_stm_contract.py::test_reverse_stack_unwinds_outermost_rule_only_under_identity_stub",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_uses_identity_stub_when_layer_reverse_is_unsuitable",
+    "test/test_subspace_what_stm_contract.py::test_signal_router_is_a_layer_subclass",
+    "test/test_subspace_what_stm_contract.py::test_signal_router_init_sets_layer_attributes",
+    "test/test_subspace_what_stm_contract.py::test_forward_dispatches_to_forward_stack_with_actions",
+    "test/test_subspace_what_stm_contract.py::test_forward_without_actions_raises_with_pointer",
+    "test/test_subspace_what_stm_contract.py::test_reverse_dispatches_to_reverse_stack",
+    "test/test_subspace_what_stm_contract.py::test_forward_stack_orchestrates_shift_then_reduce",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_instance_owns_rule_catalog",
+    "test/test_subspace_what_stm_contract.py::test_word_admission_preserves_the_property_inventory",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_owns_signal_router",
+    "test/test_subspace_what_stm_contract.py::test_shared_operation_writes_the_caller_owned_stack",
+    "test/test_subspace_what_stm_contract.py::test_stack_router_does_not_touch_word_space_current_rules",
+    "test/test_subspace_what_stm_contract.py::test_stack_router_does_not_touch_conceptual_stm",
+    "test/test_subspace_what_stm_contract.py::test_shared_compose_does_not_dispatch_a_cursor",
+    "test/test_subspace_what_stm_contract.py::test_property_forward_does_not_compose",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_stack_route_uses_canonical_forward",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_dispatches_to_declared_operator",
+    "test/test_subspace_what_stm_contract.py::test_property_reverse_does_not_call_grammar",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_does_not_touch_generate_rules",
+    "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[all]",
+    "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[off]",
+    "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[1, 3]",
+    "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[0]",
+    "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[4]",
+    "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[-1]",
+    "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[1,no]",
+    "test/test_subsymbolic_loop.py::test_default_and_overlay_use_one_attention_budget",
+    "test/test_subsymbolic_loop.py::test_overlay_rejects_retired_spelling",
+    "test/test_subsymbolic_loop.py::test_selected_typed_scope_changes_the_attentive_extent",
+    "test/test_supplied_answer_training.py::test_answer_cost_does_not_include_a_generate_lesson",
+    "test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_only_reader",
+    "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_without_state_credit",
+    "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial",
+    "test/test_surface_grammar.py::test_surface_attachment_keeps_marker_information_and_recomposes",
+    "test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values",
+    "test/test_surface_grammar.py::test_surface_inverse_uses_only_supplied_occurrence_witness",
+    "test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning",
+    "test/test_surface_grammar.py::test_generate_stack_preserves_infix_order_for_semantic_answers",
+    "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning",
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+    "test/test_surface_morphology.py::test_verb_subsumes_surface_tense",
+    "test/test_surface_morphology.py::test_lemmatizer_overfire_fixed",
+    "test/test_surface_morphology.py::test_plain_token_passthrough",
+    "test/test_surface_morphology.py::test_regular_inflection_strips",
+    "test/test_surface_morphology.py::test_features_are_role_neutral_dicts",
+    "test/test_surface_realize.py::test_realize_irregular",
+    "test/test_surface_realize.py::test_realize_regular_rules",
+    "test/test_surface_realize.py::test_bidirectional_roundtrip",
+    "test/test_surface_realize.py::test_many_surfaces_one_lexeme",
+    "test/test_surface_schema.py::test_default_schema_is_bare_juxtapose",
+    "test/test_surface_schema.py::test_conj_disj_isequal_share_one_template",
+    "test/test_surface_schema.py::test_unary_ops_use_unary_affix_template",
+    "test/test_symbol_learning_policy.py::test_observe_reduce_accepts_optional_parent_metadata",
+    "test/test_symbol_learning_policy.py::test_observe_qe_runs_leader_clustering",
+    "test/test_symbol_learning_policy.py::test_observe_qe_clusters_separate_far_activations",
+    "test/test_symbol_learning_policy.py::test_qe_raises_on_nan_input",
+    "test/test_symbol_learning_policy.py::test_policy_default_thresholds_construct",
+    "test/test_symbol_learning_policy.py::test_policy_zero_order_promotion",
+    "test/test_symbol_learning_policy.py::test_policy_no_zero_order_below_threshold",
+    "test/test_symbol_learning_policy.py::test_policy_no_zero_order_below_stability",
+    "test/test_symbol_learning_policy.py::test_policy_higher_order_pmi_promotion",
+    "test/test_symbol_learning_policy.py::test_policy_higher_order_below_count_threshold",
+    "test/test_symbol_learning_policy.py::test_flush_and_promote_calls_extend_artifact",
+    "test/test_symbol_learning_policy.py::test_flush_and_promote_noop_when_no_candidates",
+    "test/test_symbol_learning_policy.py::test_flush_and_promote_resets_stats",
+    "test/test_symbol_learning_stats.py::test_default_disabled",
+    "test/test_symbol_learning_stats.py::test_observe_qe_noop_when_disabled",
+    "test/test_symbol_learning_stats.py::test_observe_qe_accumulates_when_enabled",
+    "test/test_symbol_learning_stats.py::test_observe_qe_stats_are_detached",
+    "test/test_symbol_learning_stats.py::test_observe_reduce_noop_when_disabled",
+    "test/test_symbol_learning_stats.py::test_observe_reduce_accumulates_when_enabled",
+    "test/test_symbol_learning_stats.py::test_flush_returns_snapshot_and_clears",
+    "test/test_symbol_learning_stats.py::test_xml_config_default_disabled",
+    "test/test_symbol_learning_stats.py::test_xml_config_enabled_flag_round_trip"
+  ],
+  "completed": [
+    "test/test_stm_substrate.py::test_typed_stack_is_nn_module",
+    "test/test_stm_substrate.py::test_typed_stack_tensors_are_registered_buffers",
+    "test/test_stm_substrate.py::test_typed_stack_to_moves_all_tensors",
+    "test/test_stm_substrate.py::test_word_space_params_include_category_embedding",
+    "test/test_stream_dataset.py::test_contiguous_streams_basic",
+    "test/test_stream_dataset.py::test_truncates_tail_when_not_divisible",
+    "test/test_stream_dataset.py::test_empty_sentences_raises",
+    "test/test_stream_dataset.py::test_num_streams_larger_than_sentences_raises",
+    "test/test_stream_dataset.py::test_dataloader_prefetch_preserves_stream_order",
+    "test/test_stream_dataset.py::test_tick_prefetcher_preserves_exhaustion_after_full_queue",
+    "test/test_stream_dataset.py::test_packed_streams_preserve_row_chronology_and_whole_sentences",
+    "test/test_stream_dataset.py::test_packed_stream_progress_tracks_consumed_sentences",
+    "test/test_stream_dataset.py::test_packed_stream_refuses_one_oversized_sentence",
+    "test/test_stream_dataset.py::test_packed_stream_skips_zero_word_separators_in_place",
+    "test/test_stream_dataset.py::test_packed_stream_respects_raw_byte_capacity",
+    "test/test_stream_dataset.py::test_packed_stream_respects_fixed_root_slot_capacity",
+    "test/test_stream_dataset.py::test_loadshards_preserves_order",
+    "test/test_stream_dataset.py::test_loadshards_word_limit_excludes_whole_sentence_without_clipping",
+    "test/test_stream_dataset.py::test_data_loader_uses_train_input_in_order",
+    "test/test_stream_dataset.py::test_data_loader_caps_num_streams_to_split_length",
+    "test/test_stream_dataset.py::test_dataset_yields_tensor_slices_for_tensor_input",
+    "test/test_stream_dataset.py::test_prep_sentence_batch_delegates_to_prepinput",
+    "test/test_stream_dataset.py::test_codebook_setw_preserves_parameter_against_activation",
+    "test/test_stream_dataset.py::test_todevice_keeps_list_of_tensor_outputs_on_cpu",
+    "test/test_stream_dataset.py::test_data_loader_list_outputs_survive_worker_pickling",
+    "test/test_stream_smoke.py::test_stream_slot_identity",
+    "test/test_stream_smoke.py::test_stream_smoke_runs_one_epoch",
+    "test/test_streaming_ar_training.py::test_layer_has_start_method",
+    "test/test_streaming_ar_training.py::test_layer_start_cascades_to_children",
+    "test/test_streaming_ar_training.py::test_subspace_has_reset_event",
+    "test/test_streaming_ar_training.py::test_space_has_start_method",
+    "test/test_streaming_ar_training.py::test_mentalmodel_forward_populates_inputs_and_symbolic_state",
+    "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+    "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+    "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail",
+    "test/test_structural_preference.py::test_binary_equal_fit_prefers_structural_face_in_the_ordinary_mlp",
+    "test/test_structural_preference.py::test_compose_probability_rounding_does_not_overturn_a_better_logit",
+    "test/test_structural_preference.py::test_thought_equal_fit_uses_the_same_mlp_and_keeps_live_credit",
+    "test/test_structural_preference.py::test_six_word_legacy_pipeline_retains_every_stage_and_feedback_delay",
+    "test/test_structural_preference.py::test_preference_never_overturns_a_better_score_or_unmasks_a_rule[dtype0]",
+    "test/test_structural_preference.py::test_preference_never_overturns_a_better_score_or_unmasks_a_rule[dtype1]",
+    "test/test_structural_preference.py::test_preference_never_overturns_a_better_score_or_unmasks_a_rule[dtype2]",
+    "test/test_structural_preference.py::test_opaque_candidates_cannot_select_an_anchor_only_scorer",
+    "test/test_structural_preference.py::test_unary_and_generate_use_the_same_exact_tie_order",
+    "test/test_structural_preference.py::test_preference_compiles_fullgraph_without_host_reads",
+    "test/test_structural_preference.py::test_tie_preference_preserves_all_candidate_gradients_and_parameter_layout",
+    "test/test_structural_preference.py::test_coverage_counts_only_committed_rules_and_refuses_missing_evidence",
+    "test/test_structural_preference.py::test_coverage_comparison_reuses_maturity_and_matches_corpus_before_quality",
+    "test/test_structural_preference.py::test_trace_records_the_choice_without_another_argmax",
+    "test/test_subspace_context.py::test_error_total_returns_none_when_empty",
+    "test/test_subspace_context.py::test_error_add_none_is_noop",
+    "test/test_subspace_context.py::test_error_add_accumulates_and_total_sums_weighted",
+    "test/test_subspace_context.py::test_error_add_same_name_sums_at_add_time",
+    "test/test_subspace_context.py::test_error_clear_empties_terms",
+    "test/test_subspace_context.py::test_error_count_not_bumped_while_compiling",
+    "test/test_subspace_context.py::test_error_count_does_not_grow_across_forward_cycles",
+    "test/test_subspace_context.py::test_error_terms_shape_is_five_tuples",
+    "test/test_subspace_context.py::test_subspace_has_context_fields",
+    "test/test_subspace_context.py::test_subspace_copy_context_copies_errors_and_serial_cache",
+    "test/test_subspace_context.py::test_subspace_copy_context_none_is_noop",
+    "test/test_subspace_context.py::test_subspace_copy_context_preserves_downstream_writes",
+    "test/test_subspace_context.py::test_wordspace_last_svo_default_invalid",
+    "test/test_subspace_context.py::test_wordspace_reset_clears_last_svo",
+    "test/test_subspace_context.py::test_last_svo_lives_on_wordspace_not_conceptualspace",
+    "test/test_subspace_context.py::test_codebook_reference_is_immutable",
+    "test/test_subspace_context.py::test_input_space_has_symbolSpace_after_set",
+    "test/test_subspace_context.py::test_output_space_carries_symbolSpace",
+    "test/test_subspace_context.py::test_pipeline_spaces_carry_symbolSpace",
+    "test/test_subspace_what_stm_contract.py::test_subspace_has_no_parallel_stack_fields",
+    "test/test_subspace_what_stm_contract.py::test_subspace_exposes_required_stack_modalities",
+    "test/test_subspace_what_stm_contract.py::test_subspace_setters_exist",
+    "test/test_subspace_what_stm_contract.py::test_what_roundtrip_through_setter",
+    "test/test_subspace_what_stm_contract.py::test_where_roundtrip_through_setter",
+    "test/test_subspace_what_stm_contract.py::test_activation_roundtrip_through_setter",
+    "test/test_subspace_what_stm_contract.py::test_dead_stack_slots_zero_in_materialized_event",
+    "test/test_subspace_what_stm_contract.py::test_zero_activation_does_not_corrupt_raw_what",
+    "test/test_subspace_what_stm_contract.py::test_grammar_registry_surface_exists",
+    "test/test_subspace_what_stm_contract.py::test_grammar_registry_where_id_namespaces_do_not_collide",
+    "test/test_subspace_what_stm_contract.py::test_grammar_registry_accessors_on_configured_grammar",
+    "test/test_subspace_what_stm_contract.py::test_execute_arity1_dispatches_to_layer_forward",
+    "test/test_subspace_what_stm_contract.py::test_execute_arity2_requires_right",
+    "test/test_subspace_what_stm_contract.py::test_execute_superposed_independent_then_weighted_sum",
+    "test/test_subspace_what_stm_contract.py::test_rule_codebook_class_basics",
+    "test/test_subspace_what_stm_contract.py::test_rule_codebook_attached_grammar_routes_through_namespace",
+    "test/test_subspace_what_stm_contract.py::test_rule_codebook_with_embedding_initializes_xavier",
+    "test/test_subspace_what_stm_contract.py::test_shift_writes_into_first_empty_slot",
+    "test/test_subspace_what_stm_contract.py::test_shift_appends_after_existing_live_slots",
+    "test/test_subspace_what_stm_contract.py::test_shift_raises_on_full_stack",
+    "test/test_subspace_what_stm_contract.py::test_reduce_writes_parent_in_left_zeros_right",
+    "test/test_subspace_what_stm_contract.py::test_reduce_raises_on_stack_underflow",
+    "test/test_subspace_what_stm_contract.py::test_reduce_gradient_flows_to_child_payloads_and_op_params",
+    "test/test_subspace_what_stm_contract.py::test_grammar_decode_where_roundtrips_through_namespace",
+    "test/test_subspace_what_stm_contract.py::test_grammar_decode_where_tolerates_float_carrier",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_calls_layer_reverse_and_writes_children",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_is_noop_on_terminal_slot",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_empty_stack",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_full_stack",
+    "test/test_subspace_what_stm_contract.py::test_reverse_stack_unwinds_outermost_rule_only_under_identity_stub",
+    "test/test_subspace_what_stm_contract.py::test_unreduce_uses_identity_stub_when_layer_reverse_is_unsuitable",
+    "test/test_subspace_what_stm_contract.py::test_signal_router_is_a_layer_subclass",
+    "test/test_subspace_what_stm_contract.py::test_signal_router_init_sets_layer_attributes",
+    "test/test_subspace_what_stm_contract.py::test_forward_dispatches_to_forward_stack_with_actions",
+    "test/test_subspace_what_stm_contract.py::test_forward_without_actions_raises_with_pointer",
+    "test/test_subspace_what_stm_contract.py::test_reverse_dispatches_to_reverse_stack",
+    "test/test_subspace_what_stm_contract.py::test_forward_stack_orchestrates_shift_then_reduce",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_instance_owns_rule_catalog",
+    "test/test_subspace_what_stm_contract.py::test_word_admission_preserves_the_property_inventory",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_owns_signal_router",
+    "test/test_subspace_what_stm_contract.py::test_shared_operation_writes_the_caller_owned_stack",
+    "test/test_subspace_what_stm_contract.py::test_stack_router_does_not_touch_word_space_current_rules",
+    "test/test_subspace_what_stm_contract.py::test_stack_router_does_not_touch_conceptual_stm",
+    "test/test_subspace_what_stm_contract.py::test_shared_compose_does_not_dispatch_a_cursor",
+    "test/test_subspace_what_stm_contract.py::test_property_forward_does_not_compose",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_stack_route_uses_canonical_forward",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_dispatches_to_declared_operator",
+    "test/test_subspace_what_stm_contract.py::test_property_reverse_does_not_call_grammar",
+    "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_does_not_touch_generate_rules",
+    "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[all]",
+    "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[off]",
+    "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[1, 3]",
+    "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[0]",
+    "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[4]",
+    "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[-1]",
+    "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[1,no]",
+    "test/test_subsymbolic_loop.py::test_default_and_overlay_use_one_attention_budget",
+    "test/test_subsymbolic_loop.py::test_overlay_rejects_retired_spelling",
+    "test/test_subsymbolic_loop.py::test_selected_typed_scope_changes_the_attentive_extent",
+    "test/test_supplied_answer_training.py::test_answer_cost_does_not_include_a_generate_lesson",
+    "test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_only_reader",
+    "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_without_state_credit",
+    "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial",
+    "test/test_surface_grammar.py::test_surface_attachment_keeps_marker_information_and_recomposes",
+    "test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values",
+    "test/test_surface_grammar.py::test_surface_inverse_uses_only_supplied_occurrence_witness",
+    "test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning",
+    "test/test_surface_grammar.py::test_generate_stack_preserves_infix_order_for_semantic_answers",
+    "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning",
+    "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+    "test/test_surface_morphology.py::test_verb_subsumes_surface_tense",
+    "test/test_surface_morphology.py::test_lemmatizer_overfire_fixed",
+    "test/test_surface_morphology.py::test_plain_token_passthrough",
+    "test/test_surface_morphology.py::test_regular_inflection_strips",
+    "test/test_surface_morphology.py::test_features_are_role_neutral_dicts",
+    "test/test_surface_realize.py::test_realize_irregular",
+    "test/test_surface_realize.py::test_realize_regular_rules",
+    "test/test_surface_realize.py::test_bidirectional_roundtrip",
+    "test/test_surface_realize.py::test_many_surfaces_one_lexeme",
+    "test/test_surface_schema.py::test_default_schema_is_bare_juxtapose",
+    "test/test_surface_schema.py::test_conj_disj_isequal_share_one_template",
+    "test/test_surface_schema.py::test_unary_ops_use_unary_affix_template",
+    "test/test_symbol_learning_policy.py::test_observe_reduce_accepts_optional_parent_metadata",
+    "test/test_symbol_learning_policy.py::test_observe_qe_runs_leader_clustering",
+    "test/test_symbol_learning_policy.py::test_observe_qe_clusters_separate_far_activations",
+    "test/test_symbol_learning_policy.py::test_qe_raises_on_nan_input",
+    "test/test_symbol_learning_policy.py::test_policy_default_thresholds_construct",
+    "test/test_symbol_learning_policy.py::test_policy_zero_order_promotion",
+    "test/test_symbol_learning_policy.py::test_policy_no_zero_order_below_threshold",
+    "test/test_symbol_learning_policy.py::test_policy_no_zero_order_below_stability",
+    "test/test_symbol_learning_policy.py::test_policy_higher_order_pmi_promotion",
+    "test/test_symbol_learning_policy.py::test_policy_higher_order_below_count_threshold",
+    "test/test_symbol_learning_policy.py::test_flush_and_promote_calls_extend_artifact",
+    "test/test_symbol_learning_policy.py::test_flush_and_promote_noop_when_no_candidates",
+    "test/test_symbol_learning_policy.py::test_flush_and_promote_resets_stats",
+    "test/test_symbol_learning_stats.py::test_default_disabled",
+    "test/test_symbol_learning_stats.py::test_observe_qe_noop_when_disabled",
+    "test/test_symbol_learning_stats.py::test_observe_qe_accumulates_when_enabled",
+    "test/test_symbol_learning_stats.py::test_observe_qe_stats_are_detached",
+    "test/test_symbol_learning_stats.py::test_observe_reduce_noop_when_disabled",
+    "test/test_symbol_learning_stats.py::test_observe_reduce_accumulates_when_enabled",
+    "test/test_symbol_learning_stats.py::test_flush_returns_snapshot_and_clears",
+    "test/test_symbol_learning_stats.py::test_xml_config_default_disabled",
+    "test/test_symbol_learning_stats.py::test_xml_config_enabled_flag_round_trip"
+  ],
+  "slow_selected": [
+    "test/test_stream_smoke.py::test_stream_smoke_runs_one_epoch",
+    "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_stm_substrate.py::test_typed_stack_is_nn_module",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021287502022460103,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stm_substrate.py::test_typed_stack_tensors_are_registered_buffers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015704199904575944,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stm_substrate.py::test_typed_stack_to_moves_all_tensors",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003157909959554672,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stm_substrate.py::test_word_space_params_include_category_embedding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010067833005450666,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_contiguous_streams_basic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010958296479657292,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_truncates_tail_when_not_divisible",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.024998871609569e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_empty_sentences_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011445803102105856,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_num_streams_larger_than_sentences_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.56669682636857e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_dataloader_prefetch_preserves_stream_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006640839856117964,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_tick_prefetcher_preserves_exhaustion_after_full_queue",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.2103703749598935,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_packed_streams_preserve_row_chronology_and_whole_sentences",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001314579858444631,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_packed_stream_progress_tracks_consumed_sentences",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002810420119203627,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_packed_stream_refuses_one_oversized_sentence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001502500381320715,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_packed_stream_skips_zero_word_separators_in_place",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.579199831932783e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_packed_stream_respects_raw_byte_capacity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.412498911842704e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_packed_stream_respects_fixed_root_slot_capacity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.191699791699648e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_loadshards_preserves_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000944708997849375,
+      "message": "",
+      "stdout": "Loading text: 1 shard(s), max 100 docs from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2699/test_loadshards_preserves_orde0\nLoaded 100 docs -> 100 sentences (80 train, 10 val, 10 test)\n"
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_loadshards_word_limit_excludes_whole_sentence_without_clipping",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025125005049631,
+      "message": "",
+      "stdout": "Loading text: 1 shard(s), max 1 docs from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2699/test_loadshards_word_limit_exc0\nLoaded 1 docs -> 2 sentences (2 train, 0 val, 0 test), dropped 1 whole sentences over 2 words\n"
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_data_loader_uses_train_input_in_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00038141600089147687,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_data_loader_caps_num_streams_to_split_length",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018054095562547445,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_dataset_yields_tensor_slices_for_tensor_input",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003590830019675195,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_prep_sentence_batch_delegates_to_prepinput",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.250000584870577e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_codebook_setw_preserves_parameter_against_activation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002846250426955521,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_todevice_keeps_list_of_tensor_outputs_on_cpu",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012337497901171446,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_dataset.py::test_data_loader_list_outputs_survive_worker_pickling",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.1574247499811463,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_smoke.py::test_stream_slot_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003089999663643539,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stream_smoke.py::test_stream_smoke_runs_one_epoch",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010979198850691319,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_stream_smoke.py', 37, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_streaming_ar_training.py::test_layer_has_start_method",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012508302461355925,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_streaming_ar_training.py::test_layer_start_cascades_to_children",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.895901894196868e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_streaming_ar_training.py::test_subspace_has_reset_event",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.412497118115425e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_streaming_ar_training.py::test_space_has_start_method",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.437503129243851e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_streaming_ar_training.py::test_mentalmodel_forward_populates_inputs_and_symbolic_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08945104194572195,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004168957995716482,
+      "message": "",
+      "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2699/test_integrated_checkpoint_res0/structure.ckpt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2699/test_integrated_checkpoint_res0/structure.ckpt has no embedding bundle; embeddings stay at random init.\r\n[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2699/test_integrated_checkpoint_res0/structure.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010924995876848698,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00038225000025704503,
+      "message": "",
+      "stdout": "Training wall-clock cap armed: 15s (checked between completed batches).\r\nBaseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.\r\nEpoch [1/3]\r\nTrain Loss: output=1.0000, reconstruction=2.0000\r\nTraining wall-clock cap reached; finishing normally for final reporting/checkpoint save.\r\nFinal Stats:\r\n"
+    },
+    {
+      "nodeid": "test/test_structural_preference.py::test_binary_equal_fit_prefers_structural_face_in_the_ordinary_mlp",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001682042027823627,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_structural_preference.py::test_compose_probability_rounding_does_not_overturn_a_better_logit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000979541044216603,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_structural_preference.py::test_thought_equal_fit_uses_the_same_mlp_and_keeps_live_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003549579996615648,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_structural_preference.py::test_six_word_legacy_pipeline_retains_every_stage_and_feedback_delay",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.899999713525176e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_structural_preference.py::test_preference_never_overturns_a_better_score_or_unmasks_a_rule[dtype0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017729197861626744,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_structural_preference.py::test_preference_never_overturns_a_better_score_or_unmasks_a_rule[dtype1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001557080540806055,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_structural_preference.py::test_preference_never_overturns_a_better_score_or_unmasks_a_rule[dtype2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015133304987102747,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_structural_preference.py::test_opaque_candidates_cannot_select_an_anchor_only_scorer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019537500338628888,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_structural_preference.py::test_unary_and_generate_use_the_same_exact_tie_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012584590003825724,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_structural_preference.py::test_preference_compiles_fullgraph_without_host_reads",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.17671529098879546,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_structural_preference.py::test_tie_preference_preserves_all_candidate_gradients_and_parameter_layout",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019369589863345027,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_structural_preference.py::test_coverage_counts_only_committed_rules_and_refuses_missing_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007133749895729125,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_structural_preference.py::test_coverage_comparison_reuses_maturity_and_matches_corpus_before_quality",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015900004655122757,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_structural_preference.py::test_trace_records_the_choice_without_another_argmax",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00035904202377423644,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_error_total_returns_none_when_empty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001011659624055028,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_error_add_none_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.220803622156382e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_error_add_accumulates_and_total_sums_weighted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003261250094510615,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_error_add_same_name_sums_at_add_time",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013354199472814798,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_error_clear_empties_terms",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011345901293680072,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_error_count_not_bumped_while_compiling",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013287499314174056,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_error_count_does_not_grow_across_forward_cycles",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014600000577047467,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_error_terms_shape_is_five_tuples",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.487499482929707e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_subspace_has_context_fields",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003332089981995523,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_subspace_copy_context_copies_errors_and_serial_cache",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00044770899694412947,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_subspace_copy_context_none_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002637499710544944,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_subspace_copy_context_preserves_downstream_writes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004819999448955059,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_wordspace_last_svo_default_invalid",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014641601592302322,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_wordspace_reset_clears_last_svo",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019904202781617641,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_last_svo_lives_on_wordspace_not_conceptualspace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015537498984485865,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_codebook_reference_is_immutable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015912496019154787,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_input_space_has_symbolSpace_after_set",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014949997421354055,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_output_space_carries_symbolSpace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04195016698213294,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_context.py::test_pipeline_spaces_carry_symbolSpace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04238316701957956,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_subspace_has_no_parallel_stack_fields",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003815000527538359,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_subspace_exposes_required_stack_modalities",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029137497767806053,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_subspace_setters_exist",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028483301866799593,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_what_roundtrip_through_setter",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000366666994523257,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_where_roundtrip_through_setter",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003132909769192338,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_activation_roundtrip_through_setter",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000314874981995672,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_dead_stack_slots_zero_in_materialized_event",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00038287497591227293,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_zero_activation_does_not_corrupt_raw_what",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003161669592373073,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_grammar_registry_surface_exists",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010470801498740911,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_grammar_registry_where_id_namespaces_do_not_collide",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010825000936165452,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_grammar_registry_accessors_on_configured_grammar",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000279415980912745,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_execute_arity1_dispatches_to_layer_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003190420102328062,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_execute_arity2_requires_right",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003088749945163727,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_execute_superposed_independent_then_weighted_sum",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003290830063633621,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_rule_codebook_class_basics",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016579101793467999,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_rule_codebook_attached_grammar_routes_through_namespace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010816700523719192,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_rule_codebook_with_embedding_initializes_xavier",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002013340126723051,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_shift_writes_into_first_empty_slot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005393329774960876,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_shift_appends_after_existing_live_slots",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005786249530501664,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_shift_raises_on_full_stack",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005354589666239917,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_reduce_writes_parent_in_left_zeros_right",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007358749862760305,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_reduce_raises_on_stack_underflow",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006302500260062516,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_reduce_gradient_flows_to_child_payloads_and_op_params",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008544169832020998,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_grammar_decode_where_roundtrips_through_namespace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010745803592726588,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_grammar_decode_where_tolerates_float_carrier",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001152500044554472,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_unreduce_calls_layer_reverse_and_writes_children",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008902910049073398,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_unreduce_is_noop_on_terminal_slot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000490790989715606,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_empty_stack",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00039779103826731443,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_unreduce_raises_on_full_stack",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006359160179272294,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_reverse_stack_unwinds_outermost_rule_only_under_identity_stub",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008757499745115638,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_unreduce_uses_identity_stub_when_layer_reverse_is_unsuitable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006720829987898469,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_signal_router_is_a_layer_subclass",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.879202116280794e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_signal_router_init_sets_layer_attributes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001188750029541552,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_forward_dispatches_to_forward_stack_with_actions",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006959169986657798,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_forward_without_actions_raises_with_pointer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00035408296389505267,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_reverse_dispatches_to_reverse_stack",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003656659973785281,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_forward_stack_orchestrates_shift_then_reduce",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000695291964802891,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_symbolic_space_instance_owns_rule_catalog",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016199995297938585,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_word_admission_preserves_the_property_inventory",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004977919743396342,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_symbolic_space_owns_signal_router",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010970799485221505,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_shared_operation_writes_the_caller_owned_stack",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004318707971833646,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_stack_router_does_not_touch_word_space_current_rules",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007848329842090607,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_stack_router_does_not_touch_conceptual_stm",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007937499904073775,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_shared_compose_does_not_dispatch_a_cursor",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007961660157889128,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_property_forward_does_not_compose",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00047308299690485,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_symbolic_space_stack_route_uses_canonical_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000830708013381809,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_dispatches_to_declared_operator",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002395000192336738,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_property_reverse_does_not_call_grammar",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003837500116787851,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_does_not_touch_generate_rules",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002327919937670231,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[all]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015304202679544687,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[off]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.912496898323298e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[1, 3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.658397175371647e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.725004201754928e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[4]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010204198770225048,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.841698920354247e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[1,no]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010458298493176699,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_default_and_overlay_use_one_attention_budget",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014179458026774228,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_overlay_rejects_retired_spelling",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011597042030189186,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_subsymbolic_loop.py::test_selected_typed_scope_changes_the_attentive_extent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07388554199133068,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_supplied_answer_training.py::test_answer_cost_does_not_include_a_generate_lesson",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000999041018076241,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_supplied_answer_training.py::test_real_supplied_trials_cost_before_updates_and_reach_only_reader",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5674336249940097,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_without_state_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001463708991650492,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023508298909291625,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_grammar.py::test_surface_attachment_keeps_marker_information_and_recomposes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006288330187089741,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0862857909523882,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_grammar.py::test_surface_inverse_uses_only_supplied_occurrence_witness",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.034494041989091784,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011248041992075741,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_grammar.py::test_generate_stack_preserves_infix_order_for_semantic_answers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004231249913573265,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00016387499636039138,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_surface_grammar.py', 202, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_grammar.py::test_normal_batch_trains_supplied_grammar_lessons",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.0172520829946734,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_surface_morphology.py::test_verb_subsumes_surface_tense",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014470802852883935,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_morphology.py::test_lemmatizer_overfire_fixed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001170830219052732,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_morphology.py::test_plain_token_passthrough",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011725001968443394,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_morphology.py::test_regular_inflection_strips",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011595897376537323,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_morphology.py::test_features_are_role_neutral_dicts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011270795948803425,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_realize.py::test_realize_irregular",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012366700684651732,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_realize.py::test_realize_regular_rules",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001260410062968731,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_realize.py::test_bidirectional_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012920796871185303,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_realize.py::test_many_surfaces_one_lexeme",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012283300748094916,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_schema.py::test_default_schema_is_bare_juxtapose",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011904200073331594,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_schema.py::test_conj_disj_isequal_share_one_template",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001117499778047204,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_surface_schema.py::test_unary_ops_use_unary_affix_template",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000110417022369802,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_observe_reduce_accepts_optional_parent_metadata",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034562498331069946,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_observe_qe_runs_leader_clustering",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000524125003721565,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_observe_qe_clusters_separate_far_activations",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00039420800749212503,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_qe_raises_on_nan_input",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021974998526275158,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_policy_default_thresholds_construct",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013524998212233186,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_policy_zero_order_promotion",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005636250134557486,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_policy_no_zero_order_below_threshold",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009278749930672348,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_policy_no_zero_order_below_stability",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029095797799527645,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_policy_higher_order_pmi_promotion",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017841701628640294,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_policy_higher_order_below_count_threshold",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014300004113465548,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_flush_and_promote_calls_extend_artifact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003421249974053353,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_flush_and_promote_noop_when_no_candidates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015635419986210763,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_policy.py::test_flush_and_promote_resets_stats",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002348041976802051,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_stats.py::test_default_disabled",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000169792037922889,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_stats.py::test_observe_qe_noop_when_disabled",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001840420300140977,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_stats.py::test_observe_qe_accumulates_when_enabled",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028658396331593394,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_stats.py::test_observe_qe_stats_are_detached",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021249998826533556,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_stats.py::test_observe_reduce_noop_when_disabled",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014849996659904718,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_stats.py::test_observe_reduce_accumulates_when_enabled",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014762504724785686,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_stats.py::test_flush_returns_snapshot_and_clears",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020887504797428846,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_stats.py::test_xml_config_default_disabled",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011720904149115086,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbol_learning_stats.py::test_xml_config_enabled_flag_round_trip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015114958980120718,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,13 @@
+{
+  "head": "73cd7b71baeb64135c1e2e841b9bfc321339d8bc",
+  "source_manifest_sha256": "63d68a9b9c38d14470293e12e7d7e85103c24bfa7572d605babafed0c7e7043a",
+  "docs": {
+    "doc/Architecture.md": "bc2f94d06081a976a306f68ef072f53ee1c45d6de3c0c70b9ca3f8dc01bcdb06",
+    "doc/GradientFlow.md": "4a9c78f2f244653de2c10390f157564203d81a8e901abbcc4e42221503777cd5",
+    "doc/FutureWork.md": "55dac44bb4f39e7bda3dd4c2232cac1d5b0f163b548b0e629c2295284b2f38da",
+    "doc/Philosophy.md": "916a293ce48f17fb6dc37d5b07906ebf56c9f8b0dfc937363640792801d51588",
+    "doc/specs/2026-09-29-operator-catalogue.md": "80fbf152a8a478562da25a0c93967a708ecb8ffc69473779a6a4dd99c13df881",
+    "doc/plans/2026-10-05-operators-update.md": "e5a3ac408d8827ff441e18f685afceb8cc2fbad8b69a994ecf80ec5a098965ad",
+    "todo.md": "c3657ce94c7683f783218269567131e404e46b7b24d112231369879cbdc39dec"
+  }
+}

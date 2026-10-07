@@ -1,0 +1,9 @@
+{
+  "before/source.json": "f712768dd44310461b4723cfe5f8d794bcf2c19ac8c14cabfa731103336b00a5",
+  "before/source.zip": "f08a94367ac71f9458149a8ed79a7bb8c7037ff650291ba46d5ea22a79afae39",
+  "../2026-10-06-operators-round2c/mm-first-forward/result.json": "c92f6d1bcf05621e53ea95ecc0a638e1111c4c96bb8322266063246507392f06",
+  "../2026-10-06-operators-round2c/mm-first-forward/round2.json": "e98c0078360d3b33c561638a0310980ff4c4b96822b86b4a7deaa0ffefd964f4",
+  "../2026-10-06-operators-round2c/paired-mm/result.json": "053e9db50cb0bb46aad55fd23bee1289c4f0fee9bfe45c2369ff3ae21e699b0e",
+  "../2026-10-06-operators-round2c/disjunction-result.json": "b9dd0e43bb9ea0d4a10819b9841ae5e95adb5760a09839998a41a6b346b6103d",
+  "../2026-10-06-operators-round2c/landing-fixture-result.json": "f07d150af92a33a591492be884f9d2f62c00f3435d6e1a3e13bd88e67df5713c"
+}

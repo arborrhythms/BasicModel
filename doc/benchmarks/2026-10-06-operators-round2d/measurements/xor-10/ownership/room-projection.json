@@ -1,0 +1,50 @@
+{
+  "start": [
+    {
+      "margin": 0.0,
+      "before": {
+        "count": 0,
+        "largest": 0.0
+      },
+      "after": {
+        "count": 0,
+        "largest": 0.0
+      }
+    },
+    {
+      "margin": 0.0,
+      "before": {
+        "count": 42,
+        "largest": 0.6106940507888794
+      },
+      "after": {
+        "count": 9,
+        "largest": 0.24560964107513428
+      }
+    }
+  ],
+  "end": [
+    {
+      "margin": 0.0,
+      "before": {
+        "count": 0,
+        "largest": 0.0
+      },
+      "after": {
+        "count": 0,
+        "largest": 0.0
+      }
+    },
+    {
+      "margin": 0.0,
+      "before": {
+        "count": 0,
+        "largest": 0.0
+      },
+      "after": {
+        "count": 0,
+        "largest": 0.0
+      }
+    }
+  ]
+}

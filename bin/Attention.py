@@ -150,6 +150,9 @@ class NarrowedWords(NamedTuple):
     alternatives: torch.Tensor
     probabilities: torch.Tensor = None
     alternative_counts: torch.Tensor = None
+    poles: torch.Tensor = None
+    pole_changes: torch.Tensor = None
+    round_words: torch.Tensor = None
 
 
 def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None):
@@ -174,6 +177,10 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
     field_values=keys.new_zeros(B,K,D)
     field_poles=keys.new_zeros(B,K,2)
     field_valid=torch.zeros(B,K,dtype=torch.bool,device=keys.device)
+    handed_poles=(torch.stack((known,torch.zeros_like(known)),-1).to(keys)
+                  if poles is None else poles.detach().clone())
+    pole_changes=torch.zeros_like(known)
+    round_words=[]; field_scopes=[]; field_operations=[]
     declared=torch.tensor([i in chooser.attention_operations for i in range(A)],device=keys.device)
     rows=torch.arange(B,device=keys.device)
     slots=torch.arange(K,device=keys.device)[None]
@@ -261,6 +268,15 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
         changed_poles=torch.where((op==3)[:,None,None],conjunctive,
             torch.where((op==4)[:,None,None],disjunctive,pooled_poles.flip(-1)))
         field_poles=torch.where(where[...,None],changed_poles,field_poles)
+        # Preserve the operated extent after splitting. Resolve its word
+        # witnesses at the end of the walk: an unknown word can acquire its
+        # native identification by descent after its parent was operated on.
+        # Freezing the parent's pre-descent (0,0) would erase that evidence.
+        reached=selected & field_action[:,None]
+        field_scopes.append(reached)
+        field_operations.append(op)
+        pole_changes |= reached
+        round_words.append(torch.where(chosen,first,-1))
         # A child is a fresh reading of its retained parts. A parent's
         # temporary Boolean aggregate must not become the child's evidence.
         reset=(slots==slot[:,None])&(split|unknown|gloss)[:,None]
@@ -268,8 +284,24 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
         actions.append(torch.where(live.any(-1),action,-1));alternatives.append(alternate&live.any(-1))
         probabilities.append(detail['probability'])
         counts.append(torch.where(live.any(-1),detail['alternative_count'],0))
+    handed_poles=torch.where(descended[...,None],
+        torch.stack((torch.ones_like(known),torch.zeros_like(known)),-1).to(keys),handed_poles)
+    # Only the evidence handoff is evaluated here; eligibility, action draws,
+    # the progress budget and local value reads above are unchanged. Earlier
+    # fields supply the evidence for later fields on overlapping brackets.
+    for reached,op in zip(field_scopes,field_operations):
+        positive,negative=handed_poles.unbind(-1)
+        conjunction=torch.stack((torch.where(reached,positive,torch.inf).amin(1),
+                                 torch.where(reached,negative,0.).amax(1)),-1)
+        disjunction=torch.stack((torch.where(reached,positive,0.).amax(1),
+                                 torch.where(reached,negative,torch.inf).amin(1)),-1)
+        pooled=torch.where(reached[...,None],handed_poles,0.).amax(1)
+        pair=torch.where((op==3)[:,None],conjunction,
+                         torch.where((op==4)[:,None],disjunction,pooled.flip(-1)))
+        handed_poles=torch.where(reached[...,None],pair[:,None],handed_poles)
     return NarrowedWords(table,values,accepted,descended,torch.stack(actions,1),
-        torch.stack(alternatives,1),torch.stack(probabilities,1),torch.stack(counts,1))
+        torch.stack(alternatives,1),torch.stack(probabilities,1),torch.stack(counts,1),
+        handed_poles.detach(),pole_changes,torch.stack(round_words,1))
 
 
 class BracketKeys:

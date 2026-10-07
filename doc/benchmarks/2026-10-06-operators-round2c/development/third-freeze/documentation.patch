@@ -1,0 +1,194 @@
+--- round2b/todo.md
++++ round2c/todo.md
+@@ -137,19 +137,15 @@
+    and, once the path is invertible, at every layer by inversion;
+    expectation and output as the criteria, reconstruction retiring to an
+    audit where the transformations are exact. Rounds (plan §9.5, §12.3):
+-   **2 credit — round 2 rejected; round 2b measured, gate failed, held for Claude review**
+-   ([receipt](doc/benchmarks/2026-10-06-operators-round2/README.md); no round-2 commit):
+-   the owner-step trial cost, one departure over both walks,
+-   the narrowed poles handed off, the §2.6.1 image at the closing — the
+-   Codex text is plan §14. Thirty trainings: class 4/10, reconstruction 6/10,
+-   MM_xor 9/10, sum 10/10; sweep green and ownership zeros retained. The
+-   round-2 observer had incomplete coverage. The paired MM_xor trajectories
+-   differ, but its four pole consumers are not reached (MM_grammar reaches
+-   the reference paths). Round 2b
+-   restores the reconstruction keep, trains both reader trials, preserves
+-   pole magnitude, audits all consumers and inherited-part containment, and
+-   adds the paired MM replay
+-   ([receipt](doc/benchmarks/2026-10-06-operators-round2b/README.md)). **3 identity** (pairs plus length as the parts,
++   **2 credit — rounds 2 and 2b rejected; round 2c awaiting measurements and review**
++   ([round-2c receipt](doc/benchmarks/2026-10-06-operators-round2c/README.md); no commit):
++   magnitude interpretation preserves forms; one reader step averages compose
++   roots or trains the kept narrowing root. Reconstruction keeps the trial;
++   the total still credits the single departure. Pole consumers and closing
++   evidence, the concept-only image, and inherited-part containment are audited.
++   MM_xor stays live: retired percept sampling shifts its later Bernoulli mask.
++   Its three paired replays remain separate from the thirty unseeded trainings.
++   **3 identity** (pairs plus length as the parts,
+    the content width, the narrowing rule and the centroid), **4 meaning**
+    (membership as properties, co-activation through shared wholes, Kleene
+    connectives, expectation and targets by inversion), **5 attention** (the
+--- round2b/doc/GradientFlow.md
++++ round2c/doc/GradientFlow.md
+@@ -26,8 +26,10 @@
+ `C = R + E + A`: registry reconstruction, sentence expectation gated per role
+ by gain × predicted presence, and relative answer error when supplied.
+ Each answer is read from that trial with the understanding detached, before
+-either optimizer step. Reconstruction, expectation and the supplied-answer
+-reader train on both trials' active rows. The kept state is committed detached;
++either optimizer step. Reconstruction and expectation train on both trials.
++The supplied-answer reader takes one step per sentence: the mean of both
++root losses for compose departures, the kept root for narrowing departures.
++The batch-end answer read reports its error without another reader update. The kept state is committed detached;
+ no gradient crosses that boundary into the next sentence.
+ 
+ Input narrowing and compose share one departure per sentence. The eligible
+@@ -76,7 +78,8 @@
+ The form is `L` (6.8 plan §15.2, implemented §16; `MereologicalCodes.derive`
+ writes `lower`); `U` bounds the form and does not enter it. The both corner belongs to attention and
+ never enters this derivation. Repeated addresses in a part group do not
+-multiply its evidence. The serial leaf remains `[form | meaning] × signed activation`.
++multiply its evidence. The serial leaf is `[form × |activation| | meaning × activation]`.
++Its detached pole pair carries the sign; occurrence coordinates are preserved.
+ Field-path dictionaries retain their existing ownership; `XOR_exact`'s
+ answer coefficients are unchanged.
+ 
+@@ -665,12 +668,13 @@
+ [Architecture](Architecture.md#the-scheme-confirmed-2026-10-06-expectation-and-surprise-through-the-architecture).
+ The sections above describe what is implemented; this one what each round
+ changes in the gradient's ownership and path. Round 2's text is plan §14,
+-corrected by round 2b in §16.
+-
+-- **The trial cost (round 2, corrected in 2b).** The chooser is credited by
++corrected by round 2b in §16 and round 2c in §18.
++
++- **The trial cost (round 2, corrected in 2b and 2c).** The chooser is credited by
+   the owner-step total `R + E + A`; only reconstruction `R` decides the keep.
+   Expectation is gated per role by `g·κ`; the supplied answer is read on both
+-  detached roots before either step. The reader then trains on both trials.
++  detached roots before either step. The reader takes one mean-loss step on
++  both compose roots, or one step on the kept root for a narrowing departure.
+   Strictly lower reconstruction keeps explore; a tie keeps greedy. The SCG
+   surrogate, reduction, registration and ownership remain unchanged.
+ - **One departure over both walks (round 2).** Narrowing and compose share the
+@@ -750,7 +754,7 @@
+ 9/10 is a live miss. Round 2 was not accepted; its receipt is preserved intact.
+ 
+ 
+-## Operators update round 2b (October 6; review candidate)
++## Operators update round 2b (October 6; rejected candidate)
+ 
+ [Round-2b receipt](benchmarks/2026-10-06-operators-round2b/README.md). The keep
+ and the policy's credit are distinct: strict improvement in `R` commits explore,
+@@ -792,3 +796,40 @@
+ all four declared pole consumers, while `MM_grammar` reaches both reference
+ paths. The paired MM_xor trajectory difference is established independently;
+ its causal attribution to the reference slab is not supported by that trace.
++
++
++## Operators update round 2c (October 6; review candidate)
++
++[Round-2c receipt](benchmarks/2026-10-06-operators-round2c/README.md). Interpretation
++and retained leaf values apply activation magnitude to the form block, signed
++activation to the meaning complement, and leave occurrence coordinates alone.
++The binding kernel receives forms without a negation sign. The explicit pole
++pair and closing polarity still express negation. Reference publication uses
++the resolved grammar rows as the word brick does; an absent serial row must
++not erase a resolved leaf's evidence. Both publication paths use this rule.
++
++The reader receives one optimizer update per supplied sentence. For a compose
++departure its objective is the mean of the two detached-root losses; for a
++narrowing departure it is the kept root's loss. Mixed batches weight each row
++separately. Both reads precede either trial update; the first reconstruction
++step omits the reader, and the second carries the combined reader gradient.
++The batch-end answer remains observable without training the reader again.
++Actual reader Adam counters are recorded alongside the loss weights.
++
++Reconstruction alone keeps a trial, strictly; `Δ(R+E+A)` still credits the
++single departure under the existing SCG registration. Predictor and
++reconstruction updates, owner lists, the image and containment audit remain.
++In the two grammar configurations the meaning complement is empty: a forced
++narrowing `not` flips evidence and closing polarity but leaves the root and
++all comparison costs identical. A nonzero-complement fixture checks that only
++meaning changes sign. The saved negative-pole disjunction fixture recovers
++four multisets with zero pair-argmin residual and the positive-pole baseline's
++reconstruction cost before any gate training.
++
++MM_xor's changed first forward is caused by RNG consumption, not a pole
++consumer. The retired percept trial draws advance the generator used later
++by `create_ir_mask`'s Bernoulli input mask. At seed zero its byte costs tie,
++its kept walk and scope match, and restoring the old trial restores the
++landing output. Restoring the RNG to the state after the greedy walk restores
++the round-2 output. MM remains a live gate, with three paired trajectory
++replays recorded separately from the thirty unseeded trainings.
+--- round2b/doc/FutureWork.md
++++ round2c/doc/FutureWork.md
+@@ -607,7 +607,8 @@
+ to the owners. Lessons train choosers without moving operators. The current [§22 decision](plans/2026-09-29-item-6-9-xor-grammar.md#223-witnesses-and-the-optimizer-b-decided)
+ selects only by strictly lower reconstruction, ties to greedy, and trains
+ the reader on the kept trial alone in that historical decision; operators
+-round 2b changes reader exposure to both detached trial roots. Reconstruction uses momentum descent;
++round 2c uses one mean-loss reader step for compose departures and the
++kept root for narrowing departures. Reconstruction uses momentum descent;
+ its witnessed inverse is retired. Product and mean replace conjunction
+ and disjunction, while min/max remain separate catalogue operators.
+ [GradientFlow](GradientFlow.md) records the implementation and its audit;
+@@ -1201,3 +1202,16 @@
+ bypasses all four pole consumers; `MM_grammar` reaches both reference-slab paths.
+ All three paired MM_xor trajectories still differ from the landing. That
+ difference is recorded without attributing it to a consumer that did not run.
++
++
++Operators round 2c installs magnitude interpretation on forms and signed
++interpretation on meanings. It restores one reader update per sentence:
++both roots averaged only for compose departures, otherwise the kept root.
++The concept-only image remains a mechanism with zero width in the grammar
++gates. Narrowing negation has zero advantage there until meanings exist;
++its shared SCG term remains available on configurations whose costs can see it.
++The [round-2c receipt](benchmarks/2026-10-06-operators-round2c/README.md)
++is held for review. MM_xor's path is now isolated: retired percept sampling
++changes the generator state used by the later input-reconstruction mask.
++Centroid placement, higher-order order enforcement and meaning connectives
++remain in their subsequent rounds.
+--- round2b/doc/specs/2026-09-29-operator-catalogue.md
++++ round2c/doc/specs/2026-09-29-operator-catalogue.md
+@@ -1461,7 +1461,7 @@
+ for Claude's review and is not committed.
+ 
+ 
+-### 12.3 Operators update, round 2b (2026-10-06; review candidate)
++### 12.3 Operators update, round 2b (2026-10-06; rejected candidate)
+ 
+ The [round-2b receipt](../benchmarks/2026-10-06-operators-round2b/README.md)
+ starts from the frozen round-2 source. Only strictly lower reconstruction
+@@ -1501,3 +1501,29 @@
+ order zero this round. The tests distinguish `a ≤ ab`, `a ≤ ac` and incomparable
+ `ab`, `ac`. The receipt preserves the disjunction residual and its isolated
+ cause; an unimplemented form/pole separation is not claimed as repaired.
++
++
++### 12.4 Operators update, round 2c (2026-10-06; review candidate)
++
++The [round-2c receipt](../benchmarks/2026-10-06-operators-round2c/README.md)
++starts from the frozen round-2b source. Negation does not enter the form:
++interpretation uses `[form × |a| | meaning × a]`, with the sign carried by
++`(relu(a), relu(−a))` and the closing polarity. Retained reconstruction leaves
++use the same interpretation. Reference publication keeps the resolved grammar
++identity so its pole evidence reaches the closing. No binding kernel changes.
++
++The answer-owned reader takes one step per supplied sentence: the mean loss
++on both detached roots for compose departures, the kept root's loss for
++narrowing departures. The batch-end answer is reporting only after this step.
++The keep remains strict reconstruction improvement; the single SCG advantage
++remains `Δ(R+E+A)`, with its existing reduction, registration and owners.
++With zero meaning width, a narrowing `not` changes no root or trial cost.
++The disjunction fixture verifies four recovered multisets and exact pair
++recomposition before training. The concept-only image and §12.3's containment
++audit, a/ab/ac fixture and fold monotonicity table remain unchanged.
++
++MM_xor reaches no declared pole consumer. Retiring percept-stage sampling
++changes the RNG state consumed by its later Bernoulli input-reconstruction
++mask; a seed-zero first-forward bisection isolates this path. Scope and the
++kept walk match at that boundary. MM is live; the three paired replays and
++thirty unseeded trainings are separate records, without retries or replacements.

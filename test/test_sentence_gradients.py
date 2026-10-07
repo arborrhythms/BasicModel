@@ -11,6 +11,7 @@ def test_first_and_later_words_keep_the_same_grad_carry_contract(tmp_path, monke
     model._chart_compose_per_word = lambda: None
     # This checks the word brick's input contract. The existing compiled
     # forward/interleave cases cover compilation and tied reconstruction.
+    model.inputSpace.data.has_supervised_outputs = False
     model.reconstruct_in_loop = False
     model.loss.reconstruction_scale = 0.
     original = model._run_sentence_word_bricks

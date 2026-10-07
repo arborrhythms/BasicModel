@@ -350,7 +350,7 @@ def test_prior_thought_reserves_the_input_allowance():
  assert model._pending_attention_meters[0].spent==max(pending.work,pending.walk.other.work)
 
 
-def test_normal_input_costs_both_narrowing_walks_before_training(monkeypatch):
+def test_normal_input_stages_greedy_and_defers_comparison_to_sentence(monkeypatch):
  from test_mm_xor import _fresh_model
  import ModelAttention
  model,_,_=_fresh_model(); model.train()
@@ -363,11 +363,11 @@ def test_normal_input_costs_both_narrowing_walks_before_training(monkeypatch):
  monkeypatch.setattr(ModelAttention,'narrow_words',traced)
  value=model.inputSpace.prepInput(['hello world','hello there','loving world','loving there'])
  model._lex_embed_stem(value)
- assert calls==['greedy','explore'], calls
- assert versions[0]==versions[1]
- audit=model._last_attention_comparison
- assert audit['costs'].shape==(4,2)
- assert torch.equal(audit['wins'], (audit['departure']>=0)&(audit['costs'][:,1]<audit['costs'][:,0]))
+ assert calls==['greedy'], calls
+ assert model._attention_read is not None
+ assert model._attention_words is model._attention_greedy
+ assert not hasattr(model, '_attention_score_term')
+ assert not hasattr(model, '_last_attention_comparison')
 
 
 def test_field_operation_changes_the_next_mask_and_children_read_native_poles():
@@ -387,18 +387,11 @@ def test_field_operation_changes_the_next_mask_and_children_read_native_poles():
     torch.testing.assert_close(result.values,torch.tensor([[[1.,0.],[0.,1.]]]))
 
 
-def test_narrowing_reconstruction_cannot_erase_an_omitted_word_target():
-    from types import SimpleNamespace
-    from test_mm_xor import _fresh_model
-    from ModelAttention import percept_reconstruction_score
-    model,_,_=_fresh_model()
-    keys=torch.eye(2)[None]
-    score=percept_reconstruction_score(model,keys,[['alpha','beta']],
-        torch.tensor([[0,1]]),torch.ones(1,2,dtype=torch.bool))
-    complete=score(SimpleNamespace(values=keys))
-    omitted=score(SimpleNamespace(values=keys*torch.tensor([[[1.],[0.]]])))
-    assert omitted.item()>complete.item()
-    assert not omitted.requires_grad
+def test_narrowing_selection_has_no_percept_stage_scorer():
+    import ModelAttention, WalkTrials
+    assert not hasattr(ModelAttention, 'percept_reconstruction_score')
+    assert not hasattr(WalkTrials, 'narrowing_pair')
+    assert not hasattr(WalkTrials, 'attention_score_function')
 
 
 def test_divide_isolates_impure_first_word_and_reaches_pure_neighbors():

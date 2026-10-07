@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_convergence"
+  ],
+  "pid": 77973,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 539346288,
+  "elapsed_seconds": 13.460240625019651,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2e/measurements/mm-01/run.log"
+}

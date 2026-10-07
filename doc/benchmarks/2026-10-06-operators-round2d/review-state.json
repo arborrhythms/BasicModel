@@ -1,0 +1,34 @@
+{
+  "verified_at": "2026-10-06T18:53:37.631013+00:00",
+  "source_files": 703,
+  "source_manifest_sha256": "d7e2ead0a7ce294ed99fccb9646b62630da5c7167e014a960902852d851420bb",
+  "source_archive_sha256": "935d24a91b04ab7e898aeff71de24cb03a2c74601d76d89814a06734678ef3b1",
+  "source_and_archive_matched": true,
+  "frozen_helpers": 179,
+  "frozen_helpers_matched": true,
+  "prior_receipt_files": 5276,
+  "prior_receipts_unchanged": true,
+  "unchanged_documents": {
+    "doc/Philosophy.md": "916a293ce48f17fb6dc37d5b07906ebf56c9f8b0dfc937363640792801d51588",
+    "doc/plans/2026-10-05-operators-update.md": "7bacf9da9f9a39de14a828f1dd4673d681fb07d0c25b89a0ad76ef0e9b14b928"
+  },
+  "complete_test_ports": 5,
+  "changed_seed_calls": [],
+  "measurement_inputs_matched": true,
+  "supplemental_helpers": {
+    "aggregate-source.py.txt": "452bfaf0abbe711cce15e62e4511d0a787d63070f6dece3778b6e0e89fefdaeb",
+    "contract-check-source.py.txt": "ac40004ba500874a5883177ff3a68dd4be859deaa18d864a30663af50c949d64",
+    "detail-audit-source.py.txt": "f7c5bf9f1bd0370be475c1194e1c16c8ebd361dc808b626a2de35b7eaac47e78",
+    "miss-costs-source.py.txt": "c295ad17895a8c7b92fbf08b21669dc3c91fd9d150b8a8ee8bfee92be71434e6",
+    "results-tables-source.py.txt": "f2b803626981b4608c9c7d14c347915dfa160e9c89e9dc14209214b9ec3fc6dc",
+    "review_verify-source.py.txt": "68796e81046d41c5424bb0292b7790bfa68a853a29c7539ccc34a36423477932"
+  },
+  "head": "73cd7b71baeb64135c1e2e841b9bfc321339d8bc",
+  "parent_head": "c9670b545ff88ee1b8176aa44f6c192ad84b597c",
+  "index_empty": true,
+  "parent_index_empty": true,
+  "committed": false,
+  "pushed": false,
+  "status": "M bin/Attention.py\n M bin/ClauseJournal.py\n M bin/Interpret.py\n M bin/Layers.py\n M bin/Meaning.py\n M bin/MereologicalCodes.py\n M bin/ModelAttention.py\n M bin/Models.py\n M bin/SentenceCompose.py\n M bin/WalkTrials.py\n M doc/Architecture.md\n M doc/FutureWork.md\n M doc/GradientFlow.md\n M doc/Philosophy.md\n M doc/specs/2026-09-29-operator-catalogue.md\n M test/objective_conflicts_probe.py\n M test/test_arithmetic_isolation.py\n M test/test_compose_pair_driver.py\n M test/test_free_reconstruction.py\n M test/test_generation_catalog.py\n M test/test_grammar_object_leaves.py\n M test/test_grammar_word_learning.py\n M test/test_joint_objectives.py\n M test/test_negative_expectation.py\n M test/test_one_attention.py\n M test/test_operators_round1.py\n M test/test_output_path_supervised.py\n M test/test_reconstruction_precedence.py\n M test/test_review14_contracts.py\n M test/test_runtime_split_ingestion.py\n M test/test_sentence_compose.py\n M test/test_sentence_gradients.py\n M todo.md\n?? bin/SentenceCredit.py\n?? doc/benchmarks/2026-10-06-operators-round2/\n?? doc/benchmarks/2026-10-06-operators-round2b/\n?? doc/benchmarks/2026-10-06-operators-round2c/\n?? doc/benchmarks/2026-10-06-operators-round2d/\n?? doc/plans/2026-10-05-operators-update.md\n?? test/test_operators_round2.py\n?? test/test_operators_round2b.py\n?? test/test_operators_round2c.py\n?? test/test_operators_round2d.py",
+  "parent_status": "m basicmodel\n M nanochat"
+}

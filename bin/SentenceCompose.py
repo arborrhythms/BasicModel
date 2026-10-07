@@ -133,9 +133,10 @@ def sentence_pair(cache, compose, score, step, *, active, training=True, before_
     path on its second call so it can replay its prefix and exclude one choice.
     ``score`` returns a cost per row and the candidate's scratch commit value.
     Selection costs contain reconstruction only; strict improvement keeps
-    explore and ties keep greedy. ``before_step`` receives the rows whose
-    reader may train on this trial. Reconstruction and expectation still
-    train on both trials, each with its original forward parameter values.
+    explore and ties keep greedy. ``before_step`` receives all active rows:
+    reconstruction and expectation train on both trials, each with its original
+    forward parameter values. The caller combines the detached reader losses
+    into its single update after the departure walk and keep are known.
     The caller publishes the returned state before perceiving the next sentence.
     """
     exploit = compose(cache, None)
@@ -152,9 +153,9 @@ def sentence_pair(cache, compose, score, step, *, active, training=True, before_
     saved_b = cost_b.detach().clone()
     wins = active & (saved_b < saved_a)
     if before_step is not None:
-        before_step(active & ~wins)
+        before_step(active)
     step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
     if before_step is not None:
-        before_step(active & wins)
+        before_step(active)
     step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
     return select_rows(state_a, state_b, wins), torch.stack((saved_a, saved_b), -1), wins

@@ -1,0 +1,1339 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_meronomy_ladder.py::test_meronomy_cut_with_no_unity_stages_nothing",
+    "test/test_meronomy_ladder.py::test_language_space_forward_and_reverse_are_the_entries",
+    "test/test_meronomy_ladder.py::test_model_calls_the_symbolic_loop_as_forward",
+    "test/test_meronomy_ladder.py::test_forward_equals_compose_on_a_live_snapshot",
+    "test/test_meronomy_ladder.py::test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes",
+    "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[21 plus 1]",
+    "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[11 plus 1]",
+    "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[1 plus 12]",
+    "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[aab ba]",
+    "test/test_meronomy_ladder.py::test_long_unit_presents_every_atom",
+    "test/test_meronomy_ladder.py::test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse",
+    "test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes",
+    "test/test_meronomy_ladder.py::test_ladder_grammar_has_chunk_as_a_reduce_candidate",
+    "test/test_meronomy_ladder.py::test_chunk_is_licensed_only_inside_one_coarse_whole",
+    "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+    "test/test_meronomy_ladder.py::test_admitted_phrase_row_snaps_at_the_folded_slot",
+    "test/test_meronomy_ladder.py::test_word_unit_fraction_is_one_on_plain_text",
+    "test/test_meronomy_ladder.py::test_word_unit_fraction_counts_digit_wholes_as_sub_word_units",
+    "test/test_meronomy_ladder.py::test_fixed_words_are_units_even_on_the_atomic_cold_start",
+    "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+    "test/test_meronomy_ladder.py::test_packed_rows_are_laid_out_in_units_of_the_ladder",
+    "test/test_meronomy_ladder.py::test_stem_stages_loop_constants_with_fixed_shapes",
+    "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+    "test/test_meronomy_ladder.py::test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase",
+    "test/test_meronomy_ladder.py::test_boundary_predicates_reproduce_the_priors_tiling",
+    "test/test_meronomy_ladder.py::test_boundary_types_none_starts_without_boundaries",
+    "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary",
+    "test/test_meronomy_ladder.py::test_digit_identity_order_and_repetition_are_distinct_occurrences",
+    "test/test_meronomy_ladder.py::test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain",
+    "test/test_meronomy_ladder.py::test_utility_state_and_predicates_round_trip_a_checkpoint",
+    "test/test_meronomy_laws.py::test_eval_chart_corners_exact",
+    "test/test_meronomy_laws.py::test_eval_chart_inv_corners_exact",
+    "test/test_meronomy_laws.py::test_eval_chart_scalar_inputs",
+    "test/test_meronomy_laws.py::test_eval_chart_bijection",
+    "test/test_meronomy_laws.py::test_eval_chart_monotone_and_in_range",
+    "test/test_meronomy_laws.py::test_meronomy_constants",
+    "test/test_meronomy_laws.py::test_d_max_stable_config_override",
+    "test/test_meronomy_laws.py::test_no_relu_injection_law_in_bin",
+    "test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii",
+    "test/test_meronomy_utf8.py::test_byte_witness_offsets_cover_the_surface_without_overlap",
+    "test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[the book has a cover]",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[a b]",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[book xyz]",
+    "test/test_meronomy_utf8.py::test_unfamiliar_word_keeps_every_nonzero_byte_row",
+    "test/test_meronymic_butterfly.py::test_near_identity_at_init[sigma]",
+    "test/test_meronymic_butterfly.py::test_near_identity_at_init[pi]",
+    "test/test_meronymic_butterfly.py::test_exact_roundtrip_under_arbitrary_law[sigma]",
+    "test/test_meronymic_butterfly.py::test_exact_roundtrip_under_arbitrary_law[pi]",
+    "test/test_meronymic_butterfly.py::test_three_fold_corner_adjoint_is_finite_and_bounded[sigma]",
+    "test/test_meronymic_butterfly.py::test_three_fold_corner_adjoint_is_finite_and_bounded[pi]",
+    "test/test_meronymic_butterfly.py::test_membership_poles_and_extension_law[sigma]",
+    "test/test_meronymic_butterfly.py::test_membership_poles_and_extension_law[pi]",
+    "test/test_meronymic_butterfly.py::test_order_preserved_through_cascade[sigma]",
+    "test/test_meronymic_butterfly.py::test_order_preserved_through_cascade[pi]",
+    "test/test_meronymic_butterfly.py::test_per_vector_isolation[sigma]",
+    "test/test_meronymic_butterfly.py::test_per_vector_isolation[pi]",
+    "test/test_meronymic_butterfly.py::test_per_vector_slab_equals_per_row_fold",
+    "test/test_meronymic_butterfly.py::test_unary_mode_unchanged",
+    "test/test_meronymic_butterfly.py::test_compiled_butterfly_opt_in_keeps_forward_and_parameter_gradients",
+    "test/test_meronymic_butterfly.py::test_repeated_application_preserves_discontiguous_spec",
+    "test/test_meronymic_butterfly.py::test_repeated_application_produces_discontiguous_spec",
+    "test/test_meronymic_butterfly.py::test_iterated_aggressive_law_concentrates_without_singular_collapse",
+    "test/test_mind_generativity.py::test_current_grammar_recovery_by_depth_training_and_chain_length",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences",
+    "test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body",
+    "test/test_mixing_reconstruction_bank.py::test_eager_reconstruction_loop_keeps_captured_values_and_gradients",
+    "test/test_mlp_transform_chooser.py::test_is_a_transform_chooser",
+    "test/test_mlp_transform_chooser.py::test_unary_score_shapes_match_the_contract",
+    "test/test_mlp_transform_chooser.py::test_binary_score_shapes_match_the_contract",
+    "test/test_mlp_transform_chooser.py::test_owns_params_and_scores_are_differentiable",
+    "test/test_mlp_transform_chooser.py::test_feeds_the_binary_router_layer",
+    "test/test_mlp_transform_chooser.py::test_degenerate_shapes",
+    "test/test_mlp_transform_chooser.py::test_factory_selects_and_validates",
+    "test/test_mlp_transform_chooser.py::test_layers_select_chooser_and_state_dict_reflects_it",
+    "test/test_mlp_transform_chooser.py::test_config_mlp_builds_mlp_choosers_in_the_router",
+    "test/test_mlp_transform_chooser.py::test_config_default_keeps_anchordot_choosers",
+    "test/test_mlp_transform_chooser.py::test_config_mlp_router_parameters_have_one_optimizer_owner",
+    "test/test_mlx_export.py::test_stage_for_core_returns_tensor",
+    "test/test_mlx_export.py::test_forward_core_matches_normal_forward",
+    "test/test_mlx_export.py::test_forward_core_exports",
+    "test/test_mlx_export.py::test_mlx_lower_writes_pte",
+    "test/test_mlx_export.py::test_pte_runtime_parity",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental",
+    "test/test_mnist.py::test_mnist_loader_names_an_unfetched_lfs_pointer",
+    "test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[False]",
+    "test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[True]",
+    "test/test_modality_codebook.py::TestCodebookTiering::test_ps_subsymbolic_ws_quantized_by_default",
+    "test/test_modality_codebook.py::TestCodebookTiering::test_ws_codebook_none_opt_out_honored",
+    "test/test_modality_widths.py::TestCSWidthGuard::test_cs_demux_round_trips_where_span_and_when_phasor",
+    "test/test_modality_widths.py::TestCSWidthGuard::test_cs_event_muxing_coexists_and_reconstructs",
+    "test/test_modality_widths.py::TestCSWidthGuard::test_cs_shape_and_codebook_slot",
+    "test/test_modality_widths.py::TestSSWidthGuard::test_ws_content_round_trips",
+    "test/test_modality_widths.py::TestSSWidthGuard::test_ws_decode_is_content_passthrough",
+    "test/test_modality_widths.py::TestSSWidthGuard::test_ws_shape_and_codebook_slot",
+    "test/test_model_reporting.py::test_grammar_rows_for_report_accepts_shared_serial_path",
+    "test/test_model_reporting.py::test_grammar_rows_for_report_preserves_batched_paths",
+    "test/test_model_reporting.py::test_grammar_row_preview_bounds_long_padded_path",
+    "test/test_model_time_when.py::test_when_period_is_a_module_knob",
+    "test/test_model_time_when.py::test_tense_magnitude_resolution_above_float32_eps",
+    "test/test_model_time_when.py::test_forward_at_t0_is_present_instant",
+    "test/test_model_time_when.py::test_forward_stamps_absolute_time_in_angle",
+    "test/test_model_time_when.py::test_encode_at_T_decodes_center_to_T",
+    "test/test_model_time_when.py::test_next_previous_move_time_by_step",
+    "test/test_model_time_when.py::test_next_previous_are_symmetric_time_shifts",
+    "test/test_model_time_when.py::test_tense_layer_round_trips",
+    "test/test_model_time_when.py::test_tense_layer_is_the_identity_on_concept_events",
+    "test/test_model_time_when.py::test_aspect_layer_is_noop",
+    "test/test_model_time_when.py::test_fresh_model_present_is_zero",
+    "test/test_model_time_when.py::test_when_time_is_long_buffer_in_state_dict",
+    "test/test_model_time_when.py::test_clock_increments_once_per_train_batch",
+    "test/test_model_time_when.py::test_clock_increments_once_per_inference_batch",
+    "test/test_model_time_when.py::test_clock_increments_on_runtime_inference_only",
+    "test/test_model_time_when.py::test_when_time_syncs_to_live_encoders",
+    "test/test_model_time_when.py::test_when_time_round_trips_through_save_load",
+    "test/test_model_time_when.py::test_old_checkpoint_without_when_time_loads_at_zero",
+    "test/test_morphology_layer.py::test_layer_identity_and_registration",
+    "test/test_morphology_layer.py::test_no_token_passthrough",
+    "test/test_morphology_layer.py::test_routes_past_tense_via_tenselayer",
+    "test/test_morphology_layer.py::test_routes_progressive_aspect_via_aspectlayer",
+    "test/test_morphology_layer.py::test_reverse_runs_and_recovers_tense",
+    "test/test_morphology_layer.py::test_morphology_rule_loads_in_both_directions",
+    "test/test_mps_inductor_any_dtype.py::test_mps_inductor_any_result_retains_torch_bool_metadata"
+  ],
+  "completed": [
+    "test/test_meronomy_ladder.py::test_meronomy_cut_with_no_unity_stages_nothing",
+    "test/test_meronomy_ladder.py::test_language_space_forward_and_reverse_are_the_entries",
+    "test/test_meronomy_ladder.py::test_model_calls_the_symbolic_loop_as_forward",
+    "test/test_meronomy_ladder.py::test_forward_equals_compose_on_a_live_snapshot",
+    "test/test_meronomy_ladder.py::test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes",
+    "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[21 plus 1]",
+    "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[11 plus 1]",
+    "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[1 plus 12]",
+    "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[aab ba]",
+    "test/test_meronomy_ladder.py::test_long_unit_presents_every_atom",
+    "test/test_meronomy_ladder.py::test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse",
+    "test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes",
+    "test/test_meronomy_ladder.py::test_ladder_grammar_has_chunk_as_a_reduce_candidate",
+    "test/test_meronomy_ladder.py::test_chunk_is_licensed_only_inside_one_coarse_whole",
+    "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+    "test/test_meronomy_ladder.py::test_admitted_phrase_row_snaps_at_the_folded_slot",
+    "test/test_meronomy_ladder.py::test_word_unit_fraction_is_one_on_plain_text",
+    "test/test_meronomy_ladder.py::test_word_unit_fraction_counts_digit_wholes_as_sub_word_units",
+    "test/test_meronomy_ladder.py::test_fixed_words_are_units_even_on_the_atomic_cold_start",
+    "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+    "test/test_meronomy_ladder.py::test_packed_rows_are_laid_out_in_units_of_the_ladder",
+    "test/test_meronomy_ladder.py::test_stem_stages_loop_constants_with_fixed_shapes",
+    "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+    "test/test_meronomy_ladder.py::test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase",
+    "test/test_meronomy_ladder.py::test_boundary_predicates_reproduce_the_priors_tiling",
+    "test/test_meronomy_ladder.py::test_boundary_types_none_starts_without_boundaries",
+    "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary",
+    "test/test_meronomy_ladder.py::test_digit_identity_order_and_repetition_are_distinct_occurrences",
+    "test/test_meronomy_ladder.py::test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain",
+    "test/test_meronomy_ladder.py::test_utility_state_and_predicates_round_trip_a_checkpoint",
+    "test/test_meronomy_laws.py::test_eval_chart_corners_exact",
+    "test/test_meronomy_laws.py::test_eval_chart_inv_corners_exact",
+    "test/test_meronomy_laws.py::test_eval_chart_scalar_inputs",
+    "test/test_meronomy_laws.py::test_eval_chart_bijection",
+    "test/test_meronomy_laws.py::test_eval_chart_monotone_and_in_range",
+    "test/test_meronomy_laws.py::test_meronomy_constants",
+    "test/test_meronomy_laws.py::test_d_max_stable_config_override",
+    "test/test_meronomy_laws.py::test_no_relu_injection_law_in_bin",
+    "test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii",
+    "test/test_meronomy_utf8.py::test_byte_witness_offsets_cover_the_surface_without_overlap",
+    "test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[the book has a cover]",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[a b]",
+    "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[book xyz]",
+    "test/test_meronomy_utf8.py::test_unfamiliar_word_keeps_every_nonzero_byte_row",
+    "test/test_meronymic_butterfly.py::test_near_identity_at_init[sigma]",
+    "test/test_meronymic_butterfly.py::test_near_identity_at_init[pi]",
+    "test/test_meronymic_butterfly.py::test_exact_roundtrip_under_arbitrary_law[sigma]",
+    "test/test_meronymic_butterfly.py::test_exact_roundtrip_under_arbitrary_law[pi]",
+    "test/test_meronymic_butterfly.py::test_three_fold_corner_adjoint_is_finite_and_bounded[sigma]",
+    "test/test_meronymic_butterfly.py::test_three_fold_corner_adjoint_is_finite_and_bounded[pi]",
+    "test/test_meronymic_butterfly.py::test_membership_poles_and_extension_law[sigma]",
+    "test/test_meronymic_butterfly.py::test_membership_poles_and_extension_law[pi]",
+    "test/test_meronymic_butterfly.py::test_order_preserved_through_cascade[sigma]",
+    "test/test_meronymic_butterfly.py::test_order_preserved_through_cascade[pi]",
+    "test/test_meronymic_butterfly.py::test_per_vector_isolation[sigma]",
+    "test/test_meronymic_butterfly.py::test_per_vector_isolation[pi]",
+    "test/test_meronymic_butterfly.py::test_per_vector_slab_equals_per_row_fold",
+    "test/test_meronymic_butterfly.py::test_unary_mode_unchanged",
+    "test/test_meronymic_butterfly.py::test_compiled_butterfly_opt_in_keeps_forward_and_parameter_gradients",
+    "test/test_meronymic_butterfly.py::test_repeated_application_preserves_discontiguous_spec",
+    "test/test_meronymic_butterfly.py::test_repeated_application_produces_discontiguous_spec",
+    "test/test_meronymic_butterfly.py::test_iterated_aggressive_law_concentrates_without_singular_collapse",
+    "test/test_mind_generativity.py::test_current_grammar_recovery_by_depth_training_and_chain_length",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts",
+    "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences",
+    "test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body",
+    "test/test_mixing_reconstruction_bank.py::test_eager_reconstruction_loop_keeps_captured_values_and_gradients",
+    "test/test_mlp_transform_chooser.py::test_is_a_transform_chooser",
+    "test/test_mlp_transform_chooser.py::test_unary_score_shapes_match_the_contract",
+    "test/test_mlp_transform_chooser.py::test_binary_score_shapes_match_the_contract",
+    "test/test_mlp_transform_chooser.py::test_owns_params_and_scores_are_differentiable",
+    "test/test_mlp_transform_chooser.py::test_feeds_the_binary_router_layer",
+    "test/test_mlp_transform_chooser.py::test_degenerate_shapes",
+    "test/test_mlp_transform_chooser.py::test_factory_selects_and_validates",
+    "test/test_mlp_transform_chooser.py::test_layers_select_chooser_and_state_dict_reflects_it",
+    "test/test_mlp_transform_chooser.py::test_config_mlp_builds_mlp_choosers_in_the_router",
+    "test/test_mlp_transform_chooser.py::test_config_default_keeps_anchordot_choosers",
+    "test/test_mlp_transform_chooser.py::test_config_mlp_router_parameters_have_one_optimizer_owner",
+    "test/test_mlx_export.py::test_stage_for_core_returns_tensor",
+    "test/test_mlx_export.py::test_forward_core_matches_normal_forward",
+    "test/test_mlx_export.py::test_forward_core_exports",
+    "test/test_mlx_export.py::test_mlx_lower_writes_pte",
+    "test/test_mlx_export.py::test_pte_runtime_parity",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental",
+    "test/test_mnist.py::test_mnist_loader_names_an_unfetched_lfs_pointer",
+    "test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[False]",
+    "test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[True]",
+    "test/test_modality_codebook.py::TestCodebookTiering::test_ps_subsymbolic_ws_quantized_by_default",
+    "test/test_modality_codebook.py::TestCodebookTiering::test_ws_codebook_none_opt_out_honored",
+    "test/test_modality_widths.py::TestCSWidthGuard::test_cs_demux_round_trips_where_span_and_when_phasor",
+    "test/test_modality_widths.py::TestCSWidthGuard::test_cs_event_muxing_coexists_and_reconstructs",
+    "test/test_modality_widths.py::TestCSWidthGuard::test_cs_shape_and_codebook_slot",
+    "test/test_modality_widths.py::TestSSWidthGuard::test_ws_content_round_trips",
+    "test/test_modality_widths.py::TestSSWidthGuard::test_ws_decode_is_content_passthrough",
+    "test/test_modality_widths.py::TestSSWidthGuard::test_ws_shape_and_codebook_slot",
+    "test/test_model_reporting.py::test_grammar_rows_for_report_accepts_shared_serial_path",
+    "test/test_model_reporting.py::test_grammar_rows_for_report_preserves_batched_paths",
+    "test/test_model_reporting.py::test_grammar_row_preview_bounds_long_padded_path",
+    "test/test_model_time_when.py::test_when_period_is_a_module_knob",
+    "test/test_model_time_when.py::test_tense_magnitude_resolution_above_float32_eps",
+    "test/test_model_time_when.py::test_forward_at_t0_is_present_instant",
+    "test/test_model_time_when.py::test_forward_stamps_absolute_time_in_angle",
+    "test/test_model_time_when.py::test_encode_at_T_decodes_center_to_T",
+    "test/test_model_time_when.py::test_next_previous_move_time_by_step",
+    "test/test_model_time_when.py::test_next_previous_are_symmetric_time_shifts",
+    "test/test_model_time_when.py::test_tense_layer_round_trips",
+    "test/test_model_time_when.py::test_tense_layer_is_the_identity_on_concept_events",
+    "test/test_model_time_when.py::test_aspect_layer_is_noop",
+    "test/test_model_time_when.py::test_fresh_model_present_is_zero",
+    "test/test_model_time_when.py::test_when_time_is_long_buffer_in_state_dict",
+    "test/test_model_time_when.py::test_clock_increments_once_per_train_batch",
+    "test/test_model_time_when.py::test_clock_increments_once_per_inference_batch",
+    "test/test_model_time_when.py::test_clock_increments_on_runtime_inference_only",
+    "test/test_model_time_when.py::test_when_time_syncs_to_live_encoders",
+    "test/test_model_time_when.py::test_when_time_round_trips_through_save_load",
+    "test/test_model_time_when.py::test_old_checkpoint_without_when_time_loads_at_zero",
+    "test/test_morphology_layer.py::test_layer_identity_and_registration",
+    "test/test_morphology_layer.py::test_no_token_passthrough",
+    "test/test_morphology_layer.py::test_routes_past_tense_via_tenselayer",
+    "test/test_morphology_layer.py::test_routes_progressive_aspect_via_aspectlayer",
+    "test/test_morphology_layer.py::test_reverse_runs_and_recovers_tense",
+    "test/test_morphology_layer.py::test_morphology_rule_loads_in_both_directions",
+    "test/test_mps_inductor_any_dtype.py::test_mps_inductor_any_result_retains_torch_bool_metadata"
+  ],
+  "slow_selected": [
+    "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+    "test/test_meronomy_ladder.py::test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase",
+    "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary",
+    "test/test_meronomy_ladder.py::test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain",
+    "test/test_meronomy_ladder.py::test_utility_state_and_predicates_round_trip_a_checkpoint",
+    "test/test_mlx_export.py::test_stage_for_core_returns_tensor",
+    "test/test_mlx_export.py::test_forward_core_matches_normal_forward",
+    "test/test_mlx_export.py::test_forward_core_exports",
+    "test/test_mlx_export.py::test_mlx_lower_writes_pte",
+    "test/test_mlx_export.py::test_pte_runtime_parity",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_meronomy_cut_with_no_unity_stages_nothing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004320957988966256,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_language_space_forward_and_reverse_are_the_entries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011597909615375102,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_model_calls_the_symbolic_loop_as_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011627920321188867,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_forward_equals_compose_on_a_live_snapshot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.13091587502276525,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.12221195799065754,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[21 plus 1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0860578750143759,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[11 plus 1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08454483299283311,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[1 plus 12]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08555966598214582,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[aab ba]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07313375000376254,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_long_unit_presents_every_atom",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07580200000666082,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.7551073750364594,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012773291033226997,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_ladder_grammar_has_chunk_as_a_reduce_candidate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001110419980250299,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_chunk_is_licensed_only_inside_one_coarse_whole",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008145830361172557,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00013291696086525917,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py', 323, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_admitted_phrase_row_snaps_at_the_folded_slot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.37091383402002975,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_word_unit_fraction_is_one_on_plain_text",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.12536245898809284,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_word_unit_fraction_counts_digit_wholes_as_sub_word_units",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08823250001296401,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_fixed_words_are_units_even_on_the_atomic_cold_start",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.37696429196512327,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024091702653095126,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_packed_rows_are_laid_out_in_units_of_the_ladder",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.50569112499943,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_stem_stages_loop_constants_with_fixed_shapes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1310546250315383,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015741604147478938,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00014454202027991414,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py', 539, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_boundary_predicates_reproduce_the_priors_tiling",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.18286945897853002,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_boundary_types_none_starts_without_boundaries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.484103791997768,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00017249997472390532,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py', 620, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_digit_identity_order_and_repetition_are_distinct_occurrences",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2751010410138406,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001283750170841813,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py', 705, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_utility_state_and_predicates_round_trip_a_checkpoint",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00018958398140966892,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py', 742, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_laws.py::test_eval_chart_corners_exact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018770800670608878,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_laws.py::test_eval_chart_inv_corners_exact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001830419641919434,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_laws.py::test_eval_chart_scalar_inputs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015487498603761196,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_laws.py::test_eval_chart_bijection",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000566125032491982,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_laws.py::test_eval_chart_monotone_and_in_range",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019570899894461036,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_laws.py::test_meronomy_constants",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001127920113503933,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_laws.py::test_d_max_stable_config_override",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011904200073331594,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_laws.py::test_no_relu_injection_law_in_bin",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012039916997309774,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_utf8.py::test_byte_witness_round_trips_non_ascii",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.41579083300894126,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_utf8.py::test_byte_witness_offsets_cover_the_surface_without_overlap",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.11221912503242493,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0993467919761315,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[the book has a cover]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.11489620798965916,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[a b]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.10702991700964049,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_utf8.py::test_surface_witness_replays_words_and_spaces[book xyz]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.10593729099491611,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_utf8.py::test_unfamiliar_word_keeps_every_nonzero_byte_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09290091699222103,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_near_identity_at_init[sigma]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001297999988310039,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_near_identity_at_init[pi]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009507079957984388,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_exact_roundtrip_under_arbitrary_law[sigma]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015230000135488808,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_exact_roundtrip_under_arbitrary_law[pi]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014572079526260495,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_three_fold_corner_adjoint_is_finite_and_bounded[sigma]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006287708994932473,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_three_fold_corner_adjoint_is_finite_and_bounded[pi]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0060042080003768206,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_membership_poles_and_extension_law[sigma]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014902499970048666,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_membership_poles_and_extension_law[pi]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012948330258950591,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_order_preserved_through_cascade[sigma]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013407499645836651,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_order_preserved_through_cascade[pi]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013123750104568899,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_per_vector_isolation[sigma]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001336707966402173,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_per_vector_isolation[pi]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016206250293180346,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_per_vector_slab_equals_per_row_fold",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0029117499943822622,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_unary_mode_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006625829846598208,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_compiled_butterfly_opt_in_keeps_forward_and_parameter_gradients",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023652079980820417,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_repeated_application_preserves_discontiguous_spec",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001920957991387695,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_repeated_application_produces_discontiguous_spec",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011093749781139195,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronymic_butterfly.py::test_iterated_aggressive_law_concentrates_without_singular_collapse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021447920007631183,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mind_generativity.py::test_current_grammar_recovery_by_depth_training_and_chain_length",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.33100616600131616,
+      "message": "",
+      "stdout": "[mind-generativity] [{\"chain_length\": 1, \"code_recovery\": 1.0, \"completed\": true, \"depth\": 0, \"derivation_recovery\": 1.0, \"updates\": 0, \"work\": 1}, {\"chain_length\": 2, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 1, \"derivation_recovery\": 0.0, \"updates\": 0, \"work\": 1}, {\"chain_length\": 3, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 2, \"derivation_recovery\": 0.0, \"updates\": 0, \"work\": 1}, {\"chain_length\": 5, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 4, \"derivation_recovery\": 0.0, \"updates\": 0, \"work\": 1}, {\"chain_length\": 1, \"code_recovery\": 1.0, \"completed\": true, \"depth\": 0, \"derivation_recovery\": 1.0, \"updates\": 1, \"work\": 1}, {\"chain_length\": 2, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 1, \"derivation_recovery\": 0.0, \"updates\": 1, \"work\": 1}, {\"chain_length\": 3, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 2, \"derivation_recovery\": 0.0, \"updates\": 1, \"work\": 1}, {\"chain_length\": 5, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 4, \"derivation_recovery\": 0.0, \"updates\": 1, \"work\": 1}, {\"chain_length\": 1, \"code_recovery\": 1.0, \"completed\": true, \"depth\": 0, \"derivation_recovery\": 1.0, \"updates\": 8, \"work\": 1}, {\"chain_length\": 2, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 1, \"derivation_recovery\": 0.0, \"updates\": 8, \"work\": 1}, {\"chain_length\": 3, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 2, \"derivation_recovery\": 0.0, \"updates\": 8, \"work\": 1}, {\"chain_length\": 5, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 4, \"derivation_recovery\": 0.0, \"updates\": 8, \"work\": 1}]\n"
+    },
+    {
+      "nodeid": "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07251604099292308,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mixing_reconstruction_bank.py::test_mixing_bank_uses_byte_preserving_word_texts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002534159575589001,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_stages_objects_surfaces_and_occurrences",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07356241601519287,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mixing_reconstruction_bank.py::test_no_compile_reconstruction_uses_the_eager_loop_body",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.20884854096220806,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mixing_reconstruction_bank.py::test_eager_reconstruction_loop_keeps_captured_values_and_gradients",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1803017079946585,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mlp_transform_chooser.py::test_is_a_transform_chooser",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012095901183784008,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mlp_transform_chooser.py::test_unary_score_shapes_match_the_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005577499978244305,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mlp_transform_chooser.py::test_binary_score_shapes_match_the_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005375829641707242,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mlp_transform_chooser.py::test_owns_params_and_scores_are_differentiable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006972500123083591,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mlp_transform_chooser.py::test_feeds_the_binary_router_layer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016557499766349792,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mlp_transform_chooser.py::test_degenerate_shapes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00047045800602063537,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mlp_transform_chooser.py::test_factory_selects_and_validates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000308374990709126,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mlp_transform_chooser.py::test_layers_select_chooser_and_state_dict_reflects_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005779580096714199,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mlp_transform_chooser.py::test_config_mlp_builds_mlp_choosers_in_the_router",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.035365457995794713,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mlp_transform_chooser.py::test_config_default_keeps_anchordot_choosers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03747729101451114,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mlp_transform_chooser.py::test_config_mlp_router_parameters_have_one_optimizer_owner",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03738720901310444,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mlx_export.py::test_stage_for_core_returns_tensor",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001812080154195428,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mlx_export.py', 95, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mlx_export.py::test_forward_core_matches_normal_forward",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012541702017188072,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mlx_export.py', 107, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mlx_export.py::test_forward_core_exports",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012004200834780931,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mlx_export.py', 142, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mlx_export.py::test_mlx_lower_writes_pte",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012016703840345144,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mlx_export.py', 162, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mlx_export.py::test_pte_runtime_parity",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011299998732283711,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mlx_export.py', 209, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04300583398435265,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00013987504644319415,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py', 182, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.10301941598299891,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001313330139964819,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00013041601050645113,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py', 171, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011691602412611246,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py', 176, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012983300257474184,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mnist.py::test_mnist_loader_names_an_unfetched_lfs_pointer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036349997390061617,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.9398422079975717,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.9298637920292094,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_modality_codebook.py::TestCodebookTiering::test_ps_subsymbolic_ws_quantized_by_default",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08154770900728181,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_modality_codebook.py::TestCodebookTiering::test_ws_codebook_none_opt_out_honored",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.033871250052470714,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_modality_widths.py::TestCSWidthGuard::test_cs_demux_round_trips_where_span_and_when_phasor",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015320419915951788,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_modality_widths.py::TestCSWidthGuard::test_cs_event_muxing_coexists_and_reconstructs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015002089785411954,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_modality_widths.py::TestCSWidthGuard::test_cs_shape_and_codebook_slot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006628750124946237,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_modality_widths.py::TestSSWidthGuard::test_ws_content_round_trips",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006036249687895179,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_modality_widths.py::TestSSWidthGuard::test_ws_decode_is_content_passthrough",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005769580020569265,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_modality_widths.py::TestSSWidthGuard::test_ws_shape_and_codebook_slot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004962080274708569,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_reporting.py::test_grammar_rows_for_report_accepts_shared_serial_path",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001353340339846909,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_reporting.py::test_grammar_rows_for_report_preserves_batched_paths",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001443750225007534,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_reporting.py::test_grammar_row_preview_bounds_long_padded_path",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011337496107444167,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_when_period_is_a_module_knob",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001669999910518527,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_tense_magnitude_resolution_above_float32_eps",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002493340289220214,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_forward_at_t0_is_present_instant",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003225830150768161,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_forward_stamps_absolute_time_in_angle",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027662498177960515,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_encode_at_T_decodes_center_to_T",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021183304488658905,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_next_previous_move_time_by_step",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027741602389141917,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_next_previous_are_symmetric_time_shifts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024637498427182436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_tense_layer_round_trips",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029904203256592155,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_tense_layer_is_the_identity_on_concept_events",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017162499716505408,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_aspect_layer_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003121249610558152,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_fresh_model_present_is_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.032781667017843574,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_when_time_is_long_buffer_in_state_dict",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03348295798059553,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_clock_increments_once_per_train_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.19424641696969047,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.055s)\r\nbatch = 0 (\u0394=0.053s)\r\n"
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_clock_increments_once_per_inference_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.20194141601677984,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.044s)\r\nbatch = 0 (\u0394=0.042s)\r\nbatch = 0 (\u0394=0.040s)\r\n"
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_clock_increments_on_runtime_inference_only",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.11633183300727978,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_when_time_syncs_to_live_encoders",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.18669649999355897,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.053s)\r\nbatch = 0 (\u0394=0.054s)\r\n"
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_when_time_round_trips_through_save_load",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3528737500309944,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.049s)\r\nbatch = 0 (\u0394=0.047s)\r\nbatch = 0 (\u0394=0.048s)\r\nbatch = 0 (\u0394=0.054s)\r\n[BasicModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp5538h8kp/weights.ckpt\r\n[BasicModel] Weights loaded from /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp5538h8kp/weights.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_model_time_when.py::test_old_checkpoint_without_when_time_loads_at_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.22548391699092463,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.054s)\r\n[BasicModel] Weights saved to /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpicjenbnm/weights.ckpt\r\n[BasicModel] Weight file partial -- /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpicjenbnm/weights.ckpt\n  Keys in model but missing from file: 1 (initialized fresh)\r\n[BasicModel] Weights loaded from /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpicjenbnm/weights.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_morphology_layer.py::test_layer_identity_and_registration",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018641696078702807,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_morphology_layer.py::test_no_token_passthrough",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027841696282848716,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_morphology_layer.py::test_routes_past_tense_via_tenselayer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002534590312279761,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_morphology_layer.py::test_routes_progressive_aspect_via_aspectlayer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004331250092945993,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_morphology_layer.py::test_reverse_runs_and_recovers_tense",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002673749695532024,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_morphology_layer.py::test_morphology_rule_loads_in_both_directions",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0031062500202097,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mps_inductor_any_dtype.py::test_mps_inductor_any_result_retains_torch_bool_metadata",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.43498166697099805,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

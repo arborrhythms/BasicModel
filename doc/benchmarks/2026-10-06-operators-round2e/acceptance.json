@@ -1,0 +1,29 @@
+{
+  "status": "Accepted by Alec as the round-2 landing; commit, push and parent submodule bump authorized",
+  "date": "2026-10-07",
+  "authority": "Alec\u2019s 2026-10-07 round-3a landing instruction; land the accepted round-2 candidate first if not yet committed.",
+  "candidate_base_commit": "73cd7b71baeb64135c1e2e841b9bfc321339d8bc",
+  "candidate_base_manifest_sha256": null,
+  "runtime_source": "delivered-source/source.json",
+  "runtime_source_manifest_sha256": "3fd07f0cd516da3102867207614e11a9153638d37057bcc82a8c7ff821689106",
+  "runtime_source_unchanged": true,
+  "measurements_repeated": false,
+  "acceptance_document_changes": [
+    {
+      "path": "doc/benchmarks/2026-10-06-operators-round2e/README.md",
+      "at_review_sha256": "8ddb2b93db2a844e0824deb60d553101b2a4462d5183d833aff0653a4c1c436a",
+      "accepted_sha256": "c013ca3538b053002440681bde751f56784514a84777e1326619c2584b6a473b",
+      "change": "acceptance status and authorized landing; measurements and review evidence retained"
+    }
+  ],
+  "new_acceptance_record": "doc/benchmarks/2026-10-06-operators-round2e/acceptance.json",
+  "packaging_metadata_changes": [
+    {
+      "path": ".gitattributes",
+      "before_sha256": "b8e00d175f79f0ea00cb53c972160c14701a8a45cb5b32e098d02cde7d6749db",
+      "accepted_sha256": "953607c5510c09798504d0764cf068e0e788b18b8b536132b778ad775849d3e1",
+      "reason": "Git LFS for exact-byte benchmark archives larger than the GitHub blob limit and extracted large data; no receipt byte or source change"
+    }
+  ],
+  "basis": "Plan \u00a723: class 9/10, reconstruction 10/10, sum 10/10 at quarter, MM_xor 10/10; standing gate met."
+}

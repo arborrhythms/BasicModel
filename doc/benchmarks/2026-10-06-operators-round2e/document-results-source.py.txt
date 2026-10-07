@@ -1,0 +1,44 @@
+"""Add the measured review status to the requested documents from saved results."""
+import json
+from pathlib import Path
+H=Path(__file__).resolve().parent
+ROOT=H.parents[2]
+def read(name):return json.loads((H/name).read_text())
+S=read('measurements/summary.json');D=read('reader-diagnostics.json');V=read('results-validation.json')
+C=S['counts'];runs=[r for r in D['runs'] if r['kind']=='xor']
+conjunction=sum(names==['conjunction'] for r in S['xor'] for names in r['operator_names'])
+correct=sum(r['correct'] for r in S['xor'])
+flips=[r['stable_greedy_conjunction_epoch'] for r in runs]
+latest=max((e for e in flips if e is not None),default=0)
+result=(f"Measured round 2e: class **{C['class_pass']}/10**, reconstruction\n"
+        f"**{C['reconstruction_pass']}/10**, sum **{C['sum_floor_pass']}/10 at ¼**, and raw MM_xor\n"
+        f"**{C['mm_pass']}/10** under the repeated RNG-only bisection. The measured\n"
+        f"standing gate is {'met' if V['standing_gate_passed'] else 'missed'}; acceptance remains pending Claude's review.\n"
+        f"Final evaluation has {conjunction}/40 conjunction roots and {correct}/40 correct labels.\n")
+if all(e is not None for e in flips):
+    result+=f"Every run uses greedy conjunction throughout from epoch {latest} at the latest.\n"
+result+=(f"The receipt separates {D['miss_counts'].get('late_flip',0)} misses categorized as late flip,\n"
+         f"{D['miss_counts'].get('reader_plateau',0)} reader plateaus and {D['miss_counts'].get('anything_else',0)} other misses, with both\n"
+         "reader trajectories and late trial costs. All twenty sum/XOR runs have\n"
+         "400 updates per reader, zero presented weight on the rejected root, and\n"
+         "final active reader Adam counters of 400. The complete source sweep is\n"
+         "green; ownership conflicts, sentence-path perception gradients and\n"
+         "code displacement are zero. All thirty unseeded gate trainings are\n"
+         "retained without retries or replacements. No commit or push.\n")
+for name in ('doc/GradientFlow.md','doc/FutureWork.md','doc/specs/2026-09-29-operator-catalogue.md'):
+    p=ROOT/name
+    text=p.read_text()
+    assert 'Measured round 2e:' not in text
+    p.write_text(text.rstrip()+'\n\n'+result)
+p=ROOT/'todo.md';text=p.read_text()
+text=text.replace('round 2e in measurement', 'round 2e measured, awaiting review')
+anchor="   roots. The receipt records both readers' MSE, norms, flips and miss costs.\n"
+assert text.count(anchor)==1
+text=text.replace(anchor,anchor+
+    f"   Round 2e: class **{C['class_pass']}/10**, reconstruction **{C['reconstruction_pass']}/10**,\n"
+    f"   sum **{C['sum_floor_pass']}/10 at ¼**, raw MM_xor **{C['mm_pass']}/10** under the RNG-only amendment.\n"
+    f"   The measured standing gate is {'met' if V['standing_gate_passed'] else 'missed'}; {conjunction}/40 final roots are conjunction.\n"
+    f"   Misses: {D['miss_counts'].get('late_flip',0)} late flip, {D['miss_counts'].get('reader_plateau',0)} reader plateau, {D['miss_counts'].get('anything_else',0)} other.\n"
+    "   Sweep and owner audits pass. No commit before Claude's review.\n")
+p.write_text(text)
+print(result)

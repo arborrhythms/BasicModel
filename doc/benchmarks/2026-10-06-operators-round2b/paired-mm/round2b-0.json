@@ -1,0 +1,2812 @@
+{
+  "seed": 0,
+  "epochs": 200,
+  "construction": {
+    "parameters": "e97d00fd1385fa29eed9021bf753d3c8d36660d18ceed6016cc5d97e79a37225",
+    "torch_rng": "5da29c59fde5464d0a24baa545c30495101e679f08a1f7e5b7dbeaa3bd1d1cdf",
+    "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+    "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+  },
+  "trajectory": [
+    {
+      "epoch": 1,
+      "mse": 0.24970299005508423,
+      "predictions": [
+        0.5159099698066711,
+        0.5166341066360474,
+        0.5138277411460876,
+        0.5124868750572205
+      ],
+      "parameters": "7c455e7e7493ca25b76a75a5fb82f9dbb6b941000c389e9f09e9c26c619301b4",
+      "torch_rng": "221beed1aa4cf6684ce002642bc385634ffb477d560b89685299468381a468de",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 2,
+      "mse": 0.25983113050460815,
+      "predictions": [
+        0.3961857259273529,
+        0.41201701760292053,
+        0.389737606048584,
+        0.40523725748062134
+      ],
+      "parameters": "c350d02e715a6a3daa9982d623bf50ed306d63d7ad482cdb790c7e11648b437a",
+      "torch_rng": "6dc4d5176adcf0de7b79ea108fe3c8906df8109247478f618ac8fc6145a562ca",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 3,
+      "mse": 0.2498844861984253,
+      "predictions": [
+        0.4869421720504761,
+        0.4887770414352417,
+        0.48750028014183044,
+        0.48828306794166565
+      ],
+      "parameters": "a71e092a5950afd8a7800031dc8c6bbd0f77fc1c9ca0535cca2df0743c3d70c8",
+      "torch_rng": "5de512687d886c3e862c3acb6e170dea2e36785a9130afbfa6d0938b415dbd69",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 4,
+      "mse": 0.25313636660575867,
+      "predictions": [
+        0.55526202917099,
+        0.5536264777183533,
+        0.5537741780281067,
+        0.5530486106872559
+      ],
+      "parameters": "9abef0dea564eda671859a4a6643aa51db42243a292d33daffaadecac1c70728",
+      "torch_rng": "7e0e0ba5a65574de26a9b457e01622a2b1238ec160d5aea336a49395880a8ad0",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 5,
+      "mse": 0.254028856754303,
+      "predictions": [
+        0.5673807859420776,
+        0.5478139519691467,
+        0.563093900680542,
+        0.5466582775115967
+      ],
+      "parameters": "ce939686a4d2754805d413ba7ce17bf2f5580f6a712f8ab12e36bd07ee62f1d0",
+      "torch_rng": "2324d0d34eb6c68168745c8f9c2687e942601ce0c0e7e82e36ede193a6ec738d",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 6,
+      "mse": 0.25016531348228455,
+      "predictions": [
+        0.5434954762458801,
+        0.5433961749076843,
+        0.5381312966346741,
+        0.5324135422706604
+      ],
+      "parameters": "9f705c30d3d935f8e8d6021ddd51adba3d0c3b0a42a2183734f77236483cb3c4",
+      "torch_rng": "31d59dd83fdfd9c5d0229294f57ce11ad7789d920684828632a477c422bfc7fc",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 7,
+      "mse": 0.24888724088668823,
+      "predictions": [
+        0.4928823709487915,
+        0.4935170114040375,
+        0.5074604749679565,
+        0.5034835934638977
+      ],
+      "parameters": "887c29775b13268b1f39937831721ccc43a9ca8b1392f35c8d789c9c63ba9544",
+      "torch_rng": "66dddc11eaa330532561074f57a2948579a882dfb455a7b0a22abf748ab7929b",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 8,
+      "mse": 0.2610774040222168,
+      "predictions": [
+        0.47067907452583313,
+        0.45034563541412354,
+        0.4474748373031616,
+        0.46407628059387207
+      ],
+      "parameters": "013b39bf038dd6037c37d70aafd26f7566e8bb0edf1facfcf79b9b5aba0132b9",
+      "torch_rng": "f6293e492cbc278a8df6e197523484efc3decf57ffce27cf5313ac73f936b6b5",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 9,
+      "mse": 0.25786304473876953,
+      "predictions": [
+        0.44761836528778076,
+        0.4482356011867523,
+        0.45628970861434937,
+        0.48065072298049927
+      ],
+      "parameters": "864c5ea4b87777840d7a7060d7e05cce18f75ced7224e0cdce7a47d7a8452f17",
+      "torch_rng": "111c84cce248280e638c5394049acadbe756d255c2252ba8bfb19f123ca03a46",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 10,
+      "mse": 0.25221216678619385,
+      "predictions": [
+        0.4593225419521332,
+        0.46077191829681396,
+        0.4814130663871765,
+        0.4880288541316986
+      ],
+      "parameters": "52d78c1b697c0ff134064ce812dcb20860febac1ad225bd07b9ea1d21bc2b80d",
+      "torch_rng": "fd8596dabadee5ee78ef8dac8857f50220e67ef1bc824213d4732c2b68f83719",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 11,
+      "mse": 0.24883809685707092,
+      "predictions": [
+        0.48208919167518616,
+        0.48125988245010376,
+        0.4969569146633148,
+        0.490712434053421
+      ],
+      "parameters": "46c3426db66dc3f7a9e962c5084eddd423128247deb5d040e17a8d508317b402",
+      "torch_rng": "2bd90f89a1779aa5a45d227b65078530c4121358789cd154616719c893ca5a91",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 12,
+      "mse": 0.24845577776432037,
+      "predictions": [
+        0.5036361217498779,
+        0.5052720308303833,
+        0.5014038681983948,
+        0.496809720993042
+      ],
+      "parameters": "031d830c6d4dc9f471fa6dcbae5a78b0f9071fbf0928b1fa01e5a080985b0c54",
+      "torch_rng": "1ddd9d0264d7f80b7a5534f4511741b81d232a71019a486c2e24e951949a86e7",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 13,
+      "mse": 0.2462868094444275,
+      "predictions": [
+        0.5078951120376587,
+        0.5221518874168396,
+        0.5246884822845459,
+        0.5224269032478333
+      ],
+      "parameters": "e8d813b3e4811f9fbe7b9ecfd6d0e00422b112fb244001ace91daa9010afabde",
+      "torch_rng": "fde079b18fc75605e6eda490b1626721d927d848d89ba7c9d926e4f5328bcdab",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 14,
+      "mse": 0.25044387578964233,
+      "predictions": [
+        0.5243074297904968,
+        0.5301748514175415,
+        0.5345470905303955,
+        0.5380474328994751
+      ],
+      "parameters": "3a574270608a5b87c57f0b8b7f9327b6d2cbfdae8f4fc9c94f17ea15cf1744db",
+      "torch_rng": "9c3ba373a559b59a6c6c3afcc8f328fc45ad8b23158b2f78863590f525e6dae6",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 15,
+      "mse": 0.25042974948883057,
+      "predictions": [
+        0.5263532996177673,
+        0.5297378897666931,
+        0.5265161991119385,
+        0.5285242795944214
+      ],
+      "parameters": "8f95753ca0e044d241943a8f96ff51d379470b08b5e74c61e2ba2a904d85bc28",
+      "torch_rng": "ab90b0fa42e35f26f63be568d93d44636181371d4b43f8d9d07c7d398afbc231",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 16,
+      "mse": 0.2514302730560303,
+      "predictions": [
+        0.5308567881584167,
+        0.5223824381828308,
+        0.5204122066497803,
+        0.5155474543571472
+      ],
+      "parameters": "b8a6b7d29ffa6559620a58469d193bb86bb6668f34f427d21a7e329f0e4e44e9",
+      "torch_rng": "cef3655d74f268b1374727168cf280d147a44e6f3dd8d5a8cbeb545758639cec",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 17,
+      "mse": 0.2538451552391052,
+      "predictions": [
+        0.5197176337242126,
+        0.5124770998954773,
+        0.504217803478241,
+        0.5116596221923828
+      ],
+      "parameters": "4dcde65f00d872ea87b7b90bbbcd357f3b2bd628e969373aba720e5ea7026f2b",
+      "torch_rng": "2b178af4f305206c8d807e791821231e93b967f875f8fa09f9a519df53cbb5fc",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 18,
+      "mse": 0.25254830718040466,
+      "predictions": [
+        0.49128273129463196,
+        0.48277249932289124,
+        0.4982476830482483,
+        0.49955451488494873
+      ],
+      "parameters": "485111151fa9a9559bdea072c68537a030898c83d6120508319a5668917da264",
+      "torch_rng": "080ed5638ab820631e8ba66ca618d29dfa947a11cf0394b03e7d8b60cd7f2adc",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 19,
+      "mse": 0.25142809748649597,
+      "predictions": [
+        0.4859407842159271,
+        0.4854155480861664,
+        0.47889941930770874,
+        0.4829399287700653
+      ],
+      "parameters": "9cd341619d3c3d75c3bbc35b20691afdefd75ea2545e940100da35fdd507dbb9",
+      "torch_rng": "ef5888e76caacb8e92f6e147181afeed42a04f71eea25a94a5a4847d1a4c874c",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 20,
+      "mse": 0.24792306125164032,
+      "predictions": [
+        0.47258901596069336,
+        0.4803124964237213,
+        0.4836890399456024,
+        0.4813520312309265
+      ],
+      "parameters": "a924590a0f164a75bfc849777f8d1c2e3286d28d1ace57bf46547cddd45a9cdd",
+      "torch_rng": "636db7ade720e11a47df878b9badac8a9dbd8150662f974aaecf5faf6d070a88",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 21,
+      "mse": 0.2507461905479431,
+      "predictions": [
+        0.47867512702941895,
+        0.4820534884929657,
+        0.47333213686943054,
+        0.477710485458374
+      ],
+      "parameters": "735fe685ce2413a4a1a36cc725017f5a13788f4a97434a57411184b4874d535e",
+      "torch_rng": "b8382fb2d5f31fbd511ea238124d1c3a35ad5d002313f1186850dfeb5bb994e0",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 22,
+      "mse": 0.2466181069612503,
+      "predictions": [
+        0.4785345494747162,
+        0.48959535360336304,
+        0.4924652576446533,
+        0.48925724625587463
+      ],
+      "parameters": "4a45c5d6eb729de2c42e39a9318b73e98f6203d6ad6e6cc802c88daf090962b6",
+      "torch_rng": "2dd4c276738e7d12b156183eff5089c1168bb7a81e6f0febd758ce1a2c5476b6",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 23,
+      "mse": 0.25529393553733826,
+      "predictions": [
+        0.5045474767684937,
+        0.49300915002822876,
+        0.4855729639530182,
+        0.4949067234992981
+      ],
+      "parameters": "5b7064f8a26f64644af015440addd687af4a95cd94a6201acd174932d0c5dffe",
+      "torch_rng": "4e03587093918c3edda0b82a0b3088ae996819d5184f50801bb4af84c80fdf2f",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 24,
+      "mse": 0.24979208409786224,
+      "predictions": [
+        0.5030593276023865,
+        0.5020068287849426,
+        0.5132400989532471,
+        0.5110452771186829
+      ],
+      "parameters": "9107edcd2e19958982b5250c31873a70b2d297990e18925f2595722c23509bdb",
+      "torch_rng": "92e131c1bd6f862f163eb05685eb8c4b77fc985842f4d236d012aff28699b620",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 25,
+      "mse": 0.24874138832092285,
+      "predictions": [
+        0.51173335313797,
+        0.5162338018417358,
+        0.5126184225082397,
+        0.511394202709198
+      ],
+      "parameters": "4b9f2d2e85b206c224a7c09fa5539791174846385457af4461b2bc986a241acf",
+      "torch_rng": "6b6c7520069875ed8e459b9113ac516d6e8430bc7ca6093ef0668403e38714b5",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 26,
+      "mse": 0.25162842869758606,
+      "predictions": [
+        0.521463930606842,
+        0.5195971131324768,
+        0.5166280269622803,
+        0.5197630524635315
+      ],
+      "parameters": "69e01adbfc4656da48943291484736a4d268e5b18572d5825449dd5511806332",
+      "torch_rng": "0c1fd92fa78b241e1e73ec64f5d66d74a53d9a8be6ad23d54429d6cec3ac960b",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 27,
+      "mse": 0.2481461763381958,
+      "predictions": [
+        0.5190216302871704,
+        0.517631471157074,
+        0.5194029211997986,
+        0.5094588398933411
+      ],
+      "parameters": "6a76cc7cb844c7d30fb1aafcbf1c320033230fdfd3f1cbd230098cf04d03c06d",
+      "torch_rng": "2902d4402699c9c289cd3ce1d4401609f3789e9ee6e66181e0b942214ee3d988",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 28,
+      "mse": 0.2546420693397522,
+      "predictions": [
+        0.5152417421340942,
+        0.49526137113571167,
+        0.5096691250801086,
+        0.507847249507904
+      ],
+      "parameters": "1bb736b30461d8c957b011597518f3f43796981768eac37dbebae2bbac30aad9",
+      "torch_rng": "696c7c386a065c459aa43a2f371035d7246f3174ebd8f64ed446093d794e4b28",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 29,
+      "mse": 0.25104278326034546,
+      "predictions": [
+        0.5091598629951477,
+        0.5048777461051941,
+        0.5050467252731323,
+        0.5047796964645386
+      ],
+      "parameters": "3f01920c76fe5bf717c2746bf3483ecc8a3e89313aee7f114824e38bed5b6167",
+      "torch_rng": "94c88774f50b91ad26bca628a2190d6660d1f8fb6e5d5701aba7379e5815929a",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 30,
+      "mse": 0.251205176115036,
+      "predictions": [
+        0.4880709648132324,
+        0.482431560754776,
+        0.4932204484939575,
+        0.49183815717697144
+      ],
+      "parameters": "cf8d4154315cefcc884a12360bdb670c17bdc64a747b4e7d8d9a1b4c5ffc17a5",
+      "torch_rng": "c892f90f529332178a300e918aa654cfc963f754f3a5528e484f2106a8492998",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 31,
+      "mse": 0.2491317093372345,
+      "predictions": [
+        0.492019921541214,
+        0.49098944664001465,
+        0.49501460790634155,
+        0.49024611711502075
+      ],
+      "parameters": "2b37f7b1087a67f92040cd6aadd76d98fb016d267fec25cbe678c632c1197748",
+      "torch_rng": "7bbbb85dd30e2baf4bd4d8f5be5115e782916541c607f26d703af952e1796152",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 32,
+      "mse": 0.2486574798822403,
+      "predictions": [
+        0.4868917167186737,
+        0.4844111204147339,
+        0.48693975806236267,
+        0.47802066802978516
+      ],
+      "parameters": "50726d1e68f07ead3a8a7c478cf10a26d6a97c40a28ad2a78e6f63d88a16301a",
+      "torch_rng": "14bf4c4432303b9695f2588bf8035a68700f01f66858ffe97d59ba39cc404dc2",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 33,
+      "mse": 0.2475793957710266,
+      "predictions": [
+        0.4846680462360382,
+        0.4896315336227417,
+        0.49164995551109314,
+        0.48633190989494324
+      ],
+      "parameters": "d0bd08361f35c86a502ca8b680d45f9275fedc218244ee847929513d5818d3e4",
+      "torch_rng": "cad3479f0923fa35fe98f24f1bbd0eaea1366069b898d812344fffab9117a8cc",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 34,
+      "mse": 0.24484039843082428,
+      "predictions": [
+        0.48705264925956726,
+        0.49679404497146606,
+        0.4881490170955658,
+        0.4763755202293396
+      ],
+      "parameters": "537e00adf208fb7e1ed19e1fa27c741428fb27c54c0ddc1ecbc9cc92f297e1ad",
+      "torch_rng": "3199e1070224b7b8e620d60eb751f78beedb4878f4b82211f7df7aa13be20528",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 35,
+      "mse": 0.25203317403793335,
+      "predictions": [
+        0.4939923882484436,
+        0.4977959990501404,
+        0.4944484829902649,
+        0.506273627281189
+      ],
+      "parameters": "dd798771c7cb418b0c0e650554f0a0a18b47a2868369cd895dc7f6cb5dd4ffce",
+      "torch_rng": "4253fdd831b44f35562f54539df5bfec70512c87b495e1336308970e6357dce0",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 36,
+      "mse": 0.24642576277256012,
+      "predictions": [
+        0.49381136894226074,
+        0.502845048904419,
+        0.49974364042282104,
+        0.49440261721611023
+      ],
+      "parameters": "ca00a7a923a1ef903120995809ee3adafc94294247e9ec3b442da2139670cf8a",
+      "torch_rng": "7c3fc7d14448bf03399fa6a805e3a3cc80e3d0fc4e7ebad661a700542c9a7f13",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 37,
+      "mse": 0.2439533770084381,
+      "predictions": [
+        0.5096220970153809,
+        0.5085750222206116,
+        0.5195552110671997,
+        0.49373382329940796
+      ],
+      "parameters": "4664186d837dc3dcd21154e72a88ae97772e863b872790c111af0f5516756a27",
+      "torch_rng": "7b3d594ebc24836a4b67478fb1ea273b4e0a9e98e47c366eee155ad39639537f",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 38,
+      "mse": 0.24868237972259521,
+      "predictions": [
+        0.5109601020812988,
+        0.5177505016326904,
+        0.5165729522705078,
+        0.5170908570289612
+      ],
+      "parameters": "5e49dbc683dcded6364a3c3437938c2699f42da2ea6869494a1dbf47bedffd1e",
+      "torch_rng": "aac8de8cbdbe5d87783e55ecf1ff3cdd75c77bea9275633524bdb96f17f49cca",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 39,
+      "mse": 0.25195711851119995,
+      "predictions": [
+        0.5238897204399109,
+        0.5164450407028198,
+        0.5216721296310425,
+        0.5203316807746887
+      ],
+      "parameters": "c4cfb007409eac5d37ef67d914e26aae6461fd5c25492fb7c33ccf960ba5a338",
+      "torch_rng": "7ddc285525c2ac009655c63b4a6709402258ce347d83d1afc79c396d4fc4d0bf",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 40,
+      "mse": 0.250802218914032,
+      "predictions": [
+        0.4852779507637024,
+        0.493706613779068,
+        0.5212879776954651,
+        0.5312399864196777
+      ],
+      "parameters": "d99a5566b73513ec9aecf2cd6177a3efa7667c2337786de41326cbec6e4a6d39",
+      "torch_rng": "fc20d86a8f22d70fd9c5f40578116c2de8f59c88bdd05245dd2b500207f4b0b4",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 41,
+      "mse": 0.2506296932697296,
+      "predictions": [
+        0.5240477323532104,
+        0.5456135272979736,
+        0.5033602118492126,
+        0.5241894721984863
+      ],
+      "parameters": "ca8474559ac21eecf318da7c900849adb8024b474c4c69f9eb2c2026b190f8e0",
+      "torch_rng": "1307b4622d120c820933def3bbcb0a6180d64268258f3477edb46ea789403e63",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 42,
+      "mse": 0.24261832237243652,
+      "predictions": [
+        0.503101646900177,
+        0.5370354652404785,
+        0.48457643389701843,
+        0.48720061779022217
+      ],
+      "parameters": "f154f346e1e8183e8ad9e34476f7477e2799dfd2639c563579bf35da5cd833ee",
+      "torch_rng": "c81bf358cb7c13341a3c7f464ea4be6393308c01529daecaeb041312b644372b",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 43,
+      "mse": 0.2615375220775604,
+      "predictions": [
+        0.5351364016532898,
+        0.5368242859840393,
+        0.49539995193481445,
+        0.5390975475311279
+      ],
+      "parameters": "b75bc1c6e6b1edeb7fcc4f998fec9f16d0d66adc0a84e1fc100d3418c7911223",
+      "torch_rng": "971a82b871c8984ed5fe489861712e1742eba60dceb20efc3baefbf9bac29540",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 44,
+      "mse": 0.2581227421760559,
+      "predictions": [
+        0.5129165649414062,
+        0.48268142342567444,
+        0.47963783144950867,
+        0.4806373715400696
+      ],
+      "parameters": "ac4e57ada9738724ba6fb10bc3f3bb8c5c295b9fad1ddc256b8faf3b53906273",
+      "torch_rng": "27341362dbc7c1ac66a576545b06c3642e1740c154f1c72477ef290d9f80241f",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 45,
+      "mse": 0.24751174449920654,
+      "predictions": [
+        0.4404140114784241,
+        0.46267977356910706,
+        0.466603547334671,
+        0.47207796573638916
+      ],
+      "parameters": "3623ddc90cd74b47a960194f5d6b24152403f6bcdea2132b59d4dc68062d4a88",
+      "torch_rng": "6ffcdb201223133bc17d47ce858ad5e551b814a3e0dbc7d64732297c7de04242",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 46,
+      "mse": 0.26022475957870483,
+      "predictions": [
+        0.49577853083610535,
+        0.47022148966789246,
+        0.4680705666542053,
+        0.4811325669288635
+      ],
+      "parameters": "0af5770b66dfe970f8a55f7c11444e6f797aa3a35da04a080d387405d1b11e3c",
+      "torch_rng": "f6455c91bec2601bec927f18d8726a170d879a86088f182646593b802a4c22fe",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 47,
+      "mse": 0.2710760235786438,
+      "predictions": [
+        0.5155407190322876,
+        0.46892064809799194,
+        0.45892322063446045,
+        0.49367251992225647
+      ],
+      "parameters": "9b9c7936889c7ac9f4557f0b345e6ad9fb32c7af14f34604e847ec7376fd607e",
+      "torch_rng": "09a2e0dbe12efa898ad1dd2ecae0ebbc285de366e3d8f9bc3b704d153fc92252",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 48,
+      "mse": 0.2441280335187912,
+      "predictions": [
+        0.48965147137641907,
+        0.47867098450660706,
+        0.5162955522537231,
+        0.48062416911125183
+      ],
+      "parameters": "c713faa159f71177ee5b477b51875a4cd624b25f7f0c52b11941ac142b821385",
+      "torch_rng": "f034554c2ab9753f80aef220e4c2f6d679f8511d369ff912d18d79552c4f8883",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 49,
+      "mse": 0.24437114596366882,
+      "predictions": [
+        0.5091098546981812,
+        0.5125792026519775,
+        0.5122504234313965,
+        0.49276065826416016
+      ],
+      "parameters": "75313b573e3ae4ebed8f019e4872f0c11fefa4a621cfb84fdf7ac6382bcd0d3b",
+      "torch_rng": "ec1eefdf1b2cab98f7274289f3cc5e9cf3eebcd6a3c6ca491e385725d0e4a577",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 50,
+      "mse": 0.252205491065979,
+      "predictions": [
+        0.5226091742515564,
+        0.5240374803543091,
+        0.5248321294784546,
+        0.5323315262794495
+      ],
+      "parameters": "08ffc4d5c2e1ea4a4302fa678ef9defaaea75500f1c71c16210a89beecc9f67a",
+      "torch_rng": "032a66eb867b99d59c8c0389181d3df2177be7818944105fe7b55870cdf890fe",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 51,
+      "mse": 0.2504618465900421,
+      "predictions": [
+        0.5256592035293579,
+        0.5275291204452515,
+        0.527479887008667,
+        0.5282289385795593
+      ],
+      "parameters": "85594d36a2a3b260acb30924d949aaf9dbda520b497694aa536f6a36f0638006",
+      "torch_rng": "9a74b20b9806dcf49295331f3881e4e676de64e3a88a134e7afa94ac3c81cd13",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 52,
+      "mse": 0.2532403767108917,
+      "predictions": [
+        0.5216020345687866,
+        0.5209936499595642,
+        0.5028352737426758,
+        0.5140749216079712
+      ],
+      "parameters": "92ca2102fdb9e3ebb5c57beb9842323c96896752efd85aa52a1dbc68fe0ded23",
+      "torch_rng": "a0bb29dc531ae51dc97e00c9ca5af5a6183396eaaae065b79012b42ea453603f",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 53,
+      "mse": 0.24612858891487122,
+      "predictions": [
+        0.49297961592674255,
+        0.5094802975654602,
+        0.5115163326263428,
+        0.5121129155158997
+      ],
+      "parameters": "701508ee48d5ec5d06318641c98653c08e248ad9542534ed58e3b3e87519a593",
+      "torch_rng": "c02628f5eaa05938783a23d5a8b4545598f05b4094755944e25f929e96fc1f7e",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 54,
+      "mse": 0.25438186526298523,
+      "predictions": [
+        0.49856600165367126,
+        0.5009976029396057,
+        0.4903932809829712,
+        0.5101538896560669
+      ],
+      "parameters": "242c63b01fd7648193feb6cd164f15245da146bfd4f89e1f9bf2cc019652c9c3",
+      "torch_rng": "a190c646034dfa464ad42bf60fc9d5718919adbadd9d3501a28c90d5a1b1fbe4",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 55,
+      "mse": 0.24348944425582886,
+      "predictions": [
+        0.47626787424087524,
+        0.48940110206604004,
+        0.4935948848724365,
+        0.4795511066913605
+      ],
+      "parameters": "fcedfa7b61ead99c4246d4cc0237acfdc8f241197cc81b81b410dcc5013e6c0c",
+      "torch_rng": "1a79f14f1f5b84da5b29a14f9567fc46ad0e2630ddf6d14b6c60488a05b58d54",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 56,
+      "mse": 0.24575798213481903,
+      "predictions": [
+        0.4792121648788452,
+        0.4759971499443054,
+        0.48734599351882935,
+        0.46475210785865784
+      ],
+      "parameters": "c907fa3739c542334d4f8d5e42aa36b49af094d1c0fd1911f53650d5089cc749",
+      "torch_rng": "f4cf137937849c842397d7a09243146374555461390c4f72ec222b7b664db005",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 57,
+      "mse": 0.2526172697544098,
+      "predictions": [
+        0.49689817428588867,
+        0.48747265338897705,
+        0.4952481687068939,
+        0.49608728289604187
+      ],
+      "parameters": "d354318470d34583eebd56c6d466003257be53062c7f57448087b30d61e57bc5",
+      "torch_rng": "8e31e891a7082d8d8bc8057f86b0401d0248b441b70893b70f0bcf0aa90365a3",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 58,
+      "mse": 0.24624069035053253,
+      "predictions": [
+        0.48681384325027466,
+        0.5027104616165161,
+        0.5036510229110718,
+        0.5042973756790161
+      ],
+      "parameters": "24b25983e97801407b5e99ec513af0653da3fd54292ab94c7519ea105393399b",
+      "torch_rng": "47b695884c2fe8c9e07bbaf8e4cb7cb9ee0a4876af778de225984a5af807bb19",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 59,
+      "mse": 0.247511088848114,
+      "predictions": [
+        0.5100298523902893,
+        0.5134276151657104,
+        0.5145745277404785,
+        0.50746750831604
+      ],
+      "parameters": "aa8d82cf4bcdbf750ab362687bca9e73a59c4f91e573b932df4e8f119a2d0f1a",
+      "torch_rng": "a330f876ad3a906454be2f545b0523eacc77b98cb061080555263cb1278b4f28",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 60,
+      "mse": 0.24802166223526,
+      "predictions": [
+        0.5121454000473022,
+        0.521940290927887,
+        0.523259162902832,
+        0.5234222412109375
+      ],
+      "parameters": "ede19382e8353206577eb286a799469c9ba1e01f9564d3f17f02f4998a25fd69",
+      "torch_rng": "dd00c24a50d4fdf7e001930099b7ffa07da8cce826c0ebf25de8b44587040f39",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 61,
+      "mse": 0.24997013807296753,
+      "predictions": [
+        0.5095745921134949,
+        0.5272867679595947,
+        0.5109344720840454,
+        0.5268504023551941
+      ],
+      "parameters": "c0381aec6976da879cb58067eb7f352b22610ebf91515ae1b9b5eadc0e111c89",
+      "torch_rng": "bc2c85ff73fde81a9c89e484dd19aa9d3c5e568f878a032ef8e0ef6033ee16ea",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 62,
+      "mse": 0.24836629629135132,
+      "predictions": [
+        0.521770715713501,
+        0.5351681709289551,
+        0.5247758626937866,
+        0.528501570224762
+      ],
+      "parameters": "46ac1e1a81f08a0afa75920f1a55c0d8a2d43c913089d1787a57d3a7d589d959",
+      "torch_rng": "0bf916414a6d1178a9d97adfb94f6d374a584ff38d7ffc9816e14e18b1afe87e",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 63,
+      "mse": 0.2561129033565521,
+      "predictions": [
+        0.5100435018539429,
+        0.5210961103439331,
+        0.481406033039093,
+        0.5157699584960938
+      ],
+      "parameters": "5b3d8a602ad7ed9e22a68e42c3feac73fbc6422de0f98a09de3f0b571af2053f",
+      "torch_rng": "d62b087b8baf5b3076544447805963805bd27b35619177218afcc9d7846ed5e7",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 64,
+      "mse": 0.25322020053863525,
+      "predictions": [
+        0.48448407649993896,
+        0.5076448321342468,
+        0.4658959209918976,
+        0.5004748702049255
+      ],
+      "parameters": "528f4149eaa284bda1e4e9fa4c86b1fb2f2cd7d750700897a94646048915c2eb",
+      "torch_rng": "a6066b21288f59813e3696ce2c3d9099976427e74769fbcd814b67a305e0d310",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 65,
+      "mse": 0.26791250705718994,
+      "predictions": [
+        0.4879496097564697,
+        0.4511435031890869,
+        0.4648269712924957,
+        0.49588459730148315
+      ],
+      "parameters": "65a5fe2e68d6e08fec96ee5de5617884bed4dc2a7fe6552be03f5d26c4ac33dd",
+      "torch_rng": "19c600420c65e16d55c034ff596aaa77ac55ac3f2ff70e1fcd284097a8701e99",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 66,
+      "mse": 0.24077902734279633,
+      "predictions": [
+        0.46542856097221375,
+        0.4738280773162842,
+        0.48021629452705383,
+        0.4466097950935364
+      ],
+      "parameters": "889983e5ef5e5a04fedbc6bd2d22f945cc273b9e93f60259648e799b7979a957",
+      "torch_rng": "8244a95aa38f1ec87539fb0a42b3b73df2a2855c0b4967fbc23fb7b87d766867",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 67,
+      "mse": 0.24779878556728363,
+      "predictions": [
+        0.4556194245815277,
+        0.4659421443939209,
+        0.4530239403247833,
+        0.4463244080543518
+      ],
+      "parameters": "00cb3b92b584a2f31e964216240f1362f43c3360670e4fd5a0a5845df314bcca",
+      "torch_rng": "8811bca8cf62473f13ec1e9ee12f0185c835101591473a0f28c1c25c1faa39c8",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 68,
+      "mse": 0.25536495447158813,
+      "predictions": [
+        0.4829500913619995,
+        0.47351282835006714,
+        0.48977768421173096,
+        0.5007029175758362
+      ],
+      "parameters": "ccc05093ed498c0083ffab3f770c2527edd980bd3fa66d418392eff2425be349",
+      "torch_rng": "522d6f2026044658ef9ab2e43200ee43a692f506e6d41d6cc6d9aab89a1bb5ad",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 69,
+      "mse": 0.2533823251724243,
+      "predictions": [
+        0.48656636476516724,
+        0.4888511300086975,
+        0.4866708219051361,
+        0.5019984245300293
+      ],
+      "parameters": "3deba94b08e4358af8170c08879a92c81fca1a4ddfae3273f024821a166ba144",
+      "torch_rng": "b30762a93c6fd8b8219a8913b99a9d26b4d995799a21286287b2eab899e92768",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 70,
+      "mse": 0.24263238906860352,
+      "predictions": [
+        0.5021973252296448,
+        0.5209080576896667,
+        0.5164921283721924,
+        0.5049934983253479
+      ],
+      "parameters": "2b1305d3a198b14c1a8ddc20fcf1d0927b1b9a037c294a6db788a73ae9856256",
+      "torch_rng": "dae985c62825989124905cd360eb007f43a9999b4c28e92ef712678b2698dca3",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 71,
+      "mse": 0.24393463134765625,
+      "predictions": [
+        0.5076935887336731,
+        0.5188968181610107,
+        0.5366045236587524,
+        0.5213348865509033
+      ],
+      "parameters": "44d52abf2c89ad5d915083bf075c553616fd39bd8192f9530bb3edf16ca10f33",
+      "torch_rng": "5790ff95164a4198eb8c87e3976a1f860eef1b67533d24c8411d50bbf90dc26d",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 72,
+      "mse": 0.24720579385757446,
+      "predictions": [
+        0.5257471203804016,
+        0.5342640280723572,
+        0.5319536328315735,
+        0.5257715582847595
+      ],
+      "parameters": "44cccdc83c93b248c4e3e8025d5e54ca77ddce19d1d42c90c437813ab9bff884",
+      "torch_rng": "ed083062c5b4e57feb0c073fdac275f8472fb57a6b959b1a3a0e6c949fa671a5",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 73,
+      "mse": 0.24487808346748352,
+      "predictions": [
+        0.5444980263710022,
+        0.5414392352104187,
+        0.5383157730102539,
+        0.5095134377479553
+      ],
+      "parameters": "969f33f4658e29dd0c94dc4afa31196aff5e3e383ee2406fe87f5dadce4136bf",
+      "torch_rng": "ceee6e88a491d87dbf4a408005388e0f1b61c285c834a858f99c0d98e17db46f",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 74,
+      "mse": 0.24005335569381714,
+      "predictions": [
+        0.49979180097579956,
+        0.5445871353149414,
+        0.5129457116127014,
+        0.5155567526817322
+      ],
+      "parameters": "24fff2776fde3f01dbc5ece70ba6674f328d96f7b88e43144d364385ae30e3ff",
+      "torch_rng": "b25cdb858694182a005953f0107b4515d9dc4ba48dd10e0001e7cfc0c74e0b53",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 75,
+      "mse": 0.24705901741981506,
+      "predictions": [
+        0.5436109304428101,
+        0.5423197746276855,
+        0.5300861597061157,
+        0.5122821927070618
+      ],
+      "parameters": "d5afe47e07bdb2b031ec6e9b06734b1d8e11438cde597f9ee6e7b68632526915",
+      "torch_rng": "4fbd6a864c4de11e69e00ce4fca9e90f3117e346d1db30988d52bceba14fe368",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 76,
+      "mse": 0.24971771240234375,
+      "predictions": [
+        0.46198272705078125,
+        0.4810352921485901,
+        0.4724685251712799,
+        0.48767712712287903
+      ],
+      "parameters": "3dea1420584b0c5a8af745087f5371199e0855d8c2a0ab7569895d0a4a541419",
+      "torch_rng": "861eb696c56fda5e9d1b8fe4d0c9fcb3763f13018d026825d366e05ce521ddbd",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 77,
+      "mse": 0.2292463630437851,
+      "predictions": [
+        0.4881892204284668,
+        0.5205563902854919,
+        0.5226066708564758,
+        0.46998530626296997
+      ],
+      "parameters": "2043cb7394f16100be5a7c0d4ccded528695ea0fc6465db5f185521134dd95d8",
+      "torch_rng": "95128b87c2d9d3c1044583440c42e546b703386a792d2468302482426b3a797b",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 78,
+      "mse": 0.2234211266040802,
+      "predictions": [
+        0.47887665033340454,
+        0.5223400592803955,
+        0.5240132808685303,
+        0.45786383748054504
+      ],
+      "parameters": "3d146725e4e161e43cbad7a29b07f14d0113ede9e80b2d7e66b998758fdf20a4",
+      "torch_rng": "b3725441bfc74b6cb44f879e8a674641d97811b582d9240d54b2586f51030d00",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 79,
+      "mse": 0.22774723172187805,
+      "predictions": [
+        0.5226953625679016,
+        0.5369744896888733,
+        0.5280017852783203,
+        0.4478878974914551
+      ],
+      "parameters": "dc46a47cb488313a4d81453391796f95c36b16df3477347d166cb4f3ac84a9f5",
+      "torch_rng": "3e83b41b5b63ff4104e4a8d71cf1bf42d9fe2c51de89258e95202992e2eeb1d0",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 80,
+      "mse": 0.19041398167610168,
+      "predictions": [
+        0.41442593932151794,
+        0.5464157462120056,
+        0.5645864009857178,
+        0.441116064786911
+      ],
+      "parameters": "a349973831ac40cfa13c4e375b10a983c594a2ebd09a17f47485cf19f4bb5c30",
+      "torch_rng": "76c6d8ae43806b755543d11062ff1723c1a04eacf78cadb3fc02d37f834388a6",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 81,
+      "mse": 0.15547867119312286,
+      "predictions": [
+        0.34389883279800415,
+        0.586157500743866,
+        0.6188805103302002,
+        0.4325859546661377
+      ],
+      "parameters": "8ddae39bd858b7752012068168e7ec2b7651069518f6608747d86739ee79ffb7",
+      "torch_rng": "da4498fdfa3e3316107926d8e0348fc859e7590e4690ce3cfda6e3c58163a780",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 82,
+      "mse": 0.11248084902763367,
+      "predictions": [
+        0.3154039978981018,
+        0.6481506824493408,
+        0.7001228332519531,
+        0.36975592374801636
+      ],
+      "parameters": "54c4447d06473ec77f5ad73f4579e2c96e2681209b34c0abff32a41b68059365",
+      "torch_rng": "10394e65980a448dbdeebf62cbfe4aae01b951b41760e0d6c55b610f60a96566",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 83,
+      "mse": 0.09357762336730957,
+      "predictions": [
+        0.2028546929359436,
+        0.7144205570220947,
+        0.8010371923446655,
+        0.4604548513889313
+      ],
+      "parameters": "2a2936d8dbee45d8264b2b89420adc9cb24f78daa98603cecb870a2f1d890e47",
+      "torch_rng": "0c83a3350bda685933afe35928619d1eb9f670b5c4befa2f1e11ad961a9c4aea",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 84,
+      "mse": 0.029807712882757187,
+      "predictions": [
+        -0.044143080711364746,
+        0.7094342708587646,
+        0.9048658013343811,
+        0.15428310632705688
+      ],
+      "parameters": "0000d36df63d9c98eef5b2373c7a416f0fd1a21ef7c04c9cb42841369c18e444",
+      "torch_rng": "254f5e6a846f826e46745f093309cea3ce8a4ad0bf5d7b1ca511cd769d38c984",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 85,
+      "mse": 0.15880633890628815,
+      "predictions": [
+        -0.12912118434906006,
+        0.9460446834564209,
+        0.22237494587898254,
+        0.10460001230239868
+      ],
+      "parameters": "58e360a7806db414246674d535566de04f974604ac1b6ff7407601bd0b7f75a8",
+      "torch_rng": "012190952c377a30b9dfd1f4b24fa35752253d1a98a4b2fd72696ee4d729761a",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 86,
+      "mse": 0.07788465917110443,
+      "predictions": [
+        0.1434350609779358,
+        1.423060417175293,
+        1.0585179328918457,
+        0.32948529720306396
+      ],
+      "parameters": "6c8114ae76204fc744cd97410f182dad04416fc13f31a7cfcd4564a9e7f626b3",
+      "torch_rng": "3a0df60d943859adaad5ac019526c5b8ca441a034b0b270fb40c47db94c9e326",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 87,
+      "mse": 0.13337500393390656,
+      "predictions": [
+        0.09713813662528992,
+        1.4112322330474854,
+        1.544084906578064,
+        0.24274244904518127
+      ],
+      "parameters": "1696cde3f925ef21d34e72dec7929ba08d01c84234af68ca6d5836096817474f",
+      "torch_rng": "8b7b1a68ea1166d9183a3b3735641a2b3bc1379d1942385cdb29a1c7d2f6db47",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 88,
+      "mse": 0.026164574548602104,
+      "predictions": [
+        -0.009320855140686035,
+        1.1641533374786377,
+        1.2715978622436523,
+        -0.0621265172958374
+      ],
+      "parameters": "97cca2820c13076c296dc64927f2dc674505c620e82ece9dccfafb55af02d368",
+      "torch_rng": "a127d7b4b407727aa08b76b5a4c5adcc97c5e145f218dc5d49460bff695a0fc0",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 89,
+      "mse": 0.20287548005580902,
+      "predictions": [
+        0.8415483832359314,
+        0.8066456913948059,
+        0.8992194533348083,
+        -0.2361263632774353
+      ],
+      "parameters": "464f4cef7d24c2de907f07e1bfedbdb7780716a81030f982c421d89b5c1db1a1",
+      "torch_rng": "859774ab6ce6328df653ce9da0fdf3131f8f0af8b4b1e73f27fbc8a3140149bc",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 90,
+      "mse": 0.21456138789653778,
+      "predictions": [
+        0.5436657667160034,
+        0.5442342162132263,
+        0.5675273537635803,
+        -0.40977799892425537
+      ],
+      "parameters": "6c126df0b81c5468386a0d293a86145913d6fca76197b2303fefb12d55837966",
+      "torch_rng": "370924ad03aa78966bc55d9fd7ad99f53afb7d374c1543b5f2b31a99dd8ee131",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 91,
+      "mse": 0.26407742500305176,
+      "predictions": [
+        -0.357785701751709,
+        0.39875078201293945,
+        0.31828826665878296,
+        -0.31948018074035645
+      ],
+      "parameters": "001a192d1806b95f911dd6013eaa9ec50f82f6333860f09522c1a81a8a5ed374",
+      "torch_rng": "0706bb15ccfe4dfb938bc84c020b53b2966def47458d2dff1171186433d8cfce",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 92,
+      "mse": 0.18399803340435028,
+      "predictions": [
+        -0.05697929859161377,
+        0.30261990427970886,
+        0.5662132501602173,
+        0.24132049083709717
+      ],
+      "parameters": "d96d78c8aee093e8147928543fbc536df00ff6edef0cec61ac7559d88552e426",
+      "torch_rng": "b70f51575374dd504461ac29b3f1ad0f6ac0db511a046ef0eeba0f2ea316a518",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 93,
+      "mse": 0.10316204279661179,
+      "predictions": [
+        0.2835844159126282,
+        0.747603178024292,
+        0.7430091500282288,
+        0.4499773383140564
+      ],
+      "parameters": "4cd48f2b8413818355ecacc78147d4b573707740759a4f019f7708708ca7d679",
+      "torch_rng": "9ac8b223f98238dcbb5602233ec5bf3df706ca086800ff2c3e497c8a2409e093",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 94,
+      "mse": 0.13355913758277893,
+      "predictions": [
+        0.3602410554885864,
+        0.8566763401031494,
+        1.0538668632507324,
+        0.6172678470611572
+      ],
+      "parameters": "4a517197af6fd4aaf9ee7d02f7c8b9d6d12fa97b24a1d4db6c1afb821c005d9c",
+      "torch_rng": "f258347a13a858b077db2385986c73af164942371a49df4ef22d0d2e79839ba7",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 95,
+      "mse": 0.16616228222846985,
+      "predictions": [
+        0.3433185815811157,
+        0.8694280385971069,
+        0.659808337688446,
+        0.6434299349784851
+      ],
+      "parameters": "81db533bdb37244fbd34edbbb516d4c00cd53801b79b7fc3330d3f8159ab7295",
+      "torch_rng": "853b7a3faddbde57845e72d966a6d3dd0ed76e7b090b39a759a51c1c54879d82",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 96,
+      "mse": 0.1475788950920105,
+      "predictions": [
+        0.3491070866584778,
+        0.8451476097106934,
+        0.6397908329963684,
+        0.5609900951385498
+      ],
+      "parameters": "18a98a97405f122a06bf1681d7d5cfc59f0fab2c152180427d0df6944f465d47",
+      "torch_rng": "4961bd0225bf026da6058cd7edc42e30fce587465dd947cfb61fa9ef84c7920d",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 97,
+      "mse": 0.07604870945215225,
+      "predictions": [
+        0.2781350612640381,
+        0.8526690006256104,
+        0.9866436123847961,
+        0.45271503925323486
+      ],
+      "parameters": "d16abd95f6943c722022ebf0d5fab9e388323a8c3ae354e263e9c56983c3d81a",
+      "torch_rng": "dca15e992e95e793400dd1acf876876bb433488fc69317dd3f87573fb23be0e8",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 98,
+      "mse": 0.03922902047634125,
+      "predictions": [
+        0.15219581127166748,
+        0.8027429580688477,
+        0.9108903408050537,
+        0.2947908639907837
+      ],
+      "parameters": "4820fd9c19d01e4e2b927077f42b4531044f0d21ecce9fe9325972ef5b5c61ce",
+      "torch_rng": "eaf79d63d7e0da1f87174f2ebadb9de52d58ece533b44ab23fd42849cdd6c049",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 99,
+      "mse": 0.06991596519947052,
+      "predictions": [
+        0.053854405879974365,
+        0.7777079939842224,
+        0.8269956111907959,
+        0.4443189203739166
+      ],
+      "parameters": "32e07e1d5a77f5d1f4d12c427b80e068fc14213d3a724c4be91ba33b389c811a",
+      "torch_rng": "f2f2014b9a244dfe077f2c8a6dded26d9b39fa1a3b16e7e64f6a59a5df94a8fe",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 100,
+      "mse": 0.10150887072086334,
+      "predictions": [
+        -0.03281664848327637,
+        0.5558137893676758,
+        0.7718366384506226,
+        0.39445996284484863
+      ],
+      "parameters": "dcbdbd5bc552a57931a7b1f481749325c18afdbffb17c69419370b794eb83cc6",
+      "torch_rng": "e4ce341e024b4f172edc7ce87d4f33255c244bc654804882d7300ad6973ab527",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 101,
+      "mse": 0.05352263152599335,
+      "predictions": [
+        -0.06983894109725952,
+        0.7791646718978882,
+        0.7773122787475586,
+        0.3329489231109619
+      ],
+      "parameters": "05adf527d8351ee57a2f4572dac81c548182806cc1459d256544241f3fc66db2",
+      "torch_rng": "437df39e00f589c51af93d00fbd1c4fa2199e4840d77d2be1fd88ae40e85c61e",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 102,
+      "mse": 0.17560824751853943,
+      "predictions": [
+        0.7993278503417969,
+        0.8588387966156006,
+        0.7912942171096802,
+        -0.00483471155166626
+      ],
+      "parameters": "3186a27daa147cd07a63be57a72fcf27e06c3c92bc74c4966c9d9d77bc1a1103",
+      "torch_rng": "b4064a6aa590c56590c2bfa478f1fac1097799602a066b4bac29e774a0be303f",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 103,
+      "mse": 0.26256635785102844,
+      "predictions": [
+        -0.18198466300964355,
+        0.7463650107383728,
+        0.026028543710708618,
+        -0.06477540731430054
+      ],
+      "parameters": "e66b4a872d47b14de00a4e4e0a902cd8117d2c4cb0230c0e0d5ae7494a875c47",
+      "torch_rng": "3ba3446f2a3338ee7d954d3867358a4741258397ffa67428449d4924ca958d80",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 104,
+      "mse": 0.011650108732283115,
+      "predictions": [
+        -0.05942028760910034,
+        0.8107396364212036,
+        0.9273294806480408,
+        0.04437536001205444
+      ],
+      "parameters": "4342bed5dd62eade8af5b7d043fc1582bda152575dd45216fef41c21cef18e20",
+      "torch_rng": "74a62341706c48bdc7a9c768090bdc09554659864ab24b75e52c6ae689bdcd58",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 105,
+      "mse": 0.16338586807250977,
+      "predictions": [
+        0.01832813024520874,
+        0.9443541765213013,
+        0.26246654987335205,
+        0.3258151710033417
+      ],
+      "parameters": "a6ac075de13f68c242a59622e7d418e0733b1f930804fe7843e9933c07e1ef98",
+      "torch_rng": "b72c038f790057f5285616e77a951c6b2c6553fc3698d9d718928c3b0c1a50c6",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 106,
+      "mse": 0.061647430062294006,
+      "predictions": [
+        0.16228196024894714,
+        0.6502106189727783,
+        1.1643502712249756,
+        0.2662529945373535
+      ],
+      "parameters": "1e9f455e75c582612d801263bc3b5f097c760026654f4c384b9d03a7af6600ad",
+      "torch_rng": "50c72237a1f0f82b1fcb04b86be5b46c48c3f389445b2901ec0a76f35dadde97",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 107,
+      "mse": 0.13529838621616364,
+      "predictions": [
+        0.20128175616264343,
+        0.7313966751098633,
+        0.4674457609653473,
+        0.38068023324012756
+      ],
+      "parameters": "886df2e2a4b7d398a0d9a2b7f3af221fd993c86dcaf0da811911c3ce2d05f963",
+      "torch_rng": "38be5b3f50c9a11942ef1eceb01a22131ff01b787dd53f61b79d2eb5e2653f13",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 108,
+      "mse": 0.13803213834762573,
+      "predictions": [
+        0.2739033102989197,
+        1.1061131954193115,
+        0.48121392726898193,
+        0.4435161054134369
+      ],
+      "parameters": "f64c9cf2512a64893d77f603ee039fd9b47377f7cd157b34f763aff703db9e21",
+      "torch_rng": "4ac731227756092ac5f8ee5175d0b7937f98f3a690c25210cc3b8361d820d5de",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 109,
+      "mse": 0.10626427084207535,
+      "predictions": [
+        0.23571375012397766,
+        1.1610980033874512,
+        1.389833688735962,
+        0.437690794467926
+      ],
+      "parameters": "11f8878646b499d9f0161e5ed7cec0845837212da9ab3c9b654492a48f2f6f15",
+      "torch_rng": "f6669fd965ac985e9628f31eed6e4262a09de77875868d906af35f3223610dd8",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 110,
+      "mse": 0.09538745880126953,
+      "predictions": [
+        0.14328673481941223,
+        1.080667495727539,
+        1.3161735534667969,
+        0.5045253038406372
+      ],
+      "parameters": "2839fb9d5a14e34b4dc5c1a011828bef32a2818356783253ed171b35f57f6116",
+      "torch_rng": "330a55036b6e9c103dc19ac5914220f659321b7db54e12905b9a347bb0434765",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 111,
+      "mse": 0.04538176208734512,
+      "predictions": [
+        0.03138625621795654,
+        0.9741451144218445,
+        1.1879987716674805,
+        0.38017094135284424
+      ],
+      "parameters": "d39055d119865d75103278d93f9b7ff1cc20864a75c0a8cbac633e1c097bffb6",
+      "torch_rng": "b120a8e9a9bc9f2bfcbc2a6eda33960789e4674618c3d51608f64597a72b2f8a",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 112,
+      "mse": 0.016963519155979156,
+      "predictions": [
+        -0.09888875484466553,
+        0.8731851577758789,
+        1.0082266330718994,
+        0.2047569453716278
+      ],
+      "parameters": "90b6ab24bc8d3d764d1780bcc8a8a1126191218b52eb20a8cb4a669a3afb07e8",
+      "torch_rng": "fc069e2418563e025c004f37203b7e05f2bacb61e30ffb0ce8aa1ea31a4713d3",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 113,
+      "mse": 0.08906050026416779,
+      "predictions": [
+        0.5282670855522156,
+        0.7730569839477539,
+        0.8441101908683777,
+        0.03702878952026367
+      ],
+      "parameters": "edeaab569f1d94c982fe1cacd97e7e7be940a1d9ff17b77135dc9e8d3bfaaf7e",
+      "torch_rng": "85c040139b74047d3e31dfe9b95f4a86bf1629d7d3f0877ab5602969dc50f4ec",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 114,
+      "mse": 0.06930851191282272,
+      "predictions": [
+        -0.27331554889678955,
+        0.7248196005821228,
+        0.6470940113067627,
+        -0.04760020971298218
+      ],
+      "parameters": "8beb5528de40ad56c341e42af31060cbeef41083b0431de92aca09fe53d8cb23",
+      "torch_rng": "faf42385cc23540172ac66aaafef125d4d2e1afb06563f1132ee08846c6e785e",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 115,
+      "mse": 0.09272386878728867,
+      "predictions": [
+        -0.2543577551841736,
+        0.5916910171508789,
+        0.6268337368965149,
+        -0.0151100754737854
+      ],
+      "parameters": "cb64f4a6f891a86f15194a5d55f786544acd218eb72b8baddb77d476e8a009aa",
+      "torch_rng": "3c25b8573d10e3e3cd7e34fa68a0b45d7314a93b3959b0ba1aaebcc889b810b1",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 116,
+      "mse": 0.06725376099348068,
+      "predictions": [
+        -0.11736208200454712,
+        0.7784197330474854,
+        0.5544941425323486,
+        0.0875665545463562
+      ],
+      "parameters": "f5c2031adbf556feb2cd8fceb49eb75a90b38f353e6330962cbc0e677028f4b4",
+      "torch_rng": "1c268f7f5d40c9b69e4283ac67c0f45ba6cb4d67f1dd5932d98c7d4af4e3a333",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 117,
+      "mse": 0.02141948789358139,
+      "predictions": [
+        0.01941746473312378,
+        1.0605990886688232,
+        0.8361282348632812,
+        0.23403996229171753
+      ],
+      "parameters": "9d5e47a2eedd11612291c35514b8c91b60d5cb1575fa7f36ac40114b06857cda",
+      "torch_rng": "1afbbd023b0144f8713fd2afd72e0341b718161ae79c8b731c03b7c028179072",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 118,
+      "mse": 0.03931140527129173,
+      "predictions": [
+        0.1708890199661255,
+        1.056714653968811,
+        0.8963727355003357,
+        0.3377682566642761
+      ],
+      "parameters": "e2327e06c4336251827207285d67486b4f928c06e7a5149d502c83969e8fb213",
+      "torch_rng": "79311322e0c30a22d068d84e24efa31bb9046d362bfba31bd1971266199e7a82",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 119,
+      "mse": 0.1616567075252533,
+      "predictions": [
+        0.21413105726242065,
+        1.221745491027832,
+        1.105728268623352,
+        0.7351361513137817
+      ],
+      "parameters": "4ca61d8634f104a1a0c175209ce58683c7ac8fa90fba6bc07d92fa2e9dea1054",
+      "torch_rng": "fe74438e560ea626b79c68d5965656e96a3e7909eba46eb7386b61e8dce4f027",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 120,
+      "mse": 0.017074517905712128,
+      "predictions": [
+        0.10227423906326294,
+        1.0578908920288086,
+        1.138731598854065,
+        0.18772384524345398
+      ],
+      "parameters": "f0e15eb702f6c8a37a41d181f2b1d52debf07a2f29f8ca9ac43df423c30a4e56",
+      "torch_rng": "851c5ce0013f72b35a39c481be89c3b9628907ba66834cdd283cf9a8e4756e66",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 121,
+      "mse": 0.00960041768848896,
+      "predictions": [
+        0.015689998865127563,
+        0.908788800239563,
+        1.1500661373138428,
+        0.08553457260131836
+      ],
+      "parameters": "07bb902aeba8642cdf062192b3bb6256efc403533585a80625530c9a44b828e8",
+      "torch_rng": "7549690549a87f1395f5ebb0086a92f01d8623236fe5144d0f303dd382fb283f",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 122,
+      "mse": 0.18718388676643372,
+      "predictions": [
+        0.5965096950531006,
+        0.9504302740097046,
+        0.3751997947692871,
+        0.00890311598777771
+      ],
+      "parameters": "3c23cb594882b11caaebff7ef348c600656864928be794aae6eca794b2d5e006",
+      "torch_rng": "7a94b5544767334ffdf41d423f3175d43c882d7492aeccd80c2293a908ac51ec",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 123,
+      "mse": 0.22679878771305084,
+      "predictions": [
+        -0.15956896543502808,
+        0.977144181728363,
+        0.09935179352760315,
+        0.2646568715572357
+      ],
+      "parameters": "02721020fbcb74e36533e1058a4b04ae9dac679ea5275d77fa3e3f5a888b6d7b",
+      "torch_rng": "bc1ece0ac2e1e96b68ca82e54fc4b5cd3424ef6c607067b51e0968e9d3c0e87f",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 124,
+      "mse": 0.04006049782037735,
+      "predictions": [
+        0.393002986907959,
+        0.9433616399765015,
+        1.046656608581543,
+        -0.020147085189819336
+      ],
+      "parameters": "b01a4ce5521427fc68a3c6f2d015f7f2c214fdd7821e9a9558cea4b0d79688b0",
+      "torch_rng": "c36373e8ec0227f3e5fad6323099cf613c1a974b75ef435030b1e4c769d1cedf",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 125,
+      "mse": 0.02353210747241974,
+      "predictions": [
+        0.220740407705307,
+        0.8360424041748047,
+        0.9849845170974731,
+        0.13525733351707458
+      ],
+      "parameters": "7aa5d78b7318a9d81bb14398fb8d5817b562ee995b6bea76ad7da08903571ff0",
+      "torch_rng": "0a64c9cf908039c3896ea66f9a19e7f4e2b21edf24fc9c0f9768441d6f870f46",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 126,
+      "mse": 0.12594854831695557,
+      "predictions": [
+        0.6748746037483215,
+        0.8147287368774414,
+        0.9041761159896851,
+        -0.06950420141220093
+      ],
+      "parameters": "b2585eae9ac42274c8ce3ca7a27ff0a6e6d7dce1d261148820344016b7cc38ed",
+      "torch_rng": "f04713c9e24b49f8b00ecfd0fa0a0b1b8db06c206a930c83d9fe62ed2703d608",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 127,
+      "mse": 0.25625187158584595,
+      "predictions": [
+        -0.2999016046524048,
+        0.4809291958808899,
+        0.19247663021087646,
+        -0.11635279655456543
+      ],
+      "parameters": "bd1e76e081ab4e7336521b6e3ef9f39b4004b94caa998fe4ed897151b3d202bb",
+      "torch_rng": "5227f6f4716edf696465bdb7a45bef22e7eec609e3bc3575ee48f268e22fb44c",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 128,
+      "mse": 0.03829779475927353,
+      "predictions": [
+        -0.19914430379867554,
+        0.6949285864830017,
+        0.8572626113891602,
+        0.009496420621871948
+      ],
+      "parameters": "29414a2604292eca28292d768c4ab3748c3f8bda77dd2bb3d6baa4f9de3e03da",
+      "torch_rng": "a6395e8c97139dbd16c9a56c207c731004089ea16be70c0168f6720577be55bf",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 129,
+      "mse": 0.02585544064640999,
+      "predictions": [
+        0.03144964575767517,
+        0.8400848507881165,
+        0.9274511337280273,
+        0.267575204372406
+      ],
+      "parameters": "3b54b19e0c77f4147ad9380630fa677f908b34ed69561b8b6638889e958cb3a8",
+      "torch_rng": "9bad26abf954cb91c00d6f280c4ea6034e24cce305823cdbd1af8a1445de600c",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 130,
+      "mse": 0.05832989141345024,
+      "predictions": [
+        0.03482729196548462,
+        0.8958417177200317,
+        0.9993410110473633,
+        0.47037988901138306
+      ],
+      "parameters": "b47217de291a237af64eb95cf466c439fbcbf1d5856dc5176bc5e53069cac265",
+      "torch_rng": "f0d2138983fe574f7a96bdabdd7c9f40372fed2dfdd338decc674f1f25747a96",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 131,
+      "mse": 0.0237366184592247,
+      "predictions": [
+        0.09115973114967346,
+        0.8667761087417603,
+        1.0299334526062012,
+        0.26075229048728943
+      ],
+      "parameters": "cdc430b32c10b240283f4032bd42ded7594d23f64efe1ddfeeb6cd9cc5ba6f90",
+      "torch_rng": "9d11e4111fb63b8ca7519f26b2de77665e2e570a0d8c8359237e6e828b8233aa",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 132,
+      "mse": 0.2027997076511383,
+      "predictions": [
+        0.8584221601486206,
+        1.0837159156799316,
+        1.0522651672363281,
+        0.2541068196296692
+      ],
+      "parameters": "e6edd17c2a816c287115ba74659eb1ea635b3a88c4ccdf085b46f27e55c4a36d",
+      "torch_rng": "588d837859afd7c51943f547e9917ddf1c0ec36282f4a2b18003ad81d55fdc60",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 133,
+      "mse": 0.01818629913032055,
+      "predictions": [
+        0.11463233828544617,
+        0.862949788570404,
+        1.0031781196594238,
+        0.20201921463012695
+      ],
+      "parameters": "b841463e975fd9e059ff227a0931346c11416803258256bc65527a1b4806799c",
+      "torch_rng": "4cb48c5f99344562740915fcb9e0705d09019c9e31c4099f3b7d982b053110c3",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 134,
+      "mse": 0.014233574271202087,
+      "predictions": [
+        -0.0010485053062438965,
+        0.8303015232086182,
+        0.937296450138092,
+        0.15557599067687988
+      ],
+      "parameters": "cfbf1f6c8189d6764902480690b34de0de26dfd09473332597e5c46469871dbd",
+      "torch_rng": "2d6befba111d69f73f67848775a405da0c83cb3ec24d13d515f3348eb71c746e",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 135,
+      "mse": 0.003502771258354187,
+      "predictions": [
+        -0.04034066200256348,
+        0.9724723100662231,
+        0.9213590621948242,
+        0.07376682758331299
+      ],
+      "parameters": "e5ee4ca92a7b5bea4abe90ad58bf247cdf95aecbfeb2a0d942c4a1e5888aac15",
+      "torch_rng": "daaebfa242be5003940b58ad5ff33ab810d28320a614f0d998857b31d047865d",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 136,
+      "mse": 0.01243507582694292,
+      "predictions": [
+        -0.08732461929321289,
+        0.8209044933319092,
+        0.9008947014808655,
+        0.01475292444229126
+      ],
+      "parameters": "0da925ca6e2ed0e81ab56e860856472eb55f24bb4ab8f91ecabbfbf9365dbb42",
+      "torch_rng": "c39d7089788a743009324e59bc28c0a62441a5c57a1c58d2369c27d06000d71c",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 137,
+      "mse": 0.005458430852741003,
+      "predictions": [
+        -0.11245310306549072,
+        0.97780841588974,
+        0.90964275598526,
+        -0.023046135902404785
+      ],
+      "parameters": "92c8f0f49d2d6f502ae1eb5b3289a4bea30981a246f7dd3f7e88bd79fe06d74c",
+      "torch_rng": "e3b7d67b00952ba7a5004e5434a1317fba059ff597ddd5b1850dd30f7f0cf2b8",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 138,
+      "mse": 0.01214145589619875,
+      "predictions": [
+        -0.11621993780136108,
+        0.8787148594856262,
+        0.928524374961853,
+        0.12344998121261597
+      ],
+      "parameters": "39e8e9ab3652a4180c4ecdadc879eef4023f2eca6ad8e1892dd9f1953853dc09",
+      "torch_rng": "5a103b9d3f86b5b250c6ad5807743427de50f94ea8882a0751d7ea721bd80571",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 139,
+      "mse": 0.0052535394206643105,
+      "predictions": [
+        -0.12855243682861328,
+        1.0392141342163086,
+        0.9787442684173584,
+        -0.049988746643066406
+      ],
+      "parameters": "d5581933f52c43db10f6ff9217a7eadc624fc5de9360c5238093e1d259fccfb0",
+      "torch_rng": "2b864ac99438161763af5027e0e884d8ce4dc0bd37a387a9a4af23b77c4d9159",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 140,
+      "mse": 0.08923733979463577,
+      "predictions": [
+        -0.0826677680015564,
+        0.9505618810653687,
+        0.4116540551185608,
+        -0.03899103403091431
+      ],
+      "parameters": "64e02bf6e78fb9fda9115ad679b360888220bf91bed9c049aebcdd745282f4a1",
+      "torch_rng": "6d3cd6c8fc8e3f678f373cfca10629ee115167552c18ba29930e825a2ff28b0d",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 141,
+      "mse": 0.012254340574145317,
+      "predictions": [
+        0.007158756256103516,
+        1.1401654481887817,
+        1.104976773262024,
+        0.1352761685848236
+      ],
+      "parameters": "45083480ee2f3c1c3de9963278c93d0942820188fc0c6518ab5cd2a11281286b",
+      "torch_rng": "a69859f3c678ec37da8d2589e5d15cf3f6ee873180c5bee00779271468a0ac09",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 142,
+      "mse": 0.0532921627163887,
+      "predictions": [
+        0.06892284750938416,
+        1.167557716369629,
+        0.6004367470741272,
+        0.14384686946868896
+      ],
+      "parameters": "61edfa685cb598f95050573486b567976b5ca278a5efe93bc02a01e5395318cd",
+      "torch_rng": "77fd56bd5c7cff93437c704769f0e3c90f012c1df6a7a97dc4cd36e797240103",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 143,
+      "mse": 0.019953390583395958,
+      "predictions": [
+        0.11807605624198914,
+        1.0712887048721313,
+        1.2388997077941895,
+        0.06096270680427551
+      ],
+      "parameters": "8a5f51b27c91e03932aa352b7304ecf362f066564b85e80f7bc468fcaac55b92",
+      "torch_rng": "2f8324bd6c0c861753e89af27c440e9441c856ffb1a8b6894ebaf694e9ceac39",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 144,
+      "mse": 0.1555449664592743,
+      "predictions": [
+        0.7547976970672607,
+        1.1672892570495605,
+        0.8495901823043823,
+        0.04302889108657837
+      ],
+      "parameters": "0e8909dde7798e535140ecfaf6cf186b4d07c0e59e47b1be98e89007007087e6",
+      "torch_rng": "97f0275f426e453ad6b7ed5e8ccaf9a813acda4096f593b671ccec0cabf0f013",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 145,
+      "mse": 0.020406829193234444,
+      "predictions": [
+        0.14085525274276733,
+        0.9323565363883972,
+        1.2155574560165405,
+        0.10366511344909668
+      ],
+      "parameters": "512b63ebbe37acf0f1af5717bf1b2c367ca31db95e4b9e2f4c2645e18cbada53",
+      "torch_rng": "2f5146e047258ccd272cc9932dcbf4b6cafc12a3f6c6203776e76b22399ad7ba",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 146,
+      "mse": 0.006807804573327303,
+      "predictions": [
+        0.07935696840286255,
+        0.8649553656578064,
+        0.9541692733764648,
+        -0.024416863918304443
+      ],
+      "parameters": "7e0635accc3c00c5873b16c226115c318035dbd505e63439ccc00b622ebc23ca",
+      "torch_rng": "99e0e072b04c7570b73479e671c57774d5aa8366d63dbb2410fb31f7869a21b0",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 147,
+      "mse": 0.007134517189115286,
+      "predictions": [
+        0.04399353265762329,
+        0.8550143241882324,
+        0.9656046032905579,
+        -0.06632304191589355
+      ],
+      "parameters": "49f6ce0d577741cb88435d3feb4c8abc4ac324ee9dc5a7c1161504e9a85f5547",
+      "torch_rng": "bccffa1099dbc53c656bfa41cd0f69f54b229e4466f169511a9e0b6aa892bb15",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 148,
+      "mse": 0.022833164781332016,
+      "predictions": [
+        0.006171703338623047,
+        0.7301679253578186,
+        1.109876036643982,
+        -0.08007800579071045
+      ],
+      "parameters": "06337e73de0d7875ead217136ed6e7d75b2bd414755d795e9fc36522e438dac0",
+      "torch_rng": "65963873776d2f87135da187dbc0526923dc8f7093a14b50fb3b80e6180446ad",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 149,
+      "mse": 0.013501047156751156,
+      "predictions": [
+        0.11518386006355286,
+        0.8251655101776123,
+        1.0962928533554077,
+        -0.029957592487335205
+      ],
+      "parameters": "84bf87ac35cc9323f20d062fa2cb3f6df7852e69a6c9a4777070e31abc7bd475",
+      "torch_rng": "264a4ad7a6ed8bbaebd3b30e4fb48a34a13b78f56526d5f724545f389a7021c5",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 150,
+      "mse": 0.010788441635668278,
+      "predictions": [
+        -0.02729898691177368,
+        0.8361947536468506,
+        1.0831208229064941,
+        -0.09309834241867065
+      ],
+      "parameters": "c54d7ec2a4d183f1681e036994f2a2d41e7ead7890de3f84d429264d184e1691",
+      "torch_rng": "a726e36d2b000d64c0534aad8adbe7d968cb436e06f70d926c7d40767282954d",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 151,
+      "mse": 0.009374566376209259,
+      "predictions": [
+        -0.024190902709960938,
+        0.8348088264465332,
+        1.0614500045776367,
+        -0.07647770643234253
+      ],
+      "parameters": "dcb870cd3baa04d65da3dbc4f7978c9bcf40603cb068656d9e0f3258cc950c14",
+      "torch_rng": "94ff88ac36692f3cdbe8f7125b95c20640047c091af41c13aae559f5f4b530ec",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 152,
+      "mse": 0.04786420240998268,
+      "predictions": [
+        0.4111824631690979,
+        0.8684589862823486,
+        1.0483784675598145,
+        -0.05236673355102539
+      ],
+      "parameters": "df886b3cb3d950de42f69c9043ae6484b647170b33244ae65e4ed22281185ea9",
+      "torch_rng": "ddeada3099bd578948ca1c3f37aaf1e0de1f16839cec7efe5a25232b265b7095",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 153,
+      "mse": 0.004320830572396517,
+      "predictions": [
+        -0.014628231525421143,
+        0.8767534494400024,
+        1.0331355333328247,
+        -0.027958214282989502
+      ],
+      "parameters": "2a6ec2d836520e2e6d6b97b0452552d55faf1a47e37a357aa2bc765eb7f338ce",
+      "torch_rng": "cc5116e3b589da2fef1317e3057d438c5295a044f007ea4a1dc692c07c6ab3bb",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 154,
+      "mse": 0.07099679112434387,
+      "predictions": [
+        -0.021504223346710205,
+        0.9074578285217285,
+        0.4760774075984955,
+        0.02158293128013611
+      ],
+      "parameters": "94fb8a625cf9f688145439c0383360d883c2b97778b8c963a782d10a866e4f59",
+      "torch_rng": "9ef1d234fa80f5cacb63e03a39d21272a4d2f4fe165cc696d26f0569df9cb117",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 155,
+      "mse": 0.01947041042149067,
+      "predictions": [
+        -0.013330638408660889,
+        0.9552674293518066,
+        1.022493839263916,
+        0.27422064542770386
+      ],
+      "parameters": "a47e4acfddde148f16f803c6f34aac81c76af34dee06b09787200460f7239c9f",
+      "torch_rng": "f783c9cff82efef720edd9f4878d6810649c35a265868068b804361cd26e194c",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 156,
+      "mse": 0.0003436751721892506,
+      "predictions": [
+        -0.0074759721755981445,
+        0.9925689697265625,
+        1.0198206901550293,
+        0.029508143663406372
+      ],
+      "parameters": "20d209024c6ecb6870b60a6c63422b8c9d12cc2ebd948dfc5540a300d36bc507",
+      "torch_rng": "cc829b7f8beb72e434da7a7ecab4361d6aef3e4123621990b1c31beb821c4664",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 157,
+      "mse": 0.028983891010284424,
+      "predictions": [
+        0.33708909153938293,
+        1.0275731086730957,
+        1.0156011581420898,
+        0.036094725131988525
+      ],
+      "parameters": "9f4d0884a777129b5cee725f8ecafd0fee08e2d714e53104cc0d65b4264b690d",
+      "torch_rng": "b29563a03246ca4bb0b2b7bb42c523265a44f19f189f5ae86063ccd77516b437",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 158,
+      "mse": 0.0431806817650795,
+      "predictions": [
+        0.2847026586532593,
+        1.0293772220611572,
+        0.6992158889770508,
+        0.018248707056045532
+      ],
+      "parameters": "4de60df66b1d0fba278386ede12cd6e764cae021e1548d734e7657c85e06422a",
+      "torch_rng": "dd538954d63b7611db4202a073d80dff3d576517bb81464d7f648fe80f8fe8a3",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 159,
+      "mse": 0.003818342462182045,
+      "predictions": [
+        -0.0544276237487793,
+        0.8893995881080627,
+        0.9911571741104126,
+        0.0005983710289001465
+      ],
+      "parameters": "788c7c63325d6bc50685542353583c11df5de9c0d740c0ccb87d57f09e758474",
+      "torch_rng": "bcf34d99083574ff72dd994502e2dad93dd3ba9cc7eb41328dc50c7c51318e10",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 160,
+      "mse": 0.0027810840401798487,
+      "predictions": [
+        -0.09409832954406738,
+        1.0463289022445679,
+        0.9922590851783752,
+        -0.00797194242477417
+      ],
+      "parameters": "8c9315d143869e74f38cc302b678f45b4fee39d775dceaff771ecee47d420632",
+      "torch_rng": "f6760370f144ff897332819096e5ee8095416121e4cd20846afaf4d15bfcd4ae",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 161,
+      "mse": 0.0006157285533845425,
+      "predictions": [
+        0.005928099155426025,
+        1.0409061908721924,
+        0.9823167324066162,
+        0.021018028259277344
+      ],
+      "parameters": "05502bfef1973ab8799732923f0a77a5c0022bb511b4d5536b8b0f8dd9ad2be8",
+      "torch_rng": "444a0c8b383a716293c9cee7426970ecf7f4747e4b6aa6506f2cf362679aaed4",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 162,
+      "mse": 0.004552887752652168,
+      "predictions": [
+        -0.03249502182006836,
+        0.870685338973999,
+        0.9793483018875122,
+        -0.002617359161376953
+      ],
+      "parameters": "5034fbe12f760e19434194fb9e940c401c05dff4a606057c22d0a161772676e9",
+      "torch_rng": "1a2fac5967b8b81a3e1b46f2ca19fcf3dc27ef7752f80e113ac108926f1c7c64",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 163,
+      "mse": 0.0012878758134320378,
+      "predictions": [
+        -0.04845380783081055,
+        1.049419641494751,
+        0.9830513000488281,
+        -0.008612334728240967
+      ],
+      "parameters": "2a3cada73c07f990738eea6d4b349c70aa76d6c1501be453db184ceb335141b9",
+      "torch_rng": "3ac246a109e36d32e5de1281d53a2ba8fb697579cfb792873a8761e619062b89",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 164,
+      "mse": 0.0024383473210036755,
+      "predictions": [
+        -0.02925848960876465,
+        1.0588710308074951,
+        0.9263191223144531,
+        -0.0016309022903442383
+      ],
+      "parameters": "bc9d1eb9b0051c3b3903a938fb0d61024d1ed2022860e220dd0f2cd2101e06c8",
+      "torch_rng": "45674c7e47d14a866c519f84c08a7f929c7bfd001df7cc1f827f7798a766741e",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 165,
+      "mse": 0.0031250156462192535,
+      "predictions": [
+        -0.11009973287582397,
+        1.018401861190796,
+        1.000678539276123,
+        0.006246775388717651
+      ],
+      "parameters": "c92ca00a86190561abb3b888f821c4afb8bd6e99123cd265ac608493b3a04224",
+      "torch_rng": "93623eb388c5bbf95c94daefddc5a38da7d5e6a3245dfafd5dbc0e8c3fe97a67",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 166,
+      "mse": 0.014307261444628239,
+      "predictions": [
+        -0.10774219036102295,
+        1.0622804164886475,
+        1.0075879096984863,
+        0.2041671872138977
+      ],
+      "parameters": "d767ba87f89cc121dc7abbe724c8976420670fbe76a5bede303c4573e02290c7",
+      "torch_rng": "b71f681bcd71308f3967b0729e2da65854468d8e6c458465797bc79cd34eecb6",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 167,
+      "mse": 0.00367132225073874,
+      "predictions": [
+        -0.09283363819122314,
+        1.042681336402893,
+        1.0314998626708984,
+        0.057037413120269775
+      ],
+      "parameters": "52a81044e5044c73193ff774d5c29ae84d54af9f24925f11de7264e5cb506d85",
+      "torch_rng": "6f339659938fb8e273ba38126d3c5b1c7de6a484d90b032c65387ad1bc7efbe9",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 168,
+      "mse": 0.0012437463738024235,
+      "predictions": [
+        -0.06173592805862427,
+        0.9679452180862427,
+        0.9957324862480164,
+        0.010860025882720947
+      ],
+      "parameters": "16c8d4c548d380d81a2c6618c7c86cf48e6d74147bc53d3dd49632127028f74d",
+      "torch_rng": "8b189e1501d43a0b73a575dac80cc6a0b02b2cbbf6e1221bd078e74ef2ee2689",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 169,
+      "mse": 0.005922972224652767,
+      "predictions": [
+        -0.03830498456954956,
+        0.9835370182991028,
+        0.953709602355957,
+        0.14075079560279846
+      ],
+      "parameters": "b0109123dc816b83b0526a2ae2aa81236e383ee84393447d1472a67870e91487",
+      "torch_rng": "3e4dcdb0d58a9718e7cd867a6c7aebad9f99b8b96f4b3983af9bea1cde9b4475",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 170,
+      "mse": 0.0017797265900298953,
+      "predictions": [
+        0.0737575888633728,
+        0.9736689329147339,
+        1.0312491655349731,
+        -0.002981424331665039
+      ],
+      "parameters": "2d71856f415923738320949fa2385e645530483f4a7e54e1dbe0b5fe5a09cd00",
+      "torch_rng": "7d427827fbbd46191b4a321d414909b050ae5b16ef77d0dd701ba8c9afb48fa5",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 171,
+      "mse": 0.0007558364886790514,
+      "predictions": [
+        -0.012212097644805908,
+        0.9552932977676392,
+        0.9768826961517334,
+        -0.01846921443939209
+      ],
+      "parameters": "36f68cbd996bd88c173386519e898b00ce7f6dffec3e6c6b91a1abc7717175e7",
+      "torch_rng": "da060bfeca0c4ec4a7cd7ebdf3cf7d06d3e2c1e7c31871a20765534ce71c5300",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 172,
+      "mse": 0.0014265242498368025,
+      "predictions": [
+        -0.011287689208984375,
+        0.949661910533905,
+        0.9844363331794739,
+        0.05293896794319153
+      ],
+      "parameters": "6110e54adb091d1a1a7e07cd9f6637aea8295797e623fa826e9b47750436866b",
+      "torch_rng": "908c700b39885e41a4d84bb2c9b5a73f24c259d9caad3c12e33aac51c05c4208",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 173,
+      "mse": 0.0006227136473171413,
+      "predictions": [
+        0.010830104351043701,
+        0.9645922183990479,
+        0.985016405582428,
+        -0.029922306537628174
+      ],
+      "parameters": "7cd655db73fb2bb8c2eb7e9a1543a2d1be5719ab44517b6b374e76d0bd49d9cb",
+      "torch_rng": "82ebb338506eac242148b24e883ae905042edd533ea9b144ef76c6fc5c8dbd73",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 174,
+      "mse": 0.0005920873954892159,
+      "predictions": [
+        0.034800440073013306,
+        0.9752684831619263,
+        1.0196533203125,
+        0.012624502182006836
+      ],
+      "parameters": "2da0e606f4dbef0b5a08b145055d9be230c3334b7fc1776a715c54eb8a28b954",
+      "torch_rng": "8c0d0ac23230242406f34f611dc5d7ae2e81d5bd13817d0c2a6c8593bd876c0f",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 175,
+      "mse": 0.0030942915473133326,
+      "predictions": [
+        0.04589596390724182,
+        0.9112823009490967,
+        1.0064454078674316,
+        -0.04856288433074951
+      ],
+      "parameters": "b675224cad5156ce3100858b1a8096a94c01695577dd15d2d54f54dfbb214a22",
+      "torch_rng": "3b4cc78b9b3a534842807f45ffc3e779ccfed1f2f8dc3adbfcd8cd6937e4d5b0",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 176,
+      "mse": 0.0018570756074041128,
+      "predictions": [
+        0.0382920503616333,
+        0.9420764446258545,
+        1.0159235000610352,
+        -0.0485110878944397
+      ],
+      "parameters": "b6c4d78c5caf627f65e5c9a927d483af0122b17417a08ec098ac95e015dcacd4",
+      "torch_rng": "a1f7c20d4e148d8fa3d82dfbad2f5b54231b70e8c60d5f9ce150df8ca1383bd2",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 177,
+      "mse": 0.0017822738736867905,
+      "predictions": [
+        0.04572856426239014,
+        1.0468237400054932,
+        1.0249228477478027,
+        -0.04716336727142334
+      ],
+      "parameters": "7d7fa524c474320f122b95ea834c8cb599d25373f03e4c104b094a04fbd113b1",
+      "torch_rng": "dc927ef759a816fab639f7ac0efe3ab96428a221e4bea224335af90c618e690c",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 178,
+      "mse": 0.004785290453583002,
+      "predictions": [
+        0.06313210725784302,
+        1.0610241889953613,
+        1.1063121557235718,
+        0.011369854211807251
+      ],
+      "parameters": "593c5322e22a5b0d0b3c344314a647aa72d958c9a21ca9b4f67b588dd27b7aa8",
+      "torch_rng": "f8d5346b38a3d6d6875ddf28d2d335c11af8096fc8c269fedf4b79c9dfdeb87a",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 179,
+      "mse": 0.002382648875936866,
+      "predictions": [
+        0.05442425608634949,
+        1.0535411834716797,
+        1.0452845096588135,
+        -0.04063558578491211
+      ],
+      "parameters": "de4b503c75a9487acbe2bc2aa3accae9877fcd55f2e2141ddbc18ad09a55ef0e",
+      "torch_rng": "35deca36ad76db4a6a61ae87a45abc6802174c62e38bb297b4900ede0d9111d6",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 180,
+      "mse": 0.0012300161179155111,
+      "predictions": [
+        0.02480188012123108,
+        1.0481799840927124,
+        0.9994206428527832,
+        -0.04453408718109131
+      ],
+      "parameters": "95f27a389ed94ee5037b37e4919a3ce32cbfb661101a5676809fde267773b0a6",
+      "torch_rng": "8cb97a7aaaaa21bec04ed0a24fa44d1ffcd8da982e5ea6be98782d337d291cd5",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 181,
+      "mse": 0.0013122375821694732,
+      "predictions": [
+        0.02243664860725403,
+        0.9425306916236877,
+        1.0159597396850586,
+        -0.034469008445739746
+      ],
+      "parameters": "6d95b217dfef4a27fff9f37274d48ef190e6365d6c7f86c77a0a09dcc2268604",
+      "torch_rng": "2db3e14610fa61ecb38c806a2d9703fc85b03d0ce8760a975c6464eae9b20222",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 182,
+      "mse": 0.019444024190306664,
+      "predictions": [
+        0.022239625453948975,
+        0.7352648377418518,
+        0.9162747859954834,
+        0.013670563697814941
+      ],
+      "parameters": "59c68a2cd79151c8742548cbc11317bb02a41e20dae74cebcc99d299b241affa",
+      "torch_rng": "a8b00e668cfe0adf545f0dcce375e4c1f9056c1d82ead28371f3cc5a69f26eff",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 183,
+      "mse": 0.0019681795965880156,
+      "predictions": [
+        0.026864290237426758,
+        1.0194907188415527,
+        0.9184861779212952,
+        -0.011253297328948975
+      ],
+      "parameters": "a5a6c36129d37c9064c283d66596846ceaf88ad19c174e1575189d2b29bfefc0",
+      "torch_rng": "3228c7ca82e1d2d7cdac849a009bf5de475fa231650592661645dad11286a364",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 184,
+      "mse": 0.002234990708529949,
+      "predictions": [
+        -0.0007390975952148438,
+        1.0283000469207764,
+        0.942839503288269,
+        0.06979399919509888
+      ],
+      "parameters": "c540bb12e6c14b456554fb23b85036ea2c9661364cb72dfce90a953485bfdae2",
+      "torch_rng": "339a8565ccb8e4b5737a04341b036a1128d45b5b22dfb3889144ac12c870e3c2",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 185,
+      "mse": 0.001684195245616138,
+      "predictions": [
+        -0.014328539371490479,
+        0.9197829961776733,
+        1.0063248872756958,
+        0.007530093193054199
+      ],
+      "parameters": "4b6abbe4333ce86d241632331db2de442a83c8e25fe3d85b0e9d756c6552e2a8",
+      "torch_rng": "f4c8007457831f299fed18561aafa6b54f37ed92a911ea7db4579f91e18e4a79",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 186,
+      "mse": 0.00030232348944991827,
+      "predictions": [
+        -0.029327213764190674,
+        1.0109719038009644,
+        1.010873556137085,
+        0.010516256093978882
+      ],
+      "parameters": "6907830c07d54594eb6a5e45ad971b6c6c10639418de808bd65322a6d94220a6",
+      "torch_rng": "9afcd224a6088e3fb8a8de23c502b0b8b52cb7bb1977f27af6468214b36451d1",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 187,
+      "mse": 0.0019155817572027445,
+      "predictions": [
+        -0.039949893951416016,
+        1.0653152465820312,
+        1.0393251180648804,
+        0.01593068242073059
+      ],
+      "parameters": "3809f5ab569b08233a4f3a4c7a5c3076b3719c310a8a108ee0ba7732b12d9027",
+      "torch_rng": "ea6484eabbd00b4684604dcc96f9ee9e9a684d84f9de65b0842515ea53bd6c2c",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 188,
+      "mse": 0.0017518041422590613,
+      "predictions": [
+        -0.046993255615234375,
+        1.0386464595794678,
+        1.0529022216796875,
+        0.02250903844833374
+      ],
+      "parameters": "99dd3d56fae75da15d2b19579b99e9bf0486e2ca9619b73c5bd5a9af8beb294a",
+      "torch_rng": "9392e828a0314f7d3b8a9f46b54160b4932653808a560d89d0359890d5b749e4",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 189,
+      "mse": 0.004086262080818415,
+      "predictions": [
+        -0.056749582290649414,
+        0.8999866247177124,
+        1.0499876737594604,
+        0.024961769580841064
+      ],
+      "parameters": "a18beb6efc5077327eb93520e26dce353943ad23fcc9493067cf8b9e85cd91aa",
+      "torch_rng": "1c223d15b5690113a744696d076a87f43a5a88014834612709a5e85a5651ba78",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 190,
+      "mse": 0.0035503236576914787,
+      "predictions": [
+        -0.03676527738571167,
+        1.0263181924819946,
+        1.0707335472106934,
+        0.0845797061920166
+      ],
+      "parameters": "cfc2cb6f2d080f673421d2882b3ea97fa345f0eaf6e6af65373b310130689670",
+      "torch_rng": "487ee2ad84c3e56f447a09883b453fb9c893e4ba1206b9b9c6cd955d2e5f73e4",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 191,
+      "mse": 0.0007864618673920631,
+      "predictions": [
+        -0.03531837463378906,
+        0.9911357164382935,
+        1.0356711149215698,
+        0.023397773504257202
+      ],
+      "parameters": "58fe3c560506570232f409a19326b8e6515ffb4238af0c4fc453e2043c47d546",
+      "torch_rng": "abadd4266d083406e47d40c7d253b90239413be5740760985229fac0a9dc7fb1",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 192,
+      "mse": 0.005669127684086561,
+      "predictions": [
+        0.047631144523620605,
+        0.8593780994415283,
+        0.9837848544120789,
+        0.019244074821472168
+      ],
+      "parameters": "de06e86df72f55c775d29d62dba6b468513f5d0de7c2a6eae7cdbe22b23720be",
+      "torch_rng": "b53eaaa6901f9b1cc48cf09f7e1704a84d53ff97da671d55ca2c004a031ab7ab",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 193,
+      "mse": 0.002164148259907961,
+      "predictions": [
+        -0.03754669427871704,
+        0.9965791702270508,
+        0.9885513782501221,
+        0.08428561687469482
+      ],
+      "parameters": "fd93a6304990da11b999a957be29f9508d74ce188472e5605f6f57c557671127",
+      "torch_rng": "16b3818037a27a62d827675943cb43fb09c2b7d15dfa1541876945716e2e670b",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 194,
+      "mse": 0.0008626433555036783,
+      "predictions": [
+        -0.032150447368621826,
+        1.010481595993042,
+        0.951978325843811,
+        -0.0009884834289550781
+      ],
+      "parameters": "9788643777c7cf25611dd21cf48a5a857d6d22314351683216c76405095a3f71",
+      "torch_rng": "b9e2cf5d4db5374abde9bb103a2060d3272b2e2888b97e43c0015bfa00ca417c",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 195,
+      "mse": 0.002263513393700123,
+      "predictions": [
+        -0.03456968069076538,
+        1.0244967937469482,
+        0.9504990577697754,
+        0.06934374570846558
+      ],
+      "parameters": "8dee87d27fa6d04d34cd319e6d416dd0c29c7eb770aa9a221d66b4b8517d98c6",
+      "torch_rng": "91ca142064fb58f751d04351509d44aeff149fe0d67ff8817a1e13a884d39cc2",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 196,
+      "mse": 0.003461335552856326,
+      "predictions": [
+        -0.024614810943603516,
+        1.0334185361862183,
+        0.9814887046813965,
+        0.10853564739227295
+      ],
+      "parameters": "cc84f636953297907c1b9f1b4bb07a60de312fd7d6e59a9d57d6b0e0ebe732bf",
+      "torch_rng": "2fca2ecac9f10d0d3c26edab321b9f5de2b2d27282a8b37493dff19580d5dda0",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 197,
+      "mse": 0.001133433310315013,
+      "predictions": [
+        -0.025168657302856445,
+        1.0307927131652832,
+        1.0292197465896606,
+        -0.045807063579559326
+      ],
+      "parameters": "3161a52fe4c1fe631d90fc62a68b9c84e4e03fd2cf511aefdeff4c65447809f8",
+      "torch_rng": "3beb24a068dbe4f3779be870697d61d1515087a2e58295323a120cbd4b153d5b",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 198,
+      "mse": 0.0018177726306021214,
+      "predictions": [
+        -0.03225904703140259,
+        0.9495692849159241,
+        0.9982039332389832,
+        -0.060695648193359375
+      ],
+      "parameters": "5bafdeac12d9e91cf94822fd152e825911e53521777c10d1fe38321539d08a15",
+      "torch_rng": "8f17d884dc10c699c8852c8c72d16af8df5b428edc4cdf02f7a67fa4550c340d",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 199,
+      "mse": 0.0011716124136000872,
+      "predictions": [
+        0.011047899723052979,
+        1.0321128368377686,
+        1.0001914501190186,
+        -0.05944007635116577
+      ],
+      "parameters": "fa2767a575f1ba812638eff213c78321af1a6a99294de4779ff1f878026f58fc",
+      "torch_rng": "b47839236186195ff7aa81b1ad2b73246fea596d466effd4478a70442a87cf42",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    },
+    {
+      "epoch": 200,
+      "mse": 0.0011809186544269323,
+      "predictions": [
+        -0.004677116870880127,
+        0.9602998495101929,
+        0.9729993939399719,
+        -0.04895573854446411
+      ],
+      "parameters": "ceebfefc1d744a1ba8396c63c9a7d7ed3d5e293c5c98a35dab546339fa441bbc",
+      "torch_rng": "1835725ef99a9cb70dba0d61db17b24e1377946df4e373ccb36b1ceabe98110d",
+      "python_rng": "46f264538534643a886ab78f16bc37e702ec6d58f1c40cc2c2c5607abc7b3900",
+      "numpy_rng": "adce276c25e97ea16273335fce72f626fac07c5c37b3d517bfc1714631544280"
+    }
+  ]
+}

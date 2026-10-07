@@ -1,0 +1,6 @@
+{"nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy", "phase": "setup", "outcome": "passed", "seconds": 137.67582216701703, "failure": null}
+{"nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy", "phase": "call", "outcome": "passed", "seconds": 0.00043254200136289, "failure": null}
+{"nodeid": "test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy", "phase": "teardown", "outcome": "passed", "seconds": 0.00014150002971291542, "failure": null}
+{"nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct", "phase": "setup", "outcome": "passed", "seconds": 0.0002282079658471048, "failure": null}
+{"nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct", "phase": "call", "outcome": "passed", "seconds": 0.00020358304027467966, "failure": null}
+{"nodeid": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct", "phase": "teardown", "outcome": "passed", "seconds": 0.09252016700338572, "failure": null}

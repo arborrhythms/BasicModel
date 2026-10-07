@@ -1,0 +1,41 @@
+{
+  "verified_at": "2026-10-06T20:35:24.237467+00:00",
+  "source_files": 705,
+  "source_manifest_sha256": "3fd07f0cd516da3102867207614e11a9153638d37057bcc82a8c7ff821689106",
+  "source_archive_sha256": "822b49c8b966394af66846a60d850ada329f11175cd7c3570fedf31c8ae3e092",
+  "source_and_archive_matched": true,
+  "frozen_helpers": 180,
+  "frozen_helpers_matched": true,
+  "prior_receipt_files": 6523,
+  "prior_receipts_unchanged": true,
+  "untouched_documents": {
+    "doc/Philosophy.md": "916a293ce48f17fb6dc37d5b07906ebf56c9f8b0dfc937363640792801d51588",
+    "doc/plans/2026-10-05-operators-update.md": "502a713f7b15eef237570f0871b55d4a1166dcfb4c5a19263fefa19358bb9179"
+  },
+  "complete_test_ports": 5,
+  "changed_seed_calls": [],
+  "measurement_inputs_matched": true,
+  "supplemental_helpers": {
+    "contract-check-source.py.txt": "a49066bfcd57c726b0eff9d677798ed005b0fba15266a27b4c883c89741e7e3b",
+    "detail-audit-source.py.txt": "f7c5bf9f1bd0370be475c1194e1c16c8ebd361dc808b626a2de35b7eaac47e78",
+    "document-results-source.py.txt": "035d722d599ce122e473c415759d4a6303b8b5a5618f58e99ddbe6e6797e0dc4",
+    "full-sweep/continuation-source.py.txt": "44fdbd7cb789ba777b0ace6dd70e49bc00d7d7e36912a6a68dbab01abb8dde46",
+    "miss-costs-source.py.txt": "c295ad17895a8c7b92fbf08b21669dc3c91fd9d150b8a8ee8bfee92be71434e6",
+    "reader-report-source.py.txt": "b888827b666f4edca0d681a950517b7ee03e125707702cd978670cb2748f91c4",
+    "receipt-source.py.txt": "7676efb43f12e209f9687b42d3c88c1b9bf4be44e92dbc0d76e2c5f37d655bc3",
+    "results-tables-source.py.txt": "212c75eee3351054bf7bffc957224a4139e7d70f9986a791aa98926200ca0b62",
+    "review-verify-source.py.txt": "b438ca0414ea6d9116203190bd52e3ba1644f04fd2eaa1d137f0db093b681ea5"
+  },
+  "head": "73cd7b71baeb64135c1e2e841b9bfc321339d8bc",
+  "parent_head": "c9670b545ff88ee1b8176aa44f6c192ad84b597c",
+  "index_empty": true,
+  "parent_index_empty": true,
+  "committed": false,
+  "pushed": false,
+  "standing_gate_passed": true,
+  "gate_trainings": 30,
+  "retries": 0,
+  "replacements": 0,
+  "status": "M bin/Attention.py\n M bin/ClauseJournal.py\n M bin/Interpret.py\n M bin/Layers.py\n M bin/Meaning.py\n M bin/MereologicalCodes.py\n M bin/ModelAttention.py\n M bin/Models.py\n M bin/SentenceCompose.py\n M bin/WalkTrials.py\n M doc/Architecture.md\n M doc/FutureWork.md\n M doc/GradientFlow.md\n M doc/Philosophy.md\n M doc/specs/2026-09-29-operator-catalogue.md\n M test/objective_conflicts_probe.py\n M test/test_arithmetic_isolation.py\n M test/test_compose_pair_driver.py\n M test/test_free_reconstruction.py\n M test/test_generation_catalog.py\n M test/test_grammar_object_leaves.py\n M test/test_grammar_word_learning.py\n M test/test_joint_objectives.py\n M test/test_negative_expectation.py\n M test/test_one_attention.py\n M test/test_operators_round1.py\n M test/test_output_path_supervised.py\n M test/test_reconstruction_precedence.py\n M test/test_review14_contracts.py\n M test/test_runtime_split_ingestion.py\n M test/test_sentence_compose.py\n M test/test_sentence_gradients.py\n M test/test_supplied_answer_training.py\n M todo.md\n?? bin/AnswerComparison.py\n?? bin/SentenceCredit.py\n?? doc/benchmarks/2026-10-06-credit-loop-toy/\n?? doc/benchmarks/2026-10-06-operators-round2/\n?? doc/benchmarks/2026-10-06-operators-round2b/\n?? doc/benchmarks/2026-10-06-operators-round2c/\n?? doc/benchmarks/2026-10-06-operators-round2d/\n?? doc/benchmarks/2026-10-06-operators-round2e/\n?? doc/plans/2026-10-05-operators-update.md\n?? test/test_operators_round2.py\n?? test/test_operators_round2b.py\n?? test/test_operators_round2c.py\n?? test/test_operators_round2d.py\n?? test/test_operators_round2e.py",
+  "parent_status": "m basicmodel\n M nanochat"
+}

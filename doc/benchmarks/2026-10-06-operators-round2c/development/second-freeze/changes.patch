@@ -1,0 +1,539 @@
+--- round2b/bin/Interpret.py
++++ round2c/bin/Interpret.py
+@@ -192,13 +192,22 @@
+         self._field_pending.discard(word)
+         return row
+ 
++    def activate(self, atoms, activation):
++        """Magnitude on form; signed evidence on the contextual complement."""
++        bank = getattr(self.owner, 'similarity_codebook', None)
++        derived = getattr(bank, 'mereology', None)
++        width = atoms.shape[-1] if derived is None else derived.percept_event_width
++        value = activation.unsqueeze(-1)
++        return torch.cat((atoms[..., :width] * value.abs(),
++                          atoms[..., width:] * value), -1)
++
+     def forward(self, word, *, order=None, occurrence=None, selected=None,
+                 object_atoms=None, activation=None):
+         if torch.is_tensor(word):
+             if object_atoms is None or activation is None:
+                 raise ValueError('interpret tensor face requires the resolved object bank')
+             width = object_atoms.shape[-1]
+-            return torch.cat((object_atoms * activation.unsqueeze(-1), word[..., width:]), -1)
++            return torch.cat((self.activate(object_atoms, activation), word[..., width:]), -1)
+         from Spaces import _concept_alloc_of
+         cs, word = self.owner, int(word)
+         alloc, index = _concept_alloc_of(cs), cs.definitions
+@@ -287,7 +296,7 @@
+             if word_atoms is None or activation is None:
+                 raise ValueError('interpret reverse requires the owned word bank')
+             width = word_atoms.shape[-1]
+-            return torch.cat((word_atoms * activation.unsqueeze(-1), obj[..., width:]), -1)
++            return torch.cat((self.activate(word_atoms, activation), obj[..., width:]), -1)
+         words = self.owner.definitions.words(int(obj))
+         if len(words) != 1:
+             raise ValueError('object requires a lexical selection')
+--- round2b/bin/Models.py
++++ round2c/bin/Models.py
+@@ -2705,8 +2705,12 @@
+         if optimizer is None:
+             raise RuntimeError('owned backward requires the live optimizer')
+         registry = self._sentence_cost_registry if sentence else self.errors
++        reader = getattr(self, '_sentence_reader_costs', None) if sentence else None
++        rows = getattr(self, '_sentence_reader_rows', None) if sentence else None
+         costs = registry_costs(registry, reader_rows=(
+-            getattr(self, '_sentence_reader_rows', None) if sentence else None))
++            torch.zeros_like(registry.row_mask) if reader is not None else rows))
++        if reader is not None:
++            costs.update(reader)
+         owners = self.objective_parameter_groups(optimizer)
+         scale = 1. if amp_scaler is None else amp_scaler.get_scale()
+         if amp_scaler is not None:
+@@ -11935,7 +11939,7 @@
+         """``[B, W, D]`` retained constituent references: the leaves the
+         forward pushed, each word's symbol row's dictionary atom (its
+         object concept's where it has one, else its word concept's) scaled
+-        by the word's signed activation (the 0-D symbol), on the content
++        by activation magnitude on form and signed activation on meaning,
+         channels (zeros elsewhere and where a word has no row)."""
+         if getattr(self, '_attention_pole_representation', False):
+             from ModelAttention import read_poles
+@@ -11969,7 +11973,7 @@
+         if torch.is_tensor(activations) and int(activations.numel()) >= B * k:
+             act = activations.reshape(B, -1)[:, :k].to(
+                 device=like.device, dtype=like.dtype).unsqueeze(-1)
+-            content = content * act
++            content = self._concept_owner().interpret.activate(content, act.squeeze(-1))
+         present = (rows[:, :k] >= 0).to(device=like.device, dtype=like.dtype).unsqueeze(-1)
+         content = content * present
+         return torch.cat(
+@@ -13757,6 +13761,7 @@
+         self._sentence_answer_questions = ()
+         self._sentence_answer_cost = None
+         self._sentence_run_active = True
++        self._sentence_reader_updates = 0
+         self._open_sentence_slot = None
+         self._sentence_reconstruction = self._sentence_ends and self.reconstruct_in_loop
+         keep_ideas = self._recon_keep_ideas
+@@ -14363,7 +14368,10 @@
+                 weight=output_weight,
+                 space="OutputSpace", category="prediction", trained=False,
+             )
+-            self.errors.merge(output_errors)
++            # Supplied answers have already trained their reader once at
++            # each sentence closing. The batch-end read is reporting only.
++            self.errors.merge(output_errors, trained=(False if
++                getattr(self, '_sentence_reader_updates', 0) else None))
+ 
+             # IR masked-LM loss: compare the post-body perceptual event
+             # at masked positions against the pre-mask embedding the
+@@ -14751,6 +14759,8 @@
+             totalLoss = self.errors.total()
+             if totalLoss is None:
+                 totalLoss = lossOut + lossIn * 0
++                if getattr(self, '_sentence_reader_updates', 0):
++                    totalLoss = totalLoss.detach()
+             gradient_objectives = {name: self.errors.total(objective=name)
+                 for name in ('reconstruction', 'output', 'expectation')} if train else None
+ 
+@@ -19791,6 +19801,10 @@
+         if torch.is_tensor(object_rows) and torch.is_tensor(concept_rows):
+             rows = torch.where(object_rows >= 0, object_rows, concept_rows)
+             orders = torch.where(object_rows >= 0, isp._ar_word_object_orders, isp._ar_word_concept_orders)
++            grammar_rows = getattr(isp, '_ar_grammar_object_rows', None)
++            if torch.is_tensor(grammar_rows):
++                rows = torch.where(grammar_rows >= 0, grammar_rows, rows)
++                orders = torch.where(grammar_rows >= 0, isp._ar_grammar_object_orders, orders)
+             from ModelAttention import reference_evidence
+             self.symbolSpace.commit_word_reference_slab(rows, lang[0],
+                 isp._word_active_mask, orders=orders,
+@@ -20066,7 +20080,7 @@
+         destination = registry
+         # Keep the supplied answer distinct from generation lessons. Its
+         # detached error enters the comparison and remains observable;
+-        # the reader trains on both trials' active rows, with both roots detached.
++        # the reader's single update is assembled after both trials are scored.
+         registry = Error(row_mask=active)
+         target = getattr(self, '_sentence_supplied_answers', None)
+         if (not getattr(self, '_sentence_training', False)
+@@ -20095,6 +20109,7 @@
+                         mode=meaning.mode, polarity=meaning.polarity, sentence_kind='idea')
+                 if clause is not None and clause.relation is None else meaning
+                 for meaning, clause in zip(observation['meanings'], observation['clauses'])]
++            meanings = [None if meaning is None else meaning.detached() for meaning in meanings]
+             fields = tuple(None if value is None else SentenceEndState(value) for value in meanings)
+             idea = torch.stack([root[b].new_zeros(3, root.shape[-1])
+                                 if value is None else value.roles
+@@ -20469,6 +20484,7 @@
+             observations, predictions, paths = [], [], []
+             paired_costs, cost_parts, attention_trials = [], [], []
+             pending_steps = []
++            reader_registries = []
+             greedy_attention = getattr(self, '_attention_greedy', None)
+             attention_base = getattr(self, '_attention_words', None)
+             attention_spent = words.new_tensor([m.spent for m in getattr(self,'_attention_meters',())],dtype=torch.long)
+@@ -20556,6 +20572,7 @@
+                 if self._sentence_training and torch.is_grad_enabled():
+                     pending_steps[-1] = (*pending_steps[-1], self._sentence_cost_registry,
+                         observation['decomposition_loss'], observation['walk_loss'])
++                    reader_registries.append(self._sentence_cost_registry)
+                 from SentenceCredit import components
+                 parts = components(self._sentence_cost_registry,
+                     self._sentence_expectation_comparison, path[1][9][:,sid].sum(-1)*0,
+@@ -20572,6 +20589,12 @@
+                 trial, pullback, path, registry, decomposition_loss, walk_loss = pending_steps.pop(0)
+                 self._sentence_trial, self._sentence_pullback = trial, pullback
+                 self._sentence_cost_registry = registry
++                from SentenceCredit import reader_weights, reader_costs
++                self._sentence_reader_weights = reader_weights(
++                    torch.stack(cost_parts, 1), present, self._sentence_departure)
++                self._sentence_reader_rows = present & (trial == 'explore')
++                self._sentence_reader_costs = (reader_costs(reader_registries,
++                    self._sentence_reader_weights) if trial == 'explore' else {})
+                 if greedy_attention is not None:
+                     from ModelAttention import handoff
+                     handoff(self, attention_trials[int(trial == 'explore')])
+@@ -20587,15 +20610,18 @@
+                 if trial == 'explore':
+                     loss = loss + self._compose_score_function_loss(path, torch.stack(paired_costs, -1))
+                 self._sentence_train_step(loss)
++                if any(value.requires_grad for value in self._sentence_reader_costs.values()):
++                    self._sentence_reader_updates += 1
+             try:
+                 (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+                     train_trial, active=present,
+-                    training=self._sentence_training and torch.is_grad_enabled(),
+-                    before_step=lambda rows: setattr(self, '_sentence_reader_rows', rows))
++                    training=self._sentence_training and torch.is_grad_enabled())
+             finally:
+                 pending_steps.clear()
++                reader_registries.clear()
+                 self._sentence_pullback = None
+                 self._sentence_reader_rows = None
++                self._sentence_reader_costs = None
+                 self._compose_exploit_actions = self._compose_forced_slots = None
+                 self._compose_prefix_slots = None
+             if len(paths)==2:
+@@ -21582,6 +21608,9 @@
+             object_rows >= 0, object_rows, concept_rows)
+         symbol_orders = torch.where(
+             object_rows >= 0, object_orders, concept_orders)
++        if torch.is_tensor(grammar_rows):
++            symbol_rows = torch.where(grammar_rows >= 0, grammar_rows, symbol_rows)
++            symbol_orders = torch.where(grammar_rows >= 0, grammar_orders, symbol_orders)
+         from ModelAttention import reference_evidence
+         ss.commit_word_reference_slab(
+             symbol_rows, final[8], active, orders=symbol_orders,
+--- round2b/bin/SentenceCompose.py
++++ round2c/bin/SentenceCompose.py
+@@ -134,8 +134,9 @@
+     ``score`` returns a cost per row and the candidate's scratch commit value.
+     Selection costs contain reconstruction only; strict improvement keeps
+     explore and ties keep greedy. ``before_step`` receives all active rows:
+-    the detached reader trains on both trials. Reconstruction and expectation
+-    train on both trials, each with its original forward parameter values.
++    reconstruction and expectation train on both trials, each with its original
++    forward parameter values. The caller combines the detached reader losses
++    into its single update after the departure walk and keep are known.
+     The caller publishes the returned state before perceiving the next sentence.
+     """
+     exploit = compose(cache, None)
+--- round2b/bin/SentenceCredit.py
++++ round2c/bin/SentenceCredit.py
+@@ -85,3 +85,23 @@
+               if bool(trained.any()) else probabilities.new_zeros(len(costs)))
+     return result, dict(costs=costs.detach(), advantage=advantage, mask=mask.detach(),
+                         probabilities=probabilities.detach(), scale=scale)
++
++
++def reader_weights(parts, active, draw):
++    """One reader update: mean compose roots, otherwise the R-kept root."""
++    wins = active & (parts[:, 1, 0] < parts[:, 0, 0])
++    compose = (torch.zeros_like(active) if draw is None else
++               active & (draw['compose_round'] >= 0))
++    explore = torch.where(compose, .5, wins.to(parts.dtype)) * active
++    return torch.stack((active.to(parts.dtype) - explore, explore), -1)
++
++
++def reader_costs(registries, weights):
++    """Combine the existing output-owned losses without changing their owners."""
++    from ObjectiveOwnership import registry_costs
++    result = {}
++    for registry, rows in zip(registries, weights.unbind(-1), strict=True):
++        for name, value in registry_costs(registry, reader_rows=rows).items():
++            if name in ('output', 'penalty.output'):
++                result[name] = result.get(name, 0) + value
++    return result
+--- round2b/test/objective_conflicts_probe.py
++++ round2c/test/objective_conflicts_probe.py
+@@ -607,7 +607,7 @@
+     def metadata(self,model):
+         write('weights.json',dict(configuration=args.config, contract='§15: one objective writer per parameter',
+             terms=model.errors.breakdown(), trial_terms=getattr(model, '_sentence_cost_registry', Layers.Error()).breakdown(),
+-            trial_selection='explore R < greedy R; ties keep greedy; answer cost and reader training count both trials rows; SCG credits total R+E+A',
++            trial_selection='explore R < greedy R; ties keep greedy; answer comparison counts both trials; one reader step: mean compose roots, kept root for narrowing; SCG credits total R+E+A',
+             normalizers='Error registry: squared error / detached target energy; CE / log K; penalties separate',
+             regularizers='Own strengths; concept_readout_l1 is a detached report of the proximal step',
+             training_batches=self.training_batches,evaluation_batches=self.evaluation_batches))
+--- round2b/test/test_arithmetic_isolation.py
++++ round2c/test/test_arithmetic_isolation.py
+@@ -131,7 +131,8 @@
+         result, _ = model.runBatch(train=True, batchSize=2, split='train',
+             optimizer=optimizer, batch_override=batch,
+             questions=(What.supervised(0), What.supervised(1)))
+-        assert steps == ['exploit', 'explore', 'batch']
++        assert steps == ['exploit', 'explore']
++        assert model._sentence_reader_updates == 1
+         assert bool(torch.isfinite(result.lossOut))
+         assert model._last_answer_mask.tolist() == [True, True]
+     finally:
+--- round2b/test/test_generation_catalog.py
++++ round2c/test/test_generation_catalog.py
+@@ -223,11 +223,16 @@
+         return record(name, value, **kwargs)
+ 
+     def check_gradients(total, amp_scaler=None, **kwargs):
+-        if getattr(model, '_sentence_backward', False):
++        sentence = getattr(model, '_sentence_backward', False)
++        if sentence:
+             assert 'output' not in recorded
+-            return backward(total, amp_scaler, **kwargs)
++            reader = model._sentence_reader_costs
++            if not reader:
++                return backward(total, amp_scaler, **kwargs)
++            loss = reader['output']
++        else:
++            loss = recorded['output']
+         construction = model._last_answer_construction
+-        loss = recorded["output"]
+         assert loss.requires_grad and float(loss.detach()) > 0
+         assert all(not field.end_state.requires_grad
+                    for field in construction.derivation.sentence_states if field is not None)
+@@ -263,10 +268,11 @@
+                        batch_override=batch, questions=(What.supervised(0), What.supervised(1)))
+         owned = [id(p) for group in optimizer.param_groups for p in group["params"]]
+         stepped = [(name, norm) for name, p, before, norm in observed["reached"]
+-                   if not torch.equal(p, before) and optimizer.state.get(p)]
++                   if 'output' in model._objective_gradient_writers.get(id(p), ())]
+         # Generation may differentiate through an inverse to train its
+-        # conditioner; the owned backward cannot step that inverse's weights.
++        # conditioner; only reconstruction may write that inverse's weights.
+         assert not stepped
++        assert model._sentence_reader_updates == 1
+         conditioner, before = observed["conditioner"]
+         assert not torch.equal(conditioner, before) and optimizer.state.get(conditioner)
+         assert all(owned.count(id(p)) == 1 for _, p, _, _ in observed["reached"])
+--- round2b/test/test_joint_objectives.py
++++ round2c/test/test_joint_objectives.py
+@@ -225,7 +225,7 @@
+ @pytest.mark.usefixtures('eager_reading')
+ @pytest.mark.parametrize('config_name, expected', [
+     ('MM_xor.xml', ['batch']),
+-    ('MM_xor_loopback.xml', ['exploit', 'explore', 'batch']),
++    ('MM_xor_loopback.xml', ['exploit', 'explore']),
+ ])
+ def test_real_runbatch_steps_sentence_trials_then_batch_only_objectives(monkeypatch, config_name, expected):
+     import Models
+--- round2b/test/test_operators_round2.py
++++ round2c/test/test_operators_round2.py
+@@ -152,7 +152,7 @@
+         model.End();model.symbolSpace.soft_reset()
+ 
+ 
+-def test_not_handoff_changes_leaf_closing_and_trial_cost(monkeypatch):
++def test_not_handoff_changes_pole_and_meaning_but_never_form(monkeypatch):
+     from dataclasses import replace
+     from Models import BasicModel
+     from test_selected_nested_meaning import _nested
+@@ -176,10 +176,17 @@
+     torch.testing.assert_close(explore[0],greedy[0],rtol=0,atol=0)
+     assert explore[3].item()==-1 and greedy[3].item()==1
+     positive=finish_reading(language,replace(leaf,leaf_evidence=torch.tensor([[1.,0.]])),registry=registry)
+-    negative=finish_reading(language,replace(leaf,leaves=-code,leaf_evidence=torch.tensor([[0.,1.]])),registry=registry)
++    negative=finish_reading(language,replace(leaf,leaf_evidence=torch.tensor([[0.,1.]])),registry=registry)
+     assert positive.meaning.polarity and not negative.meaning.polarity
+-    target=(greedy[6]*greedy[3]).detach()
+-    assert (explore[6]*explore[3]-target).square().sum() > (greedy[6]*greedy[3]-target).square().sum()
++    from Interpret import InterpretLayer
++    owner = SimpleNamespace(similarity_codebook=SimpleNamespace(mereology=SimpleNamespace(percept_event_width=1)))
++    interpret = InterpretLayer(conceptualSpace=owner)
++    atoms = torch.tensor([[.8, .6]])
++    positive_code = interpret.activate(atoms, greedy[3].reshape(-1))
++    negative_code = interpret.activate(atoms, explore[3].reshape(-1))
++    torch.testing.assert_close(positive_code[:, :1], negative_code[:, :1], rtol=0, atol=0)
++    torch.testing.assert_close(positive_code[:, 1:], -negative_code[:, 1:], rtol=0, atol=0)
++    assert (negative_code-positive_code).square().sum() > 0
+ 
+ 
+ def test_presented_answer_uses_committed_root_and_keeps_reader_cut():
+--- round2b/test/test_operators_round2b.py
++++ round2c/test/test_operators_round2b.py
+@@ -3,16 +3,35 @@
+ import torch
+ 
+ 
+-def test_reader_trains_on_both_trials_all_active_rows():
+-    from SentenceCompose import sentence_pair
+-    active = torch.tensor([True, True, False])
+-    seen = []
+-    sentence_pair(None, lambda _, prior: prior is not None,
+-        lambda other, _: (torch.tensor([1., 0., 0.] if other else [0., 1., 0.]),
+-                          torch.full((3,), float(other))),
+-        lambda _: None, active=active, before_step=lambda rows: seen.append(rows.clone()))
+-    assert len(seen) == 2
+-    assert all(torch.equal(rows, active) for rows in seen)
++def test_reader_mean_for_compose_kept_for_narrowing_and_one_owned_step():
++    from Layers import Error
++    from SentenceCredit import reader_weights, reader_costs
++    from ObjectiveOwnership import backward_owned
++    active = torch.tensor([True, True, True, True, False])
++    parts = torch.zeros(5, 2, 3)
++    parts[:, 0, 0] = torch.tensor([0., 1., 0., 1., 1.])
++    parts[:, 1, 0] = torch.tensor([1., 0., 0., 0., 0.])
++    draw = dict(compose_round=torch.tensor([0, 0, -1, -1, -1]))
++    weights = reader_weights(parts, active, draw)
++    torch.testing.assert_close(weights, torch.tensor([[.5,.5],[.5,.5],[1.,0.],[0.,1.],[0.,0.]]))
++    parameter = torch.nn.Parameter(torch.tensor(2.))
++    optimizer = torch.optim.Adam([parameter], lr=.01)
++    roots = [torch.arange(1., 6., requires_grad=True), torch.arange(6., 11., requires_grad=True)]
++    registries = []
++    for root in roots:
++        registry = Error(row_mask=active)
++        registry.error('answer', (parameter * root.detach()).square(), 1., category='output')
++        registries.append(registry)
++    costs = reader_costs(registries, weights)
++    expected = sum((parameter * root.detach()).square() * weights[:, i] for i, root in enumerate(roots)).sum() / active.sum()
++    torch.testing.assert_close(costs['output'], expected)
++    backward_owned({}, {'output': (parameter,)})
++    optimizer.step()
++    assert parameter not in optimizer.state
++    backward_owned(costs, {'output': (parameter,)})
++    optimizer.step()
++    assert optimizer.state[parameter]['step'] == 1
++    assert all(root.grad is None for root in roots)
+ 
+ 
+ def test_pole_only_handoff_preserves_magnitude_and_native_reference_evidence():
+--- round2b/test/test_operators_round2c.py
++++ round2c/test/test_operators_round2c.py
+@@ -0,0 +1,94 @@
++"""Unsigned form interpretation and one answer-owner update per sentence."""
++from types import SimpleNamespace
++import pytest
++import torch
++
++
++def test_interpret_both_directions_preserve_form_and_occurrence_sign_only_meaning():
++    from Interpret import InterpretLayer
++    owner=SimpleNamespace(similarity_codebook=SimpleNamespace(mereology=SimpleNamespace(percept_event_width=2)))
++    layer=InterpretLayer(conceptualSpace=owner)
++    atoms=torch.tensor([[.8,.4,.6,.2]],requires_grad=True)
++    activation=torch.tensor([-.5],requires_grad=True)
++    event=torch.tensor([[0.,0.,0.,0.,7.,9.]])
++    expected=torch.tensor([[.4,.2,-.3,-.1,7.,9.]])
++    torch.testing.assert_close(layer(event,object_atoms=atoms,activation=activation),expected)
++    torch.testing.assert_close(layer.reverse(event,word_atoms=atoms,activation=activation),expected)
++    owner.similarity_codebook.mereology.percept_event_width=4
++    torch.testing.assert_close(layer(event,object_atoms=atoms,activation=activation),
++                              layer(event,object_atoms=atoms,activation=-activation),rtol=0,atol=0)
++
++
++@pytest.mark.parametrize('config',['XOR_grammar','MM_grammar'])
++@pytest.mark.parametrize('walk',['narrowing','compose'])
++def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch):
++    from test_mm_xor import _fresh_model
++    from Language import OperationSelectionLayer
++    import SentenceCredit
++    model,_,data=_fresh_model('data/'+config+'.xml')
++    original_attend=OperationSelectionLayer.attend
++    original_forward=OperationSelectionLayer.forward
++    original_departure=SentenceCredit.departure
++    def depart(narrowing,compose,**kwargs):
++        draw=original_departure(narrowing,compose,**kwargs)
++        if walk=='narrowing':
++            draw.update(round=torch.zeros_like(draw['round']),narrowing=torch.ones_like(draw['narrowing']),
++                        attention_round=torch.zeros_like(draw['round']),compose_round=torch.full_like(draw['round'],-1))
++        else:
++            chosen=compose.long().argmax(-1)
++            draw.update(round=chosen+narrowing.alternatives.shape[1],narrowing=torch.zeros_like(draw['narrowing']),
++                        attention_round=torch.full_like(chosen,-1),compose_round=chosen)
++        return draw
++    def attend(module,keys,legal,space,**kwargs):
++        available=legal.flatten(1)
++        action=torch.full((len(keys),),available.shape[1],dtype=torch.long)
++        for op in (0,2,1):
++            slots=legal[:,:,op]
++            action=torch.where(slots.any(-1),slots.long().argmax(-1)*6+op,action)
++        mask=kwargs.get('masked_action')
++        if mask is not None:
++            action=torch.where(mask>=0,torch.full_like(action,5),action)
++        kwargs['replay_action']=action
++        return original_attend(module,keys,legal,space,**kwargs)
++    def disjunction(module,x,**kwargs):
++        stop=(x.shape[1]-1)*module.r_reduce+x.shape[1]*module.r_apply
++        depth=kwargs.get('depth',torch.full((len(x),),x.shape[1]))
++        op=torch.ones_like(depth)
++        if walk=='compose' and kwargs.get('masked_action') is not None:
++            op=torch.where(kwargs['masked_action']>=0,0,op)
++        kwargs['replay_action']=torch.where(depth>1,op,stop)
++        return original_forward(module,x,**kwargs)
++    monkeypatch.setattr(SentenceCredit,'departure',depart)
++    monkeypatch.setattr(OperationSelectionLayer,'attend',attend)
++    monkeypatch.setattr(OperationSelectionLayer,'forward',disjunction)
++    snapshots=[]
++    original=model._sentence_path_cost
++    def cost(state,*args,**kwargs):
++        result=original(state,*args,**kwargs)
++        snapshots.append(dict(root=state[1][9].detach().clone(),
++            activation=state[1][0].detach().clone(), meanings=result[2]['meanings'], entries=result[2]['entries']))
++        return result
++    monkeypatch.setattr(model,'_sentence_path_cost',cost)
++    try:
++        optimizer=model.getOptimizer(lr=.01)
++        model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
++        assert len(snapshots)==2
++        first,second=snapshots
++        audit=model._last_sentence_credit
++        if walk=='narrowing':
++            assert (first['activation']>0).any() and (second['activation']<0).any()
++            torch.testing.assert_close(first['root'],second['root'],rtol=0,atol=0)
++            assert all(a.polarity and not b.polarity for a,b in zip(first['meanings'],second['meanings']))
++            torch.testing.assert_close(audit['components'][:,0],audit['components'][:,1],rtol=0,atol=0)
++            assert audit['advantage'].eq(0).all() and not audit['wins'].any()
++            assert model._sentence_reader_weights.tolist()==[[1.,0.]]*4
++        else:
++            torch.testing.assert_close(first['activation'],second['activation'],rtol=0,atol=0)
++            assert not torch.equal(first['root'],second['root'])
++            assert model._sentence_reader_weights.tolist()==[[.5,.5]]*4
++        assert model._sentence_reader_updates==1
++        states=[optimizer.state[p]['step'] for p in model.objective_parameter_groups(optimizer)['output']
++                if p in optimizer.state and 'step' in optimizer.state[p]]
++        assert states and all(float(s)==1 for s in states)
++    finally:
++        model.End();model.symbolSpace.soft_reset()
+--- round2b/test/test_output_path_supervised.py
++++ round2c/test/test_output_path_supervised.py
+@@ -212,6 +212,13 @@
+     initial_values = [p.detach().clone() for p in initial_params]
+     observed, recorded = {}, {}
+     backward, record = m._backward_training_loss, m.record_loss
++    constructions=[]
++    reverse_output=m.reverseOutput
++    def capture_construction(*args, **kwargs):
++        value=reverse_output(*args, **kwargs)
++        constructions.append(value)
++        return value
++    m.reverseOutput=capture_construction
+ 
+     def record_probe(name, value, **kwargs):
+         recorded[name] = value
+@@ -225,17 +232,27 @@
+         return record(name, value, **kwargs)
+ 
+     def backward_probe(total, amp_scaler=None, **kwargs):
+-        if getattr(m, '_sentence_backward', False):
++        sentence = getattr(m, '_sentence_backward', False)
++        if sentence:
+             assert 'output' not in recorded
+-            return backward(total, amp_scaler, **kwargs)
++            reader = m._sentence_reader_costs
++            if not reader:
++                return backward(total, amp_scaler, **kwargs)
++            total = reader['output']
+         params = _dedicated_answer_parameters(m)
+         observed["params"] = params
+         initial = dict(zip(map(id, initial_params), initial_values))
+         observed["before"] = [initial.get(id(p), p.detach().clone()) for p in params]
+         observed["total_grads"] = torch.autograd.grad(
+             total, params, retain_graph=True, allow_unused=True)
++        answer_loss = total if sentence else recorded["output"]
+         c = m._last_answer_construction
+-        answer_loss = recorded["output"]
++        if sentence:
++            candidates=[value for value in constructions if value.actual.requires_grad]
++            grads=torch.autograd.grad(answer_loss, [value.actual for value in candidates],
++                                      retain_graph=True, allow_unused=True)
++            c=next((value for value,grad in zip(candidates,grads)
++                    if grad is not None and bool(grad.any())),c)
+         observed["answer_loss"] = float(answer_loss.detach())
+         observed["answer_requires_grad"] = answer_loss.requires_grad
+         active = m.question_conditioners[str(m.conceptualSpace.stm.concept_dim)].weight
+@@ -258,6 +275,7 @@
+                    batch_override=batch, questions=questions)
+     finally:
+         m.record_loss, m._backward_training_loss = record, backward
++        m.reverseOutput=reverse_output
+     if "answer_loss" not in observed:
+         # A no-answer batch can finish with trial steps alone. Keep the same
+         # no-credit and unchanged-weight assertions without inventing a step.
+--- round2b/test/test_review14_contracts.py
++++ round2c/test/test_review14_contracts.py
+@@ -145,7 +145,7 @@
+     from pathlib import Path
+     from bounded_tests import run_guarded, GIB
+     root=Path(__file__).resolve().parents[1]
+-    receipt=root/'doc/benchmarks/2026-10-06-operators-round2b'
++    receipt=root/'doc/benchmarks/2026-10-06-operators-round2c'
+     prior=root/'doc/benchmarks/2026-10-03-operators-attention'
+     env=os.environ.copy()
+     env.update(PYTEST_PLUGINS='operators_gate_observer', MODEL_COMPILE='none',

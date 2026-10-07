@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/report_operators_2b.py", line 159, in <module>
+    readme+=f"| `{k}` | {aggregate['xor']['pole_consumers'][k]} | {aggregate['sum']['pole_consumers'][k]} | {aggregate['mm']['pole_consumers'][k]} |\n"
+                                                                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+KeyError: '_attention_sentence_payload'

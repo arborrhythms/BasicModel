@@ -1,0 +1,32 @@
+{
+  "selectors": [
+    "test/test_operators_round2.py",
+    "test/test_operators_round1.py",
+    "test/test_one_attention.py",
+    "test/test_sentence_compose.py",
+    "test/test_sentence_comparison.py",
+    "test/test_sentence_boundary.py",
+    "test/test_sentence_gradients.py",
+    "test/test_sentence_protocol.py",
+    "test/test_sentence_expectation.py",
+    "test/test_sentence_prediction_trials.py",
+    "test/test_sentence_journal.py",
+    "test/test_sentence_retention.py",
+    "test/test_understanding_readout.py",
+    "test/test_understanding_reconstruct.py",
+    "test/test_reconstruction_precedence.py",
+    "test/test_supplied_answer_training.py",
+    "test/test_negative_expectation.py",
+    "test/test_grammar_word_learning.py",
+    "test/test_clause_closing.py",
+    "test/test_clause_acceptance.py",
+    "test/test_clause_storage.py",
+    "test/test_review14_contracts.py",
+    "test/test_objective_ownership.py",
+    "test/test_mm_xor.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

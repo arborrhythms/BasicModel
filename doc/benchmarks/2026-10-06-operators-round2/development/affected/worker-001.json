@@ -1,0 +1,1089 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_negative_expectation.py::test_empty_role_has_residual_and_trains_the_predictor",
+    "test/test_negative_expectation.py::test_negative_image_identity_presence_and_object_mask[0.0]",
+    "test/test_negative_expectation.py::test_negative_image_identity_presence_and_object_mask[0.5]",
+    "test/test_negative_expectation.py::test_negative_image_identity_presence_and_object_mask[1.0]",
+    "test/test_negative_expectation.py::test_conceived_absence_and_no_credit_to_gain_mask_or_reading",
+    "test/test_negative_expectation.py::test_retained_pair_keeps_full_estimate_and_normalized_surprise",
+    "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+    "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
+    "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+    "test/test_negative_expectation.py::test_residual_credit_replays_current_chooser_and_has_its_own_baseline",
+    "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+    "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+    "test/test_negative_expectation.py::test_surprise_normalizes_observed_or_expected_roles_without_stance",
+    "test/test_negative_expectation.py::test_idea_and_relation_rows_have_equal_surprise_per_role[8-True]",
+    "test/test_negative_expectation.py::test_idea_and_relation_rows_have_equal_surprise_per_role[2-True]",
+    "test/test_negative_expectation.py::test_idea_and_relation_rows_have_equal_surprise_per_role[8-False]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+    "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+    "test/test_negative_expectation.py::test_delayed_contrastive_credit_replays_the_current_predictor",
+    "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+    "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+    "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+    "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
+    "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns",
+    "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[complete.grammar]",
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[ladder.grammar]",
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[tied_reconstruction_output_benchmark.grammar]",
+    "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order[concepts]",
+    "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order[roles]",
+    "test/test_grammar_word_learning.py::test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+    "test/test_grammar_word_learning.py::test_order_projection_does_not_advance_the_default_device_rng",
+    "test/test_grammar_word_learning.py::test_order_projection_compiles_and_restores_with_its_optimizer_moments",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]",
+    "test/test_clause_closing.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+    "test/test_clause_closing.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+    "test/test_clause_closing.py::test_selected_clause_tree_owns_its_local_references",
+    "test/test_clause_closing.py::test_bare_unlocated_np_reuses_its_concept_identity",
+    "test/test_clause_closing.py::test_three_slot_closing_registers_its_composite_operand",
+    "test/test_clause_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+    "test/test_clause_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+    "test/test_clause_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+    "test/test_clause_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+    "test/test_clause_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+    "test/test_clause_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+    "test/test_clause_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+    "test/test_clause_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+    "test/test_clause_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+    "test/test_clause_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+    "test/test_clause_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+    "test/test_clause_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+    "test/test_clause_acceptance.py::test_end_clause_survives_a_later_head_projection",
+    "test/test_clause_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+    "test/test_clause_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+    "test/test_clause_storage.py::test_relation_kinds_have_no_catch_all",
+    "test/test_clause_storage.py::test_relation_rows_never_enter_luminosity",
+    "test/test_clause_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+    "test/test_clause_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+    "test/test_clause_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+    "test/test_clause_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+    "test/test_clause_storage.py::test_second_order_implication_is_row_indexed_and_has_null_vector_operands",
+    "test/test_clause_storage.py::test_equality_is_two_independent_part_rows_and_never_merges_operands",
+    "test/test_clause_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+    "test/test_clause_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+    "test/test_clause_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+    "test/test_clause_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+    "test/test_clause_storage.py::test_migration_drops_catch_all_rows_and_initializes_missing_refs",
+    "test/test_clause_storage.py::test_migration_discards_all_old_provisioned_rows_for_reprovisioning",
+    "test/test_clause_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+    "test/test_clause_storage.py::test_invalid_parent_never_partially_writes_its_child",
+    "test/test_clause_storage.py::test_migration_discards_dependents_of_retired_rows",
+    "test/test_clause_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+    "test/test_clause_storage.py::test_full_store_can_update_an_existing_relation",
+    "test/test_clause_storage.py::test_query_returns_end_clause_content_and_preserves_both_poles",
+    "test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources",
+    "test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower",
+    "test/test_review14_contracts.py::test_room_projection_reports_before_after_and_moves_extremal_rows",
+    "test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling",
+    "test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live",
+    "test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient",
+    "test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient",
+    "test/test_review14_contracts.py::test_zero_parent_relative_search_remains_finite",
+    "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch",
+    "test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence",
+    "test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite",
+    "test/test_review14_contracts.py::test_room_report_includes_fixed_missing_whole_boundary",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[-0.5]",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.0]",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.5]",
+    "test/test_objective_ownership.py::test_expectation_does_not_write_its_context_or_routing",
+    "test/test_objective_ownership.py::test_objectives_write_only_their_owners_even_with_shared_graphs",
+    "test/test_objective_ownership.py::test_reconstruction_pullback_cannot_credit_an_answer_parameter",
+    "test/test_objective_ownership.py::test_answer_vocabulary_alias_keeps_perceptual_owner",
+    "test/test_objective_ownership.py::test_named_concept_evidence_has_the_answer_as_its_only_writer",
+    "test/test_objective_ownership.py::test_trial_consumers_share_one_record_and_answer_cannot_write_it",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental"
+  ],
+  "completed": [
+    "test/test_negative_expectation.py::test_empty_role_has_residual_and_trains_the_predictor",
+    "test/test_negative_expectation.py::test_negative_image_identity_presence_and_object_mask[0.0]",
+    "test/test_negative_expectation.py::test_negative_image_identity_presence_and_object_mask[0.5]",
+    "test/test_negative_expectation.py::test_negative_image_identity_presence_and_object_mask[1.0]",
+    "test/test_negative_expectation.py::test_conceived_absence_and_no_credit_to_gain_mask_or_reading",
+    "test/test_negative_expectation.py::test_retained_pair_keeps_full_estimate_and_normalized_surprise",
+    "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+    "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
+    "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+    "test/test_negative_expectation.py::test_residual_credit_replays_current_chooser_and_has_its_own_baseline",
+    "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+    "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+    "test/test_negative_expectation.py::test_surprise_normalizes_observed_or_expected_roles_without_stance",
+    "test/test_negative_expectation.py::test_idea_and_relation_rows_have_equal_surprise_per_role[8-True]",
+    "test/test_negative_expectation.py::test_idea_and_relation_rows_have_equal_surprise_per_role[2-True]",
+    "test/test_negative_expectation.py::test_idea_and_relation_rows_have_equal_surprise_per_role[8-False]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+    "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+    "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+    "test/test_negative_expectation.py::test_delayed_contrastive_credit_replays_the_current_predictor",
+    "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+    "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+    "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+    "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+    "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
+    "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns",
+    "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[complete.grammar]",
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[ladder.grammar]",
+    "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[tied_reconstruction_output_benchmark.grammar]",
+    "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order[concepts]",
+    "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order[roles]",
+    "test/test_grammar_word_learning.py::test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+    "test/test_grammar_word_learning.py::test_order_projection_does_not_advance_the_default_device_rng",
+    "test/test_grammar_word_learning.py::test_order_projection_compiles_and_restores_with_its_optimizer_moments",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]",
+    "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]",
+    "test/test_clause_closing.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+    "test/test_clause_closing.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+    "test/test_clause_closing.py::test_selected_clause_tree_owns_its_local_references",
+    "test/test_clause_closing.py::test_bare_unlocated_np_reuses_its_concept_identity",
+    "test/test_clause_closing.py::test_three_slot_closing_registers_its_composite_operand",
+    "test/test_clause_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+    "test/test_clause_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+    "test/test_clause_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+    "test/test_clause_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+    "test/test_clause_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+    "test/test_clause_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+    "test/test_clause_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+    "test/test_clause_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+    "test/test_clause_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+    "test/test_clause_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+    "test/test_clause_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+    "test/test_clause_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+    "test/test_clause_acceptance.py::test_end_clause_survives_a_later_head_projection",
+    "test/test_clause_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+    "test/test_clause_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+    "test/test_clause_storage.py::test_relation_kinds_have_no_catch_all",
+    "test/test_clause_storage.py::test_relation_rows_never_enter_luminosity",
+    "test/test_clause_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+    "test/test_clause_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+    "test/test_clause_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+    "test/test_clause_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+    "test/test_clause_storage.py::test_second_order_implication_is_row_indexed_and_has_null_vector_operands",
+    "test/test_clause_storage.py::test_equality_is_two_independent_part_rows_and_never_merges_operands",
+    "test/test_clause_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+    "test/test_clause_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+    "test/test_clause_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+    "test/test_clause_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+    "test/test_clause_storage.py::test_migration_drops_catch_all_rows_and_initializes_missing_refs",
+    "test/test_clause_storage.py::test_migration_discards_all_old_provisioned_rows_for_reprovisioning",
+    "test/test_clause_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+    "test/test_clause_storage.py::test_invalid_parent_never_partially_writes_its_child",
+    "test/test_clause_storage.py::test_migration_discards_dependents_of_retired_rows",
+    "test/test_clause_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+    "test/test_clause_storage.py::test_full_store_can_update_an_existing_relation",
+    "test/test_clause_storage.py::test_query_returns_end_clause_content_and_preserves_both_poles",
+    "test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources",
+    "test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower",
+    "test/test_review14_contracts.py::test_room_projection_reports_before_after_and_moves_extremal_rows",
+    "test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling",
+    "test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live",
+    "test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient",
+    "test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient",
+    "test/test_review14_contracts.py::test_zero_parent_relative_search_remains_finite",
+    "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch",
+    "test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence",
+    "test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite",
+    "test/test_review14_contracts.py::test_room_report_includes_fixed_missing_whole_boundary",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[-0.5]",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.0]",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.5]",
+    "test/test_objective_ownership.py::test_expectation_does_not_write_its_context_or_routing",
+    "test/test_objective_ownership.py::test_objectives_write_only_their_owners_even_with_shared_graphs",
+    "test/test_objective_ownership.py::test_reconstruction_pullback_cannot_credit_an_answer_parameter",
+    "test/test_objective_ownership.py::test_answer_vocabulary_alias_keeps_perceptual_owner",
+    "test/test_objective_ownership.py::test_named_concept_evidence_has_the_answer_as_its_only_writer",
+    "test/test_objective_ownership.py::test_trial_consumers_share_one_record_and_answer_cannot_write_it",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental"
+  ],
+  "slow_selected": [
+    "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+    "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_negative_expectation.py::test_empty_role_has_residual_and_trains_the_predictor",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003958083980251104,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_negative_image_identity_presence_and_object_mask[0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004421669873408973,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_negative_image_identity_presence_and_object_mask[0.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00035941594978794456,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_negative_image_identity_presence_and_object_mask[1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032879202626645565,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_conceived_absence_and_no_credit_to_gain_mask_or_reading",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00035962503170594573,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_retained_pair_keeps_full_estimate_and_normalized_surprise",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003054125001654029,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008716249722056091,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0030526250484399498,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.016828250023536384,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_residual_credit_replays_current_chooser_and_has_its_own_baseline",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011955291964113712,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008019290980882943,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.0058762920089066,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 1 (\u0394=0.238s)\r\nbatch = 2 (\u0394=0.123s)\r\n"
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_surprise_normalizes_observed_or_expected_roles_without_stance",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004181670374237001,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_idea_and_relation_rows_have_equal_surprise_per_role[8-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020527500309981406,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_idea_and_relation_rows_have_equal_surprise_per_role[2-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013597499928437173,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_idea_and_relation_rows_have_equal_surprise_per_role[8-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012160830083303154,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0050109580042771995,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[restored]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007782917004078627,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[compacted]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005318666982930154,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001597750000655651,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_delayed_contrastive_credit_replays_the_current_predictor",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001458291953895241,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010569875012151897,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007151458004955202,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.019943749997764826,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007288667024113238,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0077835830161347985,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006038166000507772,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000987083010841161,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 12.002848166041076,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[complete.grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000260957982391119,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[ladder.grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020691700046882033,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[tied_reconstruction_output_benchmark.grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002007919829338789,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order[concepts]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05470458301715553,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order[roles]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05654000001959503,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018729160074144602,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_order_projection_does_not_advance_the_default_device_rng",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05138416698900983,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_order_projection_compiles_and_restores_with_its_optimizer_moments",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.19641149998642504,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5825812089606188,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6127693749731407,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_clause_closing.py::test_nested_clause_retains_its_own_field_without_program_or_targets",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0072054999764077365,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_closing.py::test_closing_copies_encoded_field_bands_without_coordinatewise_pooling",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007193249999545515,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_closing.py::test_selected_clause_tree_owns_its_local_references",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007054624962620437,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_closing.py::test_bare_unlocated_np_reuses_its_concept_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006043333967681974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_closing.py::test_three_slot_closing_registers_its_composite_operand",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006840208021458238,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010516167036257684,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_04_absolute_clauses_closing_bottom_up_without_relation_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012393833021633327,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010161541984416544,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013097958988510072,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007433667022269219,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008671624993439764,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009107083023991436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008747416955884546,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008114791999105364,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_07_equality_writes_two_independent_part_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00775158399483189,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_08_unlocated_bare_np_reuses_the_concept_but_located_np_has_a_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006970333983190358,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.013392332999501377,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_end_clause_survives_a_later_head_projection",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008995709009468555,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026991701452061534,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013829169911332428,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_relation_kinds_have_no_catch_all",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000108207983430475,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_relation_rows_never_enter_luminosity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008034160127863288,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012974999845027924,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011126669705845416,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017640829901210964,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001868374994955957,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_second_order_implication_is_row_indexed_and_has_null_vector_operands",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021079169819131494,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_equality_is_two_independent_part_rows_and_never_merges_operands",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001766999950632453,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012553749838843942,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010999160003848374,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011369159910827875,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019650839967653155,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_migration_drops_catch_all_rows_and_initializes_missing_refs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013557919883169234,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_migration_discards_all_old_provisioned_rows_for_reprovisioning",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001139374973718077,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.048153334006201476,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_invalid_parent_never_partially_writes_its_child",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009157079621218145,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_migration_discards_dependents_of_retired_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022627090220339596,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009937079739756882,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_full_store_can_update_an_existing_relation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006437124975491315,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_query_returns_end_clause_content_and_preserves_both_poles",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0072825409588404,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0030360830132849514,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0025175000191666186,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review14_contracts.py::test_room_projection_reports_before_after_and_moves_extremal_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0028325000312179327,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009418329573236406,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005900420364923775,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.30279120901832357,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000501333037391305,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review14_contracts.py::test_zero_parent_relative_search_remains_finite",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005172920064069331,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.6954014580114745,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003657583030872047,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006398329860530794,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review14_contracts.py::test_room_report_includes_fixed_missing_whole_boundary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0027716669719666243,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[-0.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009458750137127936,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029795797308906913,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006035420228727162,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_objective_ownership.py::test_expectation_does_not_write_its_context_or_routing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008095839875750244,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_objective_ownership.py::test_objectives_write_only_their_owners_even_with_shared_graphs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021962501341477036,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_objective_ownership.py::test_reconstruction_pullback_cannot_credit_an_answer_parameter",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022724998416379094,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_objective_ownership.py::test_answer_vocabulary_alias_keeps_perceptual_owner",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00041437498293817043,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_objective_ownership.py::test_named_concept_evidence_has_the_answer_as_its_only_writer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.9532197920489125,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_objective_ownership.py::test_trial_consumers_share_one_record_and_answer_cannot_write_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2784043340361677,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.037406417017336935,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_convergence",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00013025000225752592,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py', 182, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09223433304578066,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_has_conceptual_symbolic_spaces",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011895899660885334,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011475000064820051,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py', 171, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010966602712869644,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py', 176, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mm_xor.py::TestMMXorConvergence::test_model_is_mental",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001277500414289534,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

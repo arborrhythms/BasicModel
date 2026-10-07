@@ -1,0 +1,947 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_semantic_categories_pipeline.py::test_consequence_vectors_categorize_by_operator_effect",
+    "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation",
+    "test/test_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_train_mode]",
+    "test/test_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_eval_mode]",
+    "test/test_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[batch_eval]",
+    "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+    "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+    "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+    "test/test_sentence_compose.py::test_cached_perception_keeps_original_values_across_parameter_updates",
+    "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
+    "test/test_sentence_compose.py::test_evaluation_has_one_trial_and_no_step",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "test/test_sentence_compose.py::test_prediction_preview_is_per_row_and_does_not_append_an_observation",
+    "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+    "test/test_sentence_compose.py::test_already_trained_observation_keeps_policy_and_skips_duplicate_loss",
+    "test/test_sentence_end_state.py::test_reading_an_idea_returns_its_one_occupied_slot",
+    "test/test_sentence_end_state.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+    "test/test_sentence_end_state.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+    "test/test_sentence_end_state.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+    "test/test_sentence_end_state.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+    "test/test_sentence_end_state.py::test_answer_and_recall_own_completed_fields_without_programs",
+    "test/test_sentence_end_state.py::test_closing_discards_operations_without_changing_other_live_rows",
+    "test/test_sentence_end_state.py::test_writer_takes_relation_kind_from_the_rel_identity",
+    "test/test_sentence_end_state.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+    "test/test_sentence_end_state.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+    "test/test_sentence_end_state.py::test_program_meaning_reads_ended_points_from_their_rows",
+    "test/test_sentence_end_state.py::test_deep_clause_retains_exact_values_references_and_gradients[False]",
+    "test/test_sentence_end_state.py::test_deep_clause_retains_exact_values_references_and_gradients[True]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]",
+    "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+    "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+    "test/test_sentence_expectation.py::test_full_role_loss_trains_predictor_but_never_source_or_target",
+    "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+    "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+    "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
+    "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence",
+    "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+    "test/test_sentence_expectation.py::test_legacy_root_checkpoint_has_declared_fresh_structured_head_migration",
+    "test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed",
+    "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward",
+    "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations",
+    "test/test_sentence_expectation.py::test_expectation_scope_is_a_checked_configuration_choice",
+    "test/test_sentence_expectation.py::test_unknown_expectation_scope_is_rejected_at_construction",
+    "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+    "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses",
+    "test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract",
+    "test/test_sentence_identity.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record",
+    "test/test_sentence_identity.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+    "test/test_sentence_identity.py::test_closing_part_and_implies_never_ask_thought_authorization",
+    "test/test_sentence_identity.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+    "test/test_sentence_identity.py::test_full_inventory_refuses_symbolization_and_still_writes_the_part_row",
+    "test/test_sentence_journal.py::test_no_numerical_frames_without_a_sentence_closing_reader",
+    "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+    "test/test_sentence_journal.py::test_journal_shape_is_fixed_within_the_serial_word_bucket",
+    "test/test_sentence_journal.py::test_large_packed_capacity_uses_existing_sentence_buckets",
+    "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+    "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+    "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+    "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+    "test/test_sentence_journal.py::test_deep_sentence_derivation_preserves_exact_postorder",
+    "test/test_sentence_journal.py::test_deep_meaning_projection_accepts_configured_sentences",
+    "test/test_sentence_prediction_trials.py::test_sentence_prediction_trials_backpropagate_independently",
+    "test/test_sentence_priming.py::test_serial_reading_diffuses_over_existing_definitions",
+    "test/test_sentence_priming.py::test_batch_rows_never_prime_each_other",
+    "test/test_sentence_priming.py::test_no_edge_cap_and_no_scalar_host_walk",
+    "test/test_sentence_protocol.py::test_open_read_precedes_every_native_word[MM_xor.xml]",
+    "test/test_sentence_protocol.py::test_open_read_precedes_every_native_word[MM_xor_loopback.xml]",
+    "test/test_sentence_protocol.py::test_open_read_has_no_optimizer_or_parameter_write",
+    "test/test_sentence_protocol.py::test_no_mid_sentence_reopening_even_under_conflict",
+    "test/test_sentence_protocol.py::test_repeated_word_is_not_reminted",
+    "test/test_sentence_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+    "test/test_sentence_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+    "test/test_sentence_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+    "test/test_sentence_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+    "test/test_sentence_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+    "test/test_sentence_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+    "test/test_sentence_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+    "test/test_sentence_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score",
+    "test/test_sentence_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+    "test/test_sentence_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+    "test/test_sentence_retention.py::test_capacity_prefers_observation_to_optional_estimate",
+    "test/test_sentence_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+    "test/test_sentence_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses",
+    "test/test_serial_mode_conceptual.py::test_conceptual_serial_mode_flag_propagates",
+    "test/test_serial_mode_conceptual.py::test_conceptual_serial_mode_matches_non_serial",
+    "test/test_serial_mode_conceptual.py::test_serial_with_attention_is_not_downgraded",
+    "test/test_serial_mode_integration.py::test_serial_mode_equivalence_end_to_end",
+    "test/test_serial_mode_integration.py::test_eos_triggers_reset_cascade",
+    "test/test_serial_mode_integration.py::test_serial_mode_does_not_slow_short_streams"
+  ],
+  "completed": [
+    "test/test_semantic_categories_pipeline.py::test_consequence_vectors_categorize_by_operator_effect",
+    "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation",
+    "test/test_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_train_mode]",
+    "test/test_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_eval_mode]",
+    "test/test_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[batch_eval]",
+    "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+    "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+    "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+    "test/test_sentence_compose.py::test_cached_perception_keeps_original_values_across_parameter_updates",
+    "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
+    "test/test_sentence_compose.py::test_evaluation_has_one_trial_and_no_step",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+    "test/test_sentence_compose.py::test_prediction_preview_is_per_row_and_does_not_append_an_observation",
+    "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+    "test/test_sentence_compose.py::test_already_trained_observation_keeps_policy_and_skips_duplicate_loss",
+    "test/test_sentence_end_state.py::test_reading_an_idea_returns_its_one_occupied_slot",
+    "test/test_sentence_end_state.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+    "test/test_sentence_end_state.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+    "test/test_sentence_end_state.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+    "test/test_sentence_end_state.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+    "test/test_sentence_end_state.py::test_answer_and_recall_own_completed_fields_without_programs",
+    "test/test_sentence_end_state.py::test_closing_discards_operations_without_changing_other_live_rows",
+    "test/test_sentence_end_state.py::test_writer_takes_relation_kind_from_the_rel_identity",
+    "test/test_sentence_end_state.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+    "test/test_sentence_end_state.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+    "test/test_sentence_end_state.py::test_program_meaning_reads_ended_points_from_their_rows",
+    "test/test_sentence_end_state.py::test_deep_clause_retains_exact_values_references_and_gradients[False]",
+    "test/test_sentence_end_state.py::test_deep_clause_retains_exact_values_references_and_gradients[True]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]",
+    "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]",
+    "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+    "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+    "test/test_sentence_expectation.py::test_full_role_loss_trains_predictor_but_never_source_or_target",
+    "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+    "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+    "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
+    "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence",
+    "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+    "test/test_sentence_expectation.py::test_legacy_root_checkpoint_has_declared_fresh_structured_head_migration",
+    "test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed",
+    "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward",
+    "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations",
+    "test/test_sentence_expectation.py::test_expectation_scope_is_a_checked_configuration_choice",
+    "test/test_sentence_expectation.py::test_unknown_expectation_scope_is_rejected_at_construction",
+    "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+    "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses",
+    "test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract",
+    "test/test_sentence_identity.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record",
+    "test/test_sentence_identity.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+    "test/test_sentence_identity.py::test_closing_part_and_implies_never_ask_thought_authorization",
+    "test/test_sentence_identity.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+    "test/test_sentence_identity.py::test_full_inventory_refuses_symbolization_and_still_writes_the_part_row",
+    "test/test_sentence_journal.py::test_no_numerical_frames_without_a_sentence_closing_reader",
+    "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+    "test/test_sentence_journal.py::test_journal_shape_is_fixed_within_the_serial_word_bucket",
+    "test/test_sentence_journal.py::test_large_packed_capacity_uses_existing_sentence_buckets",
+    "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+    "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+    "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+    "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+    "test/test_sentence_journal.py::test_deep_sentence_derivation_preserves_exact_postorder",
+    "test/test_sentence_journal.py::test_deep_meaning_projection_accepts_configured_sentences",
+    "test/test_sentence_prediction_trials.py::test_sentence_prediction_trials_backpropagate_independently",
+    "test/test_sentence_priming.py::test_serial_reading_diffuses_over_existing_definitions",
+    "test/test_sentence_priming.py::test_batch_rows_never_prime_each_other",
+    "test/test_sentence_priming.py::test_no_edge_cap_and_no_scalar_host_walk",
+    "test/test_sentence_protocol.py::test_open_read_precedes_every_native_word[MM_xor.xml]",
+    "test/test_sentence_protocol.py::test_open_read_precedes_every_native_word[MM_xor_loopback.xml]",
+    "test/test_sentence_protocol.py::test_open_read_has_no_optimizer_or_parameter_write",
+    "test/test_sentence_protocol.py::test_no_mid_sentence_reopening_even_under_conflict",
+    "test/test_sentence_protocol.py::test_repeated_word_is_not_reminted",
+    "test/test_sentence_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+    "test/test_sentence_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+    "test/test_sentence_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+    "test/test_sentence_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+    "test/test_sentence_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+    "test/test_sentence_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+    "test/test_sentence_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+    "test/test_sentence_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score",
+    "test/test_sentence_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+    "test/test_sentence_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+    "test/test_sentence_retention.py::test_capacity_prefers_observation_to_optional_estimate",
+    "test/test_sentence_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+    "test/test_sentence_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses",
+    "test/test_serial_mode_conceptual.py::test_conceptual_serial_mode_flag_propagates",
+    "test/test_serial_mode_conceptual.py::test_conceptual_serial_mode_matches_non_serial",
+    "test/test_serial_mode_conceptual.py::test_serial_with_attention_is_not_downgraded",
+    "test/test_serial_mode_integration.py::test_serial_mode_equivalence_end_to_end",
+    "test/test_serial_mode_integration.py::test_eos_triggers_reset_cascade",
+    "test/test_serial_mode_integration.py::test_serial_mode_does_not_slow_short_streams"
+  ],
+  "slow_selected": [
+    "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_semantic_categories_pipeline.py::test_consequence_vectors_categorize_by_operator_effect",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011462909751571715,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009226833004504442,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_train_mode]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.8226333750062622,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[forward_eval_mode]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.8885499580064788,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_boundary.py::test_every_entry_writes_once_with_one_trial_and_no_optimizer[batch_eval]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.3031778750009835,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_sentence_comparison.py::test_identical_second_trial_never_wins_and_both_use_original_parameters",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001275540969800204,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.7399552920251153,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_sentence_comparison.py::test_replaying_real_greedy_derivation_ties_in_every_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3289524170104414,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_sentence_compose.py::test_cached_perception_keeps_original_values_across_parameter_updates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005977079854346812,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008499159594066441,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_compose.py::test_evaluation_has_one_trial_and_no_step",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020962499547749758,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6369918749551289,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_sentence_compose.py::test_real_packed_ends_train_before_the_next_sentence[True]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00017483398551121354,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_sentence_compose.py', 75, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_compose.py::test_prediction_preview_is_per_row_and_does_not_append_an_observation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0026945419958792627,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006700420053675771,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_compose.py::test_already_trained_observation_keeps_policy_and_skips_duplicate_loss",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010972910095006227,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_end_state.py::test_reading_an_idea_returns_its_one_occupied_slot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001471291994675994,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_end_state.py::test_relation_stores_the_supplied_contents_without_rereading_references",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011004999978467822,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_end_state.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0024440829874947667,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_end_state.py::test_finishing_uses_actual_operands_and_result_without_running_an_operator",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00046841701259836555,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_end_state.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.15204754198202863,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_end_state.py::test_answer_and_recall_own_completed_fields_without_programs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005847919965162873,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_end_state.py::test_closing_discards_operations_without_changing_other_live_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010968749993480742,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_end_state.py::test_writer_takes_relation_kind_from_the_rel_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012589169782586396,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_end_state.py::test_idea_caches_the_operand_addresses_recorded_before_fusion",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005341669893823564,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_end_state.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5786193329840899,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_end_state.py::test_program_meaning_reads_ended_points_from_their_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009681915980763733,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_end_state.py::test_deep_clause_retains_exact_values_references_and_gradients[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.028762791014742106,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_end_state.py::test_deep_clause_retains_exact_values_references_and_gradients[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0695911250077188,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023905420093797147,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[1-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002903916989453137,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021679159835912287,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002964792016427964,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0028859159792773426,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002182584023103118,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_full_role_loss_trains_predictor_but_never_source_or_target",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001824290957301855,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.020679625042248517,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0256048750015907,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00245274999178946,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013583397958427668,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016605000128038228,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_legacy_root_checkpoint_has_declared_fresh_structured_head_migration",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0027753330068662763,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_provisioned_ltm_does_not_make_a_cold_prediction_a_seed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015805829898454249,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00118320801993832,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014474999625235796,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_expectation_scope_is_a_checked_configuration_choice",
+      "phase": "call",
+      "outcome": "skipped",
+      "duration": 0.0004946670378558338,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_sentence_expectation.py', 220, \"Skipped: could not import 'lxml.etree': No module named 'lxml'\")",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_unknown_expectation_scope_is_rejected_at_construction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002803330426104367,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_real_provisioning_is_not_an_external_prediction_stream",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.45446087495656684,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_truth_ingestion_preserves_all_external_row_contexts_and_losses",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.43347624997841194,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.32571687502786517,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_sentence_identity.py::test_closing_identity_is_its_ltm_occurrence_without_an_inventory_record",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00927441701060161,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_identity.py::test_referenced_phrase_is_read_from_ltm_without_an_inventory_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010768832988105714,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_identity.py::test_closing_part_and_implies_never_ask_thought_authorization",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01144024997483939,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_identity.py::test_mm_grammar_part_under_disjunction_closes_at_full_inventory",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06194120802683756,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_identity.py::test_full_inventory_refuses_symbolization_and_still_writes_the_part_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009002166974823922,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_journal.py::test_no_numerical_frames_without_a_sentence_closing_reader",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 16.187480666965712,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00041750003583729267,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_journal.py::test_journal_shape_is_fixed_within_the_serial_word_bucket",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00045175000559538603,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_journal.py::test_large_packed_capacity_uses_existing_sentence_buckets",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005738339968957007,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007523330277763307,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019204197451472282,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.1988022499717772,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_journal.py::test_functional_prediction_cost_does_not_mutate_an_inactive_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006774590001441538,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_journal.py::test_deep_sentence_derivation_preserves_exact_postorder",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00238191697280854,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_journal.py::test_deep_meaning_projection_accepts_configured_sentences",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0030967500060796738,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_prediction_trials.py::test_sentence_prediction_trials_backpropagate_independently",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00282641698140651,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_priming.py::test_serial_reading_diffuses_over_existing_definitions",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003482291998807341,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_priming.py::test_batch_rows_never_prime_each_other",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003566125000361353,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_priming.py::test_no_edge_cap_and_no_scalar_host_walk",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0032549999887123704,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_open_read_precedes_every_native_word[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0857023749849759,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_open_read_precedes_every_native_word[MM_xor_loopback.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06849470804445446,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_open_read_has_no_optimizer_or_parameter_write",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.048838957969564945,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_no_mid_sentence_reopening_even_under_conflict",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1202154160127975,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_protocol.py::test_repeated_word_is_not_reminted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2045852920273319,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_references.py::test_same_individual_uses_prior_sentence_point_and_keeps_own_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001186499954201281,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009898329735733569,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005812919698655605,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_references.py::test_two_individuals_and_cold_situation_keep_distinct_choices",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0017857499769888818,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_references.py::test_predictor_context_carries_owned_reference_without_a_memory_read",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023727919906377792,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009438340202905238,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014699995517730713,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012038082990329713,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0024615409784018993,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0030250829877331853,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_retention.py::test_capacity_prefers_observation_to_optional_estimate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007351042004302144,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_retention.py::test_idea_chain_is_a_retention_reference_to_its_prior_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021835839725099504,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015760830137878656,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_mode_conceptual.py::test_conceptual_serial_mode_flag_propagates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06306295801186934,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_mode_conceptual.py::test_conceptual_serial_mode_matches_non_serial",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.14582579099806026,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_mode_conceptual.py::test_serial_with_attention_is_not_downgraded",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03132054198067635,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_mode_integration.py::test_serial_mode_equivalence_end_to_end",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.13665283401496708,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_mode_integration.py::test_eos_triggers_reset_cascade",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03100283397361636,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_serial_mode_integration.py::test_serial_mode_does_not_slow_short_streams",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.3725845419685356,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

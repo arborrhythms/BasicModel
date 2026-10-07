@@ -1,0 +1,5 @@
+{'variant': 'landing', 'exit_code': 0}
+{'variant': 'round2', 'exit_code': 0}
+{'variant': 'old_stage', 'exit_code': 1}
+{'variant': 'old_stage_greedy', 'exit_code': 1}
+{'variant': 'open_scope', 'exit_code': 0}

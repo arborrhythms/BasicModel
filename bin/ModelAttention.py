@@ -5,6 +5,37 @@ from torch.nn import functional as F
 from Attention import narrow_words, read_code_field, BracketKeys
 
 
+POLE_CONSUMERS = ('_attention_sentence_payload', '_pushed_word_slab:poles',
+                  'commit_word_reference_slab:per_word',
+                  'commit_word_reference_slab:whole_slab')
+
+
+def read_poles(model, consumer):
+    """Declared handoff seam, also the observer's complete consumer census."""
+    if consumer not in POLE_CONSUMERS:
+        raise ValueError(f'undeclared attention pole consumer: {consumer}')
+    pair = getattr(model, '_attention_poles', None)
+    return None if pair is None else pair.detach()
+
+
+def pole_activation(activation, pair, changed):
+    """A reached field chooses sign only; tied poles retain the prior sign."""
+    net = (pair[..., 0]-pair[..., 1]).reshape_as(activation)
+    changed = changed.reshape_as(activation)
+    return torch.where(changed & net.ne(0), activation.abs()*net.sign(), activation)
+
+
+def reference_evidence(model, activations, consumer):
+    pair = read_poles(model, consumer)
+    if pair is None:
+        return None
+    reading = model._attention_words
+    signed = pole_activation(activations, pair, reading.pole_changes).squeeze(-1)
+    # Match Language.commit_word_reference_slab's native scalar conversion
+    # exactly, including its saturation. No field means the landing's pair.
+    return torch.stack((signed.clamp(0, 1), (-signed).clamp(0, 1)), -1).detach()
+
+
 def canonical_native_events(model, ids, positions, brackets):
     """Contract observed contiguous parts using retained native ancestry.
 
@@ -99,34 +130,6 @@ def native_word_poles(model, spans, forms, known):
     return F.pad(result, (0, 0, 0, known.shape[1]-width))
 
 
-def percept_reconstruction_score(model, keys, forms, identities, live):
-    """Loss-side inverse of the input's native percept snapshot.
-
-    Use the decoder's byte/end-of-word likelihood, including its null
-    candidate. The immutable bank precedes both walks and includes omitted
-    percepts, so dropping an input cannot shrink its reconstruction target.
-    Neither targets nor this scorer are passed to the chooser. Concept
-    admission and grammar follow only after the percept walk is selected.
-    """
-    B, W, _ = keys.shape
-    surfaces = [[form.encode('latin1', 'replace') for form in row] for row in forms]
-    width = max(1, max((len(value) for row in surfaces for value in row), default=0))
-    raw = torch.tensor([[list(value)+[0]*(width-len(value)) for value in row]
-                        for row in surfaces], device=keys.device, dtype=torch.long)
-    valid = raw.ne(0) & live[..., None]
-    indices = torch.arange(W, device=keys.device)
-    repeated = ((identities[:, :, None] == identities[:, None, :])
-        & (indices[None, :, None] > indices[None, None, :]) & live[:, None]).any(-1)
-    bank_valid = valid & ~repeated[..., None]
-    def score(reading):
-        with torch.no_grad():
-            costs = torch.stack([model._byte_word_cost(reading.values[:, word],
-                raw.new_tensor(word), keys, raw, bank_valid, raw, valid, True)
-                for word in range(W)], -1)
-            return (costs*live).sum(-1)/live.sum(-1).clamp_min(1)/math.log(256.)
-    return score
-
-
 def stage_input(model):
     """Read the open bracket, then select bounded percepts before admission.
 
@@ -138,8 +141,8 @@ def stage_input(model):
     slab=getattr(isp,'_ar_embedded_N',None)
     active=getattr(isp,'_word_active_mask',None)
     model._attention_words=None
-    model._attention_score_term=None
-    model._last_attention_score_function=None
+    model._attention_grammar_mask=None
+    model._attention_read=None
     model._word_expectation=None
     model._word_expectation_input=None
     from QueryWork import QueryWorkBudget
@@ -201,6 +204,8 @@ def stage_input(model):
     known=torch.tensor(known,device=slab.device,dtype=torch.bool)&live
     chooser=model._stm_reducer()
     dim=int(chooser.d_model)
+    model._attention_pole_representation=(dim == 2 and any(
+        getattr(module,"representation",None) == "poles" for module in model.languageSpace.modules()))
     keys=F.pad(slab.detach(),(0,max(0,dim-D)))[...,:dim]
     # Open awareness is a read, with neither an optimizer step nor an EMA
     # write. Narrowing's learned choice is outside this no-gradient read.
@@ -217,37 +222,49 @@ def stage_input(model):
     prior=BracketKeys._codebook_retrieval_prior(keys[:, :live_width],rows,model._last_gist[None],boosts)
     if prior is not None: prior=F.pad(prior,(0,W-live_width))
     spent=spans.new_tensor([meter.spent for meter in model._attention_meters])
-    def read(**trial):
-        result = narrow_words(chooser,keys[:, :live_width],spans[:, :live_width],
+    def read(*, sentence=None, spent_override=None, **trial):
+        reading_spans=spans[:, :live_width]
+        if sentence is not None:
+            here=model.inputSpace._packed_sentence_ids[:, :live_width] == sentence
+            reading_spans=torch.where(here[...,None],reading_spans,0)
+        result = narrow_words(chooser,keys[:, :live_width],reading_spans,
             known[:, :live_width],budget=model.attention_budget,
             prior=None if prior is None else prior[:, :live_width],
-            identities=ids[:, :live_width],poles=poles[:, :live_width],spent=spent,**trial)
+            identities=ids[:, :live_width],poles=poles[:, :live_width],
+            spent=spent if spent_override is None else spent_override,**trial)
         # Eager attention need not multiply its field reductions by inactive
         # word storage. Restore the configured carrier before the tensor body.
         return result._replace(values=F.pad(result.values,(0,0,0,W-live_width)),
             accepted=F.pad(result.accepted,(0,W-live_width)),
-            descended=F.pad(result.descended,(0,W-live_width)))
-    model._last_attention_comparison = None
-    if model.training and torch.is_grad_enabled():
-        from WalkTrials import narrowing_pair, observe_comparison, attention_score_function
-        reading, audit = narrowing_pair(read,
-            percept_reconstruction_score(model, keys, forms, ids, live))
-        model._last_attention_comparison = audit
-        model._attention_score_term, model._last_attention_score_function = attention_score_function(audit)
-        model._attention_forms=(forms,ids,keys,live)
-        observe_comparison(model, 'attention.input', audit, active=live.any(-1))
-    else:
-        reading=read()
+            descended=F.pad(result.descended,(0,W-live_width)),
+            poles=F.pad(result.poles,(0,0,0,W-live_width)),
+            pole_changes=F.pad(result.pole_changes,(0,W-live_width)))
+    model._attention_read=read
+    reading=read()
+    model._attention_greedy=reading
     model._attention_words=reading
-    # Native forward values only. The paired-cost term is the chooser's sole
-    # attention credit, consumed once by reconstruction at the owner step.
-    score=(reading.values*keys).sum(-1)/keys.square().sum(-1).clamp_min(1e-12)
-    model._attention_credit=score
     model._attention_spans=spans
     model._attention_forms=(forms,ids,keys,live)
     model._attention_spent=reading.table.spent.detach().clone()
-    for b, meter in enumerate(model._attention_meters):
-        meter.require('bracket',int(reading.table.spent[b])-meter.spent)
+    if not getattr(model,'_sentence_ends',False):
+        for b, meter in enumerate(model._attention_meters):
+            meter.require('bracket',int(reading.table.spent[b])-meter.spent)
+    handoff(model,reading)
+
+
+def handoff(model, reading):
+    """Publish the trial's scope and detached word evidence, never its values."""
+    model._attention_words=reading
+    base=getattr(model,"_attention_grammar_mask",None)
+    model.inputSpace._ar_grammar_leaf_mask=(reading.accepted if base is None else base & reading.accepted)
+    native=model._attention_native_poles
+    # A successful native descent supplies a positive identification witness.
+    native=torch.where(reading.descended[...,None],
+        torch.stack((torch.ones_like(reading.accepted),torch.zeros_like(reading.accepted)),-1).to(native),native)
+    model._attention_poles=torch.where(reading.pole_changes[...,None],reading.poles,native).detach()
+    slab=model.inputSpace._ar_embedded_N
+    spans=model._attention_spans
+    B=slab.shape[0]
     # The top-down handoff reads exactly the selected typed table.
     table=reading.table
     last=(table.done.long()*torch.arange(1,table.done.shape[1]+1,device=slab.device)).argmax(-1)

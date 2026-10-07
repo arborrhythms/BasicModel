@@ -1,0 +1,32 @@
+"""Compare frozen source ASTs and report the precise runtime change; no execution."""
+import ast,hashlib,json,zipfile
+from pathlib import Path
+H=Path(__file__).resolve().parent
+def read(p):return json.loads(p.read_text())
+before=read(H/'before/source.json');after=read(H/'delivered-source/source.json')
+changed=[p for p in after if p.startswith('bin/') and before.get(p)!=after[p]]
+assert changed==['bin/Models.py','bin/SentenceCredit.py']
+def functions(text):
+    tree=ast.parse(text);out={}
+    def walk(node,prefix=''):
+        for child in getattr(node,'body',[]):
+            if isinstance(child,ast.ClassDef):walk(child,prefix+child.name+'.')
+            elif isinstance(child,(ast.FunctionDef,ast.AsyncFunctionDef)):
+                if child.body and isinstance(child.body[0],ast.Expr) and isinstance(child.body[0].value,ast.Constant) and isinstance(child.body[0].value.value,str):
+                    child.body=child.body[1:]
+                out[prefix+child.name]=ast.dump(child,include_attributes=False)
+    walk(tree);return out
+result={'changed_runtime_files':changed,'changed_runtime_functions':{},'unchanged_credit_contract':{}}
+with zipfile.ZipFile(H/'before/source.zip') as old,zipfile.ZipFile(H/'delivered-source/source.zip') as new:
+    for name in changed:
+        a=functions(old.read(name).decode());b=functions(new.read(name).decode())
+        result['changed_runtime_functions'][name]=[key for key in b if a.get(key)!=b[key]]
+        if name=='bin/SentenceCredit.py':
+            for key in ('comparison','components','expectation_terms','score_function','reader_weights','reader_costs'):
+                assert a[key]==b[key]
+                result['unchanged_credit_contract'][key]=hashlib.sha256(b[key].encode()).hexdigest()
+assert result['changed_runtime_functions']['bin/SentenceCredit.py']==['departure']
+assert set(result['changed_runtime_functions']['bin/Models.py'])=={'BasicModel._compose_score_function_loss','BasicModel._run_sentence_word_bricks'}
+result['postprocessor_sha256']=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+(H/'runtime-contract-check.json').write_text(json.dumps(result,indent=2)+'\n')
+print(json.dumps(result,indent=2))

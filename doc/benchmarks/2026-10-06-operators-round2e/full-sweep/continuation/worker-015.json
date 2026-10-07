@@ -1,0 +1,2062 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_cold_rows_give_zero",
+    "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_hot_rows_give_excess",
+    "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_matches_priming_mask_formula",
+    "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_batch_none_returns_all_rows",
+    "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_returns_only_live_slice",
+    "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_returns_none_when_no_buffer",
+    "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_excludes_slack_rows",
+    "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_sorted_by_heat_descending",
+    "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_returns_fewer_than_k_when_few_hot",
+    "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_rows_restriction",
+    "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_rows_restriction_excludes_slack",
+    "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_empty_when_nothing_hot",
+    "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_empty_when_k_zero",
+    "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_empty_when_no_buffer",
+    "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_matches_dense_reference",
+    "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_zeros_when_nothing_hot",
+    "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_rows_restriction",
+    "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_topk_restriction",
+    "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_returns_zeros_when_no_buffer",
+    "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_dtype_matches_codebook",
+    "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_lowrank_U_times_q_equals_dense_C_times_q",
+    "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_dense_C_equals_UtU",
+    "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_empty_S_low_rank_shape",
+    "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_empty_S_dense_is_zeros",
+    "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_rows_restriction",
+    "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_dtype_matches_codebook",
+    "test/test_symbolic_heat_retrieval.py::TestCandidateUnionIncludesContentNearest::test_cold_nearest_in_union_no_typed_filter",
+    "test/test_symbolic_heat_retrieval.py::TestCandidateUnionIncludesContentNearest::test_cold_nearest_in_union_typed_admits_it",
+    "test/test_symbolic_heat_retrieval.py::TestCandidateUnionIncludesHot::test_hot_distant_in_union_no_typed_filter",
+    "test/test_symbolic_heat_retrieval.py::TestCandidateUnionIncludesHot::test_hot_distant_in_union_typed_admits_it",
+    "test/test_symbolic_heat_retrieval.py::TestTypedMaskExcludesHotInadmissible::test_inadmissible_hot_excluded_from_rows",
+    "test/test_symbolic_heat_retrieval.py::TestTypedMaskExcludesHotInadmissible::test_priming_identity_for_non_candidates",
+    "test/test_symbolic_heat_retrieval.py::TestTypedMaskExcludesHotInadmissible::test_priming_above_unity_for_at_least_one_candidate",
+    "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_knowledge_none",
+    "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_basis_none",
+    "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_getW_returns_none",
+    "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_basis_has_no_getW",
+    "test/test_symbolic_heat_retrieval.py::TestTypedOnlyFallback::test_typed_only_fallback",
+    "test/test_symbolic_heat_retrieval.py::TestDiagnosticsConsistency::test_diagnostics_consistent_on_normal_path",
+    "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_disjunction_none_equals_unity",
+    "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_conjunction_none_equals_unity",
+    "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_disjunction_none_rows_equals_unity_rows",
+    "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_primed_row_wins_over_unprimed_in_disjunction",
+    "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_primed_row_wins_over_unprimed_in_conjunction",
+    "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_candidate_from_retrieval_boosts_expected_row",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOffIsNoop::test_off_leaves_priming_at_unity",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOffIsNoop::test_off_no_op_even_for_valid_ref",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_committed_ref_is_hot",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_neighbor_becomes_hot_via_propagate",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_negative_ref_is_noop_when_on",
+    "test/test_symbolic_heat_retrieval.py::TestSentenceResetClearsHeat::test_reset_clears_row_heat_and_semantic",
+    "test/test_symbolic_heat_retrieval.py::TestConfigurePrimingFromSymbolicPriming::test_flag_flips_and_gate_respects_it",
+    "test/test_symbolic_heat_retrieval.py::TestConfigurePrimingFromSymbolicPriming::test_missing_taxonomy_is_safe",
+    "test/test_symbolic_heat_retrieval.py::TestReduceCommitPrimesChildRefs::test_child_refs_primed_when_on",
+    "test/test_symbolic_heat_retrieval.py::TestReduceCommitPrimesChildRefs::test_child_refs_noop_when_off",
+    "test/test_symbolic_heat_retrieval.py::TestPrimerModeByteIdentical::test_primer_equals_reference_formula",
+    "test/test_symbolic_heat_retrieval.py::TestPrimerModeByteIdentical::test_primer_equals_default_call",
+    "test/test_symbolic_heat_retrieval.py::TestPrimerModeByteIdentical::test_primer_mode_with_nonzero_gamma_delta_ignored",
+    "test/test_symbolic_heat_retrieval.py::TestLowRankCarrierMatchesDense::test_lowrank_delta_equals_dense_delta",
+    "test/test_symbolic_heat_retrieval.py::TestCarrierChangesWeight::test_gamma_changes_weight",
+    "test/test_symbolic_heat_retrieval.py::TestCarrierChangesWeight::test_delta_changes_weight",
+    "test/test_symbolic_heat_retrieval.py::TestMillionRowNoVVSmoke::test_large_codebook_primer_and_lowrank_no_vv",
+    "test/test_symbolize_layer.py::test_binary_symbolize_has_no_class_export_or_dispatch_registration",
+    "test/test_symbolize_layer.py::test_binary_symbolize_is_rejected_in_every_face[compose]",
+    "test/test_symbolize_layer.py::test_binary_symbolize_is_rejected_in_every_face[generate]",
+    "test/test_symbolize_layer.py::test_binary_symbolize_is_rejected_in_every_face[thought]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[symbolize]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[exist]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[true]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[lookup]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[quantize]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[arma]",
+    "test/test_symbolize_layer.py::test_implementation_alias_cannot_restore_retired_carrier",
+    "test/test_symbolize_layer.py::test_quantization_remains_available_as_a_declared_thought_capability",
+    "test/test_symbolize_layer.py::test_mean_composition_is_owned_by_sum_and_keeps_operand_gradients",
+    "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[query-QueryLayer]",
+    "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[queryPart-QueryPartLayer]",
+    "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[queryEqual-QueryEqualLayer]",
+    "test/test_syntactic_order.py::test_syntactic_order_defaults_zero_and_reads_config",
+    "test/test_syntactic_order.py::test_syntactic_order_zero_collapses_to_single_s",
+    "test/test_syntactic_order.py::test_syntactic_order_caps_parse_tree_depth",
+    "test/test_syntactic_order.py::test_syntactic_order_negative_rejected",
+    "test/test_taxonomy_boundary.py::test_negated_partof_keeps_the_supported_proposition_and_evidence",
+    "test/test_taxonomy_boundary.py::test_normal_result_retains_missing_reference_diagnostics",
+    "test/test_taxonomy_boundary.py::test_model_taxonomy_entries_skip_global_vector_proposal_setup",
+    "test/test_taxonomy_boundary.py::test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating",
+    "test/test_taxonomy_entry.py::test_public_evaluate_follows_taxonomy_and_retains_record_provenance",
+    "test/test_taxonomy_entry.py::test_whole_interface_reverses_to_the_same_partof_query",
+    "test/test_taxonomy_entry.py::test_public_queries_reject_an_unsupported_relation_domain",
+    "test/test_taxonomy_entry.py::test_normal_entry_does_not_verify_generated_vectors_as_taxonomy",
+    "test/test_taxonomy_entry.py::test_normal_controller_does_not_certify_a_world_row_as_taxonomy",
+    "test/test_taxonomy_entry.py::test_budget_cutoff_and_missing_identity_are_unknown_with_diagnostics",
+    "test/test_taxonomy_entry.py::test_actual_model_entry_and_checkpoint_keep_taxonomy_identity",
+    "test/test_taxonomy_policy.py::test_numeric_world_evidence_cannot_establish_taxonomic_inclusion",
+    "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
+    "test/test_taxonomy_policy.py::test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation",
+    "test/test_taxonomy_priming.py::test_priming_initial_shape_and_value",
+    "test/test_taxonomy_priming.py::test_priming_mask_returns_live_slice",
+    "test/test_taxonomy_priming.py::test_priming_mask_per_batch",
+    "test/test_taxonomy_priming.py::test_prime_sets_target_to_two",
+    "test/test_taxonomy_priming.py::test_prime_does_not_touch_other_entries",
+    "test/test_taxonomy_priming.py::test_prime_is_max_not_replace",
+    "test/test_taxonomy_priming.py::test_prime_is_max_lifts_existing",
+    "test/test_taxonomy_priming.py::test_prime_isolates_batches",
+    "test/test_taxonomy_priming.py::test_prime_drops_out_of_range",
+    "test/test_taxonomy_priming.py::test_prime_noop_when_unallocated",
+    "test/test_taxonomy_priming.py::test_propagate_depth1_lifts_parent",
+    "test/test_taxonomy_priming.py::test_propagate_depth1_lifts_children",
+    "test/test_taxonomy_priming.py::test_propagate_depth1_does_not_lift_siblings",
+    "test/test_taxonomy_priming.py::test_propagate_depth2_lifts_siblings_through_parent",
+    "test/test_taxonomy_priming.py::test_propagate_unrelated_refs_stay_identity",
+    "test/test_taxonomy_priming.py::test_propagate_zero_depth_is_noop",
+    "test/test_taxonomy_priming.py::test_propagate_noop_without_view",
+    "test/test_taxonomy_priming.py::test_decay_pulls_primed_toward_identity",
+    "test/test_taxonomy_priming.py::test_decay_idempotent_at_identity",
+    "test/test_taxonomy_priming.py::test_decay_noop_when_unallocated",
+    "test/test_taxonomy_priming.py::test_reset_returns_to_identity",
+    "test/test_taxonomy_priming.py::test_reset_noop_when_unallocated",
+    "test/test_taxonomy_priming.py::test_allocate_priming_preserves_existing_primed_values",
+    "test/test_taxonomy_priming.py::test_attach_view_updates_live_count",
+    "test/test_taxonomy_public_helpers.py::test_public_part_helpers_cannot_accept_geometric_or_world_row_evidence",
+    "test/test_taxonomy_public_helpers.py::test_public_part_helpers_follow_typed_links_without_world_materialization",
+    "test/test_taxonomy_routing.py::test_partof_is_not_established_by_vector_containment",
+    "test/test_taxonomy_routing.py::test_partof_is_not_established_by_a_world_relation_row",
+    "test/test_taxonomy_unknown.py::test_no_support_remains_unknown_even_at_zero_threshold[exist]",
+    "test/test_taxonomy_unknown.py::test_no_support_remains_unknown_even_at_zero_threshold[isPart]",
+    "test/test_taxonomy_unknown.py::test_zero_threshold_cannot_fabricate_the_other_evidence_polarity[support0-TRUE]",
+    "test/test_taxonomy_unknown.py::test_zero_threshold_cannot_fabricate_the_other_evidence_polarity[support1-FALSE]",
+    "test/test_taxonomy_view.py::test_direct_taxonomic_links_change_partof_with_canonical_direction",
+    "test/test_taxonomy_view.py::test_reified_relation_is_visible_without_endpoint_mutation",
+    "test/test_taxonomy_view.py::test_percept_codes_vector_overlap_and_world_rows_are_not_taxonomy_edges",
+    "test/test_taxonomy_view.py::test_snapshot_does_not_read_later_taxonomy_mutations",
+    "test/test_taxonomy_view.py::test_taxonomy_cycles_do_not_loop_and_retired_references_are_unavailable",
+    "test/test_taxonomy_view.py::test_taxonomy_budgets_report_incomplete_without_fabricating_falsehood",
+    "test/test_taxonomy_view.py::test_queries_require_typed_concept_handles_not_numeric_row_features[1]",
+    "test/test_taxonomy_view.py::test_queries_require_typed_concept_handles_not_numeric_row_features[bad1]",
+    "test/test_taxonomy_view.py::test_queries_require_typed_concept_handles_not_numeric_row_features[bad2]",
+    "test/test_taxonomy_view.py::test_queries_require_typed_concept_handles_not_numeric_row_features[bad3]",
+    "test/test_taxonomy_view.py::test_capture_is_a_pure_read_even_before_allocator_initialization",
+    "test/test_taxonomy_view.py::test_duplicate_sources_cannot_inflate_taxonomy_support",
+    "test/test_taxonomy_view.py::test_capture_charges_every_record_read_including_raw_domain_refs",
+    "test/test_teacher_reconstruction.py::test_objective_where_when_round_trip_directly_to_what",
+    "test/test_teacher_reconstruction.py::test_what_rejects_forged_location_or_snapshot",
+    "test/test_teacher_reconstruction.py::test_snapshot_identity_changes_when_manifest_changes",
+    "test/test_teacher_reconstruction.py::test_packed_lesson_keeps_exact_rows_and_clean_teacher_targets",
+    "test/test_teacher_reconstruction.py::test_binding_never_reads_or_changes_subjective_where_when",
+    "test/test_teacher_reconstruction.py::test_cursor_reports_source_indices_for_trial_and_packed_ticks",
+    "test/test_teacher_reconstruction.py::test_runtime_context_restores_data_and_answers_runtime_query",
+    "test/test_tense_aspect.py::test_ran",
+    "test/test_tense_aspect.py::test_is_running",
+    "test/test_tense_aspect.py::test_has_run",
+    "test/test_tense_aspect.py::test_had_been_running",
+    "test/test_tense_aspect.py::test_did_run",
+    "test/test_tense_aspect.py::test_will_run",
+    "test/test_tense_aspect.py::test_class_contracts",
+    "test/test_tense_aspect.py::test_past_and_future_are_the_identity_on_concept_events",
+    "test/test_tense_aspect.py::test_present_is_identity",
+    "test/test_tense_aspect.py::test_tense_round_trips",
+    "test/test_tense_aspect.py::test_aspect_is_identity_noop",
+    "test/test_tense_aspect.py::test_what_where_pass_through",
+    "test/test_tense_aspect.py::test_set_op_rejects_unknown",
+    "test/test_ternary_truth_store.py::TestSchema::test_absolute_idea_is_np_null_null",
+    "test/test_ternary_truth_store.py::TestSchema::test_np_vp_null_unary",
+    "test/test_ternary_truth_store.py::TestSchema::test_relation_is_np_vp_np",
+    "test/test_ternary_truth_store.py::TestSchema::test_unscaled_storage_trust_is_separate",
+    "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_explicit_timestamp_advances_clock",
+    "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_set_trust_overwrites",
+    "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_timestamp_monotonic",
+    "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_trust_clamped",
+    "test/test_ternary_truth_store.py::TestQueries::test_empty_queries",
+    "test/test_ternary_truth_store.py::TestQueries::test_recent_by_timestamp_desc",
+    "test/test_ternary_truth_store.py::TestQueries::test_relations_and_ideas_filters",
+    "test/test_ternary_truth_store.py::TestCapacityAndWidth::test_full_returns_minus_one",
+    "test/test_ternary_truth_store.py::TestCapacityAndWidth::test_width_conform",
+    "test/test_ternary_truth_store.py::TestPersistence::test_reset_clears",
+    "test/test_ternary_truth_store.py::TestPersistence::test_state_dict_roundtrip",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_append_defaults_conversation_origin",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_clear_origin_compacts_survivors_in_place",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_origin_rides_state_dict_texts_do_not",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_reset_clears_origin_and_texts",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_rows_of_origin_filters_in_row_order",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_set_origin_out_of_range_raises",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_set_origin_tags_row_and_text",
+    "test/test_test_modes.py::test_weekly_includes_the_parked_inline_suites",
+    "test/test_test_modes.py::test_weekly_source_copy_survives_edits_to_the_working_tree",
+    "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[None-1 passed, 1 skipped]",
+    "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[0-1 passed, 1 skipped]",
+    "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[1-2 passed]",
+    "test/test_test_modes.py::test_slow_selection_includes_historical_and_mps_switches",
+    "test/test_testpoint.py::TestEmbeddingProbes::test_nearest_neighbors",
+    "test/test_testpoint.py::TestEmbeddingProbes::test_self_similarity",
+    "test/test_testpoint.py::TestEmbeddingProbes::test_similarity_pairs",
+    "test/test_testpoint.py::TestEmbeddingProbes::test_vector_norms_nonzero",
+    "test/test_testpoint.py::TestEmbeddingProbes::test_vocab_minimum",
+    "test/test_testpoint.py::TestServerQueries::test_demo_queries",
+    "test/test_testpoint.py::TestServerQueries::test_empty_rejected",
+    "test/test_testpoint.py::TestServerQueries::test_health",
+    "test/test_testpoint.py::TestServerQueries::test_response_format",
+    "test/test_testpoint.py::TestServerQueries::test_response_length_bounded",
+    "test/test_testpoint.py::TestGPUDevicePlacement::test_model_on_gpu",
+    "test/test_testpoint.py::TestModelXmlSchema::test_basicmodel_xml",
+    "test/test_testpoint.py::TestModelXmlSchema::test_model_xml",
+    "test/test_testpoint.py::TestModelXmlSchema::test_xor_exact_xml",
+    "test/test_testpoint.py::TestModelXmlSchema::test_xor_pos_xml"
+  ],
+  "completed": [
+    "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_cold_rows_give_zero",
+    "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_hot_rows_give_excess",
+    "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_matches_priming_mask_formula",
+    "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_batch_none_returns_all_rows",
+    "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_returns_only_live_slice",
+    "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_returns_none_when_no_buffer",
+    "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_excludes_slack_rows",
+    "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_sorted_by_heat_descending",
+    "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_returns_fewer_than_k_when_few_hot",
+    "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_rows_restriction",
+    "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_rows_restriction_excludes_slack",
+    "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_empty_when_nothing_hot",
+    "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_empty_when_k_zero",
+    "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_empty_when_no_buffer",
+    "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_matches_dense_reference",
+    "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_zeros_when_nothing_hot",
+    "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_rows_restriction",
+    "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_topk_restriction",
+    "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_returns_zeros_when_no_buffer",
+    "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_dtype_matches_codebook",
+    "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_lowrank_U_times_q_equals_dense_C_times_q",
+    "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_dense_C_equals_UtU",
+    "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_empty_S_low_rank_shape",
+    "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_empty_S_dense_is_zeros",
+    "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_rows_restriction",
+    "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_dtype_matches_codebook",
+    "test/test_symbolic_heat_retrieval.py::TestCandidateUnionIncludesContentNearest::test_cold_nearest_in_union_no_typed_filter",
+    "test/test_symbolic_heat_retrieval.py::TestCandidateUnionIncludesContentNearest::test_cold_nearest_in_union_typed_admits_it",
+    "test/test_symbolic_heat_retrieval.py::TestCandidateUnionIncludesHot::test_hot_distant_in_union_no_typed_filter",
+    "test/test_symbolic_heat_retrieval.py::TestCandidateUnionIncludesHot::test_hot_distant_in_union_typed_admits_it",
+    "test/test_symbolic_heat_retrieval.py::TestTypedMaskExcludesHotInadmissible::test_inadmissible_hot_excluded_from_rows",
+    "test/test_symbolic_heat_retrieval.py::TestTypedMaskExcludesHotInadmissible::test_priming_identity_for_non_candidates",
+    "test/test_symbolic_heat_retrieval.py::TestTypedMaskExcludesHotInadmissible::test_priming_above_unity_for_at_least_one_candidate",
+    "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_knowledge_none",
+    "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_basis_none",
+    "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_getW_returns_none",
+    "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_basis_has_no_getW",
+    "test/test_symbolic_heat_retrieval.py::TestTypedOnlyFallback::test_typed_only_fallback",
+    "test/test_symbolic_heat_retrieval.py::TestDiagnosticsConsistency::test_diagnostics_consistent_on_normal_path",
+    "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_disjunction_none_equals_unity",
+    "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_conjunction_none_equals_unity",
+    "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_disjunction_none_rows_equals_unity_rows",
+    "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_primed_row_wins_over_unprimed_in_disjunction",
+    "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_primed_row_wins_over_unprimed_in_conjunction",
+    "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_candidate_from_retrieval_boosts_expected_row",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOffIsNoop::test_off_leaves_priming_at_unity",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOffIsNoop::test_off_no_op_even_for_valid_ref",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_committed_ref_is_hot",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_neighbor_becomes_hot_via_propagate",
+    "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_negative_ref_is_noop_when_on",
+    "test/test_symbolic_heat_retrieval.py::TestSentenceResetClearsHeat::test_reset_clears_row_heat_and_semantic",
+    "test/test_symbolic_heat_retrieval.py::TestConfigurePrimingFromSymbolicPriming::test_flag_flips_and_gate_respects_it",
+    "test/test_symbolic_heat_retrieval.py::TestConfigurePrimingFromSymbolicPriming::test_missing_taxonomy_is_safe",
+    "test/test_symbolic_heat_retrieval.py::TestReduceCommitPrimesChildRefs::test_child_refs_primed_when_on",
+    "test/test_symbolic_heat_retrieval.py::TestReduceCommitPrimesChildRefs::test_child_refs_noop_when_off",
+    "test/test_symbolic_heat_retrieval.py::TestPrimerModeByteIdentical::test_primer_equals_reference_formula",
+    "test/test_symbolic_heat_retrieval.py::TestPrimerModeByteIdentical::test_primer_equals_default_call",
+    "test/test_symbolic_heat_retrieval.py::TestPrimerModeByteIdentical::test_primer_mode_with_nonzero_gamma_delta_ignored",
+    "test/test_symbolic_heat_retrieval.py::TestLowRankCarrierMatchesDense::test_lowrank_delta_equals_dense_delta",
+    "test/test_symbolic_heat_retrieval.py::TestCarrierChangesWeight::test_gamma_changes_weight",
+    "test/test_symbolic_heat_retrieval.py::TestCarrierChangesWeight::test_delta_changes_weight",
+    "test/test_symbolic_heat_retrieval.py::TestMillionRowNoVVSmoke::test_large_codebook_primer_and_lowrank_no_vv",
+    "test/test_symbolize_layer.py::test_binary_symbolize_has_no_class_export_or_dispatch_registration",
+    "test/test_symbolize_layer.py::test_binary_symbolize_is_rejected_in_every_face[compose]",
+    "test/test_symbolize_layer.py::test_binary_symbolize_is_rejected_in_every_face[generate]",
+    "test/test_symbolize_layer.py::test_binary_symbolize_is_rejected_in_every_face[thought]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[symbolize]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[exist]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[true]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[lookup]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[quantize]",
+    "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[arma]",
+    "test/test_symbolize_layer.py::test_implementation_alias_cannot_restore_retired_carrier",
+    "test/test_symbolize_layer.py::test_quantization_remains_available_as_a_declared_thought_capability",
+    "test/test_symbolize_layer.py::test_mean_composition_is_owned_by_sum_and_keeps_operand_gradients",
+    "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[query-QueryLayer]",
+    "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[queryPart-QueryPartLayer]",
+    "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[queryEqual-QueryEqualLayer]",
+    "test/test_syntactic_order.py::test_syntactic_order_defaults_zero_and_reads_config",
+    "test/test_syntactic_order.py::test_syntactic_order_zero_collapses_to_single_s",
+    "test/test_syntactic_order.py::test_syntactic_order_caps_parse_tree_depth",
+    "test/test_syntactic_order.py::test_syntactic_order_negative_rejected",
+    "test/test_taxonomy_boundary.py::test_negated_partof_keeps_the_supported_proposition_and_evidence",
+    "test/test_taxonomy_boundary.py::test_normal_result_retains_missing_reference_diagnostics",
+    "test/test_taxonomy_boundary.py::test_model_taxonomy_entries_skip_global_vector_proposal_setup",
+    "test/test_taxonomy_boundary.py::test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating",
+    "test/test_taxonomy_entry.py::test_public_evaluate_follows_taxonomy_and_retains_record_provenance",
+    "test/test_taxonomy_entry.py::test_whole_interface_reverses_to_the_same_partof_query",
+    "test/test_taxonomy_entry.py::test_public_queries_reject_an_unsupported_relation_domain",
+    "test/test_taxonomy_entry.py::test_normal_entry_does_not_verify_generated_vectors_as_taxonomy",
+    "test/test_taxonomy_entry.py::test_normal_controller_does_not_certify_a_world_row_as_taxonomy",
+    "test/test_taxonomy_entry.py::test_budget_cutoff_and_missing_identity_are_unknown_with_diagnostics",
+    "test/test_taxonomy_entry.py::test_actual_model_entry_and_checkpoint_keep_taxonomy_identity",
+    "test/test_taxonomy_policy.py::test_numeric_world_evidence_cannot_establish_taxonomic_inclusion",
+    "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
+    "test/test_taxonomy_policy.py::test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation",
+    "test/test_taxonomy_priming.py::test_priming_initial_shape_and_value",
+    "test/test_taxonomy_priming.py::test_priming_mask_returns_live_slice",
+    "test/test_taxonomy_priming.py::test_priming_mask_per_batch",
+    "test/test_taxonomy_priming.py::test_prime_sets_target_to_two",
+    "test/test_taxonomy_priming.py::test_prime_does_not_touch_other_entries",
+    "test/test_taxonomy_priming.py::test_prime_is_max_not_replace",
+    "test/test_taxonomy_priming.py::test_prime_is_max_lifts_existing",
+    "test/test_taxonomy_priming.py::test_prime_isolates_batches",
+    "test/test_taxonomy_priming.py::test_prime_drops_out_of_range",
+    "test/test_taxonomy_priming.py::test_prime_noop_when_unallocated",
+    "test/test_taxonomy_priming.py::test_propagate_depth1_lifts_parent",
+    "test/test_taxonomy_priming.py::test_propagate_depth1_lifts_children",
+    "test/test_taxonomy_priming.py::test_propagate_depth1_does_not_lift_siblings",
+    "test/test_taxonomy_priming.py::test_propagate_depth2_lifts_siblings_through_parent",
+    "test/test_taxonomy_priming.py::test_propagate_unrelated_refs_stay_identity",
+    "test/test_taxonomy_priming.py::test_propagate_zero_depth_is_noop",
+    "test/test_taxonomy_priming.py::test_propagate_noop_without_view",
+    "test/test_taxonomy_priming.py::test_decay_pulls_primed_toward_identity",
+    "test/test_taxonomy_priming.py::test_decay_idempotent_at_identity",
+    "test/test_taxonomy_priming.py::test_decay_noop_when_unallocated",
+    "test/test_taxonomy_priming.py::test_reset_returns_to_identity",
+    "test/test_taxonomy_priming.py::test_reset_noop_when_unallocated",
+    "test/test_taxonomy_priming.py::test_allocate_priming_preserves_existing_primed_values",
+    "test/test_taxonomy_priming.py::test_attach_view_updates_live_count",
+    "test/test_taxonomy_public_helpers.py::test_public_part_helpers_cannot_accept_geometric_or_world_row_evidence",
+    "test/test_taxonomy_public_helpers.py::test_public_part_helpers_follow_typed_links_without_world_materialization",
+    "test/test_taxonomy_routing.py::test_partof_is_not_established_by_vector_containment",
+    "test/test_taxonomy_routing.py::test_partof_is_not_established_by_a_world_relation_row",
+    "test/test_taxonomy_unknown.py::test_no_support_remains_unknown_even_at_zero_threshold[exist]",
+    "test/test_taxonomy_unknown.py::test_no_support_remains_unknown_even_at_zero_threshold[isPart]",
+    "test/test_taxonomy_unknown.py::test_zero_threshold_cannot_fabricate_the_other_evidence_polarity[support0-TRUE]",
+    "test/test_taxonomy_unknown.py::test_zero_threshold_cannot_fabricate_the_other_evidence_polarity[support1-FALSE]",
+    "test/test_taxonomy_view.py::test_direct_taxonomic_links_change_partof_with_canonical_direction",
+    "test/test_taxonomy_view.py::test_reified_relation_is_visible_without_endpoint_mutation",
+    "test/test_taxonomy_view.py::test_percept_codes_vector_overlap_and_world_rows_are_not_taxonomy_edges",
+    "test/test_taxonomy_view.py::test_snapshot_does_not_read_later_taxonomy_mutations",
+    "test/test_taxonomy_view.py::test_taxonomy_cycles_do_not_loop_and_retired_references_are_unavailable",
+    "test/test_taxonomy_view.py::test_taxonomy_budgets_report_incomplete_without_fabricating_falsehood",
+    "test/test_taxonomy_view.py::test_queries_require_typed_concept_handles_not_numeric_row_features[1]",
+    "test/test_taxonomy_view.py::test_queries_require_typed_concept_handles_not_numeric_row_features[bad1]",
+    "test/test_taxonomy_view.py::test_queries_require_typed_concept_handles_not_numeric_row_features[bad2]",
+    "test/test_taxonomy_view.py::test_queries_require_typed_concept_handles_not_numeric_row_features[bad3]",
+    "test/test_taxonomy_view.py::test_capture_is_a_pure_read_even_before_allocator_initialization",
+    "test/test_taxonomy_view.py::test_duplicate_sources_cannot_inflate_taxonomy_support",
+    "test/test_taxonomy_view.py::test_capture_charges_every_record_read_including_raw_domain_refs",
+    "test/test_teacher_reconstruction.py::test_objective_where_when_round_trip_directly_to_what",
+    "test/test_teacher_reconstruction.py::test_what_rejects_forged_location_or_snapshot",
+    "test/test_teacher_reconstruction.py::test_snapshot_identity_changes_when_manifest_changes",
+    "test/test_teacher_reconstruction.py::test_packed_lesson_keeps_exact_rows_and_clean_teacher_targets",
+    "test/test_teacher_reconstruction.py::test_binding_never_reads_or_changes_subjective_where_when",
+    "test/test_teacher_reconstruction.py::test_cursor_reports_source_indices_for_trial_and_packed_ticks",
+    "test/test_teacher_reconstruction.py::test_runtime_context_restores_data_and_answers_runtime_query",
+    "test/test_tense_aspect.py::test_ran",
+    "test/test_tense_aspect.py::test_is_running",
+    "test/test_tense_aspect.py::test_has_run",
+    "test/test_tense_aspect.py::test_had_been_running",
+    "test/test_tense_aspect.py::test_did_run",
+    "test/test_tense_aspect.py::test_will_run",
+    "test/test_tense_aspect.py::test_class_contracts",
+    "test/test_tense_aspect.py::test_past_and_future_are_the_identity_on_concept_events",
+    "test/test_tense_aspect.py::test_present_is_identity",
+    "test/test_tense_aspect.py::test_tense_round_trips",
+    "test/test_tense_aspect.py::test_aspect_is_identity_noop",
+    "test/test_tense_aspect.py::test_what_where_pass_through",
+    "test/test_tense_aspect.py::test_set_op_rejects_unknown",
+    "test/test_ternary_truth_store.py::TestSchema::test_absolute_idea_is_np_null_null",
+    "test/test_ternary_truth_store.py::TestSchema::test_np_vp_null_unary",
+    "test/test_ternary_truth_store.py::TestSchema::test_relation_is_np_vp_np",
+    "test/test_ternary_truth_store.py::TestSchema::test_unscaled_storage_trust_is_separate",
+    "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_explicit_timestamp_advances_clock",
+    "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_set_trust_overwrites",
+    "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_timestamp_monotonic",
+    "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_trust_clamped",
+    "test/test_ternary_truth_store.py::TestQueries::test_empty_queries",
+    "test/test_ternary_truth_store.py::TestQueries::test_recent_by_timestamp_desc",
+    "test/test_ternary_truth_store.py::TestQueries::test_relations_and_ideas_filters",
+    "test/test_ternary_truth_store.py::TestCapacityAndWidth::test_full_returns_minus_one",
+    "test/test_ternary_truth_store.py::TestCapacityAndWidth::test_width_conform",
+    "test/test_ternary_truth_store.py::TestPersistence::test_reset_clears",
+    "test/test_ternary_truth_store.py::TestPersistence::test_state_dict_roundtrip",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_append_defaults_conversation_origin",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_clear_origin_compacts_survivors_in_place",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_origin_rides_state_dict_texts_do_not",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_reset_clears_origin_and_texts",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_rows_of_origin_filters_in_row_order",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_set_origin_out_of_range_raises",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_set_origin_tags_row_and_text",
+    "test/test_test_modes.py::test_weekly_includes_the_parked_inline_suites",
+    "test/test_test_modes.py::test_weekly_source_copy_survives_edits_to_the_working_tree",
+    "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[None-1 passed, 1 skipped]",
+    "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[0-1 passed, 1 skipped]",
+    "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[1-2 passed]",
+    "test/test_test_modes.py::test_slow_selection_includes_historical_and_mps_switches",
+    "test/test_testpoint.py::TestEmbeddingProbes::test_nearest_neighbors",
+    "test/test_testpoint.py::TestEmbeddingProbes::test_self_similarity",
+    "test/test_testpoint.py::TestEmbeddingProbes::test_similarity_pairs",
+    "test/test_testpoint.py::TestEmbeddingProbes::test_vector_norms_nonzero",
+    "test/test_testpoint.py::TestEmbeddingProbes::test_vocab_minimum",
+    "test/test_testpoint.py::TestServerQueries::test_demo_queries",
+    "test/test_testpoint.py::TestServerQueries::test_empty_rejected",
+    "test/test_testpoint.py::TestServerQueries::test_health",
+    "test/test_testpoint.py::TestServerQueries::test_response_format",
+    "test/test_testpoint.py::TestServerQueries::test_response_length_bounded",
+    "test/test_testpoint.py::TestGPUDevicePlacement::test_model_on_gpu",
+    "test/test_testpoint.py::TestModelXmlSchema::test_basicmodel_xml",
+    "test/test_testpoint.py::TestModelXmlSchema::test_model_xml",
+    "test/test_testpoint.py::TestModelXmlSchema::test_xor_exact_xml",
+    "test/test_testpoint.py::TestModelXmlSchema::test_xor_pos_xml"
+  ],
+  "slow_selected": [
+    "test/test_testpoint.py::TestServerQueries::test_demo_queries",
+    "test/test_testpoint.py::TestServerQueries::test_empty_rejected",
+    "test/test_testpoint.py::TestServerQueries::test_health",
+    "test/test_testpoint.py::TestServerQueries::test_response_format",
+    "test/test_testpoint.py::TestServerQueries::test_response_length_bounded",
+    "test/test_testpoint.py::TestGPUDevicePlacement::test_model_on_gpu"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_cold_rows_give_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003379590343683958,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_hot_rows_give_excess",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014716701116412878,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_matches_priming_mask_formula",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021166697843000293,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_batch_none_returns_all_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012391695054247975,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_returns_only_live_slice",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011529197217896581,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_returns_none_when_no_buffer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.604198228567839e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_excludes_slack_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002667080261744559,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_sorted_by_heat_descending",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014887499855831265,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_returns_fewer_than_k_when_few_hot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001294999965466559,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_rows_restriction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021379097597673535,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_rows_restriction_excludes_slack",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015020801220089197,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_empty_when_nothing_hot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001129160518757999,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_empty_when_k_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.795796358957887e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_empty_when_no_buffer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.80000477284193e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_matches_dense_reference",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025341700529679656,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_zeros_when_nothing_hot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001318749855272472,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_rows_restriction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017808302072808146,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_topk_restriction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020587502513080835,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_returns_zeros_when_no_buffer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010970799485221505,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestBuildSemanticHeat::test_dtype_matches_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014420802472159266,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_lowrank_U_times_q_equals_dense_C_times_q",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021883397130295634,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_dense_C_equals_UtU",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016804196638986468,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_empty_S_low_rank_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012033298844471574,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_empty_S_dense_is_zeros",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012408295879140496,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_rows_restriction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023204198805615306,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_dtype_matches_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001812080154195428,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestCandidateUnionIncludesContentNearest::test_cold_nearest_in_union_no_typed_filter",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013349169748835266,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestCandidateUnionIncludesContentNearest::test_cold_nearest_in_union_typed_admits_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005452079931274056,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestCandidateUnionIncludesHot::test_hot_distant_in_union_no_typed_filter",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005703750066459179,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestCandidateUnionIncludesHot::test_hot_distant_in_union_typed_admits_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005896249786019325,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestTypedMaskExcludesHotInadmissible::test_inadmissible_hot_excluded_from_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006041660089977086,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestTypedMaskExcludesHotInadmissible::test_priming_identity_for_non_candidates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005974170053377748,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestTypedMaskExcludesHotInadmissible::test_priming_above_unity_for_at_least_one_candidate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005058749811723828,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_knowledge_none",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.425001917406917e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_basis_none",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.429204510524869e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_getW_returns_none",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.38749872148037e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestRetrievalGracefulFallback::test_returns_empty_when_basis_has_no_getW",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.949998300522566e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestTypedOnlyFallback::test_typed_only_fallback",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005005000275559723,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestDiagnosticsConsistency::test_diagnostics_consistent_on_normal_path",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00043183303205296397,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_disjunction_none_equals_unity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000579457962885499,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_conjunction_none_equals_unity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006241670344024897,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestUnityPrimingByteIdentical::test_disjunction_none_rows_equals_unity_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005752919823862612,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_primed_row_wins_over_unprimed_in_disjunction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027904199669137597,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_primed_row_wins_over_unprimed_in_conjunction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033241702476516366,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestHeatContentPrefersExpectedCandidate::test_candidate_from_retrieval_boosts_expected_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00044166698353365064,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOffIsNoop::test_off_leaves_priming_at_unity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001218749675899744,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOffIsNoop::test_off_no_op_even_for_valid_ref",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011125003220513463,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_committed_ref_is_hot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001354169799014926,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_neighbor_becomes_hot_via_propagate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017279101302847266,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOnMakesRefHot::test_negative_ref_is_noop_when_on",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010804197518154979,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestSentenceResetClearsHeat::test_reset_clears_row_heat_and_semantic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006517090369015932,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestConfigurePrimingFromSymbolicPriming::test_flag_flips_and_gate_respects_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014770799316465855,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestConfigurePrimingFromSymbolicPriming::test_missing_taxonomy_is_safe",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.837500354275107e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestReduceCommitPrimesChildRefs::test_child_refs_primed_when_on",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015483301831409335,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestReduceCommitPrimesChildRefs::test_child_refs_noop_when_off",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001051669823937118,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestPrimerModeByteIdentical::test_primer_equals_reference_formula",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007629579631611705,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestPrimerModeByteIdentical::test_primer_equals_default_call",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007520829676650465,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestPrimerModeByteIdentical::test_primer_mode_with_nonzero_gamma_delta_ignored",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006282080430537462,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestLowRankCarrierMatchesDense::test_lowrank_delta_equals_dense_delta",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007448329706676304,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestCarrierChangesWeight::test_gamma_changes_weight",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006473750108852983,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestCarrierChangesWeight::test_delta_changes_weight",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007085830438882113,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolic_heat_retrieval.py::TestMillionRowNoVVSmoke::test_large_codebook_primer_and_lowrank_no_vv",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5976888330187649,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_binary_symbolize_has_no_class_export_or_dispatch_registration",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001009170082397759,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_binary_symbolize_is_rejected_in_every_face[compose]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026637502014636993,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_binary_symbolize_is_rejected_in_every_face[generate]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014699995517730713,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_binary_symbolize_is_rejected_in_every_face[thought]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012874999083578587,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[symbolize]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001218749675899744,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[exist]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011837499914690852,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[true]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011445797281339765,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[lookup]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011754099978134036,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[quantize]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001492499723099172,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[arma]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001218329998664558,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_implementation_alias_cannot_restore_retired_carrier",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012287497520446777,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_quantization_remains_available_as_a_declared_thought_capability",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014945800649002194,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_mean_composition_is_owned_by_sum_and_keeps_operand_gradients",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000799250032287091,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[query-QueryLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014412496238946915,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[queryPart-QueryPartLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012754200724884868,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[queryEqual-QueryEqualLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012279197108000517,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_syntactic_order.py::test_syntactic_order_defaults_zero_and_reads_config",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07869799999753013,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_syntactic_order.py::test_syntactic_order_zero_collapses_to_single_s",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04147870797896758,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_syntactic_order.py::test_syntactic_order_caps_parse_tree_depth",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.023807749967090786,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_syntactic_order.py::test_syntactic_order_negative_rejected",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011853250034619123,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_boundary.py::test_negated_partof_keeps_the_supported_proposition_and_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.014721292012836784,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_boundary.py::test_normal_result_retains_missing_reference_diagnostics",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005830083042383194,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_boundary.py::test_model_taxonomy_entries_skip_global_vector_proposal_setup",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06966758298221976,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_boundary.py::test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009726667020004243,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_entry.py::test_public_evaluate_follows_taxonomy_and_retains_record_provenance",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005788000009488314,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_entry.py::test_whole_interface_reverses_to_the_same_partof_query",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005541499995160848,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_entry.py::test_public_queries_reject_an_unsupported_relation_domain",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005860834033228457,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_entry.py::test_normal_entry_does_not_verify_generated_vectors_as_taxonomy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01610570802586153,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_entry.py::test_normal_controller_does_not_certify_a_world_row_as_taxonomy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011583167011849582,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_entry.py::test_budget_cutoff_and_missing_identity_are_unknown_with_diagnostics",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005851083027664572,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_entry.py::test_actual_model_entry_and_checkpoint_keep_taxonomy_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1534415829810314,
+      "message": "",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2700/test_actual_model_entry_and_ch0/taxonomy.pt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2700/test_actual_model_entry_and_ch0/taxonomy.pt\r\n"
+    },
+    {
+      "nodeid": "test/test_taxonomy_policy.py::test_numeric_world_evidence_cannot_establish_taxonomic_inclusion",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012080000014975667,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.020199958002194762,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_policy.py::test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.016945082985330373,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_priming_initial_shape_and_value",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00048687501111999154,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_priming_mask_returns_live_slice",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033283402444794774,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_priming_mask_per_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029387499671429396,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_prime_sets_target_to_two",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00035566696897149086,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_prime_does_not_touch_other_entries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034387496998533607,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_prime_is_max_not_replace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003519579768180847,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_prime_is_max_lifts_existing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004806250217370689,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_prime_isolates_batches",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032229197677224874,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_prime_drops_out_of_range",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00037225004052743316,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_prime_noop_when_unallocated",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.883298141881824e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_propagate_depth1_lifts_parent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00037333305226638913,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_propagate_depth1_lifts_children",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003560829791240394,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_propagate_depth1_does_not_lift_siblings",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033591699320822954,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_propagate_depth2_lifts_siblings_through_parent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003594589652493596,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_propagate_unrelated_refs_stay_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00038875004975125194,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_propagate_zero_depth_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003194590099155903,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_propagate_noop_without_view",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016599998343735933,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_decay_pulls_primed_toward_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000579125015065074,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_decay_idempotent_at_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036458304384723306,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_decay_noop_when_unallocated",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.275000775232911e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_reset_returns_to_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005378750502131879,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_reset_noop_when_unallocated",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.004102321341634e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_allocate_priming_preserves_existing_primed_values",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003898750292137265,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_priming.py::test_attach_view_updates_live_count",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029495800845324993,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_public_helpers.py::test_public_part_helpers_cannot_accept_geometric_or_world_row_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000646082975436002,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_public_helpers.py::test_public_part_helpers_follow_typed_links_without_world_materialization",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0027702919906005263,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_routing.py::test_partof_is_not_established_by_vector_containment",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002811250160448253,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_routing.py::test_partof_is_not_established_by_a_world_relation_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005727920215576887,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_unknown.py::test_no_support_remains_unknown_even_at_zero_threshold[exist]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00043820799328386784,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_unknown.py::test_no_support_remains_unknown_even_at_zero_threshold[isPart]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002340420032851398,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_unknown.py::test_zero_threshold_cannot_fabricate_the_other_evidence_polarity[support0-TRUE]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.445799514651299e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_unknown.py::test_zero_threshold_cannot_fabricate_the_other_evidence_polarity[support1-FALSE]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.04159969650209e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_view.py::test_direct_taxonomic_links_change_partof_with_canonical_direction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0026958329835906625,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_view.py::test_reified_relation_is_visible_without_endpoint_mutation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002408792031928897,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_view.py::test_percept_codes_vector_overlap_and_world_rows_are_not_taxonomy_edges",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0027501669828779995,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_view.py::test_snapshot_does_not_read_later_taxonomy_mutations",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023304999922402203,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_view.py::test_taxonomy_cycles_do_not_loop_and_retired_references_are_unavailable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002852874982636422,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_view.py::test_taxonomy_budgets_report_incomplete_without_fabricating_falsehood",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022657079971395433,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_view.py::test_queries_require_typed_concept_handles_not_numeric_row_features[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022542919614352286,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_view.py::test_queries_require_typed_concept_handles_not_numeric_row_features[bad1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022294590016826987,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_view.py::test_queries_require_typed_concept_handles_not_numeric_row_features[bad2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022350000217556953,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_view.py::test_queries_require_typed_concept_handles_not_numeric_row_features[bad3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022645830176770687,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_view.py::test_capture_is_a_pure_read_even_before_allocator_initialization",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010312499944120646,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_view.py::test_duplicate_sources_cannot_inflate_taxonomy_support",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0029621670255437493,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_taxonomy_view.py::test_capture_charges_every_record_read_including_raw_domain_refs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0025369159993715584,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_teacher_reconstruction.py::test_objective_where_when_round_trip_directly_to_what",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025641598040238023,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_teacher_reconstruction.py::test_what_rejects_forged_location_or_snapshot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002850840101018548,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_teacher_reconstruction.py::test_snapshot_identity_changes_when_manifest_changes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021729199215769768,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_teacher_reconstruction.py::test_packed_lesson_keeps_exact_rows_and_clean_teacher_targets",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002832919708453119,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_teacher_reconstruction.py::test_binding_never_reads_or_changes_subjective_where_when",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00035941600799560547,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_teacher_reconstruction.py::test_cursor_reports_source_indices_for_trial_and_packed_ticks",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011575000826269388,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_teacher_reconstruction.py::test_runtime_context_restores_data_and_answers_runtime_query",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022250000620260835,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tense_aspect.py::test_ran",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.762501576915383e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tense_aspect.py::test_is_running",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.308301378041506e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tense_aspect.py::test_has_run",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.945801528170705e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tense_aspect.py::test_had_been_running",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.958298712968826e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tense_aspect.py::test_did_run",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.862500544637442e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tense_aspect.py::test_will_run",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.02919564396143e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tense_aspect.py::test_class_contracts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.866600157693028e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tense_aspect.py::test_past_and_future_are_the_identity_on_concept_events",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034775002859532833,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tense_aspect.py::test_present_is_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019245798466727138,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tense_aspect.py::test_tense_round_trips",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020479201339185238,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tense_aspect.py::test_aspect_is_identity_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027733301976695657,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tense_aspect.py::test_what_where_pass_through",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017308298265561461,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tense_aspect.py::test_set_op_rejects_unknown",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010050000855699182,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestSchema::test_absolute_idea_is_np_null_null",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007376249996013939,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestSchema::test_np_vp_null_unary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000566790986340493,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestSchema::test_relation_is_np_vp_np",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007405420183204114,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestSchema::test_unscaled_storage_trust_is_separate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005731250275857747,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_explicit_timestamp_advances_clock",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007316659903153777,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_set_trust_overwrites",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006387920002453029,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_timestamp_monotonic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010696250246837735,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_trust_clamped",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007859999896027148,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestQueries::test_empty_queries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021758401999250054,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestQueries::test_recent_by_timestamp_desc",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008941669948399067,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestQueries::test_relations_and_ideas_filters",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008154169772751629,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestCapacityAndWidth::test_full_returns_minus_one",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006564170471392572,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestCapacityAndWidth::test_width_conform",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008809170103631914,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestPersistence::test_reset_clears",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007299580029211938,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestPersistence::test_state_dict_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001808375003747642,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestOriginProvenance::test_append_defaults_conversation_origin",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005460419924929738,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestOriginProvenance::test_clear_origin_compacts_survivors_in_place",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019924999796785414,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestOriginProvenance::test_origin_rides_state_dict_texts_do_not",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00101125001674518,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestOriginProvenance::test_reset_clears_origin_and_texts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000777832989115268,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestOriginProvenance::test_rows_of_origin_filters_in_row_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001122833986300975,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestOriginProvenance::test_set_origin_out_of_range_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024004100123420358,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestOriginProvenance::test_set_origin_tags_row_and_text",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000598000013269484,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_test_modes.py::test_weekly_includes_the_parked_inline_suites",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000904541986528784,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_test_modes.py::test_weekly_source_copy_survives_edits_to_the_working_tree",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01832741597900167,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[None-1 passed, 1 skipped]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.282837875012774,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[0-1 passed, 1 skipped]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.28792012500343844,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[1-2 passed]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.29041475005215034,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_test_modes.py::test_slow_selection_includes_historical_and_mps_switches",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2975193749880418,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_testpoint.py::TestEmbeddingProbes::test_nearest_neighbors",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0029472499736584723,
+      "message": "",
+      "stdout": "  water           -> shy(0.95), settlement(0.94), crowded(0.93), stem(0.93), am(0.93)\n  energy          -> colleges(0.95), mechanism(0.94), party(0.92), Yet(0.91), invented(0.90)\n  school          -> shown(0.94), poverty(0.92), installed(0.92), remember(0.92), cattle(0.92)\n  food            -> heads(0.93), believers(0.92), medications(0.92), residents(0.92), gather(0.92)\n  history         -> external(0.93), shorter(0.93), flight(0.93), F(0.92), knowing(0.92)\n  children        -> seeing(0.93), motor(0.93), microfilm(0.93), childhood(0.93), dip(0.93)\n  science         -> Aboriginal(0.97), throughout(0.96), accounts(0.96), Investigations(0.96), more(0.95)\n  important       -> Vegas(0.97), purchase(0.95), Ancient(0.94), included(0.94), pretty(0.93)\n  world           -> signal(0.93), musical(0.93), quickly(0.93), crop(0.93), air(0.93)\n  health          -> Angels(0.93), usually(0.90), flat(0.90), writing(0.89), floor(0.89)\n"
+    },
+    {
+      "nodeid": "test/test_testpoint.py::TestEmbeddingProbes::test_self_similarity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004892542026937008,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_testpoint.py::TestEmbeddingProbes::test_similarity_pairs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00040266697760671377,
+      "message": "",
+      "stdout": "  sim(water, food) = 0.6458\n  sim(energy, nuclear) = 0.5965\n  sim(children, school) = 0.5668\n  sim(science, history) = 0.6939\n  sim(health, important) = 0.6452\n"
+    },
+    {
+      "nodeid": "test/test_testpoint.py::TestEmbeddingProbes::test_vector_norms_nonzero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002150830114260316,
+      "message": "",
+      "stdout": "  Zero-norm vectors: 0/5650\n"
+    },
+    {
+      "nodeid": "test/test_testpoint.py::TestEmbeddingProbes::test_vocab_minimum",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001330830273218453,
+      "message": "",
+      "stdout": "\n  Vocab: 5650 words, 14-dim\n"
+    },
+    {
+      "nodeid": "test/test_testpoint.py::TestServerQueries::test_demo_queries",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001409579999744892,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_testpoint.py', 211, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_testpoint.py::TestServerQueries::test_empty_rejected",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010041700443252921,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_testpoint.py', 234, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_testpoint.py::TestServerQueries::test_health",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 9.654194582253695e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_testpoint.py', 204, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_testpoint.py::TestServerQueries::test_response_format",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0002394170151092112,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_testpoint.py', 227, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_testpoint.py::TestServerQueries::test_response_length_bounded",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011049996828660369,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_testpoint.py', 248, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_testpoint.py::TestGPUDevicePlacement::test_model_on_gpu",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00017491600010544062,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_testpoint.py', 343, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_testpoint.py::TestModelXmlSchema::test_basicmodel_xml",
+      "phase": "call",
+      "outcome": "skipped",
+      "duration": 0.00013870804104954004,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_testpoint.py', 418, 'Skipped: lxml not installed')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_testpoint.py::TestModelXmlSchema::test_model_xml",
+      "phase": "call",
+      "outcome": "skipped",
+      "duration": 0.00013191701145842671,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_testpoint.py', 415, 'Skipped: lxml not installed')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_testpoint.py::TestModelXmlSchema::test_xor_exact_xml",
+      "phase": "call",
+      "outcome": "skipped",
+      "duration": 0.00011633301619440317,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_testpoint.py', 421, 'Skipped: lxml not installed')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_testpoint.py::TestModelXmlSchema::test_xor_pos_xml",
+      "phase": "call",
+      "outcome": "skipped",
+      "duration": 0.00011433300096541643,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_testpoint.py', 426, 'Skipped: lxml not installed')",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

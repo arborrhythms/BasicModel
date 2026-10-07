@@ -105,8 +105,20 @@ def test_pair_trains_twice_and_commits_once(monkeypatch):
             torch.testing.assert_close(committed[b, :depth], chosen[b, :depth])
         assert (m._reconstruction_stack()._choice_actions == -1).all()
         assert not m._reconstruction_stack()._choice_mask.any()
-        assert (observed[0][1] != observed[1][1]).any(-1).all()
+        audit=m._last_sentence_credit
+        draw=audit['departure']
+        narrowing=draw['narrowing']
+        # Round 2 departs once across both walks. A narrowing alternative
+        # may continue through the same greedy compose structure.
+        assert draw['rounds'].gt(0).all()
+        assert ((draw['attention_round']>=0).long()+
+                (draw['compose_round']>=0).long()).eq(1).all()
+        changed_compose=(observed[0][1] != observed[1][1]).any(-1)
+        assert changed_compose[~narrowing].all()
+        a,b=audit['narrowing_actions']
+        assert (a[narrowing]!=b[narrowing]).any(-1).all()
         prefix, forced = constraints[0]
+        assert torch.equal(forced.any(-1),~narrowing)
         assert torch.equal(observed[0][1][prefix], observed[1][1][prefix])
         assert (observed[0][1][forced] != observed[1][1][forced]).all()
         assert m._exploration_trial is False

@@ -1,0 +1,8 @@
+[collect] 24 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 4.3s; peak 0.41 GiB
+[worker-000] 151 selectors; limit 1800s, 8.0 GiB
+[worker-001] 107 selectors; limit 1800s, 8.0 GiB
+[worker-001] exit 0; 29.5s; peak 1.32 GiB
+[worker-000] exit 1; 33.6s; peak 1.28 GiB
+Result: test_failure, exit 1; 258/258 cases completed.
+doc/benchmarks/2026-10-06-operators-round2/development/affected/result.json

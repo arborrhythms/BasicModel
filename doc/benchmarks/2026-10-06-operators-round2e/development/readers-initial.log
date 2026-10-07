@@ -1,0 +1,91 @@
+F.F.....                                                                 [100%]
+=================================== FAILURES ===================================
+_ test_comparison_copies_tied_parameters_without_rng_and_restores_presentation _
+
+    def test_comparison_copies_tied_parameters_without_rng_and_restores_presentation():
+        from AnswerComparison import AnswerComparison
+        class Model(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.reader=nn.Linear(2,1)
+                self.alias=self.reader
+                self.comparison_reader=AnswerComparison()
+            def objective_parameter_groups(self, optimizer):
+                return dict(output=tuple(self.parameters()))
+            def _sentence_reader_error(self, root):
+                return self.alias(root.detach())
+        model=Model()
+        root=torch.tensor([[1.,2.]],requires_grad=True)
+        before=model._sentence_reader_error(root)
+        rng=torch.get_rng_state().clone()
+        comparison=model.comparison_reader(model,root)
+        assert torch.equal(rng,torch.get_rng_state())
+        torch.testing.assert_close(before,comparison,rtol=0,atol=0)
+        assert len(model.comparison_reader.weights)==2
+>       assert not ({id(p) for p in model.reader.parameters()} &
+                    {id(p) for p in model.comparison_reader.parameters()})
+E       assert not ({4935607760, 4935607920} & {4935607760, 4935607920})
+
+test/test_operators_round2e.py:28: AssertionError
+_______ test_sentence_advantage_reads_comparison_and_optimizer_owns_both _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x126321bb0>
+
+    def test_sentence_advantage_reads_comparison_and_optimizer_owns_both(monkeypatch):
+        from test_mm_xor import _fresh_model
+        model,_,data=_fresh_model('data/XOR_grammar.xml')
+        try:
+            original=model._sentence_answer_error
+            observations=[]
+            def answer(*args,**kwargs):
+                cost=original(*args,**kwargs)
+                if cost is not None:
+                    observations.append((cost.detach().clone(),
+                        model._sentence_comparison_registry.total(objective='output').detach().clone()))
+                return cost
+            # _sentence_path_cost deliberately dispatches the class method.
+            from Models import BasicModel
+            monkeypatch.setattr(BasicModel,'_sentence_answer_error',lambda self,*a,**k:answer(*a,**k))
+            optimizer=model.getOptimizer(lr=.01)
+            model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
+            assert len(observations)==2
+            for returned,judge in observations:torch.testing.assert_close(returned,judge,rtol=0,atol=0)
+            audit=model._last_sentence_credit
+            for i,(_,judge) in enumerate(observations):
+                torch.testing.assert_close(audit['components'][:,i,2],judge,rtol=0,atol=0)
+            bank=tuple(model.comparison_reader.parameters())
+            owners=model.objective_parameter_groups(optimizer)
+            assert bank and all(any(p is q for q in owners['output']) for p in bank)
+            assert not any(p is q for p in bank for q in owners['reconstruction'])
+            assert model._sentence_reader_updates==model._sentence_comparison_reader_updates==1
+            assert {float(optimizer.state[p]['step']) for p in bank if p in optimizer.state}=={1.}
+            assert all(r is not None for r in audit['readers'])
+            # A later comparison read can never become the ordinary forward head.
+            record=model._last_sentence_understanding
+            state=(record.root,record.end_slots,record.end_depth)
+            before=model._forward_head(None,sentence_state=state,understanding=record).materialize().detach().clone()
+            with torch.no_grad():
+                for parameter in bank:parameter.add_(3.)
+            after=model._forward_head(None,sentence_state=state,understanding=record).materialize().detach()
+>           torch.testing.assert_close(after,before,rtol=0,atol=0)
+E           AssertionError: Tensor-likes are not equal!
+E           
+E           Mismatched elements: 4 / 4 (100.0%)
+E           Greatest absolute difference: 13.511394500732422 at index (2, 0, 0)
+E           Greatest relative difference: 66.4345703125 at index (0, 0, 0)
+
+test/test_operators_round2e.py:110: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 0.639s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+=============================== warnings summary ===============================
+test/test_operators_round2e.py::test_sentence_advantage_reads_comparison_and_optimizer_owns_both
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operators_round2e.py::test_comparison_copies_tied_parameters_without_rng_and_restores_presentation
+FAILED test/test_operators_round2e.py::test_sentence_advantage_reads_comparison_and_optimizer_owns_both
+2 failed, 6 passed, 1 warning in 4.31s

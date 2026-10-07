@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2b/campaign.py",
+    "sum",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2b/measurements/sum-09"
+  ],
+  "pid": 46769,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 624854408,
+  "elapsed_seconds": 131.2383064579917,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2b/measurements/sum-09/run.log"
+}

@@ -1,0 +1,269 @@
+........................................................................ [ 56%]
+......................................FF.......s........                 [100%]
+=================================== FAILURES ===================================
+________ test_streaming_and_packed_boundary_use_same_full_roles[False] _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x14ab5deb0>
+consolidated = False
+
+    @pytest.mark.parametrize("consolidated", [False, True])
+    def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolidated):
+        from Models import BasicModel as Model
+        from reading_fixtures import finish_reading
+        from test_clause_acceptance import SentenceFixture
+        f = SentenceFixture(monkeypatch)
+        entries = [f.program(('lift', 'cat', ('verb', verb, obj)))
+                   for verb, obj in (('chases', 'mouse'), ('catches', 'bird'))]
+        meanings = [finish_reading(f.language, entry, registry=f.registry).meaning
+                    for entry in entries]
+        torch.testing.assert_close(meanings[0].roles[0], meanings[1].roles[0])
+        assert not torch.equal(meanings[0].roles[1:], meanings[1].roles[1:])
+        packed = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
+            concept_dim=8, expectation_scope='structured')
+        streaming = copy.deepcopy(packed)
+        packed._ltm_store = f.store if consolidated else None
+        from reading_fixtures import commit_reading
+        costs = []
+        for sid, entry in enumerate(entries):
+>           _, _, cost = commit_reading(f.language, f.registry, entry, packed._ltm_store,
+                                       discourse=packed, sid=sid, document='a')
+
+test/test_sentence_expectation.py:120: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/reading_fixtures.py:219: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = namespace(languageSpace=namespace(_compose_binary_rules=(RuleDef(space_role='CS', canonical='part_O1 -> part.forward(p... at 0x121021a80>, _sentence_observation=<function commit_reading.<locals>.<lambda> at 0x149c7d9e0>, _closing_images={})
+state = ((tensor([[[-0.5504,  0.1754,  0.3251, -0.0315,  0.6873,  0.1894,  0.3237,
+          -0.5518],
+         [ 0.0000,  0.0...., 1.]])), (tensor([[0.]]), tensor([[0.]]), tensor([[0.]]), tensor([[0.]]), tensor([[0.]]), tensor([[0.]]), ...), None)
+sid = 0, active = tensor([True])
+observations = [{'payloads': [tensor([[-0.5504,  0.1754,  0.3251, -0.0315,  0.6873,  0.1894,  0.3237, -0.5518]],
+       grad_fn=<Slic...-1, -1],
+        [ 7,  9],
+        [ 5,  7]]), operation_relations=None, leaf_orders=None, leaf_evidence=None),), ...}]
+predictions = [([None], [None])], wins = tensor([False])
+
+    def _commit_sentence(self, state, sid, active, observations, predictions, wins):
+        """Publish only the chosen rows before the next sentence's perception."""
+        self._publish_sentence_scratch(state)
+        rows = wins.detach().cpu().tolist()
+        view = self._sentence_observation(state, sid, active, admit=True)
+        # Optimizer updates have already happened. Admission may allocate
+        # native addresses, but it must not re-read their updated dictionary
+        # values or change the discrete identity choice that was scored.
+        chosen = [observations[-1 if win else 0] for win in rows]
+        admitted = view['entries']
+        entries = []
+        for b, source in enumerate(chosen):
+            program, native = source['entries'][b], admitted[b]
+            if program is None:
+                entries.append(None)
+                continue
+            references = program.reference_ids
+            if references is not None and native.reference_ids is not None:
+                references = torch.where(references == program.concept_ids,
+                                         native.reference_ids, references)
+            entries.append(replace(program,
+                reference_ids=references, reference_orders=native.reference_orders,
+                reference_values=(program.leaves if program.reference_values is None
+                                  and references is not None else program.reference_values)).detached())
+        view['entries'] = tuple(entries)
+        for key in ('payloads', 'depths', 'meanings', 'observed', 'observed_depths'):
+            view[key] = [source[key][b] for b, source in enumerate(chosen)]
+        if any(source['roles'] is not None for source in chosen):
+            view['roles'] = [None if source['roles'] is None else source['roles'][b]
+                             for b, source in enumerate(chosen)]
+        from ClauseJournal import finish_clause
+        def frozen_values(admitted, scored):
+            if (len(admitted.children) != len(scored.children)
+                    or len(admitted.companions) != len(scored.companions)):
+                raise RuntimeError('admission changed the selected clause structure')
+            return replace(admitted, point=scored.point,
+                meaning=replace(admitted.meaning, roles=scored.meaning.roles,
+                                role_mask=scored.meaning.role_mask),
+                children=tuple(frozen_values(a, s) for a, s in zip(admitted.children, scored.children)),
+                companions=tuple(frozen_values(a, s) for a, s in zip(admitted.companions, scored.companions)))
+        view['clauses'] = [None if entry is None else frozen_values(
+            finish_clause(self.languageSpace, entry, meaning=view['meanings'][b],
+                                registry=_boundary_registry(self)), chosen[b]['clauses'][b])
+            for b, entry in enumerate(entries)]
+        disc = getattr(self.symbolSpace, 'expectation', None)
+        # The preview owns each trial's estimate. Commit its comparison and
+        # prior-query policy outcome without training prediction twice.
+        if disc is not None:
+            pending_a, pending_b = predictions[0], predictions[-1]
+            disc._inter_last_meaning = [pending_b[0][b] if win else pending_a[0][b]
+                                       for b, win in enumerate(rows)]
+            disc._inter_last_pred_root = [pending_b[1][b] if win else pending_a[1][b]
+                                         for b, win in enumerate(rows)]
+            disc.observe_stm_end_state(view['observed_depths'], view['observed'],
+                mask=view['mask'], documents=self._expectation_documents_for_slot(sid, len(rows)),
+                layout=view['layout'], role_masks=view['roles'], train_prediction=False,
+                sentence_kinds=[None if m is None else m.sentence_kind for m in view['meanings']])
+            disc.detach_prediction_context()
+        from Meaning import ClosingImage
+        images = self.__dict__.setdefault('_closing_images', {})
+        for b, meaning in enumerate(view['meanings']):
+            if meaning is None or not bool(active[b]):
+                continue
+            comparison = None if disc is None else disc.last_expectation_comparison(b)
+            estimate = None if comparison is None else comparison.estimate
+            mask = meaning.roles.new_zeros(3)
+            registry = _boundary_registry(self)
+            if registry is not None and meaning.mode == 'interrogative':
+                # An observed question need not yet name an executable thought.
+                # Only a resolved grammatical attention object spares a role.
+                try:
+                    signature = registry.signature_for(meaning)
+                except (TypeError,ValueError):
+                    signature = None
+                if signature is not None:
+                    for role in signature.open_roles:
+                        mask[registry._slot_for_operand(role)] = 1
+>           content_width = min(meaning.roles.shape[-1], int(self.conceptualSpace.nWhat))
+                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'types.SimpleNamespace' object has no attribute 'nWhat'
+
+bin/Models.py:20273: AttributeError
+_________ test_streaming_and_packed_boundary_use_same_full_roles[True] _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x148ac8d70>
+consolidated = True
+
+    @pytest.mark.parametrize("consolidated", [False, True])
+    def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolidated):
+        from Models import BasicModel as Model
+        from reading_fixtures import finish_reading
+        from test_clause_acceptance import SentenceFixture
+        f = SentenceFixture(monkeypatch)
+        entries = [f.program(('lift', 'cat', ('verb', verb, obj)))
+                   for verb, obj in (('chases', 'mouse'), ('catches', 'bird'))]
+        meanings = [finish_reading(f.language, entry, registry=f.registry).meaning
+                    for entry in entries]
+        torch.testing.assert_close(meanings[0].roles[0], meanings[1].roles[0])
+        assert not torch.equal(meanings[0].roles[1:], meanings[1].roles[1:])
+        packed = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
+            concept_dim=8, expectation_scope='structured')
+        streaming = copy.deepcopy(packed)
+        packed._ltm_store = f.store if consolidated else None
+        from reading_fixtures import commit_reading
+        costs = []
+        for sid, entry in enumerate(entries):
+>           _, _, cost = commit_reading(f.language, f.registry, entry, packed._ltm_store,
+                                       discourse=packed, sid=sid, document='a')
+
+test/test_sentence_expectation.py:120: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/reading_fixtures.py:219: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = namespace(languageSpace=namespace(_compose_binary_rules=(RuleDef(space_role='CS', canonical='part_O1 -> part.forward(p... at 0x121021a80>, _sentence_observation=<function commit_reading.<locals>.<lambda> at 0x109705760>, _closing_images={})
+state = ((tensor([[[-0.3003,  0.0242,  0.1160, -0.9358,  0.5025,  0.6182,  0.2085,
+           0.4933],
+         [ 0.0000,  0.0...., 1.]])), (tensor([[0.]]), tensor([[0.]]), tensor([[0.]]), tensor([[0.]]), tensor([[0.]]), tensor([[0.]]), ...), None)
+sid = 0, active = tensor([True])
+observations = [{'payloads': [tensor([[-0.3003,  0.0242,  0.1160, -0.9358,  0.5025,  0.6182,  0.2085,  0.4933]],
+       grad_fn=<Slic...-1, -1],
+        [ 7,  9],
+        [ 5,  7]]), operation_relations=None, leaf_orders=None, leaf_evidence=None),), ...}]
+predictions = [([None], [None])], wins = tensor([False])
+
+    def _commit_sentence(self, state, sid, active, observations, predictions, wins):
+        """Publish only the chosen rows before the next sentence's perception."""
+        self._publish_sentence_scratch(state)
+        rows = wins.detach().cpu().tolist()
+        view = self._sentence_observation(state, sid, active, admit=True)
+        # Optimizer updates have already happened. Admission may allocate
+        # native addresses, but it must not re-read their updated dictionary
+        # values or change the discrete identity choice that was scored.
+        chosen = [observations[-1 if win else 0] for win in rows]
+        admitted = view['entries']
+        entries = []
+        for b, source in enumerate(chosen):
+            program, native = source['entries'][b], admitted[b]
+            if program is None:
+                entries.append(None)
+                continue
+            references = program.reference_ids
+            if references is not None and native.reference_ids is not None:
+                references = torch.where(references == program.concept_ids,
+                                         native.reference_ids, references)
+            entries.append(replace(program,
+                reference_ids=references, reference_orders=native.reference_orders,
+                reference_values=(program.leaves if program.reference_values is None
+                                  and references is not None else program.reference_values)).detached())
+        view['entries'] = tuple(entries)
+        for key in ('payloads', 'depths', 'meanings', 'observed', 'observed_depths'):
+            view[key] = [source[key][b] for b, source in enumerate(chosen)]
+        if any(source['roles'] is not None for source in chosen):
+            view['roles'] = [None if source['roles'] is None else source['roles'][b]
+                             for b, source in enumerate(chosen)]
+        from ClauseJournal import finish_clause
+        def frozen_values(admitted, scored):
+            if (len(admitted.children) != len(scored.children)
+                    or len(admitted.companions) != len(scored.companions)):
+                raise RuntimeError('admission changed the selected clause structure')
+            return replace(admitted, point=scored.point,
+                meaning=replace(admitted.meaning, roles=scored.meaning.roles,
+                                role_mask=scored.meaning.role_mask),
+                children=tuple(frozen_values(a, s) for a, s in zip(admitted.children, scored.children)),
+                companions=tuple(frozen_values(a, s) for a, s in zip(admitted.companions, scored.companions)))
+        view['clauses'] = [None if entry is None else frozen_values(
+            finish_clause(self.languageSpace, entry, meaning=view['meanings'][b],
+                                registry=_boundary_registry(self)), chosen[b]['clauses'][b])
+            for b, entry in enumerate(entries)]
+        disc = getattr(self.symbolSpace, 'expectation', None)
+        # The preview owns each trial's estimate. Commit its comparison and
+        # prior-query policy outcome without training prediction twice.
+        if disc is not None:
+            pending_a, pending_b = predictions[0], predictions[-1]
+            disc._inter_last_meaning = [pending_b[0][b] if win else pending_a[0][b]
+                                       for b, win in enumerate(rows)]
+            disc._inter_last_pred_root = [pending_b[1][b] if win else pending_a[1][b]
+                                         for b, win in enumerate(rows)]
+            disc.observe_stm_end_state(view['observed_depths'], view['observed'],
+                mask=view['mask'], documents=self._expectation_documents_for_slot(sid, len(rows)),
+                layout=view['layout'], role_masks=view['roles'], train_prediction=False,
+                sentence_kinds=[None if m is None else m.sentence_kind for m in view['meanings']])
+            disc.detach_prediction_context()
+        from Meaning import ClosingImage
+        images = self.__dict__.setdefault('_closing_images', {})
+        for b, meaning in enumerate(view['meanings']):
+            if meaning is None or not bool(active[b]):
+                continue
+            comparison = None if disc is None else disc.last_expectation_comparison(b)
+            estimate = None if comparison is None else comparison.estimate
+            mask = meaning.roles.new_zeros(3)
+            registry = _boundary_registry(self)
+            if registry is not None and meaning.mode == 'interrogative':
+                # An observed question need not yet name an executable thought.
+                # Only a resolved grammatical attention object spares a role.
+                try:
+                    signature = registry.signature_for(meaning)
+                except (TypeError,ValueError):
+                    signature = None
+                if signature is not None:
+                    for role in signature.open_roles:
+                        mask[registry._slot_for_operand(role)] = 1
+>           content_width = min(meaning.roles.shape[-1], int(self.conceptualSpace.nWhat))
+                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'types.SimpleNamespace' object has no attribute 'nWhat'
+
+bin/Models.py:20273: AttributeError
+=============================== warnings summary ===============================
+test/test_operators_round2.py::test_not_handoff_changes_leaf_closing_and_trial_cost
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sentence_protocol.py::test_no_mid_sentence_reopening_even_under_conflict
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [1] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[False]
+FAILED test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]
+2 failed, 125 passed, 1 skipped, 2 warnings in 12.22s

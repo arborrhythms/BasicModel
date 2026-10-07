@@ -1,0 +1,34 @@
+import collections,json,sys
+from pathlib import Path
+ROOT=Path.cwd()
+H=ROOT/'doc/benchmarks/2026-10-06-operators-round2e/full-sweep'
+sys.path.insert(0,str(ROOT/'test'))
+import bounded_tests as b
+first=json.loads((H/'initial-result.json').read_text())
+completed=set(first['completed'])
+remaining=[node for node in first['selected'] if node not in completed]
+assert len(completed)==len(first['completed'])
+assert not any(r['outcome']=='failed' for w in first['workers'] for r in w.get('reports',[]))
+(H/'continuation-plan.json').write_text(json.dumps(dict(previous_completed=len(completed),
+    remaining=remaining,workers=3,aggregate_memory_bytes=24*b.GIB,per_worker_memory_bytes=8*b.GIB,
+    source_unchanged=True,repeat_completed_tests=False),indent=2)+'\n')
+last=b.run_suite(root=ROOT,selectors=remaining,run_dir=H/'continuation',memory_bytes=24*b.GIB,
+    worker_memory_bytes=8*b.GIB,workers=3,timeout=1800)
+assert set(last['selected'])==set(remaining)
+assert not completed.intersection(last['completed'])
+assert json.loads((H/'source-manifest.json').read_text())['validated_source']==json.loads((H/'continuation/source-manifest.json').read_text())['validated_source']
+merged=dict(first)
+merged.update(completed=first['completed']+last['completed'],workers=first['workers']+last['workers'],
+    exit_code=last['exit_code'],reason='passed_with_resource_continuation' if last['exit_code']==0 else last['reason'],
+    elapsed_seconds=first['elapsed_seconds']+last['elapsed_seconds'],
+    continuation=dict(initial_result='initial-result.json',result='continuation/result.json',
+        repeated_completed_tests=0,initial_reason=first['reason']))
+if last['exit_code']==0:assert collections.Counter(merged['completed'])==collections.Counter(merged['selected'])
+# Preserve each raw worker response; expose the continuation responses to the
+# frozen saved-data validator's top-level worker glob as byte-identical copies.
+for i,path in enumerate(sorted((H/'continuation').glob('worker-*.json'))):
+    if path.name.endswith(('.process.json','.request.json','.recycle.json')):continue
+    (H/f'worker-continuation-{i:03}.json').write_bytes(path.read_bytes())
+(H/'result.json').write_text(json.dumps(merged,indent=2)+'\n')
+print(json.dumps(dict(exit_code=merged['exit_code'],reason=merged['reason'],completed=len(merged['completed']),selected=len(merged['selected']))))
+raise SystemExit(merged['exit_code'])

@@ -1,0 +1,7 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (warm-up)
+batch = 0 (warm-up)
+{"round2b": {"costs": [0.01148039661347866, 0.012646200135350227, 0.01444209273904562, 0.015489327721297741], "argmin_relative_residual": [3.8504881858825684, 3.9008827209472656, 3.8957371711730957, 3.9139487743377686], "multisets": 0, "texts": ["hello", "hello", "world", "loving"]}, "round2c": {"costs": [3.48619905707892e-05, 0.0006419608253054321, 0.06606315821409225, 0.06386303156614304], "argmin_relative_residual": [0.0, 0.0, 0.0, 0.0], "multisets": 4, "texts": ["hello world", "hello there", "world loving", "there loving"]}, "landing_handoff": {"costs": [3.48619905707892e-05, 0.0006419608253054321, 0.06606315821409225, 0.06386303156614304], "argmin_relative_residual": [0.14914704859256744, 0.1404869705438614, 0.14020736515522003, 0.1364370435476303], "multisets": 4, "texts": ["hello world", "hello there", "world loving", "there loving"]}}

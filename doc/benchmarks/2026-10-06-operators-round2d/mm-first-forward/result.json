@@ -1,0 +1,35 @@
+{
+  "seed": 0,
+  "training_steps": 0,
+  "source_manifest_sha256": "d7e2ead0a7ce294ed99fccb9646b62630da5c7167e014a960902852d851420bb",
+  "construction_equal": true,
+  "scope_equal": true,
+  "kept_actions_equal": true,
+  "landing_percept_explore_wins": [
+    false,
+    false,
+    false,
+    false
+  ],
+  "old_percept_stage_matches_landing": true,
+  "rng_after_greedy_restoration_matches_candidate": true,
+  "open_scope_matches_candidate": true,
+  "candidate_matches_round2c_bisection": true,
+  "first_forward_differs_from_landing": true,
+  "sentence_departure_calls": 0,
+  "mask_changed_positions": 12,
+  "random_operations": {
+    "landing": 52,
+    "round2d": 19
+  },
+  "current_source_matched": true,
+  "path": [
+    "ModelAttention.stage_input",
+    "retired WalkTrials.narrowing_pair draws",
+    "Torch global RNG state",
+    "BasicModel.create_ir_mask: Bernoulli",
+    "masked perceptual forward",
+    "answer head"
+  ],
+  "rng_only_path_confirmed": true
+}

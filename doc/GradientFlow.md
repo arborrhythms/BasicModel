@@ -21,30 +21,36 @@ pullback for reconstruction. Saved forward parameter values preserve the
 second graph. A batch-end step runs only when its remaining registered total
 has a derivative. No extra step is added for diagnostics.
 
-Explore is kept only when its reconstruction is **strictly lower**. A tie
-keeps greedy. The answer and expectation never enter the comparison.
-Reconstruction and expectation train on both trials; the reader trains only
-the kept rows of each trial. A trial with no kept rows gives the reader no
-optimizer step, including no momentum-only step. The kept state is committed detached; no gradient crosses that
-boundary into the next sentence.
+Explore is kept only when its reconstruction total `R` is **strictly lower**.
+A tie keeps greedy. The chooser's detached advantage uses the owner-step total
+`C = R + E + A`: registry reconstruction, sentence expectation gated per role
+by gain × predicted presence, and relative answer error when supplied.
+Each answer is read from that trial with the understanding detached, before
+either optimizer step. Reconstruction and expectation train on both trials.
+Round 2e gives the answer owner two independent readers of the same form.
+The presented reader takes one step on the reconstruction-kept root only.
+The comparison reader supplies A and takes one step on the mean of both root
+losses for compose departures, or the kept root for narrowing departures.
+Both readers see detached roots. The batch-end answer read uses the presented
+reader and reports its error without another update. The kept state is committed detached;
+no gradient crosses that boundary into the next sentence.
 
-Input narrowing, compose, ordinary thought, anticipation and generation each
-compare greedy with one departure. The departure round is sampled uniformly
-from the greedy walk's rounds with a legal alternative. At that round, greedy's
-action is excluded and the departure action is sampled from the remaining
-eligible policy probabilities at unit softmax scale; it is not the next-ranked
-action. The prefix is replayed and the suffix is greedy. The original policy
-probabilities supply training credit, without the exclusion mask. Both walks
-are costed at the same parameters; only a strictly lower owner cost keeps
-exploration, and ties keep greedy. Anticipation holds both forecasts until
-the arriving observation can cost them. Its controller keeps its existing
-ownership. No learning rate, optimizer or budget changes accompany sampling.
+Input narrowing and compose share one departure per sentence. Round 2d draws
+uniformly among the `W` walks with an eligible round, then among that walk's
+`R_walk` eligible rounds, then among the selected round's `K` eligible
+alternatives. The unmasked policy probability supplies the
+`K·R_walk·W`-corrected score-function credit. A
+narrowing departure continues through admission and compose greedily; a
+compose departure uses greedy narrowing and replays its compose prefix.
+Ordinary thought, anticipation and generation retain their existing paired
+walks and owner boundaries. No learning rate, optimizer or budget changes
+accompany the sentence comparison.
 
 | Parameter owner | Weights and permitted update |
 |---|---|
 | Reconstruction (R) | Perception (the sole writer of native PS/WS prototypes and 11b evidence), field dictionaries, compose operators and tied inverses, compose chooser, and the shared generate decoder (chooser and parameterized generate faces). Grammar lessons train only their chooser, never an operator. Momentum descent; codes have no EMA refresh or contextual rotation. |
 | Expectation (E) | Within-sentence, between-sentence, ARMA and contrastive predictors; the predictive reading-attention module where enabled. All sources, routing evidence and targets are detached. |
-| Answer (A) | Numeric head and affine root/end/echoic-bank reader; learned memory retrieval for thought and generation, question conditioners and answer adapters/controllers. The concluded understanding is detached. The generate chooser belongs to reconstruction. |
+| Answer (A) | Numeric head and affine root/end/echoic-bank reader, plus its independent comparison copy on the sentence path; learned memory retrieval for thought and generation, question conditioners and answer adapters/controllers. Only the presented reader supplies outputs; the comparison copy supplies the chooser's answer cost. The concluded understanding is detached. The generate chooser belongs to reconstruction. |
 
 [ObjectiveOwnership](../bin/ObjectiveOwnership.py) reads the trained named
 terms from `Layers.Error` and obtains gradients only for their owner lists.
@@ -70,26 +76,29 @@ choosers through the root. The affine answer has its own owner and cannot
 write these sources.
 
 For net evidence `d = relu(e_for - e_against)`, the content bounds are
-`L = max_parts(d * part_code)` and
+`L = max_parts(part_code)` over the parts with `d > 0` (evidence selects a
+part, it does not scale it) and
 `U = min_property_wholes(1 - d * (1 - whole_code))` (default `U = 1`).
-The form is `(sum(d_parts)*L + sum(d_wholes)*U) / sum(d_parts,d_wholes)`;
-without property wholes it is `L`. The both corner belongs to attention and
+The form is `L` (6.8 plan §15.2, implemented §16; `MereologicalCodes.derive`
+writes `lower`); `U` bounds the form and does not enter it. The both corner belongs to attention and
 never enters this derivation. Repeated addresses in a part group do not
-multiply its evidence. The serial leaf remains `[form | meaning] × signed activation`.
+multiply its evidence. The serial leaf is `[form × |activation| | meaning × activation]`.
+Its detached pole pair carries the sign; occurrence coordinates are preserved.
 Field-path dictionaries retain their existing ownership; `XOR_exact`'s
 answer coefficients are unchanged.
 
 After the existing owner step and [0,1] projection, the deterministic room
 pass visits concept rows and coordinates in order. For `v = relu(L-U+m)`,
-the maximal part moves down by `v/2` and the minimal property whole up by
-`v/2`, clamped to [0,1]. Missing towers retain their fixed lattice boundary.
+only the minimal property whole moves, up by the full `v`, clamped to [0,1];
+parts never shrink to fit their types (`project_room`). Missing towers retain
+their fixed lattice boundary.
 `ConceptualSpace.latticeMargin` defaults to zero. This is a projection, not
 a new objective. Fractional evidence, clipping and floating-point arithmetic
 can leave violations; the audit reports the exact positive count and largest
 violation before and after the pass, without a tolerance hiding residuals.
 
 The first block stores the symbol's perceptual position. Its content coordinates
-carry the interval midpoint; its reserved location/time positions are zero for
+carry the form `L`; its reserved location/time positions are zero for
 a generally characterized type, not an occurrence stamp. The complement stores
 the concept's conceptual position: at order zero, only the detached,
 recency-weighted context mean of existing occurrence roots' meaning coordinates.
@@ -103,14 +112,15 @@ the perceptual block and never carries a durable-row gradient.
 **Explicitly deferred by Alec, October 4:** property/situation bootstrap
 learning and its co-activation objective belong to the operators update.
 There is no new context optimizer or loss. A zero complement cannot bootstrap
-itself from zero occurrence roots. XOR_grammar and MM_grammar currently have
-14-dimensional PS events and paired representations: six native form content
-coordinates, eight unused occurrence positions, and an empty meaning complement.
+itself from zero occurrence roots. XOR_grammar and MM_grammar have, since 6.8 §22,
+22-dimensional PS events and paired representations: fourteen native form content
+coordinates, the eight-coordinate address band, and an empty meaning complement
+(context width 22 − 22 = 0).
 The nonempty-complement mechanism check verifies isolated, detached reads;
 these toy gates do not test learned distributional similarity.
 
 The XOR table therefore measures perception's composition of forms (the binding
-kernel this round), its inverse, the affine read at unit norm, and one owner.
+kernel this round), its inverse, the affine read of the committed raw root, and one owner.
 The concepts in these gate configurations are empty: identical contexts and
 no bootstrap. Same-context concepts coinciding in conceptual space is correct;
 it is not a collapse to repair. Connectives over meanings are measured where
@@ -120,9 +130,11 @@ measurements of distinguishability for reconstruction.
 Identity comes from below through the fold of forms and meaning from above
 through contexts at every order; at orders ≥ 1, composition of meanings also
 joins from below. The form fold at all orders, Kleene meet/join on meanings,
-bootstrap from conceptual wholes' locations, the `not` items, and expectation's
-negative image restricted to the concept face (item 2) are carried to the
-operators update. The present kernel still composes the paired vector.
+bootstrap from conceptual wholes' locations and the `not` items were carried
+to the operators update. Round 1 landed the pole corrections; round 2 installs
+expectation's closing image on the concept face (item 2). The form fold,
+meaning connectives and bootstrap remain later work. The present kernel still
+composes the paired vector.
 The dictionary has no EMA refresh or contextual rotation. Ownership audits
 distinguish absent gradients from zero ones and retain inactive weights.
 
@@ -500,14 +512,19 @@ receipt preserves their old bodies and the complete bodies of each port.
 
 ## Expectation at the closing
 
-The signed image and observed meaning produce detached negative evidence for
-the compose chooser. Prediction separately minimizes all-role relative squared
-error and presence/kind BCE against detached targets. Empty roles have zero
-targets, not zero residuals. Context, arriving ideas and routing inputs are
-all detached; only predictor weights train. Pending estimates survive an
-update as detached evidence and are recomputed for the current predictor's
-step. The configured zero expectation-policy weight preserves the one-owner
-rule. Expectation quality and utility remain empirical questions.
+At the sentence closing, `ClosingImage` forms detached `n = −g·(1−m)⊙κ⊙ê`
+and `c = o+n` on the concept complement only. The complete perceptual block,
+including its reserved coordinates, is protected. Thought reads this closing's
+`c`; storage and predictor targets retain `o`. The retained image restores
+`o = c−n` at float precision. This supersedes the ad-hoc image formerly
+constructed in the thought context. Prediction still minimizes its unchanged
+all-role relative squared error and presence/kind BCE against detached targets;
+the confidence gate changes comparison costs, not predictor training. Empty
+roles have zero targets, not zero residuals. There is no new loss or owner.
+XOR_grammar and MM_grammar have zero complement coordinates (22 total,
+22 in the perceptual block, of which 14 carry form content): their image is
+identically zero. The nonzero-complement mechanism is tested separately.
+
 
 ## Codes are perception's; the chooser is trained from the trial comparison (October 4)
 
@@ -538,13 +555,14 @@ Decided in the 6.8 §14–§15 rounds
   exact gradient of the expected reconstruction cost with respect to them is
   the score-function term at the sampled departure, with the greedy trial's
   cost as the paired baseline (self-critical sequence training): surrogate
-  `K · R · p_θ(a_dep | state) · (C_explore − C_greedy)`, costs detached, one term per
+  `K · R_walk · W · p_θ(a_dep | state) · (C_explore − C_greedy)`, costs detached, one term per
   sentence with a departure, reconstruction-owned; `∇p` rather than `∇log p`
   because the departure is drawn uniformly over the value-distinct eligible
   alternatives (the coverage floor) and the importance weight cancels the
   `1/p`. Here K counts the value-distinct eligible alternatives at the sampled
-  round and R counts eligible rounds in that sentence. Their product cancels
-  the uniform proposal probability `1/(K·R)`, giving the sum of the
+  round, `R_walk` counts eligible rounds in the drawn walk, and `W` counts
+  walks with an eligible round in the sentence. Round 2d draws walk first;
+  their product cancels the proposal probability `1/(W·R_walk·K)`, giving the sum of the
   baseline-subtracted gradients over those alternatives and rounds, before
   the existing active-row mean reduction. No differentiable decoder is needed;
   a tie teaches nothing and the greedy argmax supplies no chooser gradient.
@@ -641,7 +659,284 @@ not a nonzero score-function learning signal; the positive/negative-advantage
 analytic and finite-difference checks are separate focused tests. The 3,200
 walk-teacher records match CE gradients within 7.45e−9 and show actual policy
 logit updates. Code displacement, sentence-path perception gradients and
-ownership conflicts remain zero. The round nevertheless fails its standing
-gate because MM_xor is 9/10 rather than 10/10; the receipt records the miss.
+ownership conflicts remain zero. The measurement originally missed the standing MM_xor count (9/10). Alec
+accepted round 1 on October 6 after the plan §5 audit established that its
+MM trajectories were identical to the landing; the receipt retains the miss
+and the acceptance record. The landing is `73cd7b71b`.
 
 [Round-1 source, tests, measurements and review receipt](benchmarks/2026-10-05-operators-update/README.md).
+
+## The target scheme (October 6; decided, scheduled by rounds)
+
+Decided in the operators update plan [§6–§13](plans/2026-10-05-operators-update.md),
+with the architecture statement in
+[Architecture](Architecture.md#the-scheme-confirmed-2026-10-06-expectation-and-surprise-through-the-architecture).
+The sections above describe what is implemented; this one what each round
+changes in the gradient's ownership and path. Round 2's text is plan §14,
+corrected by round 2b in §16, round 2c in §18 and round 2d in §20.
+
+- **The trial cost (round 2, corrected in 2b and 2c).** The chooser is credited by
+  the owner-step total `R + E + A`; only reconstruction `R` decides the keep.
+  Expectation is gated per role by `g·κ`; the supplied answer is read on both
+  detached roots before either step. The reader takes one mean-loss step on
+  both compose roots, or one step on the kept root for a narrowing departure.
+  Strictly lower reconstruction keeps explore; a tie keeps greedy. The SCG
+  surrogate, reduction, registration and ownership remain unchanged.
+- **One departure over both walks (round 2).** Narrowing and compose share the
+  sentence's single departure (`R` over both walks' eligible rounds); a
+  narrowing departure runs through the sentence; the percept-stage selection
+  and the separate attention surrogate retire. The walk's poles are handed off
+  with the scope, so a field departure can change a cost.
+- **The image at the closing (round 2).** Spec §2.6.1 on the concept face:
+  `n = −g·(1−m)⊙κ⊙ê`, `c = o + n`, `o = c − n`; thought reads `c`, storage keeps
+  `o`, the predictors' targets stay `o`, detached; identically zero where the
+  face has no width.
+- **Identity by construction (round 3).** Pairs plus length as the parts; the
+  content width for a sparse superposition; the narrowing-weighted ceiling
+  and the centroid. Reconstruction of forms becomes exact by construction.
+- **Expectation across the model (rounds 3–4).** Once the path is invertible,
+  the row-level prediction inverted through the committed operations gives an
+  expected operand at every round; the actual against it is the layer's
+  surprise, and the maps take exact targets by inversion. Expectation's
+  sources then go live: the 2026-09-20 rule detaching them existed against
+  collapse, which an invertible path cannot do. Reconstruction retires to an
+  audit wherever the transformation is exactly invertible and stays a loss
+  where it is not.
+- **The attention filter (round 5).** A weight per word on detached percepts,
+  trained pathwise by the cost factored into attended and unattended regions,
+  with a graded budget; perception's codes receive gradient only from the
+  unattended region and their own objective.
+- **Unchanged throughout.** Perception's codes have one writer; the forward is
+  a tree; the committed root is what the readers see at test and what the
+  class bar measures; no straight-through, no mixed forward.
+
+<a id="operators-update-round-2-credit-october-6-uncommitted-candidate"></a>
+
+## Operators update round 2: credit (October 6; rejected candidate)
+
+The [receipt](benchmarks/2026-10-06-operators-round2/README.md) starts from the
+accepted round-1 source. Sentence comparison uses the Error registry's relative
+`R+E+A`, with all three components and their signed differences retained for
+review. Presence and role errors are multiplied by detached `g·κ` in the
+numerator; their uninformed baseline is unchanged, so zero confidence cannot
+cancel out of the ratio. Kind error uses the mean role gate. Predictor training
+keeps its original ungated registry. The supplied answer is a detached read of
+each complete trial, and reader updates remain restricted to the kept rows.
+
+One uniform departure ranges over narrowing and compose. Its sole surrogate
+is `K·R·p(a_departure)·(C_explore−C_greedy)`, registered under the existing
+`reconstruction.compose_score_function` name and reduced over active rows.
+Exact ties disconnect the policy term. Percept-stage byte selection and the
+separate attention surrogate and consumer are retired. Packed sentences use
+their own eligible rounds and retain the shared input work allowance.
+
+Narrowing hands off each operated bracket's bilattice pole pair to the words
+inside it. Unoperated words keep native evidence; a native descent supplies
+its identification witness. Scope, admission and poles belong to the trial.
+The operated extents survive splitting; their field operations resolve in
+walk order over the completed native witnesses, including words identified
+by a later descent. An earlier unknown pair cannot erase that identification.
+The sentence consumes the explicit pair where declared, or its detached net
+evidence as leaf activation, and the closing carries its polarity. No field
+value is handed off, and no stored code or binding kernel implements negation.
+The closing image described above is the other mechanism in this candidate.
+
+Pair search, exact-fit precedence, teacher-forced decomposition, reconstruction
+objectives, owner lists, budgets and the §20.5 bands are unchanged. Focused
+checks cover both departure gradients, total-cost selection, pole evidence,
+the image table and restoration, and the committed-root answer. Empirical
+results and limitations belong to the receipt; implementation alone does not
+establish the standing gate.
+
+The frozen round-2 campaign completed all thirty unseeded trainings without
+retry. It **missed the standing gate**: class 4/10, reconstruction 6/10,
+MM_xor convergence 9/10, sum 10/10; the full sweep is green and the ownership
+zeros are retained. Across XOR, 5,426 of 16,000 sentence records have nonzero
+advantage, including 1,074 narrowing departures; both walks' logits move.
+The initial observer omitted both reference-slab consumers and therefore
+incorrectly treated MM as inactive. Plan §15 records a different first forward
+from the landing at identical construction parameters and RNG state. MM's
+9/10 is a live miss. Round 2 was not accepted; its receipt is preserved intact.
+
+
+## Operators update round 2b (October 6; rejected candidate)
+
+[Round-2b receipt](benchmarks/2026-10-06-operators-round2b/README.md). The keep
+and the policy's credit are distinct: strict improvement in `R` commits explore,
+while `Δ(R+E+A)` supplies the unchanged `K·R·p(a)` score-function surrogate.
+The audit records both components per trial, the reconstruction decision,
+the advantage sign, and whether the answer reverses credit against the keep.
+Both detached roots train the answer-owned reader on every active supplied row.
+The single departure, predictor training, reconstruction teachers and owner
+lists are unchanged.
+
+The handoff changes only activation sign, retaining its magnitude and the
+leaf event exactly. A tied pair retains the prior sign. Explicit-pole grammar
+reads the full pair. Untouched scalar references use the landing's exact
+signed-activation conversion, including saturation to `[0,1]`; reached fields
+choose its expressed pole. `ModelAttention.POLE_CONSUMERS` declares and the
+observer counts the sentence payload, explicit-pole pushed slab, and both
+reference-slab publication paths. The closing reads the resulting evidence.
+The concept-only image is unchanged and remains zero in the two grammar
+configurations whose complement width is zero.
+
+The pre-training disjunction replay exposes a remaining downstream form
+change: `InterpretLayer.forward` multiplies the signed activation into the
+resolved object code. With negative poles, the unchanged disjunction receives
+negative directions, whose composition is not the negative of the positive
+composition. Merely removing handoff rescaling does not repair this inverse.
+The receipt isolates that residual with a diagnostic unsigned interpretation;
+that diagnostic is not installed in the candidate and is not a gate training.
+
+The bank-wide inherited-part audit is read-only and covers order-zero forms.
+It checks all distinct row pairs whose positive-net part sets are included,
+using intersections of the part postings. It reports pair counts and maximum
+coordinatewise violations before and after supplied placement snapshots;
+current codes are `L` on both sides. The conceptual complement is unconstrained.
+No centroid placement or higher-order enforcement is added in this round.
+
+The round-2b campaign completed all thirty unseeded trainings: class 1/10, reconstruction 6/10, MM 10/10, sum 10/10. Its standing gate failed; the sweep is green and the receipt records all ownership checks. All three paired MM trajectories differ from the landing at the first forward, so MM is live. The candidate remains uncommitted for review.
+
+Forward-only tracing distinguishes the MM configurations: `MM_xor` bypasses
+all four declared pole consumers, while `MM_grammar` reaches both reference
+paths. The paired MM_xor trajectory difference is established independently;
+its causal attribution to the reference slab is not supported by that trace.
+
+
+## Operators update round 2c (October 6; not accepted)
+
+[Round-2c receipt](benchmarks/2026-10-06-operators-round2c/README.md). Interpretation
+and retained leaf values apply activation magnitude to the form block, signed
+activation to the meaning complement, and leave occurrence coordinates alone.
+The binding kernel receives forms without a negation sign. The explicit pole
+pair and closing polarity still express negation. Reference publication uses
+the resolved grammar rows as the word brick does; an absent serial row must
+not erase a resolved leaf's evidence. Both publication paths use this rule.
+
+The reader receives one optimizer update per supplied sentence. For a compose
+departure its objective is the mean of the two detached-root losses; for a
+narrowing departure it is the kept root's loss. Mixed batches weight each row
+separately. Both reads precede either trial update; the first reconstruction
+step omits the reader, and the second carries the combined reader gradient.
+The batch-end answer remains observable without training the reader again.
+Actual reader Adam counters are recorded alongside the loss weights.
+
+Reconstruction alone keeps a trial, strictly; `Δ(R+E+A)` still credits the
+single departure under the existing SCG registration. Predictor and
+reconstruction updates, owner lists, the image and containment audit remain.
+In the two grammar configurations the meaning complement is empty: a forced
+narrowing `not` flips evidence and closing polarity but leaves the root and
+all comparison costs identical. A nonzero-complement fixture checks that only
+meaning changes sign. The saved negative-pole disjunction fixture recovers
+four multisets with zero pair-argmin residual and exactly the actual 6.8
+landing's owner reconstruction cost at the same saved initialization, before
+any gate training.
+
+MM_xor's changed first forward is caused by RNG consumption, not a pole
+consumer. The retired percept trial draws advance the generator used later
+by `create_ir_mask`'s Bernoulli input mask. At seed zero its byte costs tie,
+its kept walk and scope match, and restoring the old trial restores the
+landing output. Restoring the RNG to the state after the greedy walk restores
+the round-2 output. MM remains a live gate, with three paired trajectory
+replays recorded separately from the thirty unseeded trainings.
+
+The thirty trainings produce class **5/10**, reconstruction **10/10**, sum
+**10/10 at the quarter floor**, and live MM_xor **9/10**. The gate as read at
+that measurement was missed on class and MM; §20 subsequently excludes the
+bisection-proven RNG-only MM path. Every final grammar root uses conjunction; the five
+class misses remain above the MSE bar, with the policy transitions and exact
+deciding trial costs retained in the receipt. All 10,650 XOR and 16,000 sum
+narrowing departures tie. All 5,350 XOR compose departures have nonzero
+credit; each grammar run's reader Adam counters end at 400 after 400 epochs.
+The full sweep is green (4,971 passed, 285 skipped, one xpassed), and perception
+gradient, code displacement and ownership conflicts remain zero. All runs
+and failures are retained without retry. This candidate is held for Claude's
+review and is not committed.
+
+## Operators update round 2d (October 6; review candidate)
+
+[Round-2d receipt](benchmarks/2026-10-06-operators-round2d/README.md). The only
+runtime change is the sentence departure's proposal and correction. Eligibility
+is computed on both greedy walks for this sentence. A uniform draw among the
+nonempty walks precedes a uniform eligible-round draw within the selected
+walk. The existing uniform alternative draw then chooses the departure action.
+One available walk gives `W=1`; no available walk gives no departure. The
+surrogate multiplies by `K·R_walk·W`, canceling that proposal exactly. Its
+active-row reduction, greedy baseline and reconstruction registration remain.
+
+The strict reconstruction keep, `Δ(R+E+A)` advantage, one reader step (mean
+detached roots for compose; kept root for narrowing), magnitude interpretation,
+owners, budgets, image and containment mechanisms remain as in round 2c.
+Every observed sentence records its walk, `W`, `R_walk` and `K`; both walks
+have analytic and finite-difference checks. The focused proposal check gives
+equal walk frequencies despite unequal numbers of eligible rounds.
+
+Plan §20 applies §5's amendment: a path changed only by global RNG consumption,
+established by bisection, is not a regression gate. The seed-zero MM bisection
+is repeated on this candidate; raw counts and paired trajectories are still
+reported. The thirty gate trainings remain unseeded, without retries or
+replacement runs. This candidate is held for Claude's review before a commit.
+
+Measured round 2d: class **2/10**, reconstruction **10/10**, sum **10/10 at ¼**,
+and raw MM_xor **10/10**. The standing class gate is missed. All forty final
+grammar roots are conjunction and all labels are correct; eight runs remain
+above the MSE bar. The three all-disjunction starts become all-conjunction
+from epochs 22, 65 and 106, and three failed runs already use conjunction
+throughout. Faster selection has not recovered the class count.
+
+There are **7,978 compose** and **8,022 narrowing** XOR departures; every
+narrowing advantage is exactly zero, as are all 16,000 sum advantages.
+Every recorded correction equals `K·R_walk·W`. All compose advantages are
+nonzero; the answer credits against reconstruction's keep on 1,375 rows.
+Every sum/XOR run has 400 reader updates and final reader Adam counters of
+400. Across all recorded sentence rows, maximum analytic and finite-difference
+discrepancies are `2.23517418e-8` and `1.76165817e-8`; focused checks also cover
+a nonzero narrowing advantage. Chooser logit ranges move in every XOR run.
+The full sweep is green, with zero sentence-path perception gradients,
+code displacement and ownership conflicts. The repeated MM bisection confirms
+the RNG-only path and all three paired trajectories differ. All results and
+the class misses' component costs are retained in the receipt; no retry or
+replacement changes the count. The candidate remains uncommitted for review.
+
+## Operators update round 2e (October 6; review candidate)
+
+[Round-2e receipt](benchmarks/2026-10-06-operators-round2e/README.md).
+Plan §22 separates two uses of the answer read. The presented reader takes
+one step on the reconstruction-kept root alone. The comparison reader has
+the same form and independent answer-owned parameters; it retains 2d's one
+step on the mean of both root losses for compose departures, or the kept
+root for narrowing departures. Only the comparison reader's answer cost
+enters `Δ(R+E+A)`. Presentation, writing and the class gate use the presented
+reader. Its weight on the rejected root is exactly zero.
+
+The comparison weights are cloned before the first update without consuming
+RNG. Both roots remain detached. Each reader's independently reduced loss
+enters the existing answer objective, so each takes one update without an
+extra batch-end step. The strict reconstruction keep, walk-first draw,
+`K·R_walk·W` correction, other components, registration, reduction and owner
+boundaries remain as in 2d. The frozen AST comparison verifies the unchanged
+reader computation and credit functions; focused tests verify separate
+gradients, tied-parameter restoration, counters and public-output isolation.
+
+Each run records both readers' MSE before the trial updates on the same kept
+roots, their active weight norms and the stable greedy conjunction epoch.
+Final class evaluation remains the ordinary presented read after training.
+The receipt separates any misses by late flip, flat reader norm with correct
+labels, or other evidence, and retains the late R/E/A comparisons. The MM
+seed-zero bisection is repeated and the paired diagnostics remain separate
+from the thirty unseeded gate trainings. There is no retry or replacement.
+
+Measured round 2e: class **9/10**, reconstruction
+**10/10**, sum **10/10 at ¼**, and raw MM_xor
+**10/10** under the repeated RNG-only bisection. The measured
+standing gate is met; acceptance remains pending Claude's review.
+Final evaluation has 40/40 conjunction roots and 40/40 correct labels.
+Every run uses greedy conjunction throughout from epoch 140 at the latest.
+The receipt separates 1 miss categorized as late flip,
+0 reader plateaus and 0 other misses, with both
+reader trajectories and late trial costs. All twenty sum/XOR runs have
+400 updates per reader, zero presented weight on the rejected root, and
+final active reader Adam counters of 400. The complete source sweep is
+green; ownership conflicts, sentence-path perception gradients and
+code displacement are zero. All thirty unseeded gate trainings are
+retained without retries or replacements. No commit or push.

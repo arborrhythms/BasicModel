@@ -1,0 +1,10 @@
+........................................................................ [ 46%]
+........................................ssssssss.sssssssss.............. [ 92%]
+............                                                             [100%]
+=============================== warnings summary ===============================
+test/test_thought_answer_adapters.py::test_code_answer_uses_the_checked_atom_and_keeps_its_reference
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+139 passed, 17 skipped, 1 warning in 43.46s

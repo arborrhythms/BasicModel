@@ -9,13 +9,11 @@ import torch
 
 @pytest.mark.parametrize('advantage', [-2., 0., 3.])
 def test_attention_score_function_has_greedy_baseline_and_uniform_counts(advantage):
-    from WalkTrials import attention_score_function
+    from SentenceCredit import score_function
     logits = torch.tensor([[.2, .6, -.1]], dtype=torch.float64, requires_grad=True)
     probability = logits.softmax(-1)
-    audit = dict(probabilities=probability[:, 1:2], scale=torch.tensor([[6]]),
-        costs=torch.tensor([[4., 4.+advantage]]), departure=torch.tensor([0]),
-        explore=torch.tensor([[1]]))
-    loss, record = attention_score_function(audit)
+    loss, record = score_function(probability[:,1:2], torch.tensor([[6]]),
+        torch.tensor([[True]]), torch.tensor([[4.,4.+advantage]]))
     assert record['advantage'].item() == advantage
     if advantage == 0:
         assert not loss.requires_grad and loss.item() == 0

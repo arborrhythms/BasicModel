@@ -1,0 +1,51 @@
+"""Validate all saved sentence records; never imports or executes a model."""
+from collections import Counter, defaultdict
+import hashlib, json
+from pathlib import Path
+H = Path(__file__).resolve().parent
+def read(path): return json.loads(path.read_text())
+A = read(H/'aggregate-audit.json')
+S = read(H/'measurements/summary.json')
+result = {}
+for kind in ('sum', 'xor'):
+    proposals = Counter()
+    walks = defaultdict(lambda: dict(records=0, nonzero=0, analytic_records=0,
+        finite_difference_records=0, maximum_gradient_error=0., maximum_finite_difference_error=0.))
+    runs = []
+    for a in A[kind]['runs']:
+        raw = read(H/f'measurements/{kind}-{a["run"]:02}/run-audit.json')
+        assert len(raw['reader_training_rows']) == len(raw['reader_weights']) == 400
+        assert all(r['reader_updates'] == 1 for r in raw['reader_weights'])
+        assert set(raw['reader_weights'][-1]['optimizer_steps'].values()) == {400.}
+        for s in raw['compose_score_function_steps']:
+            assert s['sampling_scale'] == s['W'] * s['R_walk'] * s['K']
+            proposals[(s['walk'], s['W'], s['R_walk'], s['K'])] += 1
+            w = walks[s['walk']]
+            w['records'] += 1
+            w['nonzero'] += s['advantage'] != 0
+            if 'gradient_max_error' in s:
+                w['analytic_records'] += 1
+                w['maximum_gradient_error'] = max(w['maximum_gradient_error'], s['gradient_max_error'])
+            if 'finite_difference' in s:
+                w['finite_difference_records'] += 1
+                w['maximum_finite_difference_error'] = max(w['maximum_finite_difference_error'], s['finite_difference']['error'])
+        assert all(t['delta'][row] == [0., 0., 0.]
+            for t in raw['sentence_trials'] if t['training']
+            for row in range(len(t['delta']))
+            if raw['compose_score_function_steps'][(t['epoch']-1)*4+row]['walk'] == 'narrowing')
+        assert all(v == 0 for v in raw['closing_image']['concept_widths'].values())
+        assert all(v == 0 for v in raw['closing_image']['image_max'].values())
+        containment = raw['containment']
+        assert containment['largest'] == 0
+        runs.append(dict(run=a['run'], reader_updates=400, reader_adam_steps=400,
+            pole_consumers=a['pole_consumers'], containment=containment,
+            compose_logits_moved=a['logit_first'].get('compose:1',{}) != a['logit_last'].get('compose:400',{}),
+            initial_operators=a['policy_epochs'][0]['greedy'] if a['policy_epochs'] else None,
+            all_conjunction_from_epoch=(a['last_greedy_disjunction_epoch']+1) if kind == 'xor' else None))
+    result[kind] = dict(walks=dict(walks),
+        proposals=[dict(walk=k[0], W=k[1], R_walk=k[2], K=k[3], count=v) for k,v in proposals.items()], runs=runs)
+result['mm'] = [dict(run=m['run'], pole_consumers=m['pole_consumers'],
+    owner_step_comparisons=m['owner_step_comparisons']) for m in S['mm']]
+result['postprocessor_sha256'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+(H/'audit-details.json').write_text(json.dumps(result, indent=2)+'\n')
+print(json.dumps({k:result[k]['walks'] for k in ('sum','xor')}, indent=2))

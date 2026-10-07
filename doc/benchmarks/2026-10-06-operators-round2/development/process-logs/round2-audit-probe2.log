@@ -1,0 +1,303 @@
+FFF
+=================================== FAILURES ===================================
+____________ test_review17_measurement_wiring_on_one_ordinary_batch ____________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2344/test_review17_measurement_wiri0')
+
+    def test_review17_measurement_wiring_on_one_ordinary_batch(tmp_path):
+        import json, os, sys
+        from pathlib import Path
+        from bounded_tests import run_guarded, GIB
+        root=Path(__file__).resolve().parents[1]
+        receipt=root/'doc/benchmarks/2026-10-06-operators-round2'
+        prior=root/'doc/benchmarks/2026-10-03-operators-attention'
+        env=os.environ.copy()
+        env.update(PYTEST_PLUGINS='operators_gate_observer', MODEL_COMPILE='none',
+            OWNERSHIP_OBSERVER_OUTPUT=str(tmp_path/'ownership'),
+            ITEM7_XOR_MEASUREMENTS=str(tmp_path/'observations.jsonl'), ITEM7_XOR_GATE='5',
+            REVIEW17_REPORTS=str(tmp_path/'reports.jsonl'),
+            PYTHONPATH=os.pathsep.join(map(str,(receipt,prior,root/'bin',root/'test'))))
+        result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'observer_probe.py')],
+            cwd=root,env=env,log_path=tmp_path/'observer.log',memory_bytes=8*GIB,timeout=1800)
+>       assert result['exit_code']==0,(tmp_path/'observer.log').read_text()
+E       AssertionError: F                                                                        [100%]
+E         =================================== FAILURES ===================================
+E         ___________ test_margin_and_ownership_observe_the_same_actual_steps ____________
+E         
+E             def test_margin_and_ownership_observe_the_same_actual_steps():
+E                 from test_mm_xor import _fresh_model
+E                 import operators_gate_observer
+E                 model, _, data = _fresh_model('data/XOR_grammar.xml')
+E                 optimizer = model.getOptimizer(lr=.01)
+E                 owners=model.objective_parameter_groups(optimizer)
+E                 assert 'compose_preference' not in owners
+E                 preference=owners['reconstruction']
+E                 assert any(p is model.languageSpace.decomposition_chooser.weight for p in preference)
+E                 operation=model.languageSpace._tree_layer(2)
+E                 assert all(any(p is anchor for p in preference) for anchor in
+E                            (operation.stop_anchor,operation.reduce_anchor,operation.apply_anchor))
+E                 raw, target = next(iter(data.data_loader(split='train', num_streams=4)))
+E                 batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)
+E                 from operators_run_audit import observe_run, json_value
+E                 with observe_run() as run_audit:
+E                     model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
+E                     model.runBatch(train=False,optimizer=None,batchSize=4,split='test',batch_override=batch)
+E                 decomposition=run_audit['decomposition_chooser']
+E                 assert decomposition['start']['weights'] == [1., 0., 0., 0., 0.]
+E                 assert decomposition['start']['undos'] > 0
+E                 assert decomposition['start']['true_pair_in_shortlist_rate'] == 1.
+E                 assert decomposition['end']['undos'] > 0
+E                 steps=run_audit['compose_score_function_steps']
+E                 assert len(steps)==4
+E                 assert run_audit['chooser_logit_ranges']['1']['calls']>0
+E                 assert all(row.get('gradient_max_error',0.)<2e-6 for row in steps)
+E                 assert all(row.get('finite_difference',{}).get('error',0.)<2e-6 for row in steps)
+E                 assert len(run_audit['reader_weights']) == 1
+E                 assert len(run_audit['before_learning_readback']['texts']) == 4
+E                 assert all(row['nonzero']==0 for row in run_audit['sentence_gradients'].values())
+E                 assert all(phase in run_audit for phase in ('start','end'))
+E                 assert all(phase in run_audit['room'] for phase in ('start','end'))
+E                 (Path(os.environ['OWNERSHIP_OBSERVER_OUTPUT'])/'run-audit.json').write_text(json.dumps(run_audit,default=json_value,indent=2))
+E                 operators_gate_observer.save_ownership(model)
+E                 folder = Path(os.environ['OWNERSHIP_OBSERVER_OUTPUT'])
+E                 events = [json.loads(line) for line in (folder/'events.jsonl').read_text().splitlines()]
+E                 first = [event for event in events if event['kind'] == 'decoder_first_logits']
+E                 steps = [event for event in events if event['kind'] == 'decoder_margin_step']
+E         >       assert len(first) == 4
+E         E       AssertionError: assert 2 == 4
+E         E        +  where 2 = len([{'kind': 'decoder_first_logits', 'seconds': 0.6955516250454821, 'id': 0, 'epoch': 0, ...}, {'kind': 'decoder_first_logits', 'seconds': 0.7019507910008542, 'id': 1, 'epoch': 0, ...}])
+E         
+E         doc/benchmarks/2026-10-06-operators-round2/observer_probe.py:46: AssertionError
+E         ----------------------------- Captured stdout call -----------------------------
+E         [AMP] off (fp32, MODEL_AMP unset or =off)
+E         batch = 0 (warm-up, 100.00%)
+E         Training throughput: 1 batches in 0.621s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+E         batch = 0 (Δ=0.167s)
+E         =============================== warnings summary ===============================
+E         doc/benchmarks/2026-10-06-operators-round2/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E           /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E             @pytest.mark.slow
+E         
+E         doc/benchmarks/2026-10-06-operators-round2/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E           /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E             @pytest.mark.slow
+E         
+E         doc/benchmarks/2026-10-06-operators-round2/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E           /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E             @pytest.mark.slow
+E         
+E         doc/benchmarks/2026-10-06-operators-round2/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E           /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+E             return func(*args, **kwargs)
+E         
+E         -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+E         =========================== short test summary info ============================
+E         FAILED doc/benchmarks/2026-10-06-operators-round2/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E         1 failed, 4 warnings in 1.05s
+E         
+E       assert 1 == 0
+
+test/test_review14_contracts.py:158: AssertionError
+_______ test_normal_text_reconstruction_updates_the_grammar_chooser[tie] _______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2344/test_normal_text_reconstructio0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1108480e0>
+eager_reading = None, comparison = 'tie'
+
+    @pytest.mark.parametrize("comparison", ["tie", "distinct"])
+    def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkeypatch, eager_reading, comparison):
+        from test_compiled_word_chunk import _tiny_canonical_model
+    
+        torch.manual_seed(613)
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="16", input_width=16)
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model.conceptualSpace.intra_loss_weight = 0.0
+        model.inter_loss_weight = 0.0
+        assert model.output_in_loop and model.languageSpace.generate_policy is not None
+        assert model.loss.reconstruction_scale == 1.0
+        chooser = model.languageSpace._tree_layer(2).chooser
+        before = {name: value.detach().clone() for name, value in chooser.named_parameters()}
+        generator = model.languageSpace.generate_policy
+        generate_before = [p.detach().clone() for p in generator.parameters()]
+        # A masked one-action policy has exactly zero softmax derivative. Count
+        # choices on live values only; padding rows can expose unused unaries.
+        from Language import LanguageSpace
+        eligibility = LanguageSpace.decoder_eligibility
+        live_choices = []
+        def observe_eligibility(parent, *args, **kwargs):
+            legal = eligibility(parent, *args, **kwargs)
+            live_choices.append(bool((parent.ne(0).any(-1) & legal.sum(-1).gt(1)).any()))
+            return legal
+        monkeypatch.setattr(LanguageSpace, 'decoder_eligibility', staticmethod(observe_eligibility))
+        optimizer = model.getOptimizer(lr=1e-3)
+        words = ["a b c d e", "f g h i j"]
+        inputs = model.inputSpace.prepInput(words)
+        data = model.inputSpace.data
+        supervised_before = data.has_supervised_outputs
+        data.has_supervised_outputs = False
+        try:
+            from reading_fixtures import capture_readings
+            from Models import BasicModel
+            # The §16.3 proposal removes ineffective departures. The unchanged
+            # ordinary batch now has measured non-ties; keep that observation in
+            # the receipt and construct the two cost contracts explicitly here.
+            original = BasicModel._compose_score_function_loss
+            def constructed_costs(owner, path, measured):
+                draw=owner._sentence_departure
+                assert ((draw['attention_round']>=0) | (draw['compose_round']>=0)).all()
+                costs = measured[:, :1].detach().expand(-1, 2).clone()
+                if comparison == "distinct":
+                    costs[:, 1] -= .5
+                return original(owner, path, costs)
+            monkeypatch.setattr(BasicModel, '_compose_score_function_loss', constructed_costs)
+            receipt = _ROOT / 'doc/benchmarks/2026-10-06-operators-round2'
+            monkeypatch.syspath_prepend(str(_ROOT / 'doc/benchmarks/2026-10-03-operators-attention'))
+            monkeypatch.syspath_prepend(str(receipt))
+            from round2_score_probe import observe_score_function
+            audit = {}
+            with observe_score_function(audit), capture_readings(model) as readings:
+                result, _ = model.runBatch(
+                    train=True, batchNum=0, batchSize=2, split="train", optimizer=optimizer,
+                    batch_override=(inputs, torch.empty(2, 0)))
+            assert result is not None
+            changed = {name for name, value in chooser.named_parameters()
+                       if not torch.equal(before[name], value.detach())}
+            departures = audit['compose_score_function_steps']
+            assert len(departures) == 2 and all(row['departed'] for row in departures)
+            if comparison == "tie":
+                assert not changed
+                assert all(row['advantage'] == 0 and row['p_after'] == row['p_before']
+                           for row in departures)
+            else:
+                assert any(name.startswith("mlp.") for name in changed)
+                assert all(row['advantage'] == -.5 and row['p_after'] > row['p_before']
+                           for row in departures)
+            assert all(row['gradient_max_error'] < 2e-6 for row in departures)
+            enlisted = [p for group in optimizer.param_groups for p in group["params"]]
+            for parameter in chooser.parameters():
+                assert sum(parameter is p for p in enlisted) == 1
+            assert not hasattr(model, "forward_grammar_weight")
+            understanding = model._last_understanding
+            assert len(understanding.sentence_states) == len(words)
+            assert all(program.leaves.shape[0] >= 5 for program in readings[0])
+            assert understanding.input_reconstruction is not None
+            assert bool(torch.isfinite(understanding.input_reconstruction.byte_cost).all())
+            assert not hasattr(model, '_output_policy_cost')
+            assert model.ownership_gradient_diagnostics(optimizer)['conflicts'] == 0
+            assert any(step["operation"] == "generate:grammar"
+                       for step in model._last_answer_construction.trace)
+            generator_changed = any(not torch.equal(old, new)
+                                    for old, new in zip(generate_before, generator.parameters()))
+>           assert generator_changed == any(live_choices)
+E           assert True == False
+E            +  where False = any([])
+
+test/test_grammar_word_learning.py:243: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+____ test_normal_text_reconstruction_updates_the_grammar_chooser[distinct] _____
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2344/test_normal_text_reconstructio1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x148258860>
+eager_reading = None, comparison = 'distinct'
+
+    @pytest.mark.parametrize("comparison", ["tie", "distinct"])
+    def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkeypatch, eager_reading, comparison):
+        from test_compiled_word_chunk import _tiny_canonical_model
+    
+        torch.manual_seed(613)
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="16", input_width=16)
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model.conceptualSpace.intra_loss_weight = 0.0
+        model.inter_loss_weight = 0.0
+        assert model.output_in_loop and model.languageSpace.generate_policy is not None
+        assert model.loss.reconstruction_scale == 1.0
+        chooser = model.languageSpace._tree_layer(2).chooser
+        before = {name: value.detach().clone() for name, value in chooser.named_parameters()}
+        generator = model.languageSpace.generate_policy
+        generate_before = [p.detach().clone() for p in generator.parameters()]
+        # A masked one-action policy has exactly zero softmax derivative. Count
+        # choices on live values only; padding rows can expose unused unaries.
+        from Language import LanguageSpace
+        eligibility = LanguageSpace.decoder_eligibility
+        live_choices = []
+        def observe_eligibility(parent, *args, **kwargs):
+            legal = eligibility(parent, *args, **kwargs)
+            live_choices.append(bool((parent.ne(0).any(-1) & legal.sum(-1).gt(1)).any()))
+            return legal
+        monkeypatch.setattr(LanguageSpace, 'decoder_eligibility', staticmethod(observe_eligibility))
+        optimizer = model.getOptimizer(lr=1e-3)
+        words = ["a b c d e", "f g h i j"]
+        inputs = model.inputSpace.prepInput(words)
+        data = model.inputSpace.data
+        supervised_before = data.has_supervised_outputs
+        data.has_supervised_outputs = False
+        try:
+            from reading_fixtures import capture_readings
+            from Models import BasicModel
+            # The §16.3 proposal removes ineffective departures. The unchanged
+            # ordinary batch now has measured non-ties; keep that observation in
+            # the receipt and construct the two cost contracts explicitly here.
+            original = BasicModel._compose_score_function_loss
+            def constructed_costs(owner, path, measured):
+                draw=owner._sentence_departure
+                assert ((draw['attention_round']>=0) | (draw['compose_round']>=0)).all()
+                costs = measured[:, :1].detach().expand(-1, 2).clone()
+                if comparison == "distinct":
+                    costs[:, 1] -= .5
+                return original(owner, path, costs)
+            monkeypatch.setattr(BasicModel, '_compose_score_function_loss', constructed_costs)
+            receipt = _ROOT / 'doc/benchmarks/2026-10-06-operators-round2'
+            monkeypatch.syspath_prepend(str(_ROOT / 'doc/benchmarks/2026-10-03-operators-attention'))
+            monkeypatch.syspath_prepend(str(receipt))
+            from round2_score_probe import observe_score_function
+            audit = {}
+            with observe_score_function(audit), capture_readings(model) as readings:
+                result, _ = model.runBatch(
+                    train=True, batchNum=0, batchSize=2, split="train", optimizer=optimizer,
+                    batch_override=(inputs, torch.empty(2, 0)))
+            assert result is not None
+            changed = {name for name, value in chooser.named_parameters()
+                       if not torch.equal(before[name], value.detach())}
+            departures = audit['compose_score_function_steps']
+            assert len(departures) == 2 and all(row['departed'] for row in departures)
+            if comparison == "tie":
+                assert not changed
+                assert all(row['advantage'] == 0 and row['p_after'] == row['p_before']
+                           for row in departures)
+            else:
+                assert any(name.startswith("mlp.") for name in changed)
+                assert all(row['advantage'] == -.5 and row['p_after'] > row['p_before']
+                           for row in departures)
+            assert all(row['gradient_max_error'] < 2e-6 for row in departures)
+            enlisted = [p for group in optimizer.param_groups for p in group["params"]]
+            for parameter in chooser.parameters():
+                assert sum(parameter is p for p in enlisted) == 1
+            assert not hasattr(model, "forward_grammar_weight")
+            understanding = model._last_understanding
+            assert len(understanding.sentence_states) == len(words)
+            assert all(program.leaves.shape[0] >= 5 for program in readings[0])
+            assert understanding.input_reconstruction is not None
+            assert bool(torch.isfinite(understanding.input_reconstruction.byte_cost).all())
+            assert not hasattr(model, '_output_policy_cost')
+            assert model.ownership_gradient_diagnostics(optimizer)['conflicts'] == 0
+            assert any(step["operation"] == "generate:grammar"
+                       for step in model._last_answer_construction.trace)
+            generator_changed = any(not torch.equal(old, new)
+                                    for old, new in zip(generate_before, generator.parameters()))
+>           assert generator_changed == any(live_choices)
+E           assert True == False
+E            +  where False = any([])
+
+test/test_grammar_word_learning.py:243: AssertionError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+=========================== short test summary info ============================
+FAILED test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 3 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+3 failed, 8 deselected in 9.12s

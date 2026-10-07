@@ -195,15 +195,17 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
         # the receipt and construct the two cost contracts explicitly here.
         original = BasicModel._compose_score_function_loss
         def constructed_costs(owner, path, measured):
-            assert owner._compose_forced_slots.any(-1).all()
+            draw=owner._sentence_departure
+            assert ((draw['attention_round']>=0) | (draw['compose_round']>=0)).all()
             costs = measured[:, :1].detach().expand(-1, 2).clone()
             if comparison == "distinct":
                 costs[:, 1] -= .5
             return original(owner, path, costs)
         monkeypatch.setattr(BasicModel, '_compose_score_function_loss', constructed_costs)
-        receipt = _ROOT / 'doc/benchmarks/2026-10-03-operators-attention'
+        receipt = _ROOT / 'doc/benchmarks/2026-10-06-operators-round2'
+        monkeypatch.syspath_prepend(str(_ROOT / 'doc/benchmarks/2026-10-03-operators-attention'))
         monkeypatch.syspath_prepend(str(receipt))
-        from review17_score_probe import observe_score_function
+        from round2_score_probe import observe_score_function
         audit = {}
         with observe_score_function(audit), capture_readings(model) as readings:
             result, _ = model.runBatch(
@@ -238,7 +240,10 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
                    for step in model._last_answer_construction.trace)
         generator_changed = any(not torch.equal(old, new)
                                 for old, new in zip(generate_before, generator.parameters()))
-        assert generator_changed == any(live_choices)
+        # The teacher-forced CE supplies STOP/undo targets independently of
+        # the free decoder's eligibility (whose straight-through was retired).
+        assert generator_changed
+        assert any(row['present'] for row in model._last_decomposition_walk_teacher)
         ids={id(p) for p in model.objective_parameter_groups(optimizer)['reconstruction']}
         assert all(id(p) in ids for p in generator.parameters())
     finally:

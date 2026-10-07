@@ -1,0 +1,30 @@
+{
+  "seed": 0,
+  "training_steps": 0,
+  "construction_equal": true,
+  "scope_equal": true,
+  "kept_actions_equal": true,
+  "landing_percept_explore_wins": [
+    false,
+    false,
+    false,
+    false
+  ],
+  "old_percept_stage_matches_landing": true,
+  "rng_after_greedy_restoration_matches_round2": true,
+  "mask_changed_positions": 12,
+  "random_operations": {
+    "landing": 52,
+    "round2": 19
+  },
+  "path": [
+    "ModelAttention.stage_input",
+    "WalkTrials.narrowing_pair: one round draw plus 32 alternative draws",
+    "Torch global RNG state",
+    "BasicModel._forward_body",
+    "BasicModel.create_ir_mask: Bernoulli",
+    "masked perceptual forward",
+    "answer head"
+  ],
+  "interpretation": "No percept exploration wins; no scope difference. Retiring its RNG draws changes the later reconstruction mask, explaining the first-forward output difference."
+}

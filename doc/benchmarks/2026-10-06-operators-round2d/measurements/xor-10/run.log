@@ -1,0 +1,1658 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_______________ TestXorGrammarLearnsXor.test_xor_class_accuracy ________________
+
+self = <test_explicit_dimensions.TestXorGrammarLearnsXor testMethod=test_xor_class_accuracy>
+
+    @unittest.skipIf(not _RUN_SLOW, "slow (~60s end-to-end XOR_grammar train) -- set RUN_SLOW=1")
+    def test_xor_class_accuracy(self):
+        model = self.trained_xor_grammar
+        # Read the answers saved by the final evaluation. Another forward
+        # would advance the clock; rCorrect is an embedding-report placeholder.
+        data = model.inputSpace.data
+        answers = torch.stack(data.reconstructed_output).reshape(-1)
+        targets = torch.stack(data.test_output).reshape(-1).to(answers)
+        self.assertEqual(answers.numel(), 4)
+        self.assertEqual(targets.numel(), 4)
+        self.assertTrue(bool(torch.isfinite(answers).all()))
+        correct = (answers > 0.5) == (targets > 0.5)
+        mse = torch.mean((answers - targets).square()).item()
+        self.assertTrue(
+            bool(correct.all()),
+            f"XOR_grammar requires all four answers correct: {answers.tolist()}",
+        )
+>       self.assertLess(
+            mse, 0.05,
+            f"XOR_grammar requires MSE <0.05, got {mse}: {answers.tolist()}",
+        )
+E       AssertionError: 0.14201827347278595 not less than 0.05 : XOR_grammar requires MSE <0.05, got 0.14201827347278595: [0.3710874617099762, 0.6182319521903992, 0.6488387584686279, 0.40162935853004456]
+
+test/test_explicit_dimensions.py:256: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+Device: cpu
+Peer pipeline: static PS/WS stage bodies compiled separately; legacy compatibility scheduler remains outside fullgraph capture
+
+
+==== BasicModel ====
+
+Trial [1/1]
+Baseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.
+Epoch [1/400]
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 0.597s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1817, reconstruction=1.4257
+Epoch [2/400]
+batch = 0 (Δ=0.290s, 100.00%)
+Training throughput: 1 batches in 0.288s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1722, reconstruction=1.6661
+Epoch [3/400]
+batch = 0 (Δ=0.287s, 100.00%)
+Training throughput: 1 batches in 0.286s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1885, reconstruction=2.3880
+Epoch [4/400]
+batch = 0 (Δ=0.288s, 100.00%)
+Training throughput: 1 batches in 0.287s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1858, reconstruction=2.7796
+Epoch [5/400]
+batch = 0 (Δ=0.287s, 100.00%)
+Training throughput: 1 batches in 0.286s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1750, reconstruction=3.1180
+Epoch [6/400]
+batch = 0 (Δ=0.289s, 100.00%)
+Training throughput: 1 batches in 0.288s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1849, reconstruction=3.4108
+Epoch [7/400]
+batch = 0 (Δ=0.287s, 100.00%)
+Training throughput: 1 batches in 0.286s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1885, reconstruction=3.6648
+Epoch [8/400]
+batch = 0 (Δ=0.288s, 100.00%)
+Training throughput: 1 batches in 0.287s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1770, reconstruction=3.8857
+Epoch [9/400]
+batch = 0 (Δ=0.404s, 100.00%)
+Training throughput: 1 batches in 0.403s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1853, reconstruction=4.0785
+Epoch [10/400]
+batch = 0 (Δ=0.289s, 100.00%)
+Training throughput: 1 batches in 0.288s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1919, reconstruction=4.2472
+Epoch [11/400]
+batch = 0 (Δ=0.288s, 100.00%)
+Training throughput: 1 batches in 0.287s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1843, reconstruction=4.3952
+Epoch [12/400]
+batch = 0 (Δ=0.290s, 100.00%)
+Training throughput: 1 batches in 0.290s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1813, reconstruction=4.5254
+Epoch [13/400]
+batch = 0 (Δ=0.289s, 100.00%)
+Training throughput: 1 batches in 0.288s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1884, reconstruction=4.6402
+Epoch [14/400]
+batch = 0 (Δ=0.293s, 100.00%)
+Training throughput: 1 batches in 0.293s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1862, reconstruction=4.7416
+Epoch [15/400]
+batch = 0 (Δ=0.291s, 100.00%)
+Training throughput: 1 batches in 0.289s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1796, reconstruction=4.8315
+Epoch [16/400]
+batch = 0 (Δ=0.290s, 100.00%)
+Training throughput: 1 batches in 0.289s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1833, reconstruction=4.9111
+Epoch [17/400]
+batch = 0 (Δ=0.289s, 100.00%)
+Training throughput: 1 batches in 0.288s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1849, reconstruction=4.9818
+Epoch [18/400]
+batch = 0 (Δ=0.288s, 100.00%)
+Training throughput: 1 batches in 0.287s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1785, reconstruction=5.0448
+Epoch [19/400]
+batch = 0 (Δ=0.292s, 100.00%)
+Training throughput: 1 batches in 0.291s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1760, reconstruction=5.1008
+Epoch [20/400]
+batch = 0 (Δ=0.291s, 100.00%)
+Training throughput: 1 batches in 0.290s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1795, reconstruction=5.1508
+Epoch [21/400]
+batch = 0 (Δ=0.291s, 100.00%)
+Training throughput: 1 batches in 0.290s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1757, reconstruction=5.1954
+Epoch [22/400]
+batch = 0 (Δ=0.290s, 100.00%)
+Training throughput: 1 batches in 0.289s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1747, reconstruction=5.2352
+Epoch [23/400]
+batch = 0 (Δ=0.288s, 100.00%)
+Training throughput: 1 batches in 0.288s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1780, reconstruction=5.2708
+Epoch [24/400]
+batch = 0 (Δ=0.293s, 100.00%)
+Training throughput: 1 batches in 0.292s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1760, reconstruction=5.3026
+Epoch [25/400]
+batch = 0 (Δ=0.289s, 100.00%)
+Training throughput: 1 batches in 0.288s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1740, reconstruction=5.3312
+Epoch [26/400]
+batch = 0 (Δ=0.289s, 100.00%)
+Training throughput: 1 batches in 0.288s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1764, reconstruction=5.3567
+Epoch [27/400]
+batch = 0 (Δ=0.292s, 100.00%)
+Training throughput: 1 batches in 0.291s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1758, reconstruction=5.3796
+Epoch [28/400]
+batch = 0 (Δ=0.400s, 100.00%)
+Training throughput: 1 batches in 0.399s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1738, reconstruction=5.4001
+Epoch [29/400]
+batch = 0 (Δ=0.289s, 100.00%)
+Training throughput: 1 batches in 0.288s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1754, reconstruction=5.4184
+Epoch [30/400]
+batch = 0 (Δ=0.292s, 100.00%)
+Training throughput: 1 batches in 0.291s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1752, reconstruction=5.4349
+Epoch [31/400]
+batch = 0 (Δ=0.292s, 100.00%)
+Training throughput: 1 batches in 0.291s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1737, reconstruction=5.4497
+Epoch [32/400]
+batch = 0 (Δ=0.290s, 100.00%)
+Training throughput: 1 batches in 0.289s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1749, reconstruction=5.4630
+Epoch [33/400]
+batch = 0 (Δ=0.288s, 100.00%)
+Training throughput: 1 batches in 0.287s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1745, reconstruction=5.4749
+Epoch [34/400]
+batch = 0 (Δ=0.296s, 100.00%)
+Training throughput: 1 batches in 0.295s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1734, reconstruction=5.4855
+Epoch [35/400]
+batch = 0 (Δ=0.286s, 100.00%)
+Training throughput: 1 batches in 0.285s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1746, reconstruction=5.4951
+Epoch [36/400]
+batch = 0 (Δ=0.291s, 100.00%)
+Training throughput: 1 batches in 0.290s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1738, reconstruction=5.5037
+Epoch [37/400]
+batch = 0 (Δ=0.293s, 100.00%)
+Training throughput: 1 batches in 0.292s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1732, reconstruction=5.5114
+Epoch [38/400]
+batch = 0 (Δ=0.292s, 100.00%)
+Training throughput: 1 batches in 0.291s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1743, reconstruction=5.5184
+Epoch [39/400]
+batch = 0 (Δ=0.292s, 100.00%)
+Training throughput: 1 batches in 0.292s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1733, reconstruction=5.5246
+Epoch [40/400]
+batch = 0 (Δ=0.290s, 100.00%)
+Training throughput: 1 batches in 0.289s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1729, reconstruction=5.5302
+Epoch [41/400]
+batch = 0 (Δ=0.294s, 100.00%)
+Training throughput: 1 batches in 0.293s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1736, reconstruction=5.5352
+Epoch [42/400]
+batch = 0 (Δ=0.291s, 100.00%)
+Training throughput: 1 batches in 0.290s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1729, reconstruction=5.5396
+Epoch [43/400]
+batch = 0 (Δ=0.290s, 100.00%)
+Training throughput: 1 batches in 0.289s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1725, reconstruction=5.5437
+Epoch [44/400]
+batch = 0 (Δ=0.262s, 100.00%)
+Training throughput: 1 batches in 0.262s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1728, reconstruction=5.5473
+Epoch [45/400]
+batch = 0 (Δ=0.296s, 100.00%)
+Training throughput: 1 batches in 0.295s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1826, reconstruction=5.5505
+Epoch [46/400]
+batch = 0 (Δ=0.292s, 100.00%)
+Training throughput: 1 batches in 0.291s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1723, reconstruction=5.5534
+Epoch [47/400]
+batch = 0 (Δ=0.401s, 100.00%)
+Training throughput: 1 batches in 0.400s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1728, reconstruction=5.5560
+Epoch [48/400]
+batch = 0 (Δ=0.293s, 100.00%)
+Training throughput: 1 batches in 0.292s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1724, reconstruction=5.5583
+Epoch [49/400]
+batch = 0 (Δ=0.290s, 100.00%)
+Training throughput: 1 batches in 0.289s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1720, reconstruction=5.5604
+Epoch [50/400]
+batch = 0 (Δ=0.293s, 100.00%)
+Training throughput: 1 batches in 0.292s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1721, reconstruction=5.5623
+Epoch [51/400]
+batch = 0 (Δ=0.295s, 100.00%)
+Training throughput: 1 batches in 0.294s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1620, reconstruction=5.5639
+Epoch [52/400]
+batch = 0 (Δ=0.291s, 100.00%)
+Training throughput: 1 batches in 0.290s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1619, reconstruction=5.5654
+Epoch [53/400]
+batch = 0 (Δ=0.293s, 100.00%)
+Training throughput: 1 batches in 0.293s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1762, reconstruction=5.5668
+Epoch [54/400]
+batch = 0 (Δ=0.297s, 100.00%)
+Training throughput: 1 batches in 0.296s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1759, reconstruction=5.5679
+Epoch [55/400]
+batch = 0 (Δ=0.295s, 100.00%)
+Training throughput: 1 batches in 0.294s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1759, reconstruction=5.5690
+Epoch [56/400]
+batch = 0 (Δ=0.292s, 100.00%)
+Training throughput: 1 batches in 0.291s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1760, reconstruction=5.5700
+Epoch [57/400]
+batch = 0 (Δ=0.295s, 100.00%)
+Training throughput: 1 batches in 0.294s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1759, reconstruction=5.5708
+Epoch [58/400]
+batch = 0 (Δ=0.298s, 100.00%)
+Training throughput: 1 batches in 0.297s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1760, reconstruction=5.5715
+Epoch [59/400]
+batch = 0 (Δ=0.293s, 100.00%)
+Training throughput: 1 batches in 0.292s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1760, reconstruction=5.5722
+Epoch [60/400]
+batch = 0 (Δ=0.296s, 100.00%)
+Training throughput: 1 batches in 0.295s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1760, reconstruction=5.5728
+Epoch [61/400]
+batch = 0 (Δ=0.293s, 100.00%)
+Training throughput: 1 batches in 0.292s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1760, reconstruction=5.5733
+Epoch [62/400]
+batch = 0 (Δ=0.294s, 100.00%)
+Training throughput: 1 batches in 0.293s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1760, reconstruction=5.5738
+Epoch [63/400]
+batch = 0 (Δ=0.292s, 100.00%)
+Training throughput: 1 batches in 0.291s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1763, reconstruction=5.5742
+Epoch [64/400]
+batch = 0 (Δ=0.293s, 100.00%)
+Training throughput: 1 batches in 0.292s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1761, reconstruction=5.5746
+Epoch [65/400]
+batch = 0 (Δ=0.407s, 100.00%)
+Training throughput: 1 batches in 0.406s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1760, reconstruction=5.5749
+Epoch [66/400]
+batch = 0 (Δ=0.293s, 100.00%)
+Training throughput: 1 batches in 0.292s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1761, reconstruction=5.5751
+Epoch [67/400]
+batch = 0 (Δ=0.292s, 100.00%)
+Training throughput: 1 batches in 0.291s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1761, reconstruction=5.5754
+Epoch [68/400]
+batch = 0 (Δ=0.294s, 100.00%)
+Training throughput: 1 batches in 0.294s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1762, reconstruction=5.5756
+Epoch [69/400]
+batch = 0 (Δ=0.295s, 100.00%)
+Training throughput: 1 batches in 0.294s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1762, reconstruction=5.5758
+Epoch [70/400]
+batch = 0 (Δ=0.294s, 100.00%)
+Training throughput: 1 batches in 0.293s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1762, reconstruction=5.5759
+Epoch [71/400]
+batch = 0 (Δ=0.297s, 100.00%)
+Training throughput: 1 batches in 0.296s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1762, reconstruction=5.5761
+Epoch [72/400]
+batch = 0 (Δ=0.298s, 100.00%)
+Training throughput: 1 batches in 0.297s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1762, reconstruction=5.5762
+Epoch [73/400]
+batch = 0 (Δ=0.295s, 100.00%)
+Training throughput: 1 batches in 0.294s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1762, reconstruction=5.5763
+Epoch [74/400]
+batch = 0 (Δ=0.295s, 100.00%)
+Training throughput: 1 batches in 0.294s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1762, reconstruction=5.5764
+Epoch [75/400]
+batch = 0 (Δ=0.290s, 100.00%)
+Training throughput: 1 batches in 0.289s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1762, reconstruction=5.5764
+Epoch [76/400]
+batch = 0 (Δ=0.297s, 100.00%)
+Training throughput: 1 batches in 0.296s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1762, reconstruction=5.5765
+Epoch [77/400]
+batch = 0 (Δ=0.298s, 100.00%)
+Training throughput: 1 batches in 0.297s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1762, reconstruction=5.5765
+Epoch [78/400]
+batch = 0 (Δ=0.294s, 100.00%)
+Training throughput: 1 batches in 0.293s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1762, reconstruction=5.5766
+Epoch [79/400]
+batch = 0 (Δ=0.265s, 100.00%)
+Training throughput: 1 batches in 0.264s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1762, reconstruction=5.5766
+Epoch [80/400]
+batch = 0 (Δ=0.296s, 100.00%)
+Training throughput: 1 batches in 0.295s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1763, reconstruction=5.5766
+Epoch [81/400]
+batch = 0 (Δ=0.296s, 100.00%)
+Training throughput: 1 batches in 0.295s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1765, reconstruction=5.5766
+Epoch [82/400]
+batch = 0 (Δ=0.298s, 100.00%)
+Training throughput: 1 batches in 0.297s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1763, reconstruction=5.5766
+Epoch [83/400]
+batch = 0 (Δ=0.295s, 100.00%)
+Training throughput: 1 batches in 0.294s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1764, reconstruction=5.5766
+Epoch [84/400]
+batch = 0 (Δ=0.407s, 100.00%)
+Training throughput: 1 batches in 0.406s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1763, reconstruction=5.5766
+Epoch [85/400]
+batch = 0 (Δ=0.293s, 100.00%)
+Training throughput: 1 batches in 0.293s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1764, reconstruction=5.5766
+Epoch [86/400]
+batch = 0 (Δ=0.296s, 100.00%)
+Training throughput: 1 batches in 0.295s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1764, reconstruction=5.5766
+Epoch [87/400]
+batch = 0 (Δ=0.295s, 100.00%)
+Training throughput: 1 batches in 0.294s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1764, reconstruction=5.5765
+Epoch [88/400]
+batch = 0 (Δ=0.295s, 100.00%)
+Training throughput: 1 batches in 0.294s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1763, reconstruction=5.5765
+Epoch [89/400]
+batch = 0 (Δ=0.296s, 100.00%)
+Training throughput: 1 batches in 0.295s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1763, reconstruction=5.5765
+Epoch [90/400]
+batch = 0 (Δ=0.297s, 100.00%)
+Training throughput: 1 batches in 0.296s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1763, reconstruction=5.5765
+Epoch [91/400]
+batch = 0 (Δ=0.297s, 100.00%)
+Training throughput: 1 batches in 0.296s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1763, reconstruction=5.5764
+Epoch [92/400]
+batch = 0 (Δ=0.296s, 100.00%)
+Training throughput: 1 batches in 0.295s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1763, reconstruction=5.5764
+Epoch [93/400]
+batch = 0 (Δ=0.297s, 100.00%)
+Training throughput: 1 batches in 0.297s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1763, reconstruction=5.5764
+Epoch [94/400]
+batch = 0 (Δ=0.295s, 100.00%)
+Training throughput: 1 batches in 0.294s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1764, reconstruction=5.5763
+Epoch [95/400]
+batch = 0 (Δ=0.266s, 100.00%)
+Training throughput: 1 batches in 0.265s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1766, reconstruction=5.5763
+Epoch [96/400]
+batch = 0 (Δ=0.296s, 100.00%)
+Training throughput: 1 batches in 0.295s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1763, reconstruction=5.5762
+Epoch [97/400]
+batch = 0 (Δ=0.297s, 100.00%)
+Training throughput: 1 batches in 0.296s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1786, reconstruction=5.5762
+Epoch [98/400]
+batch = 0 (Δ=0.296s, 100.00%)
+Training throughput: 1 batches in 0.295s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1789, reconstruction=5.5762
+Epoch [99/400]
+batch = 0 (Δ=0.296s, 100.00%)
+Training throughput: 1 batches in 0.295s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1702, reconstruction=5.5761
+Epoch [100/400]
+batch = 0 (Δ=0.264s, 100.00%)
+Training throughput: 1 batches in 0.263s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1702, reconstruction=5.5761
+Epoch [101/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1701, reconstruction=5.5760
+Epoch [102/400]
+batch = 0 (Δ=0.296s, 100.00%)
+Training throughput: 1 batches in 0.295s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1700, reconstruction=5.5760
+Epoch [103/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1702, reconstruction=5.5760
+Epoch [104/400]
+batch = 0 (Δ=0.409s, 100.00%)
+Training throughput: 1 batches in 0.408s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1630, reconstruction=5.5759
+Epoch [105/400]
+batch = 0 (Δ=0.297s, 100.00%)
+Training throughput: 1 batches in 0.296s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1624, reconstruction=5.5759
+Epoch [106/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1668, reconstruction=5.5758
+Epoch [107/400]
+batch = 0 (Δ=0.297s, 100.00%)
+Training throughput: 1 batches in 0.296s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1668, reconstruction=5.5758
+Epoch [108/400]
+batch = 0 (Δ=0.298s, 100.00%)
+Training throughput: 1 batches in 0.297s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1667, reconstruction=5.5758
+Epoch [109/400]
+batch = 0 (Δ=0.297s, 100.00%)
+Training throughput: 1 batches in 0.296s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1663, reconstruction=5.5757
+Epoch [110/400]
+batch = 0 (Δ=0.297s, 100.00%)
+Training throughput: 1 batches in 0.296s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1661, reconstruction=5.5757
+Epoch [111/400]
+batch = 0 (Δ=0.300s, 100.00%)
+Training throughput: 1 batches in 0.299s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1659, reconstruction=5.5756
+Epoch [112/400]
+batch = 0 (Δ=0.297s, 100.00%)
+Training throughput: 1 batches in 0.296s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1662, reconstruction=5.5756
+Epoch [113/400]
+batch = 0 (Δ=0.301s, 100.00%)
+Training throughput: 1 batches in 0.300s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1657, reconstruction=5.5756
+Epoch [114/400]
+batch = 0 (Δ=0.300s, 100.00%)
+Training throughput: 1 batches in 0.299s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1654, reconstruction=5.5755
+Epoch [115/400]
+batch = 0 (Δ=0.298s, 100.00%)
+Training throughput: 1 batches in 0.297s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1652, reconstruction=5.5755
+Epoch [116/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1651, reconstruction=5.5754
+Epoch [117/400]
+batch = 0 (Δ=0.298s, 100.00%)
+Training throughput: 1 batches in 0.297s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1647, reconstruction=5.5754
+Epoch [118/400]
+batch = 0 (Δ=0.298s, 100.00%)
+Training throughput: 1 batches in 0.297s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1643, reconstruction=5.5753
+Epoch [119/400]
+batch = 0 (Δ=0.298s, 100.00%)
+Training throughput: 1 batches in 0.297s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1641, reconstruction=5.5753
+Epoch [120/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1639, reconstruction=5.5753
+Epoch [121/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1636, reconstruction=5.5752
+Epoch [122/400]
+batch = 0 (Δ=0.414s, 100.00%)
+Training throughput: 1 batches in 0.413s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1633, reconstruction=5.5752
+Epoch [123/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1629, reconstruction=5.5752
+Epoch [124/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1626, reconstruction=5.5751
+Epoch [125/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1624, reconstruction=5.5751
+Epoch [126/400]
+batch = 0 (Δ=0.300s, 100.00%)
+Training throughput: 1 batches in 0.299s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1618, reconstruction=5.5750
+Epoch [127/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1615, reconstruction=5.5750
+Epoch [128/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1615, reconstruction=5.5750
+Epoch [129/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1612, reconstruction=5.5749
+Epoch [130/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1605, reconstruction=5.5749
+Epoch [131/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.299s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1602, reconstruction=5.5749
+Epoch [132/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1602, reconstruction=5.5748
+Epoch [133/400]
+batch = 0 (Δ=0.298s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1595, reconstruction=5.5748
+Epoch [134/400]
+batch = 0 (Δ=0.315s, 100.00%)
+Training throughput: 1 batches in 0.313s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1592, reconstruction=5.5748
+Epoch [135/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1592, reconstruction=5.5747
+Epoch [136/400]
+batch = 0 (Δ=0.300s, 100.00%)
+Training throughput: 1 batches in 0.300s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1587, reconstruction=5.5747
+Epoch [137/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1582, reconstruction=5.5747
+Epoch [138/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1581, reconstruction=5.5746
+Epoch [139/400]
+batch = 0 (Δ=0.296s, 100.00%)
+Training throughput: 1 batches in 0.295s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1575, reconstruction=5.5746
+Epoch [140/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1572, reconstruction=5.5746
+Epoch [141/400]
+batch = 0 (Δ=0.387s, 100.00%)
+Training throughput: 1 batches in 0.386s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1602, reconstruction=5.5745
+Epoch [142/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.300s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1573, reconstruction=5.5745
+Epoch [143/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1581, reconstruction=5.5745
+Epoch [144/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1559, reconstruction=5.5745
+Epoch [145/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1640, reconstruction=5.5744
+Epoch [146/400]
+batch = 0 (Δ=0.301s, 100.00%)
+Training throughput: 1 batches in 0.300s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1558, reconstruction=5.5744
+Epoch [147/400]
+batch = 0 (Δ=0.301s, 100.00%)
+Training throughput: 1 batches in 0.300s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1583, reconstruction=5.5744
+Epoch [148/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1549, reconstruction=5.5743
+Epoch [149/400]
+batch = 0 (Δ=0.271s, 100.00%)
+Training throughput: 1 batches in 0.269s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1679, reconstruction=5.5743
+Epoch [150/400]
+batch = 0 (Δ=0.271s, 100.00%)
+Training throughput: 1 batches in 0.270s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1590, reconstruction=5.5743
+Epoch [151/400]
+batch = 0 (Δ=0.300s, 100.00%)
+Training throughput: 1 batches in 0.299s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1566, reconstruction=5.5743
+Epoch [152/400]
+batch = 0 (Δ=0.301s, 100.00%)
+Training throughput: 1 batches in 0.300s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1561, reconstruction=5.5742
+Epoch [153/400]
+batch = 0 (Δ=0.301s, 100.00%)
+Training throughput: 1 batches in 0.300s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1569, reconstruction=5.5742
+Epoch [154/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1632, reconstruction=5.5742
+Epoch [155/400]
+batch = 0 (Δ=0.301s, 100.00%)
+Training throughput: 1 batches in 0.300s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1528, reconstruction=5.5741
+Epoch [156/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1590, reconstruction=5.5741
+Epoch [157/400]
+batch = 0 (Δ=0.294s, 100.00%)
+Training throughput: 1 batches in 0.294s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1527, reconstruction=5.5741
+Epoch [158/400]
+batch = 0 (Δ=0.271s, 100.00%)
+Training throughput: 1 batches in 0.270s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1655, reconstruction=5.5741
+Epoch [159/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1572, reconstruction=5.5740
+Epoch [160/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1524, reconstruction=5.5740
+Epoch [161/400]
+batch = 0 (Δ=0.415s, 100.00%)
+Training throughput: 1 batches in 0.414s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1535, reconstruction=5.5740
+Epoch [162/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1513, reconstruction=5.5740
+Epoch [163/400]
+batch = 0 (Δ=0.271s, 100.00%)
+Training throughput: 1 batches in 0.270s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1637, reconstruction=5.5739
+Epoch [164/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1546, reconstruction=5.5739
+Epoch [165/400]
+batch = 0 (Δ=0.300s, 100.00%)
+Training throughput: 1 batches in 0.300s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1515, reconstruction=5.5739
+Epoch [166/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1541, reconstruction=5.5738
+Epoch [167/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1514, reconstruction=5.5738
+Epoch [168/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1643, reconstruction=5.5738
+Epoch [169/400]
+batch = 0 (Δ=0.301s, 100.00%)
+Training throughput: 1 batches in 0.300s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1555, reconstruction=5.5738
+Epoch [170/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1501, reconstruction=5.5737
+Epoch [171/400]
+batch = 0 (Δ=0.301s, 100.00%)
+Training throughput: 1 batches in 0.300s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1523, reconstruction=5.5737
+Epoch [172/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1486, reconstruction=5.5737
+Epoch [173/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1569, reconstruction=5.5737
+Epoch [174/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1514, reconstruction=5.5737
+Epoch [175/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1494, reconstruction=5.5736
+Epoch [176/400]
+batch = 0 (Δ=0.308s, 100.00%)
+Training throughput: 1 batches in 0.307s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1510, reconstruction=5.5736
+Epoch [177/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1484, reconstruction=5.5736
+Epoch [178/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1587, reconstruction=5.5736
+Epoch [179/400]
+batch = 0 (Δ=0.418s, 100.00%)
+Training throughput: 1 batches in 0.417s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1529, reconstruction=5.5735
+Epoch [180/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1476, reconstruction=5.5735
+Epoch [181/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1529, reconstruction=5.5735
+Epoch [182/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1458, reconstruction=5.5735
+Epoch [183/400]
+batch = 0 (Δ=0.300s, 100.00%)
+Training throughput: 1 batches in 0.299s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1504, reconstruction=5.5734
+Epoch [184/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1511, reconstruction=5.5734
+Epoch [185/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1451, reconstruction=5.5734
+Epoch [186/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1499, reconstruction=5.5734
+Epoch [187/400]
+batch = 0 (Δ=0.273s, 100.00%)
+Training throughput: 1 batches in 0.272s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1448, reconstruction=5.5734
+Epoch [188/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1509, reconstruction=5.5733
+Epoch [189/400]
+batch = 0 (Δ=0.300s, 100.00%)
+Training throughput: 1 batches in 0.299s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1501, reconstruction=5.5733
+Epoch [190/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1438, reconstruction=5.5733
+Epoch [191/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1465, reconstruction=5.5733
+Epoch [192/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1453, reconstruction=5.5733
+Epoch [193/400]
+batch = 0 (Δ=0.308s, 100.00%)
+Training throughput: 1 batches in 0.307s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1439, reconstruction=5.5732
+Epoch [194/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1490, reconstruction=5.5732
+Epoch [195/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1449, reconstruction=5.5732
+Epoch [196/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1427, reconstruction=5.5732
+Epoch [197/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1443, reconstruction=5.5732
+Epoch [198/400]
+batch = 0 (Δ=0.412s, 100.00%)
+Training throughput: 1 batches in 0.411s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1421, reconstruction=5.5731
+Epoch [199/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1434, reconstruction=5.5731
+Epoch [200/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1453, reconstruction=5.5731
+Epoch [201/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1425, reconstruction=5.5731
+Epoch [202/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1408, reconstruction=5.5731
+Epoch [203/400]
+batch = 0 (Δ=0.308s, 100.00%)
+Training throughput: 1 batches in 0.307s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1406, reconstruction=5.5730
+Epoch [204/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1404, reconstruction=5.5730
+Epoch [205/400]
+batch = 0 (Δ=0.309s, 100.00%)
+Training throughput: 1 batches in 0.308s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1414, reconstruction=5.5730
+Epoch [206/400]
+batch = 0 (Δ=0.309s, 100.00%)
+Training throughput: 1 batches in 0.308s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1409, reconstruction=5.5730
+Epoch [207/400]
+batch = 0 (Δ=0.275s, 100.00%)
+Training throughput: 1 batches in 0.274s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1399, reconstruction=5.5730
+Epoch [208/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1396, reconstruction=5.5729
+Epoch [209/400]
+batch = 0 (Δ=0.308s, 100.00%)
+Training throughput: 1 batches in 0.307s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1395, reconstruction=5.5729
+Epoch [210/400]
+batch = 0 (Δ=0.309s, 100.00%)
+Training throughput: 1 batches in 0.308s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1401, reconstruction=5.5729
+Epoch [211/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1390, reconstruction=5.5729
+Epoch [212/400]
+batch = 0 (Δ=0.310s, 100.00%)
+Training throughput: 1 batches in 0.309s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1392, reconstruction=5.5729
+Epoch [213/400]
+batch = 0 (Δ=0.311s, 100.00%)
+Training throughput: 1 batches in 0.309s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1388, reconstruction=5.5729
+Epoch [214/400]
+batch = 0 (Δ=0.276s, 100.00%)
+Training throughput: 1 batches in 0.276s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1386, reconstruction=5.5728
+Epoch [215/400]
+batch = 0 (Δ=0.276s, 100.00%)
+Training throughput: 1 batches in 0.275s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1390, reconstruction=5.5728
+Epoch [216/400]
+batch = 0 (Δ=0.423s, 100.00%)
+Training throughput: 1 batches in 0.423s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1380, reconstruction=5.5728
+Epoch [217/400]
+batch = 0 (Δ=0.311s, 100.00%)
+Training throughput: 1 batches in 0.309s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1379, reconstruction=5.5728
+Epoch [218/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1377, reconstruction=5.5728
+Epoch [219/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1375, reconstruction=5.5728
+Epoch [220/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1372, reconstruction=5.5727
+Epoch [221/400]
+batch = 0 (Δ=0.274s, 100.00%)
+Training throughput: 1 batches in 0.273s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1371, reconstruction=5.5727
+Epoch [222/400]
+batch = 0 (Δ=0.308s, 100.00%)
+Training throughput: 1 batches in 0.307s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1370, reconstruction=5.5727
+Epoch [223/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1366, reconstruction=5.5727
+Epoch [224/400]
+batch = 0 (Δ=0.308s, 100.00%)
+Training throughput: 1 batches in 0.307s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1371, reconstruction=5.5727
+Epoch [225/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1367, reconstruction=5.5726
+Epoch [226/400]
+batch = 0 (Δ=0.309s, 100.00%)
+Training throughput: 1 batches in 0.308s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1360, reconstruction=5.5726
+Epoch [227/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1359, reconstruction=5.5726
+Epoch [228/400]
+batch = 0 (Δ=0.309s, 100.00%)
+Training throughput: 1 batches in 0.308s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1359, reconstruction=5.5726
+Epoch [229/400]
+batch = 0 (Δ=0.309s, 100.00%)
+Training throughput: 1 batches in 0.308s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1355, reconstruction=5.5726
+Epoch [230/400]
+batch = 0 (Δ=0.308s, 100.00%)
+Training throughput: 1 batches in 0.308s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1352, reconstruction=5.5726
+Epoch [231/400]
+batch = 0 (Δ=0.308s, 100.00%)
+Training throughput: 1 batches in 0.307s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1350, reconstruction=5.5725
+Epoch [232/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1347, reconstruction=5.5725
+Epoch [233/400]
+batch = 0 (Δ=0.308s, 100.00%)
+Training throughput: 1 batches in 0.307s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1346, reconstruction=5.5725
+Epoch [234/400]
+batch = 0 (Δ=0.392s, 100.00%)
+Training throughput: 1 batches in 0.391s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1345, reconstruction=5.5725
+Epoch [235/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1342, reconstruction=5.5725
+Epoch [236/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1341, reconstruction=5.5725
+Epoch [237/400]
+batch = 0 (Δ=0.311s, 100.00%)
+Training throughput: 1 batches in 0.310s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1338, reconstruction=5.5724
+Epoch [238/400]
+batch = 0 (Δ=0.278s, 100.00%)
+Training throughput: 1 batches in 0.278s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1334, reconstruction=5.5724
+Epoch [239/400]
+batch = 0 (Δ=0.311s, 100.00%)
+Training throughput: 1 batches in 0.310s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1331, reconstruction=5.5724
+Epoch [240/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1328, reconstruction=5.5724
+Epoch [241/400]
+batch = 0 (Δ=0.309s, 100.00%)
+Training throughput: 1 batches in 0.308s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1329, reconstruction=5.5724
+Epoch [242/400]
+batch = 0 (Δ=0.309s, 100.00%)
+Training throughput: 1 batches in 0.308s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1337, reconstruction=5.5724
+Epoch [243/400]
+batch = 0 (Δ=0.308s, 100.00%)
+Training throughput: 1 batches in 0.307s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1320, reconstruction=5.5724
+Epoch [244/400]
+batch = 0 (Δ=0.310s, 100.00%)
+Training throughput: 1 batches in 0.308s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1319, reconstruction=5.5723
+Epoch [245/400]
+batch = 0 (Δ=0.308s, 100.00%)
+Training throughput: 1 batches in 0.307s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1316, reconstruction=5.5723
+Epoch [246/400]
+batch = 0 (Δ=0.311s, 100.00%)
+Training throughput: 1 batches in 0.310s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1312, reconstruction=5.5723
+Epoch [247/400]
+batch = 0 (Δ=0.309s, 100.00%)
+Training throughput: 1 batches in 0.308s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1314, reconstruction=5.5723
+Epoch [248/400]
+batch = 0 (Δ=0.310s, 100.00%)
+Training throughput: 1 batches in 0.309s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1306, reconstruction=5.5723
+Epoch [249/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1306, reconstruction=5.5723
+Epoch [250/400]
+batch = 0 (Δ=0.308s, 100.00%)
+Training throughput: 1 batches in 0.307s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1301, reconstruction=5.5722
+Epoch [251/400]
+batch = 0 (Δ=0.312s, 100.00%)
+Training throughput: 1 batches in 0.311s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1297, reconstruction=5.5722
+Epoch [252/400]
+batch = 0 (Δ=0.425s, 100.00%)
+Training throughput: 1 batches in 0.424s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1297, reconstruction=5.5722
+Epoch [253/400]
+batch = 0 (Δ=0.301s, 100.00%)
+Training throughput: 1 batches in 0.300s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1292, reconstruction=5.5722
+Epoch [254/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1289, reconstruction=5.5722
+Epoch [255/400]
+batch = 0 (Δ=0.281s, 100.00%)
+Training throughput: 1 batches in 0.280s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1313, reconstruction=5.5722
+Epoch [256/400]
+batch = 0 (Δ=0.273s, 100.00%)
+Training throughput: 1 batches in 0.272s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1325, reconstruction=5.5722
+Epoch [257/400]
+batch = 0 (Δ=0.297s, 100.00%)
+Training throughput: 1 batches in 0.296s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1280, reconstruction=5.5698
+Epoch [258/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1290, reconstruction=5.5672
+Epoch [259/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1275, reconstruction=5.5648
+Epoch [260/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1314, reconstruction=5.5626
+Epoch [261/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1300, reconstruction=5.5608
+Epoch [262/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1268, reconstruction=5.5592
+Epoch [263/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1265, reconstruction=5.5579
+Epoch [264/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1265, reconstruction=5.5568
+Epoch [265/400]
+batch = 0 (Δ=0.308s, 100.00%)
+Training throughput: 1 batches in 0.307s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1274, reconstruction=5.5559
+Epoch [266/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1266, reconstruction=5.5551
+Epoch [267/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1266, reconstruction=5.5544
+Epoch [268/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1254, reconstruction=5.5539
+Epoch [269/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1254, reconstruction=5.5534
+Epoch [270/400]
+batch = 0 (Δ=0.419s, 100.00%)
+Training throughput: 1 batches in 0.418s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1259, reconstruction=5.5530
+Epoch [271/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1257, reconstruction=5.5527
+Epoch [272/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1249, reconstruction=5.5524
+Epoch [273/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1247, reconstruction=5.5522
+Epoch [274/400]
+batch = 0 (Δ=0.272s, 100.00%)
+Training throughput: 1 batches in 0.271s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1242, reconstruction=5.5520
+Epoch [275/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1250, reconstruction=5.5518
+Epoch [276/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1246, reconstruction=5.5517
+Epoch [277/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1243, reconstruction=5.5516
+Epoch [278/400]
+batch = 0 (Δ=0.301s, 100.00%)
+Training throughput: 1 batches in 0.300s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1234, reconstruction=5.5514
+Epoch [279/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1232, reconstruction=5.5514
+Epoch [280/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1248, reconstruction=5.5513
+Epoch [281/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1251, reconstruction=5.5512
+Epoch [282/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1229, reconstruction=5.5511
+Epoch [283/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1228, reconstruction=5.5511
+Epoch [284/400]
+batch = 0 (Δ=0.273s, 100.00%)
+Training throughput: 1 batches in 0.272s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1230, reconstruction=5.5510
+Epoch [285/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1250, reconstruction=5.5509
+Epoch [286/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1217, reconstruction=5.5509
+Epoch [287/400]
+batch = 0 (Δ=0.301s, 100.00%)
+Training throughput: 1 batches in 0.300s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1226, reconstruction=5.5509
+Epoch [288/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1216, reconstruction=5.5508
+Epoch [289/400]
+batch = 0 (Δ=0.422s, 100.00%)
+Training throughput: 1 batches in 0.421s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1213, reconstruction=5.5508
+Epoch [290/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1244, reconstruction=5.5508
+Epoch [291/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1223, reconstruction=5.5507
+Epoch [292/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1207, reconstruction=5.5507
+Epoch [293/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1220, reconstruction=5.5507
+Epoch [294/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1203, reconstruction=5.5506
+Epoch [295/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1205, reconstruction=5.5506
+Epoch [296/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1204, reconstruction=5.5506
+Epoch [297/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1197, reconstruction=5.5506
+Epoch [298/400]
+batch = 0 (Δ=0.275s, 100.00%)
+Training throughput: 1 batches in 0.274s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1197, reconstruction=5.5505
+Epoch [299/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1192, reconstruction=5.5505
+Epoch [300/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1195, reconstruction=5.5505
+Epoch [301/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1195, reconstruction=5.5505
+Epoch [302/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1189, reconstruction=5.5505
+Epoch [303/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1184, reconstruction=5.5505
+Epoch [304/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1182, reconstruction=5.5504
+Epoch [305/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1182, reconstruction=5.5504
+Epoch [306/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1187, reconstruction=5.5504
+Epoch [307/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1177, reconstruction=5.5504
+Epoch [308/400]
+batch = 0 (Δ=0.422s, 100.00%)
+Training throughput: 1 batches in 0.422s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1207, reconstruction=5.5504
+Epoch [309/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1191, reconstruction=5.5504
+Epoch [310/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1173, reconstruction=5.5503
+Epoch [311/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1215, reconstruction=5.5503
+Epoch [312/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1170, reconstruction=5.5503
+Epoch [313/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1172, reconstruction=5.5503
+Epoch [314/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1165, reconstruction=5.5503
+Epoch [315/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1160, reconstruction=5.5503
+Epoch [316/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1158, reconstruction=5.5503
+Epoch [317/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1157, reconstruction=5.5503
+Epoch [318/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1154, reconstruction=5.5503
+Epoch [319/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1156, reconstruction=5.5502
+Epoch [320/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1158, reconstruction=5.5502
+Epoch [321/400]
+batch = 0 (Δ=0.270s, 100.00%)
+Training throughput: 1 batches in 0.270s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1149, reconstruction=5.5502
+Epoch [322/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1151, reconstruction=5.5502
+Epoch [323/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1145, reconstruction=5.5502
+Epoch [324/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1154, reconstruction=5.5502
+Epoch [325/400]
+batch = 0 (Δ=0.312s, 100.00%)
+Training throughput: 1 batches in 0.311s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1140, reconstruction=5.5502
+Epoch [326/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1168, reconstruction=5.5502
+Epoch [327/400]
+batch = 0 (Δ=0.421s, 100.00%)
+Training throughput: 1 batches in 0.420s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1145, reconstruction=5.5502
+Epoch [328/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1149, reconstruction=5.5502
+Epoch [329/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1135, reconstruction=5.5502
+Epoch [330/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1130, reconstruction=5.5502
+Epoch [331/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1163, reconstruction=5.5502
+Epoch [332/400]
+batch = 0 (Δ=0.301s, 100.00%)
+Training throughput: 1 batches in 0.300s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1131, reconstruction=5.5501
+Epoch [333/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1145, reconstruction=5.5501
+Epoch [334/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1134, reconstruction=5.5501
+Epoch [335/400]
+batch = 0 (Δ=0.316s, 100.00%)
+Training throughput: 1 batches in 0.316s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1131, reconstruction=5.5501
+Epoch [336/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1157, reconstruction=5.5501
+Epoch [337/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1114, reconstruction=5.5501
+Epoch [338/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1130, reconstruction=5.5501
+Epoch [339/400]
+batch = 0 (Δ=0.276s, 100.00%)
+Training throughput: 1 batches in 0.275s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1110, reconstruction=5.5501
+Epoch [340/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1114, reconstruction=5.5501
+Epoch [341/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1130, reconstruction=5.5501
+Epoch [342/400]
+batch = 0 (Δ=0.308s, 100.00%)
+Training throughput: 1 batches in 0.307s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1124, reconstruction=5.5501
+Epoch [343/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1102, reconstruction=5.5501
+Epoch [344/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1099, reconstruction=5.5501
+Epoch [345/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1100, reconstruction=5.5501
+Epoch [346/400]
+batch = 0 (Δ=0.424s, 100.00%)
+Training throughput: 1 batches in 0.423s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1096, reconstruction=5.5501
+Epoch [347/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1094, reconstruction=5.5501
+Epoch [348/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1093, reconstruction=5.5501
+Epoch [349/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1094, reconstruction=5.5501
+Epoch [350/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1092, reconstruction=5.5501
+Epoch [351/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1093, reconstruction=5.5500
+Epoch [352/400]
+batch = 0 (Δ=0.301s, 100.00%)
+Training throughput: 1 batches in 0.300s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1084, reconstruction=5.5500
+Epoch [353/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1106, reconstruction=5.5500
+Epoch [354/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1085, reconstruction=5.5500
+Epoch [355/400]
+batch = 0 (Δ=0.298s, 100.00%)
+Training throughput: 1 batches in 0.297s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1087, reconstruction=5.5500
+Epoch [356/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1128, reconstruction=5.5500
+Epoch [357/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1092, reconstruction=5.5500
+Epoch [358/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1082, reconstruction=5.5500
+Epoch [359/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1077, reconstruction=5.5500
+Epoch [360/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1068, reconstruction=5.5500
+Epoch [361/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1071, reconstruction=5.5500
+Epoch [362/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1066, reconstruction=5.5500
+Epoch [363/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1072, reconstruction=5.5500
+Epoch [364/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1060, reconstruction=5.5500
+Epoch [365/400]
+batch = 0 (Δ=0.418s, 100.00%)
+Training throughput: 1 batches in 0.417s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1079, reconstruction=5.5500
+Epoch [366/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1059, reconstruction=5.5500
+Epoch [367/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1096, reconstruction=5.5500
+Epoch [368/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1060, reconstruction=5.5500
+Epoch [369/400]
+batch = 0 (Δ=0.272s, 100.00%)
+Training throughput: 1 batches in 0.271s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1059, reconstruction=5.5500
+Epoch [370/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1084, reconstruction=5.5500
+Epoch [371/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1052, reconstruction=5.5500
+Epoch [372/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1110, reconstruction=5.5500
+Epoch [373/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1095, reconstruction=5.5500
+Epoch [374/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1057, reconstruction=5.5500
+Epoch [375/400]
+batch = 0 (Δ=0.275s, 100.00%)
+Training throughput: 1 batches in 0.274s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1103, reconstruction=5.5500
+Epoch [376/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1045, reconstruction=5.5500
+Epoch [377/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1057, reconstruction=5.5500
+Epoch [378/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1075, reconstruction=5.5500
+Epoch [379/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1031, reconstruction=5.5500
+Epoch [380/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1066, reconstruction=5.5500
+Epoch [381/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1029, reconstruction=5.5499
+Epoch [382/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1055, reconstruction=5.5499
+Epoch [383/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1083, reconstruction=5.5499
+Epoch [384/400]
+batch = 0 (Δ=0.394s, 100.00%)
+Training throughput: 1 batches in 0.393s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1025, reconstruction=5.5499
+Epoch [385/400]
+batch = 0 (Δ=0.308s, 100.00%)
+Training throughput: 1 batches in 0.307s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1054, reconstruction=5.5499
+Epoch [386/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1023, reconstruction=5.5499
+Epoch [387/400]
+batch = 0 (Δ=0.298s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1032, reconstruction=5.5499
+Epoch [388/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1048, reconstruction=5.5499
+Epoch [389/400]
+batch = 0 (Δ=0.300s, 100.00%)
+Training throughput: 1 batches in 0.299s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1014, reconstruction=5.5499
+Epoch [390/400]
+batch = 0 (Δ=0.272s, 100.00%)
+Training throughput: 1 batches in 0.271s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1025, reconstruction=5.5499
+Epoch [391/400]
+batch = 0 (Δ=0.299s, 100.00%)
+Training throughput: 1 batches in 0.298s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1017, reconstruction=5.5499
+Epoch [392/400]
+batch = 0 (Δ=0.306s, 100.00%)
+Training throughput: 1 batches in 0.305s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1013, reconstruction=5.5499
+Epoch [393/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1007, reconstruction=5.5499
+Epoch [394/400]
+batch = 0 (Δ=0.307s, 100.00%)
+Training throughput: 1 batches in 0.306s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1012, reconstruction=5.5499
+Epoch [395/400]
+batch = 0 (Δ=0.275s, 100.00%)
+Training throughput: 1 batches in 0.274s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1004, reconstruction=5.5499
+Epoch [396/400]
+batch = 0 (Δ=0.303s, 100.00%)
+Training throughput: 1 batches in 0.302s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1001, reconstruction=5.5499
+Epoch [397/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1001, reconstruction=5.5499
+Epoch [398/400]
+batch = 0 (Δ=0.305s, 100.00%)
+Training throughput: 1 batches in 0.304s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.1000, reconstruction=5.5499
+Epoch [399/400]
+batch = 0 (Δ=0.302s, 100.00%)
+Training throughput: 1 batches in 0.301s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.0995, reconstruction=5.5499
+Epoch [400/400]
+batch = 0 (Δ=0.304s, 100.00%)
+Training throughput: 1 batches in 0.303s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+Train Loss: output=0.0994, reconstruction=5.5499
+Final Stats:
+=== Selected operation grammar ===
+batch = 0 (Δ=0.252s, 100.00%)
+Training throughput: 1 batches in 0.206s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+=== Input Reconstruction (test) ===
+  row[0] input='hello world' -> reconstructed='hello ' label=0.0000 predicted=0.3711 MISMATCH
+  row[1] input='hello there' -> reconstructed='hello ' label=1.0000 predicted=0.6182 MISMATCH
+  row[2] input='loving world' -> reconstructed='world ' label=1.0000 predicted=0.6488 MISMATCH
+  row[3] input='loving there' -> reconstructed='there ' label=0.0000 predicted=0.4016 MISMATCH
+=============================== warnings summary ===============================
+test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy
+1 failed, 1 passed, 1 warning in 123.23s (0:02:03)

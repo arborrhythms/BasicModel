@@ -1,0 +1,257 @@
+--- before-round2d/doc/Architecture.md
++++ review-round2d/doc/Architecture.md
+@@ -2715,12 +2715,15 @@
+ 
+ **Two hard derivations as expectation and surprise.** The forward is always
+ a tree. The greedy derivation is what the model expects of itself; one
+-departure, drawn uniformly over the eligible rounds of the narrowing and
+-compose walks together, is the question; both are completed and costed at
++departure, drawn first uniformly among eligible walks (narrowing and compose),
++then uniformly among the selected walk's eligible rounds, is the question
++(operators round 2d); both are completed and costed at
+ the owner step on the total of reconstruction, expectation (gated by the
+-predictor's confidence) and, where supplied, the answer; the better is
+-committed, written to its row and presented; the chooser is credited by the
+-score-function term at the departure — the surprise at the choice. The
++predictor's confidence) and, where supplied, the answer. The strict
++reconstruction keep commits the lower-R trial, with ties keeping greedy;
++the full total supplies the chooser's advantage. The committed trial is
++written to its row and presented; the chooser is credited by the score-function
++term at the departure, corrected by `K·R_walk·W` — the surprise at the choice. The
+ choice stays discrete; no mixed forward, no straight-through.
+ 
+ **Surprise at every layer.** The one unconditioned prediction is the next
+--- before-round2d/doc/FutureWork.md
++++ review-round2d/doc/FutureWork.md
+@@ -1213,10 +1213,31 @@
+ The [round-2c receipt](benchmarks/2026-10-06-operators-round2c/README.md)
+ records class 5/10, reconstruction 10/10, sum 10/10 at the quarter floor,
+ and live MM_xor 9/10, with a green sweep and zero ownership, displacement
+-and sentence-path perception gradients. It misses the standing class and
+-MM gates and is held for review without a commit. All final grammar policies
++and sentence-path perception gradients. It misses the standing class gate;
++§20 subsequently excludes its bisection-proven RNG-only MM path. The round-2c
++candidate is not accepted. All final grammar policies
+ use conjunction; all narrowing credits tie; the one-step reader contract is
+ confirmed by its optimizer counters. MM_xor's path is now isolated: retired percept sampling
+ changes the generator state used by the later input-reconstruction mask.
+ Centroid placement, higher-order order enforcement and meaning connectives
+ remain in their subsequent rounds.
++
++Operators round 2d changes the sentence departure to a uniform walk draw,
++then a uniform eligible-round draw within that walk. Its `K·R_walk·W`
++correction preserves the estimator and the existing owner. The reader,
++keep, costs, image and form/pole separation are unchanged. Plan §20 applies
++the RNG-only amendment to MM_xor after repeating its first-forward bisection.
++The [round-2d receipt](benchmarks/2026-10-06-operators-round2d/README.md)
++retains the thirty unseeded gate runs, paired replays and prior receipts.
++No centroid, meaning-connective or other later-round work is added.
++
++The round-2d mechanism is verified, but class **2/10** misses the standing
++7/10 gate. Reconstruction is **10/10**, sum **10/10 at ¼**, and raw MM_xor
++**10/10**; the repeated bisection confirms its RNG-only exclusion. All final
++roots are conjunction and all labels are correct. The all-disjunction starts
++switch permanently by epochs 22, 65 and 106, while three failed runs already
++use conjunction throughout. The eight class MSE misses remain in the receipt
++with their cost comparisons. Walk proposals are balanced, narrowing advantages
++tie, reader counters confirm one update, the sweep is green, and the ownership,
++gradient and displacement audits are zero. Round 2d remains an uncommitted
++review candidate that has not met the gate; later-round work stays carried.
+--- before-round2d/doc/GradientFlow.md
++++ review-round2d/doc/GradientFlow.md
+@@ -32,10 +32,11 @@
+ The batch-end answer read reports its error without another reader update. The kept state is committed detached;
+ no gradient crosses that boundary into the next sentence.
+ 
+-Input narrowing and compose share one departure per sentence. The eligible
+-rounds of both greedy walks supply the uniform round draw; the selected
+-round's eligible alternatives supply the uniform action draw. The unmasked
+-policy probability supplies the `K·R`-corrected score-function credit. A
++Input narrowing and compose share one departure per sentence. Round 2d draws
++uniformly among the `W` walks with an eligible round, then among that walk's
++`R_walk` eligible rounds, then among the selected round's `K` eligible
++alternatives. The unmasked policy probability supplies the
++`K·R_walk·W`-corrected score-function credit. A
+ narrowing departure continues through admission and compose greedily; a
+ compose departure uses greedy narrowing and replays its compose prefix.
+ Ordinary thought, anticipation and generation retain their existing paired
+@@ -551,13 +552,14 @@
+   exact gradient of the expected reconstruction cost with respect to them is
+   the score-function term at the sampled departure, with the greedy trial's
+   cost as the paired baseline (self-critical sequence training): surrogate
+-  `K · R · p_θ(a_dep | state) · (C_explore − C_greedy)`, costs detached, one term per
++  `K · R_walk · W · p_θ(a_dep | state) · (C_explore − C_greedy)`, costs detached, one term per
+   sentence with a departure, reconstruction-owned; `∇p` rather than `∇log p`
+   because the departure is drawn uniformly over the value-distinct eligible
+   alternatives (the coverage floor) and the importance weight cancels the
+   `1/p`. Here K counts the value-distinct eligible alternatives at the sampled
+-  round and R counts eligible rounds in that sentence. Their product cancels
+-  the uniform proposal probability `1/(K·R)`, giving the sum of the
++  round, `R_walk` counts eligible rounds in the drawn walk, and `W` counts
++  walks with an eligible round in the sentence. Round 2d draws walk first;
++  their product cancels the proposal probability `1/(W·R_walk·K)`, giving the sum of the
+   baseline-subtracted gradients over those alternatives and rounds, before
+   the existing active-row mean reduction. No differentiable decoder is needed;
+   a tie teaches nothing and the greedy argmax supplies no chooser gradient.
+@@ -668,7 +670,7 @@
+ [Architecture](Architecture.md#the-scheme-confirmed-2026-10-06-expectation-and-surprise-through-the-architecture).
+ The sections above describe what is implemented; this one what each round
+ changes in the gradient's ownership and path. Round 2's text is plan §14,
+-corrected by round 2b in §16 and round 2c in §18.
++corrected by round 2b in §16, round 2c in §18 and round 2d in §20.
+ 
+ - **The trial cost (round 2, corrected in 2b and 2c).** The chooser is credited by
+   the owner-step total `R + E + A`; only reconstruction `R` decides the keep.
+@@ -798,7 +800,7 @@
+ its causal attribution to the reference slab is not supported by that trace.
+ 
+ 
+-## Operators update round 2c (October 6; review candidate)
++## Operators update round 2c (October 6; not accepted)
+ 
+ [Round-2c receipt](benchmarks/2026-10-06-operators-round2c/README.md). Interpretation
+ and retained leaf values apply activation magnitude to the form block, signed
+@@ -836,8 +838,9 @@
+ replays recorded separately from the thirty unseeded trainings.
+ 
+ The thirty trainings produce class **5/10**, reconstruction **10/10**, sum
+-**10/10 at the quarter floor**, and live MM_xor **9/10**. The standing gate is
+-missed on class and MM. Every final grammar root uses conjunction; the five
++**10/10 at the quarter floor**, and live MM_xor **9/10**. The gate as read at
++that measurement was missed on class and MM; §20 subsequently excludes the
++bisection-proven RNG-only MM path. Every final grammar root uses conjunction; the five
+ class misses remain above the MSE bar, with the policy transitions and exact
+ deciding trial costs retained in the receipt. All 10,650 XOR and 16,000 sum
+ narrowing departures tie. All 5,350 XOR compose departures have nonzero
+@@ -846,3 +849,48 @@
+ gradient, code displacement and ownership conflicts remain zero. All runs
+ and failures are retained without retry. This candidate is held for Claude's
+ review and is not committed.
++
++## Operators update round 2d (October 6; review candidate)
++
++[Round-2d receipt](benchmarks/2026-10-06-operators-round2d/README.md). The only
++runtime change is the sentence departure's proposal and correction. Eligibility
++is computed on both greedy walks for this sentence. A uniform draw among the
++nonempty walks precedes a uniform eligible-round draw within the selected
++walk. The existing uniform alternative draw then chooses the departure action.
++One available walk gives `W=1`; no available walk gives no departure. The
++surrogate multiplies by `K·R_walk·W`, canceling that proposal exactly. Its
++active-row reduction, greedy baseline and reconstruction registration remain.
++
++The strict reconstruction keep, `Δ(R+E+A)` advantage, one reader step (mean
++detached roots for compose; kept root for narrowing), magnitude interpretation,
++owners, budgets, image and containment mechanisms remain as in round 2c.
++Every observed sentence records its walk, `W`, `R_walk` and `K`; both walks
++have analytic and finite-difference checks. The focused proposal check gives
++equal walk frequencies despite unequal numbers of eligible rounds.
++
++Plan §20 applies §5's amendment: a path changed only by global RNG consumption,
++established by bisection, is not a regression gate. The seed-zero MM bisection
++is repeated on this candidate; raw counts and paired trajectories are still
++reported. The thirty gate trainings remain unseeded, without retries or
++replacement runs. This candidate is held for Claude's review before a commit.
++
++Measured round 2d: class **2/10**, reconstruction **10/10**, sum **10/10 at ¼**,
++and raw MM_xor **10/10**. The standing class gate is missed. All forty final
++grammar roots are conjunction and all labels are correct; eight runs remain
++above the MSE bar. The three all-disjunction starts become all-conjunction
++from epochs 22, 65 and 106, and three failed runs already use conjunction
++throughout. Faster selection has not recovered the class count.
++
++There are **7,978 compose** and **8,022 narrowing** XOR departures; every
++narrowing advantage is exactly zero, as are all 16,000 sum advantages.
++Every recorded correction equals `K·R_walk·W`. All compose advantages are
++nonzero; the answer credits against reconstruction's keep on 1,375 rows.
++Every sum/XOR run has 400 reader updates and final reader Adam counters of
++400. Across all recorded sentence rows, maximum analytic and finite-difference
++discrepancies are `2.23517418e-8` and `1.76165817e-8`; focused checks also cover
++a nonzero narrowing advantage. Chooser logit ranges move in every XOR run.
++The full sweep is green, with zero sentence-path perception gradients,
++code displacement and ownership conflicts. The repeated MM bisection confirms
++the RNG-only path and all three paired trajectories differ. All results and
++the class misses' component costs are retained in the receipt; no retry or
++replacement changes the count. The candidate remains uncommitted for review.
+--- before-round2d/doc/specs/2026-09-29-operator-catalogue.md
++++ review-round2d/doc/specs/2026-09-29-operator-catalogue.md
+@@ -1503,7 +1503,7 @@
+ cause; an unimplemented form/pole separation is not claimed as repaired.
+ 
+ 
+-### 12.4 Operators update, round 2c (2026-10-06; review candidate)
++### 12.4 Operators update, round 2c (2026-10-06; not accepted)
+ 
+ The [round-2c receipt](../benchmarks/2026-10-06-operators-round2c/README.md)
+ starts from the frozen round-2b source. Negation does not enter the form:
+@@ -1529,9 +1529,39 @@
+ thirty unseeded trainings are separate records, without retries or replacements.
+ 
+ Measured: class **5/10**, reconstruction **10/10**, sum **10/10 at ¼**, MM_xor
+-**9/10**. The standing gate is missed on class and live MM; this remains an
+-unaccepted review candidate. All final grammar roots choose conjunction and
++**9/10**. Class misses the standing gate. The original reading also counted
++MM's miss; §20 subsequently excludes its bisection-proven RNG-only path.
++This candidate is not accepted. All final grammar roots choose conjunction and
+ all narrowing departures tie. Reader counters confirm one step per supplied
+ sentence, and the perception-gradient, displacement and ownership audits are
+ zero. The full sweep is green. Every run and its deciding costs are retained
+ in the receipt; no further training changes the count.
++
++### 12.5 Operators update, round 2d (2026-10-06; review candidate)
++
++The [round-2d receipt](../benchmarks/2026-10-06-operators-round2d/README.md)
++starts from the frozen round-2c source. Draw the departure's walk uniformly
++among the `W` walks with an eligible round in this sentence, then its round
++uniformly among that walk's `R_walk` eligible rounds. Draw the alternative
++uniformly among the round's `K` eligible alternatives, as before. The SCG
++correction `K·R_walk·W` cancels the proposal `1/(W·R_walk·K)`; the greedy
++baseline, active-row reduction and registration are unchanged.
++
++The reconstruction keep, answer/expectation components, one reader step,
++unsigned forms and signed meanings, pole consumers, image and containment
++audit remain unchanged. The receipt records the walk and all three counts,
++and verifies analytic gradients against finite differences for both walks.
++Under plan §20's §5 amendment, a bisection-proven RNG-only path is not a
++regression gate. MM_xor's seed-zero bisection is repeated; all ten raw MM
++outcomes and the separate three-seed paired replays remain visible.
++
++Measured round 2d: class **2/10** against the landing's 7/10, reconstruction
++**10/10**, sum **10/10 at ¼**, and raw MM_xor **10/10**. The repeated bisection
++confirms the RNG-only MM path. Every final grammar root is conjunction and
++every run gets all four labels right, but eight miss the class MSE bar.
++The all-disjunction starts become all-conjunction from epochs 22, 65 and 106.
++XOR departures divide 7,978 compose / 8,022 narrowing; all narrowing credits
++tie. The reader takes one update per batch, all proposal corrections match,
++and analytic/finite-difference checks pass. The full sweep is green and the
++ownership, perception-gradient and displacement audits remain zero. This
++candidate misses the standing gate and is held uncommitted for Claude's review.
+--- before-round2d/todo.md
++++ review-round2d/todo.md
+@@ -137,8 +137,8 @@
+    and, once the path is invertible, at every layer by inversion;
+    expectation and output as the criteria, reconstruction retiring to an
+    audit where the transformations are exact. Rounds (plan §9.5, §12.3):
+-   **2 credit — rounds 2 and 2b rejected; round 2c measured, gate missed, awaiting review**
+-   ([round-2c receipt](doc/benchmarks/2026-10-06-operators-round2c/README.md); no commit):
++   **2 credit — rounds 2, 2b and 2c not accepted; round 2d measured, gate missed, awaiting review**
++   ([round-2d receipt](doc/benchmarks/2026-10-06-operators-round2d/README.md); no commit):
+    magnitude interpretation preserves forms; one reader step averages compose
+    roots or trains the kept narrowing root. Reconstruction keeps the trial;
+    the total still credits the single departure. Pole consumers and closing
+@@ -149,6 +149,16 @@
+    MM_xor **9/10**; sweep green, ownership/gradient/displacement zeros.
+    All final grammar roots use conjunction and every narrowing departure ties;
+    the receipt records the class misses' trial costs and the failed MM trajectory.
++   Round 2d changes only the departure proposal to walk first, correcting it
++   by `K·R_walk·W`. The §5 RNG-only amendment applies to MM_xor after its
++   repeated seed-zero bisection; raw counts and paired trajectories stay visible.
++   Round 2d: class **2/10**, reconstruction **10/10**, sum **10/10 at ¼**,
++   raw MM_xor **10/10**. The class gate is missed despite all final roots
++   choosing conjunction and all labels being correct. All-disjunction starts
++   become all-conjunction from epochs 22, 65 and 106; three failed runs use
++   conjunction throughout. Departures split 7,978 compose / 8,022 narrowing,
++   all narrowing credits tie, and reader counters remain one update per batch.
++   Sweep green; ownership/gradient/displacement zeros. No commit before review.
+    **3 identity** (pairs plus length as the parts,
+    the content width, the narrowing rule and the centroid), **4 meaning**
+    (membership as properties, co-activation through shared wholes, Kleene

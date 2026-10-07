@@ -1,9 +1,9 @@
-"""Reconstruction has precedence in choosing between the two trials."""
+"""The owner-step total chooses between the two trials."""
 import torch
 import pytest
 
 
-def test_only_strictly_lower_reconstruction_wins_and_tie_keeps_greedy():
+def test_only_strictly_lower_total_wins_and_tie_keeps_greedy():
     from SentenceCompose import sentence_pair
     active = torch.tensor([True, True, True])
     r = [torch.tensor([1., 2., 3.]), torch.tensor([2., 1., 3.])]

@@ -1,0 +1,434 @@
+....F........FF
+=================================== FAILURES ===================================
+____________ test_review17_measurement_wiring_on_one_ordinary_batch ____________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2343/test_review17_measurement_wiri0')
+
+    def test_review17_measurement_wiring_on_one_ordinary_batch(tmp_path):
+        import json, os, sys
+        from pathlib import Path
+        from bounded_tests import run_guarded, GIB
+        root=Path(__file__).resolve().parents[1]
+        receipt=root/'doc/benchmarks/2026-10-06-operators-round2'
+        prior=root/'doc/benchmarks/2026-10-03-operators-attention'
+        env=os.environ.copy()
+        env.update(PYTEST_PLUGINS='operators_gate_observer', MODEL_COMPILE='none',
+            OWNERSHIP_OBSERVER_OUTPUT=str(tmp_path/'ownership'),
+            ITEM7_XOR_MEASUREMENTS=str(tmp_path/'observations.jsonl'), ITEM7_XOR_GATE='5',
+            REVIEW17_REPORTS=str(tmp_path/'reports.jsonl'),
+            PYTHONPATH=os.pathsep.join(map(str,(receipt,prior,root/'bin',root/'test'))))
+        result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'observer_probe.py')],
+            cwd=root,env=env,log_path=tmp_path/'observer.log',memory_bytes=8*GIB,timeout=1800)
+>       assert result['exit_code']==0,(tmp_path/'observer.log').read_text()
+E       AssertionError: F                                                                        [100%]
+E         =================================== FAILURES ===================================
+E         ___________ test_margin_and_ownership_observe_the_same_actual_steps ____________
+E         
+E             def test_margin_and_ownership_observe_the_same_actual_steps():
+E                 from test_mm_xor import _fresh_model
+E                 import operators_gate_observer
+E                 model, _, data = _fresh_model('data/XOR_grammar.xml')
+E                 optimizer = model.getOptimizer(lr=.01)
+E                 owners=model.objective_parameter_groups(optimizer)
+E                 assert 'compose_preference' not in owners
+E                 preference=owners['reconstruction']
+E                 assert any(p is model.languageSpace.decomposition_chooser.weight for p in preference)
+E                 operation=model.languageSpace._tree_layer(2)
+E                 assert all(any(p is anchor for p in preference) for anchor in
+E                            (operation.stop_anchor,operation.reduce_anchor,operation.apply_anchor))
+E                 raw, target = next(iter(data.data_loader(split='train', num_streams=4)))
+E                 batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)
+E                 from operators_run_audit import observe_run, json_value
+E                 with observe_run() as run_audit:
+E         >           model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
+E         
+E         doc/benchmarks/2026-10-06-operators-round2/observer_probe.py:23: 
+E         _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+E         doc/benchmarks/2026-10-06-operators-round2/operators_run_audit.py:93: in observed_epoch
+E             value=epoch(model,*args,**kwargs)
+E                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         test/objective_conflicts_probe.py:710: in observed_run_epoch
+E             return original_run_epoch(model,*args,**kwargs)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:15758: in runEpoch
+E             result, _ = self.runBatch(
+E         bin/Models.py:13673: in runBatch
+E             return self._run_sentence_batch(*args, **kwargs)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:13809: in _run_sentence_batch
+E             return self._run_batch_once(**call)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2343/test_review17_measurement_wiri0/ownership/_run_batch_once.instrumented.py:375: in _run_batch_once
+E             _what_answers = self._what_or_think(
+E         bin/Models.py:8815: in _what_or_think
+E             return self.what(questions, input_data, executor=executor, record=record, score=score)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:10313: in what
+E             execution = self._execute_input_sentence(input_data, executor)
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:153: in masked
+E             return method(self, *args, **kwargs)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:8500: in _execute_input_sentence
+E             return (executor or self.forward)(input_data)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:153: in masked
+E             return method(self, *args, **kwargs)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:8311: in forward
+E             return self._forward_per_stage(inputData)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:23380: in _forward_per_stage
+E             body_result = self._forward_body(
+E         bin/Models.py:17278: in _forward_body
+E             return self._forward_body_per_word(
+E         bin/Models.py:21915: in _forward_body_per_word
+E             self._run_tensor_peer_word_pipeline(N_words))
+E             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:21473: in _run_tensor_peer_word_pipeline
+E             feedback, trip_count) = self._run_sentence_word_bricks(
+E         bin/Models.py:20583: in _run_sentence_word_bricks
+E             (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+E         test/objective_conflicts_probe.py:680: in paired
+E             value=original_pair(cache,compose,observed_score,step,active=active,training=training,before_step=before_step)
+E                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/SentenceCompose.py:148: in sentence_pair
+E             explore = compose(cache, exploit)
+E                       ^^^^^^^^^^^^^^^^^^^^^^^
+E         bin/Models.py:20500: in compose
+E             reading = self._attention_read(exploit=greedy_attention,
+E         bin/ModelAttention.py:199: in read
+E             result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+E         bin/Attention.py:220: in narrow_words
+E             action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
+E         doc/benchmarks/2026-10-06-operators-round2/round2_score_probe.py:82: in attention
+E             eligible=legal.flatten(1)&(torch.arange(logits.shape[-1],device=logits.device)[None]!=mask[:,None])
+E                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+E         
+E         self = <torch.utils._device.DeviceContext object at 0x118a6b7a0>
+E         func = <method '__and__' of 'torch._C.TensorBase' objects>, types = ()
+E         args = (tensor([[False,  True, False, False, False, False, False,  True, False, False,
+E                  False, False, False, False, F...  True,
+E                   True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+E                   True,  True,  True]]))
+E         kwargs = {}
+E         
+E             def __torch_function__(self, func, types, args=(), kwargs=None):
+E                 kwargs = kwargs or {}
+E                 if func in _device_constructors() and kwargs.get("device") is None:
+E                     kwargs["device"] = self.device
+E         >       return func(*args, **kwargs)
+E                        ^^^^^^^^^^^^^^^^^^^^^
+E         E       RuntimeError: The size of tensor a (192) must match the size of tensor b (193) at non-singleton dimension 1
+E         
+E         .venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+E         ----------------------------- Captured stdout call -----------------------------
+E         [AMP] off (fp32, MODEL_AMP unset or =off)
+E         =============================== warnings summary ===============================
+E         doc/benchmarks/2026-10-06-operators-round2/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E           /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E             @pytest.mark.slow
+E         
+E         doc/benchmarks/2026-10-06-operators-round2/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E           /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:176: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E             @pytest.mark.slow
+E         
+E         doc/benchmarks/2026-10-06-operators-round2/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E           /Users/arogers/github/WikiOracle/basicmodel/test/test_mm_xor.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.slow - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+E             @pytest.mark.slow
+E         
+E         doc/benchmarks/2026-10-06-operators-round2/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E           /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+E             return func(*args, **kwargs)
+E         
+E         -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+E         =========================== short test summary info ============================
+E         FAILED doc/benchmarks/2026-10-06-operators-round2/observer_probe.py::test_margin_and_ownership_observe_the_same_actual_steps
+E         1 failed, 4 warnings in 1.89s
+E         
+E       assert 1 == 0
+
+test/test_review14_contracts.py:158: AssertionError
+_______ test_normal_text_reconstruction_updates_the_grammar_chooser[tie] _______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2343/test_normal_text_reconstructio0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x145f35490>
+eager_reading = None, comparison = 'tie'
+
+    @pytest.mark.parametrize("comparison", ["tie", "distinct"])
+    def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkeypatch, eager_reading, comparison):
+        from test_compiled_word_chunk import _tiny_canonical_model
+    
+        torch.manual_seed(613)
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="16", input_width=16)
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model.conceptualSpace.intra_loss_weight = 0.0
+        model.inter_loss_weight = 0.0
+        assert model.output_in_loop and model.languageSpace.generate_policy is not None
+        assert model.loss.reconstruction_scale == 1.0
+        chooser = model.languageSpace._tree_layer(2).chooser
+        before = {name: value.detach().clone() for name, value in chooser.named_parameters()}
+        generator = model.languageSpace.generate_policy
+        generate_before = [p.detach().clone() for p in generator.parameters()]
+        # A masked one-action policy has exactly zero softmax derivative. Count
+        # choices on live values only; padding rows can expose unused unaries.
+        from Language import LanguageSpace
+        eligibility = LanguageSpace.decoder_eligibility
+        live_choices = []
+        def observe_eligibility(parent, *args, **kwargs):
+            legal = eligibility(parent, *args, **kwargs)
+            live_choices.append(bool((parent.ne(0).any(-1) & legal.sum(-1).gt(1)).any()))
+            return legal
+        monkeypatch.setattr(LanguageSpace, 'decoder_eligibility', staticmethod(observe_eligibility))
+        optimizer = model.getOptimizer(lr=1e-3)
+        words = ["a b c d e", "f g h i j"]
+        inputs = model.inputSpace.prepInput(words)
+        data = model.inputSpace.data
+        supervised_before = data.has_supervised_outputs
+        data.has_supervised_outputs = False
+        try:
+            from reading_fixtures import capture_readings
+            from Models import BasicModel
+            # The §16.3 proposal removes ineffective departures. The unchanged
+            # ordinary batch now has measured non-ties; keep that observation in
+            # the receipt and construct the two cost contracts explicitly here.
+            original = BasicModel._compose_score_function_loss
+            def constructed_costs(owner, path, measured):
+                draw=owner._sentence_departure
+                assert ((draw['attention_round']>=0) | (draw['compose_round']>=0)).all()
+                costs = measured[:, :1].detach().expand(-1, 2).clone()
+                if comparison == "distinct":
+                    costs[:, 1] -= .5
+                return original(owner, path, costs)
+            monkeypatch.setattr(BasicModel, '_compose_score_function_loss', constructed_costs)
+            receipt = _ROOT / 'doc/benchmarks/2026-10-06-operators-round2'
+            monkeypatch.syspath_prepend(str(_ROOT / 'doc/benchmarks/2026-10-03-operators-attention'))
+            monkeypatch.syspath_prepend(str(receipt))
+            from round2_score_probe import observe_score_function
+            audit = {}
+            with observe_score_function(audit), capture_readings(model) as readings:
+>               result, _ = model.runBatch(
+                    train=True, batchNum=0, batchSize=2, split="train", optimizer=optimizer,
+                    batch_override=(inputs, torch.empty(2, 0)))
+
+test/test_grammar_word_learning.py:211: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13673: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13809: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14184: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8815: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10313: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8500: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23380: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17278: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21915: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21473: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20583: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:148: in sentence_pair
+    explore = compose(cache, exploit)
+              ^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20500: in compose
+    reading = self._attention_read(exploit=greedy_attention,
+bin/ModelAttention.py:199: in read
+    result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+bin/Attention.py:220: in narrow_words
+    action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
+doc/benchmarks/2026-10-06-operators-round2/round2_score_probe.py:82: in attention
+    eligible=legal.flatten(1)&(torch.arange(logits.shape[-1],device=logits.device)[None]!=mask[:,None])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x145f345c0>
+func = <method '__and__' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, F...  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True]]))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: The size of tensor a (192) must match the size of tensor b (193) at non-singleton dimension 1
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+____ test_normal_text_reconstruction_updates_the_grammar_chooser[distinct] _____
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2343/test_normal_text_reconstructio1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x145f34830>
+eager_reading = None, comparison = 'distinct'
+
+    @pytest.mark.parametrize("comparison", ["tie", "distinct"])
+    def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkeypatch, eager_reading, comparison):
+        from test_compiled_word_chunk import _tiny_canonical_model
+    
+        torch.manual_seed(613)
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="16", input_width=16)
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        model.conceptualSpace.intra_loss_weight = 0.0
+        model.inter_loss_weight = 0.0
+        assert model.output_in_loop and model.languageSpace.generate_policy is not None
+        assert model.loss.reconstruction_scale == 1.0
+        chooser = model.languageSpace._tree_layer(2).chooser
+        before = {name: value.detach().clone() for name, value in chooser.named_parameters()}
+        generator = model.languageSpace.generate_policy
+        generate_before = [p.detach().clone() for p in generator.parameters()]
+        # A masked one-action policy has exactly zero softmax derivative. Count
+        # choices on live values only; padding rows can expose unused unaries.
+        from Language import LanguageSpace
+        eligibility = LanguageSpace.decoder_eligibility
+        live_choices = []
+        def observe_eligibility(parent, *args, **kwargs):
+            legal = eligibility(parent, *args, **kwargs)
+            live_choices.append(bool((parent.ne(0).any(-1) & legal.sum(-1).gt(1)).any()))
+            return legal
+        monkeypatch.setattr(LanguageSpace, 'decoder_eligibility', staticmethod(observe_eligibility))
+        optimizer = model.getOptimizer(lr=1e-3)
+        words = ["a b c d e", "f g h i j"]
+        inputs = model.inputSpace.prepInput(words)
+        data = model.inputSpace.data
+        supervised_before = data.has_supervised_outputs
+        data.has_supervised_outputs = False
+        try:
+            from reading_fixtures import capture_readings
+            from Models import BasicModel
+            # The §16.3 proposal removes ineffective departures. The unchanged
+            # ordinary batch now has measured non-ties; keep that observation in
+            # the receipt and construct the two cost contracts explicitly here.
+            original = BasicModel._compose_score_function_loss
+            def constructed_costs(owner, path, measured):
+                draw=owner._sentence_departure
+                assert ((draw['attention_round']>=0) | (draw['compose_round']>=0)).all()
+                costs = measured[:, :1].detach().expand(-1, 2).clone()
+                if comparison == "distinct":
+                    costs[:, 1] -= .5
+                return original(owner, path, costs)
+            monkeypatch.setattr(BasicModel, '_compose_score_function_loss', constructed_costs)
+            receipt = _ROOT / 'doc/benchmarks/2026-10-06-operators-round2'
+            monkeypatch.syspath_prepend(str(_ROOT / 'doc/benchmarks/2026-10-03-operators-attention'))
+            monkeypatch.syspath_prepend(str(receipt))
+            from round2_score_probe import observe_score_function
+            audit = {}
+            with observe_score_function(audit), capture_readings(model) as readings:
+>               result, _ = model.runBatch(
+                    train=True, batchNum=0, batchSize=2, split="train", optimizer=optimizer,
+                    batch_override=(inputs, torch.empty(2, 0)))
+
+test/test_grammar_word_learning.py:211: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Models.py:13673: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13809: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14184: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8815: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10313: in what
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8500: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8311: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23380: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17278: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:21915: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:21473: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:20583: in _run_sentence_word_bricks
+    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,
+bin/SentenceCompose.py:148: in sentence_pair
+    explore = compose(cache, exploit)
+              ^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20500: in compose
+    reading = self._attention_read(exploit=greedy_attention,
+bin/ModelAttention.py:199: in read
+    result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+bin/Attention.py:220: in narrow_words
+    action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
+doc/benchmarks/2026-10-06-operators-round2/round2_score_probe.py:82: in attention
+    eligible=legal.flatten(1)&(torch.arange(logits.shape[-1],device=logits.device)[None]!=mask[:,None])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x148ffcb00>
+func = <method '__and__' of 'torch._C.TensorBase' objects>, types = ()
+args = (tensor([[False, False, False, False, False, False, False, False, False, False,
+         False, False, False, False, F...  True,
+          True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+          True,  True,  True]]))
+kwargs = {}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: The size of tensor a (192) must match the size of tensor b (193) at non-singleton dimension 1
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: RuntimeError
+=============================== warnings summary ===============================
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7162: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2343/test_first_and_later_words_kee0/tiny_chunk_model.xml]: Data.what target (2, 1) replaces the loader output (2, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7162: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2343/test_first_and_later_words_kee0/tiny_chunk_model.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 16)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[tie]
+FAILED test/test_grammar_word_learning.py::test_normal_text_reconstruction_updates_the_grammar_chooser[distinct]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 3 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+3 failed, 12 passed, 2 warnings in 13.68s

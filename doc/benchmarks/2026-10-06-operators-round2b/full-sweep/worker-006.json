@@ -1,0 +1,2583 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_definition_attribution.py::test_descent_intersects_cases_with_the_present_field",
+    "test/test_definition_attribution.py::test_descent_without_a_field_chooses_one_case",
+    "test/test_definition_attribution.py::test_descent_keeps_the_source_pole_and_scope",
+    "test/test_definition_attribution.py::test_percept_attribution_follows_signed_definitions_without_complements",
+    "test/test_definition_attribution.py::test_passback_scales_unknown_parts_without_erasing_location",
+    "test/test_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+    "test/test_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+    "test/test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+    "test/test_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+    "test/test_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+    "test/test_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+    "test/test_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+    "test/test_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+    "test/test_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+    "test/test_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+    "test/test_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+    "test/test_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+    "test/test_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+    "test/test_definition_rows.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+    "test/test_definition_rows.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+    "test/test_definition_rows.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+    "test/test_definition_rows.py::test_26_full_store_refuses_the_whole_word_transaction",
+    "test/test_definition_rows.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+    "test/test_definition_rows.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+    "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+    "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+    "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+    "test/test_definition_rows.py::test_34_learning_codes_cannot_change_definition_identity",
+    "test/test_definition_rows.py::test_32_head_meta_checkpoint_migrates_to_definitions",
+    "test/test_definition_sparsity.py::test_penalty_exempts_top_free_and_sums_marginal",
+    "test/test_definition_sparsity.py::test_penalty_excludes_everything_pole",
+    "test/test_definition_sparsity.py::test_penalty_counts_negated_parts_by_their_nonnegative_exponent",
+    "test/test_definition_sparsity.py::test_gradient_lands_only_on_marginal_ranks",
+    "test/test_definition_sparsity.py::test_penalty_none_when_empty",
+    "test/test_definition_sparsity.py::test_multi_row_sums_each_concept_independently",
+    "test/test_definition_sparsity.py::test_definition_sparsity_loss_lambda_gate",
+    "test/test_definition_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+    "test/test_definition_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects",
+    "test/test_definition_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection",
+    "test/test_definition_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+    "test/test_definition_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+    "test/test_definition_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+    "test/test_definition_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+    "test/test_definition_taxonomy.py::test_referenced_phrase_admission_is_atomic[width]",
+    "test/test_definition_taxonomy.py::test_referenced_phrase_admission_is_atomic[capacity]",
+    "test/test_definition_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular",
+    "test/test_derived_concept_codes.py::test_rows_conduct_to_other_words_without_crossing_batch_streams",
+    "test/test_derived_concept_codes.py::test_frozen_lookup_does_not_admit_symbol_concept_pairs",
+    "test/test_derived_concept_codes.py::test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms",
+    "test/test_derived_concept_codes.py::test_readback_audit_distinguishes_code_priming_and_ties",
+    "test/test_derived_concept_codes.py::test_percept_lookup_checkpoint_has_no_independent_word_state",
+    "test/test_derived_concept_codes.py::test_actual_occurrences_activate_words_outside_the_current_sentence",
+    "test/test_detached_reverse_objective.py::test_fixed_forward_loss_slab_preserves_chooser_gradient",
+    "test/test_detached_reverse_objective.py::test_compose_has_no_auxiliary_local_policy_objective",
+    "test/test_dimensional_governance.py::test_sigma_pi_mode_resolves_and_aliases_butterfly",
+    "test/test_dimensional_governance.py::test_full_sigma_pi_is_invertible_over_flat_slab",
+    "test/test_dimensional_governance.py::test_mm_5m_builds_and_forwards",
+    "test/test_dimensional_governance.py::test_serial_relaxes_symbol_dim_passthrough",
+    "test/test_dimensional_governance.py::test_converted_grammars_load_role_collapsed",
+    "test/test_dimensional_governance.py::test_temporary_config_preserves_validated_source",
+    "test/test_dimensional_governance.py::test_cs_ws_recurrent_input_mismatch_raises",
+    "test/test_dimensional_governance.py::test_cs_os_direct_handoff_mismatch_raises",
+    "test/test_dimensional_governance.py::test_reference_configs_still_build_no_false_positive",
+    "test/test_discourse_cache_dtype.py::test_staged_prediction_cast_to_amp_dtype[True-bf16-dtype0]",
+    "test/test_discourse_cache_dtype.py::test_staged_prediction_cast_to_amp_dtype[True-off-dtype1]",
+    "test/test_discourse_cache_dtype.py::test_staged_prediction_cast_to_amp_dtype[False-bf16-dtype0]",
+    "test/test_discourse_cache_dtype.py::test_staged_prediction_cast_to_amp_dtype[False-off-dtype1]",
+    "test/test_discourse_cache_dtype.py::test_full_sentence_loop_skips_legacy_discourse_tuple_staging",
+    "test/test_discourse_space.py::TestArmaUnit::test_e_history_saturates_at_q",
+    "test/test_discourse_space.py::TestArmaUnit::test_ensure_batch_resizes_buffers",
+    "test/test_discourse_space.py::TestArmaUnit::test_len_reports_max_ring_depth",
+    "test/test_discourse_space.py::TestArmaUnit::test_loss_gradient_flows_through_predictor",
+    "test/test_discourse_space.py::TestArmaUnit::test_observe_accumulates_loss_after_first_step",
+    "test/test_discourse_space.py::TestArmaUnit::test_observe_pushes_and_returns_zero_on_cold_start",
+    "test/test_discourse_space.py::TestArmaUnit::test_observe_ring_saturates_at_p",
+    "test/test_discourse_space.py::TestArmaUnit::test_predict_next_shape",
+    "test/test_discourse_space.py::TestArmaUnit::test_predict_next_stable_shape_on_cold_start",
+    "test/test_discourse_space.py::TestArmaUnit::test_reset_clears_both_rings",
+    "test/test_discourse_space.py::TestArmaUnit::test_sentence_dim_equals_n_dim",
+    "test/test_discourse_space.py::TestBackCompatShims::test_predict_returns_two_tuple",
+    "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_absent_when_sentenceExpectation_false",
+    "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_wired_when_sentenceExpectation_true",
+    "test/test_discrimination_metric.py::test_categorical_discrimination_counts_each_pair_once",
+    "test/test_discrimination_metric.py::test_fixed_discrimination_metric_keeps_all_probes_without_training",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/AccessibleMind.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Architecture.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/BasicModel.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/BasicModelStabilityPlan.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Componentization.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Ergodic.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/ExistenceEvidence.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/ExpectationRetention.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/FutureWork.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/GradientFlow.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Installation.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/KernelRetirement.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/LLMEquivalence.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Language.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Lexicon.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Logic.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/MachineMinds.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Mereology.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/NanoChatGrammarPilot.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/NestedRetention.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Params.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Philosophy.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/QueryContracts.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/QueryPhases.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/QueryWork.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Reasoning.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/STM.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/SelectedMeaning.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Spaces.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/SymbolFirewall.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/TaxonomyQueries.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Testing.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/ThoughtHistory.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Training.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/WhatSpacetimeDesign.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-07-27-pre-teacher-baseline.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-07-27-teacher-reconstruction-b24.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-09-math-thinking-pilot.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-11-fold-ladder-throughput.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-16-sentence-expectation.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-16-tied-input-reconstruction.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item10/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item11/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item12/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item2/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-22-item11/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11a/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11a/spec.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11b/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11b/spec.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item10/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11b-corrections/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11b-extent/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11b-review/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11c/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item10-forward/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item10-resolution/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9-bank/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9-bank-sync/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9-parity/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b/erosion-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-followup/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-followup/review.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-start/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item7-5/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item8/PROTOCOL.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item8/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item8-review/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9/PROTOCOL.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9-followup/PROTOCOL.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9-followup/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9b-corrections/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9b-occurrence-fix/PROTOCOL.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-landing/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-pressure/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-pressure/reviewed-spec.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-review/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-review/reviewed-spec.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-seals/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-seals/reviewed-spec.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-28-item7-review/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-28-item7-review-round2/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/acceptance-map.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/mm-grammar-table-final.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/mm-grammar-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/reconstruction-table-final.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/reconstruction-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/before/candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/before/comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/before/head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/before/mm-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/diagnostics/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/grammar-ten/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/native-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step1/candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step1/comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step1/head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step2/candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step2/comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step2/head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step3/candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step3/comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step3/head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step4/candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step4/comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step4/head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step5/candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step5/comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step5/head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step5/mm-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ae-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ae-head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/af-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/af-head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ah-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ah-head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ai-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ai-head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/baseline-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/baseline-head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final-reconstruction-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final-xor-head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final3-xor-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/failures.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/findings-in-progress.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/memory-owners.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/review-map.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-ae-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-af-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-ah-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-ai-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-baseline-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-final-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-z-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/z-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/z-head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/z-mm-grammar-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-xor-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/findings.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/landing/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/validation-runtime.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/xor-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/xor-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9/final-mm-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9/repaired-xor/candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9/variant-results.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9/xor-summary-failure/table-before.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/final-grammar-results.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/final-measurements/candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/final-mm-results.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/summary.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep-review/fixture-note.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep-review/inverse-probe-note.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep-review/output-policy-note.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/next-step-notes.md]"
+  ],
+  "completed": [
+    "test/test_definition_attribution.py::test_descent_intersects_cases_with_the_present_field",
+    "test/test_definition_attribution.py::test_descent_without_a_field_chooses_one_case",
+    "test/test_definition_attribution.py::test_descent_keeps_the_source_pole_and_scope",
+    "test/test_definition_attribution.py::test_percept_attribution_follows_signed_definitions_without_complements",
+    "test/test_definition_attribution.py::test_passback_scales_unknown_parts_without_erasing_location",
+    "test/test_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+    "test/test_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+    "test/test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+    "test/test_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+    "test/test_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+    "test/test_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+    "test/test_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+    "test/test_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+    "test/test_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+    "test/test_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+    "test/test_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+    "test/test_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+    "test/test_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+    "test/test_definition_rows.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+    "test/test_definition_rows.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+    "test/test_definition_rows.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+    "test/test_definition_rows.py::test_26_full_store_refuses_the_whole_word_transaction",
+    "test/test_definition_rows.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+    "test/test_definition_rows.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+    "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+    "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+    "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+    "test/test_definition_rows.py::test_34_learning_codes_cannot_change_definition_identity",
+    "test/test_definition_rows.py::test_32_head_meta_checkpoint_migrates_to_definitions",
+    "test/test_definition_sparsity.py::test_penalty_exempts_top_free_and_sums_marginal",
+    "test/test_definition_sparsity.py::test_penalty_excludes_everything_pole",
+    "test/test_definition_sparsity.py::test_penalty_counts_negated_parts_by_their_nonnegative_exponent",
+    "test/test_definition_sparsity.py::test_gradient_lands_only_on_marginal_ranks",
+    "test/test_definition_sparsity.py::test_penalty_none_when_empty",
+    "test/test_definition_sparsity.py::test_multi_row_sums_each_concept_independently",
+    "test/test_definition_sparsity.py::test_definition_sparsity_loss_lambda_gate",
+    "test/test_definition_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+    "test/test_definition_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects",
+    "test/test_definition_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection",
+    "test/test_definition_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+    "test/test_definition_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+    "test/test_definition_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+    "test/test_definition_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+    "test/test_definition_taxonomy.py::test_referenced_phrase_admission_is_atomic[width]",
+    "test/test_definition_taxonomy.py::test_referenced_phrase_admission_is_atomic[capacity]",
+    "test/test_definition_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular",
+    "test/test_derived_concept_codes.py::test_rows_conduct_to_other_words_without_crossing_batch_streams",
+    "test/test_derived_concept_codes.py::test_frozen_lookup_does_not_admit_symbol_concept_pairs",
+    "test/test_derived_concept_codes.py::test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms",
+    "test/test_derived_concept_codes.py::test_readback_audit_distinguishes_code_priming_and_ties",
+    "test/test_derived_concept_codes.py::test_percept_lookup_checkpoint_has_no_independent_word_state",
+    "test/test_derived_concept_codes.py::test_actual_occurrences_activate_words_outside_the_current_sentence",
+    "test/test_detached_reverse_objective.py::test_fixed_forward_loss_slab_preserves_chooser_gradient",
+    "test/test_detached_reverse_objective.py::test_compose_has_no_auxiliary_local_policy_objective",
+    "test/test_dimensional_governance.py::test_sigma_pi_mode_resolves_and_aliases_butterfly",
+    "test/test_dimensional_governance.py::test_full_sigma_pi_is_invertible_over_flat_slab",
+    "test/test_dimensional_governance.py::test_mm_5m_builds_and_forwards",
+    "test/test_dimensional_governance.py::test_serial_relaxes_symbol_dim_passthrough",
+    "test/test_dimensional_governance.py::test_converted_grammars_load_role_collapsed",
+    "test/test_dimensional_governance.py::test_temporary_config_preserves_validated_source",
+    "test/test_dimensional_governance.py::test_cs_ws_recurrent_input_mismatch_raises",
+    "test/test_dimensional_governance.py::test_cs_os_direct_handoff_mismatch_raises",
+    "test/test_dimensional_governance.py::test_reference_configs_still_build_no_false_positive",
+    "test/test_discourse_cache_dtype.py::test_staged_prediction_cast_to_amp_dtype[True-bf16-dtype0]",
+    "test/test_discourse_cache_dtype.py::test_staged_prediction_cast_to_amp_dtype[True-off-dtype1]",
+    "test/test_discourse_cache_dtype.py::test_staged_prediction_cast_to_amp_dtype[False-bf16-dtype0]",
+    "test/test_discourse_cache_dtype.py::test_staged_prediction_cast_to_amp_dtype[False-off-dtype1]",
+    "test/test_discourse_cache_dtype.py::test_full_sentence_loop_skips_legacy_discourse_tuple_staging",
+    "test/test_discourse_space.py::TestArmaUnit::test_e_history_saturates_at_q",
+    "test/test_discourse_space.py::TestArmaUnit::test_ensure_batch_resizes_buffers",
+    "test/test_discourse_space.py::TestArmaUnit::test_len_reports_max_ring_depth",
+    "test/test_discourse_space.py::TestArmaUnit::test_loss_gradient_flows_through_predictor",
+    "test/test_discourse_space.py::TestArmaUnit::test_observe_accumulates_loss_after_first_step",
+    "test/test_discourse_space.py::TestArmaUnit::test_observe_pushes_and_returns_zero_on_cold_start",
+    "test/test_discourse_space.py::TestArmaUnit::test_observe_ring_saturates_at_p",
+    "test/test_discourse_space.py::TestArmaUnit::test_predict_next_shape",
+    "test/test_discourse_space.py::TestArmaUnit::test_predict_next_stable_shape_on_cold_start",
+    "test/test_discourse_space.py::TestArmaUnit::test_reset_clears_both_rings",
+    "test/test_discourse_space.py::TestArmaUnit::test_sentence_dim_equals_n_dim",
+    "test/test_discourse_space.py::TestBackCompatShims::test_predict_returns_two_tuple",
+    "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_absent_when_sentenceExpectation_false",
+    "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_wired_when_sentenceExpectation_true",
+    "test/test_discrimination_metric.py::test_categorical_discrimination_counts_each_pair_once",
+    "test/test_discrimination_metric.py::test_fixed_discrimination_metric_keeps_all_probes_without_training",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/AccessibleMind.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Architecture.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/BasicModel.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/BasicModelStabilityPlan.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Componentization.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Ergodic.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/ExistenceEvidence.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/ExpectationRetention.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/FutureWork.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/GradientFlow.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Installation.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/KernelRetirement.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/LLMEquivalence.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Language.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Lexicon.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Logic.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/MachineMinds.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Mereology.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/NanoChatGrammarPilot.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/NestedRetention.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Params.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Philosophy.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/QueryContracts.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/QueryPhases.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/QueryWork.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Reasoning.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/STM.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/SelectedMeaning.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Spaces.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/SymbolFirewall.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/TaxonomyQueries.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Testing.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/ThoughtHistory.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/Training.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/WhatSpacetimeDesign.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-07-27-pre-teacher-baseline.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-07-27-teacher-reconstruction-b24.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-09-math-thinking-pilot.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-11-fold-ladder-throughput.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-16-sentence-expectation.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-16-tied-input-reconstruction.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item10/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item11/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item12/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item2/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-22-item11/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11a/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11a/spec.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11b/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11b/spec.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item10/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11b-corrections/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11b-extent/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11b-review/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11c/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item10-forward/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item10-resolution/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9-bank/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9-bank-sync/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9-parity/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b/erosion-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-followup/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-followup/review.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-start/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item7-5/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item8/PROTOCOL.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item8/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item8-review/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9/PROTOCOL.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9-followup/PROTOCOL.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9-followup/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9b-corrections/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9b-occurrence-fix/PROTOCOL.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-landing/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-pressure/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-pressure/reviewed-spec.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-review/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-review/reviewed-spec.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-seals/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-seals/reviewed-spec.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-28-item7-review/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-28-item7-review-round2/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/acceptance-map.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/mm-grammar-table-final.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/mm-grammar-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/reconstruction-table-final.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/reconstruction-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/before/candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/before/comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/before/head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/before/mm-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/diagnostics/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/grammar-ten/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/native-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step1/candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step1/comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step1/head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step2/candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step2/comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step2/head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step3/candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step3/comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step3/head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step4/candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step4/comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step4/head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step5/candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step5/comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step5/head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step5/mm-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ae-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ae-head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/af-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/af-head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ah-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ah-head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ai-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ai-head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/baseline-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/baseline-head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final-reconstruction-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final-xor-head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final3-xor-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/failures.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/findings-in-progress.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/memory-owners.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/review-map.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-ae-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-af-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-ah-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-ai-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-baseline-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-final-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-z-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/z-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/z-head/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/z-mm-grammar-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-xor-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/findings.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/landing/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/validation-runtime.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/xor-candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/xor-comparison.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9/final-mm-table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9/repaired-xor/candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9/variant-results.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9/xor-summary-failure/table-before.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/README.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/final-grammar-results.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/final-measurements/candidate/table.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/final-mm-results.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/summary.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep-review/fixture-note.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep-review/inverse-probe-note.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep-review/output-policy-note.md]",
+    "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/next-step-notes.md]"
+  ],
+  "slow_selected": [
+    "test/test_dimensional_governance.py::test_mm_5m_builds_and_forwards",
+    "test/test_dimensional_governance.py::test_serial_relaxes_symbol_dim_passthrough",
+    "test/test_dimensional_governance.py::test_reference_configs_still_build_no_false_positive",
+    "test/test_discourse_cache_dtype.py::test_staged_prediction_cast_to_amp_dtype[True-bf16-dtype0]",
+    "test/test_discourse_cache_dtype.py::test_staged_prediction_cast_to_amp_dtype[True-off-dtype1]",
+    "test/test_discourse_cache_dtype.py::test_staged_prediction_cast_to_amp_dtype[False-bf16-dtype0]",
+    "test/test_discourse_cache_dtype.py::test_staged_prediction_cast_to_amp_dtype[False-off-dtype1]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_definition_attribution.py::test_descent_intersects_cases_with_the_present_field",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005068333994131535,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_attribution.py::test_descent_without_a_field_chooses_one_case",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0035046670236624777,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_attribution.py::test_descent_keeps_the_source_pole_and_scope",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003451333031989634,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_attribution.py::test_percept_attribution_follows_signed_definitions_without_complements",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003087583987507969,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_attribution.py::test_passback_scales_unknown_parts_without_erasing_location",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010734170209616423,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05784129101084545,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2096735420054756,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.715646333002951,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0034709160099737346,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.037416167033370584,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06901170796481892,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_integrity.py::test_taxonomy_keeps_the_forms_derived_from_definition_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004024458001367748,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_integrity.py::test_migrated_meta_has_no_live_identity_or_inventory_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005772207980044186,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03438795899273828,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.034807083022315055,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03539799997815862,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_integrity.py::test_reading_and_closing_share_the_grammar_identity_owner",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.9027387090027332,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_definition_integrity.py::test_new_definitions_do_not_alias_later_sentence_identities",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3906342920381576,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_22_new_word_replaces_one_inventory_row_and_writes_one_definition",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03187320800498128,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03177204099483788,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03573812503600493,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_26_full_store_refuses_the_whole_word_transaction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.20844162499997765,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_27_definition_has_a_fixed_when_and_refreshes_recency_without_append",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03484283300349489,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.035422416985966265,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_xor.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.12094970903126523,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[MM_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.20156320795649663,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_31_read_words_have_definition_rows_without_changing_the_configuration[XOR_grammar.xml]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2071496249991469,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_34_learning_codes_cannot_change_definition_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03460358298616484,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_rows.py::test_32_head_meta_checkpoint_migrates_to_definitions",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004501166986301541,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_sparsity.py::test_penalty_exempts_top_free_and_sums_marginal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007411660044454038,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_sparsity.py::test_penalty_excludes_everything_pole",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007181669934652746,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_sparsity.py::test_penalty_counts_negated_parts_by_their_nonnegative_exponent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00038237497210502625,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_sparsity.py::test_gradient_lands_only_on_marginal_ranks",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005395410116761923,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_sparsity.py::test_penalty_none_when_empty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002102500293403864,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_sparsity.py::test_multi_row_sums_each_concept_independently",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00045683298958465457,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_sparsity.py::test_definition_sparsity_loss_lambda_gate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011870800517499447,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_taxonomy.py::test_part_testimony_symbols_the_parent_one_order_above_the_object",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003953042032662779,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_taxonomy.py::test_definition_rows_generalize_over_several_words_and_objects",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004175125039182603,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_taxonomy.py::test_definition_binding_preserves_ambiguous_objects_until_selection",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003243124985601753,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022895419970154762,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005228249996434897,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0038699169526807964,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009419374982826412,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_taxonomy.py::test_referenced_phrase_admission_is_atomic[width]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01006224995944649,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_taxonomy.py::test_referenced_phrase_admission_is_atomic[capacity]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009145875053945929,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_definition_taxonomy.py::test_selected_anaphor_form_binds_to_its_own_end_particular",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010470957960933447,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_derived_concept_codes.py::test_rows_conduct_to_other_words_without_crossing_batch_streams",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00338620797265321,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_derived_concept_codes.py::test_frozen_lookup_does_not_admit_symbol_concept_pairs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0031559159979224205,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_derived_concept_codes.py::test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1507989579695277,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_derived_concept_codes.py::test_readback_audit_distinguishes_code_priming_and_ties",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00041320902528241277,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_derived_concept_codes.py::test_percept_lookup_checkpoint_has_no_independent_word_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005687750002834946,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_derived_concept_codes.py::test_actual_occurrences_activate_words_outside_the_current_sentence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.390500208013691,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_detached_reverse_objective.py::test_fixed_forward_loss_slab_preserves_chooser_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004743330064229667,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_detached_reverse_objective.py::test_compose_has_no_auxiliary_local_policy_objective",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009759999811649323,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dimensional_governance.py::test_sigma_pi_mode_resolves_and_aliases_butterfly",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012383301509544253,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dimensional_governance.py::test_full_sigma_pi_is_invertible_over_flat_slab",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005834579933434725,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dimensional_governance.py::test_mm_5m_builds_and_forwards",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00017925002612173557,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_dimensional_governance.py', 49, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dimensional_governance.py::test_serial_relaxes_symbol_dim_passthrough",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012679101200774312,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_dimensional_governance.py', 62, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dimensional_governance.py::test_converted_grammars_load_role_collapsed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003613875014707446,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dimensional_governance.py::test_temporary_config_preserves_validated_source",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06994395796209574,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dimensional_governance.py::test_cs_ws_recurrent_input_mismatch_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.017540041997563094,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dimensional_governance.py::test_cs_os_direct_handoff_mismatch_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015029917005449533,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dimensional_governance.py::test_reference_configs_still_build_no_false_positive",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001657919492572546,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_dimensional_governance.py', 190, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_cache_dtype.py::test_staged_prediction_cast_to_amp_dtype[True-bf16-dtype0]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00016308296471834183,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_discourse_cache_dtype.py', 35, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_cache_dtype.py::test_staged_prediction_cast_to_amp_dtype[True-off-dtype1]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011587503831833601,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_discourse_cache_dtype.py', 35, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_cache_dtype.py::test_staged_prediction_cast_to_amp_dtype[False-bf16-dtype0]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001134589547291398,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_discourse_cache_dtype.py', 35, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_cache_dtype.py::test_staged_prediction_cast_to_amp_dtype[False-off-dtype1]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010891701094806194,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_discourse_cache_dtype.py', 35, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_cache_dtype.py::test_full_sentence_loop_skips_legacy_discourse_tuple_staging",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001448750263080001,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestArmaUnit::test_e_history_saturates_at_q",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08732204203261063,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestArmaUnit::test_ensure_batch_resizes_buffers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07846208399860188,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestArmaUnit::test_len_reports_max_ring_depth",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07862029201351106,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestArmaUnit::test_loss_gradient_flows_through_predictor",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08142862498061731,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestArmaUnit::test_observe_accumulates_loss_after_first_step",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07732579205185175,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestArmaUnit::test_observe_pushes_and_returns_zero_on_cold_start",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08873408299405128,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestArmaUnit::test_observe_ring_saturates_at_p",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0848732499871403,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestArmaUnit::test_predict_next_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08943941700272262,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestArmaUnit::test_predict_next_stable_shape_on_cold_start",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0853229999775067,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestArmaUnit::test_reset_clears_both_rings",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07822254201164469,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestArmaUnit::test_sentence_dim_equals_n_dim",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08150679199025035,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestBackCompatShims::test_predict_returns_two_tuple",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07905862503685057,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_absent_when_sentenceExpectation_false",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1447302090236917,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_wired_when_sentenceExpectation_true",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.17408633296145126,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discrimination_metric.py::test_categorical_discrimination_counts_each_pair_once",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009240420185960829,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_discrimination_metric.py::test_fixed_discrimination_metric_keeps_all_probes_without_training",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005694999708794057,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/AccessibleMind.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005041250260546803,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/Architecture.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0034024579799734056,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/BasicModel.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004225830198265612,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/BasicModelStabilityPlan.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014466600259765983,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/Componentization.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021712499437853694,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/Ergodic.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023191695800051093,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/ExistenceEvidence.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012579999747686088,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/ExpectationRetention.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002845830167643726,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/FutureWork.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002949875022750348,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/GradientFlow.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007456670282408595,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/Installation.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002462079864926636,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/KernelRetirement.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021676250034943223,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/LLMEquivalence.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004652079660445452,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/Language.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015414589433930814,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/Lexicon.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005162080051377416,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/Logic.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006259590154513717,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/MachineMinds.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003559170290827751,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/Mereology.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009187500108964741,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/NanoChatGrammarPilot.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022345897741615772,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/NestedRetention.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004399160388857126,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/Params.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015656669856980443,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/Philosophy.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007718750275671482,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/QueryContracts.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003234579926356673,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/QueryPhases.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000220458023250103,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/QueryWork.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000492250022944063,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/Reasoning.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008315409650094807,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/STM.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0036454579676501453,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/SelectedMeaning.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000582000007852912,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/Spaces.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001357375003863126,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/SymbolFirewall.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004492919542826712,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/TaxonomyQueries.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001120208005886525,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/Testing.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006217000016476959,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/ThoughtHistory.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003196250181645155,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/Training.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022616669884882867,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/WhatSpacetimeDesign.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027050002245232463,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-07-27-pre-teacher-baseline.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014925003051757812,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-07-27-teacher-reconstruction-b24.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014670798555016518,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-09-math-thinking-pilot.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002827090211212635,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-11-fold-ladder-throughput.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00031779101118445396,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-16-sentence-expectation.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006861250149086118,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-16-tied-input-reconstruction.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0026536249788478017,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item10/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013452499988488853,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item11/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002345374959986657,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item12/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005208340007811785,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-21-item2/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004927089903503656,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-22-item11/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009861249709501863,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000742000003810972,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11a/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012665000394918025,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11a/spec.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020487501751631498,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11b/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005884999991394579,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-23-item11b/spec.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001480000209994614,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item10/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010827920050360262,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11b-corrections/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010195409995503724,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11b-extent/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007972080493345857,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11b-review/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007054170127958059,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-24-item11c/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009788339957594872,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item10-forward/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008633339894004166,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item10-resolution/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010300829890184104,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9-bank/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009061669697985053,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9-bank-sync/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004852090496569872,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9-parity/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007872919668443501,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006057079881429672,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b/erosion-table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015391700435429811,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-followup/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006277500069700181,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-followup/review.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015708303544670343,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-25-item9b-start/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004065830144099891,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item7-5/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000788334000390023,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item8/PROTOCOL.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014470802852883935,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item8/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000967125000897795,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item8-review/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005434160120785236,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9/PROTOCOL.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000130708038341254,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004343329928815365,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9-followup/PROTOCOL.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014824996469542384,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9-followup/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005583749734796584,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9b-corrections/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006988750537857413,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9b-occurrence-fix/PROTOCOL.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016966601833701134,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006759160314686596,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014330829726532102,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-landing/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005357500049285591,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-pressure/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006796249654144049,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-pressure/reviewed-spec.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000149125000461936,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-review/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004669170011766255,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-review/reviewed-spec.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015287497080862522,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-seals/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006325829890556633,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-27-item7-5-seals/reviewed-spec.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016020797193050385,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-28-item7-review/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0031666249851696193,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-28-item7-review-round2/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006783329881727695,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005861669778823853,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/acceptance-map.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006372499628923833,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/mm-grammar-table-final.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026587495813146234,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/mm-grammar-table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002660419559106231,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/reconstruction-table-final.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020341697381809354,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-29-item7-review-round3/reconstruction-table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000198375026229769,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0026708749937824905,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/before/candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016541697550565004,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/before/comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023437500931322575,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/before/head/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001900839852169156,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/before/mm-table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001602920237928629,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/diagnostics/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003160840133205056,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/grammar-ten/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012651249999180436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/native-comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036037497920915484,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step1/candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016908295219764113,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step1/comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002553749945946038,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step1/head/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016570801381021738,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step2/candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015949999215081334,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step2/comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002454580389894545,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step2/head/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016799999866634607,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step3/candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016433297423645854,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step3/comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025395804550498724,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step3/head/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015658297343179584,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step4/candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015783298294991255,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step4/comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025679200189188123,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step4/head/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016333296662196517,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step5/candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015662499936297536,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step5/comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024562497856095433,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step5/head/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015816703671589494,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item6-9/step5/mm-table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014770799316465855,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00360662501771003,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ae-candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016587501158937812,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ae-head/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015558302402496338,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/af-candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001551249879412353,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/af-head/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016241701086983085,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ah-candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001551249879412353,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ah-head/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015695899492129683,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ai-candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000175916007719934,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/ai-head/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015504099428653717,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/baseline-candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001568750012665987,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/baseline-head/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015508400974795222,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final-mm-grammar-table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022791605442762375,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final-reconstruction-table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025462498888373375,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final-xor-head/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001611249754205346,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/final3-xor-candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000145500001963228,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001875840243883431,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/failures.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030025001615285873,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/full-sweep/findings-in-progress.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003618749906308949,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/memory-owners.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025970902061089873,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/review-map.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002584083005785942,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-ae-comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023058400256559253,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-af-comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027129100635647774,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-ah-comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023666699416935444,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-ai-comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022483401698991656,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-baseline-comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00038104201667010784,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-final-comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024345802376046777,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/xor-z-comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002573750098235905,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/z-candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020441599190235138,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/z-head/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016570801381021738,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round4/z-mm-grammar-table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001516249612905085,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015199159970507026,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-mm-grammar-table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020987499738112092,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-xor-candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015199999324977398,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/final-xor-comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002847079886123538,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019966601394116879,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/full-sweep/findings.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00031687499722465873,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/landing/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006931659881956875,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/mm-grammar-table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002060839906334877,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/validation-runtime.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005576669936999679,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/xor-candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001819579629227519,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-09-30-item7-review-round5/xor-comparison.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002661250182427466,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012561670155264437,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9/final-mm-table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000554917030967772,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9/repaired-xor/candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015649996930733323,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9/variant-results.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0034675829811021686,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9/xor-summary-failure/table-before.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016191700706258416,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/README.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00118433398893103,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/final-grammar-results.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018541701138019562,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/final-measurements/candidate/table.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017325003864243627,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/final-mm-results.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001634169602766633,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep/summary.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00046600005589425564,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep-review/fixture-note.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001742909662425518,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep-review/inverse-probe-note.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016966700786724687,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/full-sweep-review/output-policy-note.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001765830093063414,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-01-item6-9-continuation/next-step-notes.md]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016437500016763806,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

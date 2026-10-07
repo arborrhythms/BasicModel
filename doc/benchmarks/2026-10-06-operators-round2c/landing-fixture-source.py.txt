@@ -1,0 +1,41 @@
+"""The saved fixture on the actual 6.8 landing, no optimizer step."""
+import sys,json
+from pathlib import Path
+import torch
+from unittest.mock import patch
+HERE=Path(__file__).resolve().parent
+ROOT=Path.cwd()
+sys.path[:0]=[str(ROOT/'bin'),str(ROOT/'test')]
+from util import init_device
+init_device('cpu')
+from Models import BasicModel
+from Language import OperationSelectionLayer
+from test_mm_xor import _fresh_model
+torch.set_rng_state(torch.load(HERE/'disjunction-initial-rng.pt',weights_only=True))
+model,_,data=_fresh_model(str(ROOT/'data/XOR_grammar.xml'))
+forward,attend,commit=OperationSelectionLayer.forward,OperationSelectionLayer.attend,BasicModel._commit_sentence
+result={}
+def forced(module,x,**kw):
+    stop=(x.shape[1]-1)*module.r_reduce+x.shape[1]*module.r_apply
+    depth=kw.get('depth',torch.full((len(x),),x.shape[1]))
+    kw['replay_action']=torch.where(depth>1,1,stop)
+    return forward(module,x,**kw)
+def narrowing(module,keys,legal,space,**kw):
+    action=legal.flatten(1).long().argmax(-1)
+    for op in (0,2,1,4,3,5):
+        slots=legal[:,:,op];action=torch.where(slots.any(-1),slots.long().argmax(-1)*6+op,action)
+    kw['replay_action']=action
+    return attend(module,keys,legal,space,**kw)
+def observed(m,state,sid,active,*args):
+    texts,unavailable=m.reconstruct_grammar_sentence(state,sid,active)
+    result.update(texts=texts,unavailable=unavailable.tolist(),costs=m._sentence_cost_registry.total(objective='reconstruction').tolist(),actions=m._attention_words.actions.tolist())
+    return commit(m,state,sid,active,*args)
+raw,target=next(iter(data.data_loader(split='test',num_streams=4)))
+result['inputs']=[model._bytes_to_text(x).rstrip(chr(0)) for x in raw]
+with patch.object(OperationSelectionLayer,'forward',forced),patch.object(OperationSelectionLayer,'attend',narrowing),patch.object(BasicModel,'_commit_sentence',observed),torch.no_grad():
+    model.runBatch(train=False,optimizer=None,batchSize=4,split='test',batch_override=(model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)))
+result['multisets']=sum(sorted(a.split())==sorted(b.split()) for a,b in zip(result['inputs'],result['texts']))
+new=json.loads((HERE/'disjunction-result.json').read_text())['round2c']
+result['corrected_costs_equal_landing']=result['costs']==new['costs']
+(HERE/'landing-fixture-result.json').write_text(json.dumps(result,indent=2)+'\n')
+print(json.dumps(result));model.End();model.symbolSpace.soft_reset()

@@ -1,0 +1,32 @@
+..........................F............................................. [ 38%]
+.................ssssss............sss.................................. [ 77%]
+...........................................                              [100%]
+=================================== FAILURES ===================================
+_______ test_public_reading_fuses_the_reference_before_capture_and_write _______
+test/test_live_references.py:183: in test_public_reading_fuses_the_reference_before_capture_and_write
+    torch.testing.assert_close(frame[1], entry.leaves[-1], rtol=0, atol=0)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 117 / 136 (86.0%)
+E   Greatest absolute difference: 0.4322974383831024 at index (27,)
+E   Greatest relative difference: 2.0 at index (0,)
+=============================== warnings summary ===============================
+test/test_lift_lower_recommender.py::TestLiftLowerRecommender::test_lift_reverse_uses_recommender_with_basis
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_live_query_occurrences.py::test_what_reads_live_complete_question_across_a_detached_boundary
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_mereology_raise.py::test_run_structure_over_word_spans_counts_words
+test/test_mereology_raise.py::test_run_structure_single_blob_is_singleton
+test/test_mereology_raise.py::test_stage_analysis_spans_is_structural_only
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1233: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write
+1 failed, 177 passed, 9 skipped, 5 warnings in 17.92s

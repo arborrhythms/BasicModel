@@ -74,7 +74,11 @@ def test_real_supplied_trials_cost_before_updates_and_reach_only_reader(monkeypa
         live = [names[id(p)] for p, g in zip(params, grads) if g is not None and bool(g.abs().any())]
         assert not any(name.startswith('conceptualSpaces.') for name in live), live
         assert not any('operation_layer.' in name for name in live), live
-        readout = {id(p) for p in model.outputSpace.parameters()}
+        # The answer term in the advantage belongs only to the comparison
+        # reader; the presented map has its own kept-root training cost.
+        readout = {id(p) for p in model.comparison_reader.parameters()}
+        assert not any(id(p) in {id(q) for q in model.outputSpace.parameters()}
+                       and g is not None and bool(g.abs().any()) for p,g in zip(params,grads))
         assert any(id(p) in readout and g is not None and bool(g.abs().any())
                    for p, g in zip(params, grads)), live
         measured.append(live)

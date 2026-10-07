@@ -1,0 +1,27 @@
+{
+  "selected": 5269,
+  "completed": 5269,
+  "outcomes": {
+    "passed": 4983,
+    "skipped": 285,
+    "xpassed": 1
+  },
+  "initial": {
+    "reason": "aggregate_memory",
+    "exit_code": 137,
+    "completed": 2289,
+    "note": "The initial command mistakenly set an 8 GiB aggregate memory ceiling; it stopped at that guard, without a failing test report."
+  },
+  "continuation": {
+    "completed": 2980,
+    "exit_code": 0,
+    "workers": 3,
+    "aggregate_gib": 24,
+    "per_worker_gib": 8
+  },
+  "repeated_completed_tests": 0,
+  "failed_reports": 0,
+  "source_matched": true,
+  "manifest_sha256": "3fd07f0cd516da3102867207614e11a9153638d37057bcc82a8c7ff821689106",
+  "elapsed_seconds": 340.4432016250212
+}

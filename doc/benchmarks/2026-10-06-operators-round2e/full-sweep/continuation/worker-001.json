@@ -1,0 +1,2228 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_hierarchical.py::TestLevelShapes::test_constant_dim",
+    "test/test_hierarchical.py::TestLevelShapes::test_eight_levels",
+    "test/test_hierarchical.py::TestLevelShapes::test_single_order",
+    "test/test_hierarchical.py::TestLevelShapes::test_two_levels",
+    "test/test_hierarchical.py::TestWordEncoding::test_7tuple_encoding",
+    "test/test_hierarchical.py::TestWordEncoding::test_7tuple_layout",
+    "test/test_hierarchical.py::TestWordEncoding::test_default_order_zero",
+    "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_compaction_overflow_regression",
+    "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged",
+    "test/test_hierarchical.py::TestBackwardCompat::test_symbolicspace_per_stage_instances",
+    "test/test_hierarchical.py::TestNativePasses::test_ramsified_passes_have_native_reads_and_no_perceptual_folds",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_at_prototype_is_fixed_point",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_iterative_snap_distance_reduces_to_zero",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_noisy_input_converges_in_one_cycle",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_orthogonal_input_collapses_to_neither",
+    "test/test_idempotent_loop.py::TestWidenedIdempotentLoopV7::test_v7_at_prototype_slab_is_fixed_point_cycle0",
+    "test/test_idempotent_loop.py::TestWidenedIdempotentLoopV7::test_v7_perslot_roundtrip_is_fixed_point",
+    "test/test_identification_evidence.py::test_source_trust_does_not_supply_identification_evidence",
+    "test/test_identification_evidence.py::test_changing_source_trust_preserves_both_and_neither",
+    "test/test_identification_evidence.py::test_clause_order_and_evidence_are_stored_without_a_program",
+    "test/test_identification_evidence.py::test_row_compaction_preserves_each_order_and_pole",
+    "test/test_identification_evidence.py::test_embedded_identification_does_not_grant_source_authority",
+    "test/test_identification_evidence.py::test_open_reading_keeps_both_poles_and_its_order",
+    "test/test_identification_evidence.py::test_index_unfolding_reads_the_stored_order",
+    "test/test_identification_evidence.py::test_abstract_unfold_descends_each_sigma_rung",
+    "test/test_identification_evidence.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+    "test/test_identification_evidence.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+    "test/test_identification_evidence.py::test_withdrawing_authority_preserves_identification",
+    "test/test_identification_evidence.py::test_luminosity_view_does_not_present_identification_as_trust",
+    "test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_disjoint_codebook_zero_loss",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_equal_rows_damped_to_zero_loss",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_overlap_matched_trust_zero_loss",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_overlap_mismatched_trust_penalized",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_relation_counts_partition_non_diagonal",
+    "test/test_impenetrable.py::TestVarianceFloor::test_collapse_triggers_variance_penalty",
+    "test/test_impenetrable.py::TestVarianceFloor::test_well_spread_no_penalty",
+    "test/test_impenetrable.py::TestDisabled::test_all_zero_weights_returns_zero",
+    "test/test_impenetrable.py::TestDisabled::test_disabled_short_circuits",
+    "test/test_impenetrable.py::TestWiring::test_returns_zero_tensor_without_codebook",
+    "test/test_init_scale.py::test_init_scale_shrinks_rows_dot_product",
+    "test/test_init_scale.py::test_init_scale_shrinks_rows_generic_branch",
+    "test/test_init_scale.py::test_init_scale_zero_is_none_byte_identical",
+    "test/test_init_scale.py::test_init_scale_selection_invariant",
+    "test/test_init_scale.py::test_init_scale_keeps_folds_linear",
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_math]",
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_add]",
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[idempotent]",
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[stream_smoke]",
+    "test/test_input_word_cursor.py::test_disabled_by_default_returns_none_and_no_advance",
+    "test/test_input_word_cursor.py::test_none_buffer_returns_none_even_when_enabled",
+    "test/test_input_word_cursor.py::test_yields_words_one_per_call_in_T_order_then_null_ends",
+    "test/test_input_word_cursor.py::test_full_buffer_walks_all_T_then_ends",
+    "test/test_input_word_cursor.py::test_empty_valid_content_ends_immediately",
+    "test/test_input_word_cursor.py::test_nongrammar_config_disables_cursor_and_next_word_is_none",
+    "test/test_input_word_cursor.py::test_per_word_enabled_predicate_tracks_use_grammar",
+    "test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_default_only_fallback_is_detached",
+    "test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_grad_reaches_unary_anchors_via_projection",
+    "test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_grad_reaches_unary_and_binary_anchors_bare_router",
+    "test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_rule_probs_requires_grad_on_full_router",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerShapes::test_no_intermediate_activation",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerShapes::test_parallel_forward_shape",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerShapes::test_serial_forward_shape",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRouting::test_routing_changes_parallel_output",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRouting::test_routing_changes_serial_output",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRoundtrip::test_intra_loss_is_mse",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRoundtrip::test_parallel_roundtrip_no_routing",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRoundtrip::test_parallel_roundtrip_with_routing",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRoundtrip::test_serial_reverse_shape",
+    "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_dims_match_space",
+    "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_intra_layer_in_cascade",
+    "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_intra_loss_weight_read",
+    "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_reset_clears_registered_prediction_targets",
+    "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_reset_reaches_layer",
+    "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_routing_dim_is_n_rules",
+    "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_space_owns_intra_layer",
+    "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_bias_fires_on_real_model",
+    "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_intra_routing_for_predict_returns_real_tensor",
+    "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_routing_state_built_with_rule_probs",
+    "test/test_intra_sentence_layer_reverse.py::TestParallelRoundtripTight::test_parallel_roundtrip_no_routing",
+    "test/test_intra_sentence_layer_reverse.py::TestParallelRoundtripTight::test_parallel_roundtrip_varied_widths",
+    "test/test_intra_sentence_layer_reverse.py::TestParallelRoundtripTight::test_parallel_roundtrip_with_routing",
+    "test/test_intra_sentence_layer_reverse.py::TestParallelRoundtripTight::test_routing_bias_subtracted_exactly_on_reverse",
+    "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_reforward_closure_generic_input",
+    "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_reforward_closure_with_routing",
+    "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_reverse_honors_explicit_k",
+    "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_reverse_returns_equal_slots",
+    "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_reverse_shape_and_finiteness",
+    "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_roundtrip_tight_on_identical_slots",
+    "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_roundtrip_tight_on_identical_slots_with_routing",
+    "test/test_intra_sentence_layer_reverse.py::TestReverseInputGuards::test_parallel_reverse_rejects_2d",
+    "test/test_intra_sentence_layer_reverse.py::TestReverseInputGuards::test_serial_reverse_rejects_3d",
+    "test/test_inverse_recommend.py::TestMereologyHelpers::test_overlapOf_same_sign_min_magnitude",
+    "test/test_inverse_recommend.py::TestMereologyHelpers::test_overlapOf_sign_disagreement_collapses_to_zero",
+    "test/test_inverse_recommend.py::TestMereologyHelpers::test_partOf_basic",
+    "test/test_inverse_recommend.py::TestMereologyHelpers::test_partOf_with_sentinels",
+    "test/test_inverse_recommend.py::TestMereologyHelpers::test_wholeOf_basic",
+    "test/test_inverse_recommend.py::TestMereologyHelpers::test_wholeOf_with_sentinels",
+    "test/test_inverse_recommend.py::TestUnionInverse::test_batched_recovery",
+    "test/test_inverse_recommend.py::TestUnionInverse::test_pair_satisfies_constraints_on_codebook_target",
+    "test/test_inverse_recommend.py::TestUnionInverse::test_sentinels_keep_selection_non_empty",
+    "test/test_inverse_recommend.py::TestIntersectionInverse::test_pair_satisfies_constraints_on_codebook_target",
+    "test/test_inverse_recommend.py::TestIntersectionInverse::test_x2_minimises_overlap_with_x1",
+    "test/test_inverse_recommend.py::TestEmptyCodebook::test_intersection_inverse_empty_W_falls_back_to_identity_pair",
+    "test/test_inverse_recommend.py::TestEmptyCodebook::test_union_inverse_empty_W_falls_back_to_identity_pair",
+    "test/test_inverse_unary_exclusion.py::test_closing_does_not_spend_rounds_repeating_not_at_one_slot",
+    "test/test_inverse_unary_exclusion.py::test_inverse_exclusion_is_local_and_leaves_other_unaries_eligible[False]",
+    "test/test_inverse_unary_exclusion.py::test_inverse_exclusion_is_local_and_leaves_other_unaries_eligible[True]",
+    "test/test_inverse_unary_exclusion.py::test_serial_window_excludes_the_inverse_at_the_same_physical_slot",
+    "test/test_inverse_unary_exclusion.py::test_exploration_forces_only_a_round_with_a_legal_alternative",
+    "test/test_inverse_unary_exclusion.py::test_single_legal_derivation_is_compared_without_inventing_an_alternative",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_2d_batch",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_W_Winverse_identity",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_contract",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_contract_naive",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_contract",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_expand",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_square",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_square_naive",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_stable_expand",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_stable_square",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_expand",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_expand_naive",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_no_bias",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_no_bias_naive",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_square",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_square_naive",
+    "test/test_invertibility.py::TestMapppingLayer::test_contract",
+    "test/test_invertibility.py::TestMapppingLayer::test_expand",
+    "test/test_invertibility.py::TestMapppingLayer::test_square",
+    "test/test_invertibility.py::TestLinearLayerIdentity::test_identity",
+    "test/test_invertibility.py::TestInvertibleSigmaLayer::test_3d",
+    "test/test_invertibility.py::TestInvertibleSigmaLayer::test_3d_naive",
+    "test/test_invertibility.py::TestInvertibleSigmaLayer::test_contract",
+    "test/test_invertibility.py::TestInvertibleSigmaLayer::test_contract_naive",
+    "test/test_invertibility.py::TestInvertibleSigmaLayer::test_expand",
+    "test/test_invertibility.py::TestInvertibleSigmaLayer::test_expand_naive",
+    "test/test_invertibility.py::TestInvertibleSigmaLayer::test_square",
+    "test/test_invertibility.py::TestInvertibleSigmaLayer::test_square_naive",
+    "test/test_invertibility.py::TestInvertiblePiLayer3D::test_bias",
+    "test/test_invertibility.py::TestInvertiblePiLayer3D::test_naive_bias",
+    "test/test_invertibility.py::TestInvertiblePiLayer3D::test_naive_nobias",
+    "test/test_invertibility.py::TestInvertiblePiLayer3D::test_nobias",
+    "test/test_invertibility.py::TestInvertiblePiLayer2D::test_bias",
+    "test/test_invertibility.py::TestInvertiblePiLayer2D::test_naive_bias",
+    "test/test_invertibility.py::TestInvertiblePiLayer2D::test_naive_nobias",
+    "test/test_invertibility.py::TestInvertiblePiLayer2D::test_nobias",
+    "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_nobias_naive",
+    "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_nobias_nonnaive",
+    "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_square_naive",
+    "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_square_nonnaive",
+    "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_wide_naive",
+    "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_wide_nonnaive",
+    "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_nobias_naive",
+    "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_nobias_nonnaive",
+    "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_square_naive",
+    "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_square_nonnaive",
+    "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_wide_naive",
+    "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_wide_nonnaive",
+    "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_2d_nobias",
+    "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_2d_roundtrip",
+    "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_3d",
+    "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_3d_roundtrip",
+    "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_ergodic_roundtrip",
+    "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_training_preserves_invertibility",
+    "test/test_invertibility.py::TestPairedSigmaTraining::test_paired_roundtrip",
+    "test/test_invertibility.py::TestPairedPiTraining::test_paired_roundtrip",
+    "test/test_invertibility.py::TestPiLayerInvertibleTrained::test_dim_10",
+    "test/test_invertibility.py::TestPiLayerInvertibleTrained::test_dim_6",
+    "test/test_invertibility.py::TestConceptualSpacePairedSigma::test_objsize_0",
+    "test/test_invertibility.py::TestConceptualSpacePairedSigma::test_objsize_4",
+    "test/test_invertibility.py::TestOutputSpaceReversePass::test_objsize_0",
+    "test/test_invertibility.py::TestOutputSpaceReversePass::test_objsize_4",
+    "test/test_invertibility.py::TestErgodicInvertibleLayers::test_invertible_pi_ergodic_roundtrip",
+    "test/test_invertibility.py::TestErgodicInvertibleLayers::test_invertible_sigma_ergodic_roundtrip",
+    "test/test_invertibility.py::TestPiLayerOutputRange::test_extreme_input_minus1",
+    "test/test_invertibility.py::TestPiLayerOutputRange::test_extreme_input_plus1",
+    "test/test_invertibility.py::TestPiLayerOutputRange::test_output_in_neg1_pos1",
+    "test/test_invertibility.py::TestSigmaLayerNonlinearRange::test_forward_range",
+    "test/test_invertibility.py::TestSigmaLayerNonlinearRange::test_reverse_extreme_input",
+    "test/test_invertibility.py::TestSigmaLayerNonlinearRange::test_reverse_range",
+    "test/test_invertibility.py::TestSigmaLayerNonlinearRange::test_roundtrip",
+    "test/test_invertibility.py::TestPiLayerReverseAcceptsFullRange::test_near_boundary_accepted",
+    "test/test_invertibility.py::TestPiLayerReverseAcceptsFullRange::test_negative_input_accepted",
+    "test/test_invertibility.py::TestConceptualSpaceReverseRangeCheck::test_nonlinear_output_in_range",
+    "test/test_invertibility.py::TestProjectionBasisInvertibility::test_multi_slot_recovers_only_per_row_mean",
+    "test/test_invertibility.py::TestProjectionBasisInvertibility::test_single_slot_lossy_when_V_basis_lt_D",
+    "test/test_invertibility.py::TestProjectionBasisInvertibility::test_single_slot_round_trip_exact_when_V_basis_geq_D",
+    "test/test_invertibility_contract.py::test_zero_ldu_diagonal_has_finite_matched_inverse[False-False]",
+    "test/test_invertibility_contract.py::test_zero_ldu_diagonal_has_finite_matched_inverse[False-True]",
+    "test/test_invertibility_contract.py::test_zero_ldu_diagonal_has_finite_matched_inverse[True-False]",
+    "test/test_invertibility_contract.py::test_zero_ldu_diagonal_has_finite_matched_inverse[True-True]",
+    "test/test_invertibility_contract.py::test_ergodic_noise_cancellation_cannot_make_stable_diagonal_zero",
+    "test/test_invertibility_contract.py::test_noise_is_sampled_before_forward_and_after_reverse_only",
+    "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[3-3-SigmaLayer]",
+    "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[3-3-PiLayer]",
+    "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[7-7-SigmaLayer]",
+    "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[7-7-PiLayer]",
+    "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[8-5-SigmaLayer]",
+    "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[8-5-PiLayer]",
+    "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[8-8-SigmaLayer]",
+    "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[8-8-PiLayer]",
+    "test/test_invertibility_contract.py::test_membership_field_roundtrip_does_not_require_one_summary_to_decode_it[sigma]",
+    "test/test_invertibility_contract.py::test_membership_field_roundtrip_does_not_require_one_summary_to_decode_it[pi]",
+    "test/test_invertibility_contract.py::test_trained_padded_butterfly_remains_fullgraph_traceable[SigmaLayer]",
+    "test/test_invertibility_contract.py::test_trained_padded_butterfly_remains_fullgraph_traceable[PiLayer]",
+    "test/test_invertibility_contract.py::test_bounded_codebook_read_ste_retains_corrective_gradient",
+    "test/test_invertibility_contract.py::test_hard_nearest_lookup_and_ste_have_same_values_different_encoder_credit",
+    "test/test_ir_fullgraph_compile.py::test_idempotent_forward_compiles_fullgraph_eager",
+    "test/test_ir_fullgraph_compile.py::test_serial_per_word_forward_compiles_fullgraph_eager",
+    "test/test_ir_mode.py::TestWordLexerRegex::test_digits_individual",
+    "test/test_ir_mode.py::TestWordLexerRegex::test_hello_world_lex_runs",
+    "test/test_ir_mode.py::TestWordLexerRegex::test_letter_runs_grouped",
+    "test/test_ir_mode.py::TestWordLexerRegex::test_whitespace_individual",
+    "test/test_ir_mode.py::TestNullPerceptSlot::test_null_percept_idx_is_at_tail",
+    "test/test_ir_mode.py::TestNullPerceptSlot::test_null_percept_key_in_vocab",
+    "test/test_ir_mode.py::TestNullPerceptSlot::test_null_percept_vector_in_unit_ball",
+    "test/test_ir_mode.py::TestNullPerceptSlot::test_null_percept_vector_is_learnable",
+    "test/test_ir_mode.py::TestIRInjectMask::test_mask_excludes_padding",
+    "test/test_ir_mode.py::TestIRInjectMask::test_mask_preserves_where_when",
+    "test/test_ir_mode.py::TestIRInjectMask::test_zero_rate_no_mask"
+  ],
+  "completed": [
+    "test/test_hierarchical.py::TestLevelShapes::test_constant_dim",
+    "test/test_hierarchical.py::TestLevelShapes::test_eight_levels",
+    "test/test_hierarchical.py::TestLevelShapes::test_single_order",
+    "test/test_hierarchical.py::TestLevelShapes::test_two_levels",
+    "test/test_hierarchical.py::TestWordEncoding::test_7tuple_encoding",
+    "test/test_hierarchical.py::TestWordEncoding::test_7tuple_layout",
+    "test/test_hierarchical.py::TestWordEncoding::test_default_order_zero",
+    "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_compaction_overflow_regression",
+    "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged",
+    "test/test_hierarchical.py::TestBackwardCompat::test_symbolicspace_per_stage_instances",
+    "test/test_hierarchical.py::TestNativePasses::test_ramsified_passes_have_native_reads_and_no_perceptual_folds",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_at_prototype_is_fixed_point",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_iterative_snap_distance_reduces_to_zero",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_noisy_input_converges_in_one_cycle",
+    "test/test_idempotent_loop.py::TestIdempotentLoop::test_orthogonal_input_collapses_to_neither",
+    "test/test_idempotent_loop.py::TestWidenedIdempotentLoopV7::test_v7_at_prototype_slab_is_fixed_point_cycle0",
+    "test/test_idempotent_loop.py::TestWidenedIdempotentLoopV7::test_v7_perslot_roundtrip_is_fixed_point",
+    "test/test_identification_evidence.py::test_source_trust_does_not_supply_identification_evidence",
+    "test/test_identification_evidence.py::test_changing_source_trust_preserves_both_and_neither",
+    "test/test_identification_evidence.py::test_clause_order_and_evidence_are_stored_without_a_program",
+    "test/test_identification_evidence.py::test_row_compaction_preserves_each_order_and_pole",
+    "test/test_identification_evidence.py::test_embedded_identification_does_not_grant_source_authority",
+    "test/test_identification_evidence.py::test_open_reading_keeps_both_poles_and_its_order",
+    "test/test_identification_evidence.py::test_index_unfolding_reads_the_stored_order",
+    "test/test_identification_evidence.py::test_abstract_unfold_descends_each_sigma_rung",
+    "test/test_identification_evidence.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+    "test/test_identification_evidence.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+    "test/test_identification_evidence.py::test_withdrawing_authority_preserves_identification",
+    "test/test_identification_evidence.py::test_luminosity_view_does_not_present_identification_as_trust",
+    "test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_disjoint_codebook_zero_loss",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_equal_rows_damped_to_zero_loss",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_overlap_matched_trust_zero_loss",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_overlap_mismatched_trust_penalized",
+    "test/test_impenetrable.py::TestOverlapPenalty::test_relation_counts_partition_non_diagonal",
+    "test/test_impenetrable.py::TestVarianceFloor::test_collapse_triggers_variance_penalty",
+    "test/test_impenetrable.py::TestVarianceFloor::test_well_spread_no_penalty",
+    "test/test_impenetrable.py::TestDisabled::test_all_zero_weights_returns_zero",
+    "test/test_impenetrable.py::TestDisabled::test_disabled_short_circuits",
+    "test/test_impenetrable.py::TestWiring::test_returns_zero_tensor_without_codebook",
+    "test/test_init_scale.py::test_init_scale_shrinks_rows_dot_product",
+    "test/test_init_scale.py::test_init_scale_shrinks_rows_generic_branch",
+    "test/test_init_scale.py::test_init_scale_zero_is_none_byte_identical",
+    "test/test_init_scale.py::test_init_scale_selection_invariant",
+    "test/test_init_scale.py::test_init_scale_keeps_folds_linear",
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_math]",
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_add]",
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[idempotent]",
+    "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[stream_smoke]",
+    "test/test_input_word_cursor.py::test_disabled_by_default_returns_none_and_no_advance",
+    "test/test_input_word_cursor.py::test_none_buffer_returns_none_even_when_enabled",
+    "test/test_input_word_cursor.py::test_yields_words_one_per_call_in_T_order_then_null_ends",
+    "test/test_input_word_cursor.py::test_full_buffer_walks_all_T_then_ends",
+    "test/test_input_word_cursor.py::test_empty_valid_content_ends_immediately",
+    "test/test_input_word_cursor.py::test_nongrammar_config_disables_cursor_and_next_word_is_none",
+    "test/test_input_word_cursor.py::test_per_word_enabled_predicate_tracks_use_grammar",
+    "test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_default_only_fallback_is_detached",
+    "test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_grad_reaches_unary_anchors_via_projection",
+    "test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_grad_reaches_unary_and_binary_anchors_bare_router",
+    "test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_rule_probs_requires_grad_on_full_router",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerShapes::test_no_intermediate_activation",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerShapes::test_parallel_forward_shape",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerShapes::test_serial_forward_shape",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRouting::test_routing_changes_parallel_output",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRouting::test_routing_changes_serial_output",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRoundtrip::test_intra_loss_is_mse",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRoundtrip::test_parallel_roundtrip_no_routing",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRoundtrip::test_parallel_roundtrip_with_routing",
+    "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRoundtrip::test_serial_reverse_shape",
+    "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_dims_match_space",
+    "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_intra_layer_in_cascade",
+    "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_intra_loss_weight_read",
+    "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_reset_clears_registered_prediction_targets",
+    "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_reset_reaches_layer",
+    "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_routing_dim_is_n_rules",
+    "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_space_owns_intra_layer",
+    "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_bias_fires_on_real_model",
+    "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_intra_routing_for_predict_returns_real_tensor",
+    "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_routing_state_built_with_rule_probs",
+    "test/test_intra_sentence_layer_reverse.py::TestParallelRoundtripTight::test_parallel_roundtrip_no_routing",
+    "test/test_intra_sentence_layer_reverse.py::TestParallelRoundtripTight::test_parallel_roundtrip_varied_widths",
+    "test/test_intra_sentence_layer_reverse.py::TestParallelRoundtripTight::test_parallel_roundtrip_with_routing",
+    "test/test_intra_sentence_layer_reverse.py::TestParallelRoundtripTight::test_routing_bias_subtracted_exactly_on_reverse",
+    "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_reforward_closure_generic_input",
+    "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_reforward_closure_with_routing",
+    "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_reverse_honors_explicit_k",
+    "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_reverse_returns_equal_slots",
+    "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_reverse_shape_and_finiteness",
+    "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_roundtrip_tight_on_identical_slots",
+    "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_roundtrip_tight_on_identical_slots_with_routing",
+    "test/test_intra_sentence_layer_reverse.py::TestReverseInputGuards::test_parallel_reverse_rejects_2d",
+    "test/test_intra_sentence_layer_reverse.py::TestReverseInputGuards::test_serial_reverse_rejects_3d",
+    "test/test_inverse_recommend.py::TestMereologyHelpers::test_overlapOf_same_sign_min_magnitude",
+    "test/test_inverse_recommend.py::TestMereologyHelpers::test_overlapOf_sign_disagreement_collapses_to_zero",
+    "test/test_inverse_recommend.py::TestMereologyHelpers::test_partOf_basic",
+    "test/test_inverse_recommend.py::TestMereologyHelpers::test_partOf_with_sentinels",
+    "test/test_inverse_recommend.py::TestMereologyHelpers::test_wholeOf_basic",
+    "test/test_inverse_recommend.py::TestMereologyHelpers::test_wholeOf_with_sentinels",
+    "test/test_inverse_recommend.py::TestUnionInverse::test_batched_recovery",
+    "test/test_inverse_recommend.py::TestUnionInverse::test_pair_satisfies_constraints_on_codebook_target",
+    "test/test_inverse_recommend.py::TestUnionInverse::test_sentinels_keep_selection_non_empty",
+    "test/test_inverse_recommend.py::TestIntersectionInverse::test_pair_satisfies_constraints_on_codebook_target",
+    "test/test_inverse_recommend.py::TestIntersectionInverse::test_x2_minimises_overlap_with_x1",
+    "test/test_inverse_recommend.py::TestEmptyCodebook::test_intersection_inverse_empty_W_falls_back_to_identity_pair",
+    "test/test_inverse_recommend.py::TestEmptyCodebook::test_union_inverse_empty_W_falls_back_to_identity_pair",
+    "test/test_inverse_unary_exclusion.py::test_closing_does_not_spend_rounds_repeating_not_at_one_slot",
+    "test/test_inverse_unary_exclusion.py::test_inverse_exclusion_is_local_and_leaves_other_unaries_eligible[False]",
+    "test/test_inverse_unary_exclusion.py::test_inverse_exclusion_is_local_and_leaves_other_unaries_eligible[True]",
+    "test/test_inverse_unary_exclusion.py::test_serial_window_excludes_the_inverse_at_the_same_physical_slot",
+    "test/test_inverse_unary_exclusion.py::test_exploration_forces_only_a_round_with_a_legal_alternative",
+    "test/test_inverse_unary_exclusion.py::test_single_legal_derivation_is_compared_without_inventing_an_alternative",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_2d_batch",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_W_Winverse_identity",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_contract",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_contract_naive",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_contract",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_expand",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_square",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_square_naive",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_stable_expand",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_stable_square",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_expand",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_expand_naive",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_no_bias",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_no_bias_naive",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_square",
+    "test/test_invertibility.py::TestInvertibleLinearLayer::test_square_naive",
+    "test/test_invertibility.py::TestMapppingLayer::test_contract",
+    "test/test_invertibility.py::TestMapppingLayer::test_expand",
+    "test/test_invertibility.py::TestMapppingLayer::test_square",
+    "test/test_invertibility.py::TestLinearLayerIdentity::test_identity",
+    "test/test_invertibility.py::TestInvertibleSigmaLayer::test_3d",
+    "test/test_invertibility.py::TestInvertibleSigmaLayer::test_3d_naive",
+    "test/test_invertibility.py::TestInvertibleSigmaLayer::test_contract",
+    "test/test_invertibility.py::TestInvertibleSigmaLayer::test_contract_naive",
+    "test/test_invertibility.py::TestInvertibleSigmaLayer::test_expand",
+    "test/test_invertibility.py::TestInvertibleSigmaLayer::test_expand_naive",
+    "test/test_invertibility.py::TestInvertibleSigmaLayer::test_square",
+    "test/test_invertibility.py::TestInvertibleSigmaLayer::test_square_naive",
+    "test/test_invertibility.py::TestInvertiblePiLayer3D::test_bias",
+    "test/test_invertibility.py::TestInvertiblePiLayer3D::test_naive_bias",
+    "test/test_invertibility.py::TestInvertiblePiLayer3D::test_naive_nobias",
+    "test/test_invertibility.py::TestInvertiblePiLayer3D::test_nobias",
+    "test/test_invertibility.py::TestInvertiblePiLayer2D::test_bias",
+    "test/test_invertibility.py::TestInvertiblePiLayer2D::test_naive_bias",
+    "test/test_invertibility.py::TestInvertiblePiLayer2D::test_naive_nobias",
+    "test/test_invertibility.py::TestInvertiblePiLayer2D::test_nobias",
+    "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_nobias_naive",
+    "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_nobias_nonnaive",
+    "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_square_naive",
+    "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_square_nonnaive",
+    "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_wide_naive",
+    "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_wide_nonnaive",
+    "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_nobias_naive",
+    "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_nobias_nonnaive",
+    "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_square_naive",
+    "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_square_nonnaive",
+    "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_wide_naive",
+    "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_wide_nonnaive",
+    "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_2d_nobias",
+    "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_2d_roundtrip",
+    "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_3d",
+    "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_3d_roundtrip",
+    "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_ergodic_roundtrip",
+    "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_training_preserves_invertibility",
+    "test/test_invertibility.py::TestPairedSigmaTraining::test_paired_roundtrip",
+    "test/test_invertibility.py::TestPairedPiTraining::test_paired_roundtrip",
+    "test/test_invertibility.py::TestPiLayerInvertibleTrained::test_dim_10",
+    "test/test_invertibility.py::TestPiLayerInvertibleTrained::test_dim_6",
+    "test/test_invertibility.py::TestConceptualSpacePairedSigma::test_objsize_0",
+    "test/test_invertibility.py::TestConceptualSpacePairedSigma::test_objsize_4",
+    "test/test_invertibility.py::TestOutputSpaceReversePass::test_objsize_0",
+    "test/test_invertibility.py::TestOutputSpaceReversePass::test_objsize_4",
+    "test/test_invertibility.py::TestErgodicInvertibleLayers::test_invertible_pi_ergodic_roundtrip",
+    "test/test_invertibility.py::TestErgodicInvertibleLayers::test_invertible_sigma_ergodic_roundtrip",
+    "test/test_invertibility.py::TestPiLayerOutputRange::test_extreme_input_minus1",
+    "test/test_invertibility.py::TestPiLayerOutputRange::test_extreme_input_plus1",
+    "test/test_invertibility.py::TestPiLayerOutputRange::test_output_in_neg1_pos1",
+    "test/test_invertibility.py::TestSigmaLayerNonlinearRange::test_forward_range",
+    "test/test_invertibility.py::TestSigmaLayerNonlinearRange::test_reverse_extreme_input",
+    "test/test_invertibility.py::TestSigmaLayerNonlinearRange::test_reverse_range",
+    "test/test_invertibility.py::TestSigmaLayerNonlinearRange::test_roundtrip",
+    "test/test_invertibility.py::TestPiLayerReverseAcceptsFullRange::test_near_boundary_accepted",
+    "test/test_invertibility.py::TestPiLayerReverseAcceptsFullRange::test_negative_input_accepted",
+    "test/test_invertibility.py::TestConceptualSpaceReverseRangeCheck::test_nonlinear_output_in_range",
+    "test/test_invertibility.py::TestProjectionBasisInvertibility::test_multi_slot_recovers_only_per_row_mean",
+    "test/test_invertibility.py::TestProjectionBasisInvertibility::test_single_slot_lossy_when_V_basis_lt_D",
+    "test/test_invertibility.py::TestProjectionBasisInvertibility::test_single_slot_round_trip_exact_when_V_basis_geq_D",
+    "test/test_invertibility_contract.py::test_zero_ldu_diagonal_has_finite_matched_inverse[False-False]",
+    "test/test_invertibility_contract.py::test_zero_ldu_diagonal_has_finite_matched_inverse[False-True]",
+    "test/test_invertibility_contract.py::test_zero_ldu_diagonal_has_finite_matched_inverse[True-False]",
+    "test/test_invertibility_contract.py::test_zero_ldu_diagonal_has_finite_matched_inverse[True-True]",
+    "test/test_invertibility_contract.py::test_ergodic_noise_cancellation_cannot_make_stable_diagonal_zero",
+    "test/test_invertibility_contract.py::test_noise_is_sampled_before_forward_and_after_reverse_only",
+    "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[3-3-SigmaLayer]",
+    "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[3-3-PiLayer]",
+    "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[7-7-SigmaLayer]",
+    "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[7-7-PiLayer]",
+    "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[8-5-SigmaLayer]",
+    "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[8-5-PiLayer]",
+    "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[8-8-SigmaLayer]",
+    "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[8-8-PiLayer]",
+    "test/test_invertibility_contract.py::test_membership_field_roundtrip_does_not_require_one_summary_to_decode_it[sigma]",
+    "test/test_invertibility_contract.py::test_membership_field_roundtrip_does_not_require_one_summary_to_decode_it[pi]",
+    "test/test_invertibility_contract.py::test_trained_padded_butterfly_remains_fullgraph_traceable[SigmaLayer]",
+    "test/test_invertibility_contract.py::test_trained_padded_butterfly_remains_fullgraph_traceable[PiLayer]",
+    "test/test_invertibility_contract.py::test_bounded_codebook_read_ste_retains_corrective_gradient",
+    "test/test_invertibility_contract.py::test_hard_nearest_lookup_and_ste_have_same_values_different_encoder_credit",
+    "test/test_ir_fullgraph_compile.py::test_idempotent_forward_compiles_fullgraph_eager",
+    "test/test_ir_fullgraph_compile.py::test_serial_per_word_forward_compiles_fullgraph_eager",
+    "test/test_ir_mode.py::TestWordLexerRegex::test_digits_individual",
+    "test/test_ir_mode.py::TestWordLexerRegex::test_hello_world_lex_runs",
+    "test/test_ir_mode.py::TestWordLexerRegex::test_letter_runs_grouped",
+    "test/test_ir_mode.py::TestWordLexerRegex::test_whitespace_individual",
+    "test/test_ir_mode.py::TestNullPerceptSlot::test_null_percept_idx_is_at_tail",
+    "test/test_ir_mode.py::TestNullPerceptSlot::test_null_percept_key_in_vocab",
+    "test/test_ir_mode.py::TestNullPerceptSlot::test_null_percept_vector_in_unit_ball",
+    "test/test_ir_mode.py::TestNullPerceptSlot::test_null_percept_vector_is_learnable",
+    "test/test_ir_mode.py::TestIRInjectMask::test_mask_excludes_padding",
+    "test/test_ir_mode.py::TestIRInjectMask::test_mask_preserves_where_when",
+    "test/test_ir_mode.py::TestIRInjectMask::test_zero_rate_no_mask"
+  ],
+  "slow_selected": [
+    "test/test_input_word_cursor.py::test_per_word_enabled_predicate_tracks_use_grammar",
+    "test/test_ir_fullgraph_compile.py::test_serial_per_word_forward_compiles_fullgraph_eager"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_hierarchical.py::TestLevelShapes::test_constant_dim",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012316700303927064,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestLevelShapes::test_eight_levels",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010208302410319448,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestLevelShapes::test_single_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.833398507907987e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestLevelShapes::test_two_levels",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.92499990388751e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestWordEncoding::test_7tuple_encoding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033083301968872547,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestWordEncoding::test_7tuple_layout",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022970902500674129,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestWordEncoding::test_default_order_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002265410148538649,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_compaction_overflow_regression",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2803287909482606,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestBackwardCompat::test_mentalmodel_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.30641725001623854,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestBackwardCompat::test_symbolicspace_per_stage_instances",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.053206666954793036,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_hierarchical.py::TestNativePasses::test_ramsified_passes_have_native_reads_and_no_perceptual_folds",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08756941702449694,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idempotent_loop.py::TestIdempotentLoop::test_at_prototype_is_fixed_point",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001084082992747426,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idempotent_loop.py::TestIdempotentLoop::test_iterative_snap_distance_reduces_to_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012025420437566936,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idempotent_loop.py::TestIdempotentLoop::test_noisy_input_converges_in_one_cycle",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008011659956537187,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idempotent_loop.py::TestIdempotentLoop::test_orthogonal_input_collapses_to_neither",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004142500110901892,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idempotent_loop.py::TestWidenedIdempotentLoopV7::test_v7_at_prototype_slab_is_fixed_point_cycle0",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007597090443596244,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_idempotent_loop.py::TestWidenedIdempotentLoopV7::test_v7_perslot_roundtrip_is_fixed_point",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006997082964517176,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_source_trust_does_not_supply_identification_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011826250120066106,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_changing_source_trust_preserves_both_and_neither",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015454170061275363,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_clause_order_and_evidence_are_stored_without_a_program",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014451250317506492,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_row_compaction_preserves_each_order_and_pole",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0016742920270189643,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_embedded_identification_does_not_grant_source_authority",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014273750130087137,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_open_reading_keeps_both_poles_and_its_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011090875021182,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_index_unfolding_reads_the_stored_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007914159796200693,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_abstract_unfold_descends_each_sigma_rung",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002996249822899699,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012442080187611282,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025162502424791455,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_withdrawing_authority_preserves_identification",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000915084034204483,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_luminosity_view_does_not_present_identification_as_trust",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010626669973134995,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.7836023750132881,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestOverlapPenalty::test_disjoint_codebook_zero_loss",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006088750087656081,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestOverlapPenalty::test_equal_rows_damped_to_zero_loss",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00045658397721126676,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestOverlapPenalty::test_overlap_matched_trust_zero_loss",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004432909772731364,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestOverlapPenalty::test_overlap_mismatched_trust_penalized",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004437090246938169,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestOverlapPenalty::test_relation_counts_partition_non_diagonal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00047379202442243695,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestVarianceFloor::test_collapse_triggers_variance_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003242500242777169,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestVarianceFloor::test_well_spread_no_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030212500132620335,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestDisabled::test_all_zero_weights_returns_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000277582963462919,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestDisabled::test_disabled_short_circuits",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000152749998960644,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_impenetrable.py::TestWiring::test_returns_zero_tensor_without_codebook",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014683400513604283,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_init_scale.py::test_init_scale_shrinks_rows_dot_product",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006574589642696083,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_init_scale.py::test_init_scale_shrinks_rows_generic_branch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010163330007344484,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_init_scale.py::test_init_scale_zero_is_none_byte_identical",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009572919807396829,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_init_scale.py::test_init_scale_selection_invariant",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009642920340411365,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_init_scale.py::test_init_scale_keeps_folds_linear",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008349169511348009,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_math]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1596896669943817,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_add]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.29906649998156354,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[idempotent]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.13318054098635912,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[stream_smoke]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 6.905328334018122,
+      "message": "",
+      "stdout": "Loading text: 1 shard(s), max 10000 docs from /Users/arogers/github/WikiOracle/basicmodel/data/fineweb\nLoaded 10000 docs -> 467796 sentences (376814 train, 47208 val, 43774 test)\n"
+    },
+    {
+      "nodeid": "test/test_input_word_cursor.py::test_disabled_by_default_returns_none_and_no_advance",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002060420229099691,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_input_word_cursor.py::test_none_buffer_returns_none_even_when_enabled",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010262499563395977,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_input_word_cursor.py::test_yields_words_one_per_call_in_T_order_then_null_ends",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006075409473851323,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_input_word_cursor.py::test_full_buffer_walks_all_T_then_ends",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021508400095626712,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_input_word_cursor.py::test_empty_valid_content_ends_immediately",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001272080116905272,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_input_word_cursor.py::test_nongrammar_config_disables_cursor_and_next_word_is_none",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.7127425840008073,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/model.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_input_word_cursor.py::test_per_word_enabled_predicate_tracks_use_grammar",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00013733399100601673,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_input_word_cursor.py', 284, 'Skipped: slow: builds MM_20M over the full text corpus in a subprocess (can exceed the 180s subprocess timeout); set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_default_only_fallback_is_detached",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6265991249820217,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/model.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_grad_reaches_unary_anchors_via_projection",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04419583297567442,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_grad_reaches_unary_and_binary_anchors_bare_router",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.035219416953623295,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_rule_probs_requires_grad_on_full_router",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.019213334016967565,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestIntraSentenceLayerShapes::test_no_intermediate_activation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005890830070711672,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestIntraSentenceLayerShapes::test_parallel_forward_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007396669825538993,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestIntraSentenceLayerShapes::test_serial_forward_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006331250187940896,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRouting::test_routing_changes_parallel_output",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007980419904924929,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRouting::test_routing_changes_serial_output",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007169159944169223,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRoundtrip::test_intra_loss_is_mse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005066670128144324,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRoundtrip::test_parallel_roundtrip_no_routing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008275830186903477,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRoundtrip::test_parallel_roundtrip_with_routing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007470420096069574,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestIntraSentenceLayerRoundtrip::test_serial_reverse_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000804667011834681,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_dims_match_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013649999164044857,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_intra_layer_in_cascade",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011016597272828221,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_intra_loss_weight_read",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010945898247882724,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_reset_clears_registered_prediction_targets",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003425840404815972,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_reset_reaches_layer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002090420457534492,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_routing_dim_is_n_rules",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010837498120963573,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestConceptualSpaceOwnership::test_space_owns_intra_layer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010433298302814364,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_bias_fires_on_real_model",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09279583295574412,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_intra_routing_for_predict_returns_real_tensor",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09366383403539658,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer.py::TestRuleConditionedPredictor::test_routing_state_built_with_rule_probs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09391579200746492,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer_reverse.py::TestParallelRoundtripTight::test_parallel_roundtrip_no_routing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013143750256858766,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer_reverse.py::TestParallelRoundtripTight::test_parallel_roundtrip_varied_widths",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000997167022433132,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer_reverse.py::TestParallelRoundtripTight::test_parallel_roundtrip_with_routing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009836669778451324,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer_reverse.py::TestParallelRoundtripTight::test_routing_bias_subtracted_exactly_on_reverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011476659565232694,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_reforward_closure_generic_input",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001031499996315688,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_reforward_closure_with_routing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010597500368021429,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_reverse_honors_explicit_k",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014002919779159129,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_reverse_returns_equal_slots",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009681659867055714,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_reverse_shape_and_finiteness",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000975125003606081,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_roundtrip_tight_on_identical_slots",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009995829896070063,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer_reverse.py::TestSerialRoundtripApproximate::test_serial_roundtrip_tight_on_identical_slots_with_routing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001021832984406501,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer_reverse.py::TestReverseInputGuards::test_parallel_reverse_rejects_2d",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006691670278087258,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_intra_sentence_layer_reverse.py::TestReverseInputGuards::test_serial_reverse_rejects_3d",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006434170063585043,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_recommend.py::TestMereologyHelpers::test_overlapOf_same_sign_min_magnitude",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022316601825878024,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_recommend.py::TestMereologyHelpers::test_overlapOf_sign_disagreement_collapses_to_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016120797954499722,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_recommend.py::TestMereologyHelpers::test_partOf_basic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001495840260758996,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_recommend.py::TestMereologyHelpers::test_partOf_with_sentinels",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015074998373165727,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_recommend.py::TestMereologyHelpers::test_wholeOf_basic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013649999164044857,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_recommend.py::TestMereologyHelpers::test_wholeOf_with_sentinels",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001390830148011446,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_recommend.py::TestUnionInverse::test_batched_recovery",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006192079745233059,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_recommend.py::TestUnionInverse::test_pair_satisfies_constraints_on_codebook_target",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00048345798859372735,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_recommend.py::TestUnionInverse::test_sentinels_keep_selection_non_empty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022133300080895424,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_recommend.py::TestIntersectionInverse::test_pair_satisfies_constraints_on_codebook_target",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005207910435274243,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_recommend.py::TestIntersectionInverse::test_x2_minimises_overlap_with_x1",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026474997866898775,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_recommend.py::TestEmptyCodebook::test_intersection_inverse_empty_W_falls_back_to_identity_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001769589725881815,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_recommend.py::TestEmptyCodebook::test_union_inverse_empty_W_falls_back_to_identity_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001757090212777257,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_unary_exclusion.py::test_closing_does_not_spend_rounds_repeating_not_at_one_slot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0033093749661929905,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_unary_exclusion.py::test_inverse_exclusion_is_local_and_leaves_other_unaries_eligible[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010752920061349869,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_unary_exclusion.py::test_inverse_exclusion_is_local_and_leaves_other_unaries_eligible[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6233917500358075,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_unary_exclusion.py::test_serial_window_excludes_the_inverse_at_the_same_physical_slot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001017790986225009,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_unary_exclusion.py::test_exploration_forces_only_a_round_with_a_legal_alternative",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005951708008069545,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_inverse_unary_exclusion.py::test_single_legal_derivation_is_compared_without_inventing_an_alternative",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008308249991387129,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleLinearLayer::test_2d_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00040737498784437776,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleLinearLayer::test_W_Winverse_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029212498338893056,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleLinearLayer::test_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027787499129772186,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleLinearLayer::test_contract_naive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003013749956153333,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005435409839265049,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_expand",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003869159845635295,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_square",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003750409814529121,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_square_naive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00045716698514297605,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_stable_expand",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00043929199455305934,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleLinearLayer::test_ergodic_stable_square",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004123749677091837,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleLinearLayer::test_expand",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002760839997790754,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleLinearLayer::test_expand_naive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028737500542774796,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleLinearLayer::test_no_bias",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002493340289220214,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleLinearLayer::test_no_bias_naive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026766600785776973,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleLinearLayer::test_square",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002442909753881395,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleLinearLayer::test_square_naive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029641599394381046,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestMapppingLayer::test_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036449998151510954,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestMapppingLayer::test_expand",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002850840101018548,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestMapppingLayer::test_square",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002649170346558094,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestLinearLayerIdentity::test_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001938329660333693,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleSigmaLayer::test_3d",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029954203637316823,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleSigmaLayer::test_3d_naive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030516600236296654,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleSigmaLayer::test_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033358304062858224,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleSigmaLayer::test_contract_naive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00029616703977808356,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleSigmaLayer::test_expand",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002749169943854213,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleSigmaLayer::test_expand_naive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034416699782013893,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleSigmaLayer::test_square",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002987500047311187,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertibleSigmaLayer::test_square_naive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030883302679285407,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertiblePiLayer3D::test_bias",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00042275001760572195,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertiblePiLayer3D::test_naive_bias",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033970799995586276,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertiblePiLayer3D::test_naive_nobias",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003297090297564864,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertiblePiLayer3D::test_nobias",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003208749694749713,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertiblePiLayer2D::test_bias",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034433399559929967,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertiblePiLayer2D::test_naive_bias",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032724998891353607,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertiblePiLayer2D::test_naive_nobias",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036579102743417025,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestInvertiblePiLayer2D::test_nobias",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003458329592831433,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_nobias_naive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003202499938197434,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_nobias_nonnaive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030562502797693014,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_square_naive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00031766697065904737,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_square_nonnaive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033187499502673745,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_wide_naive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003845419851131737,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerRoundtripUniformNeg1Pos1::test_wide_nonnaive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003410420031286776,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_nobias_naive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003250829759053886,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_nobias_nonnaive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033020798582583666,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_square_naive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003368330071680248,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_square_nonnaive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032233301317319274,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_wide_naive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000380458019208163,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_wide_nonnaive",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00031345797469839454,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_2d_nobias",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030995800625532866,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_2d_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003547919914126396,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_3d",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033383298432454467,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_3d_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033908296609297395,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_ergodic_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006060419837012887,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestNonNaiveInvertiblePiLayer::test_training_preserves_invertibility",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004759125004056841,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPairedSigmaTraining::test_paired_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1660315829794854,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPairedPiTraining::test_paired_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.19696808402659371,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerInvertibleTrained::test_dim_10",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.62862379103899,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerInvertibleTrained::test_dim_6",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6412276670453139,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestConceptualSpacePairedSigma::test_objsize_0",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002716290997341275,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestConceptualSpacePairedSigma::test_objsize_4",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0023577079991810024,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestOutputSpaceReversePass::test_objsize_0",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001124250004068017,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestOutputSpaceReversePass::test_objsize_4",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011055839713662863,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestErgodicInvertibleLayers::test_invertible_pi_ergodic_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000702916004229337,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestErgodicInvertibleLayers::test_invertible_sigma_ergodic_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005951669882051647,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerOutputRange::test_extreme_input_minus1",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006793329957872629,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerOutputRange::test_extreme_input_plus1",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004985840059816837,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerOutputRange::test_output_in_neg1_pos1",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003477910067886114,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestSigmaLayerNonlinearRange::test_forward_range",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003119590110145509,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestSigmaLayerNonlinearRange::test_reverse_extreme_input",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00041437498293817043,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestSigmaLayerNonlinearRange::test_reverse_range",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005088750040158629,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestSigmaLayerNonlinearRange::test_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00038129097083583474,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerReverseAcceptsFullRange::test_near_boundary_accepted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005082080024294555,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestPiLayerReverseAcceptsFullRange::test_negative_input_accepted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003849580534733832,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestConceptualSpaceReverseRangeCheck::test_nonlinear_output_in_range",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0029885420226491988,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestProjectionBasisInvertibility::test_multi_slot_recovers_only_per_row_mean",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010231249616481364,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestProjectionBasisInvertibility::test_single_slot_lossy_when_V_basis_lt_D",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007382909534499049,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility.py::TestProjectionBasisInvertibility::test_single_slot_round_trip_exact_when_V_basis_geq_D",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007570000016130507,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_zero_ldu_diagonal_has_finite_matched_inverse[False-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007530829752795398,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_zero_ldu_diagonal_has_finite_matched_inverse[False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005851670284755528,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_zero_ldu_diagonal_has_finite_matched_inverse[True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005752499564550817,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_zero_ldu_diagonal_has_finite_matched_inverse[True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005505410372279584,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_ergodic_noise_cancellation_cannot_make_stable_diagonal_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006758329691365361,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_noise_is_sampled_before_forward_and_after_reverse_only",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005749579868279397,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[3-3-SigmaLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013237919774837792,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[3-3-PiLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011396249756217003,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[7-7-SigmaLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012826659949496388,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[7-7-PiLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001519499986898154,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[8-5-SigmaLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001395000028423965,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[8-5-PiLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013889580150134861,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[8-8-SigmaLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012692500022239983,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[8-8-PiLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012938330182805657,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_membership_field_roundtrip_does_not_require_one_summary_to_decode_it[sigma]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006944999913685024,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_membership_field_roundtrip_does_not_require_one_summary_to_decode_it[pi]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006140000186860561,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_trained_padded_butterfly_remains_fullgraph_traceable[SigmaLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.32791362499119714,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_trained_padded_butterfly_remains_fullgraph_traceable[PiLayer]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3468517499859445,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_bounded_codebook_read_ste_retains_corrective_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002894999925047159,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_invertibility_contract.py::test_hard_nearest_lookup_and_ste_have_same_values_different_encoder_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003790000337176025,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_fullgraph_compile.py::test_idempotent_forward_compiles_fullgraph_eager",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.953198458009865,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_fullgraph_compile.py::test_serial_per_word_forward_compiles_fullgraph_eager",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00015462498413398862,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_ir_fullgraph_compile.py', 56, 'Skipped: slow (~60s CLI fullgraph trace) -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_mode.py::TestWordLexerRegex::test_digits_individual",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013804197078570724,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_mode.py::TestWordLexerRegex::test_hello_world_lex_runs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012258300557732582,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_mode.py::TestWordLexerRegex::test_letter_runs_grouped",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011616700794547796,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_mode.py::TestWordLexerRegex::test_whitespace_individual",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011608400382101536,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_mode.py::TestNullPerceptSlot::test_null_percept_idx_is_at_tail",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0029638330452144146,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_ir_mode.py::TestNullPerceptSlot::test_null_percept_key_in_vocab",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002426041988655925,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_ir_mode.py::TestNullPerceptSlot::test_null_percept_vector_in_unit_ball",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002273250021971762,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_ir_mode.py::TestNullPerceptSlot::test_null_percept_vector_is_learnable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022114170133136213,
+      "message": "",
+      "stdout": "Starting with dynamic 4-dim embedding (words added at runtime)\n"
+    },
+    {
+      "nodeid": "test/test_ir_mode.py::TestIRInjectMask::test_mask_excludes_padding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003468750510364771,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_mode.py::TestIRInjectMask::test_mask_preserves_where_when",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027312501333653927,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ir_mode.py::TestIRInjectMask::test_zero_rate_no_mask",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015512504614889622,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,35 @@
+........................................................................ [ 53%]
+.........................s........F...........................           [100%]
+=================================== FAILURES ===================================
+_____ test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes _____
+test/test_arithmetic_isolation.py:134: in test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes
+    assert steps == ['exploit', 'explore', 'batch']
+E   AssertionError: assert ['exploit', 'explore'] == ['exploit', '...ore', 'batch']
+E     
+E     Right contains one more item: 'batch'
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_abstraction_order_canonical.py::test_forward_keeps_the_property_basis_without_a_word_analysis_dictionary
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7170: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2502/test_supervised_update_cannot_0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_attention_promotion.py::test_registered_pool_checkpoint_has_one_sidecar_restore
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_attention_promotion.py:231: UserWarning: Space ownership migration: removed 102 duplicate alias checkpoint keys.
+    assert target.load_weights(path, require_match=True)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes
+1 failed, 132 passed, 1 skipped, 4 warnings in 9.78s

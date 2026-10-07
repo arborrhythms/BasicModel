@@ -1,0 +1,277 @@
+diff --git a/bin/Attention.py b/bin/Attention.py
+index ab15f8b30..28203cc42 100644
+--- a/bin/Attention.py
++++ b/bin/Attention.py
+@@ -148,6 +148,11 @@ class NarrowedWords(NamedTuple):
+     descended: torch.Tensor
+     actions: torch.Tensor
+     alternatives: torch.Tensor
++    probabilities: torch.Tensor = None
++    alternative_counts: torch.Tensor = None
++    poles: torch.Tensor = None
++    pole_changes: torch.Tensor = None
++    round_words: torch.Tensor = None
+ 
+ 
+ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None):
+@@ -161,16 +166,21 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
+     if W==0:
+         table=BracketTable.open(spans.new_zeros(B),budget=K)
+         return NarrowedWords(table,keys,known,known,spans.new_full((B,K),-1),
+-                             torch.zeros(B,K,device=keys.device,dtype=torch.bool))
++            torch.zeros(B,K,device=keys.device,dtype=torch.bool),
++            keys.new_zeros(B,K),spans.new_zeros(B,K))
+     lengths=spans[...,1].amax(1)
+     table=BracketTable.open(lengths,budget=K)
+     if spent is not None:table=table._replace(spent=spent)
+     accepted=torch.zeros_like(known);descended=torch.zeros_like(known)
+-    values=torch.zeros_like(keys);actions=[];alternatives=[]
++    values=torch.zeros_like(keys);actions=[];alternatives=[];probabilities=[];counts=[]
+     reductions=torch.zeros(B,K,3,dtype=torch.bool,device=keys.device)
+     field_values=keys.new_zeros(B,K,D)
+     field_poles=keys.new_zeros(B,K,2)
+     field_valid=torch.zeros(B,K,dtype=torch.bool,device=keys.device)
++    handed_poles=(torch.stack((known,torch.zeros_like(known)),-1).to(keys)
++                  if poles is None else poles.detach().clone())
++    pole_changes=torch.zeros_like(known)
++    round_words=[]; field_scopes=[]; field_operations=[]
+     declared=torch.tensor([i in chooser.attention_operations for i in range(A)],device=keys.device)
+     rows=torch.arange(B,device=keys.device)
+     slots=torch.arange(K,device=keys.device)[None]
+@@ -207,8 +217,8 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
+         local_prior=None if prior is None else (covered.to(keys)@prior[...,None])[...,0]/count.clamp_min(1)
+         mask=None if exploit is None else torch.where(departure==step,exploit.actions[:,step],-1)
+         replay=None if exploit is None else torch.where(step<departure,exploit.actions[:,step],-1)
+-        action,credit,alternate=chooser.attend(pooled,legal,table.space,prior=local_prior,
+-                                                masked_action=mask,replay_action=replay)
++        action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
++            masked_action=mask,replay_action=replay,return_details=True)
+         slot=(action//A).clamp_max(K-1);op=action%A
+         chosen=live[rows,slot]&(action<A*K)
+         selected=covered[rows,slot]&chosen[:,None]
+@@ -221,8 +231,7 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
+         if identities is not None:
+             witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
+         descended=descended|witness
+-        sign=torch.where(negative[rows,slot],-1.,1.)
+-        values=torch.where(picked_gloss[...,None],keys*(sign*credit)[:,None,None],values)
++        values=torch.where(picked_gloss[...,None],keys*credit[:,None,None],values)
+         # Divide at the first pole disagreement, descend at a retained part.
+         first=selected.long().argmax(-1)
+         first_positive=evidence[rows,first,0]>0
+@@ -245,7 +254,7 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
+         positive_keys=keys.clamp_min(0);negative_keys=(-keys).clamp_min(0)
+         conjunction=torch.where(covered[...,None],positive_keys[:,None],torch.inf).amin(2)-torch.where(covered[...,None],negative_keys[:,None],0.).amax(2)
+         disjunction=torch.where(covered[...,None],positive_keys[:,None],0.).amax(2)-torch.where(covered[...,None],negative_keys[:,None],torch.inf).amin(2)
+-        changed=torch.where((op==3)[:,None,None],conjunction,torch.where((op==4)[:,None,None],disjunction,-pooled))
++        changed=torch.where((op==3)[:,None,None],conjunction,torch.where((op==4)[:,None,None],disjunction,pooled))
+         # Empty padding contributes no field. In particular, never multiply
+         # its reduction sentinel (inf) by a live straight-through credit.
+         changed=torch.where((count>0)[...,None],changed,0.)
+@@ -259,12 +268,40 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
+         changed_poles=torch.where((op==3)[:,None,None],conjunctive,
+             torch.where((op==4)[:,None,None],disjunctive,pooled_poles.flip(-1)))
+         field_poles=torch.where(where[...,None],changed_poles,field_poles)
++        # Preserve the operated extent after splitting. Resolve its word
++        # witnesses at the end of the walk: an unknown word can acquire its
++        # native identification by descent after its parent was operated on.
++        # Freezing the parent's pre-descent (0,0) would erase that evidence.
++        reached=selected & field_action[:,None]
++        field_scopes.append(reached)
++        field_operations.append(op)
++        pole_changes |= reached
++        round_words.append(torch.where(chosen,first,-1))
+         # A child is a fresh reading of its retained parts. A parent's
+         # temporary Boolean aggregate must not become the child's evidence.
+         reset=(slots==slot[:,None])&(split|unknown|gloss)[:,None]
+         field_valid=(field_valid|where)&~reset
+         actions.append(torch.where(live.any(-1),action,-1));alternatives.append(alternate&live.any(-1))
+-    return NarrowedWords(table,values,accepted,descended,torch.stack(actions,1),torch.stack(alternatives,1))
++        probabilities.append(detail['probability'])
++        counts.append(torch.where(live.any(-1),detail['alternative_count'],0))
++    handed_poles=torch.where(descended[...,None],
++        torch.stack((torch.ones_like(known),torch.zeros_like(known)),-1).to(keys),handed_poles)
++    # Only the evidence handoff is evaluated here; eligibility, action draws,
++    # the progress budget and local value reads above are unchanged. Earlier
++    # fields supply the evidence for later fields on overlapping brackets.
++    for reached,op in zip(field_scopes,field_operations):
++        positive,negative=handed_poles.unbind(-1)
++        conjunction=torch.stack((torch.where(reached,positive,torch.inf).amin(1),
++                                 torch.where(reached,negative,0.).amax(1)),-1)
++        disjunction=torch.stack((torch.where(reached,positive,0.).amax(1),
++                                 torch.where(reached,negative,torch.inf).amin(1)),-1)
++        pooled=torch.where(reached[...,None],handed_poles,0.).amax(1)
++        pair=torch.where((op==3)[:,None],conjunction,
++                         torch.where((op==4)[:,None],disjunction,pooled.flip(-1)))
++        handed_poles=torch.where(reached[...,None],pair[:,None],handed_poles)
++    return NarrowedWords(table,values,accepted,descended,torch.stack(actions,1),
++        torch.stack(alternatives,1),torch.stack(probabilities,1),torch.stack(counts,1),
++        handed_poles.detach(),pole_changes,torch.stack(round_words,1))
+ 
+ 
+ class BracketKeys:
+diff --git a/bin/ModelAttention.py b/bin/ModelAttention.py
+index b747418d5..679e751cd 100644
+--- a/bin/ModelAttention.py
++++ b/bin/ModelAttention.py
+@@ -5,6 +5,37 @@ from torch.nn import functional as F
+ from Attention import narrow_words, read_code_field, BracketKeys
+ 
+ 
++POLE_CONSUMERS = ('_attention_sentence_payload', '_pushed_word_slab:poles',
++                  'commit_word_reference_slab:per_word',
++                  'commit_word_reference_slab:whole_slab')
++
++
++def read_poles(model, consumer):
++    """Declared handoff seam, also the observer's complete consumer census."""
++    if consumer not in POLE_CONSUMERS:
++        raise ValueError(f'undeclared attention pole consumer: {consumer}')
++    pair = getattr(model, '_attention_poles', None)
++    return None if pair is None else pair.detach()
++
++
++def pole_activation(activation, pair, changed):
++    """A reached field chooses sign only; tied poles retain the prior sign."""
++    net = (pair[..., 0]-pair[..., 1]).reshape_as(activation)
++    changed = changed.reshape_as(activation)
++    return torch.where(changed & net.ne(0), activation.abs()*net.sign(), activation)
++
++
++def reference_evidence(model, activations, consumer):
++    pair = read_poles(model, consumer)
++    if pair is None:
++        return None
++    reading = model._attention_words
++    signed = pole_activation(activations, pair, reading.pole_changes).squeeze(-1)
++    # Match Language.commit_word_reference_slab's native scalar conversion
++    # exactly, including its saturation. No field means the landing's pair.
++    return torch.stack((signed.clamp(0, 1), (-signed).clamp(0, 1)), -1).detach()
++
++
+ def canonical_native_events(model, ids, positions, brackets):
+     """Contract observed contiguous parts using retained native ancestry.
+ 
+@@ -99,34 +130,6 @@ def native_word_poles(model, spans, forms, known):
+     return F.pad(result, (0, 0, 0, known.shape[1]-width))
+ 
+ 
+-def percept_reconstruction_score(model, keys, forms, identities, live):
+-    """Loss-side inverse of the input's native percept snapshot.
+-
+-    Use the decoder's byte/end-of-word likelihood, including its null
+-    candidate. The immutable bank precedes both walks and includes omitted
+-    percepts, so dropping an input cannot shrink its reconstruction target.
+-    Neither targets nor this scorer are passed to the chooser. Concept
+-    admission and grammar follow only after the percept walk is selected.
+-    """
+-    B, W, _ = keys.shape
+-    surfaces = [[form.encode('latin1', 'replace') for form in row] for row in forms]
+-    width = max(1, max((len(value) for row in surfaces for value in row), default=0))
+-    raw = torch.tensor([[list(value)+[0]*(width-len(value)) for value in row]
+-                        for row in surfaces], device=keys.device, dtype=torch.long)
+-    valid = raw.ne(0) & live[..., None]
+-    indices = torch.arange(W, device=keys.device)
+-    repeated = ((identities[:, :, None] == identities[:, None, :])
+-        & (indices[None, :, None] > indices[None, None, :]) & live[:, None]).any(-1)
+-    bank_valid = valid & ~repeated[..., None]
+-    def score(reading):
+-        with torch.no_grad():
+-            costs = torch.stack([model._byte_word_cost(reading.values[:, word],
+-                raw.new_tensor(word), keys, raw, bank_valid, raw, valid, True)
+-                for word in range(W)], -1)
+-            return (costs*live).sum(-1)/live.sum(-1).clamp_min(1)/math.log(256.)
+-    return score
+-
+-
+ def stage_input(model):
+     """Read the open bracket, then select bounded percepts before admission.
+ 
+@@ -138,6 +141,8 @@ def stage_input(model):
+     slab=getattr(isp,'_ar_embedded_N',None)
+     active=getattr(isp,'_word_active_mask',None)
+     model._attention_words=None
++    model._attention_grammar_mask=None
++    model._attention_read=None
+     model._word_expectation=None
+     model._word_expectation_input=None
+     from QueryWork import QueryWorkBudget
+@@ -199,6 +204,8 @@ def stage_input(model):
+     known=torch.tensor(known,device=slab.device,dtype=torch.bool)&live
+     chooser=model._stm_reducer()
+     dim=int(chooser.d_model)
++    model._attention_pole_representation=(dim == 2 and any(
++        getattr(module,"representation",None) == "poles" for module in model.languageSpace.modules()))
+     keys=F.pad(slab.detach(),(0,max(0,dim-D)))[...,:dim]
+     # Open awareness is a read, with neither an optimizer step nor an EMA
+     # write. Narrowing's learned choice is outside this no-gradient read.
+@@ -215,36 +222,49 @@ def stage_input(model):
+     prior=BracketKeys._codebook_retrieval_prior(keys[:, :live_width],rows,model._last_gist[None],boosts)
+     if prior is not None: prior=F.pad(prior,(0,W-live_width))
+     spent=spans.new_tensor([meter.spent for meter in model._attention_meters])
+-    def read(**trial):
+-        result = narrow_words(chooser,keys[:, :live_width],spans[:, :live_width],
++    def read(*, sentence=None, spent_override=None, **trial):
++        reading_spans=spans[:, :live_width]
++        if sentence is not None:
++            here=model.inputSpace._packed_sentence_ids[:, :live_width] == sentence
++            reading_spans=torch.where(here[...,None],reading_spans,0)
++        result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+             known[:, :live_width],budget=model.attention_budget,
+             prior=None if prior is None else prior[:, :live_width],
+-            identities=ids[:, :live_width],poles=poles[:, :live_width],spent=spent,**trial)
++            identities=ids[:, :live_width],poles=poles[:, :live_width],
++            spent=spent if spent_override is None else spent_override,**trial)
+         # Eager attention need not multiply its field reductions by inactive
+         # word storage. Restore the configured carrier before the tensor body.
+         return result._replace(values=F.pad(result.values,(0,0,0,W-live_width)),
+             accepted=F.pad(result.accepted,(0,W-live_width)),
+-            descended=F.pad(result.descended,(0,W-live_width)))
+-    model._last_attention_comparison = None
+-    if model.training and torch.is_grad_enabled():
+-        from WalkTrials import narrowing_pair, observe_comparison
+-        reading, audit = narrowing_pair(read,
+-            percept_reconstruction_score(model, keys, forms, ids, live))
+-        model._last_attention_comparison = audit
+-        model._attention_forms=(forms,ids,keys,live)
+-        observe_comparison(model, 'attention.input', audit, active=live.any(-1))
+-    else:
+-        reading=read()
++            descended=F.pad(result.descended,(0,W-live_width)),
++            poles=F.pad(result.poles,(0,0,0,W-live_width)),
++            pole_changes=F.pad(result.pole_changes,(0,W-live_width)))
++    model._attention_read=read
++    reading=read()
++    model._attention_greedy=reading
+     model._attention_words=reading
+-    # Forward values stay native codes. The selected projection carries the
+-    # shared chooser's straight-through credit into cached word perception.
+-    score=(reading.values*keys).sum(-1)/keys.square().sum(-1).clamp_min(1e-12)
+-    model._attention_credit=score
+     model._attention_spans=spans
+     model._attention_forms=(forms,ids,keys,live)
+     model._attention_spent=reading.table.spent.detach().clone()
+-    for b, meter in enumerate(model._attention_meters):
+-        meter.require('bracket',int(reading.table.spent[b])-meter.spent)
++    if not getattr(model,'_sentence_ends',False):
++        for b, meter in enumerate(model._attention_meters):
++            meter.require('bracket',int(reading.table.spent[b])-meter.spent)
++    handoff(model,reading)
++
++
++def handoff(model, reading):
++    """Publish the trial's scope and detached word evidence, never its values."""
++    model._attention_words=reading
++    base=getattr(model,"_attention_grammar_mask",None)
++    model.inputSpace._ar_grammar_leaf_mask=(reading.accepted if base is None else base & reading.accepted)
++    native=model._attention_native_poles
++    # A successful native descent supplies a positive identification witness.
++    native=torch.where(reading.descended[...,None],
++        torch.stack((torch.ones_like(reading.accepted),torch.zeros_like(reading.accepted)),-1).to(native),native)
++    model._attention_poles=torch.where(reading.pole_changes[...,None],reading.poles,native).detach()
++    slab=model.inputSpace._ar_embedded_N
++    spans=model._attention_spans
++    B=slab.shape[0]
+     # The top-down handoff reads exactly the selected typed table.
+     table=reading.table
+     last=(table.done.long()*torch.arange(1,table.done.shape[1]+1,device=slab.device)).argmax(-1)

@@ -1,0 +1,1933 @@
+diff --git a/bin/Attention.py b/bin/Attention.py
+index b2d05c7ce..580cd746b 100644
+--- a/bin/Attention.py
++++ b/bin/Attention.py
+@@ -150,6 +150,9 @@ class NarrowedWords(NamedTuple):
+     alternatives: torch.Tensor
+     probabilities: torch.Tensor = None
+     alternative_counts: torch.Tensor = None
++    poles: torch.Tensor = None
++    pole_changes: torch.Tensor = None
++    round_words: torch.Tensor = None
+ 
+ 
+ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None):
+@@ -174,6 +177,10 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
+     field_values=keys.new_zeros(B,K,D)
+     field_poles=keys.new_zeros(B,K,2)
+     field_valid=torch.zeros(B,K,dtype=torch.bool,device=keys.device)
++    handed_poles=(torch.stack((known,torch.zeros_like(known)),-1).to(keys)
++                  if poles is None else poles.detach().clone())
++    pole_changes=torch.zeros_like(known)
++    round_words=[]
+     declared=torch.tensor([i in chooser.attention_operations for i in range(A)],device=keys.device)
+     rows=torch.arange(B,device=keys.device)
+     slots=torch.arange(K,device=keys.device)[None]
+@@ -261,6 +268,12 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
+         changed_poles=torch.where((op==3)[:,None,None],conjunctive,
+             torch.where((op==4)[:,None,None],disjunctive,pooled_poles.flip(-1)))
+         field_poles=torch.where(where[...,None],changed_poles,field_poles)
++        # Values remain local to the walk. Its field poles travel with every
++        # word inside the operated bracket, including after that bracket splits.
++        reached=selected & field_action[:,None]
++        handed_poles=torch.where(reached[...,None],changed_poles[rows,slot][:,None],handed_poles)
++        pole_changes |= reached
++        round_words.append(torch.where(chosen,first,-1))
+         # A child is a fresh reading of its retained parts. A parent's
+         # temporary Boolean aggregate must not become the child's evidence.
+         reset=(slots==slot[:,None])&(split|unknown|gloss)[:,None]
+@@ -269,7 +282,8 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
+         probabilities.append(detail['probability'])
+         counts.append(torch.where(live.any(-1),detail['alternative_count'],0))
+     return NarrowedWords(table,values,accepted,descended,torch.stack(actions,1),
+-        torch.stack(alternatives,1),torch.stack(probabilities,1),torch.stack(counts,1))
++        torch.stack(alternatives,1),torch.stack(probabilities,1),torch.stack(counts,1),
++        handed_poles.detach(),pole_changes,torch.stack(round_words,1))
+ 
+ 
+ class BracketKeys:
+diff --git a/bin/ClauseJournal.py b/bin/ClauseJournal.py
+index b66f2dcf1..a3bad4ff2 100644
+--- a/bin/ClauseJournal.py
++++ b/bin/ClauseJournal.py
+@@ -173,7 +173,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+                  and getattr(node['rule'], 'clause_form', None) != 'VP'))
+ 
+     def recover(root, *, top=False):
+-        polarity = True
++        pair = metadata(root['leaves'])['evidence']
++        polarity = pair[0] >= pair[1]
+         excluded = False
+         mode = 'assertive'
+         node = head(root, clause=True)
+diff --git a/bin/Layers.py b/bin/Layers.py
+index 1582c84e8..f206103c1 100644
+--- a/bin/Layers.py
++++ b/bin/Layers.py
+@@ -9602,7 +9602,8 @@ class TernaryTruthStore(ClauseRows, LeafCodeIndex, Layer):
+         residual = observed_roles - estimate.roles
+         from Meaning import negative_image
+         conceived, image = negative_image(observed_roles, estimate.roles, logits.sigmoid(),
+-                                          gain=gain, object_mask=object_mask)
++                                          gain=gain, object_mask=object_mask,
++                                          form_width=getattr(self,"image_form_width",0))
+         return {
+             "estimate": estimate,
+             "observation": observation,
+@@ -11661,7 +11662,7 @@ class BracketExpectation(Layer):
+         return depth_hat, payload_hat
+ 
+     def sentence_prediction_cost(self, depths, payloads, mask, *,
+-                                 documents=None, layout="stm", role_masks=None, sentence_kinds=None):
++                                 documents=None, layout="stm", role_masks=None, sentence_kinds=None, gain=1.):
+         """Preview one sentence per row without observing either candidate.
+ 
+         Only the pending predictions are scratch. Context, occurrences, LTM,
+@@ -11672,6 +11673,7 @@ class BracketExpectation(Layer):
+         like = next((p for p in payloads if p is not None), self._s_history)
+         errors, contrast_errors = Error(row_mask=mask), Error(row_mask=mask)
+         self._sentence_prediction_errors = (errors, contrast_errors)
++        self._sentence_comparison_errors = Error(row_mask=mask)
+         if self._external_observations_suspended or not self.expectation_enabled:
+             zero = like.new_zeros(len(payloads))
+             return zero, zero.clone(), before
+@@ -11722,6 +11724,9 @@ class BracketExpectation(Layer):
+                             if kind is not None:
+                                 errors.binary('kind', kind_logit, kind_logit.new_tensor(float(kind == 'relation')),
+                                               row=b, category='expectation')
++                            from SentenceCredit import expectation_terms
++                            expectation_terms(self._sentence_comparison_errors,
++                                pred, logits, kind_logit, target, occupied, kind, row=b, gain=gain)
+                             negatives = [p.detach().to(target).flatten()
+                                          for _, p, _ in self._inter_context[b]]
+                     else:
+diff --git a/bin/Meaning.py b/bin/Meaning.py
+index a0a9dd230..4d8b327e2 100644
+--- a/bin/Meaning.py
++++ b/bin/Meaning.py
+@@ -13,7 +13,8 @@ from torch.nn import functional as F
+ 
+ 
+ @torch.no_grad()
+-def negative_image(observed, estimate, presence, *, gain=1., object_mask=None):
++def negative_image(observed, estimate, presence, *, gain=1., object_mask=None,
++                   form_width=0, content_width=None):
+     """Closing-time subtraction, detached from all reading and policy choices.
+ 
+     These are derived serial values, never writes to a presence field or a
+@@ -39,10 +40,35 @@ def negative_image(observed, estimate, presence, *, gain=1., object_mask=None):
+     if not bool(torch.isfinite(estimate).all() and torch.isfinite(presence).all()
+                 and ((presence >= 0) & (presence <= 1)).all()):
+         raise ValueError("estimate must be finite and presence in [0, 1]")
++    content_width = observed.shape[-1] if content_width is None else int(content_width)
++    if not 0 <= form_width <= content_width <= observed.shape[-1]:
++        raise ValueError('image requires form, complement, then address coordinates')
++    coordinate = torch.arange(observed.shape[-1],device=observed.device)
++    concept_face = (coordinate >= form_width) & (coordinate < content_width)
+     image = -gain * ((1 - mask) * presence)[:, None] * estimate.detach().to(observed)
++    image = torch.where(concept_face, image, 0.)
+     return observed.detach() + image, image
+ 
+ 
++@dataclass(frozen=True)
++class ClosingImage:
++    """One detached change of origin; storage and prediction targets keep o."""
++    observed: torch.Tensor
++    conceived: torch.Tensor
++    image: torch.Tensor
++    concept_width: int
++
++    @classmethod
++    def form(cls, observed, estimate, presence, *, form_width, content_width=None, **kwargs):
++        end = observed.shape[-1] if content_width is None else content_width
++        conceived, image = negative_image(observed, estimate, presence,
++            form_width=form_width, content_width=end, **kwargs)
++        return cls(observed.detach().clone(), conceived, image, end-form_width)
++
++    def restore(self):
++        return self.conceived-self.image
++
++
+ @torch.no_grad()
+ def expectation_surprise(observed, estimate, observed_mask, presence):
+     """Bound the role-normalized retention residual by s/(1+s).
+diff --git a/bin/ModelAttention.py b/bin/ModelAttention.py
+index e92ba3657..90b8bf777 100644
+--- a/bin/ModelAttention.py
++++ b/bin/ModelAttention.py
+@@ -99,34 +99,6 @@ def native_word_poles(model, spans, forms, known):
+     return F.pad(result, (0, 0, 0, known.shape[1]-width))
+ 
+ 
+-def percept_reconstruction_score(model, keys, forms, identities, live):
+-    """Loss-side inverse of the input's native percept snapshot.
+-
+-    Use the decoder's byte/end-of-word likelihood, including its null
+-    candidate. The immutable bank precedes both walks and includes omitted
+-    percepts, so dropping an input cannot shrink its reconstruction target.
+-    Neither targets nor this scorer are passed to the chooser. Concept
+-    admission and grammar follow only after the percept walk is selected.
+-    """
+-    B, W, _ = keys.shape
+-    surfaces = [[form.encode('latin1', 'replace') for form in row] for row in forms]
+-    width = max(1, max((len(value) for row in surfaces for value in row), default=0))
+-    raw = torch.tensor([[list(value)+[0]*(width-len(value)) for value in row]
+-                        for row in surfaces], device=keys.device, dtype=torch.long)
+-    valid = raw.ne(0) & live[..., None]
+-    indices = torch.arange(W, device=keys.device)
+-    repeated = ((identities[:, :, None] == identities[:, None, :])
+-        & (indices[None, :, None] > indices[None, None, :]) & live[:, None]).any(-1)
+-    bank_valid = valid & ~repeated[..., None]
+-    def score(reading):
+-        with torch.no_grad():
+-            costs = torch.stack([model._byte_word_cost(reading.values[:, word],
+-                raw.new_tensor(word), keys, raw, bank_valid, raw, valid, True)
+-                for word in range(W)], -1)
+-            return (costs*live).sum(-1)/live.sum(-1).clamp_min(1)/math.log(256.)
+-    return score
+-
+-
+ def stage_input(model):
+     """Read the open bracket, then select bounded percepts before admission.
+ 
+@@ -138,8 +110,8 @@ def stage_input(model):
+     slab=getattr(isp,'_ar_embedded_N',None)
+     active=getattr(isp,'_word_active_mask',None)
+     model._attention_words=None
+-    model._attention_score_term=None
+-    model._last_attention_score_function=None
++    model._attention_grammar_mask=None
++    model._attention_read=None
+     model._word_expectation=None
+     model._word_expectation_input=None
+     from QueryWork import QueryWorkBudget
+@@ -201,6 +173,8 @@ def stage_input(model):
+     known=torch.tensor(known,device=slab.device,dtype=torch.bool)&live
+     chooser=model._stm_reducer()
+     dim=int(chooser.d_model)
++    model._attention_pole_representation=(dim == 2 and any(
++        getattr(module,"representation",None) == "poles" for module in model.languageSpace.modules()))
+     keys=F.pad(slab.detach(),(0,max(0,dim-D)))[...,:dim]
+     # Open awareness is a read, with neither an optimizer step nor an EMA
+     # write. Narrowing's learned choice is outside this no-gradient read.
+@@ -217,37 +191,49 @@ def stage_input(model):
+     prior=BracketKeys._codebook_retrieval_prior(keys[:, :live_width],rows,model._last_gist[None],boosts)
+     if prior is not None: prior=F.pad(prior,(0,W-live_width))
+     spent=spans.new_tensor([meter.spent for meter in model._attention_meters])
+-    def read(**trial):
+-        result = narrow_words(chooser,keys[:, :live_width],spans[:, :live_width],
++    def read(*, sentence=None, spent_override=None, **trial):
++        reading_spans=spans[:, :live_width]
++        if sentence is not None:
++            here=model.inputSpace._packed_sentence_ids[:, :live_width] == sentence
++            reading_spans=torch.where(here[...,None],reading_spans,0)
++        result = narrow_words(chooser,keys[:, :live_width],reading_spans,
+             known[:, :live_width],budget=model.attention_budget,
+             prior=None if prior is None else prior[:, :live_width],
+-            identities=ids[:, :live_width],poles=poles[:, :live_width],spent=spent,**trial)
++            identities=ids[:, :live_width],poles=poles[:, :live_width],
++            spent=spent if spent_override is None else spent_override,**trial)
+         # Eager attention need not multiply its field reductions by inactive
+         # word storage. Restore the configured carrier before the tensor body.
+         return result._replace(values=F.pad(result.values,(0,0,0,W-live_width)),
+             accepted=F.pad(result.accepted,(0,W-live_width)),
+-            descended=F.pad(result.descended,(0,W-live_width)))
+-    model._last_attention_comparison = None
+-    if model.training and torch.is_grad_enabled():
+-        from WalkTrials import narrowing_pair, observe_comparison, attention_score_function
+-        reading, audit = narrowing_pair(read,
+-            percept_reconstruction_score(model, keys, forms, ids, live))
+-        model._last_attention_comparison = audit
+-        model._attention_score_term, model._last_attention_score_function = attention_score_function(audit)
+-        model._attention_forms=(forms,ids,keys,live)
+-        observe_comparison(model, 'attention.input', audit, active=live.any(-1))
+-    else:
+-        reading=read()
++            descended=F.pad(result.descended,(0,W-live_width)),
++            poles=F.pad(result.poles,(0,0,0,W-live_width)),
++            pole_changes=F.pad(result.pole_changes,(0,W-live_width)))
++    model._attention_read=read
++    reading=read()
++    model._attention_greedy=reading
+     model._attention_words=reading
+-    # Native forward values only. The paired-cost term is the chooser's sole
+-    # attention credit, consumed once by reconstruction at the owner step.
+-    score=(reading.values*keys).sum(-1)/keys.square().sum(-1).clamp_min(1e-12)
+-    model._attention_credit=score
+     model._attention_spans=spans
+     model._attention_forms=(forms,ids,keys,live)
+     model._attention_spent=reading.table.spent.detach().clone()
+-    for b, meter in enumerate(model._attention_meters):
+-        meter.require('bracket',int(reading.table.spent[b])-meter.spent)
++    if not getattr(model,'_sentence_ends',False):
++        for b, meter in enumerate(model._attention_meters):
++            meter.require('bracket',int(reading.table.spent[b])-meter.spent)
++    handoff(model,reading)
++
++
++def handoff(model, reading):
++    """Publish the trial's scope and detached word evidence, never its values."""
++    model._attention_words=reading
++    base=getattr(model,"_attention_grammar_mask",None)
++    model.inputSpace._ar_grammar_leaf_mask=(reading.accepted if base is None else base & reading.accepted)
++    native=model._attention_native_poles
++    # A successful native descent supplies a positive identification witness.
++    native=torch.where(reading.descended[...,None],
++        torch.stack((torch.ones_like(reading.accepted),torch.zeros_like(reading.accepted)),-1).to(native),native)
++    model._attention_poles=torch.where(reading.pole_changes[...,None],reading.poles,native).detach()
++    slab=model.inputSpace._ar_embedded_N
++    spans=model._attention_spans
++    B=slab.shape[0]
+     # The top-down handoff reads exactly the selected typed table.
+     table=reading.table
+     last=(table.done.long()*torch.arange(1,table.done.shape[1]+1,device=slab.device)).argmax(-1)
+diff --git a/bin/Models.py b/bin/Models.py
+index 9f470c185..ced9ba735 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -1959,6 +1959,10 @@ class BaseModel(Mereology, nn.Module):
+             object.__setattr__(_cs, "_model", self)
+         _derived = getattr(self._concept_owner().similarity_codebook, 'mereology', None)
+         self._readback_percept_width = None if _derived is None else _derived.percept_width
++        self._image_form_width = None if _derived is None else _derived.percept_event_width
++        store = getattr(self.symbolSpace,"ltm_store",None)
++        if store is not None:
++            store.image_form_width = store.nDim if _derived is None else _derived.percept_event_width
+         for _ws in (getattr(self, "wholeSpaces", None) or []):
+             # Same non-owning expansion seam for WholeSpace.insert_whole.
+             object.__setattr__(_ws, "_model", self)
+@@ -5756,7 +5760,6 @@ class BasicModel(BaseModel):
+         The active question supplies only its grammatical open-role mask.
+         Gain/presence/mask and both paired payloads are detached evidence.
+         """
+-        from Meaning import negative_image
+         from QueryWork import QueryWorkExhausted
+         mask = active.roles.new_zeros(3)
+         registry = _boundary_registry(self)
+@@ -5793,9 +5796,8 @@ class BasicModel(BaseModel):
+         observed = active.roles.detach() if comparison is None else comparison.observed.to(active.roles)
+         presence = (active.roles.new_zeros(3) if comparison is None
+                     else comparison.estimate.presence_logits.sigmoid().to(active.roles))
+-        conceived, _image = negative_image(observed,
+-            None if comparison is None else comparison.estimate.roles.to(active.roles),
+-            presence, gain=getattr(self, "expectation_gain", 1.), object_mask=mask)
++        closing = getattr(self, '_closing_images', {}).get(row)
++        conceived = observed if closing is None else closing.conceived.to(active.roles)
+         return torch.cat((conceived.reshape(-1), presence, mask,
+                           active.roles.new_tensor([comparison is not None]))).detach()
+ 
+@@ -11935,6 +11937,10 @@ class BasicModel(BaseModel):
+         object concept's where it has one, else its word concept's) scaled
+         by the word's signed activation (the 0-D symbol), on the content
+         channels (zeros elsewhere and where a word has no row)."""
++        if getattr(self, '_attention_pole_representation', False):
++            pair = self._attention_poles.detach().to(like)
++            valid = self._attention_words.accepted
++            return F.pad(torch.where(valid[...,None],pair,0.),(0,D-2,0,W-pair.shape[1]))
+         isp = self.inputSpace
+         concept_atoms = getattr(isp, "_ar_word_concept_atoms", None)
+         object_atoms = getattr(isp, "_ar_word_object_atoms", None)
+@@ -13226,8 +13232,17 @@ class BasicModel(BaseModel):
+         # sees fixed tensors and performs no dictionary walk or host sync.
+         from ModelAttention import stage_input, stage_expectation
+         stage_input(self)
+-        self._stage_serial_concept_rows()
+-        self._stage_reading_word_concepts()
++        attention = self._attention_words
++        self._attention_words = None
++        try:
++            self._stage_serial_concept_rows()
++            self._stage_reading_word_concepts()
++        finally:
++            self._attention_words = attention
++        self._attention_grammar_mask = self.inputSpace._ar_grammar_leaf_mask
++        if attention is not None:
++            from ModelAttention import handoff
++            handoff(self,attention)
+         stage_expectation(self)
+         # the snapshot's surfaces need the bank the concept rows just staged
+         self._stage_snapshot_bytes()
+@@ -13736,6 +13751,8 @@ class BasicModel(BaseModel):
+         # A reporting switch must not turn both compose objectives into zero.
+         self._sentence_training = bool(training)
+         self._sentence_supplied_answers = None
++        self._sentence_credit_audits = []
++        self._sentence_departure = None
+         self._sentence_answer_questions = ()
+         self._sentence_answer_cost = None
+         self._sentence_run_active = True
+@@ -14714,14 +14731,6 @@ class BasicModel(BaseModel):
+                 # signal-router rule load-balancing; no consumer yet.
+ 
+             if train:
+-                # Field-only training has no sentence owner step. Consume
+-                # the same pending attention term at its batch boundary.
+-                attention = getattr(self, '_attention_score_term', None)
+-                if attention is not None:
+-                    self._attention_score_term = None
+-                    if attention.requires_grad:
+-                        self.errors.add('reconstruction.attention_score_function', attention,
+-                                        category='reconstruction')
+                 batch_objective = self.errors.total()
+                 readout_l1 = self._configure_concept_readout_l1(optimizer,
+                     stage=batch_objective is not None and batch_objective.requires_grad)
+@@ -19641,6 +19650,32 @@ class BasicModel(BaseModel):
+                 seen.add(id(derived))
+                 derived.project_room(margin)
+ 
++    def _attention_sentence_payload(self, payload, index):
++        """The walk's evidence scales leaf features, never a code's identity."""
++        reading = getattr(self, '_attention_words', None)
++        if reading is None:
++            return payload
++        event, orders, row, activation, obj, obj_order, atom, gate, commit, routing, valid = payload
++        w = index.clamp(0,reading.accepted.shape[1]-1)
++        B = event.shape[0]
++        pair = self._attention_poles.gather(1,w.reshape(1,1,1).expand(B,1,2)).squeeze(1).detach()
++        # The full word code is identified already. Both native and operated
++        # poles supply its net feature evidence at this detached handoff.
++        net = (pair[:,0]-pair[:,1]).reshape_as(activation)
++        old = activation.detach()
++        scale = torch.where(old.ne(0),net/torch.where(old.ne(0),old,1.),0.).reshape(B)
++        event = event * scale[:,None,None]
++        activation = net
++        # interpret resolves atom * activation; multiplying atom would apply
++        # the evidence twice and turn a negative witness positive again.
++        pole_representation = getattr(self, '_attention_pole_representation', False)
++        if pole_representation:
++            event = pair[:,None].to(event)
++            atom = pair.to(atom)
++            activation = torch.ones_like(activation)
++        return (event,orders,row,activation,obj,obj_order,atom,gate,
++                commit & reading.accepted.gather(1,w.reshape(1,1).expand(B,1)).reshape_as(commit),routing,valid)
++
+     def _compose_score_function_loss(self, path, costs):
+         """§16.3: p(departure) times its detached paired cost difference.
+ 
+@@ -19661,13 +19696,23 @@ class BasicModel(BaseModel):
+         if scale is None:
+             raise RuntimeError("compose surrogate requires the sampled K*R counts")
+         scale = scale.detach().to(probabilities)
+-        self._last_compose_score_function = dict(costs=costs, advantage=advantage,
+-            mask=mask.detach(), actions=path[1][18].detach(),
+-            probabilities=probabilities.detach(), scale=scale)
+-        trained = mask & advantage.ne(0)[:, None]
+-        if not bool(trained.any()):
++        actions = path[1][18].detach()
++        walks = torch.ones_like(actions)
++        draw = getattr(self, '_sentence_departure', None)
++        reading = getattr(self, '_attention_words', None)
++        if draw is not None and reading is not None:
++            attention_mask = (torch.arange(reading.actions.shape[1],device=costs.device)[None]
++                              == draw['attention_round'][:,None])
++            mask = torch.cat((attention_mask,mask),-1)
++            probabilities = torch.cat((reading.probabilities,probabilities),-1)
++            scale = torch.cat((reading.alternative_counts * draw['rounds'][:,None],scale),-1)
++            actions = torch.cat((reading.actions.detach(),actions),-1)
++            walks = torch.cat((torch.zeros_like(reading.actions),walks),-1)
++        from SentenceCredit import score_function
++        surrogate, record = score_function(probabilities, scale, mask, costs)
++        self._last_compose_score_function = dict(record, actions=actions, walk=walks)
++        if not surrogate.requires_grad:
+             return probabilities.new_zeros(())
+-        surrogate = torch.where(trained, probabilities * advantage[:, None] * scale, 0.).sum(-1)
+         self._sentence_cost_registry.add('reconstruction.compose_score_function', surrogate,
+             category='reconstruction')
+         active = self._sentence_cost_registry.row_mask
+@@ -19749,7 +19794,8 @@ class BasicModel(BaseModel):
+             rows = torch.where(object_rows >= 0, object_rows, concept_rows)
+             orders = torch.where(object_rows >= 0, isp._ar_word_object_orders, isp._ar_word_concept_orders)
+             self.symbolSpace.commit_word_reference_slab(rows, lang[0],
+-                isp._word_active_mask, orders=orders)
++                isp._word_active_mask, orders=orders,
++                evidence=getattr(self, "_attention_poles", None))
+ 
+     def _sentence_observation(self, state, sid, active, *, admit=False):
+         current_stm, lang, _feedback = state
+@@ -19966,12 +20012,17 @@ class BasicModel(BaseModel):
+                     self._reading_lesson_reports.append(torch.stack(tuple(objectives.values())).sum().detach())
+         disc = getattr(self.symbolSpace, 'expectation', None)
+         pending = None
++        self._sentence_expectation_comparison = None
+         if disc is not None:
+             inter, contrast, pending = disc.sentence_prediction_cost(
+                 observation['observed_depths'], observation['observed'], observation['mask'],
+                 documents=self._expectation_documents_for_slot(sid, B),
+                 layout=observation['layout'], role_masks=observation['roles'],
+-                sentence_kinds=[None if m is None else m.sentence_kind for m in observation['meanings']])
++                sentence_kinds=[None if m is None else m.sentence_kind for m in observation['meanings']],
++                gain=getattr(self, 'expectation_gain', 1.))
++            gated = disc._sentence_comparison_errors.total()
++            if gated is not None:
++                self._sentence_expectation_comparison = gated * self.inter_loss_weight
+             if self.inter_loss_weight > 0:
+                 errors.merge(disc._sentence_prediction_errors[0],
+                              prefix='expectation.', weight=self.inter_loss_weight)
+@@ -20206,6 +20257,36 @@ class BasicModel(BaseModel):
+                 layout=view['layout'], role_masks=view['roles'], train_prediction=False,
+                 sentence_kinds=[None if m is None else m.sentence_kind for m in view['meanings']])
+             disc.detach_prediction_context()
++        from Meaning import ClosingImage
++        images = self.__dict__.setdefault('_closing_images', {})
++        for b, meaning in enumerate(view['meanings']):
++            if meaning is None or not bool(active[b]):
++                continue
++            comparison = None if disc is None else disc.last_expectation_comparison(b)
++            estimate = None if comparison is None else comparison.estimate
++            mask = meaning.roles.new_zeros(3)
++            registry = _boundary_registry(self)
++            if registry is not None and meaning.mode == 'interrogative':
++                # An observed question need not yet name an executable thought.
++                # Only a resolved grammatical attention object spares a role.
++                try:
++                    signature = registry.signature_for(meaning)
++                except (TypeError,ValueError):
++                    signature = None
++                if signature is not None:
++                    for role in signature.open_roles:
++                        mask[registry._slot_for_operand(role)] = 1
++            content_width = meaning.roles.shape[-1]
++            form_width = getattr(self, '_image_form_width', None)
++            form_width = content_width if form_width is None else min(content_width,int(form_width))
++            images[b] = ClosingImage.form(meaning.roles,
++                None if estimate is None else estimate.roles.to(meaning.roles),
++                meaning.roles.new_zeros(3) if estimate is None else estimate.presence_logits.sigmoid(),
++                gain=getattr(self,'expectation_gain',1.), object_mask=mask,
++                form_width=form_width, content_width=content_width)
++        self._last_closing_image_audit = dict(
++            concept_widths={b:v.concept_width for b,v in images.items()},
++            image_max={b:float(v.image.abs().max()) for b,v in images.items()})
+         store = getattr(self.symbolSpace, 'ltm_store', None)
+         row_ids = [-1] * len(rows)
+         if store is not None and getattr(self.conceptualSpace, '_ltm_consolidation', False):
+@@ -20387,20 +20468,50 @@ class BasicModel(BaseModel):
+             self.languageSpace._compose_primed_bank = self._sentence_primed_bank
+             before = self._snapshot_sentence_state((stm, lang, feedback))
+             observations, predictions, paths = [], [], []
+-            paired_costs = []
++            paired_costs, cost_parts, attention_trials = [], [], []
+             pending_steps = []
++            greedy_attention = getattr(self, '_attention_greedy', None)
++            attention_base = getattr(self, '_attention_words', None)
++            attention_spent = words.new_tensor([m.spent for m in getattr(self,'_attention_meters',())],dtype=torch.long)
++            if greedy_attention is not None:
++                greedy_attention = self._attention_read(sentence=sid,spent_override=attention_spent)
++            self._sentence_departure = None
+             def compose(cached, exploit):
+                 self._sentence_trial = 'exploit' if exploit is None else 'explore'
+                 self._sentence_pullback = None
+                 if self._sentence_training and torch.is_grad_enabled():
+                     cached, self._sentence_pullback = fork_perception(cached)
++                from ModelAttention import handoff
++                reading = greedy_attention
+                 if exploit is not None:
+                     self._publish_sentence_scratch(exploit)
+-                    actions, forced, owners = self._exploration_constraints()
+-                    forced = forced & (owners == sid)
++                    trace = self._reconstruction_stack()
++                    actions = trace._choice_actions.detach().clone()
++                    owners, _, _ = self._compose_round_owners(actions)
++                    eligible = trace._choice_attempted & trace._choice_explorable & (owners == sid)
++                    from SentenceCredit import departure
++                    draw = departure(greedy_attention, eligible, active=present,
++                        sentence_ids=sentence_ids, sentence=sid)
++                    self._sentence_departure = draw
++                    forced = (torch.arange(actions.shape[1],device=words.device)[None]
++                              == draw['compose_round'][:,None])
+                     self._compose_exploit_actions = actions
+                     self._compose_forced_slots = forced
+                     self._compose_prefix_slots = self._exploration_prefix_slots(actions, forced, owners)
++                    # A narrowing departure changes its full continuation. Only
++                    # rows departing in compose replay the old compose prefix.
++                    self._compose_prefix_slots &= ~draw['narrowing'][:,None]
++                    self._compose_sampling_scale = trace._choice_alternative_counts * draw['rounds'][:,None]
++                    if greedy_attention is not None and bool(draw['narrowing'].any()):
++                        reading = self._attention_read(exploit=greedy_attention,
++                            departure=draw['attention_round'],sentence=sid,spent_override=attention_spent)
++                        # Non-departing rows retain precisely the greedy walk.
++                        from SentenceCompose import select_rows
++                        selected = select_rows(greedy_attention, reading, draw['narrowing'])
++                        reading = type(reading)(type(reading.table)(*selected[0]), *selected[1:])
++                if reading is not None:
++                    handoff(self, reading)
++                attention_trials.append(reading)
+                 # Every trial begins with restored history. Give its first
+                 # word the same grad contract as subsequent word carries,
+                 # without connecting it to a previous optimizer version.
+@@ -20413,6 +20524,7 @@ class BasicModel(BaseModel):
+                 for index, payload in cached:
+                     # Grammar feedback changes with this derivation, while
+                     # the cached pre-compose word representation stays fixed.
++                    payload = self._attention_sentence_payload(payload,index)
+                     payload = (*payload[:-2], *latches[0])
+                     current_lang, current_stm, current_feedback = compose_word(
+                         payload, index, None, current_lang, current_stm)
+@@ -20445,12 +20557,12 @@ class BasicModel(BaseModel):
+                 if self._sentence_training and torch.is_grad_enabled():
+                     pending_steps[-1] = (*pending_steps[-1], self._sentence_cost_registry,
+                         observation['decomposition_loss'], observation['walk_loss'])
+-                # Expectation and grammar lessons train their owners but are
+-                # not evidence for preferring one reading over the other.
+-                reconstruction_cost = self._sentence_cost_registry.total(objective='reconstruction')
+-                cost = path[1][9][:, sid].sum(-1) * 0
+-                if reconstruction_cost is not None:
+-                    cost = cost + reconstruction_cost
++                from SentenceCredit import components
++                parts = components(self._sentence_cost_registry,
++                    self._sentence_expectation_comparison, path[1][9][:,sid].sum(-1)*0,
++                    answer=self._sentence_answer_cost)
++                cost_parts.append(parts)
++                cost = parts.sum(-1)
+                 observations.append(observation)
+                 predictions.append(pending)
+                 paired_costs.append(cost.detach().clone())
+@@ -20462,14 +20574,8 @@ class BasicModel(BaseModel):
+                 self._sentence_trial, self._sentence_pullback = trial, pullback
+                 self._sentence_cost_registry = registry
+                 self._restore_sentence_state(path)
+-                attention = getattr(self, '_attention_score_term', None)
+-                if attention is not None:
+-                    self._attention_score_term = None
+-                    if attention.requires_grad:
+-                        registry.add('reconstruction.attention_score_function', attention,
+-                                     category='reconstruction')
+-                        live = self.inputSpace._word_active_mask.any(-1)
+-                        loss = loss + (attention * live).sum() / live.sum().clamp_min(1)
++                loss = registry.total()
++                loss = (loss * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
+                 if decomposition_loss is not None and decomposition_loss.requires_grad:
+                     registry.add('reconstruction.decomposition', decomposition_loss, category='reconstruction')
+                     loss = loss + (decomposition_loss * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
+@@ -20500,6 +20606,30 @@ class BasicModel(BaseModel):
+                 observe_comparison(self,'compose',dict(costs=costs,wins=wins,
+                     departure=departure,
+                     greedy=torch.where(here,paths[0],-1),explore=torch.where(here,paths[1],-1)),sentence=sid,active=present)
++            if greedy_attention is not None:
++                from SentenceCompose import select_rows
++                selected = select_rows(attention_trials[0], attention_trials[-1], wins)
++                kept = type(greedy_attention)(type(greedy_attention.table)(*selected[0]), *selected[1:])
++                from ModelAttention import handoff
++                here=sentence_ids==sid
++                kept=kept._replace(**{name:torch.where(
++                    here[...,None] if getattr(kept,name).ndim==3 else here,
++                    getattr(kept,name),getattr(attention_base,name))
++                    for name in ('values','accepted','descended','poles','pole_changes')})
++                handoff(self, kept)
++                for b,meter in enumerate(self._attention_meters):
++                    if bool(present[b]):
++                        meter.require('bracket',int(kept.table.spent[b])-meter.spent)
++                self._attention_spent=kept.table.spent.detach().clone()
++            from SentenceCredit import comparison
++            parts = torch.stack((cost_parts[0],cost_parts[-1]),1)
++            audit = comparison(parts,present)
++            audit['sentence'] = sid
++            audit['departure'] = self._sentence_departure
++            audit['actions'] = tuple(path.detach() for path in paths)
++            audit['narrowing_actions'] = tuple(None if r is None else r.actions.detach() for r in attention_trials)
++            self._last_sentence_credit = audit
++            self.__dict__.setdefault('_sentence_credit_audits', []).append(audit)
+             from SentenceUnderstanding import SentenceUnderstanding
+             self._last_sentence_understanding = SentenceUnderstanding.select(
+                 observations[0]['record'], observations[-1]['record'], wins)
+@@ -20524,6 +20654,7 @@ class BasicModel(BaseModel):
+                       tuple(v.detach() for v in chosen[2]))
+             activations = chosen[1][0]
+             for index, payload in cache:
++                payload = self._attention_sentence_payload(payload,index)
+                 value = torch.where(payload[7], payload[3].reshape(B, 1), 0.)
+                 activations = self._tensor_write_word_column(activations, index, value)
+             chosen = (chosen[0], (activations, *chosen[1][1:]), chosen[2])
+@@ -20976,16 +21107,8 @@ class BasicModel(BaseModel):
+                 symbolic_event, symbolic_orders, row, activation,
+                 object_row, object_order, object_atom, row_gate, commit,
+                 routed_feedback, routed_valid)
+-            attention=getattr(self,'_attention_words',None)
+-            if attention is not None:
+-                # Attention and compose share their scorer. The sentence's
+-                # byte loss must not train it through the perception cache;
+-                # compose learns from its detached paired-cost surrogate.
+-                credit=_gather_word(self._attention_credit.detach(),index).reshape(B,1,1)
+-                admitted=_gather_word(attention.accepted,index).reshape_as(commit)
+-                payload=(symbolic_event*credit,symbolic_orders,row,activation,
+-                         object_row,object_order,object_atom*credit[:,0],row_gate,commit&admitted,
+-                         routed_feedback,routed_valid)
++            if not sentence_transactions:
++                payload=self._attention_sentence_payload(payload,index)
+             return payload, (next_sym,)
+ 
+         scope = language.clause_scope
+@@ -21011,7 +21134,7 @@ class BasicModel(BaseModel):
+              object_row, object_order, object_atom, row_gate, commit,
+              routing, routing_valid) = cs_sym_payload
+             word_idea = symbolic_event[:, 0, :]
+-            if torch.is_tensor(grammar_leaf_mask):
++            if torch.is_tensor(grammar_leaf_mask) and not sentence_transactions:
+                 commit = commit & _gather_word(grammar_leaf_mask, index).reshape_as(commit)
+ 
+             if capture_intra:
+@@ -21458,7 +21581,8 @@ class BasicModel(BaseModel):
+         symbol_orders = torch.where(
+             object_rows >= 0, object_orders, concept_orders)
+         ss.commit_word_reference_slab(
+-            symbol_rows, final[8], active, orders=symbol_orders)
++            symbol_rows, final[8], active, orders=symbol_orders,
++            evidence=getattr(self,"_attention_poles",None))
+         if canonical:
+             self._per_word_contributions = []
+         self._per_word_percept_contributions = final[9]
+diff --git a/bin/SentenceCompose.py b/bin/SentenceCompose.py
+index 9fef5f61a..71fd77f1c 100644
+--- a/bin/SentenceCompose.py
++++ b/bin/SentenceCompose.py
+@@ -127,12 +127,12 @@ def select_rows(exploit, explore, wins):
+ 
+ 
+ def sentence_pair(cache, compose, score, step, *, active, training=True, before_step=None):
+-    """Compare reconstruction at one parameter state, then train both paths.
++    """Compare owner-step totals at one parameter state, then train both paths.
+ 
+     ``cache`` is the sentence's one perception. ``compose`` gets the exploit
+     path on its second call so it can replay its prefix and exclude one choice.
+     ``score`` returns a cost per row and the candidate's scratch commit value.
+-    Selection costs contain reconstruction only; strict improvement keeps
++    Selection costs contain reconstruction, gated expectation and supplied-answer error; strict improvement keeps
+     explore and ties keep greedy. ``before_step`` receives the rows whose
+     reader may train on this trial. Reconstruction and expectation still
+     train on both trials, each with its original forward parameter values.
+diff --git a/bin/WalkTrials.py b/bin/WalkTrials.py
+index 27c147927..5fa9f7c8e 100644
+--- a/bin/WalkTrials.py
++++ b/bin/WalkTrials.py
+@@ -47,38 +47,6 @@ def output_pair(realize,score):
+     return result,audit
+ 
+ 
+-def narrowing_pair(read, score):
+-    """Compare complete percept walks before admission or any owner update."""
+-    from SentenceCompose import select_rows
+-    greedy = read()
+-    first = score(greedy)
+-    departure = departure_at(greedy.alternatives)
+-    explore = read(exploit=greedy, departure=departure)
+-    second = score(explore)
+-    costs = torch.stack((first, second), -1).detach()
+-    wins = (departure >= 0) & (costs[:, 1] < costs[:, 0])
+-    table = type(greedy.table)(*select_rows(greedy.table, explore.table, wins))
+-    kept = type(greedy)(table, *select_rows(greedy[1:], explore[1:], wins))
+-    return kept, dict(costs=costs, wins=wins, departure=departure,
+-        greedy=greedy.actions.detach(), explore=explore.actions.detach(),
+-        probabilities=explore.probabilities,
+-        scale=(greedy.alternative_counts * greedy.alternatives.sum(-1, keepdim=True)).detach())
+-
+-
+-def attention_score_function(audit):
+-    """Uniform departure's K*R correction with the greedy walk as baseline."""
+-    probability = audit['probabilities']
+-    advantage = (audit['costs'][:, 1] - audit['costs'][:, 0]).detach()
+-    rounds = torch.arange(probability.shape[1], device=probability.device)
+-    mask = rounds[None] == audit['departure'][:, None]
+-    trained = mask & advantage.ne(0)[:, None]
+-    # Exact ties do not attach a zero gradient to a momentum-owned chooser.
+-    term = (torch.where(trained, probability * audit['scale'] * advantage[:, None], 0.).sum(-1)
+-            if bool(trained.any()) else probability.new_zeros(probability.shape[0]))
+-    return term, dict(costs=audit['costs'], advantage=advantage, mask=mask,
+-        actions=audit['explore'], probabilities=probability.detach(), scale=audit['scale'])
+-
+-
+ def _copy_containers(value):
+     """Copy mutable scratch containers while retaining each live graph."""
+     from collections import deque
+diff --git a/doc/Architecture.md b/doc/Architecture.md
+index 2c64bad87..0dc4f7fde 100644
+--- a/doc/Architecture.md
++++ b/doc/Architecture.md
+@@ -1187,16 +1187,31 @@ overwritten from the derivation each forward. Perception reconstruction alone
+ trains native PS/WS prototypes and 11b evidence; the sentence reading detaches
+ both. Its root remains live to train the sentence choosers.
+ 
+-A word symbol's position in perceptual space is the evidence-weighted midpoint
+-of its lattice interval over letters and WS types.
++A word symbol's position in perceptual space is the join of its parts.
+ Net evidence is `d = relu(e_for-e_against)`; the attention-only both corner is
+-excluded. Parts give `L = max(d_part * part_code)`. WS property wholes give
+-`U = min(1-d_whole*(1-whole_code))`, or one with no wholes. With weights
+-`W_P = sum(d_part)` and `W_W = sum(d_whole)`, the form is
+-`(W_P*L + W_W*U)/(W_P+W_W)`, and is `L` without wholes. A deterministic
+-post-step room projection moves the maximal part down and minimal whole up
+-by half each positive `L-U+m` violation, clamped to [0,1]; `m` defaults to zero.
+-The exact remaining violations are measured, not assumed absent.
++excluded. Parts with `d > 0` give `L = max(part_code)` (evidence selects a
++part; it does not scale it), and `L` is the form. WS property wholes give
++`U = min(1-d_whole*(1-whole_code))`, or one with no wholes; `U` bounds the
++form and does not enter it. A deterministic post-step room projection moves
++only the minimal whole, up by the full positive `L-U+m` violation, clamped to
++[0,1]; parts never shrink to fit their types; `m` defaults to zero.
++The round-2 closing image acts only after the complete perceptual block:
++its form content and reserved coordinates are untouched. With a zero-width
++concept complement (XOR_grammar and MM_grammar), the image is exactly zero;
++thought reads the conceived complement while storage keeps the observation. The exact
++remaining violations are measured, not assumed absent. (6.8 plan §15.2: the
++midpoint of the interval blended each word with its type, since the only
++wholes a word had — the alphabet cuts — were common to every word of a type.)
++
++The midpoint returns under the scheme confirmed on 2026-10-06 (operators
++update plan §12–§13): the wholes that bound a word are the alphabet cuts
++together with the has-a concepts one order up (for each part `p`, the things
++containing `p`, by the sigma fold over `p`'s occurrences), each whole weighing
++in `U` in proportion to how much it narrows the domain, `d_w · s_w` with
++`s_w = 1 - |extent(w)| / |domain|`; a whole that excludes nothing bounds
++nothing. The symbol is then the evidence-weighted centroid between `L` and
++`U`. It is informative only in a wide sparse content block, so it arrives with
++the pairs and the width of round 3.
+ 
+ Generally characterized codes have zero location/time coordinates in the
+ native perceptual event block. Occurrences carry their own bracket and time.
+@@ -1221,9 +1236,9 @@ conceptual wholes' locations, the catalogue's `not` items, and expectation's
+ negative image acting on the concept face only (item 2) remain for the operators
+ update. No bootstrap or co-activation objective is added here.
+ 
+-XOR_grammar and MM_grammar retain 14-dimensional native events and paired
+-representations, with six form content coordinates and an empty meaning
+-complement. Their concepts are empty: identical contexts with no bootstrap.
++XOR_grammar and MM_grammar have 22-dimensional native events and paired
++representations since 6.8 §22: fourteen form content coordinates, the
++eight-coordinate address band, and an empty meaning complement. Their concepts are empty: identical contexts with no bootstrap.
+ The XOR class and reconstruction table measures perception's composition of
+ forms, its inverse, the affine read at unit norm, and one owner. The connectives
+ over meanings are measured where meanings exist, as in MM_xor's field path.
+@@ -2658,3 +2673,73 @@ written there and read by no gate.
+ **Footprints.** Each operator declares what it reads and writes over form
+ (perceptual space), meaning (conceptual space) and the poles (the symbol's
+ activation): catalogue §1 rule 10.
++
++## The scheme confirmed 2026-10-06: expectation and surprise through the architecture
++
++Decided in the operators update plan, [§6–§13](plans/2026-10-05-operators-update.md);
++scheduled by its [§9.5](plans/2026-10-05-operators-update.md#95-proposed-round-sequence-replaces-2)
++and [§12.3](plans/2026-10-05-operators-update.md#123-round-2-as-it-now-stands).
++This section states the target; the sections above and
++[GradientFlow](GradientFlow.md) state what is implemented at each round.
++
++**One bank, two relations.** A shared bank of codes `{X, …}` with two
++relations over it: *contains X* from the segmentation (a word's parts; a
++sentence's words) and *is X* from the predicates (a thing's own row, its
++classes, the has-a concepts one order up, later "occurs in S"). The bank
++grows only when two things would otherwise coincide: a new row for a new
++identity, a distinguishing feature (an unshared pair, a count, the length)
++when a new thing collides with an old one, and otherwise nothing.
++Containment is exact in the index (references and leaf postings); the code
++is the evidence-weighted centroid between the join of what the thing
++contains and the meet of what contains it, each whole weighing in
++proportion to how much it narrows (round 3).
++
++**Parts: pairs and length.** The parts of a word are its boundary-marked
++adjacent letter pairs (`#c ci ir rc cu us s#`) plus its letter count; the
++fold is unchanged (the join of the parts). Anagrams separate without
++position, repetition separates by length, "ends in s" is a part, and the
++derivation is one parallel join over the slab rather than a serial walk;
++the same rule serves the sentence rung with adjacent word pairs. The
++content block must hold the inventory as a sparse superposition (round 3).
++
++**Attention is a filter.** A weight per word on detached percepts, trained
++pathwise by the owner-step cost factored into attended and unattended
++regions — `C = Σ m_i·C_i^S + (1 − m_i)·C_i^P`, so a word is attended where
++the sentence path explains it better than perception alone — with a graded
++budget; soft in training, hard at test; the field's `and`/`or`/`not` are
++continuous in the poles (round 5). Until then the narrowing walk's poles are
++handed off with the scope (round 2).
++
++**Two hard derivations as expectation and surprise.** The forward is always
++a tree. The greedy derivation is what the model expects of itself; one
++departure, drawn uniformly over the eligible rounds of the narrowing and
++compose walks together, is the question; both are completed and costed at
++the owner step on the total of reconstruction, expectation (gated by the
++predictor's confidence) and, where supplied, the answer; the better is
++committed, written to its row and presented; the chooser is credited by the
++score-function term at the departure — the surprise at the choice. The
++choice stays discrete; no mixed forward, no straight-through.
++
++**Surprise at every layer.** The one unconditioned prediction is the next
++row from the previous rows (the world-model; conditioning it on the current
++input would copy it). Inverted through the committed operations of the
++actual derivation it yields an expected operand at every round, conditioned
++on the actual structure; the actual operand against it is that layer's
++surprise, deterministic and local, exact for an invertible layer; from
++below, the teacher-forced next-step predictor conditions on the propagated
++input. Expectation completes no derivation of its own — one inverse pass on
++the reverse path. This is predictive coding's two directions, and
++equilibrium propagation's two phases, with the only sampled estimate left
++being the chooser's (rounds 3–4; the confidence-gated image at the closing,
++spec §2.6.1, lands in round 2).
++
++**The invertible path.** The projections (SVD-factored), the butterflies,
++the LDU readout and the operators' tied inverses are invertible now; the
++form from bytes (round 3) and binding through the bank at sufficient width
++(rounds 3–4) are made exact. Reconstruction then retires to a structural
++audit that must read zero, the decomposition chooser becomes a lookup, the
++collapse channel closes (an invertible path cannot discard information),
++and the trainable surfaces — the chooser, the maps, the predictors, the
++readers — train by expectation and output along one path. Where a
++transformation is only approximately invertible, reconstruction stays a
++loss for that part.
+diff --git a/doc/FutureWork.md b/doc/FutureWork.md
+index 1f5d9f32e..856603f4f 100644
+--- a/doc/FutureWork.md
++++ b/doc/FutureWork.md
+@@ -1086,7 +1086,7 @@ conceptual space and the remaining catalogue. Item 6.8 owns the open read and
+ MM_xor's word-level XOR proof. Surface markers own operand-order recovery.
+ The standing XOR rule is no regression against the [closing record](benchmarks/2026-10-03-item6-9-closing/README.md),
+ including its explicit red gates; this is not a claim that every gate is green.
+-Next: the operators update, then 6.8 (no conference freeze; Alec, 2026-10-03).
++Next: the [operators update](plans/2026-10-05-operators-update.md), then 6.5 (6.8 accepted; no conference freeze; Alec, 2026-10-05).
+ 
+ ## Carried from the 6.8 §13–§15 rounds (2026-10-04)
+ 
+@@ -1114,8 +1114,12 @@ Not in the 6.8 rounds; each names its home.
+   context mean can start; without them order-0 meanings stay at zero.
+ - **The `not` items** (operators update): `NonLayer` computes `1 − x`;
+   `ConjunctionLayer` reads `max(c⁺, c⁻)`; the binding kernel pools signs.
+-- **The negative image on the concept face** (item 2): expectation cancels
+-  meaning, never form (accessible mind §2.6.2, amendment of 2026-10-04).
++- **The negative image on the concept face** (item 2): the §2.6.1 mechanism
++  is implemented in the uncommitted round-2 candidate: gain, presence and
++  role attention gate the concept complement; storage retains the observed
++  value and thought reads the conceived value. Form is protected. Learning
++  utility still waits for a populated complement and the later measurements
++  ([receipt](benchmarks/2026-10-06-operators-round2/README.md)).
+ - **Sparse percept presences** (perception, when it is trained): dense
+   prototypes' joins saturate toward everything (mean cosine between word
+   forms ≈ .98 at any scale, XOR term of a unit root .03–.05); presences on
+@@ -1145,12 +1149,33 @@ Not in the 6.8 rounds; each names its home.
+   the input-attention walk scores its bracket actions with the compose
+   chooser's parameters; its straight-through credit was found reaching the
+   shared chooser through the perception pullback (6.8 plan §21.1, §22) and was
+-  detached at the sentence handoff, so attention trains nothing until the
+-  update gives it the same score-function estimator as compose (its departure's
+-  probability, the greedy cost as baseline, `K·R`), or separate parameters.
++  detached at the sentence handoff. Round 1 supplied the score-function
++  estimator; round 2 makes its cost-sensitive mechanism live by handing
++  poles to the sentence and sharing the sentence's departure and `R+E+A`
++  comparison with compose. Its owner remains reconstruction. Measurement
++  of actual nonzero advantages is in the round-2 receipt.
+ - **The decomposition chooser's exact-fit precedence and feature
+   standardization** (operators update; 6.8 plan §23): after cross-entropy on
+   four sentences the chooser's context weights outweighed the fit for one
+   root ("hello there → hello hello", §22 run 10); an exactly recomposing pair
+   is taken before context has a say, and the activation features (projection
+   coefficients, unbounded) are standardized.
++
++**Status, 2026-10-06 (operators update [plan §9.5, §12.3, §14](plans/2026-10-05-operators-update.md)).**
++Landed in round 1 (accepted 2026-10-06): the `not` items (withdrawal and pole
++exchange, bilattice conjunction), footprints at load, the inverse's chooser
++with exact-fit precedence and standardized features, the attention
++estimator (score-function, found silent by construction — plan §5). Round 2
++is implemented as an uncommitted candidate awaiting its measured gate and
++review ([receipt](benchmarks/2026-10-06-operators-round2/README.md)):
++the trial cost as the owner-step total, one departure over both walks with
++the narrowed poles handed off, the negative image at the closing on the
++concept face (spec §2.6.1, confidence-gated, so it needs no meanings to
++exist). Round 3: the fold composing forms is replaced by boundary-marked
++pairs plus length as the parts (anagrams separate without position), the
++content width, the has-a wholes and the narrowing-weighted centroid. Round
++4: the complement's bootstrap (membership as properties, co-activation
++through shared wholes), the Kleene connectives over meanings, expectation
++and targets by inversion. Round 5: the attention filter. The dense chooser
++signal is not wanted: the forward stays a tree (plan §12.2); sparse
++presences are subsumed by round 3's sparse superposition.
+diff --git a/doc/GradientFlow.md b/doc/GradientFlow.md
+index 918dde352..c5197a728 100644
+--- a/doc/GradientFlow.md
++++ b/doc/GradientFlow.md
+@@ -21,24 +21,25 @@ pullback for reconstruction. Saved forward parameter values preserve the
+ second graph. A batch-end step runs only when its remaining registered total
+ has a derivative. No extra step is added for diagnostics.
+ 
+-Explore is kept only when its reconstruction is **strictly lower**. A tie
+-keeps greedy. The answer and expectation never enter the comparison.
++Explore is kept only when its owner-step total `C = R + E + A` is **strictly lower**.
++A tie keeps greedy. `R` is the registry reconstruction total; `E` is sentence
++expectation error gated per role by gain × predicted presence; `A` is the
++relative answer error when supplied. Each answer is read from that trial
++with the understanding detached, before either optimizer step.
+ Reconstruction and expectation train on both trials; the reader trains only
+ the kept rows of each trial. A trial with no kept rows gives the reader no
+ optimizer step, including no momentum-only step. The kept state is committed detached; no gradient crosses that
+ boundary into the next sentence.
+ 
+-Input narrowing, compose, ordinary thought, anticipation and generation each
+-compare greedy with one departure. The departure round is sampled uniformly
+-from the greedy walk's rounds with a legal alternative. At that round, greedy's
+-action is excluded and the departure action is sampled from the remaining
+-eligible policy probabilities at unit softmax scale; it is not the next-ranked
+-action. The prefix is replayed and the suffix is greedy. The original policy
+-probabilities supply training credit, without the exclusion mask. Both walks
+-are costed at the same parameters; only a strictly lower owner cost keeps
+-exploration, and ties keep greedy. Anticipation holds both forecasts until
+-the arriving observation can cost them. Its controller keeps its existing
+-ownership. No learning rate, optimizer or budget changes accompany sampling.
++Input narrowing and compose share one departure per sentence. The eligible
++rounds of both greedy walks supply the uniform round draw; the selected
++round's eligible alternatives supply the uniform action draw. The unmasked
++policy probability supplies the `K·R`-corrected score-function credit. A
++narrowing departure continues through admission and compose greedily; a
++compose departure uses greedy narrowing and replays its compose prefix.
++Ordinary thought, anticipation and generation retain their existing paired
++walks and owner boundaries. No learning rate, optimizer or budget changes
++accompany the sentence comparison.
+ 
+ | Parameter owner | Weights and permitted update |
+ |---|---|
+@@ -70,10 +71,11 @@ choosers through the root. The affine answer has its own owner and cannot
+ write these sources.
+ 
+ For net evidence `d = relu(e_for - e_against)`, the content bounds are
+-`L = max_parts(d * part_code)` and
++`L = max_parts(part_code)` over the parts with `d > 0` (evidence selects a
++part, it does not scale it) and
+ `U = min_property_wholes(1 - d * (1 - whole_code))` (default `U = 1`).
+-The form is `(sum(d_parts)*L + sum(d_wholes)*U) / sum(d_parts,d_wholes)`;
+-without property wholes it is `L`. The both corner belongs to attention and
++The form is `L` (6.8 plan §15.2, implemented §16; `MereologicalCodes.derive`
++writes `lower`); `U` bounds the form and does not enter it. The both corner belongs to attention and
+ never enters this derivation. Repeated addresses in a part group do not
+ multiply its evidence. The serial leaf remains `[form | meaning] × signed activation`.
+ Field-path dictionaries retain their existing ownership; `XOR_exact`'s
+@@ -81,15 +83,16 @@ answer coefficients are unchanged.
+ 
+ After the existing owner step and [0,1] projection, the deterministic room
+ pass visits concept rows and coordinates in order. For `v = relu(L-U+m)`,
+-the maximal part moves down by `v/2` and the minimal property whole up by
+-`v/2`, clamped to [0,1]. Missing towers retain their fixed lattice boundary.
++only the minimal property whole moves, up by the full `v`, clamped to [0,1];
++parts never shrink to fit their types (`project_room`). Missing towers retain
++their fixed lattice boundary.
+ `ConceptualSpace.latticeMargin` defaults to zero. This is a projection, not
+ a new objective. Fractional evidence, clipping and floating-point arithmetic
+ can leave violations; the audit reports the exact positive count and largest
+ violation before and after the pass, without a tolerance hiding residuals.
+ 
+ The first block stores the symbol's perceptual position. Its content coordinates
+-carry the interval midpoint; its reserved location/time positions are zero for
++carry the form `L`; its reserved location/time positions are zero for
+ a generally characterized type, not an occurrence stamp. The complement stores
+ the concept's conceptual position: at order zero, only the detached,
+ recency-weighted context mean of existing occurrence roots' meaning coordinates.
+@@ -103,14 +106,15 @@ the perceptual block and never carries a durable-row gradient.
+ **Explicitly deferred by Alec, October 4:** property/situation bootstrap
+ learning and its co-activation objective belong to the operators update.
+ There is no new context optimizer or loss. A zero complement cannot bootstrap
+-itself from zero occurrence roots. XOR_grammar and MM_grammar currently have
+-14-dimensional PS events and paired representations: six native form content
+-coordinates, eight unused occurrence positions, and an empty meaning complement.
++itself from zero occurrence roots. XOR_grammar and MM_grammar have, since 6.8 §22,
++22-dimensional PS events and paired representations: fourteen native form content
++coordinates, the eight-coordinate address band, and an empty meaning complement
++(context width 22 − 22 = 0).
+ The nonempty-complement mechanism check verifies isolated, detached reads;
+ these toy gates do not test learned distributional similarity.
+ 
+ The XOR table therefore measures perception's composition of forms (the binding
+-kernel this round), its inverse, the affine read at unit norm, and one owner.
++kernel this round), its inverse, the affine read of the committed raw root, and one owner.
+ The concepts in these gate configurations are empty: identical contexts and
+ no bootstrap. Same-context concepts coinciding in conceptual space is correct;
+ it is not a collapse to repair. Connectives over meanings are measured where
+@@ -500,14 +504,19 @@ receipt preserves their old bodies and the complete bodies of each port.
+ 
+ ## Expectation at the closing
+ 
+-The signed image and observed meaning produce detached negative evidence for
+-the compose chooser. Prediction separately minimizes all-role relative squared
+-error and presence/kind BCE against detached targets. Empty roles have zero
+-targets, not zero residuals. Context, arriving ideas and routing inputs are
+-all detached; only predictor weights train. Pending estimates survive an
+-update as detached evidence and are recomputed for the current predictor's
+-step. The configured zero expectation-policy weight preserves the one-owner
+-rule. Expectation quality and utility remain empirical questions.
++At the sentence closing, `ClosingImage` forms detached `n = −g·(1−m)⊙κ⊙ê`
++and `c = o+n` on the concept complement only. The complete perceptual block,
++including its reserved coordinates, is protected. Thought reads this closing's
++`c`; storage and predictor targets retain `o`. The retained image restores
++`o = c−n` at float precision. This supersedes the ad-hoc image formerly
++constructed in the thought context. Prediction still minimizes its unchanged
++all-role relative squared error and presence/kind BCE against detached targets;
++the confidence gate changes comparison costs, not predictor training. Empty
++roles have zero targets, not zero residuals. There is no new loss or owner.
++XOR_grammar and MM_grammar have zero complement coordinates (22 total,
++22 in the perceptual block, of which 14 carry form content): their image is
++identically zero. The nonzero-complement mechanism is tested separately.
++
+ 
+ ## Codes are perception's; the chooser is trained from the trial comparison (October 4)
+ 
+@@ -641,7 +650,86 @@ not a nonzero score-function learning signal; the positive/negative-advantage
+ analytic and finite-difference checks are separate focused tests. The 3,200
+ walk-teacher records match CE gradients within 7.45e−9 and show actual policy
+ logit updates. Code displacement, sentence-path perception gradients and
+-ownership conflicts remain zero. The round nevertheless fails its standing
+-gate because MM_xor is 9/10 rather than 10/10; the receipt records the miss.
++ownership conflicts remain zero. The measurement originally missed the standing MM_xor count (9/10). Alec
++accepted round 1 on October 6 after the plan §5 audit established that its
++MM trajectories were identical to the landing; the receipt retains the miss
++and the acceptance record. The landing is `73cd7b71b`.
+ 
+ [Round-1 source, tests, measurements and review receipt](benchmarks/2026-10-05-operators-update/README.md).
++
++## The target scheme (October 6; decided, scheduled by rounds)
++
++Decided in the operators update plan [§6–§13](plans/2026-10-05-operators-update.md),
++with the architecture statement in
++[Architecture](Architecture.md#the-scheme-confirmed-2026-10-06-expectation-and-surprise-through-the-architecture).
++The sections above describe what is implemented; this one what each round
++changes in the gradient's ownership and path. Round 2's text is plan §14.
++
++- **The trial cost (round 2).** The two derivations are compared on, and the
++  chooser credited by, the owner-step total `R + E + A`: reconstruction;
++  expectation gated per role by `g·κ` so an unconfident predictor decides
++  nothing; the answer where supplied, read on both roots without a step.
++  Strictly lower keeps explore; a tie keeps greedy; the SCG surrogate and its
++  registration are unchanged, so the chooser remains reconstruction's in the
++  audit while the cost it compares sees every objective. This replaces the
++  sentence "the answer and expectation never enter the comparison" above.
++- **One departure over both walks (round 2).** Narrowing and compose share the
++  sentence's single departure (`R` over both walks' eligible rounds); a
++  narrowing departure runs through the sentence; the percept-stage selection
++  and the separate attention surrogate retire. The walk's poles are handed off
++  with the scope, so a field departure can change a cost.
++- **The image at the closing (round 2).** Spec §2.6.1 on the concept face:
++  `n = −g·(1−m)⊙κ⊙ê`, `c = o + n`, `o = c − n`; thought reads `c`, storage keeps
++  `o`, the predictors' targets stay `o`, detached; identically zero where the
++  face has no width.
++- **Identity by construction (round 3).** Pairs plus length as the parts; the
++  content width for a sparse superposition; the narrowing-weighted ceiling
++  and the centroid. Reconstruction of forms becomes exact by construction.
++- **Expectation across the model (rounds 3–4).** Once the path is invertible,
++  the row-level prediction inverted through the committed operations gives an
++  expected operand at every round; the actual against it is the layer's
++  surprise, and the maps take exact targets by inversion. Expectation's
++  sources then go live: the 2026-09-20 rule detaching them existed against
++  collapse, which an invertible path cannot do. Reconstruction retires to an
++  audit wherever the transformation is exactly invertible and stays a loss
++  where it is not.
++- **The attention filter (round 5).** A weight per word on detached percepts,
++  trained pathwise by the cost factored into attended and unattended regions,
++  with a graded budget; perception's codes receive gradient only from the
++  unattended region and their own objective.
++- **Unchanged throughout.** Perception's codes have one writer; the forward is
++  a tree; the committed root is what the readers see at test and what the
++  class bar measures; no straight-through, no mixed forward.
++
++## Operators update round 2: credit (October 6; uncommitted candidate)
++
++The [receipt](benchmarks/2026-10-06-operators-round2/README.md) starts from the
++accepted round-1 source. Sentence comparison uses the Error registry's relative
++`R+E+A`, with all three components and their signed differences retained for
++review. Presence and role errors are multiplied by detached `g·κ` in the
++numerator; their uninformed baseline is unchanged, so zero confidence cannot
++cancel out of the ratio. Kind error uses the mean role gate. Predictor training
++keeps its original ungated registry. The supplied answer is a detached read of
++each complete trial, and reader updates remain restricted to the kept rows.
++
++One uniform departure ranges over narrowing and compose. Its sole surrogate
++is `K·R·p(a_departure)·(C_explore−C_greedy)`, registered under the existing
++`reconstruction.compose_score_function` name and reduced over active rows.
++Exact ties disconnect the policy term. Percept-stage byte selection and the
++separate attention surrogate and consumer are retired. Packed sentences use
++their own eligible rounds and retain the shared input work allowance.
++
++Narrowing hands off each operated bracket's bilattice pole pair to the words
++inside it. Unoperated words keep native evidence; a native descent supplies
++its identification witness. Scope, admission and poles belong to the trial.
++The sentence consumes the explicit pair where declared, or its detached net
++evidence as leaf activation, and the closing carries its polarity. No field
++value is handed off, and no stored code or binding kernel implements negation.
++The closing image described above is the other mechanism in this candidate.
++
++Pair search, exact-fit precedence, teacher-forced decomposition, reconstruction
++objectives, owner lists, budgets and the §20.5 bands are unchanged. Focused
++checks cover both departure gradients, total-cost selection, pole evidence,
++the image table and restoration, and the committed-root answer. Empirical
++results and limitations belong to the receipt; implementation alone does not
++establish the standing gate.
+diff --git a/doc/Philosophy.md b/doc/Philosophy.md
+index 6994e1d03..b155a77dd 100644
+--- a/doc/Philosophy.md
++++ b/doc/Philosophy.md
+@@ -815,6 +815,41 @@ attention) in visual cognition*, Trends in Cognitive Sciences 13(9). von Holst
+ (1965), *The contexts of plausible denial*, Journal of Verbal Learning and
+ Verbal Behavior 4.
+ 
++### Learning is surprise, at every layer (2026-10-06)
++
++The training loop's two derivations were first described as exploit and
++explore. Alec's reframing (operators update plan
++[§12](plans/2026-10-05-operators-update.md#12-alecs-fourth-replies-2026-10-06-the-interval-kept-surprise-throughout-the-chain)):
++the greedy derivation is what the model *expects of itself*; the one
++departure is a question put to that expectation; the better of the two is
++what is conceived, written and answered from; and what is learned at the
++choice is the surprise — the difference between what was expected and what
++turned out better. Nothing in this is sampling for its own sake. The second
++derivation is the model's own expectation being contradicted.
++
++The same reading runs down the whole chain. The one prediction formed
++without the input — the next row from the previous rows, the world-model —
++is inverted through the operations the actual derivation committed, and at
++every layer the expected operand meets the actual one; the difference is
++that layer's surprise, local and, for an invertible layer, exact. Expectation
++never completes a derivation of its own, so it is never free-running, never
++compounding its own errors; it borrows the structure of what actually
++happened and runs its content down through it. This is predictive coding in
++its original form — a prediction descending, an error ascending at every
++level (Rao & Ballard 1999) — and it is the free and nudged phases of
++equilibrium propagation, where the layer-wise difference between the two
++phases is the gradient. Section [2.6.4 of the accessible mind](specs/2026-09-20-accessible-mind-subsystems.md#264-surprise-is-what-is-learned)
++said that surprise is what is learned; this says where: at every layer, in
++the one place the layer could have done otherwise.
++
++Two consequences follow for how the mind is built. Reconstruction, which
++was an objective, becomes a property: with the path up through percepts
++made invertible, nothing is lost by construction, and reconstruction is a
++check that reads zero rather than a loss that competes. And the only
++sampled estimate left anywhere is at the choice itself — the choice stays
++discrete, the forward is always one derivation, one row — so the structure
++of thought is never a mixture; only the gradient is.
++
+ ## Where Is Context: Particulars, Universals and the Two Axes (2026-09-22)
+ 
+ > We need to integrate the "same space and time" that creates wholes and
+diff --git a/doc/specs/2026-09-29-operator-catalogue.md b/doc/specs/2026-09-29-operator-catalogue.md
+index 636c1759e..1eb8e7446 100644
+--- a/doc/specs/2026-09-29-operator-catalogue.md
++++ b/doc/specs/2026-09-29-operator-catalogue.md
+@@ -1409,3 +1409,39 @@ are zero. **The standing gate failed** because MM_xor must remain 10/10:
+ run 5 reached best MSE 0.220072806 within 200 epochs against the unchanged
+ 0.20 threshold. The receipt retains that miss without a retry. This is an
+ uncommitted review candidate, not an accepted landing.
++
++
++### 12.2 Operators update, round 2: credit (2026-10-06; uncommitted)
++
++Round 1 was accepted by Alec on October 6 and landed as `73cd7b71b`; its
++[acceptance record](../benchmarks/2026-10-05-operators-update/acceptance.json)
++amends the historical candidate status in §12.1 without replacing the measured
++MM miss. Round 2 starts from that source and is held for Claude's review.
++
++The two derivations now compare the owner-step relative total `R+E+A`.
++Expectation contributes role, presence and kind errors gated by `g·κ`; its own
++training targets and loss are unchanged. A supplied answer reads both complete
++trials without a step and trains its reader only on kept rows. Strictly lower
++keeps explore; a tie keeps greedy. The existing reconstruction-owned SCG
++registration credits one departure drawn uniformly over the eligible narrowing
++and compose rounds, with the `K·R` correction and unchanged active-row reduction.
++The percept-stage byte comparison and separate attention term are retired.
++
++The walk's field poles cross the sentence handoff with scope. Bracket `and`
++and `or` use the bilattice, and `not` exchanges poles. Each affected word
++carries that pair; the sentence uses an explicit pair or detached net feature
++evidence, and closing polarity reflects it. The word's stored code is unchanged.
++No meaning-value connective or negation in the binding kernel is introduced.
++
++At closing, `n=−g·(1−m)⊙κ⊙ê` and `c=o+n` operate on the concept face only.
++Thought reads `c`; storage and detached prediction targets retain `o`;
++`o=c−n` restores the observation. The mechanism adds no loss, optimizer or
++owner. XOR_grammar and MM_grammar have zero concept-complement width and an
++identically zero image. The nonzero-complement fixture checks all six cases.
++
++The pair search, decomposition teachers, owner lists, reconstruction objective,
++training budgets and bands remain unchanged. Later identity, meaning, attention
++filter and catalogue work follows the current plan §9.5/§12.3 schedule.
++[Gradient flow](../GradientFlow.md#operators-update-round-2-credit-october-6-uncommitted-candidate)
++and the [round-2 receipt](../benchmarks/2026-10-06-operators-round2/README.md)
++record the implementation, old/new test texts, source freeze and measurements.
+diff --git a/test/test_grammar_word_learning.py b/test/test_grammar_word_learning.py
+index eeaa4d29a..00f25f4d8 100644
+--- a/test/test_grammar_word_learning.py
++++ b/test/test_grammar_word_learning.py
+@@ -195,15 +195,17 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
+         # the receipt and construct the two cost contracts explicitly here.
+         original = BasicModel._compose_score_function_loss
+         def constructed_costs(owner, path, measured):
+-            assert owner._compose_forced_slots.any(-1).all()
++            draw=owner._sentence_departure
++            assert ((draw['attention_round']>=0) | (draw['compose_round']>=0)).all()
+             costs = measured[:, :1].detach().expand(-1, 2).clone()
+             if comparison == "distinct":
+                 costs[:, 1] -= .5
+             return original(owner, path, costs)
+         monkeypatch.setattr(BasicModel, '_compose_score_function_loss', constructed_costs)
+-        receipt = _ROOT / 'doc/benchmarks/2026-10-03-operators-attention'
++        receipt = _ROOT / 'doc/benchmarks/2026-10-06-operators-round2'
++        monkeypatch.syspath_prepend(str(_ROOT / 'doc/benchmarks/2026-10-03-operators-attention'))
+         monkeypatch.syspath_prepend(str(receipt))
+-        from review17_score_probe import observe_score_function
++        from round2_score_probe import observe_score_function
+         audit = {}
+         with observe_score_function(audit), capture_readings(model) as readings:
+             result, _ = model.runBatch(
+@@ -238,7 +240,10 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
+                    for step in model._last_answer_construction.trace)
+         generator_changed = any(not torch.equal(old, new)
+                                 for old, new in zip(generate_before, generator.parameters()))
+-        assert generator_changed == any(live_choices)
++        # The teacher-forced CE supplies STOP/undo targets independently of
++        # the free decoder's eligibility (whose straight-through was retired).
++        assert generator_changed
++        assert any(row['present'] for row in model._last_decomposition_walk_teacher)
+         ids={id(p) for p in model.objective_parameter_groups(optimizer)['reconstruction']}
+         assert all(id(p) in ids for p in generator.parameters())
+     finally:
+diff --git a/test/test_negative_expectation.py b/test/test_negative_expectation.py
+index 001465e49..61507f7d1 100644
+--- a/test/test_negative_expectation.py
++++ b/test/test_negative_expectation.py
+@@ -138,6 +138,9 @@ def test_declared_not_is_a_thought_act_not_an_observation(tmp_path, monkeypatch)
+     discourse._last_expectation_comparisons[0] = ExpectationComparison(
+         estimate, actual.roles, actual.role_mask, actual.roles - estimate.roles,
+         actual.role_mask.float() - estimate.presence_logits.sigmoid(), None)
++    from Meaning import ClosingImage
++    model._closing_images = {0: ClosingImage.form(actual.roles,estimate.roles,
++        estimate.presence_logits.sigmoid(),form_width=0)}
+     evidence = model._selected_thought_expectation(request, row=0)
+     torch.testing.assert_close(evidence[:width], -request.roles[0])
+     store = TernaryTruthStore(width, capacity=4)
+diff --git a/test/test_one_attention.py b/test/test_one_attention.py
+index 5d5a666ca..5b7d0e6ee 100644
+--- a/test/test_one_attention.py
++++ b/test/test_one_attention.py
+@@ -350,7 +350,7 @@ def test_prior_thought_reserves_the_input_allowance():
+  assert model._pending_attention_meters[0].spent==max(pending.work,pending.walk.other.work)
+ 
+ 
+-def test_normal_input_costs_both_narrowing_walks_before_training(monkeypatch):
++def test_normal_input_stages_greedy_and_defers_comparison_to_sentence(monkeypatch):
+  from test_mm_xor import _fresh_model
+  import ModelAttention
+  model,_,_=_fresh_model(); model.train()
+@@ -363,11 +363,11 @@ def test_normal_input_costs_both_narrowing_walks_before_training(monkeypatch):
+  monkeypatch.setattr(ModelAttention,'narrow_words',traced)
+  value=model.inputSpace.prepInput(['hello world','hello there','loving world','loving there'])
+  model._lex_embed_stem(value)
+- assert calls==['greedy','explore'], calls
+- assert versions[0]==versions[1]
+- audit=model._last_attention_comparison
+- assert audit['costs'].shape==(4,2)
+- assert torch.equal(audit['wins'], (audit['departure']>=0)&(audit['costs'][:,1]<audit['costs'][:,0]))
++ assert calls==['greedy'], calls
++ assert model._attention_read is not None
++ assert model._attention_words is model._attention_greedy
++ assert not hasattr(model, '_attention_score_term')
++ assert not hasattr(model, '_last_attention_comparison')
+ 
+ 
+ def test_field_operation_changes_the_next_mask_and_children_read_native_poles():
+@@ -387,18 +387,11 @@ def test_field_operation_changes_the_next_mask_and_children_read_native_poles():
+     torch.testing.assert_close(result.values,torch.tensor([[[1.,0.],[0.,1.]]]))
+ 
+ 
+-def test_narrowing_reconstruction_cannot_erase_an_omitted_word_target():
+-    from types import SimpleNamespace
+-    from test_mm_xor import _fresh_model
+-    from ModelAttention import percept_reconstruction_score
+-    model,_,_=_fresh_model()
+-    keys=torch.eye(2)[None]
+-    score=percept_reconstruction_score(model,keys,[['alpha','beta']],
+-        torch.tensor([[0,1]]),torch.ones(1,2,dtype=torch.bool))
+-    complete=score(SimpleNamespace(values=keys))
+-    omitted=score(SimpleNamespace(values=keys*torch.tensor([[[1.],[0.]]])))
+-    assert omitted.item()>complete.item()
+-    assert not omitted.requires_grad
++def test_narrowing_selection_has_no_percept_stage_scorer():
++    import ModelAttention, WalkTrials
++    assert not hasattr(ModelAttention, 'percept_reconstruction_score')
++    assert not hasattr(WalkTrials, 'narrowing_pair')
++    assert not hasattr(WalkTrials, 'attention_score_function')
+ 
+ 
+ def test_divide_isolates_impure_first_word_and_reaches_pure_neighbors():
+diff --git a/test/test_operators_round1.py b/test/test_operators_round1.py
+index 460ac4819..87cb148d6 100644
+--- a/test/test_operators_round1.py
++++ b/test/test_operators_round1.py
+@@ -9,13 +9,11 @@ import torch
+ 
+ @pytest.mark.parametrize('advantage', [-2., 0., 3.])
+ def test_attention_score_function_has_greedy_baseline_and_uniform_counts(advantage):
+-    from WalkTrials import attention_score_function
++    from SentenceCredit import score_function
+     logits = torch.tensor([[.2, .6, -.1]], dtype=torch.float64, requires_grad=True)
+     probability = logits.softmax(-1)
+-    audit = dict(probabilities=probability[:, 1:2], scale=torch.tensor([[6]]),
+-        costs=torch.tensor([[4., 4.+advantage]]), departure=torch.tensor([0]),
+-        explore=torch.tensor([[1]]))
+-    loss, record = attention_score_function(audit)
++    loss, record = score_function(probability[:,1:2], torch.tensor([[6]]),
++        torch.tensor([[True]]), torch.tensor([[4.,4.+advantage]]))
+     assert record['advantage'].item() == advantage
+     if advantage == 0:
+         assert not loss.requires_grad and loss.item() == 0
+diff --git a/test/test_reconstruction_precedence.py b/test/test_reconstruction_precedence.py
+index e62eb5500..3b6f4c54d 100644
+--- a/test/test_reconstruction_precedence.py
++++ b/test/test_reconstruction_precedence.py
+@@ -1,9 +1,9 @@
+-"""Reconstruction has precedence in choosing between the two trials."""
++"""The owner-step total chooses between the two trials."""
+ import torch
+ import pytest
+ 
+ 
+-def test_only_strictly_lower_reconstruction_wins_and_tie_keeps_greedy():
++def test_only_strictly_lower_total_wins_and_tie_keeps_greedy():
+     from SentenceCompose import sentence_pair
+     active = torch.tensor([True, True, True])
+     r = [torch.tensor([1., 2., 3.]), torch.tensor([2., 1., 3.])]
+diff --git a/test/test_review14_contracts.py b/test/test_review14_contracts.py
+index ef9308515..797e01845 100644
+--- a/test/test_review14_contracts.py
++++ b/test/test_review14_contracts.py
+@@ -145,7 +145,7 @@ def test_review17_measurement_wiring_on_one_ordinary_batch(tmp_path):
+     from pathlib import Path
+     from bounded_tests import run_guarded, GIB
+     root=Path(__file__).resolve().parents[1]
+-    receipt=root/'doc/benchmarks/2026-10-05-operators-update'
++    receipt=root/'doc/benchmarks/2026-10-06-operators-round2'
+     prior=root/'doc/benchmarks/2026-10-03-operators-attention'
+     env=os.environ.copy()
+     env.update(PYTEST_PLUGINS='operators_gate_observer', MODEL_COMPILE='none',
+diff --git a/test/test_sentence_compose.py b/test/test_sentence_compose.py
+index d31085758..af09b82d9 100644
+--- a/test/test_sentence_compose.py
++++ b/test/test_sentence_compose.py
+@@ -83,6 +83,7 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch,
+     # Completion is a fixture for this causal mechanism test. Both winners
+     # must leave a real predecessor, regardless of the untrained chooser.
+     _select_completed_binary_path(model)
++    model.inputSpace.data.has_supervised_outputs = False
+     optimizer = model.getOptimizer(lr=1e-4)
+     import util
+     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+@@ -112,9 +113,9 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch,
+             disc = model.symbolSpace.expectation
+             assert tuple(tuple(row) for row in disc._inter_context_occurrences) == prior_context[0]
+         fixed = cost.new_tensor([1., 2.] if alternative else [2., 1.])
+-        # Fix only the reconstruction comparison, preserving the trained
+-        # registry entries and their live derivatives. The answer no longer
+-        # participates in the choice under §22.
++        # Fix the comparison's reconstruction component and zero its gated
++        # expectation view, preserving both owners' live training entries.
++        model._sentence_expectation_comparison = None
+         registry = model._sentence_cost_registry
+         original_total = registry.total
+         def fixed_total(*args, **kwargs):
+@@ -218,7 +219,9 @@ def test_disabled_sentence_prediction_leaves_adam_momentum_unused():
+     optimizer.step()
+     optimizer.zero_grad(set_to_none=True)
+     before = predictor.detach().clone()
+-    disc = SimpleNamespace(sentence_prediction_cost=lambda *a, **k:
++    from Layers import Error
++    disc = SimpleNamespace(_sentence_comparison_errors=Error(row_mask=torch.tensor([True])),
++        sentence_prediction_cost=lambda *a, **k:
+         (predictor.square().reshape(1), predictor.square().reshape(1), None))
+     observation = dict(observed_depths=[1], observed=[root],
+         mask=torch.tensor([True]), layout='stm', roles=None, meanings=[None])
+diff --git a/test/test_sentence_gradients.py b/test/test_sentence_gradients.py
+index 4627d9e35..ca195f3a9 100644
+--- a/test/test_sentence_gradients.py
++++ b/test/test_sentence_gradients.py
+@@ -11,6 +11,7 @@ def test_first_and_later_words_keep_the_same_grad_carry_contract(tmp_path, monke
+     model._chart_compose_per_word = lambda: None
+     # This checks the word brick's input contract. The existing compiled
+     # forward/interleave cases cover compilation and tied reconstruction.
++    model.inputSpace.data.has_supervised_outputs = False
+     model.reconstruct_in_loop = False
+     model.loss.reconstruction_scale = 0.
+     original = model._run_sentence_word_bricks
+diff --git a/todo.md b/todo.md
+index 4e51e372c..082808f99 100644
+--- a/todo.md
++++ b/todo.md
+@@ -17,11 +17,12 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
+ Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
+ lines below keep the numbers their items had when they landed.
+ 
+-**Current sequence (6.9 closed as the October 3 §25 baseline; Alec,
+-2026-10-03: "no conference freeze. We push through to item zero"):**
+-the grammatical operators update → 6.8 → 6.5 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0.
+-The word-level evaluator once pulled forward for the conference returns to
+-its place in items 4 and 6.8. Items 9 and 8 are implemented and
++**Next:** the [grammatical operators update](doc/plans/2026-10-05-operators-update.md), then **6.5**.
++
++**Current sequence (6.8 accepted on October 5; no conference freeze):**
++the grammatical operators update → 6.5 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0.
++The word-level evaluator built in 6.8 waits for item 4's trained checkpoint;
++acceptance does not authorize fresh-model bulk scoring. Items 9 and 8 are implemented and
+ reviewed; what remains of them is empirical and waits for the
+ million-sentence checkpoint that item 0's run provides, so they are not
+ in the implementation queue.
+@@ -71,8 +72,8 @@ generation is expected at this stage and is recorded, not tuned away.
+    causal result, and fused AMP conservatively undercounts exposure. Preserve the
+    tiny-run nulls, incomplete reverse programs and 5/56 wording failures as
+    development diagnostics ([original receipt](doc/benchmarks/2026-09-26-item9/README.md));
+-   old context-free and assertion-thought scores are invalid controls. Item 6.9 is
+-   the next implementation task while this empirical gate waits for training.
++   old context-free and assertion-thought scores are invalid controls. The grammatical operators
++   update is next while this empirical gate waits for training.
+ - **8. Evidence: learned utility and structural preference.** Prefer
+    understandable structural operators when they carry the meaning; any opaque
+    operator must be an ordinary grammar-MLP choice, with the structural face
+@@ -123,10 +124,28 @@ generation is expected at this stage and is recorded, not tuned away.
+    Alec, 2026-09-30: "equal comparison").
+    The unchanged depth-three campaign remains red; retain its assertion and
+    the XOR/MM evidence ([accepted landing](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).
+-- **The grammatical operators update** (not yet numbered. **Decided, Alec,
+-   2026-09-29:** after item 7 is accepted and before 6.8 (the conference
+-   freeze that once stood between was dropped on 2026-10-03): "let's iron out the operators after getting 7 accepted";
+-   later the same day, after item 6.9).
++- **The grammatical operators update** (not yet numbered; next after the
++   accepted 6.8 landing, then 6.5; Alec, 2026-10-05).
++   The [operators update plan](doc/plans/2026-10-05-operators-update.md) orders
++   the remaining catalogue and the work carried from the 6.8 rounds.
++   **Round 1 accepted (Alec, 2026-10-06; plan §5, §9.1):** class 8/10,
++   reconstruction 10/10, sum 10/10, MM_xor 9/10 shown trajectory-identical
++   to the landing (not a regression of the round). **The scheme confirmed
++   the same day** (plan §13; [Architecture](doc/Architecture.md#the-scheme-confirmed-2026-10-06-expectation-and-surprise-through-the-architecture)):
++   the centroid for symbols with has-a wholes weighted by their narrowing;
++   two hard derivations as expectation and surprise, credited at the choice
++   and, once the path is invertible, at every layer by inversion;
++   expectation and output as the criteria, reconstruction retiring to an
++   audit where the transformations are exact. Rounds (plan §9.5, §12.3):
++   **2 credit — implemented candidate, measurement/review pending**
++   ([receipt](doc/benchmarks/2026-10-06-operators-round2/README.md); no round-2 commit):
++   the owner-step trial cost, one departure over both walks,
++   the narrowed poles handed off, the §2.6.1 image at the closing — the
++   Codex text is plan §14. **3 identity** (pairs plus length as the parts,
++   the content width, the narrowing rule and the centroid), **4 meaning**
++   (membership as properties, co-activation through shared wholes, Kleene
++   connectives, expectation and targets by inversion), **5 attention** (the
++   filter with the factored cost), **6** the catalogue's remaining sections.
+    It carries into code what the
+    operator pass of 2026-09-27 to 09-29 decided in documents: `not` and `non`
+    over evidence poles, the conjunction's reading of poles, words as
+@@ -175,12 +194,13 @@ generation is expected at this stage and is recorded, not tuned away.
+    adverb cannot write on a dimension their operand is silent on. Open
+    there, for when the pass reaches them: `bind`, `expect` in place of
+    `arma`, and what says a sentence is absolute once `exist` is retired.
+-   **Standing gate (6.9 closing decision, October 3):** no regression
+-   against the [accepted 6.9 baseline](doc/benchmarks/2026-10-03-item6-9-closing/README.md);
+-   its class and reconstruction gates remain red. First add decoder exploration
+-   under [6.9 plan §26.3](doc/plans/2026-09-29-item-6-9-xor-grammar.md#263-for-the-catalog),
+-   then implement the remaining catalogue. No configuration is given
+-   more rows (decided, spec §17.7). A sentence that states a definition is
++   **Standing gate (accepted 6.8, October 5):** no regression against the
++   [§22 receipt](doc/benchmarks/2026-10-03-operators-attention/README.md):
++   class **7/10**, reconstruction **9/10**, joint **6/10**, MM_xor and sum
++   **10/10**, full sweep **4,917 passed / 0 failed**, zero sentence-path
++   gradient at perception and zero ownership conflicts. Decoder exploration
++   is implemented; the remaining work follows the operators update plan.
++   No configuration is given more rows (decided, spec §17.7). A sentence that states a definition is
+    an `equal` (Alec, 2026-09-29: "I guess we only need equal?"; catalogue
+    §6.3).
+    **Item-7 review residue** (two truths §21 and §23): the predicate identity
+@@ -190,126 +210,18 @@ generation is expected at this stage and is recorded, not tuned away.
+    outside the accepted item-7 repair.
+    Item 5 takes up the bias of forgetting by the kind of truth that Alec
+    proposed on 2026-09-29 (forgetting spec §4).
+-- **6.8. One attention: brackets, narrowing, and expectation at every bracket**
+-   ([plan](doc/plans/2026-09-27-item-6-8-one-attention.md); Alec, 2026-09-27;
+-   after 7.5 and 7, before 6.5; three non-blocking questions in plan §6).
+-   **October 5 §22 accepted landing:** the §16.3 candidate remains at
+-   `eb1fbefb`, tagged `6.8-s16.3-candidate`. Alec accepted the measured
+-   §17–§22 state and authorized its commit, push and parent submodule bump.
+-   One working tree.
+-   **Two declared changes:** admitted percept rows use a Gaussian row,
+-   unit-L2 normalization, then the [0,1] clamp. The two grammar fixtures have
+-   a declared capacity increase: **nDim 14 → 22**, content **6 → 14** after
+-   the eight address coordinates, in IS/PS/CS/WS. Concept rows stay **6 / 8**;
+-   MM_xor's configuration is unchanged. The byte-fallback initializer stays
+-   as §18. The §20 kernels still take magnitude from activation; the reader
+-   remains affine on the raw root. Attention credit stays detached at the
+-   sentence handoff; its estimator is the operators update's. The forward
+-   score-function K·R term, decomposition chooser, pair search and room rule
+-   are unchanged.
+-   **Green full sweep:** **5204 cases; 4917 passed,
+-   286 skipped, 1 non-strict XPASS,
+-   0 XFAIL, zero failed**, ten workers. Two assertions for
+-   the old six-coordinate content width were ported, with complete old/new
+-   bodies and failures saved; no runtime regression repair was needed.
+-   The final focused probe retained both affected files (21/21 passed).
+-   Seeds, bars, budgets, optimizers and guards are unchanged.
+-   **Once-only frozen campaign:** sum **10/10**, read first; XOR
+-   class **7/10**, reconstruction **9/10**,
+-   joint **6/10** from ten shared trainings; MM_xor **10/10**.
+-   Bands: **7 at 0, 2 at ¼, 1 between,
+-   0 above ¼**. No retries or tuning; Alec accepted the measured round.
+-   Exact form collisions occurred in **0/10** runs at start or end.
+-   Historical class/reconstruction/joint counts: §12 **0/7/0**, §13 **0/0/0**,
+-   §14 **1/8/1** (pre-addendum CS 262/264), §17 **1/10/1**, §18 **0/10/0**,
+-   §20 **2/8/2**; MM and sum were **10/10**. §§15–16.3 and §19 supplied no
+-   gate measurements. Accepted MSE **.114748**, reconstruction **0/4**, zero
+-   conflicts and prior **9/10 / 5/10** remain historical. The declared
+-   capacity difference and independent random runs preclude attributing a
+-   count change to one of this round's two changes.
+-   **Audits:** 1600 tenth-run sentence/step records,
+-   1600 departures, 80 nonzero advantages;
+-   K·R·ΔC·∇p error 1.86265e-09, finite-difference error
+-   1.02006e-09. Prototype/evidence sentence gradient
+-   maximum 0; ownership conflicts 0.
+-   The [receipt](doc/benchmarks/2026-10-03-operators-attention/README.md) retains
+-   starting form/root norms, named operators, per-word read-backs, geometry,
+-   exact collisions, support, d ranges, room, reader trajectories, decomposition
+-   weights/pick rates, decoder margins and kept paths. Empty same-context
+-   meanings correctly coincide. Complement bootstrap and the carried operators
+-   work remain deferred. Frozen evaluation admits nothing; the trained NanoChat
+-   gate waits for item 4. No fresh bulk scoring or native benchmark.
+-   **Accepted by Alec on October 5; commit, push and parent submodule bump authorized.**
+-   **Item-7 reading residue:** every read word currently runs the complete
+-   `interpret` unary under every binding. This forcing stays until reading
+-   mode decides when an object is interpreted; its removal is not part of
+-   item 7's accepted landing (two truths §15 and §18).
+-   **Taken up with this item (Alec, 2026-09-29):** a predefined word
+-   whole, "a cut of non-white space letters", so that a word has one whole
+-   that learning does not move and WholeSpace's cut agrees with the
+-   reader's ([plan §3a](doc/plans/2026-09-27-item-6-8-one-attention.md#3a-the-word-whole-alec-2026-09-29-taken-up-with-this-item)).
+-   "Waiting for 6.8 is fine, as long as it's written down." Its extent is a
+-   word by the common definition: "punctuation and digits also separate
+-   words". To settle there: the reader's rule, which does not separate at
+-   digits today, and what reads the runs of digits that the proofs of XOR
+-   are made of.
+-   The simplification: attention is one mechanism, a bracket over the input.
+-   Open awareness is the bracket set to the whole input, read by the field,
+-   whose only operations are the order-independent ones — and, or, not —
+-   because a pooled reading admits nothing else; that is the criterion for
+-   what belongs to the field. Everything order-dependent (lift, lower, verb,
+-   preposition) is the grammar and acts *between* brackets, over the
+-   sequence of readings that narrowing produces. Mode exclusion stops being
+-   a rule and becomes a theorem. The word loop is the narrowing schedule:
+-   the four corners give the reading policy already decided in pieces —
+-   true or false, move on; *both*, divide the bracket; *neither*, look
+-   closer, descend, mint if nothing is there — so serial reading is
+-   "narrow until each bracket's encoding is pure". A known word reads
+-   purely at its word bracket and narrowing stops; an unknown word reads
+-   neither and narrowing continues to bytes, where `interpret` mints; a
+-   known multi-word unit reads purely at the wider bracket and is glossed
+-   (speed reading that slows at novelty). Parallel-first falls out: the
+-   open read is the first bracket. **Expectation** (Alec: the mathematical
+-   sense; applied with the opposite sign so that surprise is what is
+-   processed; held for any subject of attention — past, current or future
+-   frames, a whole sentence, the next concept) becomes one mechanism at
+-   every bracket level — next byte in a word, next word in a sentence,
+-   next sentence in a document, next row in the chain — the same ARMA
+-   machinery, negative image and surprise column with the level as an
+-   argument, giving a training target at every bracket instead of one per
+-   sentence, and making the pilot's next-word gate this predictor at the
+-   word bracket rather than a separate scorer.
+-   **Landing 6.8-1 (the fast loop is kept):** the stop is pinned at
+-   words, so the compiled per-word step keeps its shape; narrowing and
+-   glossing enter as candidates in the 7.5 softmax (the same chooser and
+-   straight-through learning, no separate policy), which is why this
+-   follows 7.5; the closing's sentence-bracket row with its `.where`/`.when`
+-   is the terminal encoding, which is why it follows 7; 6.5 then adds
+-   identity binding as further candidates in the same softmax, which is
+-   why it precedes 6.5. Deletions, per the no-legacy rule: `modeSchedule`,
+-   `serial` as a mode (the bracket schedule replaces it), the
+-   subsymbolic-versus-symbolic loop distinction and the two order budgets
+-   (one narrowing budget replaces them), and the boundary-only sentence
+-   predictor as a separate object (expectation at every bracket replaces
+-   it). Exit: the XOR gate and exact-zero controls unchanged; the serial
+-   reconstruction baseline within the reviewed-9b tolerance; the
+-   word-level predictor scoring the frozen NanoChat item manifest; the
+-   both-rate and categorical-discrimination fields logged per level (item
+-   4); item 9's prediction gates re-declared at the word bracket. Costs to
+-   measure, not assume: the open pass against item 1's per-word baseline;
+-   the reliability of the field's *both* that the policy turns on.
+-   **6.8-2, after 6.8-1 (FutureWork):** the dynamic stop —
+-   glossing above the word bracket and descending below it only at
+-   novelty — decided against item 1's throughput baseline.
+-   **Conference sequencing (Alec, 2026-09-27), superseded 2026-10-03:**
+-   there is no conference freeze; 6.8 follows the operators update, and the
+-   word-level predictor is built in 6.8-1 as the first level of expectation
+-   (item 4 evaluates with it).
+-   *Architecture (Alec, 2026-09-28):* words are a formula for narrowing
+-   attention — the bracket narrows the input and the symbols on one shared
+-   budget, the words narrow the domain of discourse and keep it as Ground;
+-   two attentions, one chooser
+-   ([accessible mind §2.0.1](doc/specs/2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention)).
++   **Carried from 6.8:** the [FutureWork list](doc/FutureWork.md#carried-from-the-68-1315-rounds-2026-10-04)
++   and the [operators update plan](doc/plans/2026-10-05-operators-update.md)
++   retain the attention estimator, decomposition exact-fit precedence and
++   feature standardization, form fold, Kleene connectives, complement
++   bootstrap, `not` items, concept-face negative image and form density.
++   The [dynamic stop](doc/FutureWork.md#the-dynamic-stop-glossing-above-words-descending-at-novelty-item-68-2)
++   remains future work. Item 1 retains the open-read cost and teacher-loss
++   host island; item 4 retains the trained-checkpoint evaluator.
++   **Reading residue:** the forced `interpret` at each binding and the word
++   boundary's treatment of digits remain visible in the
++   [6.8 plan](doc/plans/2026-09-27-item-6-8-one-attention.md); reconciliation
++   belongs with the carried operators work, not a repeat of the accepted gate.
+ - **6.5. Independent components: identity as columns, verbs as change**
+    ([spec](doc/specs/2026-09-26-independent-components.md)), after item 7
+    (needs the closing writing every S as a row and §3.5's reference chain).
+@@ -534,6 +446,8 @@ Everything that is decided in direction but not on this path is in
+ 
+ ### Done (newest first)
+ 
++- `73cd7b71b` Operators round 1 accepted and pushed, with WikiOracle bumped at `c9670b5` ([receipt](doc/benchmarks/2026-10-05-operators-update/README.md)).
++- `42daf96f` Item 6.8 accepted: one attention, two spaces and one index; tag `6.8-landing`; class **7/10**, reconstruction **9/10**, joint **6/10**, MM_xor **10/10**, sum **10/10**, sweep **4,917 passed / 0 failed**, zero ownership conflicts ([receipt](doc/benchmarks/2026-10-03-operators-attention/README.md)); carried work: [FutureWork](doc/FutureWork.md#carried-from-the-68-1315-rounds-2026-10-04) and the [operators update plan](doc/plans/2026-10-05-operators-update.md).
+ - `bfe6a0d7` Item 6.9: the baseline of the composition mechanism (6.8 §12.1), one reconstruction/output decoder and one writer per weight; accepted class MSE .11475 and reconstruction 0/4 remain historical, with zero ownership conflicts ([closing receipt](doc/benchmarks/2026-10-03-item6-9-closing/README.md), [round history](doc/benchmarks/2026-10-03-item6-9-closing/todo-history.md)).
+ - `9810fc7` Item 7: two truths, indexed definitions, ended clause state and shared row-free predicates; accepted under review §25 after all three fixture ports and required checks ([landing receipt](doc/benchmarks/2026-09-30-item7-review-round5/landing/README.md)).
+ - `6906727` Item 7.5: one-operation exploit/explore derivations trained at each sentence closing, reduction pressure/deadlines and closing-gradient reporting; accepted with the unchanged depth-three campaign red ([receipt](doc/benchmarks/2026-09-27-item7-5-landing/README.md)).
+diff --git a/bin/SentenceCredit.py b/bin/SentenceCredit.py
+new file mode 100644
+index 000000000..ed51dc5cf
+--- /dev/null
++++ b/bin/SentenceCredit.py
+@@ -0,0 +1,78 @@
++"""Loss-side credit for one departure across the sentence's two walks."""
++import torch
++
++
++def expectation_terms(registry, pred, logits, kind_logit, target, occupied,
++                      kind, *, row, gain=1.):
++    """Gate each role's error, retaining the Error registry's baseline.
++
++    Gating the denominator too would cancel confidence. Prediction training
++    uses its separate, unchanged registry and detached observation targets.
++    """
++    import math
++    from torch.nn import functional as F
++    target = target.detach().to(pred)
++    gate = torch.as_tensor(gain, device=pred.device, dtype=pred.dtype) * logits.detach().sigmoid()
++    registry.error('roles', (pred-target).square()*gate[:,None], target.square(),
++                   row=row, category='expectation')
++    registry.error('presence', F.binary_cross_entropy_with_logits(logits,
++        occupied.to(logits), reduction='none')*gate, math.log(2), row=row, category='expectation')
++    if kind is not None:
++        error = F.binary_cross_entropy_with_logits(kind_logit,
++            kind_logit.new_tensor(float(kind == 'relation')), reduction='none')
++        registry.error('kind', error*gate.mean(), math.log(2), row=row, category='expectation')
++
++
++def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0):
++    """Uniform over eligible rounds; action sampling remains the chooser's."""
++    from WalkTrials import departure_at
++    if narrowing is None:
++        attention = compose.new_zeros(compose.shape[0], 0)
++    else:
++        attention = narrowing.alternatives.clone()
++        if sentence_ids is not None:
++            owners = sentence_ids.gather(1, narrowing.round_words.clamp_min(0))
++            attention &= (owners == sentence) & (narrowing.round_words >= 0)
++    eligible = torch.cat((attention, compose), -1) & active[:, None]
++    chosen = departure_at(eligible)
++    width = attention.shape[1]
++    at_attention = (chosen >= 0) & (chosen < width)
++    at_compose = chosen >= width
++    rounds = eligible.sum(-1)
++    return dict(round=chosen, rounds=rounds, narrowing=at_attention,
++        attention_round=torch.where(at_attention, chosen, -1),
++        compose_round=torch.where(at_compose, chosen-width, -1))
++
++
++def components(registry, expectation, like, *, answer=None):
++    """R and A use the training registry; E is its gated comparison view."""
++    def value(v):
++        return torch.zeros_like(like) if v is None else v.detach().expand_as(like)
++    return torch.stack((value(registry.total(objective='reconstruction')),
++        value(expectation), value(answer)), -1)
++
++
++def comparison(parts, active):
++    """Strict total keep plus the signed contributions which decided it."""
++    costs = parts.sum(-1).detach()
++    delta = parts[:, 1] - parts[:, 0]
++    wins = active & (costs[:, 1] < costs[:, 0])
++    direction = torch.sign(costs[:, 1]-costs[:, 0])
++    supports = delta * direction[:, None] > 0
++    names = ('reconstruction', 'expectation', 'answer')
++    deciding = [('+'.join(name for name, yes in zip(names, row) if yes)
++                 if sign else 'tie:greedy') for row, sign in
++                zip(supports.tolist(), direction.tolist())]
++    return dict(costs=costs, components=parts.detach(), delta=delta.detach(),
++                wins=wins, deciding=deciding)
++
++
++def score_function(probabilities, scale, mask, costs):
++    """The existing K R p(a) ΔC surrogate and exact-tie disconnection."""
++    advantage = (costs[:, 1]-costs[:, 0]).detach()
++    scale = scale.detach().to(probabilities)
++    trained = mask & advantage.ne(0)[:, None]
++    result = (torch.where(trained, probabilities * scale * advantage[:, None], 0.).sum(-1)
++              if bool(trained.any()) else probabilities.new_zeros(len(costs)))
++    return result, dict(costs=costs.detach(), advantage=advantage, mask=mask.detach(),
++                        probabilities=probabilities.detach(), scale=scale)
+diff --git a/test/test_operators_round2.py b/test/test_operators_round2.py
+new file mode 100644
+index 000000000..869501c39
+--- /dev/null
++++ b/test/test_operators_round2.py
+@@ -0,0 +1,165 @@
++"""Owner-step credit, detached evidence, and the closing's concept image."""
++from types import SimpleNamespace
++import pytest
++import torch
++
++
++def test_owner_total_strict_keep_and_supplied_answer_only():
++    from Layers import Error
++    from SentenceCredit import components, comparison
++    active=torch.tensor([True,True,True])
++    def trial(r,e,a=None):
++        registry=Error(row_mask=active)
++        registry.error('bytes',torch.tensor(r),1.,category='reconstruction')
++        if a is not None:
++            registry.error('answer',torch.tensor(a),1.,category='output')
++        return components(registry,torch.tensor(e),torch.zeros(3),answer=registry.total(objective='output'))
++    greedy=trial([1.,1.,1.],[0.,0.,0.],[1.,1.,1.])
++    explore=trial([1.,2.,1.],[0.,0.,0.],[1.,0.,0.])
++    audit=comparison(torch.stack((greedy,explore),1),active)
++    assert audit['wins'].tolist()==[False,False,True]
++    assert audit['deciding']==['tie:greedy','tie:greedy','answer']
++    assert trial([1.,1.,1.],[0.,0.,0.])[:,2].eq(0).all()
++
++
++def test_expectation_gate_does_not_cancel_against_its_baseline():
++    from Layers import Error
++    from SentenceCredit import expectation_terms
++    pred=torch.ones(3,2,requires_grad=True)
++    logits=torch.tensor([0.,0.,0.],requires_grad=True)
++    target=torch.full((3,2),2.,requires_grad=True)
++    values=[]
++    for gain in (0.,.5,1.):
++        registry=Error(row_mask=torch.tensor([True]))
++        expectation_terms(registry,pred,logits,torch.tensor(0.,requires_grad=True),
++            target,torch.ones(3),'idea',row=0,gain=gain)
++        values.append(registry.total())
++    assert values[0].item()==0
++    torch.testing.assert_close(values[1],values[2]/2)
++    values[2].sum().backward()
++    assert target.grad is None
++    assert pred.grad is not None and logits.grad is not None
++
++
++@pytest.mark.parametrize('walk',['narrowing','compose'])
++def test_one_uniform_departure_counts_both_walks_and_gradient(walk,monkeypatch):
++    import WalkTrials
++    from SentenceCredit import departure,score_function
++    attention=SimpleNamespace(alternatives=torch.tensor([[True,False,True]]),
++        round_words=torch.tensor([[0,0,1]]))
++    seen=[]
++    def choose(mask):
++        seen.append(mask)
++        return torch.tensor([2 if walk=='narrowing' else 4])
++    monkeypatch.setattr(WalkTrials,'departure_at',choose)
++    draw=departure(attention,torch.tensor([[False,True,True]]),active=torch.tensor([True]))
++    assert seen[0].tolist()==[[True,False,True,False,True,True]]
++    assert draw['rounds'].item()==4
++    assert draw['narrowing'].item()==(walk=='narrowing')
++    assert (draw['attention_round']>=0).sum()+(draw['compose_round']>=0).sum()==1
++    logits=torch.tensor([[.2,.8,-.3]],dtype=torch.float64,requires_grad=True)
++    def value(x):
++        return score_function(x.softmax(-1)[:,1:2],2*draw['rounds'][:,None],
++            torch.tensor([[True]]),torch.tensor([[3.,1.]]))[0].sum()
++    gradient,=torch.autograd.grad(value(logits),logits)
++    for column in range(3):
++        plus,minus=logits.detach().clone(),logits.detach().clone()
++        plus[0,column]+=1e-5;minus[0,column]-=1e-5
++        torch.testing.assert_close(gradient[0,column],(value(plus)-value(minus))/2e-5)
++
++
++def field_read(op):
++    from Attention import narrow_words
++    calls=0
++    def choose(keys,legal,space,**kwargs):
++        nonlocal calls
++        selected=torch.tensor([op]) if calls==0 else legal.flatten(1).long().argmax(-1)
++        calls+=1
++        return selected,keys.new_ones(1),legal.flatten(1).sum(-1)>1,dict(
++            probability=keys.new_ones(1),alternative_count=(legal.flatten(1).sum(-1)-1).clamp_min(0))
++    return narrow_words(SimpleNamespace(attention_operations=tuple(range(6)),attend=choose),
++        torch.eye(2)[None],torch.tensor([[[0,1],[2,3]]]),torch.ones(1,2,dtype=torch.bool),
++        poles=torch.tensor([[[1.,0.],[0.,1.]]]),budget=8)
++
++
++@pytest.mark.parametrize('op,pair',[(3,[0.,1.]),(4,[1.,0.]),(5,[1.,1.])])
++def test_field_pair_survives_bracket_split(op,pair):
++    reading=field_read(op)
++    assert reading.pole_changes.all()
++    torch.testing.assert_close(reading.poles,torch.tensor([[pair,pair]]))
++    # Field connectives do not hand off their transformed key values.
++    torch.testing.assert_close(reading.values,torch.eye(2)[None])
++
++
++@pytest.mark.parametrize('observed,estimate,presence,mask,expected',[
++    (2.,2.,1.,0.,0.),(3.,2.,1.,0.,1.),(2.,2.,0.,0.,2.),
++    (0.,2.,1.,0.,-2.),(0.,2.,0.,0.,0.),(2.,2.,1.,1.,2.)])
++def test_closing_image_six_rows_and_exact_restoration(observed,estimate,presence,mask,expected):
++    from Meaning import ClosingImage
++    o=torch.tensor([[8.,observed,4.]]).expand(3,-1).clone().requires_grad_()
++    e=torch.tensor([[16.,estimate,8.]]).expand(3,-1).clone().requires_grad_()
++    image=ClosingImage.form(o,e,torch.full((3,),presence),object_mask=torch.full((3,),mask),
++        form_width=1,content_width=2)
++    torch.testing.assert_close(image.conceived[:,1],torch.full((3,),expected))
++    torch.testing.assert_close(image.conceived[:,[0,2]],o[:,[0,2]],rtol=0,atol=0)
++    torch.testing.assert_close(image.restore(),o,rtol=0,atol=0)
++    assert not image.conceived.requires_grad and not image.image.requires_grad
++
++
++def test_zero_complement_is_identically_zero_at_every_gain():
++    from Meaning import ClosingImage
++    o=torch.arange(18.).reshape(3,6)
++    for gain in (0.,.5,1.):
++        image=ClosingImage.form(o,o+1,torch.ones(3),form_width=4,content_width=4,gain=gain)
++        assert image.concept_width==0 and image.image.eq(0).all()
++        torch.testing.assert_close(image.conceived,o,rtol=0,atol=0)
++
++
++def test_not_handoff_changes_leaf_closing_and_trial_cost(monkeypatch):
++    from dataclasses import replace
++    from Models import BasicModel
++    from test_selected_nested_meaning import _nested
++    from reading_fixtures import finish_reading
++    _,registry,language,entry,_=_nested(monkeypatch)
++    code=entry.leaves[:1]
++    leaf=replace(entry,rows=entry.rows[:1],word_rows=entry.word_rows[:1],
++        activations=torch.ones(1),leaves=code,concept_ids=torch.tensor([1]),
++        lexical_forms=(None,),actions=torch.tensor([[0,-1,0]]),targets=torch.tensor([-1]),
++        end_state=torch.cat((code,torch.zeros_like(entry.end_state[1:]))))
++    event=code[None].requires_grad_()
++    payload=(event,torch.zeros(1,1),torch.zeros(1,dtype=torch.long),torch.ones(1,1),
++        torch.zeros(1,dtype=torch.long),torch.zeros(1,dtype=torch.long),code,
++        torch.ones(1,1,dtype=torch.bool),torch.ones(1,1,dtype=torch.bool),None,None)
++    reading=SimpleNamespace(accepted=torch.ones(1,1,dtype=torch.bool),
++                            pole_changes=torch.ones(1,1,dtype=torch.bool))
++    model=SimpleNamespace(_attention_words=reading,_attention_poles=torch.tensor([[[1.,0.]]]))
++    greedy=BasicModel._attention_sentence_payload(model,payload,torch.tensor(0))
++    model._attention_poles=model._attention_poles.flip(-1)
++    explore=BasicModel._attention_sentence_payload(model,payload,torch.tensor(0))
++    torch.testing.assert_close(explore[0],-greedy[0])
++    assert explore[3].item()==-1 and greedy[3].item()==1
++    positive=finish_reading(language,replace(leaf,leaf_evidence=torch.tensor([[1.,0.]])),registry=registry)
++    negative=finish_reading(language,replace(leaf,leaves=-code,leaf_evidence=torch.tensor([[0.,1.]])),registry=registry)
++    assert positive.meaning.polarity and not negative.meaning.polarity
++    target=greedy[0].detach()
++    assert (explore[0].detach()-target).square().sum() > (greedy[0].detach()-target).square().sum()
++
++
++def test_presented_answer_uses_committed_root_and_keeps_reader_cut():
++    from Models import BasicModel
++    from SentenceCompose import sentence_pair
++    from test_supplied_answer_training import _sentence
++    model,state,_=_sentence(True)
++    root=state[1][9][:,0]
++    greedy=(root,torch.cat((root[:,None],torch.zeros(2,2,2)),1),torch.ones(2,dtype=torch.long))
++    explore=(root+7,torch.cat(((root+7)[:,None],torch.zeros(2,2,2)),1),greedy[2])
++    active=torch.ones(2,dtype=torch.bool)
++    def score(path,alternative):
++        return torch.tensor([0.,1.] if alternative else [1.,0.]),path
++    kept,_,wins=sentence_pair(None,lambda _,prior:greedy if prior is None else explore,
++        score,lambda _:None,active=active)
++    answer=BasicModel._forward_head(model,None,sentence_state=kept).materialize()
++    expected=torch.stack((explore[0][0].sum(),greedy[0][1].sum()))[:,None]
++    torch.testing.assert_close(answer,expected)
++    assert wins.tolist()==[True,False]
++    assert torch.autograd.grad(answer.sum(),root,allow_unused=True)[0] is None

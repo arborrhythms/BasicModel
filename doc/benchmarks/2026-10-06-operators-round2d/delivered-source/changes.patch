@@ -1,0 +1,226 @@
+--- round2c/bin/Models.py
++++ round2d/bin/Models.py
+@@ -19705,7 +19705,7 @@
+         probabilities = path[1][27].exp()
+         scale = getattr(self, "_compose_sampling_scale", None)
+         if scale is None:
+-            raise RuntimeError("compose surrogate requires the sampled K*R counts")
++            raise RuntimeError("compose surrogate requires the sampled proposal correction")
+         scale = scale.detach().to(probabilities)
+         actions = path[1][18].detach()
+         walks = torch.ones_like(actions)
+@@ -19716,7 +19716,8 @@
+                               == draw['attention_round'][:,None])
+             mask = torch.cat((attention_mask,mask),-1)
+             probabilities = torch.cat((reading.probabilities,probabilities),-1)
+-            scale = torch.cat((reading.alternative_counts * draw['rounds'][:,None],scale),-1)
++            scale = torch.cat((reading.alternative_counts *
++                (draw['walk_count'] * draw['walk_rounds'])[:,None],scale),-1)
+             actions = torch.cat((reading.actions.detach(),actions),-1)
+             walks = torch.cat((torch.zeros_like(reading.actions),walks),-1)
+         from SentenceCredit import score_function
+@@ -20519,7 +20520,8 @@
+                     # A narrowing departure changes its full continuation. Only
+                     # rows departing in compose replay the old compose prefix.
+                     self._compose_prefix_slots &= ~draw['narrowing'][:,None]
+-                    self._compose_sampling_scale = trace._choice_alternative_counts * draw['rounds'][:,None]
++                    self._compose_sampling_scale = trace._choice_alternative_counts * (
++                        draw['walk_count'] * draw['walk_rounds'])[:,None]
+                     if greedy_attention is not None and bool(draw['narrowing'].any()):
+                         reading = self._attention_read(exploit=greedy_attention,
+                             departure=draw['attention_round'],sentence=sid,spent_override=attention_spent)
+--- round2c/bin/SentenceCredit.py
++++ round2d/bin/SentenceCredit.py
+@@ -24,7 +24,7 @@
+ 
+ 
+ def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0):
+-    """Uniform over eligible rounds; action sampling remains the chooser's."""
++    """Uniform walk, then uniform eligible round; the chooser draws the action."""
+     from WalkTrials import departure_at
+     if narrowing is None:
+         attention = compose.new_zeros(compose.shape[0], 0)
+@@ -33,13 +33,21 @@
+         if sentence_ids is not None:
+             owners = sentence_ids.gather(1, narrowing.round_words.clamp_min(0))
+             attention &= (owners == sentence) & (narrowing.round_words >= 0)
+-    eligible = torch.cat((attention, compose), -1) & active[:, None]
+-    chosen = departure_at(eligible)
++    counts = torch.stack((attention.sum(-1), compose.sum(-1)), -1) * active[:, None]
++    available = counts > 0
++    walk = departure_at(available)
++    walk_count = available.sum(-1)
++    walk_rounds = torch.where(walk >= 0,
++        counts.gather(1, walk.clamp_min(0)[:, None]).squeeze(1), 0)
++    eligible = torch.cat((attention & (walk == 0)[:, None],
++                          compose & (walk == 1)[:, None]), -1)
++    chosen = (departure_at(eligible) if eligible.shape[1] else
++              torch.full_like(walk, -1))
+     width = attention.shape[1]
+     at_attention = (chosen >= 0) & (chosen < width)
+     at_compose = chosen >= width
+-    rounds = eligible.sum(-1)
+-    return dict(round=chosen, rounds=rounds, narrowing=at_attention,
++    return dict(round=chosen, rounds=counts.sum(-1), walk=walk,
++        walk_count=walk_count, walk_rounds=walk_rounds, narrowing=at_attention,
+         attention_round=torch.where(at_attention, chosen, -1),
+         compose_round=torch.where(at_compose, chosen-width, -1))
+ 
+@@ -77,7 +85,7 @@
+ 
+ 
+ def score_function(probabilities, scale, mask, costs):
+-    """The existing K R p(a) ΔC surrogate and exact-tie disconnection."""
++    """The proposal-corrected p(a) ΔC surrogate and exact-tie disconnection."""
+     advantage = (costs[:, 1]-costs[:, 0]).detach()
+     scale = scale.detach().to(probabilities)
+     trained = mask & advantage.ne(0)[:, None]
+--- round2c/test/test_operators_round2.py
++++ round2d/test/test_operators_round2.py
+@@ -45,7 +45,7 @@
+ 
+ 
+ @pytest.mark.parametrize('walk',['narrowing','compose'])
+-def test_one_uniform_departure_counts_both_walks_and_gradient(walk,monkeypatch):
++def test_walk_first_departure_counts_and_gradient(walk,monkeypatch):
+     import WalkTrials
+     from SentenceCredit import departure,score_function
+     attention=SimpleNamespace(alternatives=torch.tensor([[True,False,True]]),
+@@ -53,18 +53,30 @@
+     seen=[]
+     def choose(mask):
+         seen.append(mask)
++        if len(seen)==1:return torch.tensor([0 if walk=='narrowing' else 1])
+         return torch.tensor([2 if walk=='narrowing' else 4])
+     monkeypatch.setattr(WalkTrials,'departure_at',choose)
+-    draw=departure(attention,torch.tensor([[False,True,True]]),active=torch.tensor([True]))
+-    assert seen[0].tolist()==[[True,False,True,False,True,True]]
+-    assert draw['rounds'].item()==4
++    draw=departure(attention,torch.tensor([[False,True,True,True]]),active=torch.tensor([True]))
++    assert seen[0].tolist()==[[True,True]]
++    assert seen[1].tolist()==([[True,False,True,False,False,False,False]] if walk=='narrowing'
++                             else [[False,False,False,False,True,True,True]])
++    assert draw['rounds'].item()==5
++    assert draw['walk_count'].item()==2
++    assert draw['walk_rounds'].item()==(2 if walk=='narrowing' else 3)
++    assert draw['walk'].item()==(0 if walk=='narrowing' else 1)
+     assert draw['narrowing'].item()==(walk=='narrowing')
+     assert (draw['attention_round']>=0).sum()+(draw['compose_round']>=0).sum()==1
+     logits=torch.tensor([[.2,.8,-.3]],dtype=torch.float64,requires_grad=True)
+     def value(x):
+-        return score_function(x.softmax(-1)[:,1:2],2*draw['rounds'][:,None],
++        return score_function(x.softmax(-1)[:,1:2],
++            2*(draw['walk_count']*draw['walk_rounds'])[:,None],
+             torch.tensor([[True]]),torch.tensor([[3.,1.]]))[0].sum()
+     gradient,=torch.autograd.grad(value(logits),logits)
++    probability=logits.detach().softmax(-1)
++    expected=-probability*probability[:,1:2]
++    expected[:,1]+=probability[:,1]
++    expected*=2*draw['walk_count']*draw['walk_rounds']*(-2)
++    torch.testing.assert_close(gradient,expected)
+     for column in range(3):
+         plus,minus=logits.detach().clone(),logits.detach().clone()
+         plus[0,column]+=1e-5;minus[0,column]-=1e-5
+--- round2c/test/test_operators_round2c.py
++++ round2d/test/test_operators_round2c.py
+@@ -38,6 +38,8 @@
+             chosen=compose.long().argmax(-1)
+             draw.update(round=chosen+narrowing.alternatives.shape[1],narrowing=torch.zeros_like(draw['narrowing']),
+                         attention_round=torch.full_like(chosen,-1),compose_round=chosen)
++        draw['walk']=torch.full_like(draw['round'],0 if walk=='narrowing' else 1)
++        draw['walk_rounds']=(narrowing.alternatives if walk=='narrowing' else compose).sum(-1)
+         return draw
+     def attend(module,keys,legal,space,**kwargs):
+         available=legal.flatten(1)
+--- round2c/test/test_operators_round2d.py
++++ round2d/test/test_operators_round2d.py
+@@ -0,0 +1,78 @@
++"""Walk-first proposals and their inverse-probability correction."""
++from types import SimpleNamespace
++import torch
++
++
++def test_walk_probability_does_not_depend_on_its_number_of_rounds(monkeypatch):
++    from SentenceCredit import departure
++    count=60
++    # Midpoints cover each proposal interval exactly, without a seed or a
++    # statistical tolerance: two narrowing rounds versus three compose rounds.
++    draws=iter(((torch.arange(count)+.5)/count,
++                (torch.arange(count).remainder(30)+.5)/30))
++    monkeypatch.setattr(torch,'rand',lambda *args,**kwargs:next(draws))
++    reading=SimpleNamespace(alternatives=torch.tensor([[True,False,True]]).expand(count,-1))
++    draw=departure(reading,torch.tensor([[True,True,True]]).expand(count,-1),
++                   active=torch.ones(count,dtype=torch.bool))
++    assert torch.bincount(draw['walk']).tolist()==[30,30]
++    assert torch.bincount(draw['attention_round'][draw['narrowing']],minlength=3).tolist()==[15,0,15]
++    assert torch.bincount(draw['compose_round'][~draw['narrowing']],minlength=3).tolist()==[10,10,10]
++    assert draw['walk_count'].eq(2).all()
++    assert draw['walk_rounds'][draw['narrowing']].eq(2).all()
++    assert draw['walk_rounds'][~draw['narrowing']].eq(3).all()
++
++
++def test_eligible_walks_respect_sentence_and_active_rows(monkeypatch):
++    from SentenceCredit import departure
++    monkeypatch.setattr(torch,'rand',lambda n,**kwargs:torch.full((n,),.75))
++    reading=SimpleNamespace(alternatives=torch.tensor([
++        [True,True,True], [False,False,False], [False,True,True], [True,True,True]]),
++        round_words=torch.tensor([[0,1,-1]]).expand(4,-1))
++    draw=departure(reading,torch.tensor([[False,False],[True,True],[False,False],[True,True]]),
++        active=torch.tensor([True,True,True,False]),
++        sentence_ids=torch.tensor([[0,1]]).expand(4,-1),sentence=0)
++    assert draw['walk'].tolist()==[0,1,-1,-1]
++    assert draw['walk_count'].tolist()==[1,1,0,0]
++    assert draw['walk_rounds'].tolist()==[1,2,0,0]
++    assert draw['attention_round'].tolist()==[0,-1,-1,-1]
++    assert draw['compose_round'].tolist()==[-1,1,-1,-1]
++    assert draw['rounds'].tolist()==[1,2,0,0]
++
++
++def test_compose_only_and_no_eligible_rounds(monkeypatch):
++    from SentenceCredit import departure
++    monkeypatch.setattr(torch,'rand',lambda n,**kwargs:torch.full((n,),.75))
++    draw=departure(None,torch.tensor([[True,False,True],[False,False,False]]),
++                   active=torch.tensor([True,True]))
++    assert draw['walk'].tolist()==[1,-1]
++    assert draw['walk_count'].tolist()==[1,0]
++    assert draw['walk_rounds'].tolist()==[2,0]
++    assert draw['compose_round'].tolist()==[2,-1]
++    empty=departure(None,torch.zeros(2,0,dtype=torch.bool),active=torch.tensor([True,False]))
++    assert empty['round'].tolist()==[-1,-1]
++    assert empty['walk_count'].eq(0).all() and empty['walk_rounds'].eq(0).all()
++
++
++def test_enumerated_proposals_equal_the_full_score_function_gradient():
++    from SentenceCredit import score_function
++    logits=torch.tensor([[.3,-.5,.7],[.2,.8,-.4],[-.6,.1,.9]],dtype=torch.float64,requires_grad=True)
++    # Two rounds in narrowing; one in compose. The alternatives have K=1,2,2.
++    alternatives=((1,), (0,2), (0,1))
++    round_counts=(2,2,1)
++    costs=logits.new_tensor([[4.,1.,3.],[2.,4.,.5],[.8,2.5,4.]])
++    baseline=4.
++    expected=logits.new_zeros(())
++    estimated=logits.new_zeros(())
++    probabilities=logits.softmax(-1)
++    for row,(eligible,rounds) in enumerate(zip(alternatives,round_counts,strict=True)):
++        for action in eligible:
++            probability=probabilities[row,action].reshape(1,1)
++            expected=expected+probability.squeeze()*(costs[row,action]-baseline)
++            scale=2*rounds*len(eligible)
++            trial=score_function(probability,torch.tensor([[scale]]),torch.tensor([[True]]),
++                torch.stack((logits.new_tensor(baseline),costs[row,action])).reshape(1,2))[0].sum()
++            estimated=estimated+trial/scale
++    torch.testing.assert_close(estimated,expected,rtol=0,atol=1e-15)
++    actual,=torch.autograd.grad(estimated,logits,retain_graph=True)
++    analytic,=torch.autograd.grad(expected,logits)
++    torch.testing.assert_close(actual,analytic,rtol=0,atol=1e-15)
+--- round2c/test/test_review14_contracts.py
++++ round2d/test/test_review14_contracts.py
+@@ -145,7 +145,7 @@
+     from pathlib import Path
+     from bounded_tests import run_guarded, GIB
+     root=Path(__file__).resolve().parents[1]
+-    receipt=root/'doc/benchmarks/2026-10-06-operators-round2c'
++    receipt=root/'doc/benchmarks/2026-10-06-operators-round2d'
+     prior=root/'doc/benchmarks/2026-10-03-operators-attention'
+     env=os.environ.copy()
+     env.update(PYTEST_PLUGINS='operators_gate_observer', MODEL_COMPILE='none',

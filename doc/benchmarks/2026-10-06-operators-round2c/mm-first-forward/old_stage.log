@@ -1,0 +1,27 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/mm_first_forward.py", line 83, in <module>
+    if len(sys.argv)>1:child(sys.argv[2])
+                       ^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/mm_first_forward.py", line 58, in child
+    _,_,value,_=model.forward(inp)
+                ^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/mm-first-forward/round2-source/bin/Models.py", line 153, in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/mm-first-forward/round2-source/bin/Models.py", line 8315, in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/mm-first-forward/round2-source/bin/Models.py", line 23370, in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/mm-first-forward/round2-source/bin/Models.py", line 13245, in _lex_embed_stem
+    handoff(self,attention)
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/mm-first-forward/round2-source/bin/ModelAttention.py", line 233, in handoff
+    model._attention_poles=torch.where(reading.pole_changes[...,None],reading.poles,native).detach()
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py", line 122, in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: The size of tensor a (2) must match the size of tensor b (8) at non-singleton dimension 1

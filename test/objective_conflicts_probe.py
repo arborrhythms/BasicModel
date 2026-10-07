@@ -607,7 +607,7 @@ class Probe:
     def metadata(self,model):
         write('weights.json',dict(configuration=args.config, contract='§15: one objective writer per parameter',
             terms=model.errors.breakdown(), trial_terms=getattr(model, '_sentence_cost_registry', Layers.Error()).breakdown(),
-            trial_selection='explore R < greedy R; ties keep greedy; reader trains only kept rows',
+            trial_selection='explore R < greedy R; ties keep greedy; answer comparison counts both trials; one reader step: mean compose roots, kept root for narrowing; SCG credits total R+E+A',
             normalizers='Error registry: squared error / detached target energy; CE / log K; penalties separate',
             regularizers='Own strengths; concept_readout_l1 is a detached report of the proximal step',
             training_batches=self.training_batches,evaluation_batches=self.evaluation_batches))

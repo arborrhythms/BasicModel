@@ -1,0 +1,2198 @@
+{
+  "sum": {
+    "walks": {
+      "narrowing": {
+        "records": 16000,
+        "nonzero": 0,
+        "analytic_records": 16000,
+        "finite_difference_records": 16000,
+        "maximum_gradient_error": 0.0,
+        "maximum_finite_difference_error": 0.0
+      }
+    },
+    "proposals": [
+      {
+        "walk": "narrowing",
+        "W": 1,
+        "R_walk": 3,
+        "K": 1,
+        "count": 31
+      },
+      {
+        "walk": "narrowing",
+        "W": 1,
+        "R_walk": 2,
+        "K": 2,
+        "count": 7920
+      },
+      {
+        "walk": "narrowing",
+        "W": 1,
+        "R_walk": 2,
+        "K": 1,
+        "count": 8040
+      },
+      {
+        "walk": "narrowing",
+        "W": 1,
+        "R_walk": 3,
+        "K": 2,
+        "count": 9
+      }
+    ],
+    "runs": [
+      {
+        "run": 1,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": false,
+        "initial_operators": null,
+        "all_conjunction_from_epoch": null
+      },
+      {
+        "run": 2,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": false,
+        "initial_operators": null,
+        "all_conjunction_from_epoch": null
+      },
+      {
+        "run": 3,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": false,
+        "initial_operators": null,
+        "all_conjunction_from_epoch": null
+      },
+      {
+        "run": 4,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": false,
+        "initial_operators": null,
+        "all_conjunction_from_epoch": null
+      },
+      {
+        "run": 5,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": false,
+        "initial_operators": null,
+        "all_conjunction_from_epoch": null
+      },
+      {
+        "run": 6,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": false,
+        "initial_operators": null,
+        "all_conjunction_from_epoch": null
+      },
+      {
+        "run": 7,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": false,
+        "initial_operators": null,
+        "all_conjunction_from_epoch": null
+      },
+      {
+        "run": 8,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": false,
+        "initial_operators": null,
+        "all_conjunction_from_epoch": null
+      },
+      {
+        "run": 9,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": false,
+        "initial_operators": null,
+        "all_conjunction_from_epoch": null
+      },
+      {
+        "run": 10,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": false,
+        "initial_operators": null,
+        "all_conjunction_from_epoch": null
+      }
+    ]
+  },
+  "xor": {
+    "walks": {
+      "narrowing": {
+        "records": 7926,
+        "nonzero": 0,
+        "analytic_records": 7926,
+        "finite_difference_records": 7926,
+        "maximum_gradient_error": 0.0,
+        "maximum_finite_difference_error": 0.0
+      },
+      "compose": {
+        "records": 8074,
+        "nonzero": 8074,
+        "analytic_records": 8074,
+        "finite_difference_records": 8074,
+        "maximum_gradient_error": 2.2351741790771484e-08,
+        "maximum_finite_difference_error": 1.2667210322336864e-08
+      }
+    },
+    "proposals": [
+      {
+        "walk": "narrowing",
+        "W": 2,
+        "R_walk": 3,
+        "K": 1,
+        "count": 14
+      },
+      {
+        "walk": "compose",
+        "W": 2,
+        "R_walk": 1,
+        "K": 1,
+        "count": 8074
+      },
+      {
+        "walk": "narrowing",
+        "W": 2,
+        "R_walk": 3,
+        "K": 3,
+        "count": 4
+      },
+      {
+        "walk": "narrowing",
+        "W": 2,
+        "R_walk": 2,
+        "K": 1,
+        "count": 3974
+      },
+      {
+        "walk": "narrowing",
+        "W": 2,
+        "R_walk": 2,
+        "K": 3,
+        "count": 3934
+      }
+    ],
+    "runs": [
+      {
+        "run": 1,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": true,
+        "initial_operators": [
+          [
+            "conjunction"
+          ],
+          [
+            "disjunction"
+          ],
+          [
+            "conjunction"
+          ],
+          [
+            "disjunction"
+          ]
+        ],
+        "all_conjunction_from_epoch": 15
+      },
+      {
+        "run": 2,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": true,
+        "initial_operators": [
+          [
+            "disjunction"
+          ],
+          [
+            "disjunction"
+          ],
+          [
+            "disjunction"
+          ],
+          [
+            "disjunction"
+          ]
+        ],
+        "all_conjunction_from_epoch": 49
+      },
+      {
+        "run": 3,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": true,
+        "initial_operators": [
+          [
+            "conjunction"
+          ],
+          [
+            "conjunction"
+          ],
+          [
+            "conjunction"
+          ],
+          [
+            "conjunction"
+          ]
+        ],
+        "all_conjunction_from_epoch": 1
+      },
+      {
+        "run": 4,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": true,
+        "initial_operators": [
+          [
+            "disjunction"
+          ],
+          [
+            "disjunction"
+          ],
+          [
+            "disjunction"
+          ],
+          [
+            "conjunction"
+          ]
+        ],
+        "all_conjunction_from_epoch": 14
+      },
+      {
+        "run": 5,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": true,
+        "initial_operators": [
+          [
+            "disjunction"
+          ],
+          [
+            "disjunction"
+          ],
+          [
+            "disjunction"
+          ],
+          [
+            "disjunction"
+          ]
+        ],
+        "all_conjunction_from_epoch": 18
+      },
+      {
+        "run": 6,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": true,
+        "initial_operators": [
+          [
+            "disjunction"
+          ],
+          [
+            "disjunction"
+          ],
+          [
+            "disjunction"
+          ],
+          [
+            "disjunction"
+          ]
+        ],
+        "all_conjunction_from_epoch": 140
+      },
+      {
+        "run": 7,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": true,
+        "initial_operators": [
+          [
+            "conjunction"
+          ],
+          [
+            "conjunction"
+          ],
+          [
+            "conjunction"
+          ],
+          [
+            "conjunction"
+          ]
+        ],
+        "all_conjunction_from_epoch": 1
+      },
+      {
+        "run": 8,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": true,
+        "initial_operators": [
+          [
+            "conjunction"
+          ],
+          [
+            "conjunction"
+          ],
+          [
+            "conjunction"
+          ],
+          [
+            "conjunction"
+          ]
+        ],
+        "all_conjunction_from_epoch": 1
+      },
+      {
+        "run": 9,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4006,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": true,
+        "initial_operators": [
+          [
+            "disjunction"
+          ],
+          [
+            "disjunction"
+          ],
+          [
+            "disjunction"
+          ],
+          [
+            "disjunction"
+          ]
+        ],
+        "all_conjunction_from_epoch": 33
+      },
+      {
+        "run": 10,
+        "reader_updates": 400,
+        "reader_adam_steps": 400,
+        "pole_consumers": {
+          "_attention_sentence_payload": 3606,
+          "_pushed_word_slab:poles": 0,
+          "commit_word_reference_slab:per_word": 4007,
+          "commit_word_reference_slab:whole_slab": 401
+        },
+        "containment": {
+          "start": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 12,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "end": [
+            {
+              "order": 0,
+              "rows": 0,
+              "postings": 0,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            },
+            {
+              "order": 0,
+              "rows": 4,
+              "postings": 4,
+              "self_pairs": false,
+              "before": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              },
+              "after": {
+                "pairs": 0,
+                "violating_pairs": 0,
+                "coordinates": 0,
+                "largest": 0.0
+              }
+            }
+          ],
+          "largest": 0.0
+        },
+        "compose_logits_moved": true,
+        "initial_operators": [
+          [
+            "conjunction"
+          ],
+          [
+            "conjunction"
+          ],
+          [
+            "conjunction"
+          ],
+          [
+            "conjunction"
+          ]
+        ],
+        "all_conjunction_from_epoch": 1
+      }
+    ]
+  },
+  "mm": [
+    {
+      "run": 1,
+      "pole_consumers": {
+        "_attention_sentence_payload": 0,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 0,
+        "commit_word_reference_slab:whole_slab": 0
+      },
+      "owner_step_comparisons": 0
+    },
+    {
+      "run": 2,
+      "pole_consumers": {
+        "_attention_sentence_payload": 0,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 0,
+        "commit_word_reference_slab:whole_slab": 0
+      },
+      "owner_step_comparisons": 0
+    },
+    {
+      "run": 3,
+      "pole_consumers": {
+        "_attention_sentence_payload": 0,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 0,
+        "commit_word_reference_slab:whole_slab": 0
+      },
+      "owner_step_comparisons": 0
+    },
+    {
+      "run": 4,
+      "pole_consumers": {
+        "_attention_sentence_payload": 0,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 0,
+        "commit_word_reference_slab:whole_slab": 0
+      },
+      "owner_step_comparisons": 0
+    },
+    {
+      "run": 5,
+      "pole_consumers": {
+        "_attention_sentence_payload": 0,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 0,
+        "commit_word_reference_slab:whole_slab": 0
+      },
+      "owner_step_comparisons": 0
+    },
+    {
+      "run": 6,
+      "pole_consumers": {
+        "_attention_sentence_payload": 0,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 0,
+        "commit_word_reference_slab:whole_slab": 0
+      },
+      "owner_step_comparisons": 0
+    },
+    {
+      "run": 7,
+      "pole_consumers": {
+        "_attention_sentence_payload": 0,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 0,
+        "commit_word_reference_slab:whole_slab": 0
+      },
+      "owner_step_comparisons": 0
+    },
+    {
+      "run": 8,
+      "pole_consumers": {
+        "_attention_sentence_payload": 0,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 0,
+        "commit_word_reference_slab:whole_slab": 0
+      },
+      "owner_step_comparisons": 0
+    },
+    {
+      "run": 9,
+      "pole_consumers": {
+        "_attention_sentence_payload": 0,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 0,
+        "commit_word_reference_slab:whole_slab": 0
+      },
+      "owner_step_comparisons": 0
+    },
+    {
+      "run": 10,
+      "pole_consumers": {
+        "_attention_sentence_payload": 0,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 0,
+        "commit_word_reference_slab:whole_slab": 0
+      },
+      "owner_step_comparisons": 0
+    }
+  ],
+  "postprocessor_sha256": "f7c5bf9f1bd0370be475c1194e1c16c8ebd361dc808b626a2de35b7eaac47e78"
+}

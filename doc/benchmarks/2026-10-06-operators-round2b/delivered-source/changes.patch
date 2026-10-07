@@ -1,0 +1,374 @@
+--- round2/bin/MereologicalCodes.py
++++ round2b/bin/MereologicalCodes.py
+@@ -128,6 +128,45 @@
+             bound, extreme = values.max(0) if tower == 0 else values.min(0)
+             bounds.append(bound); weights.append(float(d.sum())); extrema.append(extreme)
+         return bounds, weights, extrema, ids
++
++    @torch.no_grad()
++    def containment_audit(self, *, before=None, after=None):
++        """Audit order-zero form containment through positive-part postings.
++
++        Optional row-to-form snapshots expose both sides of the future centroid
++        placement pass. This observer does not project or change any code.
++        Equal part sets are checked in both directions; self pairs are omitted.
++        """
++        from Spaces import _concept_alloc_of
++        rows = sorted(row for row in _concept_alloc_of(self.owner).layer()._tensor_row_keys
++                      if self.owner._order0_inventory_row(row))
++        parts = {row: {pid for tower, pid, net in edges if tower == 0 and net > 0}
++                 for row, edges in self._definitions(rows).items()}
++        postings = {}
++        for row, members in parts.items():
++            for pid in members:
++                postings.setdefault(pid, set()).add(row)
++        pairs = []
++        for row, members in parts.items():
++            extents = sorted((postings[pid] for pid in members), key=len)
++            containers = set.intersection(*extents) if extents else set(rows)
++            pairs.extend((row, other) for other in sorted(containers) if row != other)
++        values = dict(zip(rows, self.derive(rows)[..., :self.percept_width]))
++        def report(snapshot):
++            snapshot = values if snapshot is None else snapshot
++            count = coordinates = 0
++            largest = 0.
++            for contained, container in pairs:
++                violation = (snapshot[contained][:self.percept_width]-
++                             snapshot[container][:self.percept_width]).clamp_min(0)
++                positive = int(violation.gt(0).sum())
++                count += int(positive > 0)
++                coordinates += positive
++                largest = max(largest, float(violation.max()))
++            return dict(pairs=len(pairs), violating_pairs=count,
++                        coordinates=coordinates, largest=largest)
++        return dict(order=0, rows=len(rows), postings=len(postings),
++                    self_pairs=False, before=report(before), after=report(after))
+ 
+     @torch.no_grad()
+     def room_report(self, margin=0.):
+--- round2/bin/ModelAttention.py
++++ round2b/bin/ModelAttention.py
+@@ -3,6 +3,37 @@
+ import math
+ from torch.nn import functional as F
+ from Attention import narrow_words, read_code_field, BracketKeys
++
++
++POLE_CONSUMERS = ('_attention_sentence_payload', '_pushed_word_slab:poles',
++                  'commit_word_reference_slab:per_word',
++                  'commit_word_reference_slab:whole_slab')
++
++
++def read_poles(model, consumer):
++    """Declared handoff seam, also the observer's complete consumer census."""
++    if consumer not in POLE_CONSUMERS:
++        raise ValueError(f'undeclared attention pole consumer: {consumer}')
++    pair = getattr(model, '_attention_poles', None)
++    return None if pair is None else pair.detach()
++
++
++def pole_activation(activation, pair, changed):
++    """A reached field chooses sign only; tied poles retain the prior sign."""
++    net = (pair[..., 0]-pair[..., 1]).reshape_as(activation)
++    changed = changed.reshape_as(activation)
++    return torch.where(changed & net.ne(0), activation.abs()*net.sign(), activation)
++
++
++def reference_evidence(model, activations, consumer):
++    pair = read_poles(model, consumer)
++    if pair is None:
++        return None
++    reading = model._attention_words
++    signed = pole_activation(activations, pair, reading.pole_changes).squeeze(-1)
++    # Match Language.commit_word_reference_slab's native scalar conversion
++    # exactly, including its saturation. No field means the landing's pair.
++    return torch.stack((signed.clamp(0, 1), (-signed).clamp(0, 1)), -1).detach()
+ 
+ 
+ def canonical_native_events(model, ids, positions, brackets):
+--- round2/bin/Models.py
++++ round2b/bin/Models.py
+@@ -11938,7 +11938,8 @@
+         by the word's signed activation (the 0-D symbol), on the content
+         channels (zeros elsewhere and where a word has no row)."""
+         if getattr(self, '_attention_pole_representation', False):
+-            pair = self._attention_poles.detach().to(like)
++            from ModelAttention import read_poles
++            pair = read_poles(self, '_pushed_word_slab:poles').to(like)
+             valid = self._attention_words.accepted
+             return F.pad(torch.where(valid[...,None],pair,0.),(0,D-2,0,W-pair.shape[1]))
+         isp = self.inputSpace
+@@ -19651,21 +19652,18 @@
+                 derived.project_room(margin)
+ 
+     def _attention_sentence_payload(self, payload, index):
+-        """The walk's evidence scales leaf features, never a code's identity."""
++        """Field operations change the pole, preserving form and magnitude."""
+         reading = getattr(self, '_attention_words', None)
+         if reading is None:
+             return payload
+         event, orders, row, activation, obj, obj_order, atom, gate, commit, routing, valid = payload
+         w = index.clamp(0,reading.accepted.shape[1]-1)
+         B = event.shape[0]
+-        pair = self._attention_poles.gather(1,w.reshape(1,1,1).expand(B,1,2)).squeeze(1).detach()
+-        # The full word code is identified already. Both native and operated
+-        # poles supply its net feature evidence at this detached handoff.
+-        net = (pair[:,0]-pair[:,1]).reshape_as(activation)
+-        old = activation.detach()
+-        scale = torch.where(old.ne(0),net/torch.where(old.ne(0),old,1.),0.).reshape(B)
+-        event = event * scale[:,None,None]
+-        activation = net
++        from ModelAttention import read_poles, pole_activation
++        pair = read_poles(self, '_attention_sentence_payload').gather(
++            1,w.reshape(1,1,1).expand(B,1,2)).squeeze(1)
++        changed = reading.pole_changes.gather(1,w.reshape(1,1).expand(B,1))
++        activation = pole_activation(activation, pair, changed)
+         # interpret resolves atom * activation; multiplying atom would apply
+         # the evidence twice and turn a negative witness positive again.
+         pole_representation = getattr(self, '_attention_pole_representation', False)
+@@ -19793,9 +19791,10 @@
+         if torch.is_tensor(object_rows) and torch.is_tensor(concept_rows):
+             rows = torch.where(object_rows >= 0, object_rows, concept_rows)
+             orders = torch.where(object_rows >= 0, isp._ar_word_object_orders, isp._ar_word_concept_orders)
++            from ModelAttention import reference_evidence
+             self.symbolSpace.commit_word_reference_slab(rows, lang[0],
+                 isp._word_active_mask, orders=orders,
+-                evidence=getattr(self, "_attention_poles", None))
++                evidence=reference_evidence(self, lang[0], 'commit_word_reference_slab:per_word'))
+ 
+     def _sentence_observation(self, state, sid, active, *, admit=False):
+         current_stm, lang, _feedback = state
+@@ -20067,7 +20066,7 @@
+         destination = registry
+         # Keep the supplied answer distinct from generation lessons. Its
+         # detached error enters the comparison and remains observable;
+-        # the reader trains only on the rows of the kept trial.
++        # the reader trains on both trials' active rows, with both roots detached.
+         registry = Error(row_mask=active)
+         target = getattr(self, '_sentence_supplied_answers', None)
+         if (not getattr(self, '_sentence_training', False)
+@@ -20566,13 +20565,16 @@
+                 observations.append(observation)
+                 predictions.append(pending)
+                 paired_costs.append(cost.detach().clone())
+-                return cost, (path, reconstruction)
++                return parts[:, 0], (path, reconstruction)
+             def train_trial(loss):
+                 # Both graphs now exist. Restore this trial's perception
+                 # pullback and scratch bindings before its own backward.
+                 trial, pullback, path, registry, decomposition_loss, walk_loss = pending_steps.pop(0)
+                 self._sentence_trial, self._sentence_pullback = trial, pullback
+                 self._sentence_cost_registry = registry
++                if greedy_attention is not None:
++                    from ModelAttention import handoff
++                    handoff(self, attention_trials[int(trial == 'explore')])
+                 self._restore_sentence_state(path)
+                 loss = registry.total()
+                 loss = (loss * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
+@@ -21580,9 +21582,10 @@
+             object_rows >= 0, object_rows, concept_rows)
+         symbol_orders = torch.where(
+             object_rows >= 0, object_orders, concept_orders)
++        from ModelAttention import reference_evidence
+         ss.commit_word_reference_slab(
+             symbol_rows, final[8], active, orders=symbol_orders,
+-            evidence=getattr(self,"_attention_poles",None))
++            evidence=reference_evidence(self, final[8], 'commit_word_reference_slab:whole_slab'))
+         if canonical:
+             self._per_word_contributions = []
+         self._per_word_percept_contributions = final[9]
+--- round2/bin/SentenceCompose.py
++++ round2b/bin/SentenceCompose.py
+@@ -127,14 +127,14 @@
+ 
+ 
+ def sentence_pair(cache, compose, score, step, *, active, training=True, before_step=None):
+-    """Compare owner-step totals at one parameter state, then train both paths.
++    """Compare reconstruction at one parameter state, then train both paths.
+ 
+     ``cache`` is the sentence's one perception. ``compose`` gets the exploit
+     path on its second call so it can replay its prefix and exclude one choice.
+     ``score`` returns a cost per row and the candidate's scratch commit value.
+-    Selection costs contain reconstruction, gated expectation and supplied-answer error; strict improvement keeps
+-    explore and ties keep greedy. ``before_step`` receives the rows whose
+-    reader may train on this trial. Reconstruction and expectation still
++    Selection costs contain reconstruction only; strict improvement keeps
++    explore and ties keep greedy. ``before_step`` receives all active rows:
++    the detached reader trains on both trials. Reconstruction and expectation
+     train on both trials, each with its original forward parameter values.
+     The caller publishes the returned state before perceiving the next sentence.
+     """
+@@ -152,9 +152,9 @@
+     saved_b = cost_b.detach().clone()
+     wins = active & (saved_b < saved_a)
+     if before_step is not None:
+-        before_step(active & ~wins)
++        before_step(active)
+     step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
+     if before_step is not None:
+-        before_step(active & wins)
++        before_step(active)
+     step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
+     return select_rows(state_a, state_b, wins), torch.stack((saved_a, saved_b), -1), wins
+--- round2/bin/SentenceCredit.py
++++ round2b/bin/SentenceCredit.py
+@@ -53,18 +53,27 @@
+ 
+ 
+ def comparison(parts, active):
+-    """Strict total keep plus the signed contributions which decided it."""
++    """Reconstruction keeps the derivation; the full total credits its policy."""
+     costs = parts.sum(-1).detach()
+     delta = parts[:, 1] - parts[:, 0]
+-    wins = active & (costs[:, 1] < costs[:, 0])
++    keep_costs = parts[:, :, 0].detach()
++    wins = active & (keep_costs[:, 1] < keep_costs[:, 0])
+     direction = torch.sign(costs[:, 1]-costs[:, 0])
+     supports = delta * direction[:, None] > 0
+     names = ('reconstruction', 'expectation', 'answer')
+     deciding = [('+'.join(name for name, yes in zip(names, row) if yes)
+                  if sign else 'tie:greedy') for row, sign in
+                 zip(supports.tolist(), direction.tolist())]
+-    return dict(costs=costs, components=parts.detach(), delta=delta.detach(),
+-                wins=wins, deciding=deciding)
++    keep_decision = [('explore' if d < 0 else 'greedy' if d > 0 else 'tie:greedy')
++                     for d in delta[:, 0].tolist()]
++    # Negative advantage rewards explore. A positive advantage rewards greedy.
++    against_keep = active & direction.ne(0) & ((direction < 0) != wins)
++    without_answer = torch.sign(delta[:, :2].sum(-1))
++    answer_against_keep = against_keep & (without_answer != direction) & delta[:, 2].ne(0)
++    return dict(costs=costs, keep_costs=keep_costs, components=parts.detach(), delta=delta.detach(),
++                wins=wins, deciding=deciding, keep_decision=keep_decision,
++                advantage=(costs[:, 1]-costs[:, 0]), advantage_sign=direction,
++                policy_against_keep=against_keep, answer_against_keep=answer_against_keep)
+ 
+ 
+ def score_function(probabilities, scale, mask, costs):
+--- round2/test/objective_conflicts_probe.py
++++ round2b/test/objective_conflicts_probe.py
+@@ -607,7 +607,7 @@
+     def metadata(self,model):
+         write('weights.json',dict(configuration=args.config, contract='§15: one objective writer per parameter',
+             terms=model.errors.breakdown(), trial_terms=getattr(model, '_sentence_cost_registry', Layers.Error()).breakdown(),
+-            trial_selection='explore R < greedy R; ties keep greedy; reader trains only kept rows',
++            trial_selection='explore R < greedy R; ties keep greedy; answer cost and reader training count both trials rows; SCG credits total R+E+A',
+             normalizers='Error registry: squared error / detached target energy; CE / log K; penalties separate',
+             regularizers='Own strengths; concept_readout_l1 is a detached report of the proximal step',
+             training_batches=self.training_batches,evaluation_batches=self.evaluation_batches))
+--- round2/test/test_operators_round2.py
++++ round2b/test/test_operators_round2.py
+@@ -4,7 +4,7 @@
+ import torch
+ 
+ 
+-def test_owner_total_strict_keep_and_supplied_answer_only():
++def test_reconstruction_keeps_total_credits_and_supplied_answer_only():
+     from Layers import Error
+     from SentenceCredit import components, comparison
+     active=torch.tensor([True,True,True])
+@@ -15,10 +15,13 @@
+             registry.error('answer',torch.tensor(a),1.,category='output')
+         return components(registry,torch.tensor(e),torch.zeros(3),answer=registry.total(objective='output'))
+     greedy=trial([1.,1.,1.],[0.,0.,0.],[1.,1.,1.])
+-    explore=trial([1.,2.,1.],[0.,0.,0.],[1.,0.,0.])
++    explore=trial([1.,2.,.5],[0.,0.,0.],[0.,0.,3.])
+     audit=comparison(torch.stack((greedy,explore),1),active)
+     assert audit['wins'].tolist()==[False,False,True]
+-    assert audit['deciding']==['tie:greedy','tie:greedy','answer']
++    assert audit['keep_decision']==['tie:greedy','greedy','explore']
++    assert audit['advantage_sign'].tolist()==[-1.,0.,1.]
++    assert audit['policy_against_keep'].tolist()==[True,False,True]
++    assert audit['answer_against_keep'].tolist()==[True,False,True]
+     assert trial([1.,1.,1.],[0.,0.,0.])[:,2].eq(0).all()
+ 
+ 
+@@ -170,13 +173,13 @@
+     greedy=BasicModel._attention_sentence_payload(model,payload,torch.tensor(0))
+     model._attention_poles=model._attention_poles.flip(-1)
+     explore=BasicModel._attention_sentence_payload(model,payload,torch.tensor(0))
+-    torch.testing.assert_close(explore[0],-greedy[0])
++    torch.testing.assert_close(explore[0],greedy[0],rtol=0,atol=0)
+     assert explore[3].item()==-1 and greedy[3].item()==1
+     positive=finish_reading(language,replace(leaf,leaf_evidence=torch.tensor([[1.,0.]])),registry=registry)
+     negative=finish_reading(language,replace(leaf,leaves=-code,leaf_evidence=torch.tensor([[0.,1.]])),registry=registry)
+     assert positive.meaning.polarity and not negative.meaning.polarity
+-    target=greedy[0].detach()
+-    assert (explore[0].detach()-target).square().sum() > (greedy[0].detach()-target).square().sum()
++    target=(greedy[6]*greedy[3]).detach()
++    assert (explore[6]*explore[3]-target).square().sum() > (greedy[6]*greedy[3]-target).square().sum()
+ 
+ 
+ def test_presented_answer_uses_committed_root_and_keeps_reader_cut():
+--- round2/test/test_operators_round2b.py
++++ round2b/test/test_operators_round2b.py
+@@ -0,0 +1,59 @@
++"""Reconstruction keep, unbiased reader exposure, and inherited form order."""
++from types import SimpleNamespace
++import torch
++
++
++def test_reader_trains_on_both_trials_all_active_rows():
++    from SentenceCompose import sentence_pair
++    active = torch.tensor([True, True, False])
++    seen = []
++    sentence_pair(None, lambda _, prior: prior is not None,
++        lambda other, _: (torch.tensor([1., 0., 0.] if other else [0., 1., 0.]),
++                          torch.full((3,), float(other))),
++        lambda _: None, active=active, before_step=lambda rows: seen.append(rows.clone()))
++    assert len(seen) == 2
++    assert all(torch.equal(rows, active) for rows in seen)
++
++
++def test_pole_only_handoff_preserves_magnitude_and_native_reference_evidence():
++    from ModelAttention import pole_activation, reference_evidence
++    activation = torch.tensor([[[.3], [-.6], [.8], [-.4]]], requires_grad=True)
++    pair = torch.tensor([[[0., 1.], [1., 0.], [.5, .5], [1., 0.]]])
++    changed = torch.tensor([[True, True, True, False]])
++    actual = pole_activation(activation, pair, changed)
++    torch.testing.assert_close(actual, torch.tensor([[[-.3], [.6], [.8], [-.4]]]))
++    torch.testing.assert_close(actual.abs(), activation.abs(), rtol=0, atol=0)
++    model = SimpleNamespace(_attention_poles=pair,
++                            _attention_words=SimpleNamespace(pole_changes=changed))
++    evidence = reference_evidence(model, activation, 'commit_word_reference_slab:whole_slab')
++    torch.testing.assert_close(evidence, torch.tensor([[[0., .3], [.6, 0.], [.8, 0.], [0., .4]]]))
++    assert not evidence.requires_grad
++    model._attention_words.pole_changes.zero_()
++    native = torch.stack((activation.squeeze(-1).clamp(0, 1),
++                         (-activation.squeeze(-1)).clamp(0, 1)), -1)
++    torch.testing.assert_close(reference_evidence(model, activation,
++        'commit_word_reference_slab:per_word'), native, rtol=0, atol=0)
++
++
++def test_inherited_parts_form_partial_order_and_before_after_audit():
++    from test_review13_subspaces import fixture, word
++    cs, cb, ps, _ = fixture()
++    with torch.no_grad():
++        ps.W[4] = torch.tensor([.2, .2, .2])
++        ps.W[7] = torch.tensor([.8, .3, .2])
++        ps.W[8] = torch.tensor([.3, .8, .2])
++    a = word(cs, [(4, 1.)])
++    ab = word(cs, [(4, 1.), (7, 1.)])
++    ac = word(cs, [(4, 1.), (8, 1.)])
++    codes = dict(zip((a, ab, ac), cb.lookup_rows(torch.tensor([a, ab, ac]))))
++    assert (codes[a][:3] <= codes[ab][:3]).all()
++    assert (codes[a][:3] <= codes[ac][:3]).all()
++    assert not (codes[ab][:3] <= codes[ac][:3]).all()
++    assert not (codes[ac][:3] <= codes[ab][:3]).all()
++    audit = cb.mereology.containment_audit()
++    assert audit['before'] == audit['after'] == dict(pairs=2, violating_pairs=0, coordinates=0, largest=0.)
++    displaced = {row: code.clone() for row, code in codes.items()}
++    displaced[a][0] = 1.
++    audit = cb.mereology.containment_audit(before=displaced, after=codes)
++    assert audit['before']['violating_pairs'] == 2
++    assert audit['before']['largest'] > .6 and audit['after']['largest'] == 0
+--- round2/test/test_review14_contracts.py
++++ round2b/test/test_review14_contracts.py
+@@ -145,7 +145,7 @@
+     from pathlib import Path
+     from bounded_tests import run_guarded, GIB
+     root=Path(__file__).resolve().parents[1]
+-    receipt=root/'doc/benchmarks/2026-10-06-operators-round2'
++    receipt=root/'doc/benchmarks/2026-10-06-operators-round2b'
+     prior=root/'doc/benchmarks/2026-10-03-operators-attention'
+     env=os.environ.copy()
+     env.update(PYTEST_PLUGINS='operators_gate_observer', MODEL_COMPILE='none',

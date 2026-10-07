@@ -1,0 +1,23 @@
+..................................................................... [ 45%]
+......................ss..............................................s. [ 93%]
+.sss......                                                               [100%]
+=============================== warnings summary ===============================
+test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7166: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpxsek4zhe/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_verb_adverb_grammar_ops.py::test_verb_layer_forces_spectrum_and_inverts_given_verb
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7166: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2420/cfg2/MM_xor_synth_discourse.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+145 passed, 6 skipped, 4 warnings, 3 subtests passed in 10.57s

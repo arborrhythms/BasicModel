@@ -1,0 +1,117 @@
+"""Report saved reader trajectories and misses; no model or optimizer calls."""
+from collections import Counter
+import hashlib
+import json
+from pathlib import Path
+
+H = Path(__file__).resolve().parent
+def read(path): return json.loads(path.read_text())
+summary = read(H/'measurements/summary.json')
+aggregate = read(H/'aggregate-audit.json')
+result = dict(protocol=read(H/'measurement-protocol.json'), runs=[], misses=[])
+curves = {}
+for kind in ('xor', 'sum'):
+    for gate, policy in zip(summary[kind], aggregate[kind]['runs'], strict=True):
+        run = gate['run']
+        raw = read(H/f'measurements/{kind}-{run:02}/run-audit.json')
+        mse = raw['reader_mse']
+        assert len(mse) == 400
+        assert all(r['epoch'] == i+1 for i,r in enumerate(mse))
+        row = dict(kind=kind, run=run, final_gate_mse=gate['mse'], readers={})
+        weights = Counter(tuple(w) for r in raw['reader_training_rows'] for w in r['weights'])
+        compare_weights = Counter(tuple(w) for r in raw['reader_training_rows'] for w in r['comparison_weights'])
+        assert set(weights) <= {(1.,0.), (0.,1.)}
+        row['presented_weights'] = {str(k):v for k,v in weights.items()}
+        row['comparison_weights'] = {str(k):v for k,v in compare_weights.items()}
+        row['comparison_rejected_weight_fraction'] = compare_weights[(.5,.5)]*.5/1600
+        row['presented_rejected_weight_fraction'] = 0.
+        for name,key in (('presented','reader_weights'), ('comparison','comparison_reader_weights')):
+            norms = raw[key]
+            assert len(norms) == 400 and all(r['reader_updates'] == 1 for r in norms)
+            assert set(norms[-1]['optimizer_steps'].values()) == {400.}
+            first, last = norms[349]['active_norm'], norms[-1]['active_norm']
+            change = (last-first)/max(abs(first),1e-30)
+            tail = [r['active_norm'] for r in norms[349:]]
+            row['readers'][name] = dict(
+                mse_before_epoch1=mse[0][name]['mse'], mse_before_epoch350=mse[349][name]['mse'],
+                mse_before_epoch400=mse[-1][name]['mse'],
+                mean_mse_final50=sum(r[name]['mse'] for r in mse[-50:])/50,
+                active_weight_norm_epoch350=first, active_weight_norm_epoch400=last,
+                active_norm_change_fraction_final50=change,
+                active_norm_range_fraction_final50=(max(tail)-min(tail))/max(abs(first),1e-30),
+                plateau_norm=abs(change)<=.01,
+                updates=400, final_adam_steps=sorted(set(norms[-1]['optimizer_steps'].values())))
+        if kind == 'xor':
+            policies = policy['policy_epochs']
+            conjunction = lambda roots: all(r == ['conjunction'] for r in roots)
+            final_conjunction = all(names == ['conjunction'] for names in gate['operator_names'])
+            flip = policy['last_greedy_disjunction_epoch']+1 if conjunction(policies[-1]['greedy']) else None
+            last_committed = max((p['epoch'] for p in policies if not conjunction(p['committed'])),default=0)
+            row.update(class_pass=gate['class_pass'], correct=gate['correct'],
+                reconstructed=gate['recovered'], final_all_conjunction=final_conjunction,
+                first_greedy=policies[0]['greedy'], stable_greedy_conjunction_epoch=flip,
+                epochs_after_greedy_flip=(400-flip+1 if flip is not None else 0),
+                last_training_epoch_with_committed_disjunction=last_committed,
+                committed_conjunction_rows=sum(sum(r==['conjunction'] for r in p['committed']) for p in policies),
+                committed_disjunction_rows=sum(sum(r==['disjunction'] for r in p['committed']) for p in policies))
+            if not gate['class_pass']:
+                if final_conjunction and flip is not None and flip > 100:
+                    category = 'late_flip'
+                elif final_conjunction and gate['correct']==4 and row['readers']['presented']['plateau_norm']:
+                    category = 'reader_plateau'
+                else:
+                    category = 'anything_else'
+                row['miss_category'] = category
+                result['misses'].append(row)
+            curves[run] = dict(mse=mse, presented=raw['reader_weights'], comparison=raw['comparison_reader_weights'], flip=flip)
+        result['runs'].append(row)
+result['miss_counts'] = dict(Counter(r['miss_category'] for r in result['misses']))
+result['note'] = ('MSE is measured before either trial update on reconstruction-kept roots; final gate MSE uses ordinary evaluation after training. '
+    'Norms include active weight matrices only, excluding unused matrices and bias vectors. The plateau rule uses the epoch-350 to epoch-400 endpoint change; the full tail range is also reported. '
+    'Flip uses the 2d greedy-policy convention. Actual committed disjunction exposure is reported separately. Categories describe the saved evidence and do not establish causation.')
+result['postprocessor_sha256'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+(H/'reader-diagnostics.json').write_text(json.dumps(result,indent=2)+'\n')
+
+lines = ['# Round-2e reader trajectories', '', result['note'], '',
+    '| Run | Final gate MSE | Class | All greedy conjunction from epoch | Training epochs from flip | Presented MSE before epoch 400 | Comparison MSE before epoch 400 | Presented norm change, final 50 epochs | Miss category |',
+    '| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | --- |']
+for r in result['runs']:
+    if r['kind']!='xor': continue
+    p,c = r['readers']['presented'],r['readers']['comparison']
+    lines.append(f"| [{r['run']}](measurements/xor-{r['run']:02}/run-audit.json) | {r['final_gate_mse']:.9g} | {'pass' if r['class_pass'] else 'fail'} | {r['stable_greedy_conjunction_epoch']} | {r['epochs_after_greedy_flip']} | {p['mse_before_epoch400']:.9g} | {c['mse_before_epoch400']:.9g} | {p['active_norm_change_fraction_final50']:+.3%} | {r.get('miss_category','—')} |")
+lines += ['', '![Both readers’ MSE on kept roots](reader-mse.png)', '',
+    'The dashed horizontal line is the class MSE threshold. It is shown as a reference for these pre-update training reads; the gate itself uses the final presented output. Vertical dotted lines mark stable greedy conjunction. Each MSE panel has its own logarithmic scale; values below 1e-16 are drawn at 1e-16.', '',
+    '![Active reader weight norms](reader-norms.png)', '',
+    'Every raw curve, per-row prediction, training weight, optimizer counter and committed operator is retained in each run’s audit. [All diagnostic values](reader-diagnostics.json).', '']
+(H/'reader-trajectories.md').write_text('\n'.join(lines))
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+plt.rcParams.update({'font.family':'DejaVu Sans','font.size':9})
+colors = dict(presented='#0066a6',comparison='#d06a23')
+for name in ('mse','norms'):
+    fig,axes = plt.subplots(2,5,figsize=(16,6.8),sharex=True)
+    for run,ax in enumerate(axes.flat,1):
+        values=curves[run]
+        for reader in ('presented','comparison'):
+            ys=([max(v[reader]['mse'],1e-16) for v in values['mse']] if name=='mse'
+                else [v['active_norm'] for v in values[reader]])
+            ax.plot(range(1,401),ys,color=colors[reader],linewidth=1.2,label=reader.capitalize())
+        if name=='mse':
+            ax.set_yscale('log')
+            ax.axhline(.05,color='#555555',linestyle='--',linewidth=.8)
+        if values['flip'] is not None and values['flip']>1:
+            ax.axvline(values['flip'],color='#777777',linestyle=':',linewidth=1.)
+        gate=summary['xor'][run-1]
+        ax.set_title(f"Run {run} · {'pass' if gate['class_pass'] else 'miss'} · final {gate['mse']:.4g}")
+        ax.grid(alpha=.17)
+        ax.set_xlabel('Epoch')
+    axes[0,0].legend(frameon=False)
+    axes[0,0].set_ylabel('MSE before update' if name=='mse' else 'Active weight matrix norm')
+    axes[1,0].set_ylabel('MSE before update' if name=='mse' else 'Active weight matrix norm')
+    fig.suptitle('Round 2e · readers on reconstruction-kept roots' if name=='mse' else 'Round 2e · independent reader weight growth',fontsize=15)
+    fig.tight_layout(rect=(0,0,1,.96))
+    fig.savefig(H/f'reader-{name}.png',dpi=160)
+    plt.close(fig)
+print(json.dumps(dict(miss_counts=result['miss_counts'],xor=[r for r in result['runs'] if r['kind']=='xor']),indent=2))

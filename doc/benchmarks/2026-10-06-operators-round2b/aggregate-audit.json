@@ -1,0 +1,6020 @@
+{
+  "aggregate": {
+    "sum": {
+      "counts": {
+        "sentences": 16000,
+        "advantage:0": 16000
+      },
+      "nonzero_by_walk_action": {},
+      "pole_consumers": {
+        "_attention_sentence_payload": 36060,
+        "commit_word_reference_slab:per_word": 40060,
+        "commit_word_reference_slab:whole_slab": 4010
+      },
+      "largest_containment_violation": 0.0,
+      "final_comparable_pairs": 0,
+      "reader_trials": 8000,
+      "reader_rows": 32000
+    },
+    "xor": {
+      "counts": {
+        "sentences": 16000,
+        "explore_kept": 1450,
+        "policy_against_keep": 1237,
+        "answer_against_keep": 1237,
+        "advantage:0": 10790,
+        "advantage:-1": 1887,
+        "advantage:1": 3323,
+        "nonzero_advantage": 5210
+      },
+      "nonzero_by_walk_action": {
+        "compose:disjunction": 2654,
+        "narrowing:not": 494,
+        "compose:conjunction": 1358,
+        "narrowing:descend": 704
+      },
+      "pole_consumers": {
+        "_attention_sentence_payload": 36060,
+        "commit_word_reference_slab:per_word": 40061,
+        "commit_word_reference_slab:whole_slab": 4010
+      },
+      "largest_containment_violation": 0.0,
+      "final_comparable_pairs": 0,
+      "reader_trials": 8000,
+      "reader_rows": 32000
+    },
+    "mm": {
+      "pole_consumers": {},
+      "largest_containment_violation": 0.0,
+      "final_comparable_pairs": 0
+    }
+  },
+  "runs": [
+    {
+      "kind": "sum",
+      "run": 1,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 0,
+        "policy_against_keep": 0,
+        "answer_against_keep": 0,
+        "advantage:0": 1600,
+        "nonzero_advantage": 0
+      },
+      "nonzero_by_walk_action": {},
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": -0.017103921622037888,
+          "maximum": 0.2731351852416992,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 4.966864585876465,
+          "calls": 96
+        },
+        "400": {
+          "minimum": -0.017103921622037888,
+          "maximum": 0.2731351852416992,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 7.262837584676163e-07,
+            "expectation": 0.0,
+            "answer": 0.24366310238838196
+          },
+          "trial_components": [
+            [
+              7.262837584676163e-07,
+              0.0,
+              0.24366310238838196
+            ],
+            [
+              7.262837584676163e-07,
+              0.0,
+              0.24366310238838196
+            ]
+          ],
+          "selected_cost": 7.262837584676163e-07,
+          "credit_total": 0.24366383254528046,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 2.4870630568329943e-06,
+            "expectation": 0.0,
+            "answer": 0.4701415002346039
+          },
+          "trial_components": [
+            [
+              2.4870630568329943e-06,
+              0.0,
+              0.4701415002346039
+            ],
+            [
+              2.4870630568329943e-06,
+              0.0,
+              0.4701415002346039
+            ]
+          ],
+          "selected_cost": 2.4870630568329943e-06,
+          "credit_total": 0.47014397382736206,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.21169327199459076,
+            "expectation": 0.0,
+            "answer": 0.48181337118148804
+          },
+          "trial_components": [
+            [
+              0.21169327199459076,
+              0.0,
+              0.48181337118148804
+            ],
+            [
+              0.21169327199459076,
+              0.0,
+              0.48181337118148804
+            ]
+          ],
+          "selected_cost": 0.21169327199459076,
+          "credit_total": 0.69350665807724,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.21924364566802979,
+            "expectation": 0.0,
+            "answer": 0.2430618405342102
+          },
+          "trial_components": [
+            [
+              0.21924364566802979,
+              0.0,
+              0.2430618405342102
+            ],
+            [
+              0.21924364566802979,
+              0.0,
+              0.2430618405342102
+            ]
+          ],
+          "selected_cost": 0.21924364566802979,
+          "credit_total": 0.46230548620224,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "run": 2,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 0,
+        "policy_against_keep": 0,
+        "answer_against_keep": 0,
+        "advantage:0": 1600,
+        "nonzero_advantage": 0
+      },
+      "nonzero_by_walk_action": {},
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": -0.028497060760855675,
+          "maximum": 0.30461859703063965,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 5.132401943206787,
+          "calls": 96
+        },
+        "400": {
+          "minimum": -0.028497060760855675,
+          "maximum": 0.30461859703063965,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 4.190955849026068e-07,
+            "expectation": 0.0,
+            "answer": 0.5050287246704102
+          },
+          "trial_components": [
+            [
+              4.190955849026068e-07,
+              0.0,
+              0.5050287246704102
+            ],
+            [
+              4.190955849026068e-07,
+              0.0,
+              0.5050287246704102
+            ]
+          ],
+          "selected_cost": 4.190955849026068e-07,
+          "credit_total": 0.5050291419029236,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 6.782828639029237e-12,
+            "expectation": 0.0,
+            "answer": 0.22635778784751892
+          },
+          "trial_components": [
+            [
+              6.782828639029237e-12,
+              0.0,
+              0.22635778784751892
+            ],
+            [
+              6.782828639029237e-12,
+              0.0,
+              0.22635778784751892
+            ]
+          ],
+          "selected_cost": 6.782828639029237e-12,
+          "credit_total": 0.22635778784751892,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.1307206004858017,
+            "expectation": 0.0,
+            "answer": 0.2186877280473709
+          },
+          "trial_components": [
+            [
+              0.1307206004858017,
+              0.0,
+              0.2186877280473709
+            ],
+            [
+              0.1307206004858017,
+              0.0,
+              0.2186877280473709
+            ]
+          ],
+          "selected_cost": 0.1307206004858017,
+          "credit_total": 0.3494083285331726,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.3744215667247772,
+            "expectation": 0.0,
+            "answer": 0.5074664354324341
+          },
+          "trial_components": [
+            [
+              0.3744215667247772,
+              0.0,
+              0.5074664354324341
+            ],
+            [
+              0.3744215667247772,
+              0.0,
+              0.5074664354324341
+            ]
+          ],
+          "selected_cost": 0.3744215667247772,
+          "credit_total": 0.8818880319595337,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "run": 3,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 0,
+        "policy_against_keep": 0,
+        "answer_against_keep": 0,
+        "advantage:0": 1600,
+        "nonzero_advantage": 0
+      },
+      "nonzero_by_walk_action": {},
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": -0.015491556376218796,
+          "maximum": 0.28944316506385803,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 4.900618553161621,
+          "calls": 96
+        },
+        "400": {
+          "minimum": -0.015491556376218796,
+          "maximum": 0.28944316506385803,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 3.381961278137169e-06,
+            "expectation": 0.0,
+            "answer": 0.48603299260139465
+          },
+          "trial_components": [
+            [
+              3.381961278137169e-06,
+              0.0,
+              0.48603299260139465
+            ],
+            [
+              3.381961278137169e-06,
+              0.0,
+              0.48603299260139465
+            ]
+          ],
+          "selected_cost": 3.381961278137169e-06,
+          "credit_total": 0.48603636026382446,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 2.356287254201561e-08,
+            "expectation": 0.0,
+            "answer": 0.2400497943162918
+          },
+          "trial_components": [
+            [
+              2.356287254201561e-08,
+              0.0,
+              0.2400497943162918
+            ],
+            [
+              2.356287254201561e-08,
+              0.0,
+              0.2400497943162918
+            ]
+          ],
+          "selected_cost": 2.356287254201561e-08,
+          "credit_total": 0.2400498241186142,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.1419522911310196,
+            "expectation": 0.0,
+            "answer": 0.23244790732860565
+          },
+          "trial_components": [
+            [
+              0.1419522911310196,
+              0.0,
+              0.23244790732860565
+            ],
+            [
+              0.1419522911310196,
+              0.0,
+              0.23244790732860565
+            ]
+          ],
+          "selected_cost": 0.1419522911310196,
+          "credit_total": 0.37440019845962524,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.42292872071266174,
+            "expectation": 0.0,
+            "answer": 0.48607951402664185
+          },
+          "trial_components": [
+            [
+              0.42292872071266174,
+              0.0,
+              0.48607951402664185
+            ],
+            [
+              0.42292872071266174,
+              0.0,
+              0.48607951402664185
+            ]
+          ],
+          "selected_cost": 0.42292872071266174,
+          "credit_total": 0.909008264541626,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "run": 4,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 0,
+        "policy_against_keep": 0,
+        "answer_against_keep": 0,
+        "advantage:0": 1600,
+        "nonzero_advantage": 0
+      },
+      "nonzero_by_walk_action": {},
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": 0.006680550519376993,
+          "maximum": 0.269724577665329,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 4.849978446960449,
+          "calls": 96
+        },
+        "400": {
+          "minimum": 0.006680550519376993,
+          "maximum": 0.269724577665329,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 8.501894626533613e-06,
+            "expectation": 0.0,
+            "answer": 0.4389314651489258
+          },
+          "trial_components": [
+            [
+              8.501894626533613e-06,
+              0.0,
+              0.4389314651489258
+            ],
+            [
+              8.501894626533613e-06,
+              0.0,
+              0.4389314651489258
+            ]
+          ],
+          "selected_cost": 8.501894626533613e-06,
+          "credit_total": 0.4389399588108063,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 5.122812764268847e-12,
+            "expectation": 0.0,
+            "answer": 0.27824562788009644
+          },
+          "trial_components": [
+            [
+              5.122812764268847e-12,
+              0.0,
+              0.27824562788009644
+            ],
+            [
+              5.122812764268847e-12,
+              0.0,
+              0.27824562788009644
+            ]
+          ],
+          "selected_cost": 5.122812764268847e-12,
+          "credit_total": 0.27824562788009644,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.11372493952512741,
+            "expectation": 0.0,
+            "answer": 0.26552727818489075
+          },
+          "trial_components": [
+            [
+              0.11372493952512741,
+              0.0,
+              0.26552727818489075
+            ],
+            [
+              0.11372493952512741,
+              0.0,
+              0.26552727818489075
+            ]
+          ],
+          "selected_cost": 0.11372493952512741,
+          "credit_total": 0.37925222516059875,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.3272029161453247,
+            "expectation": 0.0,
+            "answer": 0.4370921850204468
+          },
+          "trial_components": [
+            [
+              0.3272029161453247,
+              0.0,
+              0.4370921850204468
+            ],
+            [
+              0.3272029161453247,
+              0.0,
+              0.4370921850204468
+            ]
+          ],
+          "selected_cost": 0.3272029161453247,
+          "credit_total": 0.7642951011657715,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "run": 5,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 0,
+        "policy_against_keep": 0,
+        "answer_against_keep": 0,
+        "advantage:0": 1600,
+        "nonzero_advantage": 0
+      },
+      "nonzero_by_walk_action": {},
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": -0.03006480634212494,
+          "maximum": 0.3016228675842285,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 4.868971347808838,
+          "calls": 96
+        },
+        "400": {
+          "minimum": -0.03006480634212494,
+          "maximum": 0.3016228675842285,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 2.6073987555719214e-06,
+            "expectation": 0.0,
+            "answer": 0.46736934781074524
+          },
+          "trial_components": [
+            [
+              2.6073987555719214e-06,
+              0.0,
+              0.46736934781074524
+            ],
+            [
+              2.6073987555719214e-06,
+              0.0,
+              0.46736934781074524
+            ]
+          ],
+          "selected_cost": 2.6073987555719214e-06,
+          "credit_total": 0.46737194061279297,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 3.556797025794367e-07,
+            "expectation": 0.0,
+            "answer": 0.25153395533561707
+          },
+          "trial_components": [
+            [
+              3.556797025794367e-07,
+              0.0,
+              0.25153395533561707
+            ],
+            [
+              3.556797025794367e-07,
+              0.0,
+              0.25153395533561707
+            ]
+          ],
+          "selected_cost": 3.556797025794367e-07,
+          "credit_total": 0.2515343129634857,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.21040549874305725,
+            "expectation": 0.0,
+            "answer": 0.24755865335464478
+          },
+          "trial_components": [
+            [
+              0.21040549874305725,
+              0.0,
+              0.24755865335464478
+            ],
+            [
+              0.21040549874305725,
+              0.0,
+              0.24755865335464478
+            ]
+          ],
+          "selected_cost": 0.21040549874305725,
+          "credit_total": 0.457964152097702,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.2602803707122803,
+            "expectation": 0.0,
+            "answer": 0.46745043992996216
+          },
+          "trial_components": [
+            [
+              0.2602803707122803,
+              0.0,
+              0.46745043992996216
+            ],
+            [
+              0.2602803707122803,
+              0.0,
+              0.46745043992996216
+            ]
+          ],
+          "selected_cost": 0.2602803707122803,
+          "credit_total": 0.7277308106422424,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "run": 6,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 0,
+        "policy_against_keep": 0,
+        "answer_against_keep": 0,
+        "advantage:0": 1600,
+        "nonzero_advantage": 0
+      },
+      "nonzero_by_walk_action": {},
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": 0.009706639684736729,
+          "maximum": 0.3082911968231201,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 4.141681671142578,
+          "calls": 96
+        },
+        "400": {
+          "minimum": 0.009706639684736729,
+          "maximum": 0.3082911968231201,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 8.87627606971364e-08,
+            "expectation": 0.0,
+            "answer": 0.27418479323387146
+          },
+          "trial_components": [
+            [
+              8.87627606971364e-08,
+              0.0,
+              0.27418479323387146
+            ],
+            [
+              8.87627606971364e-08,
+              0.0,
+              0.27418479323387146
+            ]
+          ],
+          "selected_cost": 8.87627606971364e-08,
+          "credit_total": 0.2741848826408386,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 8.929205708163579e-10,
+            "expectation": 0.0,
+            "answer": 0.4319954514503479
+          },
+          "trial_components": [
+            [
+              8.929205708163579e-10,
+              0.0,
+              0.4319954514503479
+            ],
+            [
+              8.929205708163579e-10,
+              0.0,
+              0.4319954514503479
+            ]
+          ],
+          "selected_cost": 8.929205708163579e-10,
+          "credit_total": 0.4319954514503479,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.08173848688602448,
+            "expectation": 0.0,
+            "answer": 0.44159194827079773
+          },
+          "trial_components": [
+            [
+              0.08173848688602448,
+              0.0,
+              0.44159194827079773
+            ],
+            [
+              0.08173848688602448,
+              0.0,
+              0.44159194827079773
+            ]
+          ],
+          "selected_cost": 0.08173848688602448,
+          "credit_total": 0.5233304500579834,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.18016168475151062,
+            "expectation": 0.0,
+            "answer": 0.2714596390724182
+          },
+          "trial_components": [
+            [
+              0.18016168475151062,
+              0.0,
+              0.2714596390724182
+            ],
+            [
+              0.18016168475151062,
+              0.0,
+              0.2714596390724182
+            ]
+          ],
+          "selected_cost": 0.18016168475151062,
+          "credit_total": 0.45162132382392883,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "run": 7,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 0,
+        "policy_against_keep": 0,
+        "answer_against_keep": 0,
+        "advantage:0": 1600,
+        "nonzero_advantage": 0
+      },
+      "nonzero_by_walk_action": {},
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": -0.034904032945632935,
+          "maximum": 0.2627672553062439,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 4.7428364753723145,
+          "calls": 96
+        },
+        "400": {
+          "minimum": -0.034904032945632935,
+          "maximum": 0.2627672553062439,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 1.0309867093383218e-06,
+            "expectation": 0.0,
+            "answer": 0.43216463923454285
+          },
+          "trial_components": [
+            [
+              1.0309867093383218e-06,
+              0.0,
+              0.43216463923454285
+            ],
+            [
+              1.0309867093383218e-06,
+              0.0,
+              0.43216463923454285
+            ]
+          ],
+          "selected_cost": 1.0309867093383218e-06,
+          "credit_total": 0.4321656823158264,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 2.1743536138263408e-10,
+            "expectation": 0.0,
+            "answer": 0.28450068831443787
+          },
+          "trial_components": [
+            [
+              2.1743536138263408e-10,
+              0.0,
+              0.28450068831443787
+            ],
+            [
+              2.1743536138263408e-10,
+              0.0,
+              0.28450068831443787
+            ]
+          ],
+          "selected_cost": 2.1743536138263408e-10,
+          "credit_total": 0.28450068831443787,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.0538296215236187,
+            "expectation": 0.0,
+            "answer": 0.2723536193370819
+          },
+          "trial_components": [
+            [
+              0.0538296215236187,
+              0.0,
+              0.2723536193370819
+            ],
+            [
+              0.0538296215236187,
+              0.0,
+              0.2723536193370819
+            ]
+          ],
+          "selected_cost": 0.0538296215236187,
+          "credit_total": 0.3261832296848297,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.4049201011657715,
+            "expectation": 0.0,
+            "answer": 0.4274262487888336
+          },
+          "trial_components": [
+            [
+              0.4049201011657715,
+              0.0,
+              0.4274262487888336
+            ],
+            [
+              0.4049201011657715,
+              0.0,
+              0.4274262487888336
+            ]
+          ],
+          "selected_cost": 0.4049201011657715,
+          "credit_total": 0.8323463201522827,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "run": 8,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 0,
+        "policy_against_keep": 0,
+        "answer_against_keep": 0,
+        "advantage:0": 1600,
+        "nonzero_advantage": 0
+      },
+      "nonzero_by_walk_action": {},
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": 0.038754478096961975,
+          "maximum": 0.27322128415107727,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 4.823226451873779,
+          "calls": 96
+        },
+        "400": {
+          "minimum": 0.038754478096961975,
+          "maximum": 0.27322128415107727,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 4.515707701102656e-07,
+            "expectation": 0.0,
+            "answer": 0.49659377336502075
+          },
+          "trial_components": [
+            [
+              4.515707701102656e-07,
+              0.0,
+              0.49659377336502075
+            ],
+            [
+              4.515707701102656e-07,
+              0.0,
+              0.49659377336502075
+            ]
+          ],
+          "selected_cost": 4.515707701102656e-07,
+          "credit_total": 0.49659422039985657,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.0005382992676459253,
+            "expectation": 0.0,
+            "answer": 0.22701062262058258
+          },
+          "trial_components": [
+            [
+              0.0005382992676459253,
+              0.0,
+              0.22701062262058258
+            ],
+            [
+              0.0005382992676459253,
+              0.0,
+              0.22701062262058258
+            ]
+          ],
+          "selected_cost": 0.0005382992676459253,
+          "credit_total": 0.22754892706871033,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.26222896575927734,
+            "expectation": 0.0,
+            "answer": 0.22935225069522858
+          },
+          "trial_components": [
+            [
+              0.26222896575927734,
+              0.0,
+              0.22935225069522858
+            ],
+            [
+              0.26222896575927734,
+              0.0,
+              0.22935225069522858
+            ]
+          ],
+          "selected_cost": 0.26222896575927734,
+          "credit_total": 0.4915812015533447,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.24454915523529053,
+            "expectation": 0.0,
+            "answer": 0.49896442890167236
+          },
+          "trial_components": [
+            [
+              0.24454915523529053,
+              0.0,
+              0.49896442890167236
+            ],
+            [
+              0.24454915523529053,
+              0.0,
+              0.49896442890167236
+            ]
+          ],
+          "selected_cost": 0.24454915523529053,
+          "credit_total": 0.7435135841369629,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "run": 9,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 0,
+        "policy_against_keep": 0,
+        "answer_against_keep": 0,
+        "advantage:0": 1600,
+        "nonzero_advantage": 0
+      },
+      "nonzero_by_walk_action": {},
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": 0.0201848316937685,
+          "maximum": 0.2856546640396118,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 4.93296480178833,
+          "calls": 96
+        },
+        "400": {
+          "minimum": 0.0201848316937685,
+          "maximum": 0.2856546640396118,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.0001244961895281449,
+            "expectation": 0.0,
+            "answer": 0.4653475880622864
+          },
+          "trial_components": [
+            [
+              0.0001244961895281449,
+              0.0,
+              0.4653475880622864
+            ],
+            [
+              0.0001244961895281449,
+              0.0,
+              0.4653475880622864
+            ]
+          ],
+          "selected_cost": 0.0001244961895281449,
+          "credit_total": 0.4654720723628998,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 8.11922191701342e-08,
+            "expectation": 0.0,
+            "answer": 0.2511154115200043
+          },
+          "trial_components": [
+            [
+              8.11922191701342e-08,
+              0.0,
+              0.2511154115200043
+            ],
+            [
+              8.11922191701342e-08,
+              0.0,
+              0.2511154115200043
+            ]
+          ],
+          "selected_cost": 8.11922191701342e-08,
+          "credit_total": 0.25111550092697144,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.1833413541316986,
+            "expectation": 0.0,
+            "answer": 0.24434241652488708
+          },
+          "trial_components": [
+            [
+              0.1833413541316986,
+              0.0,
+              0.24434241652488708
+            ],
+            [
+              0.1833413541316986,
+              0.0,
+              0.24434241652488708
+            ]
+          ],
+          "selected_cost": 0.1833413541316986,
+          "credit_total": 0.4276837706565857,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.1585012525320053,
+            "expectation": 0.0,
+            "answer": 0.4745057225227356
+          },
+          "trial_components": [
+            [
+              0.1585012525320053,
+              0.0,
+              0.4745057225227356
+            ],
+            [
+              0.1585012525320053,
+              0.0,
+              0.4745057225227356
+            ]
+          ],
+          "selected_cost": 0.1585012525320053,
+          "credit_total": 0.6330069899559021,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "run": 10,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 0,
+        "policy_against_keep": 0,
+        "answer_against_keep": 0,
+        "advantage:0": 1600,
+        "nonzero_advantage": 0
+      },
+      "nonzero_by_walk_action": {},
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": 0.012964621186256409,
+          "maximum": 0.3162361681461334,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 4.7582011222839355,
+          "calls": 96
+        },
+        "400": {
+          "minimum": 0.012964621186256409,
+          "maximum": 0.3162361681461334,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 6.292822263276321e-07,
+            "expectation": 0.0,
+            "answer": 0.44744566082954407
+          },
+          "trial_components": [
+            [
+              6.292822263276321e-07,
+              0.0,
+              0.44744566082954407
+            ],
+            [
+              6.292822263276321e-07,
+              0.0,
+              0.44744566082954407
+            ]
+          ],
+          "selected_cost": 6.292822263276321e-07,
+          "credit_total": 0.4474462866783142,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 1.7307044469436206e-12,
+            "expectation": 0.0,
+            "answer": 0.2691737413406372
+          },
+          "trial_components": [
+            [
+              1.7307044469436206e-12,
+              0.0,
+              0.2691737413406372
+            ],
+            [
+              1.7307044469436206e-12,
+              0.0,
+              0.2691737413406372
+            ]
+          ],
+          "selected_cost": 1.7307044469436206e-12,
+          "credit_total": 0.2691737413406372,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.07375133782625198,
+            "expectation": 0.0,
+            "answer": 0.26045483350753784
+          },
+          "trial_components": [
+            [
+              0.07375133782625198,
+              0.0,
+              0.26045483350753784
+            ],
+            [
+              0.07375133782625198,
+              0.0,
+              0.26045483350753784
+            ]
+          ],
+          "selected_cost": 0.07375133782625198,
+          "credit_total": 0.33420616388320923,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.38742250204086304,
+            "expectation": 0.0,
+            "answer": 0.4466927647590637
+          },
+          "trial_components": [
+            [
+              0.38742250204086304,
+              0.0,
+              0.4466927647590637
+            ],
+            [
+              0.38742250204086304,
+              0.0,
+              0.4466927647590637
+            ]
+          ],
+          "selected_cost": 0.38742250204086304,
+          "credit_total": 0.8341152667999268,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "xor",
+      "run": 1,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 201,
+        "policy_against_keep": 65,
+        "answer_against_keep": 65,
+        "advantage:0": 1166,
+        "advantage:-1": 180,
+        "advantage:1": 254,
+        "nonzero_advantage": 434
+      },
+      "nonzero_by_walk_action": {
+        "compose:disjunction": 11,
+        "narrowing:not": 3,
+        "compose:conjunction": 312,
+        "narrowing:descend": 108
+      },
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": -0.018286600708961487,
+          "maximum": 0.3163697421550751,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 5.465277671813965,
+          "calls": 96
+        },
+        "400": {
+          "minimum": -0.9143263101577759,
+          "maximum": 1.4951927661895752,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "explore",
+          "cost_components": {
+            "reconstruction": 1.1445703421486542e-05,
+            "expectation": 0.0,
+            "answer": 0.5186673402786255
+          },
+          "trial_components": [
+            [
+              0.014947282150387764,
+              0.0,
+              0.6817351579666138
+            ],
+            [
+              1.1445703421486542e-05,
+              0.0,
+              0.5186673402786255
+            ]
+          ],
+          "selected_cost": 1.1445703421486542e-05,
+          "credit_total": 0.5186787843704224,
+          "decision": "explore",
+          "advantage_sign": -1.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "explore",
+          "cost_components": {
+            "reconstruction": 1.5291705679487677e-08,
+            "expectation": 0.0,
+            "answer": 0.015487867407500744
+          },
+          "trial_components": [
+            [
+              0.016012677922844887,
+              0.0,
+              0.17968036234378815
+            ],
+            [
+              1.5291705679487677e-08,
+              0.0,
+              0.015487867407500744
+            ]
+          ],
+          "selected_cost": 1.5291705679487677e-08,
+          "credit_total": 0.015487882308661938,
+          "decision": "explore",
+          "advantage_sign": -1.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 2,
+              "rule_name": "disjunction",
+              "surface_name": "disjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.021868858486413956,
+            "expectation": 0.0,
+            "answer": 0.1652291864156723
+          },
+          "trial_components": [
+            [
+              0.021868858486413956,
+              0.0,
+              0.1652291864156723
+            ],
+            [
+              0.021868858486413956,
+              0.0,
+              0.1652291864156723
+            ]
+          ],
+          "selected_cost": 0.021868858486413956,
+          "credit_total": 0.18709804117679596,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 2,
+              "rule_name": "disjunction",
+              "surface_name": "disjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.0180844496935606,
+            "expectation": 0.0,
+            "answer": 0.5080766677856445
+          },
+          "trial_components": [
+            [
+              0.0180844496935606,
+              0.0,
+              0.5080766677856445
+            ],
+            [
+              0.3271920084953308,
+              0.0,
+              1.0702303647994995
+            ]
+          ],
+          "selected_cost": 0.0180844496935606,
+          "credit_total": 0.5261611342430115,
+          "decision": "greedy",
+          "advantage_sign": 1.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "xor",
+      "run": 2,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 212,
+        "policy_against_keep": 34,
+        "answer_against_keep": 34,
+        "advantage:0": 1166,
+        "advantage:-1": 194,
+        "advantage:1": 240,
+        "nonzero_advantage": 434
+      },
+      "nonzero_by_walk_action": {
+        "narrowing:not": 1,
+        "compose:disjunction": 20,
+        "narrowing:descend": 107,
+        "compose:conjunction": 306
+      },
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": -0.003119839821010828,
+          "maximum": 0.3339683413505554,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 4.576277256011963,
+          "calls": 96
+        },
+        "400": {
+          "minimum": -0.9443994760513306,
+          "maximum": 1.4174705743789673,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 2,
+              "rule_name": "disjunction",
+              "surface_name": "disjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.01712225005030632,
+            "expectation": 0.0,
+            "answer": 0.024142174050211906
+          },
+          "trial_components": [
+            [
+              0.01712225005030632,
+              0.0,
+              0.024142174050211906
+            ],
+            [
+              0.01712225005030632,
+              0.0,
+              0.024142174050211906
+            ]
+          ],
+          "selected_cost": 0.01712225005030632,
+          "credit_total": 0.04126442223787308,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 2,
+              "rule_name": "disjunction",
+              "surface_name": "disjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.018100842833518982,
+            "expectation": 0.0,
+            "answer": 2.0746207237243652
+          },
+          "trial_components": [
+            [
+              0.018100842833518982,
+              0.0,
+              2.0746207237243652
+            ],
+            [
+              0.018100842833518982,
+              0.0,
+              2.0746207237243652
+            ]
+          ],
+          "selected_cost": 0.018100842833518982,
+          "credit_total": 2.092721462249756,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 2,
+              "rule_name": "disjunction",
+              "surface_name": "disjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.02256551943719387,
+            "expectation": 0.0,
+            "answer": 1.7003931999206543
+          },
+          "trial_components": [
+            [
+              0.02256551943719387,
+              0.0,
+              1.7003931999206543
+            ],
+            [
+              0.02256551943719387,
+              0.0,
+              1.7003931999206543
+            ]
+          ],
+          "selected_cost": 0.02256551943719387,
+          "credit_total": 1.7229586839675903,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 2,
+              "rule_name": "disjunction",
+              "surface_name": "disjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.028067633509635925,
+            "expectation": 0.0,
+            "answer": 0.05142706632614136
+          },
+          "trial_components": [
+            [
+              0.028067633509635925,
+              0.0,
+              0.05142706632614136
+            ],
+            [
+              0.028067633509635925,
+              0.0,
+              0.05142706632614136
+            ]
+          ],
+          "selected_cost": 0.028067633509635925,
+          "credit_total": 0.07949469983577728,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "xor",
+      "run": 3,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 84,
+        "policy_against_keep": 105,
+        "answer_against_keep": 105,
+        "advantage:0": 1156,
+        "advantage:-1": 175,
+        "advantage:1": 269,
+        "nonzero_advantage": 444
+      },
+      "nonzero_by_walk_action": {
+        "compose:conjunction": 21,
+        "narrowing:not": 3,
+        "compose:disjunction": 316,
+        "narrowing:descend": 104
+      },
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": -0.0033871170599013567,
+          "maximum": 0.3192107677459717,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 5.421012878417969,
+          "calls": 96
+        },
+        "400": {
+          "minimum": -1.198684573173523,
+          "maximum": 1.7084028720855713,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 8.872075341059826e-07,
+            "expectation": 0.0,
+            "answer": 0.23543091118335724
+          },
+          "trial_components": [
+            [
+              8.872075341059826e-07,
+              0.0,
+              0.23543091118335724
+            ],
+            [
+              0.013037982396781445,
+              0.0,
+              0.13860061764717102
+            ]
+          ],
+          "selected_cost": 8.872075341059826e-07,
+          "credit_total": 0.23543180525302887,
+          "decision": "greedy",
+          "advantage_sign": -1.0,
+          "answer_against_keep": true
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 5.07167889907123e-08,
+            "expectation": 0.0,
+            "answer": 0.09052044153213501
+          },
+          "trial_components": [
+            [
+              5.07167889907123e-08,
+              0.0,
+              0.09052044153213501
+            ],
+            [
+              0.0175067987293005,
+              0.0,
+              1.3483185768127441
+            ]
+          ],
+          "selected_cost": 5.07167889907123e-08,
+          "credit_total": 0.09052049368619919,
+          "decision": "greedy",
+          "advantage_sign": 1.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.08062661439180374,
+            "expectation": 0.0,
+            "answer": 0.2907550632953644
+          },
+          "trial_components": [
+            [
+              0.08062661439180374,
+              0.0,
+              0.2907550632953644
+            ],
+            [
+              0.08062661439180374,
+              0.0,
+              0.2907550632953644
+            ]
+          ],
+          "selected_cost": 0.08062661439180374,
+          "credit_total": 0.3713816702365875,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 9.307690729265516e-10,
+            "expectation": 0.0,
+            "answer": 0.1678028553724289
+          },
+          "trial_components": [
+            [
+              9.307690729265516e-10,
+              0.0,
+              0.1678028553724289
+            ],
+            [
+              0.3025965988636017,
+              0.0,
+              0.31592944264411926
+            ]
+          ],
+          "selected_cost": 9.307690729265516e-10,
+          "credit_total": 0.1678028553724289,
+          "decision": "greedy",
+          "advantage_sign": 1.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "xor",
+      "run": 4,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 179,
+        "policy_against_keep": 186,
+        "answer_against_keep": 186,
+        "advantage:0": 1216,
+        "advantage:1": 225,
+        "advantage:-1": 159,
+        "nonzero_advantage": 384
+      },
+      "nonzero_by_walk_action": {
+        "compose:disjunction": 340,
+        "narrowing:not": 1,
+        "narrowing:descend": 41,
+        "compose:conjunction": 2
+      },
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": -0.010481035336852074,
+          "maximum": 0.30705177783966064,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 5.7444353103637695,
+          "calls": 96
+        },
+        "400": {
+          "minimum": -0.8983933925628662,
+          "maximum": 1.4986056089401245,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.00012057241838192567,
+            "expectation": 0.0,
+            "answer": 0.12846317887306213
+          },
+          "trial_components": [
+            [
+              0.00012057241838192567,
+              0.0,
+              0.12846317887306213
+            ],
+            [
+              0.00012057241838192567,
+              0.0,
+              0.12846317887306213
+            ]
+          ],
+          "selected_cost": 0.00012057241838192567,
+          "credit_total": 0.12858374416828156,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.0008049096213653684,
+            "expectation": 0.0,
+            "answer": 0.2108575850725174
+          },
+          "trial_components": [
+            [
+              0.0008049096213653684,
+              0.0,
+              0.2108575850725174
+            ],
+            [
+              0.01789303682744503,
+              0.0,
+              0.043389517813920975
+            ]
+          ],
+          "selected_cost": 0.0008049096213653684,
+          "credit_total": 0.21166250109672546,
+          "decision": "greedy",
+          "advantage_sign": -1.0,
+          "answer_against_keep": true
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 2,
+              "rule_name": "disjunction",
+              "surface_name": "disjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "explore",
+          "cost_components": {
+            "reconstruction": 0.015144966542720795,
+            "expectation": 0.0,
+            "answer": 0.991041362285614
+          },
+          "trial_components": [
+            [
+              0.13613305985927582,
+              0.0,
+              0.12536929547786713
+            ],
+            [
+              0.015144966542720795,
+              0.0,
+              0.991041362285614
+            ]
+          ],
+          "selected_cost": 0.015144966542720795,
+          "credit_total": 1.0061863660812378,
+          "decision": "explore",
+          "advantage_sign": 1.0,
+          "answer_against_keep": true
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 2,
+              "rule_name": "disjunction",
+              "surface_name": "disjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "explore",
+          "cost_components": {
+            "reconstruction": 0.01908848248422146,
+            "expectation": 0.0,
+            "answer": 0.31851664185523987
+          },
+          "trial_components": [
+            [
+              0.2225806713104248,
+              0.0,
+              0.132828488945961
+            ],
+            [
+              0.01908848248422146,
+              0.0,
+              0.31851664185523987
+            ]
+          ],
+          "selected_cost": 0.01908848248422146,
+          "credit_total": 0.3376051187515259,
+          "decision": "explore",
+          "advantage_sign": -1.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "xor",
+      "run": 5,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 278,
+        "policy_against_keep": 107,
+        "answer_against_keep": 107,
+        "advantage:0": 983,
+        "advantage:1": 304,
+        "advantage:-1": 313,
+        "nonzero_advantage": 617
+      },
+      "nonzero_by_walk_action": {
+        "compose:conjunction": 347,
+        "narrowing:not": 28,
+        "compose:disjunction": 10,
+        "narrowing:descend": 232
+      },
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": -0.007429317105561495,
+          "maximum": 0.2883278429508209,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 4.685873985290527,
+          "calls": 96
+        },
+        "400": {
+          "minimum": -0.19274207949638367,
+          "maximum": 0.7819405794143677,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 2,
+              "rule_name": "disjunction",
+              "surface_name": "disjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.01465150248259306,
+            "expectation": 0.0,
+            "answer": 0.25790026783943176
+          },
+          "trial_components": [
+            [
+              0.01465150248259306,
+              0.0,
+              0.25790026783943176
+            ],
+            [
+              0.01465150248259306,
+              0.0,
+              0.25790026783943176
+            ]
+          ],
+          "selected_cost": 0.01465150248259306,
+          "credit_total": 0.2725517749786377,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 2,
+              "rule_name": "disjunction",
+              "surface_name": "disjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.014596394263207912,
+            "expectation": 0.0,
+            "answer": 0.5455719232559204
+          },
+          "trial_components": [
+            [
+              0.014596394263207912,
+              0.0,
+              0.5455719232559204
+            ],
+            [
+              0.014596394263207912,
+              0.0,
+              0.5455719232559204
+            ]
+          ],
+          "selected_cost": 0.014596394263207912,
+          "credit_total": 0.5601683259010315,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 2,
+              "rule_name": "disjunction",
+              "surface_name": "disjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.016266725957393646,
+            "expectation": 0.0,
+            "answer": 0.483174592256546
+          },
+          "trial_components": [
+            [
+              0.016266725957393646,
+              0.0,
+              0.483174592256546
+            ],
+            [
+              0.09160425513982773,
+              0.0,
+              0.7611489295959473
+            ]
+          ],
+          "selected_cost": 0.016266725957393646,
+          "credit_total": 0.49944132566452026,
+          "decision": "greedy",
+          "advantage_sign": 1.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 2,
+              "rule_name": "disjunction",
+              "surface_name": "disjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.020060308277606964,
+            "expectation": 0.0,
+            "answer": 0.1929551213979721
+          },
+          "trial_components": [
+            [
+              0.020060308277606964,
+              0.0,
+              0.1929551213979721
+            ],
+            [
+              0.020060308277606964,
+              0.0,
+              0.1929551213979721
+            ]
+          ],
+          "selected_cost": 0.020060308277606964,
+          "credit_total": 0.21301543712615967,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "xor",
+      "run": 6,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 88,
+        "policy_against_keep": 219,
+        "answer_against_keep": 219,
+        "advantage:0": 922,
+        "advantage:1": 511,
+        "advantage:-1": 167,
+        "nonzero_advantage": 678
+      },
+      "nonzero_by_walk_action": {
+        "compose:disjunction": 513,
+        "narrowing:not": 165
+      },
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": 0.025627154856920242,
+          "maximum": 0.28905197978019714,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 5.492799758911133,
+          "calls": 96
+        },
+        "400": {
+          "minimum": -1.188347578048706,
+          "maximum": 1.7329365015029907,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 3.368697987227165e-09,
+            "expectation": 0.0,
+            "answer": 0.4661959409713745
+          },
+          "trial_components": [
+            [
+              3.368697987227165e-09,
+              0.0,
+              0.4661959409713745
+            ],
+            [
+              3.368697987227165e-09,
+              0.0,
+              0.4661959409713745
+            ]
+          ],
+          "selected_cost": 3.368697987227165e-09,
+          "credit_total": 0.4661959409713745,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 1.221031169507114e-07,
+            "expectation": 0.0,
+            "answer": 0.0023234577383846045
+          },
+          "trial_components": [
+            [
+              1.221031169507114e-07,
+              0.0,
+              0.0023234577383846045
+            ],
+            [
+              1.221031169507114e-07,
+              0.0,
+              0.0023234577383846045
+            ]
+          ],
+          "selected_cost": 1.221031169507114e-07,
+          "credit_total": 0.002323579741641879,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.16394482553005219,
+            "expectation": 0.0,
+            "answer": 0.00036214961437508464
+          },
+          "trial_components": [
+            [
+              0.16394482553005219,
+              0.0,
+              0.00036214961437508464
+            ],
+            [
+              0.16394482553005219,
+              0.0,
+              0.09705725312232971
+            ]
+          ],
+          "selected_cost": 0.16394482553005219,
+          "credit_total": 0.16430696845054626,
+          "decision": "tie:greedy",
+          "advantage_sign": 1.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.2086063176393509,
+            "expectation": 0.0,
+            "answer": 0.3972574472427368
+          },
+          "trial_components": [
+            [
+              0.2086063176393509,
+              0.0,
+              0.3972574472427368
+            ],
+            [
+              0.2086063176393509,
+              0.0,
+              0.3972574472427368
+            ]
+          ],
+          "selected_cost": 0.2086063176393509,
+          "credit_total": 0.6058637499809265,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "xor",
+      "run": 7,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 35,
+        "policy_against_keep": 174,
+        "answer_against_keep": 174,
+        "advantage:0": 900,
+        "advantage:1": 499,
+        "advantage:-1": 201,
+        "nonzero_advantage": 700
+      },
+      "nonzero_by_walk_action": {
+        "compose:conjunction": 13,
+        "narrowing:not": 160,
+        "narrowing:descend": 1,
+        "compose:disjunction": 526
+      },
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": -0.03324250504374504,
+          "maximum": 0.29811838269233704,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 5.704017162322998,
+          "calls": 96
+        },
+        "400": {
+          "minimum": -0.9725302457809448,
+          "maximum": 1.5177943706512451,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.0018706806004047394,
+            "expectation": 0.0,
+            "answer": 0.5943629145622253
+          },
+          "trial_components": [
+            [
+              0.0018706806004047394,
+              0.0,
+              0.5943629145622253
+            ],
+            [
+              0.0018706806004047394,
+              0.0,
+              0.5943629145622253
+            ]
+          ],
+          "selected_cost": 0.0018706806004047394,
+          "credit_total": 0.596233606338501,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.00010522256343392655,
+            "expectation": 0.0,
+            "answer": 0.0003954466665163636
+          },
+          "trial_components": [
+            [
+              0.00010522256343392655,
+              0.0,
+              0.0003954466665163636
+            ],
+            [
+              0.018262987956404686,
+              0.0,
+              2.0803658962249756
+            ]
+          ],
+          "selected_cost": 0.00010522256343392655,
+          "credit_total": 0.0005006692372262478,
+          "decision": "greedy",
+          "advantage_sign": 1.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.09430684894323349,
+            "expectation": 0.0,
+            "answer": 0.03503891080617905
+          },
+          "trial_components": [
+            [
+              0.09430684894323349,
+              0.0,
+              0.03503891080617905
+            ],
+            [
+              0.09430684894323349,
+              0.0,
+              0.03503891080617905
+            ]
+          ],
+          "selected_cost": 0.09430684894323349,
+          "credit_total": 0.12934575974941254,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 6.807304941958137e-08,
+            "expectation": 0.0,
+            "answer": 0.4172400236129761
+          },
+          "trial_components": [
+            [
+              6.807304941958137e-08,
+              0.0,
+              0.4172400236129761
+            ],
+            [
+              0.2251901924610138,
+              0.0,
+              1.6675212383270264
+            ]
+          ],
+          "selected_cost": 6.807304941958137e-08,
+          "credit_total": 0.41724008321762085,
+          "decision": "greedy",
+          "advantage_sign": 1.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "xor",
+      "run": 8,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 75,
+        "policy_against_keep": 96,
+        "answer_against_keep": 96,
+        "advantage:0": 1183,
+        "advantage:1": 326,
+        "advantage:-1": 91,
+        "nonzero_advantage": 417
+      },
+      "nonzero_by_walk_action": {
+        "compose:disjunction": 416,
+        "narrowing:not": 1
+      },
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": -0.027206405997276306,
+          "maximum": 0.32693514227867126,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 4.717048645019531,
+          "calls": 96
+        },
+        "400": {
+          "minimum": -0.8193795680999756,
+          "maximum": 2.186753034591675,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 4.325335248722695e-05,
+            "expectation": 0.0,
+            "answer": 0.065132275223732
+          },
+          "trial_components": [
+            [
+              4.325335248722695e-05,
+              0.0,
+              0.065132275223732
+            ],
+            [
+              4.325335248722695e-05,
+              0.0,
+              0.065132275223732
+            ]
+          ],
+          "selected_cost": 4.325335248722695e-05,
+          "credit_total": 0.06517552584409714,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 2.2087203888077056e-06,
+            "expectation": 0.0,
+            "answer": 0.23527543246746063
+          },
+          "trial_components": [
+            [
+              2.2087203888077056e-06,
+              0.0,
+              0.23527543246746063
+            ],
+            [
+              0.020994214341044426,
+              0.0,
+              0.7682362198829651
+            ]
+          ],
+          "selected_cost": 2.2087203888077056e-06,
+          "credit_total": 0.23527763783931732,
+          "decision": "greedy",
+          "advantage_sign": 1.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.08751600980758667,
+            "expectation": 0.0,
+            "answer": 0.28217336535453796
+          },
+          "trial_components": [
+            [
+              0.08751600980758667,
+              0.0,
+              0.28217336535453796
+            ],
+            [
+              0.08751600980758667,
+              0.0,
+              0.28217336535453796
+            ]
+          ],
+          "selected_cost": 0.08751600980758667,
+          "credit_total": 0.36968937516212463,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 1.7174210187667627e-12,
+            "expectation": 0.0,
+            "answer": 0.07030030339956284
+          },
+          "trial_components": [
+            [
+              1.7174210187667627e-12,
+              0.0,
+              0.07030030339956284
+            ],
+            [
+              1.7174210187667627e-12,
+              0.0,
+              0.07030030339956284
+            ]
+          ],
+          "selected_cost": 1.7174210187667627e-12,
+          "credit_total": 0.07030030339956284,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "xor",
+      "run": 9,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 225,
+        "policy_against_keep": 44,
+        "answer_against_keep": 44,
+        "advantage:0": 1153,
+        "advantage:1": 240,
+        "advantage:-1": 207,
+        "nonzero_advantage": 447
+      },
+      "nonzero_by_walk_action": {
+        "compose:disjunction": 2,
+        "narrowing:not": 2,
+        "compose:conjunction": 336,
+        "narrowing:descend": 107
+      },
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4006,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": 0.008282557129859924,
+          "maximum": 0.3057073950767517,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 5.8139729499816895,
+          "calls": 96
+        },
+        "400": {
+          "minimum": -0.4938142001628876,
+          "maximum": 1.0772212743759155,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "explore",
+          "cost_components": {
+            "reconstruction": 9.353794666822068e-06,
+            "expectation": 0.0,
+            "answer": 0.5880714058876038
+          },
+          "trial_components": [
+            [
+              0.014941753819584846,
+              0.0,
+              1.1450234651565552
+            ],
+            [
+              9.353794666822068e-06,
+              0.0,
+              0.5880714058876038
+            ]
+          ],
+          "selected_cost": 9.353794666822068e-06,
+          "credit_total": 0.5880807638168335,
+          "decision": "explore",
+          "advantage_sign": -1.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 2,
+              "rule_name": "disjunction",
+              "surface_name": "disjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.01664525270462036,
+            "expectation": 0.0,
+            "answer": 0.026422297582030296
+          },
+          "trial_components": [
+            [
+              0.01664525270462036,
+              0.0,
+              0.026422297582030296
+            ],
+            [
+              0.01664525270462036,
+              0.0,
+              0.026422297582030296
+            ]
+          ],
+          "selected_cost": 0.01664525270462036,
+          "credit_total": 0.04306755214929581,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 2,
+              "rule_name": "disjunction",
+              "surface_name": "disjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.020240092650055885,
+            "expectation": 0.0,
+            "answer": 0.008690262213349342
+          },
+          "trial_components": [
+            [
+              0.020240092650055885,
+              0.0,
+              0.008690262213349342
+            ],
+            [
+              0.12534499168395996,
+              0.0,
+              0.165150985121727
+            ]
+          ],
+          "selected_cost": 0.020240092650055885,
+          "credit_total": 0.028930354863405228,
+          "decision": "greedy",
+          "advantage_sign": 1.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 2,
+              "rule_name": "disjunction",
+              "surface_name": "disjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.02057505026459694,
+            "expectation": 0.0,
+            "answer": 1.1009328365325928
+          },
+          "trial_components": [
+            [
+              0.02057505026459694,
+              0.0,
+              1.1009328365325928
+            ],
+            [
+              0.02057505026459694,
+              0.0,
+              1.1009328365325928
+            ]
+          ],
+          "selected_cost": 0.02057505026459694,
+          "credit_total": 1.1215078830718994,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        }
+      ]
+    },
+    {
+      "kind": "xor",
+      "run": 10,
+      "counts": {
+        "sentences": 1600,
+        "explore_kept": 73,
+        "policy_against_keep": 207,
+        "answer_against_keep": 207,
+        "advantage:0": 945,
+        "advantage:-1": 200,
+        "advantage:1": 455,
+        "nonzero_advantage": 655
+      },
+      "nonzero_by_walk_action": {
+        "compose:disjunction": 500,
+        "narrowing:not": 130,
+        "compose:conjunction": 21,
+        "narrowing:descend": 4
+      },
+      "pole_consumers": {
+        "_attention_sentence_payload": 3606,
+        "_pushed_word_slab:poles": 0,
+        "commit_word_reference_slab:per_word": 4007,
+        "commit_word_reference_slab:whole_slab": 401
+      },
+      "containment": {
+        "start": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 12,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "end": [
+          {
+            "order": 0,
+            "rows": 0,
+            "postings": 0,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          },
+          {
+            "order": 0,
+            "rows": 4,
+            "postings": 4,
+            "self_pairs": false,
+            "before": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            },
+            "after": {
+              "pairs": 0,
+              "violating_pairs": 0,
+              "coordinates": 0,
+              "largest": 0.0
+            }
+          }
+        ],
+        "largest": 0.0
+      },
+      "reader_trials": 800,
+      "reader_rows": 3200,
+      "both_trials_all_active": true,
+      "first_logit_ranges": {
+        "narrowing:1": {
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "calls": 96
+        },
+        "1": {
+          "minimum": -0.04023496061563492,
+          "maximum": 0.29771533608436584,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "last_logit_ranges": {
+        "narrowing:400": {
+          "minimum": 0.0,
+          "maximum": 5.498856544494629,
+          "calls": 96
+        },
+        "400": {
+          "minimum": -0.8924957513809204,
+          "maximum": 1.448083519935608,
+          "calls": 8,
+          "nan_count": 0,
+          "positive_infinity_count": 0
+        }
+      },
+      "final_operators": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 1.8156248060563485e-08,
+            "expectation": 0.0,
+            "answer": 0.2010185718536377
+          },
+          "trial_components": [
+            [
+              1.8156248060563485e-08,
+              0.0,
+              0.2010185718536377
+            ],
+            [
+              1.8156248060563485e-08,
+              0.0,
+              0.2010185718536377
+            ]
+          ],
+          "selected_cost": 1.8156248060563485e-08,
+          "credit_total": 0.2010185867547989,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 2.9814559638907667e-06,
+            "expectation": 0.0,
+            "answer": 0.05649089440703392
+          },
+          "trial_components": [
+            [
+              2.9814559638907667e-06,
+              0.0,
+              0.05649089440703392
+            ],
+            [
+              2.9814559638907667e-06,
+              0.0,
+              0.05649089440703392
+            ]
+          ],
+          "selected_cost": 2.9814559638907667e-06,
+          "credit_total": 0.05649387463927269,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 1,
+              "rule_name": "conjunction",
+              "surface_name": "conjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "greedy",
+          "cost_components": {
+            "reconstruction": 0.15217114984989166,
+            "expectation": 0.0,
+            "answer": 0.13289989531040192
+          },
+          "trial_components": [
+            [
+              0.15217114984989166,
+              0.0,
+              0.13289989531040192
+            ],
+            [
+              0.15217114984989166,
+              0.0,
+              0.13289989531040192
+            ]
+          ],
+          "selected_cost": 0.15217114984989166,
+          "credit_total": 0.2850710451602936,
+          "decision": "tie:greedy",
+          "advantage_sign": 0.0,
+          "answer_against_keep": false
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 2,
+              "rule_name": "disjunction",
+              "surface_name": "disjunction",
+              "position": 1
+            }
+          ],
+          "epoch": 400,
+          "trial": "explore",
+          "cost_components": {
+            "reconstruction": 0.019717024639248848,
+            "expectation": 0.0,
+            "answer": 1.6009985208511353
+          },
+          "trial_components": [
+            [
+              0.18582336604595184,
+              0.0,
+              0.13475225865840912
+            ],
+            [
+              0.019717024639248848,
+              0.0,
+              1.6009985208511353
+            ]
+          ],
+          "selected_cost": 0.019717024639248848,
+          "credit_total": 1.6207154989242554,
+          "decision": "explore",
+          "advantage_sign": 1.0,
+          "answer_against_keep": true
+        }
+      ]
+    }
+  ]
+}

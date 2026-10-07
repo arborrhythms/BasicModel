@@ -1,0 +1,58 @@
+........................................................................ [ 47%]
+............s.........F.....................s........................... [ 95%]
+.......                                                                  [100%]
+=================================== FAILURES ===================================
+_________ test_first_and_later_words_keep_the_same_grad_carry_contract _________
+test/test_sentence_gradients.py:35: in test_first_and_later_words_keep_the_same_grad_carry_contract
+    model.runBatch(train=True, batchSize=2, optimizer=model.getOptimizer(lr=.003),
+bin/Models.py:13677: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13813: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14188: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8819: in _what_or_think
+    return self.what(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10341: in what
+    construction = self.reverseOutput(self._last_understanding, derivation,**options)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9624: in reverseOutput
+    value,audit=output_pair(realize,score)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/WalkTrials.py:35: in output_pair
+    first=score(greedy)
+          ^^^^^^^^^^^^^
+bin/Models.py:14187: in score_answer
+    return self._output_target_cost(construction,values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:9777: in _output_target_cost
+    if pred is None:raise RuntimeError('output trial and supplied answer do not align')
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: output trial and supplied answer do not align
+=============================== warnings summary ===============================
+test/test_operators_round2.py::test_not_handoff_changes_leaf_closing_and_trial_cost
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7166: RuntimeWarning: output_shape_gate [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-2349/test_first_and_later_words_kee0/tiny_chunk_model.xml]: head pred (1, 1, 1) vs labels (1, 1, 16) irreconcilable after reduction; supervised output loss zeroed
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_protocol.py::test_no_mid_sentence_reopening_even_under_conflict
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [1] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7166: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+1 failed, 148 passed, 2 skipped, 4 warnings in 31.80s

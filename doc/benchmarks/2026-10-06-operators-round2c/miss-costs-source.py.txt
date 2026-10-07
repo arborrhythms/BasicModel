@@ -1,0 +1,39 @@
+"""Extract concrete cost records for every failed gate without rerunning models."""
+import hashlib,json
+from pathlib import Path
+H=Path(__file__).resolve().parent
+def read(p):return json.loads(p.read_text())
+S=read(H/'measurements/summary.json');A=read(H/'aggregate-audit.json')
+result={'xor':[],'mm':[]}
+for x,a in zip(S['xor'],A['xor']['runs'],strict=True):
+    if x['class_pass'] and x['reconstruction_pass']:continue
+    raw=read(H/x['run_audit']);steps={(s['epoch'],s['batch_row']):s for s in raw['compose_score_function_steps']}
+    events=[]
+    for t in raw['sentence_trials']:
+        if not t['training']:continue
+        for row,adv in enumerate(t['advantage']):
+            s=steps[t['epoch'],row]
+            if s['walk']!='compose':continue
+            events.append(dict(epoch=t['epoch'],batch_row=row,input=x['inputs'][row],
+                departure=s['action_name'],greedy_components=t['components'][row][0],
+                explore_components=t['components'][row][1],delta=t['delta'][row],
+                keep=t['keep_decision'][row],advantage=adv,deciding=t['deciding'][row],
+                K=s['eligible_alternatives'],R=s['eligible_rounds'],probability=s['p_forward']))
+    against_conjunction=[e for e in events if e['departure']=='conjunction' and e['advantage']>0]
+    for_conjunction=[e for e in events if e['departure']=='disjunction' and e['advantage']>0]
+    result['xor'].append(dict(run=x['run'],mse=x['mse'],correct=x['correct'],
+        reconstructed=x['recovered'],predictions=x['predictions'],band=x['band'],
+        final_evaluation=x['final_greedy_compose'],last_greedy_disjunction_epoch=a['last_greedy_disjunction_epoch'],
+        by_walk_action=a['by_walk_action'],
+        last_cost_rewarding_greedy_disjunction=against_conjunction[-1] if against_conjunction else None,
+        last_cost_rewarding_greedy_conjunction=for_conjunction[-1] if for_conjunction else None,
+        all_compose_costs=events))
+for x in S['mm']:
+    if x['passed']:continue
+    best=min(x['trajectory'],key=lambda row:row['mse'])
+    result['mm'].append(dict(run=x['run'],epochs=x['calls'],best=best,last=x['trajectory'][-1],
+        pole_consumers=x['pole_consumers'],owner_step_comparisons=x['owner_step_comparisons'],
+        statement='No sentence trial costs or keep decisions run on this MM_xor path. The changed mechanism is the retired sampling draws followed by the Bernoulli mask; the failed 200-epoch convergence run remains counted.'))
+result['postprocessor_sha256']=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+(H/'miss-costs.json').write_text(json.dumps(result,indent=2)+'\n')
+print(json.dumps({k:[{name:val for name,val in row.items() if name not in ('all_compose_costs','final_evaluation','by_walk_action')} for row in result[k]] for k in ('xor','mm')},indent=2))

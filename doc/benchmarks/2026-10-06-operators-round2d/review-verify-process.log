@@ -1,0 +1,20 @@
+{
+  "verified_at": "2026-10-06T18:53:37.631013+00:00",
+  "source_files": 703,
+  "source_manifest_sha256": "d7e2ead0a7ce294ed99fccb9646b62630da5c7167e014a960902852d851420bb",
+  "source_archive_sha256": "935d24a91b04ab7e898aeff71de24cb03a2c74601d76d89814a06734678ef3b1",
+  "source_and_archive_matched": true,
+  "frozen_helpers": 179,
+  "frozen_helpers_matched": true,
+  "prior_receipt_files": 5276,
+  "prior_receipts_unchanged": true,
+  "complete_test_ports": 5,
+  "changed_seed_calls": [],
+  "measurement_inputs_matched": true,
+  "head": "73cd7b71baeb64135c1e2e841b9bfc321339d8bc",
+  "parent_head": "c9670b545ff88ee1b8176aa44f6c192ad84b597c",
+  "index_empty": true,
+  "parent_index_empty": true,
+  "committed": false,
+  "pushed": false
+}

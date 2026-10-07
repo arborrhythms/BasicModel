@@ -1,0 +1,20 @@
+{"name": "landing-0", "exit_code": 0}
+{"name": "round2c-0", "exit_code": 0}
+{"name": "landing-1", "exit_code": 0}
+{"name": "round2c-1", "exit_code": 0}
+{"name": "landing-2", "exit_code": 0}
+{"name": "round2c-2", "exit_code": 0}
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/paired_mm.py", line 93, in <module>
+    else:main()
+         ^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/paired_mm.py", line 80, in main
+    b=json.loads((OUT/f'round2b-{seed}.json').read_text())
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/paired-mm/round2b-0.json'

@@ -1,0 +1,1709 @@
+{
+  "passed": 10,
+  "total": 10,
+  "before_xor_or_mm": true,
+  "completed_processes": [
+    {
+      "kind": "sum",
+      "run": 1,
+      "name": "sum-01",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-01"
+        ],
+        "pid": 57777,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 657507816,
+        "elapsed_seconds": 129.86463154200464,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-01/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 2,
+      "name": "sum-02",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-02"
+        ],
+        "pid": 57778,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 590546288,
+        "elapsed_seconds": 130.8746229170356,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-02/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 3,
+      "name": "sum-03",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-03"
+        ],
+        "pid": 57779,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 589890976,
+        "elapsed_seconds": 131.88143825001316,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-03/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 4,
+      "name": "sum-04",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-04"
+        ],
+        "pid": 58185,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 613893512,
+        "elapsed_seconds": 129.3601312499959,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-04/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 5,
+      "name": "sum-05",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-05"
+        ],
+        "pid": 58186,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 655967696,
+        "elapsed_seconds": 130.35809429199435,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-05/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 6,
+      "name": "sum-06",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-06"
+        ],
+        "pid": 58187,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 590579008,
+        "elapsed_seconds": 131.36852454202017,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-06/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 9,
+      "name": "sum-09",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-09"
+        ],
+        "pid": 58567,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 599623048,
+        "elapsed_seconds": 129.82084008300444,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-09/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 7,
+      "name": "sum-07",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-07"
+        ],
+        "pid": 58565,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 645203336,
+        "elapsed_seconds": 131.38720712496433,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-07/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 8,
+      "name": "sum-08",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-08"
+        ],
+        "pid": 58566,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 654738896,
+        "elapsed_seconds": 132.39116370800184,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-08/run.log"
+      }
+    },
+    {
+      "kind": "sum",
+      "run": 10,
+      "name": "sum-10",
+      "process": {
+        "command": [
+          "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/campaign.py",
+          "sum",
+          "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-10"
+        ],
+        "pid": 59137,
+        "exit_code": 0,
+        "reason": "exit",
+        "peak_memory_bytes": 652363192,
+        "elapsed_seconds": 112.07110429200111,
+        "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-06-operators-round2c/measurements/sum-10/run.log"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "kind": "sum",
+      "answers": [
+        0.49999991059303284,
+        0.49999985098838806,
+        0.5000000596046448,
+        0.5
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.2499999850988388,
+      "correct": 3,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": 0.0,
+      "max_deviation_from_half": 1.4901161193847656e-07,
+      "half_at_float32_precision": true,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "floor_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged operators round 2c control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 1.9936417967880704e-12,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 1.9936417967880704e-12,
+          "credit_total": 1.9936417967880704e-12,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 1.44010137148598e-10,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 1.44010137148598e-10,
+          "credit_total": 1.44010137148598e-10,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.20879440009593964,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.20879440009593964,
+          "credit_total": 0.20879440009593964,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.22841477394104004,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.22841477394104004,
+          "credit_total": 0.22841477394104004,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.5,
+        0.4999999701976776,
+        0.49999991059303284,
+        0.4999998211860657
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.2499999850988388,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": -5.960464477539063e-08,
+      "max_deviation_from_half": 1.7881393432617188e-07,
+      "half_at_float32_precision": true,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "floor_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged operators round 2c control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 5.221565957391761e-10,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 5.221565957391761e-10,
+          "credit_total": 5.221565957391761e-10,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 1.9512588878001225e-08,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 1.9512588878001225e-08,
+          "credit_total": 1.9512588878001225e-08,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.17636869847774506,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.17636869847774506,
+          "credit_total": 0.17636869847774506,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.19860485196113586,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.19860485196113586,
+          "credit_total": 0.19860485196113586,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.4999997913837433,
+        0.49999985098838806,
+        0.5000000596046448,
+        0.5000000596046448
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.2499999850988388,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": -5.960464477539063e-08,
+      "max_deviation_from_half": 2.086162567138672e-07,
+      "half_at_float32_precision": true,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "floor_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged operators round 2c control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 4.926351721223909e-06,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 4.926351721223909e-06,
+          "credit_total": 4.926351721223909e-06,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 3.8156897086416564e-10,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 3.8156897086416564e-10,
+          "credit_total": 3.8156897086416564e-10,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.2810058891773224,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.2810058891773224,
+          "credit_total": 0.2810058891773224,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.3515750467777252,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.3515750467777252,
+          "credit_total": 0.3515750467777252,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.5000000596046448,
+        0.4999998211860657,
+        0.5000001192092896,
+        0.49999991059303284
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.25,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": 2.9802322387695312e-08,
+      "max_deviation_from_half": 1.7881393432617188e-07,
+      "half_at_float32_precision": true,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "floor_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged operators round 2c control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 2.2313390246608833e-08,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 2.2313390246608833e-08,
+          "credit_total": 2.2313390246608833e-08,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.00019591352611314505,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.00019591352611314505,
+          "credit_total": 0.00019591352611314505,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.22056925296783447,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.22056925296783447,
+          "credit_total": 0.22056925296783447,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.3999999463558197,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.3999999463558197,
+          "credit_total": 0.3999999463558197,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.5000001788139343,
+        0.4999999701976776,
+        0.5000000596046448,
+        0.49999988079071045
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.25,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": 2.9802322387695312e-08,
+      "max_deviation_from_half": 1.7881393432617188e-07,
+      "half_at_float32_precision": true,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "floor_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged operators round 2c control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.00030602593324147165,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.00030602593324147165,
+          "credit_total": 0.00030602593324147165,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 4.349448943230527e-07,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 4.349448943230527e-07,
+          "credit_total": 4.349448943230527e-07,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.15296563506126404,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.15296563506126404,
+          "credit_total": 0.15296563506126404,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.2961868941783905,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.2961868941783905,
+          "credit_total": 0.2961868941783905,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.5000003576278687,
+        0.5000000596046448,
+        0.5000006556510925,
+        0.5000003576278687
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.25,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": 0.0,
+      "max_deviation_from_half": 6.556510925292969e-07,
+      "half_at_float32_precision": true,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "floor_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged operators round 2c control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 8.147722947715597e-12,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 8.147722947715597e-12,
+          "credit_total": 8.147722947715597e-12,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.0,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.0,
+          "credit_total": 0.0,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.17976436018943787,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.17976436018943787,
+          "credit_total": 0.17976436018943787,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.40255972743034363,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.40255972743034363,
+          "credit_total": 0.40255972743034363,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.5000000596046448,
+        0.5000000596046448,
+        0.4999999403953552,
+        0.49999991059303284
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.25,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": -2.9802322387695312e-08,
+      "max_deviation_from_half": 8.940696716308594e-08,
+      "half_at_float32_precision": true,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "floor_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged operators round 2c control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 3.1440566296281336e-12,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 3.1440566296281336e-12,
+          "credit_total": 3.1440566296281336e-12,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 7.315816787922813e-07,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 7.315816787922813e-07,
+          "credit_total": 7.315816787922813e-07,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.24093930423259735,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.24093930423259735,
+          "credit_total": 0.24093930423259735,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.4172338545322418,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.4172338545322418,
+          "credit_total": 0.4172338545322418,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.5000001788139343,
+        0.49999988079071045,
+        0.5000000596046448,
+        0.4999997317790985
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.25,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": -2.9802322387695312e-08,
+      "max_deviation_from_half": 2.682209014892578e-07,
+      "half_at_float32_precision": true,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "floor_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged operators round 2c control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 1.6962041493595592e-10,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 1.6962041493595592e-10,
+          "credit_total": 1.6962041493595592e-10,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 6.789432518417016e-05,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 6.789432518417016e-05,
+          "credit_total": 6.789432518417016e-05,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.07779379189014435,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.07779379189014435,
+          "credit_total": 0.07779379189014435,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.26775071024894714,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.26775071024894714,
+          "credit_total": 0.26775071024894714,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.5000000596046448,
+        0.5000000596046448,
+        0.5000002384185791,
+        0.5000002384185791
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.25,
+      "correct": 2,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": 0.0,
+      "max_deviation_from_half": 2.384185791015625e-07,
+      "half_at_float32_precision": true,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "floor_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged operators round 2c control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 1.369235141934766e-10,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 1.369235141934766e-10,
+          "credit_total": 1.369235141934766e-10,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 2.41431603442005e-13,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 2.41431603442005e-13,
+          "credit_total": 2.41431603442005e-13,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.19524429738521576,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.19524429738521576,
+          "credit_total": 0.19524429738521576,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.3520873486995697,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.3520873486995697,
+          "credit_total": 0.3520873486995697,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        }
+      ]
+    },
+    {
+      "kind": "sum",
+      "answers": [
+        0.4999998211860657,
+        0.4999995827674866,
+        0.5000001788139343,
+        0.5
+      ],
+      "targets": [
+        0.0,
+        1.0,
+        1.0,
+        0.0
+      ],
+      "inputs": [
+        "hello world",
+        "hello there",
+        "loving world",
+        "loving there"
+      ],
+      "mse": 0.25,
+      "correct": 3,
+      "class_bar": false,
+      "read_backs": [
+        "hello world",
+        "hello there",
+        "world loving",
+        "there loving"
+      ],
+      "unavailable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "reconstructed": 4,
+      "reconstruction_bar": true,
+      "contrast": 5.960464477539063e-08,
+      "max_deviation_from_half": 4.172325134277344e-07,
+      "half_at_float32_precision": true,
+      "half_comparison": "torch.allclose defaults rtol=1e-5, atol=1e-8; raw deviations retained; class bar unchanged",
+      "sum_bar": true,
+      "floor_bar": true,
+      "criterion": "abs(checkerboard contrast) <= 1e-4 and class bar not met (unchanged operators round 2c control)",
+      "final_greedy_compose": [
+        {
+          "batch_row": 0,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 8.810302097117528e-05,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 8.810302097117528e-05,
+          "credit_total": 8.810302097117528e-05,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 1,
+          "sentence_slot": 0,
+          "word_rows": [
+            0,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 1.2676381402343395e-06,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 1.2676381402343395e-06,
+          "credit_total": 1.2676381402343395e-06,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 2,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            1
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.24335913360118866,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.24335913360118866,
+          "credit_total": 0.24335913360118866,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        },
+        {
+          "batch_row": 3,
+          "sentence_slot": 0,
+          "word_rows": [
+            4,
+            2
+          ],
+          "sequence": [
+            {
+              "arity": 2,
+              "rule_id": 0,
+              "rule_name": "sum",
+              "surface_name": "sum",
+              "position": 1
+            }
+          ],
+          "cost_components": {
+            "reconstruction": 0.36479124426841736,
+            "expectation": 0.0,
+            "answer": 0.0
+          },
+          "selected_cost": 0.36479124426841736,
+          "credit_total": 0.36479124426841736,
+          "decision": "tie:greedy",
+          "trial": "greedy"
+        }
+      ]
+    }
+  ]
+}

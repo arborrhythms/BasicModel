@@ -1,0 +1,1263 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_bounded_test_recycling.py::test_time_pressure_recycles_after_complete_cases_without_dropping_coverage",
+    "test/test_bounded_test_recycling.py::test_live_worker_receipt_keeps_completed_cases_when_a_later_case_times_out",
+    "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+    "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+    "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+    "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+    "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+    "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+    "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+    "test/test_bounded_test_runner.py::test_shared_training_group_survives_batch_and_recycle_boundaries",
+    "test/test_bounded_test_runner.py::test_default_test_budget_reserves_eight_gib_for_the_machine",
+    "test/test_bounded_test_runner.py::test_fast_pool_uses_cpu_minus_four_workers",
+    "test/test_bounded_test_runner.py::test_macos_worker_keeps_memory_cap_without_background_throttling",
+    "test/test_bounded_test_runner.py::test_selected_runs_skip_the_full_receipt_lock",
+    "test/test_bounded_test_runner.py::test_full_sweep_warns_for_missing_stale_or_incomplete_slow_record",
+    "test/test_bounded_test_runner.py::test_documentation_is_recorded_without_invalidating_code_snapshot",
+    "test/test_bounded_test_runner.py::test_weekly_continues_only_unattempted_cases_after_a_guard_stop",
+    "test/test_bounded_test_runner.py::test_weekly_collection_failure_cannot_spin_or_claim_attempts",
+    "test/test_bounded_test_runner.py::test_weekly_snapshot_copies_sources_and_shares_only_the_runtime",
+    "test/test_bounded_test_runner.py::test_bounded_workers_ignore_iteration_xdist_request",
+    "test/test_bounded_test_runner.py::test_parallel_workers_share_the_aggregate_budget_and_overlap",
+    "test/test_bounded_test_runner.py::test_aggregate_cap_terminates_parallel_workers_before_host_pressure",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+    "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+    "test/test_bounded_test_runner.py::test_xpass_respects_pytest_strictness[False-0]",
+    "test/test_bounded_test_runner.py::test_xpass_respects_pytest_strictness[True-1]",
+    "test/test_bounded_test_runner.py::test_test_failure_does_not_cancel_remaining_worker_coverage",
+    "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+    "test/test_bounded_test_runner.py::test_aborted_peer_preserves_completed_and_active_cases",
+    "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+    "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+    "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_xor]",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_grammar]",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_20M_xor]",
+    "test/test_byte_reconstruction.py::test_byte_scoring_ignores_empty_candidate_columns",
+    "test/test_byte_reconstruction.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul",
+    "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[False-0.0]",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_word_loop_rejects_external_full_stm",
+    "test/test_compiled_word_chunk.py::test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies",
+    "test/test_compiled_word_chunk.py::test_cuda_selects_lazy_fullgraph_word_loop_and_cudagraph_policy",
+    "test/test_compiled_word_chunk.py::test_compiled_sentence_state_is_an_explicit_result_not_a_side_effect",
+    "test/test_compiled_word_chunk.py::test_functional_soft_reset_clears_only_selected_owner_rows",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+    "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[40-50-64-512]",
+    "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics",
+    "test/test_compose_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline",
+    "test/test_compose_operations.py::test_one_binary_operation_across_all_locations",
+    "test/test_compose_operations.py::test_unary_and_binary_compete_in_the_same_softmax",
+    "test/test_compose_operations.py::test_stop_is_eligible_only_when_each_row_fits",
+    "test/test_compose_operations.py::test_hard_candidate_and_score_function_have_separate_gradients",
+    "test/test_compose_operations.py::test_explore_differs_and_static_budget_can_stop_early",
+    "test/test_compose_operations.py::test_fullgraph_round_and_backward_match_eager",
+    "test/test_compose_operations.py::test_padding_never_supplies_an_operation_and_inactive_rows_freeze",
+    "test/test_compose_operations.py::test_budget_exhaustion_reports_overlarge_derivation",
+    "test/test_compose_operations.py::test_forced_round_is_uniform_over_exploit_used_rounds",
+    "test/test_compose_operations.py::test_impossible_distinct_path_is_reported_without_a_fake_noop",
+    "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+    "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+    "test/test_compose_records.py::test_older_slot_unary_is_preserved_in_the_committed_postfix_program",
+    "test/test_compose_records.py::test_invalid_unary_position_is_not_silently_dropped",
+    "test/test_compose_records.py::test_unknown_recorded_operation_is_not_silently_dropped",
+    "test/test_compose_records.py::test_incomplete_forest_keeps_its_slots_for_reconstruction",
+    "test/test_compose_records.py::test_parallel_completion_guards_memory_without_serial_depths",
+    "test/test_compose_records.py::test_exploration_forces_one_used_round_for_each_packed_sentence",
+    "test/test_compose_records.py::test_one_word_packed_sentence_has_its_own_closing_and_program",
+    "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[0]",
+    "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[1]",
+    "test/test_compose_review.py::test_zero_temperature_keeps_the_score_function_gradient",
+    "test/test_compose_review.py::test_temperature_and_forced_mask_do_not_change_model_credit",
+    "test/test_compose_review.py::test_zero_temperature_explore_is_identical_until_the_forced_round",
+    "test/test_compose_review.py::test_evaluation_ignores_sampling_temperature_and_does_not_explore",
+    "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[-1.0]",
+    "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[inf]",
+    "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[nan]",
+    "test/test_compose_review.py::test_sampling_temperature_changes_only_the_hard_draw",
+    "test/test_compose_review.py::test_sampling_temperature_is_read_from_the_shared_xml_element",
+    "test/test_compose_review.py::test_zero_temperature_prefix_uses_execution_order_for_packed_ends",
+    "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[1.0-True]",
+    "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[2.0-False]",
+    "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[3.0-False]",
+    "test/test_compound_cases.py::test_modifier_selects_the_heads_cases_and_refolds_only_those_cases",
+    "test/test_compound_cases.py::test_case_selection_preserves_negative_evidence_and_silent_absence",
+    "test/test_compound_cases.py::test_case_fold_keeps_existing_code_and_membership_gradients",
+    "test/test_compound_cases.py::test_case_selector_and_fold_compile_as_one_tensor_body",
+    "test/test_compound_cases.py::test_native_case_staging_uses_existing_sigma_and_allocates_nothing",
+    "test/test_compound_cases.py::test_compound_structural_face_reads_only_the_selected_cases",
+    "test/test_compound_cases.py::test_compound_candidate_is_masked_when_no_native_case_is_available",
+    "test/test_compound_cases.py::test_compound_inverse_search_is_bounded_by_the_supplied_primed_symbols",
+    "test/test_compound_cases.py::test_free_decoder_uses_case_search_without_a_compose_witness",
+    "test/test_compound_cases.py::test_shipped_grammar_supplies_subtyping_without_a_predefined_surface",
+    "test/test_compound_cases.py::test_compound_choice_runs_in_the_shared_compiled_chooser",
+    "test/test_compound_cases.py::test_answer_case_bank_detaches_reader_keys_without_detaching_parent",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[ConjunctionLayer-<lambda>]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[DisjunctionLayer-<lambda>]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MinLayer-minimum]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MaxLayer-maximum]",
+    "test/test_concept_binding_operators.py::test_conjunction_same_reference_is_identity_but_equal_codes_are_distinct",
+    "test/test_concept_binding_operators.py::test_conjunction_zero_operand_has_zero_result_and_finite_gradient",
+    "test/test_concept_binding_operators.py::test_free_lift_inverse_searches_both_operands_from_the_bank",
+    "test/test_concept_binding_operators.py::test_free_discarding_operator_still_searches_both_bank_operands",
+    "test/test_concept_binding_operators.py::test_conjunction_keeps_the_repeated_reference_for_the_next_operation",
+    "test/test_concept_capacity_policy.py::test_explicit_word_row_capacity_failure_is_atomic",
+    "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+    "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+    "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_off_baseline_picks_larger_norm_row",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_on_primer_steers_pick_to_hot_typed_row",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_on_and_off_differ",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseSelfPriming::test_selected_left_row_is_reprimed",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseSelfPriming::test_off_path_records_no_selection",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_off_baseline_picks_smaller_norm_row",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_on_primer_steers_pick_to_hot_typed_row",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_on_and_off_differ"
+  ],
+  "completed": [
+    "test/test_bounded_test_recycling.py::test_time_pressure_recycles_after_complete_cases_without_dropping_coverage",
+    "test/test_bounded_test_recycling.py::test_live_worker_receipt_keeps_completed_cases_when_a_later_case_times_out",
+    "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+    "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+    "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+    "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+    "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+    "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+    "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+    "test/test_bounded_test_runner.py::test_shared_training_group_survives_batch_and_recycle_boundaries",
+    "test/test_bounded_test_runner.py::test_default_test_budget_reserves_eight_gib_for_the_machine",
+    "test/test_bounded_test_runner.py::test_fast_pool_uses_cpu_minus_four_workers",
+    "test/test_bounded_test_runner.py::test_macos_worker_keeps_memory_cap_without_background_throttling",
+    "test/test_bounded_test_runner.py::test_selected_runs_skip_the_full_receipt_lock",
+    "test/test_bounded_test_runner.py::test_full_sweep_warns_for_missing_stale_or_incomplete_slow_record",
+    "test/test_bounded_test_runner.py::test_documentation_is_recorded_without_invalidating_code_snapshot",
+    "test/test_bounded_test_runner.py::test_weekly_continues_only_unattempted_cases_after_a_guard_stop",
+    "test/test_bounded_test_runner.py::test_weekly_collection_failure_cannot_spin_or_claim_attempts",
+    "test/test_bounded_test_runner.py::test_weekly_snapshot_copies_sources_and_shares_only_the_runtime",
+    "test/test_bounded_test_runner.py::test_bounded_workers_ignore_iteration_xdist_request",
+    "test/test_bounded_test_runner.py::test_parallel_workers_share_the_aggregate_budget_and_overlap",
+    "test/test_bounded_test_runner.py::test_aggregate_cap_terminates_parallel_workers_before_host_pressure",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+    "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+    "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+    "test/test_bounded_test_runner.py::test_xpass_respects_pytest_strictness[False-0]",
+    "test/test_bounded_test_runner.py::test_xpass_respects_pytest_strictness[True-1]",
+    "test/test_bounded_test_runner.py::test_test_failure_does_not_cancel_remaining_worker_coverage",
+    "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+    "test/test_bounded_test_runner.py::test_aborted_peer_preserves_completed_and_active_cases",
+    "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+    "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+    "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_xor]",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_grammar]",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_20M_xor]",
+    "test/test_byte_reconstruction.py::test_byte_scoring_ignores_empty_candidate_columns",
+    "test/test_byte_reconstruction.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul",
+    "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[False-0.0]",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_word_loop_rejects_external_full_stm",
+    "test/test_compiled_word_chunk.py::test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies",
+    "test/test_compiled_word_chunk.py::test_cuda_selects_lazy_fullgraph_word_loop_and_cudagraph_policy",
+    "test/test_compiled_word_chunk.py::test_compiled_sentence_state_is_an_explicit_result_not_a_side_effect",
+    "test/test_compiled_word_chunk.py::test_functional_soft_reset_clears_only_selected_owner_rows",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+    "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[40-50-64-512]",
+    "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics",
+    "test/test_compose_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline",
+    "test/test_compose_operations.py::test_one_binary_operation_across_all_locations",
+    "test/test_compose_operations.py::test_unary_and_binary_compete_in_the_same_softmax",
+    "test/test_compose_operations.py::test_stop_is_eligible_only_when_each_row_fits",
+    "test/test_compose_operations.py::test_hard_candidate_and_score_function_have_separate_gradients",
+    "test/test_compose_operations.py::test_explore_differs_and_static_budget_can_stop_early",
+    "test/test_compose_operations.py::test_fullgraph_round_and_backward_match_eager",
+    "test/test_compose_operations.py::test_padding_never_supplies_an_operation_and_inactive_rows_freeze",
+    "test/test_compose_operations.py::test_budget_exhaustion_reports_overlarge_derivation",
+    "test/test_compose_operations.py::test_forced_round_is_uniform_over_exploit_used_rounds",
+    "test/test_compose_operations.py::test_impossible_distinct_path_is_reported_without_a_fake_noop",
+    "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+    "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+    "test/test_compose_records.py::test_older_slot_unary_is_preserved_in_the_committed_postfix_program",
+    "test/test_compose_records.py::test_invalid_unary_position_is_not_silently_dropped",
+    "test/test_compose_records.py::test_unknown_recorded_operation_is_not_silently_dropped",
+    "test/test_compose_records.py::test_incomplete_forest_keeps_its_slots_for_reconstruction",
+    "test/test_compose_records.py::test_parallel_completion_guards_memory_without_serial_depths",
+    "test/test_compose_records.py::test_exploration_forces_one_used_round_for_each_packed_sentence",
+    "test/test_compose_records.py::test_one_word_packed_sentence_has_its_own_closing_and_program",
+    "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[0]",
+    "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[1]",
+    "test/test_compose_review.py::test_zero_temperature_keeps_the_score_function_gradient",
+    "test/test_compose_review.py::test_temperature_and_forced_mask_do_not_change_model_credit",
+    "test/test_compose_review.py::test_zero_temperature_explore_is_identical_until_the_forced_round",
+    "test/test_compose_review.py::test_evaluation_ignores_sampling_temperature_and_does_not_explore",
+    "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[-1.0]",
+    "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[inf]",
+    "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[nan]",
+    "test/test_compose_review.py::test_sampling_temperature_changes_only_the_hard_draw",
+    "test/test_compose_review.py::test_sampling_temperature_is_read_from_the_shared_xml_element",
+    "test/test_compose_review.py::test_zero_temperature_prefix_uses_execution_order_for_packed_ends",
+    "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[1.0-True]",
+    "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[2.0-False]",
+    "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[3.0-False]",
+    "test/test_compound_cases.py::test_modifier_selects_the_heads_cases_and_refolds_only_those_cases",
+    "test/test_compound_cases.py::test_case_selection_preserves_negative_evidence_and_silent_absence",
+    "test/test_compound_cases.py::test_case_fold_keeps_existing_code_and_membership_gradients",
+    "test/test_compound_cases.py::test_case_selector_and_fold_compile_as_one_tensor_body",
+    "test/test_compound_cases.py::test_native_case_staging_uses_existing_sigma_and_allocates_nothing",
+    "test/test_compound_cases.py::test_compound_structural_face_reads_only_the_selected_cases",
+    "test/test_compound_cases.py::test_compound_candidate_is_masked_when_no_native_case_is_available",
+    "test/test_compound_cases.py::test_compound_inverse_search_is_bounded_by_the_supplied_primed_symbols",
+    "test/test_compound_cases.py::test_free_decoder_uses_case_search_without_a_compose_witness",
+    "test/test_compound_cases.py::test_shipped_grammar_supplies_subtyping_without_a_predefined_surface",
+    "test/test_compound_cases.py::test_compound_choice_runs_in_the_shared_compiled_chooser",
+    "test/test_compound_cases.py::test_answer_case_bank_detaches_reader_keys_without_detaching_parent",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[ConjunctionLayer-<lambda>]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[DisjunctionLayer-<lambda>]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MinLayer-minimum]",
+    "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MaxLayer-maximum]",
+    "test/test_concept_binding_operators.py::test_conjunction_same_reference_is_identity_but_equal_codes_are_distinct",
+    "test/test_concept_binding_operators.py::test_conjunction_zero_operand_has_zero_result_and_finite_gradient",
+    "test/test_concept_binding_operators.py::test_free_lift_inverse_searches_both_operands_from_the_bank",
+    "test/test_concept_binding_operators.py::test_free_discarding_operator_still_searches_both_bank_operands",
+    "test/test_concept_binding_operators.py::test_conjunction_keeps_the_repeated_reference_for_the_next_operation",
+    "test/test_concept_capacity_policy.py::test_explicit_word_row_capacity_failure_is_atomic",
+    "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+    "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+    "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+    "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+    "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_off_baseline_picks_larger_norm_row",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_on_primer_steers_pick_to_hot_typed_row",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_on_and_off_differ",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseSelfPriming::test_selected_left_row_is_reprimed",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseSelfPriming::test_off_path_records_no_selection",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_off_baseline_picks_smaller_norm_row",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_on_primer_steers_pick_to_hot_typed_row",
+    "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_on_and_off_differ"
+  ],
+  "slow_selected": [
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_xor]",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_grammar]",
+    "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_20M_xor]",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+    "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[40-50-64-512]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_bounded_test_recycling.py::test_time_pressure_recycles_after_complete_cases_without_dropping_coverage",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 28.031886000011582,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 20s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 8 selectors; limit 20s, 0.5 GiB\n[worker-000] exit 0; 19.4s; peak 0.05 GiB\n[worker-001] 2 selectors; limit 20s, 0.5 GiB\n[worker-001] exit 0; 7.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_recycling.py::test_live_worker_receipt_keeps_completed_cases_when_a_later_case_times_out",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 22.327428415999748,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 20s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 20s, 0.5 GiB\n[worker-000] timeout 124; 21.0s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_worker_exit_and_diagnostics_are_preserved",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.18001812498550862,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.7222216659574769,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.19298233301378787,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.18547020899131894,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.18634587503038347,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_suite_lock_excludes_another_process_and_releases",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04140649997862056,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015858298866078258,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_shared_training_group_survives_batch_and_recycle_boundaries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.606317166995723,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 30s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 2 selectors; limit 30s, 0.5 GiB\n[worker-000] exit 1; 1.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_default_test_budget_reserves_eight_gib_for_the_machine",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001099579967558384,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_fast_pool_uses_cpu_minus_four_workers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.574997238814831e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_macos_worker_keeps_memory_cap_without_background_throttling",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001015419838950038,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_selected_runs_skip_the_full_receipt_lock",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.016698459163308e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_full_sweep_warns_for_missing_stale_or_incomplete_slow_record",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005227910005487502,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_documentation_is_recorded_without_invalidating_code_snapshot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012376660015434027,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_weekly_continues_only_unattempted_cases_after_a_guard_stop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009131249971687794,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_weekly_collection_failure_cannot_spin_or_claim_attempts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.899999713525176e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_weekly_snapshot_copies_sources_and_shares_only_the_runtime",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010591541009489447,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_bounded_workers_ignore_iteration_xdist_request",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017120898701250553,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_parallel_workers_share_the_aggregate_budget_and_overlap",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 6.100380250019953,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 30s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 30s, 0.5 GiB\n[worker-001] 1 selectors; limit 30s, 0.5 GiB\n[worker-000] exit 0; 1.4s; peak 0.04 GiB\n[worker-001] exit 0; 2.4s; peak 0.04 GiB\n[worker-002] 1 selectors; limit 30s, 0.5 GiB\n[worker-003] 1 selectors; limit 30s, 0.5 GiB\n[worker-002] exit 0; 1.4s; peak 0.04 GiB\n[worker-003] exit 0; 2.4s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_aggregate_cap_terminates_parallel_workers_before_host_pressure",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 3.5738683749805205,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 30s, 0.2 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 30s, 0.2 GiB\n[worker-001] 1 selectors; limit 30s, 0.2 GiB\n[worker-000] aggregate_memory 137; 1.3s; peak 0.17 GiB\n[worker-001] aborted 125; 2.3s; peak 0.17 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002020830288529396,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001408749958500266,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[nan]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001337499707005918,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013966701226308942,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_real_pytest_coverage_fresh_workers_and_failure_receipt",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 7.870014916989021,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 0; 1.3s; peak 0.04 GiB\n[worker-001] 1 selectors; limit 60s, 0.5 GiB\n[worker-001] exit 0; 1.3s; peak 0.04 GiB\n[worker-002] 1 selectors; limit 60s, 0.5 GiB\n[worker-002] exit 0; 1.3s; peak 0.04 GiB\n[worker-003] 1 selectors; limit 60s, 0.5 GiB\n[worker-003] exit 0; 1.3s; peak 0.04 GiB\n[worker-004] 1 selectors; limit 60s, 0.5 GiB\n[worker-004] exit 1; 1.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_xpass_respects_pytest_strictness[False-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.6351963749621063,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 0; 1.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_xpass_respects_pytest_strictness[True-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.6310673330444843,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 1; 1.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_test_failure_does_not_cancel_remaining_worker_coverage",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.244757208973169,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 60s, 0.5 GiB\n[worker-000] exit 1; 1.3s; peak 0.04 GiB\n[worker-001] 1 selectors; limit 60s, 0.5 GiB\n[worker-001] exit 0; 1.3s; peak 0.04 GiB\n[worker-002] 1 selectors; limit 60s, 0.5 GiB\n[worker-002] exit 0; 1.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_empty_selection_is_not_a_green_suite",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.3004955420037732,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 60s, 0.5 GiB\n[collect] exit 5; 1.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_aborted_peer_preserves_completed_and_active_cases",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 3.584224999998696,
+      "message": "",
+      "stdout": "[collect] 2 selectors; limit 20s, 0.2 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 20s, 0.2 GiB\n[worker-001] 2 selectors; limit 20s, 0.2 GiB\n[worker-000] exit 42; 1.3s; peak 0.04 GiB\n[worker-001] aborted 125; 2.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.619431750033982,
+      "message": "",
+      "stdout": "[collect] 1 selectors; limit 15s, 0.5 GiB\n[collect] exit 0; 1.3s; peak 0.04 GiB\n[worker-000] 1 selectors; limit 15s, 0.5 GiB\n[worker-000] exit 0; 1.3s; peak 0.04 GiB\n"
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00020662497263401747,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.646149125008378,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_xor]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00014424999244511127,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_brick_no_sync.py', 55, 'Skipped: CUDA profiler trace requires a CUDA device')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_grammar]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010499998461455107,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_brick_no_sync.py', 55, 'Skipped: CUDA profiler trace requires a CUDA device')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_brick_no_sync.py::test_brick_runBatch_zero_dtoh_events[MM_20M_xor]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 7.933302549645305e-05,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_brick_no_sync.py', 55, 'Skipped: CUDA profiler trace requires a CUDA device')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_byte_reconstruction.py::test_byte_scoring_ignores_empty_candidate_columns",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.005316624999977648,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_byte_reconstruction.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.1387997080455534,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[False-0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.038073457952123135,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_word_loop_rejects_external_full_stm",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 13.026166750001721,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 6.641542124969419,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_cuda_selects_lazy_fullgraph_word_loop_and_cudagraph_policy",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06384191696997732,
+      "message": "",
+      "stdout": "Canonical fullgraph compile: lazy fused tensor word-loop lowering on cuda with fixed capacity and residual-part axes\r\n"
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_compiled_sentence_state_is_an_explicit_result_not_a_side_effect",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03517883300082758,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_functional_soft_reset_clears_only_selected_owner_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007435409934259951,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00014341698260977864,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py', 772, 'Skipped: strict real-model fullgraph trace is ~15s; set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00013016699813306332,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py', 824, 'Skipped: requires explicit slow MPS Inductor run')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011391699081286788,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py', 879, 'Skipped: requires explicit slow MPS Inductor run')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[40-50-64-512]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011495797662064433,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py', 879, 'Skipped: requires explicit slow MPS Inductor run')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6767547919880599,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_deadline.py::test_shared_stack_contract_allows_unary_until_the_deadline",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004607499984558672,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_one_binary_operation_across_all_locations",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001282875018659979,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_unary_and_binary_compete_in_the_same_softmax",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009438749984838068,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_stop_is_eligible_only_when_each_row_fits",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007806670037098229,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_hard_candidate_and_score_function_have_separate_gradients",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011511250049807131,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_explore_differs_and_static_budget_can_stop_early",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007293333008419722,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_fullgraph_round_and_backward_match_eager",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.7199946670443751,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_padding_never_supplies_an_operation_and_inactive_rows_freeze",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011425000266171992,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_budget_exhaustion_reports_overlarge_derivation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00093887496041134,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_forced_round_is_uniform_over_exploit_used_rounds",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007801208004821092,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_operations.py::test_impossible_distinct_path_is_reported_without_a_fake_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001136625010985881,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3465077499859035,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.4354053749702871,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.210s)\r\n"
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_older_slot_unary_is_preserved_in_the_committed_postfix_program",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000391666020732373,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_invalid_unary_position_is_not_silently_dropped",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033312500454485416,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_unknown_recorded_operation_is_not_silently_dropped",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023995799710974097,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_incomplete_forest_keeps_its_slots_for_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00028362497687339783,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_parallel_completion_guards_memory_without_serial_depths",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001348750083707273,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_exploration_forces_one_used_round_for_each_packed_sentence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003637910122051835,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_one_word_packed_sentence_has_its_own_closing_and_program",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004365420318208635,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.17292654199991375,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.11643125000409782,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_zero_temperature_keeps_the_score_function_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001233167015016079,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_temperature_and_forced_mask_do_not_change_model_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0024693330051377416,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_zero_temperature_explore_is_identical_until_the_forced_round",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007695875014178455,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_evaluation_ignores_sampling_temperature_and_does_not_explore",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0067350000026635826,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[-1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003290830063633621,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[inf]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016970798606052995,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[nan]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001604580320417881,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_sampling_temperature_changes_only_the_hard_draw",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015327919973060489,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_sampling_temperature_is_read_from_the_shared_xml_element",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03763995901681483,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_zero_temperature_prefix_uses_execution_order_for_packed_ends",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003441660082899034,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[1.0-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002234579878859222,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[2.0-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00018787500448524952,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[3.0-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00017758295871317387,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compound_cases.py::test_modifier_selects_the_heads_cases_and_refolds_only_those_cases",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00047737499698996544,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compound_cases.py::test_case_selection_preserves_negative_evidence_and_silent_absence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003097080043517053,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compound_cases.py::test_case_fold_keeps_existing_code_and_membership_gradients",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00041008403059095144,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compound_cases.py::test_case_selector_and_fold_compile_as_one_tensor_body",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09454012499190867,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compound_cases.py::test_native_case_staging_uses_existing_sigma_and_allocates_nothing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004400250036269426,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compound_cases.py::test_compound_structural_face_reads_only_the_selected_cases",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003536669537425041,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compound_cases.py::test_compound_candidate_is_masked_when_no_native_case_is_available",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004971669986844063,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compound_cases.py::test_compound_inverse_search_is_bounded_by_the_supplied_primed_symbols",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006414999952539802,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compound_cases.py::test_free_decoder_uses_case_search_without_a_compose_witness",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006089580128900707,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compound_cases.py::test_shipped_grammar_supplies_subtyping_without_a_predefined_surface",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002982541045639664,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compound_cases.py::test_compound_choice_runs_in_the_shared_compiled_chooser",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.8270311250234954,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compound_cases.py::test_answer_case_bank_detaches_reader_keys_without_detaching_parent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000600875006057322,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[ConjunctionLayer-<lambda>]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022897080052644014,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[DisjunctionLayer-<lambda>]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018697499763220549,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MinLayer-minimum]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014327079989016056,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[MaxLayer-maximum]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0014475409989245236,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_conjunction_same_reference_is_identity_but_equal_codes_are_distinct",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00048266700468957424,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_conjunction_zero_operand_has_zero_result_and_finite_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032683403696864843,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_free_lift_inverse_searches_both_operands_from_the_bank",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3042687089764513,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_free_discarding_operator_still_searches_both_bank_operands",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005885420250706375,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_binding_operators.py::test_conjunction_keeps_the_repeated_reference_for_the_next_operation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006959580350667238,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_explicit_word_row_capacity_failure_is_atomic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002670292044058442,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0029687079950235784,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003018834046088159,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1622510000015609,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.16154441598337144,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0026738750166259706,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[1-8]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 7.911561250046361,
+      "message": "",
+      "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-4]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 5.607175708981231,
+      "message": "",
+      "stdout": "{'pool': 4, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(24, 0.0), (25, 0.17335030436515808), (26, 0.17335030436515808), (27, 0.0)], 'native_cases': [(24, 16), (25, 20), (26, 24), (27, 28)]}\n"
+    },
+    {
+      "nodeid": "test/test_grounded_xor.py::test_native_unseeded_xor[2-8]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 7.879491541010793,
+      "message": "",
+      "stdout": "{'pool': 8, 'primitive_updates': 32, 'definition_updates': 32, 'concept_updates': 32, 'initial_mse': 0.5, 'mse': 0.0, 'output': [0.0, 1.0, 1.0, 0.0], 'conjunctions': 4, 'gates': [1.0, 1.0, 1.0, 1.0], 'xor_parts': [(48, 0.0), (49, 0.17335030436515808), (50, 0.17335030436515808), (51, 0.0)], 'native_cases': [(48, 16), (49, 20), (50, 24), (51, 28)]}\n"
+    },
+    {
+      "nodeid": "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_off_baseline_picks_larger_norm_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007842089980840683,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_on_primer_steers_pick_to_hot_typed_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011234170524403453,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_on_and_off_differ",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011797909974120557,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_heat_reverse_wiring.py::TestHeatReverseSelfPriming::test_selected_left_row_is_reprimed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009524160414002836,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_heat_reverse_wiring.py::TestHeatReverseSelfPriming::test_off_path_records_no_selection",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00042104197200387716,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_off_baseline_picks_smaller_norm_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006433749804273248,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_on_primer_steers_pick_to_hot_typed_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0009747080039232969,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_on_and_off_differ",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0013166249846108258,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}
