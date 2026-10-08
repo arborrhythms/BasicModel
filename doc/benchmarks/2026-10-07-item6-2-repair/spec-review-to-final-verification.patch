@@ -1,0 +1,96 @@
+--- archived-review/doc/specs/2026-10-07-thinking.md
++++ observed-at-final-verification/doc/specs/2026-10-07-thinking.md
+@@ -54,7 +54,7 @@
+ | asking | `ask(row)`: the attempt to fill a row's open references — enumerate fillings (query, the chains below, the situation's candidates), choose one; nested questions are new open references | — |
+ | existence / truth | `isTrue(P)`: P's row by reference; its pair and trust | `exist(P)`: P's presence in conceptual space — the extent's pair at its magnitude |
+ | parthood | `isPart(a, b)`: part-of rows and taxonomy by reference, with transitive chains | `part(a, b)`: containment and residual of `a` in `b` over codes |
+-| equality | `isEqual(a, b)`: DEF rows and bound references | `equal(a, b)`: identity of codes |
++| equality | `isEqual(a, b)`: DEF rows and bound references; with open variables, substitution of equals — an equation applied as a rewrite rule | `equal(a, b)`: identity of codes |
+ | implication | `isImplied(P, Q)`: implies rows with chains (modus ponens; temporal chains by `.when` order) | `implies(P, Q)`: containment of P's region in Q's |
+ | negation | `not`: exchanges the lanes of a pair or of a meaning (also of the expectation image: concluding `not X` from an uncancelled image, §2.6.5) | the same |
+ | the gain act | sets the expectation gain `g` for the next sentence (§2.6.6) | — |
+@@ -243,31 +243,59 @@
+ unique solutions, no arithmetic in the runtime (`plus` is a learned verb;
+ the successor was learned 100% on single digits on 2026-09-09).
+ 
+-**The gate, `MM_math_chain`.** The 09-09 generator at stage 2 with worked
+-solutions: each problem's premises, then the question, then — in training
+-only — the solution's intermediate sentences in dependency order and the
+-answer line (`y is 5.`). Under this spec: the question is a row with an
+-open referent; `ask` fills it by chaining the premises through working
+-memory (each intermediate value a bound slot); the conclusion is the
+-binding and is written as an inference row with its premises as
+-provenance; the presented reader reads the binding.
+-
+-Credit, both kinds, as §5: the supplied answer (the final line) credits the
+-episode's chain; and each intermediate sentence is the *next sentence* for
+-the thought that computed it, so **a thought that computes the right
+-intermediate makes the next sentence predictable** — thinking trained by
+-expectation and surprise, without oracle subgoals (the production plan's
+-rule: no gold subgoals; the corpus simply states its steps).
+-
+-Bars (ten unseeded trainings, no retry): (1) held-out problems at the
+-trained depths answered correctly in ≥ 9/10 runs (the standing form: four
+-of four held-out rows correct on the committed binding); (2) one depth
+-beyond training reported, not required — the generalization of chaining;
+-(3) every question opens an episode, chains of the dependency length, one
+-inference row per conclusion with the right provenance; (4) an ablation
+-with the final answer withheld (expectation credit only): the chain still
+-forms in a majority of runs, reported — the test of thinking by surprise.
+-Distractor clauses present; premise order shuffled per presentation.
++**Not direct (Alec, 2026-10-07).** The September fixture gave numerals a
++one-hot or binary code inside the root and read the answer as a one-hot
++over `[0, R)`, so the reader computed on the code's structure. That is the
++direct path and it goes: numerals are opaque identities like any word, and
++the answer is a binding. Nothing numeric remains in the model; exact
++arithmetic lives only in the generator and the verifier.
++
++**The sequence.** (1) Numerals are number *words* (`one` … `twenty`), each
++an identity by construction (3a), no structure; digits are separate wholes
++under the word rule, and positional notation is a later, learned system.
++(2) The successor is stated: the counting facts as sentences, `one plus one
++is two.` …, stored as rows. The verb is `plus`; what it learns is its
++action with the object `one` — the successor, a map from each numeral's
++code to the next's (6.5's change column from a row to the next; the
++2026-09-09 pilot learned it to 100% on single digits), the one learned map
++in the gate; its inverse is exact given the verb, which gives the
++predecessor. `plus` with any other object is not learned as a map — numeral
++codes are opaque, so a map fit on seen pairs says nothing about unseen ones
++— and is given its meaning by **the definition of addition, stated once as
++two sentences**: `a plus zero is a.` and `a plus (b plus one) is (a plus b)
++plus one.` — equations, `equal` rows generic in `a` and `b` (Alec,
++2026-10-07: "eventually that is enough to define addition"; the operator is
++`equal`, as the catalogue says of a definition sentence). (3) Addition is thinking:
++`three plus two ?` is a row with an open referent; nothing computes it;
++thought applies the definition by substitution of equals — `isEqual`'s
++symbolic face as a rewrite: `query` matches the question against an
++equation's left side with its variables as open slots and the right side
++replaces it — `two is one plus one` (a counting fact), so `three plus two`
++is `three plus (one plus one)`, which the definition rewrites to `(three
++plus one) plus one` — then
++the successor verb twice, `three plus one is four`, `four plus one is five`,
++binding the referent to `five`; each step is an inference row with its
++premises; the chain length is the second addend — `a + S(b) = S(a + b)`
++carried out as sentences.
++(4) The corpus states its steps: in training, the premises, the question,
++the successor steps in order and the answer line; the answer credits the
++chain, each step is the next sentence for the thought that computed it.
++
++**The gate, `MM_math_chain`.** The 09-09 generator rendering number words
++(including `zero`), the counting facts, the two definition sentences, and
++successor-step worked solutions; addends up to ten in training with
++held-out *pairs*; `attentionBudget` at least the largest addend plus two.
++Bars (ten unseeded trainings, no retry): (1) held-out pairs at the trained
++range bound correctly in ≥ 9/10 runs (four of four held-out rows on the
++committed binding) — derivable from the successor facts alone, so this is
++thinking generalizing, not a verb; (2) addends beyond the trained range
++reported, not required; (3) every question opens an episode, the chain
++length equals the second addend, one inference row per step with the
++right provenance; (4) the same ten with the answer line withheld
++(expectation credit only), reporting how many runs still form the chain.
++Distractor premises present; premise order shuffled per presentation; no
++one-hot or binary numeral code and no numeric output anywhere (a test
++asserts the model has no `mathRange`-sized output).
+ 
+ This gate replaces `MM_query_reasoning` as 6.2's learning certificate; the
+ 11c mechanism tests stay as mechanism. It is added to the repair pass of §9.

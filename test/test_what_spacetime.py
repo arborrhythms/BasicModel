@@ -235,7 +235,7 @@ def test_model_what_present_wraps_established_forward_byte_identically():
     model = _TinyWhatModel()
     clean = model.forward(value)
     calls = model.calls
-    answer = model.what(What.present(0), execution=clean)
+    answer = model.ask(What.present(0), execution=clean)
     assert model.calls == calls
     assert answer.what is clean[2]
     assert torch.equal(answer.what, value + 3.0)
@@ -247,7 +247,7 @@ def test_model_what_ltm_records_actual_head_response_not_input_state():
     memory = _memory()
     model = _TinyWhatModel(memory)
     value = torch.tensor([[4.0]])
-    answer = model.what(What.supervised(0), input_data=value)
+    answer = model.ask(What.supervised(0), input_data=value)
     stored = memory.get_what_slots()[0]
     assert torch.equal(answer.what, value + 3.0)
     assert torch.equal(stored.output, answer.what)

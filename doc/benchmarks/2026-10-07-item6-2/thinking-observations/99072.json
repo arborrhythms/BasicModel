@@ -1,0 +1,942 @@
+{
+  "pid": 99072,
+  "nodes": [
+    {
+      "nodeid": "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_replaces_wave",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_replaces_wave",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_replaces_wave",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+      "phase": "call",
+      "outcome": "failed",
+      "reason": "test/test_dual_towers.py:258: in test_pyramid_taper_topk_selection\n    content, acts = cs0.cs_symbolic_phase(settled, extents=extents,\nbin/Spaces.py:16218: in cs_symbolic_phase\n    a_0 = self.cs_read_memberships(percepts, extents) if a_0 is None else a_0\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:15464: in cs_read_memberships\n    perception = read_percepts(percepts, extents, keys,\nbin/PerceptField.py:67: in read_percepts\n    _, support = part_reader(native, [keys[i][1] for i in ps],\nbin/Spaces.py:10848: in part_memberships\n    raw = b''.join(store.bytes_for(pid) for pid, _, _ in selected)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:10848: in <genexpr>\n    raw = b''.join(store.bytes_for(pid) for pid, _, _ in selected)\n                   ^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:13607: in bytes_for\n    raise IndexError(\nE   IndexError: RadixLayer.bytes_for: percept_id 65 out of range [0, 51)"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+      "phase": "call",
+      "outcome": "failed",
+      "reason": "test/test_dual_towers.py:57: in test_ws_matches_ps_view_shape\n    assert int(ps.nOutputDim) == int(ws.nOutputDim) == 1024\nE   assert 104 == 1024\nE    +  where 104 = int(104)\nE    +    where 104 = WholeSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Codebook(\\n      (...): EventEncoding()\\n    (whatEncoding): WhatEncoding()\\n    (wordEncoding): WordEncoding()\\n  )\\n  (layers): ModuleList()\\n).nOutputDim"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+      "phase": "call",
+      "outcome": "failed",
+      "reason": "test/test_dual_towers.py:150: in test_ws_routes_universe_on_parallel_path\n    assert stamps == [\"universe\"] * len(stamps), stamps\nE   AssertionError: ['universe', 'property-neutral', 'property-neutral']\nE   assert ['universe', ...erty-neutral'] == ['universe', ...', 'universe']\nE     \nE     At index 1 diff: 'property-neutral' != 'universe'\nE     Use -v to get more diff"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes",
+      "phase": "call",
+      "outcome": "failed",
+      "reason": "test/test_frozen_concepts.py:135: in test_reading_wiring_desires_staged_wholes\n    monkeypatch.setattr(target, '_stage0_indices', torch.tensor([[0]]))\nE   AttributeError: WholeSpace(\nE     (subspace): SubSpace()\nE     (_owned_bases): ModuleDict(\nE       (event): Tensor()\nE       (what): Codebook(\nE         (primitive_properties): PrimitiveProperties()\nE       )\nE       (where): Tensor()\nE       (when): Tensor()\nE       (activation): Tensor()\nE     )\nE     (_owned_encoders): ModuleDict(\nE       (activeEncoding): ActiveEncoding()\nE       (objectEncoding): EventEncoding()\nE       (whatEncoding): WhatEncoding()\nE       (wordEncoding): WordEncoding()\nE     )\nE     (layers): ModuleList()\nE   ) has no attribute '_stage0_indices'"
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage",
+      "phase": "call",
+      "outcome": "failed",
+      "reason": "test/test_priming_energy.py:212: in test_reading_heat_from_canonical_on_multistage\n    m._primed_reading_step()\n    ^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute '_primed_reading_step'"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "phase": "call",
+      "outcome": "failed",
+      "reason": "test/test_reasoning_cde_model.py:62: in test_training_step_uses_the_normal_policy_configuration\n    self.m.runEpoch(optimizer=opt, batchSize=6, split='train',\nbin/Models.py:15676: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:13595: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13734: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14116: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8764: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10192: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8449: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8227: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23428: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17199: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:21962: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21515: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20615: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:142: in sentence_pair\n    exploit = compose(cache, None)\n              ^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20529: in compose\n    current_lang, current_stm, current_feedback = compose_word(\nbin/Models.py:21174: in stage_cs_lang\n    prediction, loss_sum, loss_weight = FunctionalPeerSTM.predict(\nbin/Models.py:1405: in predict\n    routed_prediction = layer._apply_routing_bias(\nbin/Layers.py:12368: in _apply_routing_bias\n    bias = self.routing_proj(routing.detach())            # [B, D]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/linear.py:134: in forward\n    return F.linear(input, self.weight, self.bias)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: mat1 and mat2 shapes cannot be multiplied (6x58 and 11x104)"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_reference_kinds_and_bound_surface",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_reference_kinds_and_bound_surface",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_reference_kinds_and_bound_surface",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_conclude_gate_and_exhaustion_question",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_conclude_gate_and_exhaustion_question",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_conclude_gate_and_exhaustion_question",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_credit_sign_and_exact_tie",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_credit_sign_and_exact_tie",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_credit_sign_and_exact_tie",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_not_exchanges_both_poles_and_preserves_content",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_not_exchanges_both_poles_and_preserves_content",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_not_exchanges_both_poles_and_preserves_content",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_operations_all_declare_pairs_and_ast_never_returns_scalar",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_operations_all_declare_pairs_and_ast_never_returns_scalar",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_operations_all_declare_pairs_and_ast_never_returns_scalar",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_nested_ask_returns_the_binding_and_shares_budget",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_nested_ask_returns_the_binding_and_shares_budget",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_nested_ask_returns_the_binding_and_shares_budget",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_negative_image_concludes_absence_with_confidence",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_negative_image_concludes_absence_with_confidence",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_negative_image_concludes_absence_with_confidence",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_expectation_only_credit_uses_held_next_sentence_cost",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_expectation_only_credit_uses_held_next_sentence_cost",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_expectation_only_credit_uses_held_next_sentence_cost",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_expectation_credit_moves_shared_chooser_toward_the_completed_chain",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_expectation_credit_moves_shared_chooser_toward_the_completed_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_expectation_credit_moves_shared_chooser_toward_the_completed_chain",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_document_end_flushes_answer_work_credit_without_a_future_target",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_document_end_flushes_answer_work_credit_without_a_future_target",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_document_end_flushes_answer_work_credit_without_a_future_target",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[bind]",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[bind]",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[bind]",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    }
+  ],
+  "seed_calls_suppressed": [
+    7,
+    1000,
+    1001,
+    1002,
+    7,
+    1000,
+    1001,
+    1002,
+    7,
+    1000,
+    7,
+    1000,
+    7,
+    1000,
+    1001,
+    1002,
+    1003,
+    1004,
+    1005,
+    7,
+    1000,
+    0
+  ],
+  "episodes": 17,
+  "credit": [
+    {
+      "source": "answer_and_work",
+      "costs": [
+        0.3816010129451752,
+        0.3819781278073788
+      ],
+      "requires_grad": true,
+      "surrogate": 0.0039058274123817682
+    },
+    {
+      "source": "answer_and_work",
+      "costs": [
+        0.3814817962050438,
+        0.38191468238830567
+      ],
+      "requires_grad": true,
+      "surrogate": 0.004690549802035093
+    },
+    {
+      "source": "answer_and_work",
+      "costs": [
+        1.2,
+        0.2
+      ],
+      "requires_grad": true,
+      "surrogate": -4.630844593048096
+    },
+    {
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.1,
+        0.05
+      ],
+      "requires_grad": true,
+      "surrogate": -0.04255574569106102
+    },
+    {
+      "source": "answer_and_work",
+      "costs": [
+        1.6400000000000001,
+        0.14
+      ],
+      "requires_grad": true,
+      "surrogate": -0.75
+    },
+    {
+      "source": "answer_expectation_and_work",
+      "costs": [
+        0.1059032678604126,
+        0.1
+      ],
+      "requires_grad": true,
+      "surrogate": -0.00295163388364017
+    },
+    {
+      "source": "document_end_answer_and_work",
+      "costs": [
+        1.0,
+        0.5
+      ],
+      "requires_grad": true,
+      "surrogate": -0.25
+    }
+  ],
+  "exit_code": 1
+}

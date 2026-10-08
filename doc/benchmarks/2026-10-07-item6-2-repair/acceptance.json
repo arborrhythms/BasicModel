@@ -1,0 +1,114 @@
+{
+  "status": "Accepted by Alec as the item 6.2 mechanism landing; commit, push and WikiOracle bump authorized",
+  "date": "2026-10-07",
+  "authority": "User landing instruction; Claude review in thinking spec section 11",
+  "candidate_base_commit": "631d9e8e44b7c8034263e22b36dc74fa5df4eb75",
+  "scope": "6.2 source, tests, specs, thought-loop plan, thinking toys, both receipts and current document edits",
+  "measured_source_files": 726,
+  "measured_source_sha256": "9fabf14e889d9b3cc58b331f932804bce13dd10c4986bdabf8ca900adbe1271c",
+  "runtime_source_unchanged": true,
+  "test_changes_after_measurement": [
+    "test/test_frozen_concepts.py",
+    "test/test_meronomy_ladder.py"
+  ],
+  "test_delta": "acceptance-test-delta.patch",
+  "test_change_reason": "Authorized removal of the nested helper torch.manual_seed(0); trailing blank-line cleanup in the retired-test file",
+  "first_receipt_unchanged": true,
+  "prior_measurements_preserved": true,
+  "basis": {
+    "full": {
+      "selected": 5568,
+      "completed": 5568,
+      "outcomes": {
+        "passed": 5283,
+        "skipped": 284,
+        "xpassed": 1
+      }
+    },
+    "thinking": {
+      "selected": 57,
+      "outcomes": {
+        "passed": 56,
+        "failed": 1
+      },
+      "groups": {
+        "11c": {
+          "passed": 17
+        },
+        "mm": {
+          "passed": 2
+        },
+        "per_row": {
+          "failed": 1
+        },
+        "original_certificates": {
+          "passed": 25
+        },
+        "ownership_certificates": {
+          "passed": 12
+        }
+      }
+    },
+    "standing": {
+      "class_pass": 10,
+      "reconstruction_pass": 10,
+      "joint": 10,
+      "mm_pass": 10,
+      "sum_pass": 10,
+      "sum_floor_pass": 10,
+      "xor_bands": {
+        "at 0": 10,
+        "at 1/4": 0,
+        "between": 0,
+        "above 1/4": 0
+      },
+      "sum_bands": {
+        "at 0": 0,
+        "at 1/4": 10,
+        "between": 0,
+        "above 1/4": 0
+      }
+    },
+    "standing_episodes": 0
+  },
+  "configured_run": {
+    "epochs": 300,
+    "unforced": true,
+    "seed": null,
+    "episodes": 1,
+    "exact_credit_ties": 1,
+    "nonzero_thought_gradients": 0,
+    "meaning": "Completion, not learned chaining"
+  },
+  "landing_fixture": {
+    "result": "passed",
+    "selected": 1,
+    "completed": 1,
+    "seed_calls": 0,
+    "receipt": "landing-fixture/result.json",
+    "note": "New validation of the corrected fixture, not a replacement for the recorded 56/57 gate; the next learning-step measurement includes all 57"
+  },
+  "learning_gates_6_5": {
+    "status": "Pending the million-sentence checkpoint; not claimed",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "gates": [
+      "held-out anaphora",
+      "verb reuse",
+      "prediction control",
+      "shuffled order",
+      "renamed vocabulary",
+      "determiner control"
+    ]
+  },
+  "learning_step": "MM_math_chain under live thinking spec section 10; separate receipt and Claude review before its commit",
+  "historical_reports": "review-summary.json and archived documents retain the pre-acceptance review state; this acceptance record supersedes that status without replacing measurements",
+  "landing_documentation_checks": {
+    "passed": 333,
+    "report": "landing-doc-links.xml"
+  },
+  "whitespace_check": "Live source and documents pass. Raw historical logs, snapshots and diffs retain their original whitespace as measurement evidence."
+}

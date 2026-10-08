@@ -1,0 +1,43 @@
+s....................................................................... [ 41%]
+......FFFF.............................................................. [ 83%]
+............................                                             [100%]
+=================================== FAILURES ===================================
+__ test_retired_operators_are_absent_from_shipped_grammars[complete.grammar] ___
+test/test_operator_catalogue.py:155: in test_retired_operators_are_absent_from_shipped_grammars
+    assert retired.isdisjoint(THOUGHT_EXECUTORS)
+E   AssertionError: assert False
+E    +  where False = <built-in method isdisjoint of set object at 0x148477140>(mappingproxy({'not': ThoughtExecutorDescriptor(semantic_id='not', domain='serial-negation', argument_kinds=('meaning',...ate')),), continues=False, open_operands=False, predicate_name=None, relation_directions=(), taxonomy_by_order=False)}))
+E    +    where <built-in method isdisjoint of set object at 0x148477140> = {'exist', 'lookup', 'true'}.isdisjoint
+___ test_retired_operators_are_absent_from_shipped_grammars[ladder.grammar] ____
+test/test_operator_catalogue.py:155: in test_retired_operators_are_absent_from_shipped_grammars
+    assert retired.isdisjoint(THOUGHT_EXECUTORS)
+E   AssertionError: assert False
+E    +  where False = <built-in method isdisjoint of set object at 0x1484775a0>(mappingproxy({'not': ThoughtExecutorDescriptor(semantic_id='not', domain='serial-negation', argument_kinds=('meaning',...ate')),), continues=False, open_operands=False, predicate_name=None, relation_directions=(), taxonomy_by_order=False)}))
+E    +    where <built-in method isdisjoint of set object at 0x1484775a0> = {'exist', 'lookup', 'true'}.isdisjoint
+_ test_retired_operators_are_absent_from_shipped_grammars[tied_reconstruction_output_benchmark.grammar] _
+test/test_operator_catalogue.py:155: in test_retired_operators_are_absent_from_shipped_grammars
+    assert retired.isdisjoint(THOUGHT_EXECUTORS)
+E   AssertionError: assert False
+E    +  where False = <built-in method isdisjoint of set object at 0x148476260>(mappingproxy({'not': ThoughtExecutorDescriptor(semantic_id='not', domain='serial-negation', argument_kinds=('meaning',...ate')),), continues=False, open_operands=False, predicate_name=None, relation_directions=(), taxonomy_by_order=False)}))
+E    +    where <built-in method isdisjoint of set object at 0x148476260> = {'exist', 'lookup', 'true'}.isdisjoint
+____________ test_retired_operator_declarations_fail_loudly[exist] _____________
+test/test_operator_catalogue.py:165: in test_retired_operator_declarations_fail_loudly
+    with pytest.raises(ValueError, match='retired'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+=============================== warnings summary ===============================
+test/test_objective_ownership.py::test_named_concept_evidence_has_the_answer_as_its_only_writer
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_occurrence_coordinates.py::test_input_event_position_is_independent_of_the_subjective_clock
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7080: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3371/test_input_event_position_is_i0/packed_parity.xml]: Data.what target (1, 16) replaces the loader output (1, 0) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[complete.grammar]
+FAILED test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[ladder.grammar]
+FAILED test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[tied_reconstruction_output_benchmark.grammar]
+FAILED test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[exist]
+4 failed, 167 passed, 1 skipped, 2 warnings in 25.90s

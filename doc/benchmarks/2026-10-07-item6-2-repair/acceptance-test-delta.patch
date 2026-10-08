@@ -1,0 +1,18 @@
+--- measured/test/test_frozen_concepts.py
++++ accepted/test/test_frozen_concepts.py
+@@ -117,5 +117,3 @@
+         m.relevance_on = False
+         object.__setattr__(cs0, "_priming_boosts", None)
+         object.__setattr__(m, "_reading_desire", None)
+-
+-
+--- measured/test/test_meronomy_ladder.py
++++ accepted/test/test_meronomy_ladder.py
+@@ -484,7 +484,6 @@
+     Language.TheGrammar._configured = False
+     cfg = Models.BaseModel.load_config(str(config))
+     TheData.load(dataset, dat=dict(cfg["architecture"]["data"]))
+-    torch.manual_seed(0)
+     m, _ = Models.BaseModel.from_config(str(config), data=TheData)
+     return m
+ 

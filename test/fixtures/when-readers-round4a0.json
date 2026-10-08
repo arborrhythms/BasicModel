@@ -804,6 +804,12 @@
       "function": "SituationFrame.detached",
       "previous_absolute_time": false,
       "now": "Carries the stored source-relative occurrence band as detached binding evidence; never an independence feature."
+    },
+    {
+      "file": "bin/Queries.py",
+      "function": "ThoughtLTMCapability.relation_evidence",
+      "previous_absolute_time": false,
+      "now": "Read event endpoint .when on the shared thought meter; compare only within one document."
     }
   ],
   "dynamic_readers": [

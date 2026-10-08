@@ -1,0 +1,47 @@
+[
+  {
+    "stage": "freeze",
+    "status": "started"
+  },
+  {
+    "stage": "freeze",
+    "status": "finished",
+    "exit_code": 0
+  },
+  {
+    "stage": "mm_query_run",
+    "status": "started"
+  },
+  {
+    "stage": "thinking_gate",
+    "status": "started"
+  },
+  {
+    "stage": "thinking_gate",
+    "status": "finished",
+    "exit_code": 1
+  },
+  {
+    "stage": "campaign",
+    "status": "started"
+  },
+  {
+    "stage": "campaign",
+    "status": "finished",
+    "exit_code": 0
+  },
+  {
+    "stage": "mm_query_run",
+    "status": "finished",
+    "exit_code": 0
+  },
+  {
+    "stage": "summarize",
+    "status": "started"
+  },
+  {
+    "stage": "summarize",
+    "status": "finished",
+    "exit_code": 0
+  }
+]

@@ -59,7 +59,11 @@ def semantic_metadata(meanings):
 
     return tuple(torch.cat((meaning.roles.new_tensor(
         [meaning.mode == mode for mode in MODES] + [meaning.polarity]),
-        field(meaning.bindings, meaning.roles), field(meaning.scope, meaning.roles)))
+        field(tuple(item for item in meaning.bindings if not (
+            isinstance(item, tuple) and len(item) == 2 and item[0] in
+            ('_evidence_pair', '_open_references', '_thought_witnesses',
+             '_producing_operation', '_query_relation', '_query_exclude'))), meaning.roles),
+        field(meaning.scope, meaning.roles)))
         for meaning in meanings)
 
 

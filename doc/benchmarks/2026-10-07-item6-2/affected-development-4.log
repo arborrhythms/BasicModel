@@ -1,0 +1,170 @@
+...F.............................FF.....FFFF...F..F..................... [ 72%]
+......F.............F....F.                                              [100%]
+=================================== FAILURES ===================================
+__________ test_thought_uses_existing_compose_scorer_and_owner_credit __________
+test/test_item6_2_thinking.py:109: in test_thought_uses_existing_compose_scorer_and_owner_credit
+    result=run(model,registry.form('equal',a,a),work_budget=20,
+test/test_item6_2_thinking.py:44: in run
+    return model.run_selected_thought(q, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6029: in run_selected_thought
+    result = thought_pair(self, meaning, row=row, work_budget=work_budget,
+bin/WalkTrials.py:176: in thought_pair
+    greedy,first,trace,state=run()
+                             ^^^^^
+bin/WalkTrials.py:170: in run
+    result=model._run_selected_thought_once(meaning,row=row,work_budget=work_budget,registry=registry,work=meter)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6397: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6391: in run_context
+    outcome = execute(outcome["meaning"], actions=(action,),
+bin/Models.py:6306: in execute
+    apply_thought_effect(self, raw, row=row, work=meter)
+bin/AccessibleMind.py:138: in apply_thought_effect
+    value = float(result.evidence['gain'])
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'gain'
+___ test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse ___
+test/test_normal_thought_controller.py:88: in test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse
+    result = model.run_selected_thought(question, row=0, work_budget=16)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6032: in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+bin/Models.py:6397: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6375: in run_context
+    raise ValueError("cannot conclude with open references and work remaining")
+E   ValueError: cannot conclude with open references and work remaining
+__ test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata ___
+test/test_normal_thought_controller.py:118: in test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata
+    result = model.run_selected_thought(question, row=0, work_budget=16)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6032: in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+bin/Models.py:6397: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6375: in run_context
+    raise ValueError("cannot conclude with open references and work remaining")
+E   ValueError: cannot conclude with open references and work remaining
+_ test_completed_compose_program_enters_normal_controller_before_legacy_thinking _
+test/test_normal_thought_controller.py:307: in test_completed_compose_program_enters_normal_controller_before_legacy_thinking
+    assert [record.operation for record in result.records if record.kind == "thought"] == [
+E   AssertionError: assert ['part', 'par...part', 'part'] == ['part', 'conclude']
+E     
+E     At index 1 diff: 'part' != 'conclude'
+E     Left contains 4 more items, first extra item: 'part'
+E     Use -v to get more diff
+______ test_completed_unary_concept_program_enters_the_normal_controller _______
+test/test_normal_thought_controller.py:353: in test_completed_unary_concept_program_enters_the_normal_controller
+    query=registry.form('quantize', leaves[0]))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1974: in form
+    raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E   ValueError: quantize is retired; use future symbolization
+____ test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit ____
+test/test_normal_thought_controller.py:389: in test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit
+    chooser.logits(torch.stack((first, first)), (False, False)),
+    ^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'OperationSelectionLayer' object has no attribute 'logits'
+______ test_normal_controller_checkpoint_rebuilds_its_width_owned_policy _______
+test/test_normal_thought_controller.py:438: in test_normal_controller_checkpoint_rebuilds_its_width_owned_policy
+    chooser.mlp[-1].weight.fill_(0.125)
+    ^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'OperationSelectionLayer' object has no attribute 'mlp'
+_______ test_normal_boundary_realizes_the_controller_selected_operation ________
+test/test_normal_thought_controller.py:672: in test_normal_boundary_realizes_the_controller_selected_operation
+    derivation = model.resolveAnswer(
+bin/Models.py:8596: in resolveAnswer
+    return self._resolve_answer(understanding, questions, **({} if score is None else {'score':score}))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8691: in _resolve_answer
+    selected_thoughts = self._run_selected_sentence_thoughts(
+bin/Models.py:6451: in _run_selected_sentence_thoughts
+    results.append((row, self.run_selected_thought(question, row=row,
+bin/Models.py:6032: in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+bin/Models.py:6397: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6375: in run_context
+    raise ValueError("cannot conclude with open references and work remaining")
+E   ValueError: cannot conclude with open references and work remaining
+_______ test_normal_what_uses_the_selected_thought_without_a_legacy_slot _______
+test/test_normal_thought_controller.py:843: in test_normal_what_uses_the_selected_thought_without_a_legacy_slot
+    assert [record.kind for record in memory.thought_history()] == [
+E   AssertionError: assert ['begin', 'th...thought', ...] == ['begin', 'th...ht', 'finish']
+E     
+E     At index 3 diff: 'thought' != 'finish'
+E     Left contains 21 more items, first extra item: 'thought'
+E     Use -v to get more diff
+_ test_thought_execution_receives_the_common_context_and_only_capability_views _
+test/test_thought_operation_catalog.py:368: in test_thought_execution_receives_the_common_context_and_only_capability_views
+    assert result.semantic_id == "part" and result.support_true == 1.0
+E   AssertionError: assert ('part' == 'part'
+E     
+E       part and 0.0 == 1.0)
+E    +  where 0.0 = ThoughtResult(semantic_id='part', domain='conceptual-containment', result_kind='concept', evidence_kind='meronymy', re...g', 'semantic_id': 'part', 'domain': 'conceptual-containment', 'resolution_records_scanned': 0, 'records_scanned': 0})).support_true
+____ test_canonical_thought_executors_use_only_their_named_capability_views ____
+test/test_thought_operation_catalog.py:838: in test_canonical_thought_executors_use_only_their_named_capability_views
+    assert {"exist", "true", "lookup"}.isdisjoint(THOUGHT_EXECUTORS)
+E   AssertionError: assert False
+E    +  where False = <built-in method isdisjoint of set object at 0x12aee0ba0>(mappingproxy({'not': ThoughtExecutorDescriptor(semantic_id='not', domain='serial-negation', argument_kinds=('meaning',...ad',)),), continues=False, open_operands=False, predicate_name=None, relation_directions=(), taxonomy_by_order=False)}))
+E    +    where <built-in method isdisjoint of set object at 0x12aee0ba0> = {'exist', 'lookup', 'true'}.isdisjoint
+_ test_normal_boundary_execution_uses_the_thought_registry_and_common_context __
+test/test_thought_operation_catalog.py:1048: in test_normal_boundary_execution_uses_the_thought_registry_and_common_context
+    result = model.run_selected_thought(
+bin/Models.py:6029: in run_selected_thought
+    result = thought_pair(self, meaning, row=row, work_budget=work_budget,
+bin/WalkTrials.py:176: in thought_pair
+    greedy,first,trace,state=run()
+                             ^^^^^
+bin/WalkTrials.py:170: in run
+    result=model._run_selected_thought_once(meaning,row=row,work_budget=work_budget,registry=registry,work=meter)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6397: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6358: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6222: in execute
+    action = self._choose_selected_thought_action(
+bin/Models.py:5983: in _choose_selected_thought_action
+    chooser = self._selected_thought_chooser(active)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5865: in _selected_thought_chooser
+    raise RuntimeError('thinking requires the existing grammar operation chooser')
+E   RuntimeError: thinking requires the existing grammar operation chooser
+=============================== warnings summary ===============================
+test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_item6_2_thinking.py::test_expectation_only_credit_uses_held_next_sentence_cost
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit
+FAILED test/test_normal_thought_controller.py::test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse
+FAILED test/test_normal_thought_controller.py::test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata
+FAILED test/test_normal_thought_controller.py::test_completed_compose_program_enters_normal_controller_before_legacy_thinking
+FAILED test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller
+FAILED test/test_normal_thought_controller.py::test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit
+FAILED test/test_normal_thought_controller.py::test_normal_controller_checkpoint_rebuilds_its_width_owned_policy
+FAILED test/test_normal_thought_controller.py::test_normal_boundary_realizes_the_controller_selected_operation
+FAILED test/test_normal_thought_controller.py::test_normal_what_uses_the_selected_thought_without_a_legacy_slot
+FAILED test/test_thought_operation_catalog.py::test_thought_execution_receives_the_common_context_and_only_capability_views
+FAILED test/test_thought_operation_catalog.py::test_canonical_thought_executors_use_only_their_named_capability_views
+FAILED test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context
+12 failed, 87 passed, 2 warnings in 6.06s

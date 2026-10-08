@@ -1,0 +1,2451 @@
+{
+  "config": "data/MM_query_reasoning.xml",
+  "configured_epochs": 300,
+  "batch_size": 6,
+  "seed": null,
+  "retries": 0,
+  "forced_reading": false,
+  "training_epochs": 300,
+  "thought_credit": [
+    {
+      "epoch": 154,
+      "costs": [
+        0.2989143913984299,
+        0.2989143913984299
+      ],
+      "source": "document_end_answer_and_work",
+      "requires_grad": false,
+      "surrogate": null,
+      "greedy_operations": [
+        "not",
+        "not",
+        "not",
+        "not",
+        "not",
+        "not"
+      ],
+      "explore_operations": [
+        "not",
+        "gain",
+        "not",
+        "not",
+        "not",
+        "not"
+      ],
+      "greedy_bound": false,
+      "explore_bound": false,
+      "work": [
+        16,
+        16
+      ],
+      "departure": 1,
+      "eligible_rounds": 6,
+      "raw_chooser_gradient_l2": 0.0,
+      "chooser_parameters_with_nonzero_gradient": 0
+    }
+  ],
+  "chooser_movement": [
+    {
+      "epoch": 1,
+      "epoch_change_l2": 0.00019471455551746817,
+      "initial_change_l2": 0.00019471455551746817,
+      "maximum_absolute_change": 5.16306608915329e-05,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 2,
+      "epoch_change_l2": 0.0008086588363238078,
+      "initial_change_l2": 0.0008778518087793634,
+      "maximum_absolute_change": 0.00019857892766594887,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 3,
+      "epoch_change_l2": 0.0008147045894264523,
+      "initial_change_l2": 0.001649035520336686,
+      "maximum_absolute_change": 0.00018038228154182434,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 4,
+      "epoch_change_l2": 0.011046563064320983,
+      "initial_change_l2": 0.011323606674208474,
+      "maximum_absolute_change": 0.001840398646891117,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 5,
+      "epoch_change_l2": 0.010685261046258837,
+      "initial_change_l2": 0.021505256673748564,
+      "maximum_absolute_change": 0.0017110873013734818,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 6,
+      "epoch_change_l2": 0.00998656623456618,
+      "initial_change_l2": 0.030927542576003973,
+      "maximum_absolute_change": 0.0016139838844537735,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 7,
+      "epoch_change_l2": 0.010052831042332408,
+      "initial_change_l2": 0.04003397497494314,
+      "maximum_absolute_change": 0.0014522932469844818,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 8,
+      "epoch_change_l2": 0.014684230614894675,
+      "initial_change_l2": 0.05019048461085066,
+      "maximum_absolute_change": 0.0027030091732740402,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 9,
+      "epoch_change_l2": 0.013278880214839544,
+      "initial_change_l2": 0.06093768738375469,
+      "maximum_absolute_change": 0.002416422590613365,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 10,
+      "epoch_change_l2": 0.012095474198477516,
+      "initial_change_l2": 0.07146696010731046,
+      "maximum_absolute_change": 0.0021677790209650993,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 11,
+      "epoch_change_l2": 0.01233232567725341,
+      "initial_change_l2": 0.08210816951146868,
+      "maximum_absolute_change": 0.002255689352750778,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 12,
+      "epoch_change_l2": 0.013191257508162397,
+      "initial_change_l2": 0.09302884117162702,
+      "maximum_absolute_change": 0.0020272918045520782,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 13,
+      "epoch_change_l2": 0.012634751798960455,
+      "initial_change_l2": 0.10381305505414232,
+      "maximum_absolute_change": 0.0017982721328735352,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 14,
+      "epoch_change_l2": 0.011455458096949301,
+      "initial_change_l2": 0.11388784076001397,
+      "maximum_absolute_change": 0.0016029421240091324,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 15,
+      "epoch_change_l2": 0.009723969070867745,
+      "initial_change_l2": 0.12221289481187342,
+      "maximum_absolute_change": 0.0012203454971313477,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 16,
+      "epoch_change_l2": 0.008627392756922023,
+      "initial_change_l2": 0.12952876479374678,
+      "maximum_absolute_change": 0.001086600124835968,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 17,
+      "epoch_change_l2": 0.008382982987186722,
+      "initial_change_l2": 0.13607101391946969,
+      "maximum_absolute_change": 0.0009924564510583878,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 18,
+      "epoch_change_l2": 0.0077505689240038545,
+      "initial_change_l2": 0.14208828843105092,
+      "maximum_absolute_change": 0.0008790711872279644,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 19,
+      "epoch_change_l2": 0.007115598450887759,
+      "initial_change_l2": 0.1477172326018883,
+      "maximum_absolute_change": 0.0007898281328380108,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 20,
+      "epoch_change_l2": 0.012161426068704113,
+      "initial_change_l2": 0.1519462617650911,
+      "maximum_absolute_change": 0.0020560696721076965,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 21,
+      "epoch_change_l2": 0.011757685962211306,
+      "initial_change_l2": 0.1565989149923274,
+      "maximum_absolute_change": 0.0029013976454734802,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 22,
+      "epoch_change_l2": 0.015482275183318144,
+      "initial_change_l2": 0.1668122498200769,
+      "maximum_absolute_change": 0.0032165925949811935,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 23,
+      "epoch_change_l2": 0.015189952686946449,
+      "initial_change_l2": 0.17675230930445893,
+      "maximum_absolute_change": 0.0028123874217271805,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 24,
+      "epoch_change_l2": 0.01892665673275433,
+      "initial_change_l2": 0.1869949996003978,
+      "maximum_absolute_change": 0.00468621589243412,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 25,
+      "epoch_change_l2": 0.01980106911565723,
+      "initial_change_l2": 0.19821110597633693,
+      "maximum_absolute_change": 0.004216616041958332,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 26,
+      "epoch_change_l2": 0.017954592117789783,
+      "initial_change_l2": 0.20967326416703652,
+      "maximum_absolute_change": 0.003794953227043152,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 27,
+      "epoch_change_l2": 0.022193709917028095,
+      "initial_change_l2": 0.22306625870986635,
+      "maximum_absolute_change": 0.006218003109097481,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 28,
+      "epoch_change_l2": 0.020160573059991943,
+      "initial_change_l2": 0.23634593225911715,
+      "maximum_absolute_change": 0.005557013675570488,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 29,
+      "epoch_change_l2": 0.018145048803588852,
+      "initial_change_l2": 0.24899030252226562,
+      "maximum_absolute_change": 0.005009792745113373,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 30,
+      "epoch_change_l2": 0.01639877848422038,
+      "initial_change_l2": 0.2609064500723233,
+      "maximum_absolute_change": 0.004481364041566849,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 31,
+      "epoch_change_l2": 0.015549858200188126,
+      "initial_change_l2": 0.2717953776906302,
+      "maximum_absolute_change": 0.004033226519823074,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 32,
+      "epoch_change_l2": 0.014114313037193859,
+      "initial_change_l2": 0.28128231436418355,
+      "maximum_absolute_change": 0.0036449171602725983,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 33,
+      "epoch_change_l2": 0.01588225969739004,
+      "initial_change_l2": 0.29060384738991935,
+      "maximum_absolute_change": 0.0030033551156520844,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 34,
+      "epoch_change_l2": 0.015441120873558058,
+      "initial_change_l2": 0.3002952630746394,
+      "maximum_absolute_change": 0.002704419195652008,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 35,
+      "epoch_change_l2": 0.013941215736787485,
+      "initial_change_l2": 0.3094712941824232,
+      "maximum_absolute_change": 0.002443067729473114,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 36,
+      "epoch_change_l2": 0.0,
+      "initial_change_l2": 0.3094712941824232,
+      "maximum_absolute_change": 0.0,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 37,
+      "epoch_change_l2": 0.012681292872026722,
+      "initial_change_l2": 0.3183496526595852,
+      "maximum_absolute_change": 0.0021979920566082,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 38,
+      "epoch_change_l2": 0.013213326509793859,
+      "initial_change_l2": 0.32641066629897325,
+      "maximum_absolute_change": 0.0019309259951114655,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 39,
+      "epoch_change_l2": 0.014793918340514623,
+      "initial_change_l2": 0.33362661488890955,
+      "maximum_absolute_change": 0.001762300729751587,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 40,
+      "epoch_change_l2": 0.01355312345598558,
+      "initial_change_l2": 0.3405690313434292,
+      "maximum_absolute_change": 0.001577308401465416,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 41,
+      "epoch_change_l2": 0.013005208345286302,
+      "initial_change_l2": 0.347531536474551,
+      "maximum_absolute_change": 0.002178417518734932,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 42,
+      "epoch_change_l2": 0.013420732124111412,
+      "initial_change_l2": 0.35587327027921517,
+      "maximum_absolute_change": 0.002443462610244751,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 43,
+      "epoch_change_l2": 0.01190303852594152,
+      "initial_change_l2": 0.36310346696353796,
+      "maximum_absolute_change": 0.0022254735231399536,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 44,
+      "epoch_change_l2": 0.020522938913220625,
+      "initial_change_l2": 0.37444471160588255,
+      "maximum_absolute_change": 0.0027345605194568634,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 45,
+      "epoch_change_l2": 0.01212191397301366,
+      "initial_change_l2": 0.37769143593444715,
+      "maximum_absolute_change": 0.001799069344997406,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 46,
+      "epoch_change_l2": 0.0,
+      "initial_change_l2": 0.37769143593444715,
+      "maximum_absolute_change": 0.0,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 47,
+      "epoch_change_l2": 0.011461095724163,
+      "initial_change_l2": 0.3799795416892657,
+      "maximum_absolute_change": 0.0016191676259040833,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 48,
+      "epoch_change_l2": 0.014375522952911125,
+      "initial_change_l2": 0.380932204333645,
+      "maximum_absolute_change": 0.0021210433915257454,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 49,
+      "epoch_change_l2": 0.015076708469089458,
+      "initial_change_l2": 0.38241957935073234,
+      "maximum_absolute_change": 0.0019100839272141457,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 50,
+      "epoch_change_l2": 0.012470694131258108,
+      "initial_change_l2": 0.3842542619997081,
+      "maximum_absolute_change": 0.001978108659386635,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 51,
+      "epoch_change_l2": 0.0194074066117425,
+      "initial_change_l2": 0.3857024779151772,
+      "maximum_absolute_change": 0.0038451766595244408,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 52,
+      "epoch_change_l2": 0.020935917238401824,
+      "initial_change_l2": 0.3894773545855391,
+      "maximum_absolute_change": 0.002985972911119461,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 53,
+      "epoch_change_l2": 0.020962213270493645,
+      "initial_change_l2": 0.39450220381871215,
+      "maximum_absolute_change": 0.002735201269388199,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 54,
+      "epoch_change_l2": 0.01889941652840661,
+      "initial_change_l2": 0.39996874021626,
+      "maximum_absolute_change": 0.0024650199338793755,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 55,
+      "epoch_change_l2": 0.017384665513469524,
+      "initial_change_l2": 0.4060448012672459,
+      "maximum_absolute_change": 0.0022284304723143578,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 56,
+      "epoch_change_l2": 0.018904602816291898,
+      "initial_change_l2": 0.41384147392983334,
+      "maximum_absolute_change": 0.002551265060901642,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 57,
+      "epoch_change_l2": 0.01739112097809241,
+      "initial_change_l2": 0.4224916091869329,
+      "maximum_absolute_change": 0.002254147082567215,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 58,
+      "epoch_change_l2": 0.015584408368752712,
+      "initial_change_l2": 0.43047244434936677,
+      "maximum_absolute_change": 0.002037975937128067,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 59,
+      "epoch_change_l2": 0.015612804567578306,
+      "initial_change_l2": 0.439471775167691,
+      "maximum_absolute_change": 0.0020132996141910553,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 60,
+      "epoch_change_l2": 0.01504332408628225,
+      "initial_change_l2": 0.44961642181004663,
+      "maximum_absolute_change": 0.0022152289748191833,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 61,
+      "epoch_change_l2": 0.018466064660032293,
+      "initial_change_l2": 0.4612596913460235,
+      "maximum_absolute_change": 0.0033302921801805496,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 62,
+      "epoch_change_l2": 0.019308813784159013,
+      "initial_change_l2": 0.47263737532113564,
+      "maximum_absolute_change": 0.0030330587178468704,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 63,
+      "epoch_change_l2": 0.017333380022652826,
+      "initial_change_l2": 0.48098772105467263,
+      "maximum_absolute_change": 0.0022204890847206116,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 64,
+      "epoch_change_l2": 0.016390946638105693,
+      "initial_change_l2": 0.48999302093028685,
+      "maximum_absolute_change": 0.00202261283993721,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 65,
+      "epoch_change_l2": 0.01681620135718579,
+      "initial_change_l2": 0.49995765434863904,
+      "maximum_absolute_change": 0.0022692009806632996,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 66,
+      "epoch_change_l2": 0.02873110553392793,
+      "initial_change_l2": 0.515543226875869,
+      "maximum_absolute_change": 0.004589296877384186,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 67,
+      "epoch_change_l2": 0.02509100029887745,
+      "initial_change_l2": 0.5296966753665063,
+      "maximum_absolute_change": 0.003960900008678436,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 68,
+      "epoch_change_l2": 0.022784081645656942,
+      "initial_change_l2": 0.543176703564408,
+      "maximum_absolute_change": 0.003643214702606201,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 69,
+      "epoch_change_l2": 0.021186102746242188,
+      "initial_change_l2": 0.5561298773367372,
+      "maximum_absolute_change": 0.0033664926886558533,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 70,
+      "epoch_change_l2": 0.021746977973068276,
+      "initial_change_l2": 0.5697743787986542,
+      "maximum_absolute_change": 0.003080040216445923,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 71,
+      "epoch_change_l2": 0.02458139823757184,
+      "initial_change_l2": 0.5819855432402755,
+      "maximum_absolute_change": 0.003165319561958313,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 72,
+      "epoch_change_l2": 0.021927851404381554,
+      "initial_change_l2": 0.5932300923005706,
+      "maximum_absolute_change": 0.003088623285293579,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 73,
+      "epoch_change_l2": 0.019966016600194526,
+      "initial_change_l2": 0.6036964518454161,
+      "maximum_absolute_change": 0.002688169479370117,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 74,
+      "epoch_change_l2": 0.0,
+      "initial_change_l2": 0.6036964518454161,
+      "maximum_absolute_change": 0.0,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 75,
+      "epoch_change_l2": 0.018305722305051515,
+      "initial_change_l2": 0.6138347263383074,
+      "maximum_absolute_change": 0.002346448600292206,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 76,
+      "epoch_change_l2": 0.019221780754553185,
+      "initial_change_l2": 0.6247467277452554,
+      "maximum_absolute_change": 0.0023344308137893677,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 77,
+      "epoch_change_l2": 0.01718638398447808,
+      "initial_change_l2": 0.6353328827579504,
+      "maximum_absolute_change": 0.002086751163005829,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 78,
+      "epoch_change_l2": 0.015520592202624549,
+      "initial_change_l2": 0.6451300222929527,
+      "maximum_absolute_change": 0.0018401220440864563,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 79,
+      "epoch_change_l2": 0.013942572483401057,
+      "initial_change_l2": 0.6534756760072402,
+      "maximum_absolute_change": 0.002101063495501876,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 80,
+      "epoch_change_l2": 0.012985223315921456,
+      "initial_change_l2": 0.6615864061891102,
+      "maximum_absolute_change": 0.0018932040547952056,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 81,
+      "epoch_change_l2": 0.01667067815581419,
+      "initial_change_l2": 0.672449878490472,
+      "maximum_absolute_change": 0.0021816436201334,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 82,
+      "epoch_change_l2": 0.01477905747350224,
+      "initial_change_l2": 0.6818941382621616,
+      "maximum_absolute_change": 0.001964774914085865,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 83,
+      "epoch_change_l2": 0.016080676907010556,
+      "initial_change_l2": 0.6918619841177134,
+      "maximum_absolute_change": 0.0020127072930336,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 84,
+      "epoch_change_l2": 0.017111964009648848,
+      "initial_change_l2": 0.7007920958217423,
+      "maximum_absolute_change": 0.004763796925544739,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 85,
+      "epoch_change_l2": 0.01553025615942349,
+      "initial_change_l2": 0.7092877775452425,
+      "maximum_absolute_change": 0.0043462663888931274,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 86,
+      "epoch_change_l2": 0.013971987146314866,
+      "initial_change_l2": 0.7170974610840175,
+      "maximum_absolute_change": 0.003924600780010223,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 87,
+      "epoch_change_l2": 0.01347989445678344,
+      "initial_change_l2": 0.723762699840153,
+      "maximum_absolute_change": 0.0035772472620010376,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 88,
+      "epoch_change_l2": 0.014012165365438832,
+      "initial_change_l2": 0.7308307979917558,
+      "maximum_absolute_change": 0.003452301025390625,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 89,
+      "epoch_change_l2": 0.013073242735250809,
+      "initial_change_l2": 0.7363521849308097,
+      "maximum_absolute_change": 0.0031021982431411743,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 90,
+      "epoch_change_l2": 0.011918500444020095,
+      "initial_change_l2": 0.7416705006774591,
+      "maximum_absolute_change": 0.002827689051628113,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 91,
+      "epoch_change_l2": 0.010833812332167458,
+      "initial_change_l2": 0.7471960836671822,
+      "maximum_absolute_change": 0.0026345252990722656,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 92,
+      "epoch_change_l2": 0.009074819556379765,
+      "initial_change_l2": 0.7509817630332964,
+      "maximum_absolute_change": 0.0021074414253234863,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 93,
+      "epoch_change_l2": 0.008555110485264495,
+      "initial_change_l2": 0.7545464528620625,
+      "maximum_absolute_change": 0.0018500834703445435,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 94,
+      "epoch_change_l2": 0.009116424190886999,
+      "initial_change_l2": 0.758293332989925,
+      "maximum_absolute_change": 0.0018126964569091797,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 95,
+      "epoch_change_l2": 0.009554266910346158,
+      "initial_change_l2": 0.7625470552187337,
+      "maximum_absolute_change": 0.0017287880182266235,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 96,
+      "epoch_change_l2": 0.008767702635209491,
+      "initial_change_l2": 0.7666213701016658,
+      "maximum_absolute_change": 0.0017970800399780273,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 97,
+      "epoch_change_l2": 0.00912100466243077,
+      "initial_change_l2": 0.7703971108051371,
+      "maximum_absolute_change": 0.0015078932046890259,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 98,
+      "epoch_change_l2": 0.010195535590812719,
+      "initial_change_l2": 0.7741355181283273,
+      "maximum_absolute_change": 0.0014003068208694458,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 99,
+      "epoch_change_l2": 0.009460077432688507,
+      "initial_change_l2": 0.7766854891545297,
+      "maximum_absolute_change": 0.0012959018349647522,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 100,
+      "epoch_change_l2": 0.009862007809180787,
+      "initial_change_l2": 0.7796074223989605,
+      "maximum_absolute_change": 0.001311376690864563,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 101,
+      "epoch_change_l2": 0.008941824691789824,
+      "initial_change_l2": 0.7824044603296764,
+      "maximum_absolute_change": 0.0011742711067199707,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 102,
+      "epoch_change_l2": 0.009347352338955185,
+      "initial_change_l2": 0.7850536944652421,
+      "maximum_absolute_change": 0.0014879107475280762,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 103,
+      "epoch_change_l2": 0.008452318883993691,
+      "initial_change_l2": 0.7875514248604191,
+      "maximum_absolute_change": 0.0013403892517089844,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 104,
+      "epoch_change_l2": 0.011051815921248759,
+      "initial_change_l2": 0.7903271842130658,
+      "maximum_absolute_change": 0.0019065514206886292,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 105,
+      "epoch_change_l2": 0.0,
+      "initial_change_l2": 0.7903271842130658,
+      "maximum_absolute_change": 0.0,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 106,
+      "epoch_change_l2": 0.010249505151675876,
+      "initial_change_l2": 0.7928986021791588,
+      "maximum_absolute_change": 0.001964110881090164,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 107,
+      "epoch_change_l2": 0.009901562305632444,
+      "initial_change_l2": 0.7948823303893356,
+      "maximum_absolute_change": 0.001770615577697754,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 108,
+      "epoch_change_l2": 0.028222849826098198,
+      "initial_change_l2": 0.7985584806952227,
+      "maximum_absolute_change": 0.0037327101454138756,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 109,
+      "epoch_change_l2": 0.02611105064388329,
+      "initial_change_l2": 0.8037939177954706,
+      "maximum_absolute_change": 0.0033294521272182465,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 110,
+      "epoch_change_l2": 0.022996344410437873,
+      "initial_change_l2": 0.8080489308872105,
+      "maximum_absolute_change": 0.003101019188761711,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 111,
+      "epoch_change_l2": 0.020793390800235272,
+      "initial_change_l2": 0.8130584572664737,
+      "maximum_absolute_change": 0.0028190617449581623,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 112,
+      "epoch_change_l2": 0.02016870570284074,
+      "initial_change_l2": 0.8182747831512711,
+      "maximum_absolute_change": 0.0027380541432648897,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 113,
+      "epoch_change_l2": 0.019822455095366173,
+      "initial_change_l2": 0.8248951881799349,
+      "maximum_absolute_change": 0.0025119928177446127,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 114,
+      "epoch_change_l2": 0.02032368509561985,
+      "initial_change_l2": 0.8326313913085224,
+      "maximum_absolute_change": 0.0033614039421081543,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 115,
+      "epoch_change_l2": 0.018432188835363628,
+      "initial_change_l2": 0.8398196924738776,
+      "maximum_absolute_change": 0.0030196160078048706,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 116,
+      "epoch_change_l2": 0.017156819883713675,
+      "initial_change_l2": 0.8469195171133465,
+      "maximum_absolute_change": 0.0027176551520824432,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 117,
+      "epoch_change_l2": 0.015826424446339894,
+      "initial_change_l2": 0.8531154145201442,
+      "maximum_absolute_change": 0.0024800822138786316,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 118,
+      "epoch_change_l2": 0.014742048002897433,
+      "initial_change_l2": 0.8597239148035558,
+      "maximum_absolute_change": 0.0022285915911197662,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 119,
+      "epoch_change_l2": 0.014036232351859615,
+      "initial_change_l2": 0.866766659883381,
+      "maximum_absolute_change": 0.0021853595972061157,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 120,
+      "epoch_change_l2": 0.012448643644321982,
+      "initial_change_l2": 0.873176473698599,
+      "maximum_absolute_change": 0.0019292235374450684,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 121,
+      "epoch_change_l2": 0.011876790965403538,
+      "initial_change_l2": 0.8794690105960531,
+      "maximum_absolute_change": 0.0026734471321105957,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 122,
+      "epoch_change_l2": 0.011872438557006513,
+      "initial_change_l2": 0.8858996145040632,
+      "maximum_absolute_change": 0.0025843828916549683,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 123,
+      "epoch_change_l2": 0.011444083746018309,
+      "initial_change_l2": 0.8925216986608665,
+      "maximum_absolute_change": 0.002483263611793518,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 124,
+      "epoch_change_l2": 0.010314400007042493,
+      "initial_change_l2": 0.8984885804281192,
+      "maximum_absolute_change": 0.002167731523513794,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 125,
+      "epoch_change_l2": 0.009465450654231643,
+      "initial_change_l2": 0.9041595511075473,
+      "maximum_absolute_change": 0.002003684639930725,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 126,
+      "epoch_change_l2": 0.008381627546105134,
+      "initial_change_l2": 0.9089346314730323,
+      "maximum_absolute_change": 0.0016857683658599854,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 127,
+      "epoch_change_l2": 0.008072116634588419,
+      "initial_change_l2": 0.9129881507147463,
+      "maximum_absolute_change": 0.001806488260626793,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 128,
+      "epoch_change_l2": 0.008277779166859097,
+      "initial_change_l2": 0.9173333274527119,
+      "maximum_absolute_change": 0.001602118369191885,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 129,
+      "epoch_change_l2": 0.009377589367676223,
+      "initial_change_l2": 0.9223075679943212,
+      "maximum_absolute_change": 0.001510176807641983,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 130,
+      "epoch_change_l2": 0.008788526018421458,
+      "initial_change_l2": 0.9269249400194439,
+      "maximum_absolute_change": 0.0014285168144851923,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 131,
+      "epoch_change_l2": 0.011084623663821822,
+      "initial_change_l2": 0.9309293003506826,
+      "maximum_absolute_change": 0.002864733338356018,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 132,
+      "epoch_change_l2": 0.01075340329469704,
+      "initial_change_l2": 0.9344449575364934,
+      "maximum_absolute_change": 0.002544507384300232,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 133,
+      "epoch_change_l2": 0.009686765521177013,
+      "initial_change_l2": 0.9377115063229174,
+      "maximum_absolute_change": 0.0022518783807754517,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 134,
+      "epoch_change_l2": 0.009252522781733307,
+      "initial_change_l2": 0.9409639510748186,
+      "maximum_absolute_change": 0.0020211786031723022,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 135,
+      "epoch_change_l2": 0.008534351389013409,
+      "initial_change_l2": 0.9439054672825068,
+      "maximum_absolute_change": 0.0017465651035308838,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 136,
+      "epoch_change_l2": 0.008999911188636349,
+      "initial_change_l2": 0.9474465562359802,
+      "maximum_absolute_change": 0.0016041547060012817,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 137,
+      "epoch_change_l2": 0.01040465961460314,
+      "initial_change_l2": 0.9514539786209202,
+      "maximum_absolute_change": 0.0015081807505339384,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 138,
+      "epoch_change_l2": 0.010949988471225343,
+      "initial_change_l2": 0.9563862038521331,
+      "maximum_absolute_change": 0.0016535669565200806,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 139,
+      "epoch_change_l2": 0.010534701752653954,
+      "initial_change_l2": 0.9612827173055513,
+      "maximum_absolute_change": 0.0015083327889442444,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 140,
+      "epoch_change_l2": 0.011349574221460124,
+      "initial_change_l2": 0.9676708701549817,
+      "maximum_absolute_change": 0.0016946224495768547,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 141,
+      "epoch_change_l2": 0.010020577927691126,
+      "initial_change_l2": 0.9732009775350361,
+      "maximum_absolute_change": 0.0015248432755470276,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 142,
+      "epoch_change_l2": 0.009076522277000475,
+      "initial_change_l2": 0.9784298605254493,
+      "maximum_absolute_change": 0.0013721426948904991,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 143,
+      "epoch_change_l2": 0.009756476422531222,
+      "initial_change_l2": 0.9838773799543251,
+      "maximum_absolute_change": 0.002282842993736267,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 144,
+      "epoch_change_l2": 0.0,
+      "initial_change_l2": 0.9838773799543251,
+      "maximum_absolute_change": 0.0,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 145,
+      "epoch_change_l2": 0.009807767051273487,
+      "initial_change_l2": 0.9885951587232452,
+      "maximum_absolute_change": 0.002471707761287689,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 146,
+      "epoch_change_l2": 0.009865778391376237,
+      "initial_change_l2": 0.9942308008378032,
+      "maximum_absolute_change": 0.0022521130740642548,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 147,
+      "epoch_change_l2": 0.010891058102769044,
+      "initial_change_l2": 0.999482407916174,
+      "maximum_absolute_change": 0.0029288530349731445,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 148,
+      "epoch_change_l2": 0.009887777686521139,
+      "initial_change_l2": 1.0045633583603972,
+      "maximum_absolute_change": 0.002678319811820984,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 149,
+      "epoch_change_l2": 0.009501510763479772,
+      "initial_change_l2": 1.0092058072848322,
+      "maximum_absolute_change": 0.0023787766695022583,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 150,
+      "epoch_change_l2": 0.008842917190748686,
+      "initial_change_l2": 1.0136480343064167,
+      "maximum_absolute_change": 0.002134457230567932,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 151,
+      "epoch_change_l2": 0.007983366846551264,
+      "initial_change_l2": 1.0173104865498466,
+      "maximum_absolute_change": 0.0018274933099746704,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 152,
+      "epoch_change_l2": 0.007436477571309598,
+      "initial_change_l2": 1.0204965331385474,
+      "maximum_absolute_change": 0.0015825927257537842,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 153,
+      "epoch_change_l2": 0.007727143137009373,
+      "initial_change_l2": 1.0234074592828921,
+      "maximum_absolute_change": 0.0018568933010101318,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 154,
+      "epoch_change_l2": 0.007886081698345117,
+      "initial_change_l2": 1.0270558936424832,
+      "maximum_absolute_change": 0.00186900794506073,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 155,
+      "epoch_change_l2": 0.006088443741708965,
+      "initial_change_l2": 1.0302248512128247,
+      "maximum_absolute_change": 0.000982152298092842,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 156,
+      "epoch_change_l2": 0.005498322334158497,
+      "initial_change_l2": 1.0331050076399058,
+      "maximum_absolute_change": 0.0008814334869384766,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 157,
+      "epoch_change_l2": 0.005200258625697894,
+      "initial_change_l2": 1.0357464639365015,
+      "maximum_absolute_change": 0.0007868818938732147,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 158,
+      "epoch_change_l2": 0.005492951862845911,
+      "initial_change_l2": 1.0382464083198704,
+      "maximum_absolute_change": 0.0011969730257987976,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 159,
+      "epoch_change_l2": 0.004923994642343475,
+      "initial_change_l2": 1.0407762025800849,
+      "maximum_absolute_change": 0.0010766610503196716,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 160,
+      "epoch_change_l2": 0.006612635868434035,
+      "initial_change_l2": 1.0438057749529683,
+      "maximum_absolute_change": 0.0012460537254810333,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 161,
+      "epoch_change_l2": 0.006185546020693558,
+      "initial_change_l2": 1.0465319923631873,
+      "maximum_absolute_change": 0.0011307746171951294,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 162,
+      "epoch_change_l2": 0.007022918935399041,
+      "initial_change_l2": 1.0496694603323953,
+      "maximum_absolute_change": 0.0012707244604825974,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 163,
+      "epoch_change_l2": 0.007716515779214833,
+      "initial_change_l2": 1.0537907835190112,
+      "maximum_absolute_change": 0.0011478140950202942,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 164,
+      "epoch_change_l2": 0.008186985786706624,
+      "initial_change_l2": 1.057377203335534,
+      "maximum_absolute_change": 0.0015759095549583435,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 165,
+      "epoch_change_l2": 0.007040812528176666,
+      "initial_change_l2": 1.0600838832418138,
+      "maximum_absolute_change": 0.0012826323509216309,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 166,
+      "epoch_change_l2": 0.006978936325914385,
+      "initial_change_l2": 1.0625988737468346,
+      "maximum_absolute_change": 0.0012111812829971313,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 167,
+      "epoch_change_l2": 0.006303492796183027,
+      "initial_change_l2": 1.064977540018266,
+      "maximum_absolute_change": 0.0011059418320655823,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 168,
+      "epoch_change_l2": 0.006998851139421836,
+      "initial_change_l2": 1.0684805125455743,
+      "maximum_absolute_change": 0.0013390928506851196,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 169,
+      "epoch_change_l2": 0.006872148330274252,
+      "initial_change_l2": 1.0717115670200932,
+      "maximum_absolute_change": 0.0012420043349266052,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 170,
+      "epoch_change_l2": 0.005805904203075219,
+      "initial_change_l2": 1.0736510695419494,
+      "maximum_absolute_change": 0.0009332150220870972,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 171,
+      "epoch_change_l2": 0.009192826976948098,
+      "initial_change_l2": 1.0764035245185486,
+      "maximum_absolute_change": 0.0018562376499176025,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 172,
+      "epoch_change_l2": 0.007996692924940471,
+      "initial_change_l2": 1.0796360614740301,
+      "maximum_absolute_change": 0.00139588862657547,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 173,
+      "epoch_change_l2": 0.007865416767350428,
+      "initial_change_l2": 1.0837011392280504,
+      "maximum_absolute_change": 0.0014464855194091797,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 174,
+      "epoch_change_l2": 0.007271627819688533,
+      "initial_change_l2": 1.087456036955285,
+      "maximum_absolute_change": 0.001316666603088379,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 175,
+      "epoch_change_l2": 0.011705741422749912,
+      "initial_change_l2": 1.0929459665292967,
+      "maximum_absolute_change": 0.00320728262886405,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 176,
+      "epoch_change_l2": 0.01276141501474623,
+      "initial_change_l2": 1.0996679773920615,
+      "maximum_absolute_change": 0.0028887144289910793,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 177,
+      "epoch_change_l2": 0.009838588734300303,
+      "initial_change_l2": 1.1046246909447173,
+      "maximum_absolute_change": 0.002599140629172325,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 178,
+      "epoch_change_l2": 0.008907842864597499,
+      "initial_change_l2": 1.1091803885268248,
+      "maximum_absolute_change": 0.0023368587717413902,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 179,
+      "epoch_change_l2": 0.008416951541068581,
+      "initial_change_l2": 1.1134172983512822,
+      "maximum_absolute_change": 0.0021636513993144035,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 180,
+      "epoch_change_l2": 0.007769368009141334,
+      "initial_change_l2": 1.1172530485634327,
+      "maximum_absolute_change": 0.0019393730908632278,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 181,
+      "epoch_change_l2": 0.012019938396848845,
+      "initial_change_l2": 1.120983550340432,
+      "maximum_absolute_change": 0.002306124195456505,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 182,
+      "epoch_change_l2": 0.011938861214770875,
+      "initial_change_l2": 1.1254702752400012,
+      "maximum_absolute_change": 0.002488762140274048,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 183,
+      "epoch_change_l2": 0.01153334233061067,
+      "initial_change_l2": 1.1307790709590517,
+      "maximum_absolute_change": 0.0022253505885601044,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 184,
+      "epoch_change_l2": 0.010584367335045797,
+      "initial_change_l2": 1.1357555427584605,
+      "maximum_absolute_change": 0.0020042769610881805,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 185,
+      "epoch_change_l2": 0.011273093761292345,
+      "initial_change_l2": 1.1411470523073866,
+      "maximum_absolute_change": 0.002349676564335823,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 186,
+      "epoch_change_l2": 0.010074298101818063,
+      "initial_change_l2": 1.1457676709446842,
+      "maximum_absolute_change": 0.002093544229865074,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 187,
+      "epoch_change_l2": 0.009214417343352984,
+      "initial_change_l2": 1.1504569133097358,
+      "maximum_absolute_change": 0.0018804986029863358,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 188,
+      "epoch_change_l2": 0.010353447209398969,
+      "initial_change_l2": 1.1549794755620895,
+      "maximum_absolute_change": 0.0019415952265262604,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 189,
+      "epoch_change_l2": 0.010366585231815542,
+      "initial_change_l2": 1.1589009182796233,
+      "maximum_absolute_change": 0.0023706741631031036,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 190,
+      "epoch_change_l2": 0.009756115017614116,
+      "initial_change_l2": 1.1633353895827678,
+      "maximum_absolute_change": 0.0021382085978984833,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 191,
+      "epoch_change_l2": 0.008833766778302493,
+      "initial_change_l2": 1.1674446292702403,
+      "maximum_absolute_change": 0.0019253641366958618,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 192,
+      "epoch_change_l2": 0.008762907264640718,
+      "initial_change_l2": 1.1720150199065338,
+      "maximum_absolute_change": 0.0016897916793823242,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 193,
+      "epoch_change_l2": 0.00797805025514327,
+      "initial_change_l2": 1.176035389636958,
+      "maximum_absolute_change": 0.0015429742634296417,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 194,
+      "epoch_change_l2": 0.009026518313877104,
+      "initial_change_l2": 1.1800792426456679,
+      "maximum_absolute_change": 0.0027354732155799866,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 195,
+      "epoch_change_l2": 0.007809408038949552,
+      "initial_change_l2": 1.1837383312433527,
+      "maximum_absolute_change": 0.002478264272212982,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 196,
+      "epoch_change_l2": 0.008067341093753828,
+      "initial_change_l2": 1.187652006167776,
+      "maximum_absolute_change": 0.0022543929517269135,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 197,
+      "epoch_change_l2": 0.007320222696764391,
+      "initial_change_l2": 1.1911594509570367,
+      "maximum_absolute_change": 0.002057604491710663,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 198,
+      "epoch_change_l2": 0.009329771534419114,
+      "initial_change_l2": 1.196281173373235,
+      "maximum_absolute_change": 0.0017946884036064148,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 199,
+      "epoch_change_l2": 0.009114123757617174,
+      "initial_change_l2": 1.2017560544710486,
+      "maximum_absolute_change": 0.0016051176935434341,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 200,
+      "epoch_change_l2": 0.008414410704394535,
+      "initial_change_l2": 1.2066172294590418,
+      "maximum_absolute_change": 0.0014392975717782974,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 201,
+      "epoch_change_l2": 0.007617155386921502,
+      "initial_change_l2": 1.2113984627047325,
+      "maximum_absolute_change": 0.00126715749502182,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 202,
+      "epoch_change_l2": 0.0,
+      "initial_change_l2": 1.2113984627047325,
+      "maximum_absolute_change": 0.0,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 203,
+      "epoch_change_l2": 0.006851224038572279,
+      "initial_change_l2": 1.2157228418339832,
+      "maximum_absolute_change": 0.0011408030986785889,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 204,
+      "epoch_change_l2": 0.007461430238004121,
+      "initial_change_l2": 1.2191531965045308,
+      "maximum_absolute_change": 0.0023661255836486816,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 205,
+      "epoch_change_l2": 0.0067257798886627305,
+      "initial_change_l2": 1.2223092050790498,
+      "maximum_absolute_change": 0.002124398946762085,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 206,
+      "epoch_change_l2": 0.009475508950274332,
+      "initial_change_l2": 1.225014496755985,
+      "maximum_absolute_change": 0.002783656120300293,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 207,
+      "epoch_change_l2": 0.007874871134612845,
+      "initial_change_l2": 1.2281585104312303,
+      "maximum_absolute_change": 0.0024080276489257812,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 208,
+      "epoch_change_l2": 0.007361081852788778,
+      "initial_change_l2": 1.231744947215688,
+      "maximum_absolute_change": 0.0023407340049743652,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 209,
+      "epoch_change_l2": 0.0067474475526192465,
+      "initial_change_l2": 1.2351152009525528,
+      "maximum_absolute_change": 0.002077847719192505,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 210,
+      "epoch_change_l2": 0.006850505899820664,
+      "initial_change_l2": 1.2385850244663303,
+      "maximum_absolute_change": 0.0020325183868408203,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 211,
+      "epoch_change_l2": 0.0071435036783813344,
+      "initial_change_l2": 1.242078585133792,
+      "maximum_absolute_change": 0.0023878514766693115,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 212,
+      "epoch_change_l2": 0.0062762402781076695,
+      "initial_change_l2": 1.2448761259657268,
+      "maximum_absolute_change": 0.0020759403705596924,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 213,
+      "epoch_change_l2": 0.0063138394803409735,
+      "initial_change_l2": 1.2479163203460077,
+      "maximum_absolute_change": 0.0019314587116241455,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 214,
+      "epoch_change_l2": 0.005652227785185385,
+      "initial_change_l2": 1.251290228519805,
+      "maximum_absolute_change": 0.0016745924949645996,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 215,
+      "epoch_change_l2": 0.005894673266550959,
+      "initial_change_l2": 1.2550600707870507,
+      "maximum_absolute_change": 0.0015716552734375,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 216,
+      "epoch_change_l2": 0.005095187711467777,
+      "initial_change_l2": 1.2581448422273094,
+      "maximum_absolute_change": 0.0013362467288970947,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 217,
+      "epoch_change_l2": 0.004885748159584552,
+      "initial_change_l2": 1.2607219396383542,
+      "maximum_absolute_change": 0.0010893940925598145,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 218,
+      "epoch_change_l2": 0.0073299493825853546,
+      "initial_change_l2": 1.2639737454983238,
+      "maximum_absolute_change": 0.0015720035880804062,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 219,
+      "epoch_change_l2": 0.007808269908867161,
+      "initial_change_l2": 1.2669905700942934,
+      "maximum_absolute_change": 0.002024233341217041,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 220,
+      "epoch_change_l2": 0.008362557126286835,
+      "initial_change_l2": 1.2698053813178907,
+      "maximum_absolute_change": 0.0019583702087402344,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 221,
+      "epoch_change_l2": 0.007560759183714472,
+      "initial_change_l2": 1.2724349233442924,
+      "maximum_absolute_change": 0.0017370879650115967,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 222,
+      "epoch_change_l2": 0.007472753141256259,
+      "initial_change_l2": 1.274971817792516,
+      "maximum_absolute_change": 0.0015749037265777588,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 223,
+      "epoch_change_l2": 0.00699720780208474,
+      "initial_change_l2": 1.2770843527366804,
+      "maximum_absolute_change": 0.001452803611755371,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 224,
+      "epoch_change_l2": 0.00645877598100888,
+      "initial_change_l2": 1.2791468873410505,
+      "maximum_absolute_change": 0.0012963712215423584,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 225,
+      "epoch_change_l2": 0.00650262146214995,
+      "initial_change_l2": 1.2816228644569123,
+      "maximum_absolute_change": 0.001229405403137207,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 226,
+      "epoch_change_l2": 0.006142232970615101,
+      "initial_change_l2": 1.284544819043255,
+      "maximum_absolute_change": 0.0013144314289093018,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 227,
+      "epoch_change_l2": 0.005831182424118416,
+      "initial_change_l2": 1.2875337878140305,
+      "maximum_absolute_change": 0.001212090253829956,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 228,
+      "epoch_change_l2": 0.005455794342939743,
+      "initial_change_l2": 1.2903778169159756,
+      "maximum_absolute_change": 0.0011209547519683838,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 229,
+      "epoch_change_l2": 0.005701106630552654,
+      "initial_change_l2": 1.292879685729225,
+      "maximum_absolute_change": 0.0009166300296783447,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 230,
+      "epoch_change_l2": 0.0060543824065125386,
+      "initial_change_l2": 1.2956111173514928,
+      "maximum_absolute_change": 0.0009358823299407959,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 231,
+      "epoch_change_l2": 0.007883262616188217,
+      "initial_change_l2": 1.298310457561346,
+      "maximum_absolute_change": 0.0010218210518360138,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 232,
+      "epoch_change_l2": 0.007160297427885092,
+      "initial_change_l2": 1.301123457834172,
+      "maximum_absolute_change": 0.0009193010628223419,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 233,
+      "epoch_change_l2": 0.00879945164282423,
+      "initial_change_l2": 1.3037619888993315,
+      "maximum_absolute_change": 0.0024789171293377876,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 234,
+      "epoch_change_l2": 0.008749295014318538,
+      "initial_change_l2": 1.3069965086315747,
+      "maximum_absolute_change": 0.0022341832518577576,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 235,
+      "epoch_change_l2": 0.007859052365224719,
+      "initial_change_l2": 1.3093970965302721,
+      "maximum_absolute_change": 0.002011653035879135,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 236,
+      "epoch_change_l2": 0.00663826272542549,
+      "initial_change_l2": 1.3112040552455306,
+      "maximum_absolute_change": 0.0017693247646093369,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 237,
+      "epoch_change_l2": 0.005970913245398472,
+      "initial_change_l2": 1.312836597101,
+      "maximum_absolute_change": 0.0015924535691738129,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 238,
+      "epoch_change_l2": 0.006828222588533696,
+      "initial_change_l2": 1.3148267823140447,
+      "maximum_absolute_change": 0.0014490392059087753,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 239,
+      "epoch_change_l2": 0.00598584995436169,
+      "initial_change_l2": 1.3174463406054224,
+      "maximum_absolute_change": 0.0013173557817935944,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 240,
+      "epoch_change_l2": 0.005652298832490498,
+      "initial_change_l2": 1.3200809778620206,
+      "maximum_absolute_change": 0.0011474844068288803,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 241,
+      "epoch_change_l2": 0.005604461529492085,
+      "initial_change_l2": 1.3232888351881789,
+      "maximum_absolute_change": 0.0010293927043676376,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 242,
+      "epoch_change_l2": 0.0060147369614592635,
+      "initial_change_l2": 1.3267471775964204,
+      "maximum_absolute_change": 0.0011299746111035347,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 243,
+      "epoch_change_l2": 0.005257321155858579,
+      "initial_change_l2": 1.329647712906057,
+      "maximum_absolute_change": 0.0010177865624427795,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 244,
+      "epoch_change_l2": 0.006016765684979161,
+      "initial_change_l2": 1.3332490894523905,
+      "maximum_absolute_change": 0.0009107459336519241,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 245,
+      "epoch_change_l2": 0.006313153906684438,
+      "initial_change_l2": 1.3362797875028265,
+      "maximum_absolute_change": 0.0012641176581382751,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 246,
+      "epoch_change_l2": 0.006273990863357531,
+      "initial_change_l2": 1.3395964032724086,
+      "maximum_absolute_change": 0.001144208014011383,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 247,
+      "epoch_change_l2": 0.00615640607154413,
+      "initial_change_l2": 1.3431869531546186,
+      "maximum_absolute_change": 0.001033235341310501,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 248,
+      "epoch_change_l2": 0.005840309706001776,
+      "initial_change_l2": 1.3468269176308048,
+      "maximum_absolute_change": 0.0009318031370639801,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 249,
+      "epoch_change_l2": 0.00700221191151308,
+      "initial_change_l2": 1.3506083818121242,
+      "maximum_absolute_change": 0.0013009943068027496,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 250,
+      "epoch_change_l2": 0.006257945243276121,
+      "initial_change_l2": 1.3544415378538188,
+      "maximum_absolute_change": 0.001202467828989029,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 251,
+      "epoch_change_l2": 0.005981068593068259,
+      "initial_change_l2": 1.357996354528157,
+      "maximum_absolute_change": 0.0011071376502513885,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 252,
+      "epoch_change_l2": 0.005997623701491152,
+      "initial_change_l2": 1.3615069499556587,
+      "maximum_absolute_change": 0.0013785138726234436,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 253,
+      "epoch_change_l2": 0.005325932151397959,
+      "initial_change_l2": 1.3645705146695655,
+      "maximum_absolute_change": 0.0012405775487422943,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 254,
+      "epoch_change_l2": 0.005916200783768994,
+      "initial_change_l2": 1.3674045277205489,
+      "maximum_absolute_change": 0.0011257193982601166,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 255,
+      "epoch_change_l2": 0.007785865238442953,
+      "initial_change_l2": 1.3709332999799433,
+      "maximum_absolute_change": 0.0013851523399353027,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 256,
+      "epoch_change_l2": 0.00712158572624204,
+      "initial_change_l2": 1.3742380105020064,
+      "maximum_absolute_change": 0.0012476593255996704,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 257,
+      "epoch_change_l2": 0.0066429213439100155,
+      "initial_change_l2": 1.377521323369483,
+      "maximum_absolute_change": 0.001123383641242981,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 258,
+      "epoch_change_l2": 0.005944507636830485,
+      "initial_change_l2": 1.3802621819101046,
+      "maximum_absolute_change": 0.0010110139846801758,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 259,
+      "epoch_change_l2": 0.005317183786736909,
+      "initial_change_l2": 1.3825930098455725,
+      "maximum_absolute_change": 0.0010627061128616333,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 260,
+      "epoch_change_l2": 0.00477468091807912,
+      "initial_change_l2": 1.384682956688517,
+      "maximum_absolute_change": 0.0009564310312271118,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 261,
+      "epoch_change_l2": 0.004394078762433913,
+      "initial_change_l2": 1.3867334484977587,
+      "maximum_absolute_change": 0.0008608400821685791,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 262,
+      "epoch_change_l2": 0.004825449044186724,
+      "initial_change_l2": 1.388581574993694,
+      "maximum_absolute_change": 0.0010449765250086784,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 263,
+      "epoch_change_l2": 0.005091260432925212,
+      "initial_change_l2": 1.3906039614490193,
+      "maximum_absolute_change": 0.0009479876607656479,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 264,
+      "epoch_change_l2": 0.0049810515804944965,
+      "initial_change_l2": 1.3927305330832889,
+      "maximum_absolute_change": 0.0008621560409665108,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 265,
+      "epoch_change_l2": 0.005498894183541252,
+      "initial_change_l2": 1.3953286527166986,
+      "maximum_absolute_change": 0.0007634591311216354,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 266,
+      "epoch_change_l2": 0.0058136922073964295,
+      "initial_change_l2": 1.397235858335111,
+      "maximum_absolute_change": 0.0014342404901981354,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 267,
+      "epoch_change_l2": 0.005360851214404991,
+      "initial_change_l2": 1.398914361221889,
+      "maximum_absolute_change": 0.0012845247983932495,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 268,
+      "epoch_change_l2": 0.005033151072275968,
+      "initial_change_l2": 1.4004916555752196,
+      "maximum_absolute_change": 0.0011723674833774567,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 269,
+      "epoch_change_l2": 0.005736817804627719,
+      "initial_change_l2": 1.4030860661973825,
+      "maximum_absolute_change": 0.0010561943054199219,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 270,
+      "epoch_change_l2": 0.0054644281032547514,
+      "initial_change_l2": 1.4058208340419236,
+      "maximum_absolute_change": 0.0009746626019477844,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 271,
+      "epoch_change_l2": 0.004716640718549908,
+      "initial_change_l2": 1.407986115655631,
+      "maximum_absolute_change": 0.0008487142622470856,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 272,
+      "epoch_change_l2": 0.004453441417128282,
+      "initial_change_l2": 1.409868319245806,
+      "maximum_absolute_change": 0.0007700398564338684,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 273,
+      "epoch_change_l2": 0.004936669615761987,
+      "initial_change_l2": 1.4121144542889552,
+      "maximum_absolute_change": 0.0006932709366083145,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 274,
+      "epoch_change_l2": 0.004557105627360213,
+      "initial_change_l2": 1.4141279236252557,
+      "maximum_absolute_change": 0.000627296045422554,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 275,
+      "epoch_change_l2": 0.005376781887704693,
+      "initial_change_l2": 1.416241063420458,
+      "maximum_absolute_change": 0.001109689474105835,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 276,
+      "epoch_change_l2": 0.004839146528961785,
+      "initial_change_l2": 1.4181578313068122,
+      "maximum_absolute_change": 0.0009986460208892822,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 277,
+      "epoch_change_l2": 0.0,
+      "initial_change_l2": 1.4181578313068122,
+      "maximum_absolute_change": 0.0,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 278,
+      "epoch_change_l2": 0.004614997589432413,
+      "initial_change_l2": 1.4199613273282015,
+      "maximum_absolute_change": 0.0009003579616546631,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 279,
+      "epoch_change_l2": 0.004607932191640885,
+      "initial_change_l2": 1.4221452074403913,
+      "maximum_absolute_change": 0.0009821951389312744,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 280,
+      "epoch_change_l2": 0.0044917944901530955,
+      "initial_change_l2": 1.4240436912316918,
+      "maximum_absolute_change": 0.0009195506572723389,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 281,
+      "epoch_change_l2": 0.004158092037112331,
+      "initial_change_l2": 1.4259258147598508,
+      "maximum_absolute_change": 0.0008308887481689453,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 282,
+      "epoch_change_l2": 0.003600707669377016,
+      "initial_change_l2": 1.4274874985377701,
+      "maximum_absolute_change": 0.0007470250129699707,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 283,
+      "epoch_change_l2": 0.003168324610085264,
+      "initial_change_l2": 1.4287912897854178,
+      "maximum_absolute_change": 0.0006431639194488525,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 284,
+      "epoch_change_l2": 0.003582139655914796,
+      "initial_change_l2": 1.4305951617040091,
+      "maximum_absolute_change": 0.0007903575897216797,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 285,
+      "epoch_change_l2": 0.003960805801341813,
+      "initial_change_l2": 1.4326711860773076,
+      "maximum_absolute_change": 0.0009053125977516174,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 286,
+      "epoch_change_l2": 0.0037943521676076495,
+      "initial_change_l2": 1.4346945725543059,
+      "maximum_absolute_change": 0.0008117929100990295,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 287,
+      "epoch_change_l2": 0.004060197998821949,
+      "initial_change_l2": 1.43655442037449,
+      "maximum_absolute_change": 0.0007301270961761475,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 288,
+      "epoch_change_l2": 0.0037813054767301176,
+      "initial_change_l2": 1.4383148038204132,
+      "maximum_absolute_change": 0.0006907880306243896,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 289,
+      "epoch_change_l2": 0.003454720355463356,
+      "initial_change_l2": 1.439770038429119,
+      "maximum_absolute_change": 0.0006275773048400879,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 290,
+      "epoch_change_l2": 0.0031105634640074425,
+      "initial_change_l2": 1.4412621271586705,
+      "maximum_absolute_change": 0.0005615130066871643,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 291,
+      "epoch_change_l2": 0.002857448459049179,
+      "initial_change_l2": 1.4424710751207264,
+      "maximum_absolute_change": 0.0005087405443191528,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 292,
+      "epoch_change_l2": 0.0033283736940742372,
+      "initial_change_l2": 1.4437913871385109,
+      "maximum_absolute_change": 0.0005188304930925369,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 293,
+      "epoch_change_l2": 0.0034174895957596323,
+      "initial_change_l2": 1.4453541752181074,
+      "maximum_absolute_change": 0.0005583316087722778,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 294,
+      "epoch_change_l2": 0.00426276668516821,
+      "initial_change_l2": 1.4469409387295469,
+      "maximum_absolute_change": 0.0005718842148780823,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 295,
+      "epoch_change_l2": 0.003918264793637799,
+      "initial_change_l2": 1.4483032218542544,
+      "maximum_absolute_change": 0.0005146954208612442,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 296,
+      "epoch_change_l2": 0.005985442469409211,
+      "initial_change_l2": 1.4493803505605583,
+      "maximum_absolute_change": 0.002559155225753784,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 297,
+      "epoch_change_l2": 0.005839522476799812,
+      "initial_change_l2": 1.450455566448209,
+      "maximum_absolute_change": 0.002302408218383789,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 298,
+      "epoch_change_l2": 0.005251399960836928,
+      "initial_change_l2": 1.4514622064591143,
+      "maximum_absolute_change": 0.002075105905532837,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 299,
+      "epoch_change_l2": 0.004809464031223192,
+      "initial_change_l2": 1.4524533766978374,
+      "maximum_absolute_change": 0.0018672309815883636,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    },
+    {
+      "epoch": 300,
+      "epoch_change_l2": 0.004776719368449623,
+      "initial_change_l2": 1.4528905087504884,
+      "maximum_absolute_change": 0.0016222447156906128,
+      "raw_thought_gradient_l2": 0.0,
+      "negative_thought_gradient_dot_epoch_change": 0
+    }
+  ],
+  "outcome": "running",
+  "observation_scope": "Raw thought-credit gradients and actual shared-scorer epoch changes. Other owner losses also update this scorer; total movement alone is not proof of learned chaining."
+}

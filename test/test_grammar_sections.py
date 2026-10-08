@@ -47,7 +47,7 @@ def test_all_shipped_grammars_load_with_rules():
 def test_thought_ops_derive_from_structural_families():
     G = _fresh('complete.grammar')
     ids = {operation.semantic_id for operation in G.thought_operations}
-    assert {'part', 'equal', 'quantize', 'arma', 'what'} <= ids
+    assert {'part', 'equal', 'ask', 'query', 'gain', 'isTrue', 'exist', 'isPart', 'isEqual', 'isImplied', 'implies', 'not'} <= ids
     part = next(operation for operation in G.thought_operations
                 if operation.semantic_id == 'part')
     whole = next(form for form in part.forms if form.structural_id == 'whole')

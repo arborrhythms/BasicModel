@@ -1,0 +1,75 @@
+[
+  {
+    "file": "test/test_chooser_architecture.py",
+    "removed": [
+      "test_deep_step_checkpoint_materializes_saved_architecture_and_loads_strictly",
+      "test_model_lazy_step_head_uses_configured_capacity"
+    ],
+    "added": [
+      "test_legacy_step_checkpoint_is_discarded_without_replacing_grammar",
+      "test_thought_uses_existing_grammar_capacity"
+    ]
+  },
+  {
+    "file": "test/test_query_contract_boundaries.py",
+    "removed": [
+      "test_zero_quantize_budget_does_not_fetch_a_named_concept_payload"
+    ],
+    "added": [
+      "test_zero_budget_does_not_fetch_a_named_concept_payload"
+    ]
+  },
+  {
+    "file": "test/test_query_executors.py",
+    "removed": [
+      "test_arma_returns_all_roles_as_an_estimate_without_overwriting_pending_prediction",
+      "test_quantize_reads_allocated_conceptual_atoms_without_symbol_snapping",
+      "test_what_preserves_the_complete_question_and_schedules_same_controller"
+    ],
+    "added": [
+      "test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+      "test_global_expectation_retains_all_roles_without_a_thought_operation",
+      "test_removed_quantize_raises_without_symbol_snapping"
+    ]
+  },
+  {
+    "file": "test/test_replacement_kernel_contracts.py",
+    "removed": [
+      "test_concluding_without_evidence_cannot_assert_truth",
+      "test_untrained_chooser_exactly_reproduces_baseline_at_every_level"
+    ],
+    "added": [
+      "test_concluding_without_evidence_is_illegal_while_work_remains",
+      "test_supplied_mechanism_walk_uses_one_controller_at_every_level"
+    ]
+  },
+  {
+    "file": "test/test_symbolize_layer.py",
+    "removed": [
+      "test_quantization_remains_available_as_a_declared_thought_capability"
+    ],
+    "added": [
+      "test_quantization_is_removed_from_declared_thought_capabilities"
+    ]
+  },
+  {
+    "file": "test/test_truth_grounded_reasoning.py",
+    "removed": [
+      "TestGrammarOps.test_quantize_noop_without_store",
+      "TestGrammarOps.test_quantize_snaps_to_nearest_idea"
+    ],
+    "added": [
+      "TestGrammarOps.test_quantize_raises_with_and_without_a_store",
+      "TestGrammarOps.test_retired_prediction_aliases_point_to_global_expectation"
+    ]
+  },
+  {
+    "file": "test/test_walk_trials.py",
+    "removed": [
+      "test_anticipation_holds_both_walks_until_future_return"
+    ],
+    "added": [
+      "test_expectation_is_global_and_does_not_open_an_anticipatory_episode"
+    ]
+  }
+]

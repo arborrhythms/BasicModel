@@ -309,7 +309,6 @@
       <interContrastiveTemp>0.1</interContrastiveTemp>
       <!-- Hard normal grammatical-thought choices use their own explicit
            REINFORCE credit; zero preserves the deterministic safe baseline. -->
-      <selectedThoughtPolicyWeight>0.0</selectedThoughtPolicyWeight>
     </training>
 
     <server>

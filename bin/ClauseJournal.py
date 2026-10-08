@@ -87,6 +87,14 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                         break
                     selected = selected['children'][headed-1]
                 reference = int(program.operation_refs[action, role])
+                rule = catalog[local]
+                mode = dict(getattr(rule, 'reference_kinds', ())).get('I'+str(role+1))
+                if getattr(rule, 'head_role', 0) == role+1:
+                    mode = getattr(rule, 'determiner_mode', None) or mode
+                if reference in (-1, 0) and mode in ('bind', 'pronoun'):
+                    selected['ref'] = -1
+                    selected['open_reference'] = True
+                    operand['open_reference'] = True
                 # A trial's newly requested singleton still had its source
                 # address. Resolve that alias to the winning host's admitted
                 # identity; an already selected earlier occurrence is unchanged.
@@ -164,7 +172,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         if getattr(node['rule'], 'determiner_mode', None) == 'bind':
             chosen = node.get('operand_refs')
             if chosen is None or chosen[1] in (-1, 0):
-                raise ValueError('a binding determiner needs an earlier occurrence')
+                return -1
             return chosen[1]
         selected = head(node)
         if selected['ref'] not in (-1, 0):
@@ -232,6 +240,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                           subject_word_id=subject_word_id(description), **bands(item), **meta)
 
         def operand(item, *, sentence=False):
+            if item.get('open_reference') or head(item).get('open_reference'):
+                return value(item), -1
             fresh = member(item)
             if fresh is not None:
                 ref = ('clause', len(children))
@@ -362,6 +372,12 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     getattr(rule, 'determiner_mode', None) in ('mint', 'bind') else value)
             return orders[id(item)]
         evidence['order'] = node_order(root)
+        from ThoughtReferences import with_slots
+        opened = tuple(('relation' if role == 1 else 'referent', role)
+                       for role, item in enumerate(role_nodes) if item is not None
+                       and (item.get('open_reference') or head(item).get('open_reference')))
+        if opened:
+            described = with_slots(described, opened, pair=evidence['evidence'])
         if excluded:
             support = evidence['evidence']
             evidence['evidence'] = (0., support[1])

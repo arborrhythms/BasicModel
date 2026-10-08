@@ -158,7 +158,16 @@ def _sentence_query_mask(method):
 
 def _append_observed_meaning(store, clause, *, trust=0.0, expectation=None, stream=-1):
     """Write the completed field with caller-owned provenance."""
-    kind = 'question' if clause.meaning.mode == 'interrogative' else 'observation'
+    from ThoughtReferences import from_closing, open_slots, question
+    meaning = from_closing(clause.meaning, evidence=clause.evidence)
+    # The clause writer installs native references after this boundary. A
+    # well-defined relative row with no evidence already has an open pair.
+    if (clause.relation is not None and clause.evidence == (0., 0.)
+            and all(ref not in (-1, 0) for ref in clause.refs)
+            and store.__dict__.get('_clause_assertion') is None):
+        meaning = question(meaning, (*open_slots(meaning), ('evidence', -1)))
+    clause = replace(clause, meaning=meaning)
+    kind = 'question' if open_slots(meaning) else 'observation'
     return store.write_clause(clause, trust=trust, kind=kind, stream=stream,
         evidence=clause.evidence, expectation=expectation)
 
@@ -1843,6 +1852,10 @@ class BaseModel(Mereology, nn.Module):
 
         arch = cfg["architecture"]
         ModelFactory.validate_config(cfg)
+        # Predictors are constructed before SymbolSpace. Their routing width
+        # must use this model's grammar, not a previous model's cached rules.
+        TheGrammar._configured = False
+        TheGrammar._ensure_configured()
 
         _binding = str(TheXMLConfig.get(
             "architecture.conceptBinding", default="mixing")
@@ -2185,9 +2198,8 @@ class BaseModel(Mereology, nn.Module):
         self.concept_index_read = bool(TheXMLConfig.get(
             "architecture.conceptIndexRead", default=False))
 
-        # Explicit reason_about / answer_query work allowance. The default
-        # one-unit allowance is bounded; zero disables these public APIs.
-        # The deprecated Boolean alias selects ten shared work units.
+        # Historical configuration metadata, retained for old checkpoints.
+        # Every current thought entry uses attention_budget below.
         _ri = TheXMLConfig.get("architecture.reasoningIterations", default=None)
         if _ri is None:
             self.reasoning_iterations = (
@@ -2200,8 +2212,8 @@ class BaseModel(Mereology, nn.Module):
 
         # Explicit think_about calls share the normal controller work meter.
         # Zero disables this API; it never attaches a second result to an answer.
-        self.thinking_budget = max(0, int(TheXMLConfig.get(
-            "architecture.thinkingBudget", default=0) or 0))
+        self.attention_budget = max(0, int(TheXMLConfig.get(
+            "architecture.attentionBudget", default=32) or 0))
 
         # Serial word-at-a-time object/meta (doc/specs/mereological-order-
         # raising.md "Serial-mode word-at-a-time loop"; Alec 2026-06-17). When
@@ -3801,13 +3813,24 @@ class BaseModel(Mereology, nn.Module):
         return truth_layer.ground(activation, threshold=threshold, model=self)
 
     @torch.no_grad()
-    def isTrue(self, activation):
-        """Ground a proposition and return a scalar DoT in [-1, 1].
+    def isTrue(self, proposition):
+        """Read an ended proposition's independent poles and witnesses."""
+        from Queries import ThoughtLTMCapability
+        from ThoughtFaces import pair
+        from reasoning import TruthGroundedReasoner
+        store = getattr(getattr(self, 'symbolSpace', None), 'ltm_store', None)
+        if store is None:
+            return pair(proposition)
+        capability = ThoughtLTMCapability(store=lambda:store,
+            equal=TruthGroundedReasoner.equal, tau_id=.6)
+        meter = QueryWorkBudget(getattr(self, 'attention_budget', 32))
+        if isinstance(proposition, tuple) and proposition and proposition[0] == 'ltm':
+            return capability.end_evidence(proposition, max_records=meter.remaining, work=meter)
+        meaning = ConceptualMeaning.from_description(proposition)
+        return capability.truth_evidence(meaning, max_records=meter.remaining, work=meter)
 
-        Positive = true, negative = false, zero = unknown.
-        """
-        result = self.ground(activation)
-        return 0.0 if not result['grounded'] else result['confidence']
+    def true(self, *args, **kwargs):
+        raise ValueError('true is retired; use isTrue, which returns an evidence pair')
 
     @torch.no_grad()
     def extrapolate(self, seed_indices=None, max_new=64, attenuation=0.8):
@@ -5654,6 +5677,22 @@ class BasicModel(BaseModel):
         finally:
             self._query_ready_rows = previous
 
+    @contextmanager
+    def _committed_thought_scope(self, sentence, ready_rows):
+        """The eager closing has ended; permit only its already committed rows."""
+        if torch.compiler.is_compiling():
+            raise RuntimeError('thinking cannot execute in a captured sentence')
+        fields = self._sentence_fields[sentence]
+        if any(fields[row] is None for row in ready_rows):
+            raise RuntimeError('thinking requires a completed closing')
+        depth = self._query_sentence_depth
+        self._query_sentence_depth = 0
+        try:
+            with self._query_boundary_scope(ready_rows):
+                yield
+        finally:
+            self._query_sentence_depth = depth
+
     def _thought_grammar_context(self, meaning, *, row, work, continuation):
         """Build the one capability-scoped context for a selected thought.
 
@@ -5827,210 +5866,30 @@ class BasicModel(BaseModel):
                           active.roles.new_tensor([comparison is not None]))).detach()
 
     def _selected_thought_chooser(self, meaning, *, device=None, dtype=None):
-        """Return the width-owned learned chooser for complete meanings."""
-        if not isinstance(meaning, ConceptualMeaning):
-            raise TypeError("selected thought chooser requires a ConceptualMeaning")
-        width = int(meaning.roles.shape[-1])
-        key = str(width)
-        table = getattr(self, "selected_thought_choosers", None)
-        if table is None:
-            table = nn.ModuleDict()
-            self.selected_thought_choosers = table
-        module = table[key] if key in table else None
-        if module is None:
-            from Language import SelectedThoughtChooser
-            from ThoughtFeatures import context_width
-            if device is None:
-                device = meaning.roles.device
-            if dtype is None:
-                dtype = meaning.roles.dtype
-            module = SelectedThoughtChooser(
-                # Width includes semantic metadata and two bounded memory
-                # attention results. Native IDs remain address metadata.
-                context_dim=context_width(width),
-                hidden=getattr(self, "what_thinking_hidden", 16),
-                depth=getattr(self, "what_thinking_depth", 1),
-            ).to(device=device, dtype=dtype)
-            table[key] = module
-            self._collect_fresh_synthesis_modules()
-        return module
+        """Thought and composition use exactly the same operation scorer."""
+        language = getattr(self, 'languageSpace', None)
+        symbol = getattr(self, 'symbolSpace', None)
+        layer = getattr(getattr(symbol, 'languageLayer', None), 'operation_layer', None)
+        if layer is None:
+            layer = getattr(getattr(language, 'language_layer', None), 'operation_layer', None)
+        if layer is None:
+            layer = getattr(getattr(symbol, 'language_layer', None), 'operation_layer', None)
+        if layer is None:
+            raise RuntimeError('thinking requires the existing grammar operation chooser')
+        return layer
 
     def _stage_expectation_queries(self, *, training=None):
-        """Optional prior-only thought before the batch's first external input.
-
-        Packed later slots still receive ordinary chronological prediction;
-        their optional query phase is empty. No query is run during a packed
-        drain, when unseen inputs have already altered the model's staging.
-        """
-        discourse = getattr(getattr(self, "symbolSpace", None), "expectation", None)
-        registry = _boundary_registry(self)
+        """Prediction is global; no retired arma thought or separate policy runs."""
+        discourse = getattr(getattr(self, 'symbolSpace', None), 'expectation', None)
         self._pending_attention_meters = (() if discourse is None else tuple(
-            QueryWorkBudget(getattr(self, 'attention_budget', self.expectation_query_budget))
-            for _ in discourse._inter_context_occurrences))
-        if (getattr(self, "expectation_policy_weight", 0.) <= 0 or discourse is None
-                or not discourse.expectation_enabled or discourse._external_observations_suspended
-                or getattr(self, "expectation_query_budget", 0) == 0):
-            return
-        if registry is None:
-            raise ValueError("expectationPolicyWeight requires the model's thought catalogue")
-        if "arma" not in registry.executable_operation_ids:
-            raise ValueError("expectationPolicyWeight requires arma in the model's thought catalogue")
-        store = getattr(self.symbolSpace, "ltm_store", None)
-        if store is None:
-            raise ValueError("expectationPolicyWeight requires ltmConsolidation for owned prior occurrences")
-        from dataclasses import replace
-        for row, occurrences in enumerate(discourse._inter_context_occurrences):
-            if not occurrences or occurrences[-1] is None:
-                continue
-            index = store._index_occurrences.get(occurrences[-1])
-            source = None if index is None else store.meaning_of(index)
-            if source is None:
-                continue
-            operation = registry.operation_spec("arma")
-            root = registry._form_candidate(operation, registry.descriptors["arma"],
-                {operation.operand_roles[0]: (source.roles.sum(0) / source.role_mask.sum().sqrt(),
-                                            occurrences[-1])},
-                source=replace(source, mode="interrogative", polarity=True))
-            self._anticipating_expectation_row = row
-            self._anticipation_training = bool(self.training if training is None else training)
-            self._anticipatory_choices = []
-            def forecast():
-                with self._query_boundary_scope((row,)):
-                    result = self.run_selected_thought(root, row=row,
-                        work_budget=min(self.expectation_query_budget,
-                            self._pending_attention_meters[row].remaining), registry=registry)
-                frames = self._what_memory().retrieved_frames(b=row, limit=discourse._inter_chain_window - 1)
-                from ReferenceContext import SituationFrame
-                reference_frames = tuple(frame for value in frames
-                    if (frame := SituationFrame.from_row(value)) is not None)
-                discourse.expect_next_meaning(row, frames=tuple(f['meaning'] for f in frames),
-                    frame_occurrences=tuple(f['occurrence'] for f in frames), policy=tuple(self._anticipatory_choices), policy_work=result.work.spent,
-                    refresh=True, reference_frames=reference_frames)
-                return result, discourse._inter_last_meaning[row]
-            try:
-                if self._anticipation_training and torch.is_grad_enabled():
-                    from WalkTrials import forecast_pair
-                    pending = forecast_pair(self, root, row=row, run=forecast)
-                    discourse._inter_last_meaning[row] = pending
-                else:
-                    forecast()
-                pending = discourse._inter_last_meaning[row]
-                # Its winner is not known until the next observation. Reserve
-                # the larger prior-only spend so either held walk and the
-                # arriving input fit the same allowance; no target selects it.
-                spent = max(pending.work, pending.walk.other.work) if pending.walk else pending.work
-                self._pending_attention_meters[row].require('anticipation', spent)
-            finally:
-                self._anticipating_expectation_row = None
-                self._anticipatory_choices = []
-                self._end_finished_selected_thought_episodes()
+            QueryWorkBudget(self.attention_budget) for _ in discourse._inter_context_occurrences))
 
     def _expectation_policy_loss(self):
-        """Residual REINFORCE with an independent EMA return baseline.
+        """Thinking receives the same owner-step paired credit as compose."""
+        return None
 
-        Replay frozen candidate features through the current single chooser.
-        A detached, capped importance ratio accounts for a changed parameter
-        version (cap 4); there is no backward through an old policy graph.
-        Reward is minus all-role MSE/presence BCE and actual metered work.
-        Gain, the object mask and reading attention are outside this estimator.
-        """
-        discourse = getattr(getattr(self, "symbolSpace", None), "expectation", None)
-        if discourse is not None:
-            from WalkTrials import observe_comparison
-            for row, audit in discourse.consume_expectation_walk_outcomes():
-                observe_comparison(self, 'think.anticipation', audit, row=row)
-                self._last_anticipation_records = audit['records']
-        outcomes = [] if discourse is None else discourse.consume_expectation_policy_outcomes()
-        if not outcomes or getattr(self, "expectation_policy_weight", 0.) <= 0:
-            return None
-        baseline = self.__dict__.get("_expectation_policy_baseline", 0.)
-        losses, returns, ratios = [], [], []
-        for trajectory, residual_reward, spent in outcomes:
-            reward = residual_reward - self.WHAT_STEP_COST * spent
-            terms = []
-            for width, contexts, concludes, index, old_log_prob in trajectory:
-                chooser = self.selected_thought_choosers[str(width)]
-                log_prob = chooser.logits(contexts, concludes).log_softmax(0)[index]
-                ratio = (log_prob.detach() - old_log_prob).exp().clamp(max=4.)
-                terms.append(-ratio * (reward - baseline) * log_prob)
-                ratios.append(float(ratio))
-            if terms:
-                losses.append(torch.stack(terms).mean())
-                returns.append(reward)
-        if not losses:
-            return None
-        mean_return = sum(returns) / len(returns)
-        self._expectation_policy_baseline = (.9 * baseline + .1 * mean_return
-            if "_expectation_policy_baseline" in self.__dict__ else mean_return)
-        self._expectation_policy_report = dict(episodes=len(returns), choices=len(ratios),
-            mean_return=mean_return, return_variance=sum((r - mean_return) ** 2 for r in returns) / len(returns),
-            mean_importance=sum(ratios) / len(ratios))
-        return torch.stack(losses).mean()
-
-    def _selected_thought_policy_loss(self, answer_loss, mask=None):
-        """REINFORCE credit for hard normal-controller query/finish choices.
-
-        The only scalar reward is the later answer loss, less a small charge
-        for actual metered work, including child execution and reads.
-        No desired answer or oracle subgoal
-        enters the chooser context; hard query results remain nondifferentiable.
-        """
-        episodes = {}
-        for record in self.__dict__.get("_selected_thought_policy_records") or ():
-            if len(record) != 4:
-                continue  # no credit without a completed episode's actual meter
-            row, log_prob, episode, spent = record
-            if not (torch.is_tensor(log_prob) and log_prob.requires_grad):
-                continue
-            if mask is not None and not (
-                    0 <= row < mask.numel() and bool(mask.reshape(-1)[row])):
-                continue
-            episodes.setdefault((row, episode, spent), []).append(log_prob)
-        if not episodes:
-            return None
-        losses, rewards, choices = [], [], 0
-        baseline = self.__dict__.get("_selected_thought_policy_baseline")
-        for (row, _episode, spent), log_probs in episodes.items():
-            if torch.is_tensor(answer_loss):
-                values = answer_loss.detach().reshape(-1)
-                answer = float(values[0] if values.numel() == 1 else values[row])
-            else:
-                answer = float(answer_loss or 0.0)
-            reward = -answer - self.WHAT_STEP_COST * spent
-            advantage = reward - (baseline if baseline is not None else 0.0)
-            losses.append(-(advantage * torch.stack(log_probs)).mean())
-            rewards.append(reward)
-            choices += len(log_probs)
-        reward = sum(rewards) / len(rewards)
-        self._selected_thought_policy_baseline = (
-            reward if baseline is None else 0.9 * baseline + 0.1 * reward)
-        loss = torch.stack(losses).mean()
-        report = self._what_report_state()
-        for key, value in (("credit_sum", float(loss.detach())),
-                           ("return_sum", reward), ("batches", 1),
-                           ("choices", choices)):
-            name = "policy_selected_thought_" + key
-            report[name] = report.get(name, 0) + value
-        return loss
-
-    def _selected_thought_answer_errors(self, prediction, target, mask, questions, *, surface=False):
-        """Row-local, detached answer rewards after the answer has been fixed."""
-        if not (self.__dict__.get("_selected_thought_policy_records")
-                and bool(getattr(self.inputSpace.data, "has_supervised_outputs", False))):
-            return None
-        questions = question_batch(questions)
-        eligible = torch.tensor([
-            question.relation is WhatRelation.SUPERVISED for question in questions],
-            device=prediction.device, dtype=torch.bool)
-        if mask is not None:
-            eligible = eligible & mask.to(eligible).reshape(-1)
-        errors = prediction.new_zeros(len(questions))
-        with torch.no_grad():
-            for row in eligible.nonzero().reshape(-1).tolist():
-                pred, gold = prediction[row:row + 1].detach(), target[row:row + 1].detach()
-                errors[row] = (self._reverse_event_loss(pred, gold) if surface
-                               else self.loss.compute(pred, gold))
-        return errors, eligible
+    def _selected_thought_policy_loss(self, *args, **kwargs):
+        raise ValueError('REINFORCE/EMA thought credit is retired; use the paired grammar cost')
 
     def _selected_thought_memory(self, active, *, row, work):
         """Bounded attended STM/discourse and what-retrieved frames on one meter.
@@ -6109,80 +5968,65 @@ class BasicModel(BaseModel):
 
     def _choose_selected_thought_action(self, root, active, actions, *, row,
                                         level, pressure, evidence=None, work=None):
-        """Choose a catalog operation or the non-semantic conclude transition.
-
-        ``actions`` is a tuple of grammar-derived ``ThoughtOperationCandidate``
-        instances, plus ``None`` only for conclude.  The operation's complete
-        request is the learned candidate representation; its name and catalog
-        position remain dispatch metadata outside the policy tensor.
-        """
+        """All compatible operations enter the grammar's existing softmax."""
         from Queries import ThoughtOperationCandidate
-
         actions = tuple(actions)
-        if not actions:
-            raise ValueError("selected thought action requires a legal candidate")
-        if any(action is not None and not isinstance(
-                action, ThoughtOperationCandidate) for action in actions):
-            raise TypeError("selected thought action must be a grammar candidate or conclude")
-        current = active
-        memory_context = self._selected_thought_memory(active, row=row, work=work)
-        expectation_context = self._selected_thought_expectation(active, row=row, work=work)
-        contexts = tuple(self._selected_thought_context(
-            root, active,
-            (current if action is None else action.request),
-            level=level, pressure=pressure, evidence=evidence,
-            memory_context=memory_context, expectation_context=expectation_context)
-            for action in actions)
-        context = torch.stack(contexts)
-        chooser = self._selected_thought_chooser(
-            current, device=context.device, dtype=context.dtype)
-        anticipating = getattr(self, "_anticipating_expectation_row", None) == row
-        weight = getattr(self, "expectation_policy_weight" if anticipating else "selected_thought_policy_weight", 0.)
-        concludes = tuple(action is None for action in actions)
-        from GrammarPreference import operator_is_structural
-        registry = _boundary_registry(self)
-        structural = tuple(action is None or operator_is_structural(
-            registry.descriptors[action.semantic_id]) for action in actions)
-        walk=getattr(self,'_thought_walk',None)
-        choice={}
+        if not actions or any(action is not None and not isinstance(action, ThoughtOperationCandidate)
+                              for action in actions):
+            raise ValueError('thought requires legal grammar candidates')
+        chooser = self._selected_thought_chooser(active)
+        # The next sentence may arrive after other owners update. Preserve
+        # this decision's forward values while retaining its parameter credit.
+        image = getattr(self, '_closing_images', {}).get(row)
+        viewed = (replace(active, roles=active.roles+image.image.to(active.roles))
+                  if image is not None and image.image.shape == active.roles.shape else active)
+        with torch.autograd.graph.saved_tensors_hooks(lambda tensor: tensor.clone(), lambda tensor: tensor):
+            logits = chooser.thought_logits(viewed, tuple(None if a is None else a.request for a in actions))
+        walk = getattr(self, '_thought_walk', None)
+        replay = masked = None
         if walk is not None:
-            step=len(walk['actions'])
-            exploit=walk['exploit']
-            if exploit is not None and step<len(exploit):
-                if step<walk['departure']:choice['forced']=exploit[step]
-                elif step==walk['departure']:choice['excluded']=exploit[step]
-        index, log_prob = chooser.choose(context, concludes,structural=structural,
-            sample=bool(anticipating and self._anticipation_training and weight>0. and walk is None),**choice)
+            step = len(walk['actions'])
+            exploit = walk['exploit']
+            if exploit is not None and step < len(exploit):
+                if step < walk['departure']:
+                    replay = torch.tensor([exploit[step]], device=logits.device)
+                elif step == walk['departure']:
+                    masked = torch.tensor([exploit[step]], device=logits.device)
+        chosen, probability, valid = chooser.select_logits(logits,
+            structural=(True,)*len(actions), masked_action=masked, replay_action=replay,
+            departure_eligible=torch.isfinite(logits))
+        index = int(chosen[0])
+        if not bool(valid[0]):
+            raise RuntimeError('thought selected an illegal operation')
         if walk is not None:
             walk['actions'].append(index)
             walk['eligible'].append(len(actions)>1)
-        if anticipating and weight > 0.:
-            # Keep data, not an autograd graph across the arriving input or
-            # an optimizer step. Credit replays this same chooser on this view.
-            self._anticipatory_choices.append((int(root.roles.shape[-1]),
-                context.detach().clone(), concludes, index, float(log_prob.detach())))
-        elif float(getattr(self, "selected_thought_policy_weight", 0.0) or 0.0) > 0.0:
-            self.__dict__.setdefault("_selected_thought_policy_records", []).append(
-                (int(row), log_prob))
+            walk.setdefault('choices', []).append(dict(
+                probability=probability[0,index], alternatives=len(actions)-1,
+                active=active.detached(), requests=tuple(None if a is None else a.request.detached() for a in actions),
+                action=index))
         return actions[index]
 
     def run_selected_thought(self, meaning, *, row=0, work_budget=32,
                              registry=None, work=None, score=None):
-        """Run the ordinary controller, comparing complete training trials."""
-        self._last_thought_comparison=None
-        if score is not None and self.training and torch.is_grad_enabled():
-            self._assert_query_boundary(row)
-            # Binding a supplied constituent is part of query admission, not
-            # a trial effect; both paths read this same owned occurrence.
-            if meaning.constituents:
-                store=getattr(self.symbolSpace,'ltm_store',None)
-                if store is None:raise RuntimeError('selected nested thought requires its occurrence owner')
-                meaning=store.bind_constituents(meaning,stream=row)
-                if meaning is None:raise RuntimeError('selected nested thought exhausted occurrence capacity')
+        """One open row, one grammar chooser, one shared budget and paired credit."""
+        from ThoughtReferences import open_slots
+        from ThoughtStream import commit
+        self._last_thought_comparison = None
+        self._assert_query_boundary(row)
+        if not open_slots(meaning):
+            meter = QueryWorkBudget(work_budget) if work is None else work
+            return SelectedThoughtResult(meaning, dict(support_true=0., support_false=0.,
+                evidence_kind='bound', incomplete=()), meter, (), None)
+        if self.training and torch.is_grad_enabled():
             from WalkTrials import thought_pair
-            return thought_pair(self,meaning,row=row,work_budget=work_budget,
-                registry=registry,work=work,score=score)
-        return self._run_selected_thought_once(meaning,row=row,work_budget=work_budget,registry=registry,work=work)
+            result = thought_pair(self, meaning, row=row, work_budget=work_budget,
+                registry=registry, work=work, score=score)
+        else:
+            result = self._run_selected_thought_once(meaning, row=row,
+                work_budget=work_budget, registry=registry, work=work)
+        commit(self, result, row=row)
+        return result
 
     def _run_selected_thought_once(self, meaning, *, row=0, work_budget=32,
                                   registry=None, work=None):
@@ -6192,20 +6036,19 @@ class BasicModel(BaseModel):
         boundary-only: it creates the *one* transient query meter for the
         episode, records each selected operation in the existing interaction
         history, and delegates checked reads/effects to the registered VP.
-        A ``what(Q)`` executor receives the same meter and may enter a nested
+        An ``ask(Q)`` executor receives the same meter and may enter a nested
         ordinary context; it never starts a child budget, a new owner, or a
         second optimizer episode.
 
-        The hard operation sequence is a small safe baseline: execute the
-        selected VP and conclude, with ``what(Q)`` supplying its explicit
-        subordinate meaning.  Its return value preserves actual support and
-        occurrence provenance for the later learned controller/output path;
-        it does not turn a question into an accepted fact.
+        Every checked result becomes a serial candidate slot. The shared
+        grammar chooser selects the next operation, with conclude gated by
+        open references and the remaining work. Nested returns preserve
+        both evidence poles and the witnessing occurrence references.
         """
         if not isinstance(meaning, ConceptualMeaning):
             raise TypeError("selected thought requires a complete ConceptualMeaning")
-        if meaning.mode != "interrogative":
-            raise ValueError("selected thought requires an interrogative meaning")
+        from ThoughtReferences import open_slots, evidence_pair
+        from ThoughtStream import candidates as stream_candidates, integrate
         if type(row) is not int or row < 0:
             raise ValueError("selected thought row must be a non-negative integer")
         if type(work_budget) is not int or work_budget < 0:
@@ -6215,17 +6058,6 @@ class BasicModel(BaseModel):
         registry = registry or _boundary_registry(self)
         if not isinstance(registry, GrammaticalThoughtRegistry):
             raise RuntimeError("selected thought has no installed grammatical thought registry")
-        if meaning.constituents:
-            store = getattr(getattr(self, "symbolSpace", None), "ltm_store", None)
-            if store is None:
-                raise RuntimeError("selected nested thought requires its occurrence owner")
-            meaning = store.bind_constituents(meaning, stream=row)
-            if meaning is None:
-                raise RuntimeError("selected nested thought exhausted occurrence capacity")
-        # Reject a non-executable VP before opening an episode that could not
-        # truthfully be completed.  ``signature_for`` only validates the
-        # frozen setup binding; all selected reads below share ``meter``.
-        registry.signature_for(meaning)
         memory = self._what_memory()
         if memory is None or not all(hasattr(memory, name) for name in (
                 "begin_thought_episode", "commit_thought", "descend_thought",
@@ -6233,7 +6065,6 @@ class BasicModel(BaseModel):
                 "thought_history", "thought_reference")):
             raise RuntimeError("selected thought requires the interaction memory owner")
 
-        policy_start = len(self.__dict__.get("_selected_thought_policy_records") or ())
         meter = QueryWorkBudget(work_budget) if work is None else work
         initial_spend = meter.spent
         root = memory.begin_thought_episode(meaning, b=row, work_budget=meter.remaining)
@@ -6274,6 +6105,8 @@ class BasicModel(BaseModel):
                     "result_kind", None if checked is None else checked.result_kind),
                 "query_signature": result.get("query_signature"),
                 "incomplete": tuple(result.get("incomplete", ()) or ()),
+                "witnesses": tuple(source.get("witnesses", ())),
+                "meaning": source.get("meaning"),
             }, checked
 
         def refs(current, *extra):
@@ -6325,11 +6158,12 @@ class BasicModel(BaseModel):
             return record
 
         def exhausted(current):
+            positive, negative = evidence_pair(current)
             outcome = {
                 "meaning": current,
                 "evidence": {
-                    "support_true": 0.0,
-                    "support_false": 0.0,
+                    "support_true": positive,
+                    "support_false": negative,
                     "evidence_kind": "subgoal",
                     "query_signature": None,
                     "incomplete": ("work_budget",),
@@ -6352,9 +6186,10 @@ class BasicModel(BaseModel):
             initiating = next(record for record in reversed(memory.thought_history(b=row))
                               if record.episode == episode and record.level == state.level
                               and record.kind in ("begin", "descend"))
-            return registry.controller_candidates(
-                meaning, state.contexts[-1].meaning, current,
-                descriptions=((state.contexts[-1].initial, reference(initiating)),))
+            history = tuple(record for record in memory.thought_history(b=row)
+                            if record.episode == episode and record.level == state.level)
+            return stream_candidates(registry, state.contexts[-1].initial, state.contexts[-1].meaning,
+                current, history, descriptions=((state.contexts[-1].initial, reference(initiating)),))
 
         unselected = object()
 
@@ -6373,7 +6208,7 @@ class BasicModel(BaseModel):
             if state is None or state.forced:
                 return exhausted(current)
             if actions is None:
-                actions = tuple(candidates(current, state)) + (None,)
+                actions = tuple(candidates(current, state)) + (() if open_slots(current) else (None,))
             else:
                 actions = tuple(actions)
             if action is unselected:
@@ -6384,6 +6219,8 @@ class BasicModel(BaseModel):
             elif action not in actions:
                 raise ValueError("selected thought chose an unavailable action")
             if action is None:
+                if open_slots(current) and meter.remaining:
+                    raise ValueError("cannot conclude with open references and work remaining")
                 if not meter.consume("controller"):
                     return exhausted(current)
                 evidence = {
@@ -6397,13 +6234,14 @@ class BasicModel(BaseModel):
                                sources=refs(current))
                 return {"meaning": current, "evidence": evidence,
                         "result": None, "record": record}
+            goal = current
             selected = action
             current = selected.request
             # Choosing a checked operation is ordinary controller work in
             # addition to the registered VP/read work below.  This is paid
             # before the executor can inspect a native reference or evidence.
             if not meter.consume("controller"):
-                return exhausted(current)
+                return exhausted(goal)
             child_result = None
             parent_record = None
             child_return = None
@@ -6412,12 +6250,12 @@ class BasicModel(BaseModel):
                 """The checked ``what(Q)`` callback: descend/return in order."""
                 nonlocal child_result, parent_record, child_return
                 if not isinstance(child, ConceptualMeaning):
-                    raise TypeError("what(Q) supplied no complete grammatical subgoal")
+                    raise TypeError("ask(row) supplied no complete open-reference row")
                 # ``what`` has already paid for its own VP/read/operation.
                 parent_record = event(
                     "thought", current,
                     {"support_true": 0.0, "support_false": 0.0,
-                     "evidence_kind": "subgoal", "query_signature": "what",
+                     "evidence_kind": "subgoal", "query_signature": "ask",
                      "incomplete": ()},
                     operation=selected.semantic_id, sources=refs(current))
                 if memory.thought_state(b=row).forced:
@@ -6427,7 +6265,7 @@ class BasicModel(BaseModel):
                 descent = event(
                     "descend", child,
                     {"support_true": 0.0, "support_false": 0.0,
-                     "evidence_kind": "subgoal", "query_signature": "what",
+                     "evidence_kind": "subgoal", "query_signature": "ask",
                      "incomplete": ()},
                     operation="descend",
                     sources=refs(child, reference(parent_record)))
@@ -6455,6 +6293,8 @@ class BasicModel(BaseModel):
                     context = self._thought_grammar_context(
                         current, row=row, work=meter, continuation=schedule_subgoal)
                     raw = registry.execute(current, context)
+                    from ThoughtStream import materialize
+                    raw = materialize(raw)
                     from AccessibleMind import apply_thought_effect
                     apply_thought_effect(self, raw, row=row, work=meter)
             except Exception:
@@ -6478,22 +6318,36 @@ class BasicModel(BaseModel):
                 # is legal; never append another ordinary thought at cutoff.
                 evidence = dict(evidence, incomplete=tuple(dict.fromkeys(
                     (*evidence['incomplete'], 'work_budget'))))
-                return {'meaning': current, 'evidence': evidence,
+                return {'meaning': goal, 'evidence': evidence,
                         'result': checked, 'record': parent_record}
             if child_result is not None:
                 # A ``what`` result is the child result, not a new proposition
                 # established by the outer question.  The parent return and
                 # root finish retain this causal evidence explicitly.
                 evidence = dict(child_result["evidence"])
-                evidence["query_signature"] = "what"
+                evidence["query_signature"] = "ask"
                 if parent_record is None:  # pragma: no cover - callback invariant
                     raise RuntimeError("selected what query omitted its parent record")
-                return {"meaning": current, "evidence": evidence,
+                from ThoughtReferences import fill
+                child_evidence = dict(child_result['evidence'], meaning=child_result['meaning'])
+                child_evidence['witnesses'] = tuple(dict(child_result['meaning'].bindings).get('_thought_witnesses', ()))
+                try:
+                    asking = registry.signature_for(goal, verify_reference=False).operation.semantic_id == 'ask'
+                except (ValueError, TypeError):
+                    asking = False
+                resolved = (child_result['meaning'] if asking else
+                    fill(goal, child_evidence, witnesses=child_evidence['witnesses'], operation='ask'))
+                return {"meaning": resolved, "evidence": evidence,
                         "result": checked, "record": child_return or parent_record}
             record = event("thought", current, evidence,
                            operation=selected.semantic_id,
                            sources=refs(current), result=checked)
-            return {"meaning": current, "evidence": evidence,
+            history = tuple(item for item in memory.thought_history(b=row)
+                            if item.episode == episode and item.level == state.level)
+            resolved = integrate(registry, goal, checked, history)
+            poles = evidence_pair(resolved)
+            evidence = dict(evidence, support_true=poles[0], support_false=poles[1])
+            return {"meaning": resolved, "evidence": evidence,
                     "result": checked, "record": record}
 
         def run_context(current):
@@ -6508,12 +6362,14 @@ class BasicModel(BaseModel):
                 state = memory.thought_state(b=row)
                 if state is None or state.forced:
                     break
-                actions = (None,) + tuple(candidates(outcome["meaning"], state))
+                actions = (() if open_slots(outcome["meaning"]) else (None,)) + tuple(candidates(outcome["meaning"], state))
                 action = self._choose_selected_thought_action(
                     meaning, state.contexts[-1].meaning, actions,
                     row=row, level=state.level, pressure=state.pressure,
                     evidence=outcome["evidence"], work=meter)
                 if action is None:
+                    if open_slots(outcome["meaning"]) and meter.remaining:
+                        raise ValueError("cannot conclude with open references and work remaining")
                     # This is the required concluding ordinary thought before
                     # the separate root-finish transition.  At cutoff only
                     # the bounded finish drain is legal, so do not invent a
@@ -6557,9 +6413,6 @@ class BasicModel(BaseModel):
                 while memory.thought_state(b=row).level:
                     memory.return_thought(meaning, b=row)
                 memory.finish_thought(meaning, b=row)
-            policy = self.__dict__.get("_selected_thought_policy_records")
-            if policy is not None:
-                del policy[policy_start:]
             raise
         records = tuple(record for record in memory.thought_history(b=row)
                         if record.episode == episode)
@@ -6567,28 +6420,27 @@ class BasicModel(BaseModel):
             raise RuntimeError("selected thought did not finish its owned episode")
         if meter.spent - initial_spend != memory.thought_state(b=row).work_spent:
             raise RuntimeError("selected thought meter and history disagree")
-        policy = self.__dict__.get("_selected_thought_policy_records")
-        if policy is not None:
-            policy[policy_start:] = [
-                (item[0], item[1], episode, meter.spent)
-                for item in policy[policy_start:]]
         return SelectedThoughtResult(
             outcome["meaning"], dict(outcome["evidence"]), meter, records,
             outcome.get("result"))
 
-    def _run_selected_sentence_thoughts(self, fields, *, work_budget=32, score=None):
-        """Execute the typed questions fixed while their readings were open."""
-        if type(work_budget) is not int or work_budget < 0:
-            raise ValueError('selected sentence work_budget must be a non-negative integer')
+    def _run_selected_sentence_thoughts(self, fields, *, work_budget=None, score=None):
+        """Every closing with an open reference can enter the ordinary episode."""
+        from ThoughtReferences import open_slots
         registry = _boundary_registry(self)
         if registry is None:
             return ()
-        return tuple((row, self.run_selected_thought(field.query, row=row,
-                      work_budget=work_budget, registry=registry,
-                      score=(None if score is None else lambda result,row=row:score(row,result)),
-                      work=(self._attention_meters[row] if row < len(getattr(self, "_attention_meters", ())) else None)))
-                     for row, field in enumerate(fields)
-                     if field is not None and field.query is not None)
+        budget = self.attention_budget if work_budget is None else work_budget
+        results = []
+        for row, field in enumerate(fields):
+            if field is None:
+                continue
+            question = field.query if field.query is not None else field.meaning
+            if open_slots(question):
+                results.append((row, self.run_selected_thought(question, row=row,
+                    work_budget=budget, registry=registry,
+                    score=None if score is None else lambda result,row=row:score(row,result))))
+        return tuple(results)
 
     def _end_finished_selected_thought_episodes(self):
         """Close detached eval credit for ordinary completed episodes only.
@@ -6612,11 +6464,6 @@ class BasicModel(BaseModel):
             if state is not None and state.finished:
                 memory.end_what_episode(row)
                 rows.append(row)
-        if rows:
-            completed = set(rows)
-            records = self.__dict__.get("_selected_thought_policy_records") or ()
-            self._selected_thought_policy_records = [
-                record for record in records if record[0] not in completed]
         return tuple(rows)
 
     def create_from_config(self, config_path=None, model_type=None, data=None):
@@ -8411,7 +8258,7 @@ class BasicModel(BaseModel):
         if isinstance(execution, (tuple, list)) and len(execution) >= 3:
             return execution[0], execution[1], execution[2]
         raise TypeError(
-            "Model.what executor must return the established forward tuple "
+            "Model.ask executor must return the established forward tuple "
             "or BatchResult")
 
     @staticmethod
@@ -8918,7 +8765,7 @@ class BasicModel(BaseModel):
 
     def _what_or_think(self, questions, input_data, *, executor, record, score=None):
         """One understanding and answer boundary per batch presentation."""
-        return self.what(questions, input_data, executor=executor, record=record, score=score)
+        return self.ask(questions, input_data, executor=executor, record=record, score=score)
 
     def _end_what_episodes(self):
         """Close every row's episode (detaching its slots under ``episode``
@@ -8932,7 +8779,6 @@ class BasicModel(BaseModel):
             if not hasattr(memory, "in_episode") or memory.in_episode(b):
                 detached += int(memory.end_what_episode(b) or 0)
         self._what_policy_records = []
-        self._selected_thought_policy_records = []
         return detached
 
     def _thinking_enabled(self):
@@ -9550,87 +9396,12 @@ class BasicModel(BaseModel):
                                 "_reasoning_ga.")) or "meaning_codec." in key):
                 del state[key]
         self._pending_thought_policy_reset = set()
-        # Width-owned normal selected-thought choosers are lazy like the
-        # answer conditioner. Rebuild exactly the saved MLP shape before the
-        # strict state-dict audit; never infer a semantic width from a native
-        # concept ID or pad a learned controller weight.
-        selected_prefix = "selected_thought_choosers."
-        selected = {}
-        for key, weight in state.items():
-            if not (key.startswith(selected_prefix)
-                    and key.endswith(".mlp.0.weight")):
-                continue
-            suffix = key[len(selected_prefix):]
-            width = suffix.split(".", 1)[0]
-            if not width.isdigit() or weight.dim() != 2:
-                raise ValueError(f"invalid selected thought chooser checkpoint: {key}")
-            selected[width] = weight
-        if selected:
-            from Language import SelectedThoughtChooser
-            table = getattr(self, "selected_thought_choosers", None)
-            if table is None:
-                table = nn.ModuleDict()
-                self.selected_thought_choosers = table
-            for width, first_weight in selected.items():
-                hidden, in_dim = (int(value) for value in first_weight.shape)
-                # The input schema is owned by ThoughtFeatures. Retire a
-                # saved incomplete-context policy instead of padding it.
-                from ThoughtFeatures import context_width
-                context_dim = context_width(int(width))
-                expected_in = context_dim + SelectedThoughtChooser.CANDIDATE_FEATURES
-                if in_dim == 9 * int(width) + 17:
-                    # Retired incomplete-context schema: reset this policy at
-                    # its neutral baseline, retaining no fabricated columns.
-                    if width in table:
-                        del table[width]
-                    module = self._selected_thought_chooser(ConceptualMeaning(
-                        torch.zeros(3, int(width), device=device, dtype=dtype),
-                        torch.ones(3, device=device, dtype=torch.bool)))
-                    prefix = f"{selected_prefix}{width}."
-                    for name in tuple(state):
-                        if name.startswith(prefix):
-                            self._pending_thought_policy_reset.add(name)
-                            del state[name]
-                    state.update({prefix + name: value.detach().clone()
-                                  for name, value in module.state_dict().items()})
-                    built += 1
-                    continue
-                if in_dim == expected_in - (3 * int(width) + 7):
-                    first_weight = torch.cat((first_weight[:, :-2],
-                        first_weight.new_zeros(hidden, 3 * int(width) + 7),
-                        first_weight[:, -2:]), dim=1)
-                    key = f"{selected_prefix}{width}.mlp.0.weight"
-                    state[key] = first_weight
-                    self._pending_thought_policy_reset.add(key)
-                    in_dim = expected_in
-                if in_dim != expected_in:
-                    raise ValueError(
-                        f"selected thought chooser width {width} has input "
-                        f"{in_dim}, expected {expected_in}")
-                prefix = f"{selected_prefix}{width}.mlp."
-                indices = sorted(int(name[len(prefix):].split(".")[0])
-                                 for name in state
-                                 if name.startswith(prefix)
-                                 and name.endswith(".weight")
-                                 and name[len(prefix):].split(".")[0].isdigit())
-                if (len(indices) < 2
-                        or indices != list(range(0, 2 * len(indices), 2))):
-                    raise ValueError(
-                        "invalid SelectedThoughtChooser checkpoint layer layout")
-                for layer, index in enumerate(indices):
-                    expected = ((1, hidden) if layer == len(indices) - 1 else
-                                (hidden, in_dim if layer == 0 else hidden))
-                    weight_key = f"{prefix}{index}.weight"
-                    if tuple(state[weight_key].shape) != expected:
-                        raise ValueError(
-                            f"invalid SelectedThoughtChooser checkpoint shape for "
-                            f"{weight_key}: expected {expected}, got "
-                            f"{tuple(state[weight_key].shape)}")
-                module = SelectedThoughtChooser(
-                    context_dim=context_dim, hidden=hidden,
-                    depth=len(indices) - 1).to(device=device, dtype=dtype)
-                table[width] = module
-                built += 1
+        # Retire the independent policy and its optimizer moments. Existing
+        # grammar scorer weights are already in this same checkpoint.
+        for key in tuple(state):
+            if key.startswith('selected_thought_choosers.'):
+                self._pending_thought_policy_reset.add(key)
+                del state[key]
         if built or saved:
             self._collect_fresh_synthesis_modules()
         return built
@@ -10353,7 +10124,11 @@ class BasicModel(BaseModel):
         return LTMSlot(input=conceptual_input, output=output,
                        grammar_trace=("grammar:what_answer", answered), **kwargs)
 
-    def what(self, question, input_data=None, *, executor=None,
+    def what(self, *args, **kwargs):
+        """One-release diagnostic alias for the renamed question API."""
+        raise ValueError('what is retired; use ask for open references or query for LTM lookup')
+
+    def ask(self, question, input_data=None, *, executor=None,
              execution=None, record=True, iteration=0,
              closure_pressure=0.0, score=None):
         """Produce the model's answer through the existing forward path.
@@ -10364,9 +10139,11 @@ class BasicModel(BaseModel):
         ``runBatch`` or a compatibility test wrap an already-computed clean
         path without a second model pass.
         """
+        if isinstance(question, ConceptualMeaning):
+            return self._run_public_thought(question, work_budget=getattr(self, 'attention_budget', 32))
         questions = question_batch(question)
         if not questions:
-            raise ValueError("Model.what requires at least one question")
+            raise ValueError("Model.ask requires at least one question")
         # Episode bookkeeping for the resolve step (mathematical thinking
         # spec 6): iteration 0 opens fresh scratchpads / pending referents /
         # policy records; later iterations reuse them.
@@ -10415,7 +10192,7 @@ class BasicModel(BaseModel):
             if execution is None:
                 if input_data is None:
                     raise ValueError(
-                        "Model.what needs input_data or an existing execution")
+                        "Model.ask needs input_data or an existing execution")
                 execution = self._execute_input_sentence(input_data, executor)
         finally:
             for h, ctx, detail in saved:
@@ -10425,7 +10202,7 @@ class BasicModel(BaseModel):
         _forward_input, symbols, produced_all = self._what_execution_parts(
             execution)
         if produced_all is None:
-            raise RuntimeError("Model.what received no produced response")
+            raise RuntimeError("Model.ask received no produced response")
         previous = getattr(self, "_last_understanding", None)
         self._last_understanding = (
             previous if previous is not None and previous.execution is execution
@@ -10635,7 +10412,7 @@ class BasicModel(BaseModel):
             raise TypeError("Model.think expects one WhatQuestion or a batch")
         if max_iterations is not None and int(max_iterations) < 1:
             raise ValueError("max_iterations must be positive")
-        first = self.what(question, input_data, executor=executor, record=True,
+        first = self.ask(question, input_data, executor=executor, record=True,
                           iteration=0, closure_pressure=0.0)
         answers = first if isinstance(first, tuple) else (first,)
         if not all(answer.available for answer in answers):
@@ -13430,6 +13207,9 @@ class BasicModel(BaseModel):
             depth = getattr(stm, "_depth", None) if stm is not None else None
             if torch.is_tensor(depth) and depth.numel():
                 stm._max_depth_host = int(depth.max().item())
+        from ThoughtCredit import finish_documents
+        finish_documents(self, (b for b, ended in enumerate(
+            getattr(self, '_thought_document_ends', ())) if ended))
         self._sentence_codes_snapshotted = False
         self._staged_in_sub = None
         self._staged_concepts_in = None
@@ -13460,6 +13240,9 @@ class BasicModel(BaseModel):
         A head first enabled after optimizer construction joins the next
         training step through the existing fresh-parameter adoption boundary.
         """
+        if not enabled:
+            from ThoughtCredit import finish_documents
+            finish_documents(self, tuple(getattr(self, '_pending_thought_credit', {})))
         symbol_space = self.symbolSpace
         if symbol_space is None:
             raise RuntimeError("sentence expectation requires SymbolSpace")
@@ -14443,7 +14226,6 @@ class BasicModel(BaseModel):
             lossOut = torch.zeros((), device=TheDevice.get())
             output_errors, input_errors, reverse_errors = Error(), Error(), Error()
             output_weight = 0.0
-            selected_answer_credit = None
             # ``Data.what()`` is the answer-loss authority (What spec Step 5):
             # the question's desired answer replaces the loader's incidental
             # ``outputTensor``; unavailable rows are masked out of the term.
@@ -14467,9 +14249,6 @@ class BasicModel(BaseModel):
                         _surface[_answer_mask], _surface_target[_answer_mask],
                         registry=output_errors, name='answer', objective='output')
                     output_weight = 1.0
-                    if train and float(getattr(self, "selected_thought_policy_weight", 0.0)) > 0:
-                        selected_answer_credit = self._selected_thought_answer_errors(
-                            _surface, _surface_target, _answer_mask, what_questions, surface=True)
                 elif (getattr(self.inputSpace.data,
                             "has_supervised_outputs", True)
                         and _scored_target is not None
@@ -14482,9 +14261,6 @@ class BasicModel(BaseModel):
                     _pred = self._align_output_pred(outputDataPred,
                                                     _scored_target)
                     if _pred is not None:
-                        if train and float(getattr(self, "selected_thought_policy_weight", 0.0)) > 0:
-                            selected_answer_credit = self._selected_thought_answer_errors(
-                                _pred, _scored_target, _answer_mask, what_questions)
                         if (_answer_authority
                                 and not bool(_answer_mask.all())):
                             _pred = _pred[_answer_mask]
@@ -14497,7 +14273,6 @@ class BasicModel(BaseModel):
                 # Best-effort degrade to zero, but never SILENTLY (5b fail-loud).
                 lossOut = torch.zeros((), device=TheDevice.get())
                 output_weight = 0.0
-                selected_answer_credit = None
                 self._warn_zeroed_channel(
                     "output_loss_exception",
                     f"supervised output loss zeroed by "
@@ -14795,18 +14570,6 @@ class BasicModel(BaseModel):
                 if gradient_objectives is not None:
                     gradient_objectives["expectation"] = (gradient_objectives["expectation"]
                         + self.expectation_policy_weight * expectation_policy_loss)
-            # One hard-choice credit contract for completed grammatical
-            # episodes, using the shared meter and the later answer error.
-            if train and selected_answer_credit is not None and float(
-                    getattr(self, "selected_thought_policy_weight", 0.0) or 0.0) > 0.0:
-                selected_pol_loss = self._selected_thought_policy_loss(
-                    selected_answer_credit[0], mask=selected_answer_credit[1])
-                if selected_pol_loss is not None:
-                    self.record_loss(
-                        "selected_thought_policy", selected_pol_loss,
-                        weight=self.selected_thought_policy_weight,
-                        space="SymbolSpace", category="policy")
-
 
             # Method-1 -> Method-2 leaf distillation (snap design doc step
             # 3): the exact-leaf teacher supervises a from-root decoder so
@@ -15913,6 +15676,7 @@ class BasicModel(BaseModel):
                     step, split=split, batch_size=B_step,
                     sentence_index=step, source_rows=source_rows,
                     training=training)
+                self._thought_document_ends = tuple(hard_eos)
                 result, _ = self.runBatch(
                     train=training, batchNum=step,
                     batchSize=B_step, split=split,
@@ -15925,6 +15689,7 @@ class BasicModel(BaseModel):
                 )
                 if result is not None:
                     record(result)
+                self._thought_document_ends = ()
                 # Training record() retains no BatchResult tensors. Release
                 # the graph-attached outputs before the next brick so the
                 # preceding forward tape cannot overlap the next forward's
@@ -16169,15 +15934,15 @@ class BasicModel(BaseModel):
             TheXMLConfig.get("architecture.allowContradiction", default=0) or 0)
         self.truth_loss_weight = float(TheXMLConfig.training("TruthLoss", default=0.0) or 0.0)
         if float(TheXMLConfig.training("answerLossWeight", default=0.0) or 0.0):
-            raise ValueError("answerLossWeight is retired; use selectedThoughtPolicyWeight")
+            raise ValueError("answerLossWeight is retired; use the paired grammar cost")
         if float(TheXMLConfig.training("predictNextLossWeight", default=0.0) or 0.0):
             raise ValueError("predictNextLossWeight is retired; use the normal thought policy")
         # Legacy loss knobs migrate into the one hard-choice contract.
         self.thinking_loss_weight = float(TheXMLConfig.training("thinkingLossWeight", default=0.0) or 0.0)
         self.what_thinking_policy_weight = float(TheXMLConfig.training("whatThinkingPolicyWeight", default=0.0) or 0.0)
-        self.selected_thought_policy_weight = max(
-            float(TheXMLConfig.training("selectedThoughtPolicyWeight", default=0.0) or 0.0),
-            self.thinking_loss_weight, self.what_thinking_policy_weight)
+        # No independent thought policy or enabling weight: the ordinary
+        # grammar's paired-cost credit owns every thought choice.
+        self.selected_thought_policy_weight = 0.0
         # Method-1 -> Method-2 leaf distillation weight (root separability;
         # snap design doc step 3). 0.0 -> no term -> byte-identical.
         self.leaf_distill_weight = float(
@@ -17940,7 +17705,7 @@ class BasicModel(BaseModel):
             return cached if cached >= 0 else None
         reducer = self._stm_reducer()
         names = list(getattr(reducer, "op_names", None) or []) if reducer is not None else []
-        idx = names.index("chunk") if "chunk" in names else -1
+        idx = names.index("synthesize") if "synthesize" in names else -1
         self.__dict__["_chunk_op_index_cached"] = idx
         return idx if idx >= 0 else None
 
@@ -20520,6 +20285,7 @@ class BasicModel(BaseModel):
                     disc.bind_observation_occurrence(b, store.row(row)['occurrence'])
         fields = []
         registry = _boundary_registry(self)
+        from ThoughtClosing import closing_question
         for b, clause in enumerate(view['clauses']):
             if clause is None:
                 fields.append(None)
@@ -20534,13 +20300,28 @@ class BasicModel(BaseModel):
                                    mode=clause.meaning.mode, polarity=clause.meaning.polarity,
                                    sentence_kind='idea'))
                 refs = tuple(ref if type(ref) is int and ref not in (-1, 0) else -1 for ref in clause.refs)
-            query = (self.languageSpace.program_meaning(entries[b], registry)
-                     if clause.meaning.mode == 'interrogative' and registry is not None else None)
+            parsed = (self.languageSpace.program_meaning(entries[b], registry)
+                      if registry is not None else None)
+            query = closing_question(meaning, clause, parsed, entries[b])
             fields.append(SentenceEndState(meaning, refs, row_ids[b], clause.where, clause.when, query,
                 clause.order if index is None else int(store.order[index]),
                 clause.evidence if index is None else (float(store.c_plus[index]), float(store.c_minus[index])),
                 self.conceptualSpace._incoming_trust_multiplier() if index is None else float(store.trust[index])))
         self._sentence_fields[sid] = tuple(fields)
+        from ThoughtClosing import close
+        from ThoughtAnswer import scorer, train_readers, bound_view
+        view['record'] = self._last_sentence_understanding
+        score_thought, thought_readers = scorer(self, state, view, sid)
+        ready = tuple(b for b, field in enumerate(fields) if field is not None and bool(active[b]))
+        with self._committed_thought_scope(sid, ready):
+            closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought)
+        train_readers(self, thought_readers)
+        for row, result in closed_thoughts:
+            from ThoughtReferences import open_slots
+            if not open_slots(result.meaning):
+                _bound, view = bound_view(state, view, sid, row, result.meaning)
+                self._last_sentence_understanding = view['record']
+                self._sentence_understandings[sid] = view['record']
         record_categories = getattr(self.languageSpace, 'record_category_observations', None)
         trace = getattr(self, '_reconstruction_stack', lambda: None)()
         owner = self._concept_owner()
@@ -22881,7 +22662,8 @@ class BasicModel(BaseModel):
             return None
         if not isinstance(meaning, ConceptualMeaning):
             meaning = self._public_query_meaning(meaning, row=row)
-        if meaning is None or meaning.mode != "interrogative":
+        from ThoughtReferences import open_slots
+        if meaning is None or not open_slots(meaning):
             return None
         with self._query_boundary_scope((row,)):
             try:
@@ -22907,13 +22689,13 @@ class BasicModel(BaseModel):
                 ("I1", query.left), ("I2", query.right)) if value is None)
             arguments = tuple(value for value in (query.left, query.right)
                               if value is not None)
-            return registry.form("part", *arguments, open_roles=opened,
+            return registry.form("isPart", *arguments, open_roles=opened,
                                  polarity=query.desired_polarity)
         if query.predicate == KIND_IS_EQUAL:
-            return registry.form("equal", query.left, query.right,
+            return registry.form("isEqual", query.left, query.right,
                                  polarity=query.desired_polarity)
         if query.predicate == KIND_IS_TRUE:
-            raise ValueError("exist/true are retired; query conceptual content with what")
+            return registry.form('isTrue', query.left, polarity=query.desired_polarity)
         raise ValueError("unsupported typed grammatical query")
 
     @torch.no_grad()
@@ -22921,14 +22703,14 @@ class BasicModel(BaseModel):
         """Run a completed request through the grammatical thought controller."""
         return self._run_public_thought(
             query_spec, row=row,
-            work_budget=int(getattr(self, "reasoning_iterations", 0) or 0))
+            work_budget=int(getattr(self, "attention_budget", 0) or 0))
 
     @torch.no_grad()
     def think_about(self, query_spec, *, spaces=None, row=0):
         """The thinking API shares the normal controller and ordinary history."""
         return self._run_public_thought(
             query_spec, row=row,
-            work_budget=int(getattr(self, "thinking_budget", 0) or 0))
+            work_budget=int(getattr(self, "attention_budget", 0) or 0))
 
 
     @torch.no_grad()
@@ -22942,7 +22724,7 @@ class BasicModel(BaseModel):
         available as ``_last_selected_thought`` and in ordinary history.
         """
         self._assert_queries_outside_sentence()
-        budget = int(getattr(self, "reasoning_iterations", 0) or 0)
+        budget = int(getattr(self, "attention_budget", 0) or 0)
         if budget <= 0:
             return None
         self._last_selected_thought = None
@@ -24106,7 +23888,7 @@ class BasicModel(BaseModel):
                 if target is not None:
                     dot = self.isTrue(target)
                     trace[-1]['target_dot'] = dot
-                    if abs(dot) > 0.5:
+                    if max(dot['support_true'],dot['support_false']) > 0.5:
                         return {'proved': True, 'confidence': dot,
                                 'steps': step + 1, 'trace': trace}
 
@@ -24114,8 +23896,8 @@ class BasicModel(BaseModel):
                 if len(result['added']) == 0:
                     break
 
-            confidence = self.isTrue(target) if target is not None else 0.0
-            return {'proved': abs(confidence) > 0.5,
+            confidence = self.isTrue(target) if target is not None else dict(support_true=0.,support_false=0.)
+            return {'proved': max(confidence['support_true'],confidence['support_false']) > 0.5,
                     'confidence': confidence,
                     'steps': len(trace), 'trace': trace}
 

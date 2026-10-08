@@ -1,0 +1,287 @@
+"""Symmetric dual towers (2026-07-10 plan, rev 2, Task A).
+
+PS and WS are symmetric duals — atoms vs universe views of the same input —
+with the thin ``PerceptualSpace`` intermediate class removed. cpu/eager,
+seed-free structural pins (no training in this file).
+"""
+
+import pytest
+import os
+os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+os.environ.setdefault("MODEL_COMPILE", "eager")
+import functools
+import sys
+
+sys.path.insert(0, "bin")
+from recon_bench import _build_model, _resolve_config
+import Spaces
+from Spaces import Space, PartSpace, WholeSpace
+
+# Structural pins. Re-baselined 2026-07-17 when durable Basis/Encoding
+# ownership moved from persistent SubSpaces to their Spaces and duplicate
+# terminal/body/SymbolSpace aliases stopped registering the same modules.
+# Re-baselined 2026-09-09 (a8a5142): every ConceptualSpace gained the live
+# ``concepts_from_percepts`` readout and ``concept_source_readout`` sigma,
+# and the stage butterfly moved from ``layers.3`` to ``layers.5`` (+63/-15
+# keys on MM_20M_xor); no other key changed.
+_XOR_HEAD_NVEC = [8, 8, 8]
+_GRAMMAR_HEAD_NVEC = [4096, 4096, 4096, 4096]
+
+
+
+@functools.lru_cache(maxsize=None)
+def _build(cfg):
+    model, *_ = _build_model(_resolve_config(cfg))
+    return model
+
+
+def test_perceptualspace_class_removed():
+    """PS/WS/SS subclass Space directly; the thin base is gone."""
+    assert not hasattr(Spaces, "PerceptualSpace")
+    assert PartSpace.__bases__ == (Space,)
+    assert WholeSpace.__bases__ == (Space,)
+    from Language import SymbolSpace
+    assert SymbolSpace.__bases__ == (Space,)
+
+
+def test_null_percept_key_survives_on_partspace():
+    """Consumers reference PartSpace.NULL_PERCEPT_KEY; it must keep resolving."""
+    assert PartSpace.NULL_PERCEPT_KEY == "__NULL_PERCEPT__"
+
+
+@pytest.mark.slow
+def test_ws_matches_ps_view_shape():
+    """The two towers present identical [8, 1024] views for the callosum."""
+    m = _build("data/MM_20M_xor.xml")
+    ps, ws = m.perceptualSpace, m.wholeSpace
+    assert int(ps.nOutputDim) == int(ws.nOutputDim) == 1024
+
+
+@pytest.mark.slow
+def test_subsymbolic_passes_keep_the_same_native_geometry():
+    """Serial and sO=0 passes retain one native perceptual geometry."""
+    for cfg, want in (("data/MM_20M_xor.xml", _XOR_HEAD_NVEC),
+                      ("data/MM_ladder.xml", _GRAMMAR_HEAD_NVEC)):
+        got = [int(cs.nVectors) for cs in _build(cfg).conceptualSpaces]
+        assert got == want, (cfg, got)
+
+
+@pytest.mark.slow
+def test_default_expectation_adds_only_its_owned_checkpoint_keys():
+    """Default-on expectation adds its keys; unrelated structural pins hold."""
+    for cfg in ("data/MM_20M_xor.xml", "data/XOR_grammar.xml"):
+        model = _build(cfg)
+        discourse = model.symbolSpace.expectation
+        assert discourse is not None
+        paths = [name for name, module in
+                 model.named_modules(remove_duplicate=False)
+                 if module is discourse]
+        assert paths
+        added = {f"{path}.{key}" for path in paths
+                 for key in discourse.state_dict()}
+        current = set(model.state_dict())
+        assert added <= current
+        assert not any('.sigmas.' in key or '.pis.' in key for key in current)
+        assert all(not hasattr(space, 'sigmas') and not hasattr(space, 'pis')
+                   for space in (model.perceptualSpace, *model.wholeSpaces))
+
+
+@pytest.mark.slow
+def test_space_is_the_single_structural_owner_of_slot_modules():
+    """SubSpaces retain compatibility references, never registrations."""
+    m = _build("data/MM_20M_xor.xml")
+    spaces = [
+        m.inputSpace,
+        m.perceptualSpace,
+        *m.conceptualSpaces,
+        *m.wholeSpaces,
+        m.outputSpace,
+        m.symbolSpace,
+    ]
+    all_parameters = list(m.named_parameters(remove_duplicate=False))
+    for space in spaces:
+        for role in ("event", "what", "where", "when", "activation"):
+            assert role not in space.subspace._modules
+            assert space._owned_bases[role] is getattr(space.subspace, role)
+            basis = space._owned_bases[role]
+            vq = getattr(basis, "vq", None)
+            if vq is not None and getattr(basis, "W", None) is not None:
+                assert vq.codebook is basis.W
+                assert "_codebook" not in vq._parameters
+            for parameter in space._owned_bases[role].parameters():
+                occurrences = sum(
+                    candidate is parameter for _, candidate in all_parameters
+                )
+                assert occurrences == 1, (space._codebook_owner_path, role, occurrences)
+
+    keys = tuple(m.state_dict())
+    assert not any(key.startswith("wholeSpace.") for key in keys)
+    assert not any(key.startswith("conceptualSpace.") for key in keys)
+    assert not any(key.startswith("body_stages.") for key in keys)
+    assert not any("._model_symbolSpace." in key for key in keys)
+    assert not any(".symbolSpace." in key for key in keys)
+
+
+def test_dual_forward_signatures():
+    """One symmetric signature: forward(in_sub, cs_out=None) on both towers."""
+    import inspect
+    for cls in (PartSpace, WholeSpace):
+        params = list(inspect.signature(cls.forward).parameters)
+        assert params == ["self", "in_sub", "cs_out"], (cls.__name__, params)
+
+
+def _run_one_epoch(cfg):
+    from configuration_fixtures import parallel_concepts
+    if cfg == "sparse":
+        with parallel_concepts() as path:
+            m, *_ = _build_model(path)
+    else:
+        m = _build(cfg)
+    opt = m.getOptimizer(lr=0.01)
+    m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
+    return m
+
+
+@pytest.mark.slow
+def test_ws_routes_universe_on_parallel_path():
+    """sO>=1 parallel: WS consumes the universe view at EVERY stage."""
+    m = _run_one_epoch("sparse")
+    stamps = [getattr(ws, "_ws_routed_source", None) for ws in m.wholeSpaces]
+    assert stamps == ["universe"] * len(stamps), stamps
+
+
+@pytest.mark.slow
+def test_ws_routing_after_serial_migration():
+    """UNCONDITIONAL routing + the VALIDITY law (2026-07-12): a staged
+    unity routes universe, period; an ALL-ZERO unity is staged as None at
+    the stem and the carrier body routes. Embedding-mode inputs lex zero
+    byte buffers today (live-universe byte plumbing is the recorded
+    follow-on), so serial per-word routes carrier; when real bytes land,
+    universe routing engages with no code change. The parallel pump offers
+    its unity raw (glue contract) and stamps universe regardless.
+    """
+    m = _build("data/MM_ladder.xml")
+    for w in m.wholeSpaces:                     # cached models: clear stamps
+        object.__setattr__(w, "_ws_routed_source", None)
+    import torch
+    with torch.no_grad():
+        m.forward(m.inputSpace.prepInput(['hello world']))
+    # The tensor peer reads the eager byte/property bank, bypassing the
+    # former WholeSpace.forward observer.
+    for ws in [m.wholeSpace]:
+        counts = ws._staged_word_primitive_counts
+        assert counts is not None and counts.sum() > 0
+        assert counts.shape[-1] == 256
+    import torch as _t
+    assert _t.is_tensor(getattr(m, "_ws_universe", None))
+    m = _build("data/MM_20M_xor.xml")
+    for w in m.wholeSpaces:
+        object.__setattr__(w, "_ws_routed_source", None)
+    m = _run_one_epoch("data/MM_20M_xor.xml")
+    stamps = [getattr(ws, "_ws_routed_source", None) for ws in m.wholeSpaces]
+    assert stamps[0] == "universe", stamps      # live unity at the bootstrap
+
+
+# ---- Native membership read and feedforward pyramid ----
+
+@pytest.mark.slow
+def test_written_order0_words_are_present_after_one_smoke_epoch(monkeypatch):
+    """The raw smoke workload reads each present word without denying it."""
+    import torch
+    m = _run_one_epoch("sparse")
+    cs0 = m._concept_owner()
+    read = cs0.cs_read_memberships
+    seen = {}
+    def capture(percepts, extents):
+        result = read(percepts, extents)
+        seen['raw'] = percepts[3].detach().clone()
+        return result
+    monkeypatch.setattr(cs0, 'cs_read_memberships', capture)
+    # Read the same workload after the training boundary wrote its words.
+    with torch.no_grad():
+        m.forward(m.inputSpace.prepInput(['hello', 'loving', 'there', 'world']))
+    a0 = getattr(cs0, "_cs_last_a0", None)
+    assert a0 is not None and torch.is_tensor(a0)
+    store = Spaces._concept_alloc_of(cs0).layer()
+    assert store.features.nnz > 0, 'the boundary must admit witnessed features'
+    carrier = m._combine_last_cs_sub
+    leg = m.symbolSpace.forward_concept_to_symbol(carrier)
+    raw = seen['raw']
+    raw = raw[:, 0] if raw.ndim == 3 else raw
+    for b, row in enumerate(raw):
+        word = bytes(row[row != 0].tolist()).decode()
+        cid = cs0.definitions.deref(cs0.definitions.word(form=word))
+        ids = carrier._concept_ids
+        ids = ids[:, b] if ids.ndim == 2 else ids
+        slots = (ids == cid).nonzero().flatten()
+        assert len(slots) == 1, word
+        slot = slots.item()
+        for evidence in (a0[slot, b],
+                         carrier._concept_activations[slot, b], leg._symbol_evidence[slot, b]):
+            assert evidence[..., 0].max() > 0, word
+            assert evidence[..., 1].count_nonzero() == 0, word
+        print({'present_word': word, 'extent_pair': a0[slot, b].tolist(),
+               'symbol_pair': leg._symbol_evidence[slot, b].tolist()})
+
+
+@pytest.mark.slow
+def test_pyramid_replaces_wave():
+    """C: feedforward per-order folds replace the settling wave."""
+    import torch
+    m = _run_one_epoch("sparse")
+    cs0 = m._concept_owner()
+    assert getattr(cs0, "_cs_wave_qe", None) is None, "wave statistic retired"
+    lv = getattr(cs0, "_cs_level_acts", None)
+    assert lv is not None and len(lv) >= 1, "per-rung stats must populate"
+    assert all(0. <= float(value) <= 1. for value in lv)
+    assert float(lv[0]) == float(cs0._cs_last_a0.max())
+
+
+@pytest.mark.slow
+def test_pyramid_taper_topk_selection():
+    """C: per-order top-K taper 8/4/2/1 lands in cs.subspace.index and a
+    generic materialize() pulls exactly the selected codes.
+
+    The staging is PER-BATCH state (SubSpace.End() releases it with the
+    other per-batch tensors), so the contract is read inside the
+    consumption window: drive the symbolic phase directly post-training.
+    """
+    import torch
+    m = _run_one_epoch("sparse")
+    cs0 = m._concept_owner()
+    settled = torch.randn(2, int(cs0.outputShape[0]),
+                          int(cs0.subspace.muxedSize))
+    raw = torch.full((2, settled.shape[1]), 65, dtype=torch.long)
+    from PerceptProperties import uniform_spans
+    spans = uniform_spans(2, raw.shape[1], raw.shape[1], device=raw.device)
+    extents = torch.tensor([[[0, raw.shape[1]]]]).expand(2, -1, -1)
+    content, acts = cs0.cs_symbolic_phase(settled, extents=extents,
+                                         percepts=(raw, spans, None, raw, spans))
+    assert acts is not None, "symbolic phase must be active"
+    idx = cs0.subspace.get_index()
+    assert idx is not None and idx.ndim == 3, "top-K selection must be staged"
+    n_sel = int(idx.shape[1])
+    K = int(getattr(cs0, "_symbolic_order", 0))
+    caps = [8, 4, 2, 1][:K + 1]
+    # Caps are CAPS, not quotas: early epochs may not mint every order.
+    assert caps[0] <= n_sel <= sum(caps), f"taper range violated: {n_sel}"
+    codes = cs0.subspace.materialize()
+    assert torch.is_tensor(codes) and codes.shape[1] == n_sel, (
+        "generic materialize() must pull exactly the selected codes")
+    assert int(codes.shape[0]) == 2, "codes are per-batch [B, n_sel, D]"
+
+
+@pytest.mark.slow
+def test_pyramid_grads_reach_every_rung():
+    """C: gradients flow to the sparse edge values through the FF folds."""
+    import torch
+    m = _run_one_epoch("sparse")
+    cs0 = m._concept_owner()
+    for obj in cs0.definitions.object_ids:
+        cs0.singleton_concept(obj)
+    opt = m.getOptimizer(lr=0.01)
+    m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
+    fams = cs0._sparse_families(0)
+    vals = [ly.values for ly in fams if getattr(ly, "values", None) is not None]
+    assert vals, "the concept store must expose trainable edge values"
+    assert all(v.grad is None or torch.isfinite(v.grad).all() for v in vals)

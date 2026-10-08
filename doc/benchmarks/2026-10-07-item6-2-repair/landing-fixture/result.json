@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+  ],
+  "completed": [
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/landing-fixture/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/landing-fixture/worker-000.json"
+      ],
+      "pid": 16188,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 992577216,
+      "elapsed_seconds": 14.660432458040304,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/landing-fixture/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+      ],
+      "completed": [
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 10.907249541021883,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/landing-fixture",
+  "elapsed_seconds": 18.82085387490224,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 992577216,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/landing-fixture/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/landing-fixture/collect.json"
+    ],
+    "pid": 16172,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 435422384,
+    "elapsed_seconds": 3.5607719579711556,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/landing-fixture/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

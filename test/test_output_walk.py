@@ -839,7 +839,7 @@ def test_compiled_understanding_captures_explicit_sentence_products():
             assert len(u.execution) == 4
             m._last_understanding = u
             _stop(m)
-            m.what(What.supervised(0), execution=u.execution, record=False, iteration=1)
+            m.ask(What.supervised(0), execution=u.execution, record=False, iteration=1)
             assert m._last_understanding is u
             for b, record in enumerate(u.sentence_states):
                 assert record is not None

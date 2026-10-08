@@ -29,6 +29,11 @@ def thought_answer_meanings(selected):
     from Layers import MeaningExpectation
     checked = getattr(selected, "result", None)
     meaning = getattr(selected, "meaning", None)
+    from ThoughtReferences import bindings, open_slots
+    if isinstance(meaning, ConceptualMeaning) and '_open_references' in bindings(meaning):
+        # The concluded binding is the answer, even when the last operation
+        # was only one link in its proof. An exhausted question is unanswered.
+        return () if open_slots(meaning) else (meaning.detached(),)
     seen = set()
     while isinstance(checked, ThoughtResult) and checked.result_kind == "subgoal":
         if id(checked) in seen or len(seen) >= 64:

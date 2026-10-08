@@ -1,0 +1,59 @@
+.....................s...........ss.........................F........... [ 37%]
+..Fs.................................................................... [ 74%]
+.........................F........................                       [100%]
+=================================== FAILURES ===================================
+___ test_expectation_credit_moves_shared_chooser_toward_the_completed_chain ____
+test/test_item6_2_thinking.py:318: in test_expectation_credit_moves_shared_chooser_toward_the_completed_chain
+    assert after[1] > after[0]
+E   assert tensor(-3.5066e-08, grad_fn=<SelectBackward0>) > tensor(-3.0042e-08, grad_fn=<SelectBackward0>)
+________ test_packed_prediction_teardown_records_each_observation_once _________
+test/test_joint_objectives.py:43: in test_packed_prediction_teardown_records_each_observation_once
+    owner = present()
+            ^^^^^^^^^
+test/test_joint_objectives.py:41: in present
+    return commit_reading(fixture.language, fixture.registry, fixture.program('cat'),
+test/reading_fixtures.py:234: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20336: in _commit_sentence
+    parsed = (self.languageSpace.program_meaning(entries[b], registry)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'program_meaning'
+__________ test_native_progress_and_trained_artifact_evaluation_path ___________
+test/test_learning_readiness.py:182: in test_native_progress_and_trained_artifact_evaluation_path
+    report = read_validation(loaded, sentences=4, gain=0.)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/eval_fineweb_learning.py:116: in read_validation
+    question = _forecast_question(model)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/eval_fineweb_learning.py:64: in _forecast_question
+    operation = registry.operation_spec('arma')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1894: in operation_spec
+    raise ValueError(
+E   ValueError: thought operation 'arma' is not registered by this grammar
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 0 (Δ=0.164s)
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3366/test_native_progress_and_train0/small-native.ckpt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3366/test_native_progress_and_train0/small-native.ckpt
+batch = 0 (warm-up)
+=============================== warnings summary ===============================
+test/test_ir_only_refactor.py::TestIrForwardShape::test_ir_forward_returns_b_n_d
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_ir_only_refactor.py::TestReconstructConceptsLoss::test_reconstruction_is_unconditionally_from_concepts
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7080: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_ir_only_refactor.py::TestArmaPredictAndObserve::test_observe_accumulates_nonzero_loss
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item6_2_thinking.py::test_expectation_credit_moves_shared_chooser_toward_the_completed_chain
+FAILED test/test_joint_objectives.py::test_packed_prediction_teardown_records_each_observation_once
+FAILED test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path
+3 failed, 187 passed, 4 skipped, 3 warnings in 14.25s

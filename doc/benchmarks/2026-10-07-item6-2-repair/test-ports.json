@@ -1,0 +1,22 @@
+[
+  {
+    "node": "test_dual_towers::test_ws_matches_ps_view_shape",
+    "change": "Assert the resolved identity width: 64 pair bits + 32 length bits + 8 where/when = 104, shared by both towers."
+  },
+  {
+    "node": "test_dual_towers::test_ws_routes_universe_on_parallel_path",
+    "change": "Stage zero receives raw unity; following stages receive the current neutral property field."
+  },
+  {
+    "node": "test_dual_towers::test_pyramid_taper_topk_selection",
+    "change": "Observe native percept IDs, extents, top-K and materialization in the live consumption window on the same four-row batch. Preserve taper caps and selected-code assertions. Byte 65 is not a native percept address."
+  },
+  {
+    "node": "test_reasoning_cde_model::test_training_step_uses_the_normal_policy_configuration",
+    "change": "Fix the producer/reader width at model configuration: load its grammar before constructing routing predictors. test_gates_on asserts each predictor matches the current grammar. The optimizer smoke keeps its original training call."
+  },
+  {
+    "node": "test_priming_energy::_projected_model",
+    "change": "Remove historical fixed torch.manual_seed calls; retain all seventeen surviving 11c assertions without seeding."
+  }
+]

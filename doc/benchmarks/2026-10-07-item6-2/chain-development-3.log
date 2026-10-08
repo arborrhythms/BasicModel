@@ -1,0 +1,38 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Queries.py", line 169, in __getattr__
+    return methods[name]
+           ~~~~~~~^^^^^^
+KeyError: 'best_match'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/tmp/item6-2-chain-probe.py", line 37, in <module>
+    result=model.run_selected_thought(question,work_budget=128)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6099, in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6458, in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6419, in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6367, in execute
+    raw = registry.execute(current, context)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Queries.py", line 2301, in execute
+    evidence = signature._invoke_permitted(invocation, *arguments)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Queries.py", line 1551, in _invoke_permitted
+    result = self.descriptor.executor(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ThoughtFaces.py", line 82, in query
+    return context.ltm.best_match(arguments['I1'],
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Queries.py", line 171, in __getattr__
+    raise AttributeError(
+AttributeError: thought capability does not admit 'best_match'

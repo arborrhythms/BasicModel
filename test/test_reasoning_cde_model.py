@@ -36,10 +36,15 @@ class TestReasoningCDEModel(unittest.TestCase):
             self.m = request.getfixturevalue('fineweb_trained_model')
 
     def test_gates_on(self):
-        self.assertEqual(self.m.reasoning_iterations, 10)
-        self.assertEqual(self.m.thinking_budget, 16)
-        self.assertEqual(self.m.selected_thought_policy_weight, .1)
+        self.assertEqual(self.m.attention_budget, 16)
+        self.assertEqual(self.m.selected_thought_policy_weight, 0.)
+        self.assertFalse(hasattr(self.m, 'selected_thought_choosers'))
         self.assertFalse(hasattr(self.m, "_intervening_generator"))
+        for cs in self.m.conceptualSpaces:
+            self.assertEqual(cs.intraSentenceLayer.routing_dim,
+                             self.m.languageSpace._n_rules)
+            self.assertEqual(cs.intraSentenceLayer.routing_proj.in_features,
+                             self.m.languageSpace._n_rules)
 
     def test_truthset_provisions_source_rows(self):
         store = self.m.symbolSpace.ltm_store
@@ -77,16 +82,13 @@ class TestReasoningCDEModel(unittest.TestCase):
         cs = self.m.conceptualSpace
         width = cs.outputShape[-1]
         before = dict(cs._concept_allocator.placement)
-        result = self.m.reason_about(QuerySpec(KIND_IS_PART,
-            left=torch.ones(width), right=torch.ones(width)))
-        self.assertIn(result.posture, ('TRUE', 'FALSE', 'BOTH', 'UNKNOWN'))
-        # The trained chooser may select another legal operation. Any
-        # geometric part it executes still supplies no taxonomy proof.
-        for record in result.records:
-            if record.result is not None and record.result.evidence_kind == 'meronymy':
-                self.assertNotIn('path', record.result.evidence)
+        # The symbolic face requires native names; the conceptual face is
+        # available as part over codes and cannot manufacture a taxonomy path.
+        with self.assertRaisesRegex(TypeError, 'reference'):
+            self.m.reason_about(QuerySpec(KIND_IS_PART,
+                left=torch.ones(width), right=torch.ones(width)))
         self.assertEqual(cs._concept_allocator.placement, before)
-        with self.assertRaises(ValueError):
+        with self.assertRaises((ValueError, TypeError)):
             self.m.reason_about(QuerySpec(KIND_IS_PART,
                 left=torch.ones(width - 1), right=torch.ones(width - 1)))
 

@@ -66,7 +66,7 @@ class ThoughtTrialState:
     def __init__(self,model):
         memory=model._what_memory()
         owners=[(memory,('_what_slots','_what_closure_pressure','_episode_live','_thought_next_id')),
-                (model,('_selected_thought_policy_records',))]
+                (model,('expectation_gain',))]
         carrier=getattr(getattr(model,'conceptualSpace',None),'subspace',None)
         if carrier is not None:
             owners.append((carrier,tuple(name for name in vars(carrier)
@@ -168,17 +168,25 @@ def thought_pair(model,meaning,*,row,work_budget,registry,work,score):
         trace=dict(actions=[],eligible=[],exploit=exploit,departure=departure)
         model._thought_walk=trace
         result=model._run_selected_thought_once(meaning,row=row,work_budget=work_budget,registry=registry,work=meter)
-        error=score(result)
+        error=0. if score is None else score(result)
         cost=float(error.detach() if torch.is_tensor(error) else error)+model.WHAT_STEP_COST*meter.spent
         return result,cost,trace,ThoughtTrialState(model)
     old=getattr(model,'_thought_walk',None)
     try:
         greedy,first,trace,state=run()
+        from ThoughtCredit import forecast
+        greedy_forecast=forecast(model,greedy.meaning,row)
+        greedy_gain=float(getattr(model,'expectation_gain',1.))
         base.restore()
         eligible=torch.tensor([trace['eligible']],dtype=torch.bool,device=meaning.roles.device)
         departure=int(departure_at(eligible)[0]) if eligible.numel() else -1
         explore,second,other,other_state=run(tuple(trace['actions']),departure)
+        explore_forecast=forecast(model,explore.meaning,row)
+        explore_gain=float(getattr(model,'expectation_gain',1.))
         wins=departure>=0 and second<first
+        trace['reader_weight'],other['reader_weight']=float(not wins),float(wins)
+        trace['comparison_weight']=.5 if departure>=0 else 1.
+        other['comparison_weight']=.5 if departure>=0 else 0.
         result=explore if wins else greedy
         (other_state if wins else state).restore()
         if work is not None:
@@ -188,7 +196,14 @@ def thought_pair(model,meaning,*,row,work_budget,registry,work,score):
         model._last_thought_comparison=dict(costs=(first,second),explore_kept=wins,
             departure=departure,greedy=tuple(trace['actions']),explore=tuple(other['actions']),
             stable=trace['actions']==other['actions'])
-        observe_comparison(model,'think',model._last_thought_comparison,row=row)
+        from ThoughtCredit import complete
+        complete(model,greedy,explore,trace,other,departure,(first,second),row,
+            forecasts=(greedy_forecast,explore_forecast),gains=(greedy_gain,explore_gain))
+        width=max(len(trace['actions']),len(other['actions']))
+        audit=dict(model._last_thought_comparison,
+            greedy=tuple(trace['actions'])+(-1,)*(width-len(trace['actions'])),
+            explore=tuple(other['actions'])+(-1,)*(width-len(other['actions'])))
+        observe_comparison(model,'think',audit,row=row)
         return result
     except BaseException:
         base.restore()

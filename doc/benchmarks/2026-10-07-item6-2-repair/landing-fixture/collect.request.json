@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

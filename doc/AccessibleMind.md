@@ -32,15 +32,18 @@ and no priming. Thought operands, reads and writes detach.
 
 | Operator | Effect |
 |---|---|
-| `part` on order-zero ideas | `Ops.part` vector residual in serial conceptual thinking; scalar support is derived from the same operands. No store read. |
-| Higher-order `part`, or explicit `isPart` | Bounded taxonomy traversal produces graded symbolic inclusion. A missing path has value zero and retains any traversal incompleteness. |
-| Open-role `part` | A native bound reference enumerates bounded taxonomy members with captured numerical payloads. An unnamed vector cannot offer this form. |
-| `equal` | Support on the completed idea; no LTM capability. |
-| `quantize` | An existing code, seeded into parallel knowing; no LTM capability. |
-| `lookup` | Members from frames already held by `what`, seeded into knowing. |
-| `exist` | Summed signed familiarity from indexed matching facts, clipped for support; bounded source provenance is retained without stored meaning frames. Observations do not certify truth. |
-| `what` | One best matching, bounded, cued frame is retained in ordinary thought history. If none is retrieved, a declared nested question can use the same controller and meter. |
-| `arma` | A detached prior estimate with role-presence logits; never a fact. Its negative-image treatment is subsequent work. |
+| `part`, `equal`, `implies`, `exist` | Conceptual content and an independent evidence pair over codes. |
+| `isPart`, `isEqual`, `isImplied`, `isTrue` | Symbolic evidence and witnessing rows read by reference from LTM or the taxonomy. |
+| `query` | The best matching cued row, retained as a serial result with its pair and occurrence. |
+| `ask` | Attempt to fill an open reference; a nested attempt shares the same history and meter. |
+| `not` | Exchanges a pair's poles, retaining its meaning; an uncancelled image concludes absence. |
+| `gain` | Sets expectation gain for the next sentence; the predictor remains global. |
+
+`quantize`, `arma` and `expect` are removed from thought. The old `what`,
+`lookup`, `chunk` and `true` names raise with their replacements for one release.
+Thought conclusions write only `inference` rows, with occurrence addresses and
+witness references. Unresolved `question` rows belong to closing. There is no
+generic writable-store capability on an executor.
 
 `ThoughtResult` remains the immutable internal effect record and checkpoint
 representation. Its serialization kinds describe payload shape; the descriptor's
@@ -54,7 +57,7 @@ The effect traversal and chooser's read of that field are metered.
 ## What can enter the chooser
 
 The chooser attends live STM slots, its ordinary thought history, the row's
-bounded discourse chain and frames retained by `what`. It no longer reads a
+bounded discourse chain and frames retained by `query`. It no longer reads a
 slice of the most recently written LTM rows. Merely writing a fact does not
 expose it to the chooser. Each retrieved frame owns detached values, so later
 store mutation or compaction cannot alter the held content. Its occurrence
@@ -64,8 +67,9 @@ LTM occurrences alive while the owning history is retained.
 Priming widens retrieval cues with rows whose multiplier is above the neutral
 value one. A cleared all-ones mask supplies no extra codes. The code addresses
 remain index metadata; their magnitudes never become chooser features.
-Budget and closure pressure retain their explicit resource features and force
-the existing bounded conclusion path at cutoff.
+Open references gate conclusion. One `attentionBudget` covers every nested
+attempt; the grammar scorer receives the expectation image as context. Its
+paired owner credit uses the answer, next-sentence prediction error and work.
 
 ## The existing LTM writer owns the index
 
@@ -90,8 +94,8 @@ neighbors of previously retrieved frames in the same stream. The reader
 examines at most K candidates and charges before reading each record. Scope
 and bindings filter candidates; masked role similarity ranks them; contiguity
 breaks equal-match ties. Other streams' observations and estimate/question rows
-are excluded. `what` retains at most the best row. `exist` aggregates matching
-fact support without retaining a frame. Fan increases examined candidates and
+are excluded. `query` retains at most the best row. `isTrue` retains the ended pair and
+trust separately; `exist` is the conceptual presence face. Fan increases examined candidates and
 work until the cap is reached.
 
 Checkpoint restore rebuilds postings from the columns. Legacy checkpoints

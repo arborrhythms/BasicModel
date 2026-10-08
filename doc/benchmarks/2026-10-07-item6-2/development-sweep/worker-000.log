@@ -1,0 +1,88 @@
+..............F......FF.F....F.........................F................ [ 53%]
+.........................s....FF..............................           [100%]
+=================================== FAILURES ===================================
+_________________ test_thought_effect_uses_cached_row_identity _________________
+test/test_accessible_mind.py:72: in test_thought_effect_uses_cached_row_identity
+    apply_thought_effect(SimpleNamespace(conceptualSpace=cs), result, row=0, work=QueryWorkBudget(32))
+bin/AccessibleMind.py:133: in apply_thought_effect
+    raise ValueError('thought effect has no declared operator contract')
+E   ValueError: thought effect has no declared operator contract
+_____ test_query_retrieves_every_old_cued_frame_without_an_implicit_write ______
+test/test_accessible_mind.py:189: in test_query_retrieves_every_old_cued_frame_without_an_implicit_write
+    found = _signature('what', 'I1').invoke(context, cue)
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_query_vp_boundaries.py:62: in _signature
+    THOUGHT_EXECUTORS[semantic_id], tuple(roles))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'what'
+_______ test_higher_order_missing_edge_keeps_content_with_zero_evidence ________
+test/test_accessible_mind.py:210: in test_higher_order_missing_edge_keeps_content_with_zero_evidence
+    assert result['result_kind'] == 'concept' and result['evidence_kind'] == 'taxonomy'
+E   AssertionError: assert ('concept' == 'concept'
+E     
+E       concept and 'meronymy' == 'taxonomy'
+E     
+E     - taxonomy
+E     + meronymy)
+_________ test_higher_order_retrieval_seeds_discontinuous_members_only _________
+test/test_accessible_mind.py:288: in test_higher_order_retrieval_seeds_discontinuous_members_only
+    apply_thought_effect(SimpleNamespace(conceptualSpace=cs), result, row=0, work=QueryWorkBudget(32))
+bin/AccessibleMind.py:133: in apply_thought_effect
+    raise ValueError('thought effect has no declared operator contract')
+E   ValueError: thought effect has no declared operator contract
+_________ test_normal_priming_uses_boosted_rows_not_the_identity_mask __________
+test/test_accessible_mind.py:355: in test_normal_priming_uses_boosted_rows_not_the_identity_mask
+    assert not retrieve()
+               ^^^^^^^^^^
+test/test_accessible_mind.py:354: in retrieve
+    return _signature('what', 'I1').invoke(context, cue)['frames']
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_query_vp_boundaries.py:62: in _signature
+    THOUGHT_EXECUTORS[semantic_id], tuple(roles))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'what'
+__________ test_chunk_reverse_and_peel_preserve_active_prefix_row_ids __________
+test/test_active_decode_candidates.py:94: in test_chunk_reverse_and_peel_preserve_active_prefix_row_ids
+    part, _residual = synthesize.analyze(whole, basis=cb)
+                      ^^^^^^^^^^
+E   NameError: name 'synthesize' is not defined
+____ test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic ____
+test/test_arithmetic_isolation.py:39: in test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic
+    assert forward.result.support_true == 1
+E   AssertionError: assert 0.002123665064573288 == 1
+E    +  where 0.002123665064573288 = ThoughtResult(semantic_id='part', domain='conceptual-containment', result_kind='concept', evidence_kind='meronymy', re..._open_references', ()), ('_producing_operation', 'part'), ('_thought_witnesses', ())), scope=(), sentence_kind=None)})).support_true
+E    +    where ThoughtResult(semantic_id='part', domain='conceptual-containment', result_kind='concept', evidence_kind='meronymy', re..._open_references', ()), ('_producing_operation', 'part'), ('_thought_witnesses', ())), scope=(), sentence_kind=None)})) = SelectedThoughtResult(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 12), ('sym', 40100...open_references', ()), ('_producing_operation', 'part'), ('_thought_witnesses', ())), scope=(), sentence_kind=None)}))).result
+______ test_renamed_native_vocabulary_preserves_checked_relation_answers _______
+test/test_arithmetic_isolation.py:88: in test_renamed_native_vocabulary_preserves_checked_relation_answers
+    assert a.support_true == b.support_true == 1
+E   AssertionError: assert 0.0 == 1
+E    +  where 0.0 = ThoughtResult(semantic_id='part', domain='conceptual-containment', result_kind='concept', evidence_kind='meronymy', re...g', 'semantic_id': 'part', 'domain': 'conceptual-containment', 'resolution_records_scanned': 0, 'records_scanned': 0})).support_true
+=============================== warnings summary ===============================
+test/test_abstraction_order_canonical.py::test_forward_keeps_the_property_basis_without_a_word_analysis_dictionary
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7080: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3354/test_supervised_update_cannot_0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_attention_promotion.py::test_registered_pool_checkpoint_has_one_sidecar_restore
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_attention_promotion.py:231: UserWarning: Space ownership migration: removed 108 duplicate alias checkpoint keys.
+    assert target.load_weights(path, require_match=True)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_accessible_mind.py::test_thought_effect_uses_cached_row_identity
+FAILED test/test_accessible_mind.py::test_query_retrieves_every_old_cued_frame_without_an_implicit_write
+FAILED test/test_accessible_mind.py::test_higher_order_missing_edge_keeps_content_with_zero_evidence
+FAILED test/test_accessible_mind.py::test_higher_order_retrieval_seeds_discontinuous_members_only
+FAILED test/test_accessible_mind.py::test_normal_priming_uses_boosted_rows_not_the_identity_mask
+FAILED test/test_active_decode_candidates.py::test_chunk_reverse_and_peel_preserve_active_prefix_row_ids
+FAILED test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic
+FAILED test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers
+8 failed, 125 passed, 1 skipped, 4 warnings in 9.66s

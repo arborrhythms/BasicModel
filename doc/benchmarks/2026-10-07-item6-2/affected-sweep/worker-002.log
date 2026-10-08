@@ -1,0 +1,41 @@
+...........s......................................s........s..s.ss...... [ 37%]
+........................................F......................F........ [ 74%]
+..s.................................F.............                       [100%]
+=================================== FAILURES ===================================
+_____________ test_bound_snapshot_and_checkpoint_keep_concept_ids ______________
+test/test_order0_attended_field.py:107: in test_bound_snapshot_and_checkpoint_keep_concept_ids
+    apply_thought_effect(SimpleNamespace(conceptualSpace=cs, conceptualSpaces=[cs]),
+bin/AccessibleMind.py:133: in apply_thought_effect
+    raise ValueError('thought effect has no declared operator contract')
+E   ValueError: thought effect has no declared operator contract
+______________ test_retired_golden_rule_is_rejected[query(S, S)] _______________
+test/test_partition_grammar_rewrite.py:124: in test_retired_golden_rule_is_rejected
+    with pytest.raises(ValueError, match="retired"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+___________ TestGroundAndIsTrue.test_isTrue_ungrounded_returns_zero ____________
+test/test_reasoning.py:182: in test_isTrue_ungrounded_returns_zero
+    self.assertEqual(model.isTrue(act)['support_true'],0.)
+                     ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:3811: in isTrue
+    from Reasoning import TruthGroundedReasoner
+E   ModuleNotFoundError: No module named 'Reasoning'
+=============================== warnings summary ===============================
+test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_order0_attended_field.py::test_bound_snapshot_and_checkpoint_keep_concept_ids
+FAILED test/test_partition_grammar_rewrite.py::test_retired_golden_rule_is_rejected[query(S, S)]
+FAILED test/test_reasoning.py::TestGroundAndIsTrue::test_isTrue_ungrounded_returns_zero
+3 failed, 184 passed, 7 skipped, 2 warnings in 31.47s

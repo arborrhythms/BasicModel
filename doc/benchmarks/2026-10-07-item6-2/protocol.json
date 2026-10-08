@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-07",
+  "item": "6.2 thinking with renames",
+  "base_commit": "631d9e8e44b7c8034263e22b36dc74fa5df4eb75",
+  "spec": "doc/specs/2026-10-07-thinking.md",
+  "seed": null,
+  "training_retries": 0,
+  "replacement_trainings": 0,
+  "validation": "Affected files during development, then one complete green sweep on the final measured source. Preserve failures and any corrective source snapshots.",
+  "standing_measurements": "Thirty unchanged trainings: ten sum negative controls, ten XOR trainings supplying both class and reconstruction gates, ten MM_xor convergence trainings. Preserve every outcome. Assert no thinking episode opens in these gates.",
+  "thinking_measurement": "MM_query_reasoning and the existing 11c mechanism checks plus the new chaining fixture, with ordinary paired credit enabled. One attempt each; no seed or retry. Include one unforced 300-epoch configured MM_query_reasoning attempt, separately from the supplied-reading optimizer smoke; preserve an early error or resource cutoff as a failed outcome, without retry. The nineteen 11c selectors are taken verbatim from its archived explicit receipt, with old local torch.manual_seed calls suppressed and recorded for this unseeded measurement.",
+  "certificates": [
+    "open referent/evidence/relation slots and surface-independent questionhood",
+    "shared budget and conclude gate",
+    "symbolic and conceptual faces return pairs/content with witnesses",
+    "transitive parthood, modus ponens and nested ask through result slots",
+    "inference-only thought writes and occurrence/provenance addresses",
+    "answer and expectation paired credit, exact tie zero",
+    "uncancelled negative expectation image",
+    "one chooser and retired configuration/API diagnostics"
+  ],
+  "publication": "Stop for Claude review before any commit or push"
+}

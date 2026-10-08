@@ -226,11 +226,9 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
             return [(value, ids, (scope.bitwise_and(1) != 0), torch.ones_like(valid))]
         inventory = getattr(bank, 'column_ids', None)
         if inventory is not None and inventory.numel() == 0:
-            # A cold inventory cannot bind. Keep one masked proposal for a
-            # pronoun/definite, or the single mint proposal, without expanding
-            # a compiled graph into many copies of unavailable candidates.
-            permitted = torch.zeros_like(valid) if mode in ('pronoun', 'bind') else valid
-            return [(value, torch.full_like(ids, -1), torch.zeros_like(valid), permitted)]
+            # A binder with no referent leaves an open slot. The sentence
+            # can still close; its closing will ask on this same reference.
+            return [(value, torch.full_like(ids, -1), torch.zeros_like(valid), valid)]
         from ClauseScope import ClauseScope
         P, C = value.shape[1], bank.ids.shape[1]
         live_values, live_ids, live_orders, live_relations, live_positions = live[:5]
@@ -273,6 +271,9 @@ def prepare_operands(window, identities, flags, positions, *, rules, unary_rules
                     candidate_relations[:, :, c], available[:, :, c]) for c in range(count)]
         if mode not in ('pronoun', 'bind'):
             options.append((value, torch.full_like(ids, -1), torch.zeros_like(valid), valid))
+        else:
+            options.append((value, torch.full_like(ids, -1), torch.zeros_like(valid),
+                            valid & ~available.any(-1)))
         return options
 
     def choice_tag(refs, rule, role):

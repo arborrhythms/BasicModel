@@ -1,0 +1,10 @@
+...................ss.sss....s...ss......ssss........................... [ 66%]
+....................................                                     [100%]
+=============================== warnings summary ===============================
+test/test_compiled_word_chunk.py::test_tensor_peer_ws_stages_distinct_word_local_property_views
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+96 passed, 12 skipped, 1 warning in 59.02s

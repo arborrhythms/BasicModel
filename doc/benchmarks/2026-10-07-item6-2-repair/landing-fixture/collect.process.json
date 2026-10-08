@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/landing-fixture/collect.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/landing-fixture/collect.json"
+  ],
+  "pid": 16172,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 435422384,
+  "elapsed_seconds": 3.5607719579711556,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/landing-fixture/collect.log"
+}

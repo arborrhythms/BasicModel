@@ -1,0 +1,1301 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_what_spacetime.py::test_context_values_carry_absolute_where",
+    "test/test_what_spacetime.py::test_data_what_present_temporal_supervised_and_inference",
+    "test/test_what_spacetime.py::test_temporal_lookup_never_crosses_document_or_split_boundary",
+    "test/test_what_spacetime.py::test_changing_only_temporal_question_changes_desired_answer",
+    "test/test_what_spacetime.py::test_attached_model_output_keeps_index_and_supplied_target_separate",
+    "test/test_what_spacetime.py::test_ltm_slot_stack_parity_lifo_and_immutable_openings",
+    "test/test_what_spacetime.py::test_ltm_rejects_empty_or_unmatched_close_and_detaches_actual_response",
+    "test/test_what_spacetime.py::test_ltm_pressure_is_monotonic_until_parity_and_reset_clears_slots",
+    "test/test_what_spacetime.py::test_ltm_capacity_evicts_only_balanced_prefixes",
+    "test/test_what_spacetime.py::test_model_what_present_wraps_established_forward_byte_identically",
+    "test/test_what_spacetime.py::test_model_what_ltm_records_actual_head_response_not_input_state",
+    "test/test_what_spacetime.py::test_think_presents_once_and_returns_the_completed_answer",
+    "test/test_what_spacetime.py::test_think_rejects_an_unfinished_presentation_without_fabricated_closure",
+    "test/test_what_spacetime.py::test_mlp_grammar_chooser_consumes_target_free_what_context",
+    "test/test_what_spacetime.py::test_what_grammar_context_uses_model_where_ladder",
+    "test/test_what_spacetime.py::test_what_projection_checkpoint_widens_from_19",
+    "test/test_what_spacetime.py::test_questions_for_batch_folds_driver_counters_into_the_split",
+    "test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser",
+    "test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer",
+    "test/test_what_thinking_episode.py::test_pressure_schedules_are_monotone_and_end_at_one",
+    "test/test_what_training.py::test_data_what_supervised_target_matches_loader_output",
+    "test/test_what_training.py::test_runbatch_scores_answers_against_data_what",
+    "test/test_what_training.py::test_unavailable_rows_are_omitted_not_substituted",
+    "test/test_what_training.py::test_no_scoreable_answer_omits_the_answer_loss",
+    "test/test_what_training.py::test_text_answer_is_not_scored_against_the_head",
+    "test/test_what_training.py::test_training_step_runs_for_each_question_family[reconstruct]",
+    "test/test_what_training.py::test_training_step_runs_for_each_question_family[predict]",
+    "test/test_what_training.py::test_desired_answer_never_becomes_the_recorded_response",
+    "test/test_what_training.py::test_temporal_question_content_is_causally_used",
+    "test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space",
+    "test/test_what_training.py::test_curriculum_drives_question_families_through_run",
+    "test/test_what_training.py::test_joint_training_keeps_both_primary_costs_in_band",
+    "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[future]",
+    "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[past]",
+    "test/test_when_bracket.py::test_instant_decodes_time_and_zero_extent",
+    "test/test_when_bracket.py::test_bracket_decodes_center_and_duration",
+    "test/test_when_bracket.py::test_encode_tensor_input_round_trips_time",
+    "test/test_when_bracket.py::test_tense_shifts_center_by_step_via_shift_time",
+    "test/test_when_bracket.py::test_aspect_layer_is_identity",
+    "test/test_when_bracket.py::test_forward_stamps_present_instant",
+    "test/test_when_encoding_v2.py::test_defaults_and_dims",
+    "test/test_when_encoding_v2.py::test_constant_norm_sqrt2_exact",
+    "test/test_when_encoding_v2.py::test_lf_pair_roundtrips_onset_over_horizon",
+    "test/test_when_encoding_v2.py::test_hf_pair_roundtrips_residue_within_rung",
+    "test/test_when_encoding_v2.py::test_ladder_decode_exact_on_integer_onsets",
+    "test/test_when_encoding_v2.py::test_ladder_branch_boundary",
+    "test/test_when_encoding_v2.py::test_shift_time_rotates_both_pairs_coherently",
+    "test/test_when_encoding_v2.py::test_batched_tensor_encode_decode",
+    "test/test_when_encoding_v2.py::test_exact_clock_untouched",
+    "test/test_when_encoding_v2.py::test_tense_relation_keys_on_lf_pair",
+    "test/test_when_encoding_v2.py::test_no_endpoint_bracket_api",
+    "test/test_when_grammar_rules.py::TestPrepositionGrammarRules::test_preposition_forward_reverse_pairing",
+    "test/test_when_grammar_rules.py::TestPrepositionGrammarRules::test_preposition_rule_present",
+    "test/test_when_grammar_rules.py::TestBindGrammarRules::test_bind_forward_reverse_pairing",
+    "test/test_when_grammar_rules.py::TestBindGrammarRules::test_bind_rule_present",
+    "test/test_when_grammar_rules.py::TestTenseGrammarRules::test_tense_forward_reverse_pairing",
+    "test/test_when_grammar_rules.py::TestTenseGrammarRules::test_tense_rule_present_and_aspect_not_live",
+    "test/test_when_grammar_rules.py::TestPrepositionSignalRouterBinding::test_auto_wiring_contract_holds",
+    "test/test_when_grammar_rules.py::TestPrepositionSignalRouterBinding::test_resolve_rule_layer_yields_preposition_layer",
+    "test/test_when_grammar_rules.py::TestMentalModelWhenEnabled::test_when_enabled_at_width_four_with_start_ladder",
+    "test/test_when_range_encoding.py::test_ndim_is_two_like_where",
+    "test/test_when_range_encoding.py::test_disabled_when_zero_width",
+    "test/test_when_range_encoding.py::test_instant_at_t0_is_unit_cos_axis",
+    "test/test_when_range_encoding.py::test_components_stay_in_unit_interval",
+    "test/test_when_range_encoding.py::test_decode_instant_recovers_time_and_zero_extent",
+    "test/test_when_range_encoding.py::test_decode_bracket_recovers_center_and_duration",
+    "test/test_when_range_encoding.py::test_short_duration_snaps_to_instant",
+    "test/test_when_range_encoding.py::test_decode_tensor_batch",
+    "test/test_when_range_encoding.py::test_angle_tracks_absolute_time_via_self_t",
+    "test/test_when_range_encoding.py::test_decode_zero_phasor_is_finite",
+    "test/test_when_range_encoding.py::test_next_previous_move_time_by_step",
+    "test/test_when_range_encoding.py::test_shift_time_moves_center_preserves_extent",
+    "test/test_when_range_encoding.py::test_shift_time_is_invertible",
+    "test/test_when_range_encoding.py::test_forward_stamps_present_instant_and_reverse_zeros",
+    "test/test_when_range_encoding.py::test_period_is_module_knob",
+    "test/test_when_range_encoding.py::test_default_period_is_65536",
+    "test/test_when_range_encoding.py::test_subspace_muxed_size_includes_two_when_slots",
+    "test/test_when_range_encoding.py::test_subspace_demux_round_trips_present_instant",
+    "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement",
+    "test/test_where_bracket.py::test_ladder_shape_and_rungs",
+    "test/test_where_bracket.py::test_ladder_round_trip_exact_across_range",
+    "test/test_where_bracket.py::test_origin_shift_clears_the_seam",
+    "test/test_where_bracket.py::test_forward_stamp_round_trip",
+    "test/test_where_bracket.py::test_bracket_is_retired",
+    "test/test_where_decoupling.py::TestWhereDecoupling::test_codebook_identity_is_the_active_row_index",
+    "test/test_where_decoupling.py::TestWhereDecoupling::test_where_is_not_a_codebook_row_key",
+    "test/test_where_decoupling.py::TestWhereDecoupling::test_where_still_carries_spatial_extent",
+    "test/test_where_encoding_period.py::test_where_period_is_derived_from_the_registry",
+    "test/test_where_encoding_period.py::test_input_and_inventory_share_the_same_encoding",
+    "test/test_where_encoding_period.py::test_retired_period_knob_is_rejected",
+    "test/test_where_encoding_period.py::test_forward_overflow_assert_holds",
+    "test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds",
+    "test/test_where_encoding_recovery.py::test_allocate_starts_at_one",
+    "test/test_where_encoding_recovery.py::test_allocate_monotonic",
+    "test/test_where_encoding_recovery.py::test_allocate_position_persists_via_structural_extras",
+    "test/test_where_encoding_recovery.py::test_restore_without_counter_defaults_to_one",
+    "test/test_where_run_structure.py::test_single_span_one_run",
+    "test/test_where_run_structure.py::test_contiguous_siblings_merge_to_one_run",
+    "test/test_where_run_structure.py::test_disjoint_two_runs_one_gap",
+    "test/test_where_run_structure.py::test_nested_one_run_and_containment",
+    "test/test_where_run_structure.py::test_single_position_gap_splits",
+    "test/test_where_run_structure.py::test_unsorted_input_handled",
+    "test/test_where_run_structure.py::test_word_spans_count_as_runs",
+    "test/test_where_run_structure.py::test_tie_break_same_start_nested",
+    "test/test_where_run_structure.py::test_pad_spans_excluded_by_default_validity",
+    "test/test_where_run_structure.py::test_batched_rows",
+    "test/test_where_run_structure.py::test_explicit_valid_mask_drops_middle",
+    "test/test_where_run_structure.py::test_is_run_start_flags",
+    "test/test_where_run_structure.py::test_extent_signals",
+    "test/test_where_run_structure.py::test_long_singleton_flagged_by_extent",
+    "test/test_where_run_structure.py::test_extent_excludes_pads",
+    "test/test_where_run_structure.py::test_extent_batched",
+    "test/test_where_run_structure.py::test_tightest_container_flat_siblings_none",
+    "test/test_where_run_structure.py::test_tightest_container_sentence_over_words",
+    "test/test_where_run_structure.py::test_tightest_container_picks_smallest_whole",
+    "test/test_where_run_structure.py::test_tightest_container_batched",
+    "test/test_where_run_structure.py::test_route_hint_null_when_no_valid_runs",
+    "test/test_where_run_structure.py::test_route_hint_refine_one_run",
+    "test/test_where_run_structure.py::test_route_hint_raise_discontiguous",
+    "test/test_where_run_structure.py::test_route_hint_batched",
+    "test/test_while_loop_gradients.py::test_while_loop_gradients_match_a_python_loop_with_grad_carries",
+    "test/test_while_loop_gradients.py::test_bare_while_loop_still_shows_the_defect_or_is_fixed_upstream",
+    "test/test_while_loop_gradients.py::test_no_grad_leaves_carries_untouched",
+    "test/test_while_loop_gradients.py::test_release_loop_checkpoints_drops_the_node_payload",
+    "test/test_while_loop_gradients.py::test_release_leaves_a_foreign_pending_graph_intact",
+    "test/test_whole_property_codebook.py::test_materialize_property_shape_and_range",
+    "test/test_whole_property_codebook.py::test_property_segments_into_have_and_havenot",
+    "test/test_whole_property_codebook.py::test_property_region_is_low_frequency"
+  ],
+  "completed": [
+    "test/test_what_spacetime.py::test_context_values_carry_absolute_where",
+    "test/test_what_spacetime.py::test_data_what_present_temporal_supervised_and_inference",
+    "test/test_what_spacetime.py::test_temporal_lookup_never_crosses_document_or_split_boundary",
+    "test/test_what_spacetime.py::test_changing_only_temporal_question_changes_desired_answer",
+    "test/test_what_spacetime.py::test_attached_model_output_keeps_index_and_supplied_target_separate",
+    "test/test_what_spacetime.py::test_ltm_slot_stack_parity_lifo_and_immutable_openings",
+    "test/test_what_spacetime.py::test_ltm_rejects_empty_or_unmatched_close_and_detaches_actual_response",
+    "test/test_what_spacetime.py::test_ltm_pressure_is_monotonic_until_parity_and_reset_clears_slots",
+    "test/test_what_spacetime.py::test_ltm_capacity_evicts_only_balanced_prefixes",
+    "test/test_what_spacetime.py::test_model_what_present_wraps_established_forward_byte_identically",
+    "test/test_what_spacetime.py::test_model_what_ltm_records_actual_head_response_not_input_state",
+    "test/test_what_spacetime.py::test_think_presents_once_and_returns_the_completed_answer",
+    "test/test_what_spacetime.py::test_think_rejects_an_unfinished_presentation_without_fabricated_closure",
+    "test/test_what_spacetime.py::test_mlp_grammar_chooser_consumes_target_free_what_context",
+    "test/test_what_spacetime.py::test_what_grammar_context_uses_model_where_ladder",
+    "test/test_what_spacetime.py::test_what_projection_checkpoint_widens_from_19",
+    "test/test_what_spacetime.py::test_questions_for_batch_folds_driver_counters_into_the_split",
+    "test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser",
+    "test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer",
+    "test/test_what_thinking_episode.py::test_pressure_schedules_are_monotone_and_end_at_one",
+    "test/test_what_training.py::test_data_what_supervised_target_matches_loader_output",
+    "test/test_what_training.py::test_runbatch_scores_answers_against_data_what",
+    "test/test_what_training.py::test_unavailable_rows_are_omitted_not_substituted",
+    "test/test_what_training.py::test_no_scoreable_answer_omits_the_answer_loss",
+    "test/test_what_training.py::test_text_answer_is_not_scored_against_the_head",
+    "test/test_what_training.py::test_training_step_runs_for_each_question_family[reconstruct]",
+    "test/test_what_training.py::test_training_step_runs_for_each_question_family[predict]",
+    "test/test_what_training.py::test_desired_answer_never_becomes_the_recorded_response",
+    "test/test_what_training.py::test_temporal_question_content_is_causally_used",
+    "test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space",
+    "test/test_what_training.py::test_curriculum_drives_question_families_through_run",
+    "test/test_what_training.py::test_joint_training_keeps_both_primary_costs_in_band",
+    "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[future]",
+    "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[past]",
+    "test/test_when_bracket.py::test_instant_decodes_time_and_zero_extent",
+    "test/test_when_bracket.py::test_bracket_decodes_center_and_duration",
+    "test/test_when_bracket.py::test_encode_tensor_input_round_trips_time",
+    "test/test_when_bracket.py::test_tense_shifts_center_by_step_via_shift_time",
+    "test/test_when_bracket.py::test_aspect_layer_is_identity",
+    "test/test_when_bracket.py::test_forward_stamps_present_instant",
+    "test/test_when_encoding_v2.py::test_defaults_and_dims",
+    "test/test_when_encoding_v2.py::test_constant_norm_sqrt2_exact",
+    "test/test_when_encoding_v2.py::test_lf_pair_roundtrips_onset_over_horizon",
+    "test/test_when_encoding_v2.py::test_hf_pair_roundtrips_residue_within_rung",
+    "test/test_when_encoding_v2.py::test_ladder_decode_exact_on_integer_onsets",
+    "test/test_when_encoding_v2.py::test_ladder_branch_boundary",
+    "test/test_when_encoding_v2.py::test_shift_time_rotates_both_pairs_coherently",
+    "test/test_when_encoding_v2.py::test_batched_tensor_encode_decode",
+    "test/test_when_encoding_v2.py::test_exact_clock_untouched",
+    "test/test_when_encoding_v2.py::test_tense_relation_keys_on_lf_pair",
+    "test/test_when_encoding_v2.py::test_no_endpoint_bracket_api",
+    "test/test_when_grammar_rules.py::TestPrepositionGrammarRules::test_preposition_forward_reverse_pairing",
+    "test/test_when_grammar_rules.py::TestPrepositionGrammarRules::test_preposition_rule_present",
+    "test/test_when_grammar_rules.py::TestBindGrammarRules::test_bind_forward_reverse_pairing",
+    "test/test_when_grammar_rules.py::TestBindGrammarRules::test_bind_rule_present",
+    "test/test_when_grammar_rules.py::TestTenseGrammarRules::test_tense_forward_reverse_pairing",
+    "test/test_when_grammar_rules.py::TestTenseGrammarRules::test_tense_rule_present_and_aspect_not_live",
+    "test/test_when_grammar_rules.py::TestPrepositionSignalRouterBinding::test_auto_wiring_contract_holds",
+    "test/test_when_grammar_rules.py::TestPrepositionSignalRouterBinding::test_resolve_rule_layer_yields_preposition_layer",
+    "test/test_when_grammar_rules.py::TestMentalModelWhenEnabled::test_when_enabled_at_width_four_with_start_ladder",
+    "test/test_when_range_encoding.py::test_ndim_is_two_like_where",
+    "test/test_when_range_encoding.py::test_disabled_when_zero_width",
+    "test/test_when_range_encoding.py::test_instant_at_t0_is_unit_cos_axis",
+    "test/test_when_range_encoding.py::test_components_stay_in_unit_interval",
+    "test/test_when_range_encoding.py::test_decode_instant_recovers_time_and_zero_extent",
+    "test/test_when_range_encoding.py::test_decode_bracket_recovers_center_and_duration",
+    "test/test_when_range_encoding.py::test_short_duration_snaps_to_instant",
+    "test/test_when_range_encoding.py::test_decode_tensor_batch",
+    "test/test_when_range_encoding.py::test_angle_tracks_absolute_time_via_self_t",
+    "test/test_when_range_encoding.py::test_decode_zero_phasor_is_finite",
+    "test/test_when_range_encoding.py::test_next_previous_move_time_by_step",
+    "test/test_when_range_encoding.py::test_shift_time_moves_center_preserves_extent",
+    "test/test_when_range_encoding.py::test_shift_time_is_invertible",
+    "test/test_when_range_encoding.py::test_forward_stamps_present_instant_and_reverse_zeros",
+    "test/test_when_range_encoding.py::test_period_is_module_knob",
+    "test/test_when_range_encoding.py::test_default_period_is_65536",
+    "test/test_when_range_encoding.py::test_subspace_muxed_size_includes_two_when_slots",
+    "test/test_when_range_encoding.py::test_subspace_demux_round_trips_present_instant",
+    "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement",
+    "test/test_where_bracket.py::test_ladder_shape_and_rungs",
+    "test/test_where_bracket.py::test_ladder_round_trip_exact_across_range",
+    "test/test_where_bracket.py::test_origin_shift_clears_the_seam",
+    "test/test_where_bracket.py::test_forward_stamp_round_trip",
+    "test/test_where_bracket.py::test_bracket_is_retired",
+    "test/test_where_decoupling.py::TestWhereDecoupling::test_codebook_identity_is_the_active_row_index",
+    "test/test_where_decoupling.py::TestWhereDecoupling::test_where_is_not_a_codebook_row_key",
+    "test/test_where_decoupling.py::TestWhereDecoupling::test_where_still_carries_spatial_extent",
+    "test/test_where_encoding_period.py::test_where_period_is_derived_from_the_registry",
+    "test/test_where_encoding_period.py::test_input_and_inventory_share_the_same_encoding",
+    "test/test_where_encoding_period.py::test_retired_period_knob_is_rejected",
+    "test/test_where_encoding_period.py::test_forward_overflow_assert_holds",
+    "test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds",
+    "test/test_where_encoding_recovery.py::test_allocate_starts_at_one",
+    "test/test_where_encoding_recovery.py::test_allocate_monotonic",
+    "test/test_where_encoding_recovery.py::test_allocate_position_persists_via_structural_extras",
+    "test/test_where_encoding_recovery.py::test_restore_without_counter_defaults_to_one",
+    "test/test_where_run_structure.py::test_single_span_one_run",
+    "test/test_where_run_structure.py::test_contiguous_siblings_merge_to_one_run",
+    "test/test_where_run_structure.py::test_disjoint_two_runs_one_gap",
+    "test/test_where_run_structure.py::test_nested_one_run_and_containment",
+    "test/test_where_run_structure.py::test_single_position_gap_splits",
+    "test/test_where_run_structure.py::test_unsorted_input_handled",
+    "test/test_where_run_structure.py::test_word_spans_count_as_runs",
+    "test/test_where_run_structure.py::test_tie_break_same_start_nested",
+    "test/test_where_run_structure.py::test_pad_spans_excluded_by_default_validity",
+    "test/test_where_run_structure.py::test_batched_rows",
+    "test/test_where_run_structure.py::test_explicit_valid_mask_drops_middle",
+    "test/test_where_run_structure.py::test_is_run_start_flags",
+    "test/test_where_run_structure.py::test_extent_signals",
+    "test/test_where_run_structure.py::test_long_singleton_flagged_by_extent",
+    "test/test_where_run_structure.py::test_extent_excludes_pads",
+    "test/test_where_run_structure.py::test_extent_batched",
+    "test/test_where_run_structure.py::test_tightest_container_flat_siblings_none",
+    "test/test_where_run_structure.py::test_tightest_container_sentence_over_words",
+    "test/test_where_run_structure.py::test_tightest_container_picks_smallest_whole",
+    "test/test_where_run_structure.py::test_tightest_container_batched",
+    "test/test_where_run_structure.py::test_route_hint_null_when_no_valid_runs",
+    "test/test_where_run_structure.py::test_route_hint_refine_one_run",
+    "test/test_where_run_structure.py::test_route_hint_raise_discontiguous",
+    "test/test_where_run_structure.py::test_route_hint_batched",
+    "test/test_while_loop_gradients.py::test_while_loop_gradients_match_a_python_loop_with_grad_carries",
+    "test/test_while_loop_gradients.py::test_bare_while_loop_still_shows_the_defect_or_is_fixed_upstream",
+    "test/test_while_loop_gradients.py::test_no_grad_leaves_carries_untouched",
+    "test/test_while_loop_gradients.py::test_release_loop_checkpoints_drops_the_node_payload",
+    "test/test_while_loop_gradients.py::test_release_leaves_a_foreign_pending_graph_intact",
+    "test/test_whole_property_codebook.py::test_materialize_property_shape_and_range",
+    "test/test_whole_property_codebook.py::test_property_segments_into_have_and_havenot",
+    "test/test_whole_property_codebook.py::test_property_region_is_low_frequency"
+  ],
+  "slow_selected": [
+    "test/test_what_training.py::test_temporal_question_content_is_causally_used",
+    "test/test_what_training.py::test_joint_training_keeps_both_primary_costs_in_band",
+    "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[future]",
+    "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[past]",
+    "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_what_spacetime.py::test_context_values_carry_absolute_where",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012558302842080593,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_spacetime.py::test_data_what_present_temporal_supervised_and_inference",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013329205103218555,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_spacetime.py::test_temporal_lookup_never_crosses_document_or_split_boundary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011224998161196709,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_spacetime.py::test_changing_only_temporal_question_changes_desired_answer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010883400682359934,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_spacetime.py::test_attached_model_output_keeps_index_and_supplied_target_separate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012600002810359,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_spacetime.py::test_ltm_slot_stack_parity_lifo_and_immutable_openings",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00046374998055398464,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_spacetime.py::test_ltm_rejects_empty_or_unmatched_close_and_detaches_actual_response",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001977500505745411,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_spacetime.py::test_ltm_pressure_is_monotonic_until_parity_and_reset_clears_slots",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013579195365309715,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_spacetime.py::test_ltm_capacity_evicts_only_balanced_prefixes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001421249471604824,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_spacetime.py::test_model_what_present_wraps_established_forward_byte_identically",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007141659734770656,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_spacetime.py::test_model_what_ltm_records_actual_head_response_not_input_state",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00045483303256332874,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_spacetime.py::test_think_presents_once_and_returns_the_completed_answer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005184999899938703,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_spacetime.py::test_think_rejects_an_unfinished_presentation_without_fabricated_closure",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00033816706854850054,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_spacetime.py::test_mlp_grammar_chooser_consumes_target_free_what_context",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010190829634666443,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_spacetime.py::test_what_grammar_context_uses_model_where_ladder",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00046341598499566317,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_spacetime.py::test_what_projection_checkpoint_widens_from_19",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014462496619671583,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_spacetime.py::test_questions_for_batch_folds_driver_counters_into_the_split",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012279197108000517,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.23778958292677999,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09599004196934402,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_thinking_episode.py::test_pressure_schedules_are_monotone_and_end_at_one",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011845806147903204,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_training.py::test_data_what_supervised_target_matches_loader_output",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006445000180974603,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_training.py::test_runbatch_scores_answers_against_data_what",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3994182499591261,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_what_training.py::test_unavailable_rows_are_omitted_not_substituted",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07330875005573034,
+      "message": "",
+      "stdout": "batch = 0 (\u0394=0.076s)\r\n"
+    },
+    {
+      "nodeid": "test/test_what_training.py::test_no_scoreable_answer_omits_the_answer_loss",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06944595801178366,
+      "message": "",
+      "stdout": "batch = 0 (\u0394=0.071s)\r\n"
+    },
+    {
+      "nodeid": "test/test_what_training.py::test_text_answer_is_not_scored_against_the_head",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07086179195903242,
+      "message": "",
+      "stdout": "batch = 0 (\u0394=0.072s)\r\n"
+    },
+    {
+      "nodeid": "test/test_what_training.py::test_training_step_runs_for_each_question_family[reconstruct]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07167574996128678,
+      "message": "",
+      "stdout": "batch = 0 (\u0394=0.073s)\r\n"
+    },
+    {
+      "nodeid": "test/test_what_training.py::test_training_step_runs_for_each_question_family[predict]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06882874993607402,
+      "message": "",
+      "stdout": "batch = 0 (\u0394=0.073s)\r\n"
+    },
+    {
+      "nodeid": "test/test_what_training.py::test_desired_answer_never_becomes_the_recorded_response",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07112400000914931,
+      "message": "",
+      "stdout": "batch = 0 (\u0394=0.071s)\r\n"
+    },
+    {
+      "nodeid": "test/test_what_training.py::test_temporal_question_content_is_causally_used",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00014304101932793856,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_what_training.py', 220, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.38671041699126363,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.078s)\r\nbatch = 0 (\u0394=0.109s)\r\nbatch = 0 (\u0394=0.132s)\r\n"
+    },
+    {
+      "nodeid": "test/test_what_training.py::test_curriculum_drives_question_families_through_run",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.48069812497124076,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 8.33%)\r\nbatch = 2 (\u0394=0.084s, 16.67%)\r\nTraining throughput: 2 batches in 0.159s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.079s, 8.33%)\r\nbatch = 2 (\u0394=0.082s, 16.67%)\r\nTraining throughput: 2 batches in 0.161s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.080s, 8.33%)\r\nbatch = 2 (\u0394=0.079s, 16.67%)\r\nTraining throughput: 2 batches in 0.157s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_what_training.py::test_joint_training_keeps_both_primary_costs_in_band",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00014595896936953068,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_what_training.py', 394, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[future]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011587503831833601,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_what_training.py', 433, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training[past]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00011020805686712265,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_what_training.py', 433, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_bracket.py::test_instant_decodes_time_and_zero_extent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005115000531077385,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_bracket.py::test_bracket_decodes_center_and_duration",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002205829368904233,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_bracket.py::test_encode_tensor_input_round_trips_time",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021824997384101152,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_bracket.py::test_tense_shifts_center_by_step_via_shift_time",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002637919969856739,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_bracket.py::test_aspect_layer_is_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002799159847199917,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_bracket.py::test_forward_stamps_present_instant",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023141701240092516,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_encoding_v2.py::test_defaults_and_dims",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015587499365210533,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_encoding_v2.py::test_constant_norm_sqrt2_exact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002972499933093786,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_encoding_v2.py::test_lf_pair_roundtrips_onset_over_horizon",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00035737501457333565,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_encoding_v2.py::test_hf_pair_roundtrips_residue_within_rung",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032654195092618465,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_encoding_v2.py::test_ladder_decode_exact_on_integer_onsets",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000626959023065865,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_encoding_v2.py::test_ladder_branch_boundary",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00031058292370289564,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_encoding_v2.py::test_shift_time_rotates_both_pairs_coherently",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006044999463483691,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_encoding_v2.py::test_batched_tensor_encode_decode",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002229160163551569,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_encoding_v2.py::test_exact_clock_untouched",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00027887499891221523,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_encoding_v2.py::test_tense_relation_keys_on_lf_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022245803847908974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_encoding_v2.py::test_no_endpoint_bracket_api",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014683289919048548,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_grammar_rules.py::TestPrepositionGrammarRules::test_preposition_forward_reverse_pairing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004889125004410744,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_grammar_rules.py::TestPrepositionGrammarRules::test_preposition_rule_present",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0033324999967589974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_grammar_rules.py::TestBindGrammarRules::test_bind_forward_reverse_pairing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0033259158954024315,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_grammar_rules.py::TestBindGrammarRules::test_bind_rule_present",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003342707990668714,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_grammar_rules.py::TestTenseGrammarRules::test_tense_forward_reverse_pairing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003334708046168089,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_grammar_rules.py::TestTenseGrammarRules::test_tense_rule_present_and_aspect_not_live",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0033218329772353172,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_grammar_rules.py::TestPrepositionSignalRouterBinding::test_auto_wiring_contract_holds",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014591694343835115,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_grammar_rules.py::TestPrepositionSignalRouterBinding::test_resolve_rule_layer_yields_preposition_layer",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013329205103218555,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_grammar_rules.py::TestMentalModelWhenEnabled::test_when_enabled_at_width_four_with_start_ladder",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07566091709304601,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_ndim_is_two_like_where",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014883396215736866,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_disabled_when_zero_width",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012458302080631256,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_instant_at_t0_is_unit_cos_axis",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021358404774218798,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_components_stay_in_unit_interval",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005850410088896751,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_decode_instant_recovers_time_and_zero_extent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004004170186817646,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_decode_bracket_recovers_center_and_duration",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004267910262569785,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_short_duration_snaps_to_instant",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001902079675346613,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_decode_tensor_batch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002212079707533121,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_angle_tracks_absolute_time_via_self_t",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002929579932242632,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_decode_zero_phasor_is_finite",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002013749908655882,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_next_previous_move_time_by_step",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024979107547551394,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_shift_time_moves_center_preserves_extent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002525830641388893,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_shift_time_is_invertible",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019566703122109175,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_forward_stamps_present_instant_and_reverse_zeros",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032316602300852537,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_period_is_module_knob",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012941588647663593,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_default_period_is_65536",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001069169957190752,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_subspace_muxed_size_includes_two_when_slots",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003902920288965106,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_when_range_encoding.py::test_subspace_demux_round_trips_present_instant",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005162080051377416,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001784579362720251,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_where_attention_handoff.py', 36, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_bracket.py::test_ladder_shape_and_rungs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002607500646263361,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_bracket.py::test_ladder_round_trip_exact_across_range",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007623330457136035,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_bracket.py::test_origin_shift_clears_the_seam",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001984999980777502,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_bracket.py::test_forward_stamp_round_trip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030329206492751837,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_bracket.py::test_bracket_is_retired",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013466703239828348,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_decoupling.py::TestWhereDecoupling::test_codebook_identity_is_the_active_row_index",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006575000006705523,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_decoupling.py::TestWhereDecoupling::test_where_is_not_a_codebook_row_key",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00045408308506011963,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_decoupling.py::TestWhereDecoupling::test_where_still_carries_spatial_extent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007149169687181711,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_encoding_period.py::test_where_period_is_derived_from_the_registry",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05176820803899318,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_encoding_period.py::test_input_and_inventory_share_the_same_encoding",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03517770895268768,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_encoding_period.py::test_retired_period_knob_is_rejected",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011800667038187385,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_encoding_period.py::test_forward_overflow_assert_holds",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004374160198494792,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.13121458305977285,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 0.089s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_where_encoding_recovery.py::test_allocate_starts_at_one",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002951669739559293,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_encoding_recovery.py::test_allocate_monotonic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002347499830648303,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_encoding_recovery.py::test_allocate_position_persists_via_structural_extras",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003261124948039651,
+      "message": "",
+      "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3506/test_allocate_position_persist0/concept-counter.ckpt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3506/test_allocate_position_persist0/concept-counter.ckpt has no embedding bundle; embeddings stay at random init.\r\n[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3506/test_allocate_position_persist0/concept-counter.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_where_encoding_recovery.py::test_restore_without_counter_defaults_to_one",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023404101375490427,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_single_span_one_run",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003738750237971544,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_contiguous_siblings_merge_to_one_run",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002757500624284148,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_disjoint_two_runs_one_gap",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002503329887986183,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_nested_one_run_and_containment",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024358299560844898,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_single_position_gap_splits",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00038895802572369576,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_unsorted_input_handled",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022841710597276688,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_word_spans_count_as_runs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022916600573807955,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_tie_break_same_start_nested",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022041599731892347,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_pad_spans_excluded_by_default_validity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022245803847908974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_batched_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002464590361341834,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_explicit_valid_mask_drops_middle",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002935420488938689,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_is_run_start_flags",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032179197296500206,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_extent_signals",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022208306472748518,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_long_singleton_flagged_by_extent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032537500374019146,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_extent_excludes_pads",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023612496443092823,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_extent_batched",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002474590437486768,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_tightest_container_flat_siblings_none",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030333304312080145,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_tightest_container_sentence_over_words",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024149997625499964,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_tightest_container_picks_smallest_whole",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00023883290123194456,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_tightest_container_batched",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002554589882493019,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_route_hint_null_when_no_valid_runs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024750002194195986,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_route_hint_refine_one_run",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00024358299560844898,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_route_hint_raise_discontiguous",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002455000067129731,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_where_run_structure.py::test_route_hint_batched",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00026174995582550764,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_while_loop_gradients.py::test_while_loop_gradients_match_a_python_loop_with_grad_carries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3271477920934558,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_while_loop_gradients.py::test_bare_while_loop_still_shows_the_defect_or_is_fixed_upstream",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07862304092850536,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_while_loop_gradients.py::test_no_grad_leaves_carries_untouched",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014187500346451998,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_while_loop_gradients.py::test_release_loop_checkpoints_drops_the_node_payload",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07710104191210121,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_while_loop_gradients.py::test_release_leaves_a_foreign_pending_graph_intact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08965179196093231,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_whole_property_codebook.py::test_materialize_property_shape_and_range",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0007442500209435821,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_whole_property_codebook.py::test_property_segments_into_have_and_havenot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005393750034272671,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_whole_property_codebook.py::test_property_region_is_low_frequency",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005290420958772302,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

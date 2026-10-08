@@ -151,7 +151,7 @@ def test_retired_operators_are_absent_from_shipped_grammars(filename):
     from Queries import THOUGHT_EXECUTORS
     grammar = Grammar()
     grammar.load_from_grammar_file(filename)
-    retired = {'exist', 'true', 'lookup'}
+    retired = {'what', 'true', 'lookup', 'quantize', 'arma', 'expect', 'chunk'}
     assert retired.isdisjoint(THOUGHT_EXECUTORS)
     assert retired.isdisjoint(GRAMMAR_LAYER_CLASSES)
     structural = {r.method_name for r in grammar.rules_upward + grammar.rules_downward}
@@ -159,7 +159,7 @@ def test_retired_operators_are_absent_from_shipped_grammars(filename):
     assert all('exist' not in start for start in grammar.ws_absolute_starts)
 
 
-@pytest.mark.parametrize('name', ['exist', 'true', 'lookup'])
+@pytest.mark.parametrize('name', ['what', 'true', 'lookup', 'quantize', 'arma', 'expect', 'chunk'])
 def test_retired_operator_declarations_fail_loudly(name):
     from Language import Grammar
     with pytest.raises(ValueError, match='retired'):

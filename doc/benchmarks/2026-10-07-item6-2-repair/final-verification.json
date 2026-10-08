@@ -1,0 +1,28 @@
+{
+  "source_files_verified": 726,
+  "source_sha256": "9fabf14e889d9b3cc58b331f932804bce13dd10c4986bdabf8ca900adbe1271c",
+  "measurement_helpers_verified": 191,
+  "first_receipt_files_verified_unchanged": 1632,
+  "all_measurements_match_source": true,
+  "source_archive_verified": true,
+  "helper_archive_verified": true,
+  "standing_protected_files_match_6_5": true,
+  "original_25_certificate_source_unchanged": true,
+  "HEAD_unchanged": "631d9e8e44b7c8034263e22b36dc74fa5df4eb75",
+  "git_diff_check": {
+    "exit_code": 2,
+    "output": "test/test_frozen_concepts.py:120: new blank line at EOF.\n",
+    "disposition": "Style-only trailing blank line retained in the frozen measured source; deferred to a subsequent authorized source revision."
+  },
+  "spec_revision": {
+    "path": "doc/specs/2026-10-07-thinking.md",
+    "archived_review_sha256": "4cc4f8439673f8ad57d04122c689a7527c832589b4b6823c378968ec8ddac0a4",
+    "observed_sha256": "7971ef94c5cb444d06ef77b305d1056c11a4fc99654b99febea7b5dd3e547342",
+    "archived_review_already_has_section_10": true,
+    "snapshot": "spec-observed-at-final-verification.txt",
+    "diff": "spec-review-to-final-verification.patch",
+    "disposition": "The spec was revised concurrently during finalization. This receipt measures the recorded repair protocol only. No MM_math_chain gate or amended equality-rewrite contract is claimed."
+  },
+  "training_retries": 0,
+  "commit": false
+}

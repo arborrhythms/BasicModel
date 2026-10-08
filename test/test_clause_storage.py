@@ -309,9 +309,9 @@ def test_query_returns_end_clause_content_and_preserves_both_poles():
     meaning = ConceptualMeaning.from_description(point)
     row = store.write_clause(Clause(meaning, point=point), kind='fact', evidence=(.8, .7))
     context = _context(cs, store=store)
-    question = registry.form('what', store.occurrence_of(row), context=context)
+    question = registry.form('ask', store.occurrence_of(row), context=context)
     result = registry.execute(question, context)
-    assert result.evidence['semantic_id'] == 'what'
+    assert result.evidence['semantic_id'] == 'ask'
     torch.testing.assert_close(result.value[0]['meaning'].roles, meaning.roles)
     assert result.support_true == pytest.approx(.8)
     assert result.support_false == pytest.approx(.7)

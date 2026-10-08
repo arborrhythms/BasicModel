@@ -1,0 +1,15 @@
+{
+  "selectors": [
+    "test/test_item6_2_repair.py",
+    "test/test_item6_2_thinking.py",
+    "test/test_dual_towers.py",
+    "test/test_frozen_concepts.py",
+    "test/test_priming_energy.py",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

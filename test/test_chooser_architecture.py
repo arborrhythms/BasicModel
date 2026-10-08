@@ -188,7 +188,7 @@ def test_canonical_xml_defaults_pin_existing_architectures():
         "attentionBudget": 32,
     }.items():
         assert config.get(f"architecture.{name}") == expected
-    assert config.training("selectedThoughtPolicyWeight") == 0.0
+    assert config.training("selectedThoughtPolicyWeight",default=None) is None
 
 
 @pytest.mark.parametrize("path,bad_value", [
@@ -197,7 +197,6 @@ def test_canonical_xml_defaults_pin_existing_architectures():
     ("architecture/whatThinkingHidden", 0),
     ("architecture/whatThinkingDepth", 0),
     ("architecture/attentionBudget", -1),
-    ("architecture/training/selectedThoughtPolicyWeight", -0.1),
 ])
 def test_xml_schema_rejects_invalid_capacity(tmp_path, path, bad_value):
     xsd_path = str(_ROOT / "data/model.xsd")
@@ -251,7 +250,8 @@ def test_real_model_xml_wires_both_chooser_architectures(monkeypatch, tmp_path):
     for chooser in grammar_heads:
         assert chooser.hidden == 19 and chooser.depth == 2
     step = model._selected_thought_chooser(_meaning())
-    assert step.hidden == 23 and step.depth == 3
+    assert step.chooser.hidden == 19 and step.chooser.depth == 2
+    assert not hasattr(model,'selected_thought_choosers')
 
 
 def _model_shell(**capacity):
@@ -264,33 +264,22 @@ def _model_shell(**capacity):
     return model
 
 
-def test_model_lazy_step_head_uses_configured_capacity():
-    model = _model_shell(what_thinking_hidden=23, what_thinking_depth=3)
-    chooser = model._selected_thought_chooser(_meaning(), device=torch.device("cpu"), dtype=torch.float64)
-    assert len(_linears(chooser)) == 4
-    assert _linears(chooser)[0].out_features == 23
-    assert next(chooser.parameters()).dtype == torch.float64
-    assert model._selected_thought_chooser(_meaning()) is chooser
+def test_thought_uses_existing_grammar_capacity():
+    from test_normal_thought_controller import _catalog_world
+    model,registry,_,a,b=_catalog_world()
+    chooser=model._selected_thought_chooser(registry.form('part',a,b))
+    assert chooser is model.shared_grammar
+    assert not hasattr(model,'selected_thought_choosers')
 
 
-def test_deep_step_checkpoint_materializes_saved_architecture_and_loads_strictly():
-    """The absent-head restore path infers depth as well as first-layer width."""
-    torch.manual_seed(331)
-    source = _model_shell(what_thinking_hidden=17, what_thinking_depth=3)
-    chooser = source._selected_thought_chooser(_meaning())
-    with torch.no_grad():
-        chooser.mlp[-1].weight.fill_(0.2)
-        chooser.mlp[-1].bias.fill_(0.1)
-    saved = {key: value.detach().clone() for key, value in source.state_dict().items()}
-
-    restored = _model_shell()
-    assert getattr(restored, "selected_thought_choosers", None) is None
-    assert restored._materialize_answer_path_from_checkpoint(saved) == 1
-    restored.load_state_dict(saved, strict=True)
-    _assert_same_state(restored, source)
-    assert len(_linears(restored.selected_thought_choosers["8"])) == 4
-    assert _linears(restored.selected_thought_choosers["8"])[0].out_features == 17
-    candidates = (False, True)
-    context = torch.randn(2, chooser.context_dim)
-    assert torch.equal(chooser.logits(context, candidates),
-                       restored.selected_thought_choosers["8"].logits(context, candidates))
+def test_legacy_step_checkpoint_is_discarded_without_replacing_grammar():
+    from test_normal_thought_controller import _catalog_world
+    model,registry,_,a,b=_catalog_world()
+    original=model._selected_thought_chooser(registry.form('part',a,b))
+    state={key:value.detach().clone() for key,value in model.state_dict().items()}
+    key='selected_thought_choosers.8.mlp.0.weight'
+    state[key]=torch.ones(17,29)
+    model._materialize_answer_path_from_checkpoint(state)
+    assert key not in state and key in model._pending_thought_policy_reset
+    model.load_state_dict(state,strict=True)
+    assert model._selected_thought_chooser(registry.form('part',a,b)) is original

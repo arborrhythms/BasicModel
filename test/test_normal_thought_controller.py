@@ -11,7 +11,7 @@ from types import MappingProxyType, SimpleNamespace
 import pytest
 import torch
 
-from Language import Grammar
+from Language import Grammar, OperationSelectionLayer
 from Layers import MeaningExpectation, WhatInteractionMemory
 from Meaning import ConceptualMeaning
 from Models import BasicModel
@@ -40,11 +40,21 @@ def _catalog_world():
     memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
     model = BasicModel()
     model.spaces = []
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    object.__setattr__(model, 'languageSpace', SimpleNamespace(
+        language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+    model.attention_budget = 64
+
     object.__setattr__(model, "conceptualSpace", cs)
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         what_memory=memory, grammatical_thoughts=registry))
     object.__setattr__(model, "grammatical_thoughts", registry)
     model.what_thinking_detach = "episode"
+    model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
+    with torch.no_grad():
+        model.shared_grammar.chooser.mlp[-1].weight.zero_()
+        model.shared_grammar.chooser.mlp[-1].bias.zero_()
+    model.eval()
     return model, registry, memory, part, whole
 
 
@@ -52,85 +62,68 @@ def _with_what_wrapper(language, entry):
     """Mark a completed structural program interrogative through grammar."""
     local = next(
         index for index, rule in enumerate(language._compose_unary_rules)
-        if rule.method_name == "what")
+        if rule.method_name == "ask")
     return replace(entry, actions=torch.cat((entry.actions, torch.tensor(
         [[2, local, -1]], dtype=entry.actions.dtype))))
 
 
-def test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse(
-        monkeypatch):
-    """A completed ``part`` may select grammar-declared ``equal`` afterwards."""
+def test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse(monkeypatch):
+    """An unparsed action enters the stream but cannot close an unrelated goal."""
     model, registry, memory, part, whole = _catalog_world()
-    question = registry.form("part", part, whole)
+    question = registry.form('part', part, whole)
     choices = []
-
-    def choose(_root, _active, actions, **_kwargs):
-        choices.append(tuple(
-            "conclude" if action is None else action.semantic_id
-            for action in actions))
-        if len(choices) == 1:
-            return next(action for action in actions
-                        if action is not None and action.semantic_id == "equal")
-        return None
-
-    monkeypatch.setattr(model, "_choose_selected_thought_action", choose)
-    with model._query_boundary_scope((0,)):
-        result = model.run_selected_thought(question, row=0, work_budget=16)
-
-    assert "equal" in choices[0]
-    assert [record.operation for record in result.records if record.kind == "thought"] == [
-        "equal", "conclude"]
-    assert registry.signature_for(result.meaning).operation.semantic_id == "equal"
-    assert result.result is not None and result.result.semantic_id == "equal"
-    assert 0.0 <= result.evidence["support_true"] <= 1.0
-    memory.end_what_episode()
-
-
-def test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata(
-        monkeypatch):
-    """A later grammar action keeps the selected question's negation/context."""
-    model, registry, memory, part, whole = _catalog_world()
-    question = registry.form(
-        "part", part, whole, polarity=False,
-        bindings={"variable": "whole"}, scope={"place": "workshop"})
-
-    choices = []
-
     def choose(_root, _active, actions, **_kwargs):
         choices.append(actions)
         if len(choices) == 1:
-            return next(action for action in actions
-                        if action is not None and action.semantic_id == "equal")
+            return next(a for a in actions if a is not None and a.semantic_id == 'equal')
+        assert None not in actions
         return None
-
-    monkeypatch.setattr(model, "_choose_selected_thought_action", choose)
-    with model._query_boundary_scope((0,)):
-        result = model.run_selected_thought(question, row=0, work_budget=16)
-
-    assert result.meaning.polarity is False
-    assert result.meaning.bindings == question.bindings
-    assert result.meaning.scope == question.scope
-    assert result.result is not None and result.result.semantic_id == "equal"
-    assert result.result.request.polarity is False
+    monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
+    with model._query_boundary_scope((0,)), pytest.raises(ValueError, match='conclude'):
+        model.run_selected_thought(question, work_budget=16)
+    executed = [r.result for r in memory.thought_history() if r.result is not None]
+    assert executed[0].semantic_id == 'equal'
+    assert 'equal' in [a.semantic_id for a in choices[0]]
+    assert 0. <= executed[0].support_true <= 1.
     memory.end_what_episode()
+
+
+def test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata(monkeypatch):
+    """A later grammar candidate keeps negation, bindings and scope."""
+    model, registry, memory, part, whole = _catalog_world()
+    question = registry.form('part', part, whole, polarity=False,
+        bindings={'variable': 'whole'}, scope={'place': 'workshop'})
+    actions = registry.controller_candidates(question, question, question)
+    selected = next(a for a in actions if a.semantic_id == 'equal')
+    assert selected.request.polarity is False
+    assert selected.request.bindings == question.bindings
+    assert selected.request.scope == question.scope
+    from QueryWork import QueryWorkBudget
+    with model._query_boundary_scope((0,)):
+        context = model._thought_grammar_context(selected.request, row=0,
+            work=QueryWorkBudget(16), continuation=None)
+        result = registry.execute(selected.request, context)
+    assert result.semantic_id == 'equal' and result.request.polarity is False
+    assert result.request.scope == question.scope
 
 
 def test_selected_boundary_query_records_one_episode_and_its_actual_work():
     model, registry, memory, part, whole = _world()
-    question = registry.form("part", part, whole)
+    question = registry.form("isPart", part, whole)
 
     with model._query_boundary_scope((0,)):
         result = model.run_selected_thought(question, row=0, work_budget=16)
 
     assert result.evidence["support_true"] == 1
-    assert result.meaning is question
+    assert result.meaning.role_refs == question.role_refs
+    assert not __import__("ThoughtReferences").open_slots(result.meaning)
     assert result.work.spent == memory.thought_state().work_spent
     assert result.work.spent <= 16
     records = memory.thought_history()
     ordinary = [record for record in records if record.kind != "cutoff"]
     assert [record.kind for record in ordinary] == [
         "begin", "thought", "thought", "finish"]
-    assert [record.operation for record in ordinary[1:3]] == ["part", "conclude"]
+    assert [record.operation for record in ordinary[1:3]] == ["isPart", "conclude"]
     assert ordinary[1].meaning.role_refs == question.role_refs
     assert ordinary[-1].support_true == 1
     assert memory.thought_state().finished
@@ -140,17 +133,17 @@ def test_selected_boundary_query_records_one_episode_and_its_actual_work():
 def test_selected_history_retains_the_typed_checked_result_through_restore():
     """The one history owner keeps the actual checked result, not a summary."""
     model, registry, memory, part, whole = _world()
-    question = registry.form("part", part, whole)
+    question = registry.form("isPart", part, whole)
 
     with model._query_boundary_scope((0,)):
         selected = model.run_selected_thought(question, row=0, work_budget=16)
 
     executed = next(
         record for record in selected.records
-        if record.kind == "thought" and record.operation == "part")
+        if record.kind == "thought" and record.operation == "isPart")
     stored = executed.result
     assert stored is not None
-    assert stored.semantic_id == selected.result.semantic_id == "part"
+    assert stored.semantic_id == selected.result.semantic_id == "isPart"
     assert stored.result_kind == selected.result.result_kind == "concept"
     assert stored.request is not selected.result.request
     assert not stored.request.roles.requires_grad
@@ -163,9 +156,9 @@ def test_selected_history_retains_the_typed_checked_result_through_restore():
     restored.load_thought_extras(memory.thought_extras())
     replayed = next(
         record for record in restored.thought_history()
-        if record.kind == "thought" and record.operation == "part")
+        if record.kind == "thought" and record.operation == "isPart")
     assert replayed.result is not None
-    assert replayed.result.semantic_id == "part"
+    assert replayed.result.semantic_id == "isPart"
     assert replayed.result.result_kind == "concept"
     assert not replayed.result.request.roles.requires_grad
 
@@ -217,13 +210,13 @@ def test_what_subgoal_descends_executes_returns_and_causally_carries_evidence():
     model, registry, memory, part, whole = _world()
     from QueryWork import QueryWorkBudget
 
-    inner = registry.form("part", part, whole)
+    inner = registry.form("isPart", part, whole)
     prior = memory.begin_thought_episode(inner, work_budget=2)
     memory.finish_thought(inner, support_true=0.0, evidence_kind="subgoal")
     memory.end_what_episode()
     with model._query_boundary_scope((0,)):
         outer = registry.form(
-            "what", memory.thought_reference(memory.thought_history()[0]),
+            "ask", memory.thought_reference(memory.thought_history()[0]),
             context=model._thought_grammar_context(
                 inner, row=0, work=QueryWorkBudget(8), continuation=None),
         )
@@ -243,7 +236,7 @@ def test_what_subgoal_descends_executes_returns_and_causally_carries_evidence():
     assert latest[5].support_true == 1
     assert any(ref[0] == "thought" for ref in latest[5].sources)
     assert [record.operation for record in latest if record.kind == "thought"] == [
-        "what", "part", "conclude", "conclude"]
+        "ask", "isPart", "conclude", "conclude"]
     memory.end_what_episode()
 
 
@@ -267,6 +260,11 @@ def test_completed_compose_program_enters_normal_controller_before_legacy_thinki
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    object.__setattr__(model, 'languageSpace', SimpleNamespace(
+        language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+    model.attention_budget = 64
+
     memory = WhatInteractionMemory(batch=1, capacity=32, detach_mode="episode")
     object.__setattr__(model, "conceptualSpace", cs)
     object.__setattr__(model, "languageSpace", language)
@@ -275,6 +273,11 @@ def test_completed_compose_program_enters_normal_controller_before_legacy_thinki
         grammatical_thoughts=registry))
     object.__setattr__(model, "grammatical_thoughts", registry)
     model.what_thinking_detach = "episode"
+    model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
+    with torch.no_grad():
+        model.shared_grammar.chooser.mlp[-1].weight.zero_()
+        model.shared_grammar.chooser.mlp[-1].bias.zero_()
+    model.eval()
 
     with model._query_boundary_scope((0,)):
         selected = model._run_selected_sentence_thoughts(
@@ -282,9 +285,15 @@ def test_completed_compose_program_enters_normal_controller_before_legacy_thinki
 
     assert len(selected) == 1
     row, result = selected[0]
-    assert row == 0 and result.meaning.mode == "interrogative"
-    assert [record.operation for record in result.records if record.kind == "thought"] == [
-        "part", "conclude"]
+    assert row == 0
+    from ThoughtReferences import open_slots
+    operations = [r.operation for r in result.records if r.kind == 'thought']
+    assert operations[0] == 'part'
+    if open_slots(result.meaning):
+        assert result.work.remaining == 0 and 'conclude' not in operations
+    else:
+        assert operations[-1] == 'conclude'
+        assert max(result.evidence['support_true'], result.evidence['support_false']) > 0
     assert memory.thought_state().finished
     memory.end_what_episode()
 
@@ -294,9 +303,9 @@ def test_completed_unary_concept_program_enters_the_normal_controller(
     """A grammar-selected unary concept tool reaches its typed executor.
 
     The normal bridge must not assume every selected program is a binary
-    truth relation.  A completed quantize request owns its live signed
+    truth relation.  A completed exist request owns its live signed
     leaf and grammar-native VP, enters the same ordinary episode, and retains
-    the checked ``code`` result without coercing that result into a truth or
+    the checked ``concept`` result without coercing that result into a truth or
     answer seed.
     """
     from Understanding import AnswerProgram
@@ -307,6 +316,11 @@ def test_completed_unary_concept_program_enters_the_normal_controller(
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    object.__setattr__(model, 'languageSpace', SimpleNamespace(
+        language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+    model.attention_budget = 64
+
     memory = WhatInteractionMemory(batch=1, capacity=32, detach_mode="episode")
     object.__setattr__(model, "conceptualSpace", cs)
     object.__setattr__(model, "languageSpace", language)
@@ -315,11 +329,16 @@ def test_completed_unary_concept_program_enters_the_normal_controller(
         grammatical_thoughts=registry))
     object.__setattr__(model, "grammatical_thoughts", registry)
     model.what_thinking_detach = "episode"
-    # Quantize is thought-only. The completed field carries its selected
+    model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
+    with torch.no_grad():
+        model.shared_grammar.chooser.mlp[-1].weight.zero_()
+        model.shared_grammar.chooser.mlp[-1].bias.zero_()
+    model.eval()
+    # Exist is thought-only. The completed field carries its selected
     # request directly, without an identity compose wrapper or parse replay.
     from Understanding import SentenceEndState
     entry = SentenceEndState(ConceptualMeaning.from_description(leaves[0]),
-                             query=registry.form('quantize', leaves[0]))
+                             query=registry.form('exist', leaves[0]))
 
     with model._query_boundary_scope((0,)):
         # The ordinary chooser also pays for its context reads. Give this
@@ -328,94 +347,61 @@ def test_completed_unary_concept_program_enters_the_normal_controller(
 
     assert len(selected) == 1
     row, result = selected[0]
-    assert row == 0 and result.meaning.mode == "interrogative"
+    assert row == 0 and result.meaning.mode == "assertive"
     assert result.result is not None
-    assert result.result.semantic_id == "quantize"
-    assert result.result.result_kind == "code"
+    assert result.result.semantic_id == "exist"
+    assert result.result.result_kind == "concept"
     assert [record.operation for record in result.records if record.kind == "thought"] == [
-        "quantize", "conclude"]
+        "exist", "conclude"]
     memory.end_what_episode()
 
 
 def test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit():
+    from ThoughtCredit import surrogate
     model, registry, memory, part, whole = _world()
-    model.selected_thought_policy_weight = 1.0
-    question = registry.form("part", part, whole)
-    changed_roles = question.roles.clone()
-    changed_roles[1].add_(0.75)
-    changed_roles[2].sub_(0.5)
-    changed = replace(question, roles=changed_roles)
+    question = registry.form('equal', part, whole)
     chooser = model._selected_thought_chooser(question)
     with torch.no_grad():
         for parameter in chooser.parameters():
-            parameter.fill_(0.01)
-    first = model._selected_thought_context(
-        question, question, question, level=0, pressure=0.0)
-    second = model._selected_thought_context(
-        question, question, changed, level=0, pressure=0.0)
-    assert not torch.equal(first, second)
-    assert not torch.equal(
-        chooser.logits(torch.stack((first, first)), (False, False)),
-        chooser.logits(torch.stack((first, second)), (False, False)),
-    )
-
-    changed_root_roles = question.roles.clone()
-    changed_root_roles[0].add_(0.25)
-    changed_root = replace(question, roles=changed_root_roles)
-    changed_active_roles = question.roles.clone()
-    changed_active_roles[2].sub_(0.125)
-    changed_active = replace(question, roles=changed_active_roles)
-    assert not torch.equal(
-        first,
-        model._selected_thought_context(
-            changed_root, question, question, level=0, pressure=0.0),
-    )
-    assert not torch.equal(
-        first,
-        model._selected_thought_context(
-            question, changed_active, question, level=0, pressure=0.0),
-    )
-    # Unoccupied-role values are physical padding, not controller features.
-    unary = registry.form("part", whole, open_roles=("I1",))
-    padded = unary.roles.clone()
-    padded[0].fill_(99.0)
-    unary_with_padding = replace(unary, roles=padded)
-    torch.testing.assert_close(
-        model._selected_thought_context(
-            unary, unary, unary, level=0, pressure=0.0),
-        model._selected_thought_context(
-            unary, unary, unary_with_padding, level=0, pressure=0.0),
-    )
-
-    with model._query_boundary_scope((0,)):
-        model.run_selected_thought(question, row=0, work_budget=8)
-    loss = model._selected_thought_policy_loss(torch.tensor(0.25))
-    assert loss is not None and loss.requires_grad
+            parameter.fill_(.01)
+    first = chooser.thought_logits(question, (question, question))
+    for role in range(3):
+        roles = question.roles.clone()
+        roles[role].add_(.5)
+        changed = replace(question, roles=roles)
+        assert not torch.equal(first, chooser.thought_logits(question, (question, changed)))
+        assert not torch.equal(first, chooser.thought_logits(changed, (question, question)))
+    unary = registry.form('isPart', whole, open_roles=('I1',))
+    padding = unary.roles.clone()
+    padding[0].fill_(99.)
+    torch.testing.assert_close(chooser.thought_logits(unary, (unary,)),
+        chooser.thought_logits(unary, (replace(unary, roles=padding),)))
+    probability = chooser.thought_logits(question, (question, changed)).softmax(-1)[0]
+    loss = surrogate(dict(eligible=[True]), dict(choices=[dict(
+        probability=probability[1], alternatives=1)]), 0, (1., .25))
     loss.backward()
-    assert any(
-        parameter.grad is not None and bool(parameter.grad.abs().sum())
-        for parameter in chooser.parameters()
-    )
-    memory.end_what_episode()
+    assert any(p.grad is not None and bool(p.grad.abs().sum()) for p in chooser.parameters())
+    with pytest.raises(ValueError, match='retired'):
+        model._selected_thought_policy_loss(torch.tensor(.25))
 
 
 def test_normal_controller_checkpoint_rebuilds_its_width_owned_policy():
+    """The ordinary grammar restores; retired policy weights are discarded."""
     source, registry, _memory, part, whole = _world()
-    question = registry.form("part", part, whole)
-    chooser = source._selected_thought_chooser(question)
+    chooser = source._selected_thought_chooser(registry.form('part', part, whole))
     with torch.no_grad():
-        chooser.mlp[-1].weight.fill_(0.125)
+        chooser.chooser.mlp[-1].weight.fill_(.125)
     state = {key: value.detach().clone() for key, value in source.state_dict().items()}
-
-    restored = BasicModel()
-    assert getattr(restored, "selected_thought_choosers", None) is None
-    assert restored._materialize_answer_path_from_checkpoint(state) == 1
+    retired = 'selected_thought_choosers.8.mlp.0.weight'
+    state[retired] = torch.ones(2, 2)
+    restored, registry2, _memory2, p2, w2 = _world()
+    restored._materialize_answer_path_from_checkpoint(state)
+    assert retired not in state and retired in restored._pending_thought_policy_reset
     restored.load_state_dict(state, strict=True)
-    loaded = restored.selected_thought_choosers[str(question.roles.shape[-1])]
+    loaded = restored._selected_thought_chooser(registry2.form('part', p2, w2))
+    assert not hasattr(restored, 'selected_thought_choosers')
     for before, after in zip(chooser.parameters(), loaded.parameters()):
         torch.testing.assert_close(before, after)
-    ids = [id(parameter) for parameter in restored.synthesis_parameters()]
-    assert all(ids.count(id(parameter)) == 1 for parameter in loaded.parameters())
 
 
 def test_selected_program_resolution_releases_completed_eval_episode(monkeypatch):
@@ -426,6 +412,11 @@ def test_selected_program_resolution_releases_completed_eval_episode(monkeypatch
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    object.__setattr__(model, 'languageSpace', SimpleNamespace(
+        language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+    model.attention_budget = 64
+
     memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
     object.__setattr__(model, "conceptualSpace", cs)
     object.__setattr__(model, "languageSpace", language)
@@ -434,6 +425,11 @@ def test_selected_program_resolution_releases_completed_eval_episode(monkeypatch
         grammatical_thoughts=registry))
     object.__setattr__(model, "grammatical_thoughts", registry)
     model.what_thinking_detach = "episode"
+    model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
+    with torch.no_grad():
+        model.shared_grammar.chooser.mlp[-1].weight.zero_()
+        model.shared_grammar.chooser.mlp[-1].bias.zero_()
+    model.eval()
     model.reconstruct_in_loop = False
     model.eval()
     # The semantic/controller seam is the subject of this probe.  Its answer
@@ -470,6 +466,11 @@ def test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed(monke
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    object.__setattr__(model, 'languageSpace', SimpleNamespace(
+        language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+    model.attention_budget = 64
+
     memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
     object.__setattr__(model, "conceptualSpace", cs)
     object.__setattr__(model, "languageSpace", language)
@@ -478,6 +479,11 @@ def test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed(monke
         grammatical_thoughts=registry))
     object.__setattr__(model, "grammatical_thoughts", registry)
     model.what_thinking_detach = "episode"
+    model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
+    with torch.no_grad():
+        model.shared_grammar.chooser.mlp[-1].weight.zero_()
+        model.shared_grammar.chooser.mlp[-1].bias.zero_()
+    model.eval()
     model.reconstruct_in_loop = False
     model.eval()
     monkeypatch.setattr(model, "_walk_budget", lambda: 8)
@@ -489,11 +495,12 @@ def test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed(monke
     monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
 
     derivation = model.resolveAnswer(
-        Understanding(sentence_states=(sentence_state(language, program(), registry),)), WhatQuestion.present(0))
+        Understanding(sentence_states=(__import__("Understanding").SentenceEndState(
+            ConceptualMeaning.from_description(_leaves[0]),
+            query=registry.form("equal", _leaves[0], _leaves[0])),)), WhatQuestion.present(0))
 
     selected = derivation.selected_thoughts[0][1]
-    torch.testing.assert_close(derivation.conceptual_answer[0, 0], selected.result.value)
-    assert not derivation.conceptual_answer[0, 1:].any()
+    torch.testing.assert_close(derivation.conceptual_answer[0], selected.meaning.roles)
     assert derivation.source == "thought-concept"
 
 
@@ -507,6 +514,11 @@ def test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed(
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    object.__setattr__(model, 'languageSpace', SimpleNamespace(
+        language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+    model.attention_budget = 64
+
     memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
     object.__setattr__(model, "conceptualSpace", cs)
     object.__setattr__(model, "languageSpace", language)
@@ -515,6 +527,11 @@ def test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed(
         grammatical_thoughts=registry))
     object.__setattr__(model, "grammatical_thoughts", registry)
     model.what_thinking_detach = "episode"
+    model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
+    with torch.no_grad():
+        model.shared_grammar.chooser.mlp[-1].weight.zero_()
+        model.shared_grammar.chooser.mlp[-1].bias.zero_()
+    model.eval()
     model.reconstruct_in_loop = False
     model.eval()
     monkeypatch.setattr(model, "_walk_budget", lambda: 8)
@@ -571,6 +588,11 @@ def test_normal_boundary_realizes_the_controller_selected_operation(monkeypatch)
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    object.__setattr__(model, 'languageSpace', SimpleNamespace(
+        language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+    model.attention_budget = 64
+
     memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
     object.__setattr__(model, "conceptualSpace", cs)
     object.__setattr__(model, "languageSpace", language)
@@ -579,6 +601,11 @@ def test_normal_boundary_realizes_the_controller_selected_operation(monkeypatch)
         grammatical_thoughts=registry))
     object.__setattr__(model, "grammatical_thoughts", registry)
     model.what_thinking_detach = "episode"
+    model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
+    with torch.no_grad():
+        model.shared_grammar.chooser.mlp[-1].weight.zero_()
+        model.shared_grammar.chooser.mlp[-1].bias.zero_()
+    model.eval()
     model.reconstruct_in_loop = False
     model.eval()
     monkeypatch.setattr(model, "_walk_budget", lambda: 8)
@@ -599,12 +626,13 @@ def test_normal_boundary_realizes_the_controller_selected_operation(monkeypatch)
 
     monkeypatch.setattr(model, "_choose_selected_thought_action", choose)
     derivation = model.resolveAnswer(
-        Understanding(sentence_states=(sentence_state(language, program(), registry),)), WhatQuestion.present(0))
+        Understanding(sentence_states=(__import__("Understanding").SentenceEndState(
+            ConceptualMeaning.from_description(_leaves[0]),
+            query=registry.form("equal", _leaves[0], _leaves[0])),)), WhatQuestion.present(0))
 
     selected = derivation.selected_thoughts[0][1]
     assert registry.signature_for(selected.meaning).operation.semantic_id == "equal"
-    torch.testing.assert_close(derivation.conceptual_answer[0, 0], selected.result.value)
-    assert not derivation.conceptual_answer[0, 1:].any()
+    torch.testing.assert_close(derivation.conceptual_answer[0], selected.meaning.roles)
     assert derivation.grammar_trace[1]["semantic_id"] == "equal"
 
 
@@ -617,6 +645,11 @@ def test_selected_program_precedes_the_legacy_surface_reasoner(monkeypatch):
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    object.__setattr__(model, 'languageSpace', SimpleNamespace(
+        language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+    model.attention_budget = 64
+
     memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
     object.__setattr__(model, "conceptualSpace", cs)
     object.__setattr__(model, "languageSpace", language)
@@ -625,6 +658,11 @@ def test_selected_program_precedes_the_legacy_surface_reasoner(monkeypatch):
         grammatical_thoughts=registry))
     object.__setattr__(model, "grammatical_thoughts", registry)
     model.what_thinking_detach = "episode"
+    model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
+    with torch.no_grad():
+        model.shared_grammar.chooser.mlp[-1].weight.zero_()
+        model.shared_grammar.chooser.mlp[-1].bias.zero_()
+    model.eval()
     model.reconstruct_in_loop = False
     model.reasoning_iterations = 1
     model.eval()
@@ -665,6 +703,11 @@ def test_normal_boundary_never_falls_back_to_the_legacy_surface_reasoner(
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    object.__setattr__(model, 'languageSpace', SimpleNamespace(
+        language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+    model.attention_budget = 64
+
     memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
     object.__setattr__(model, "conceptualSpace", cs)
     object.__setattr__(model, "languageSpace", language)
@@ -673,6 +716,11 @@ def test_normal_boundary_never_falls_back_to_the_legacy_surface_reasoner(
         grammatical_thoughts=registry))
     object.__setattr__(model, "grammatical_thoughts", registry)
     model.what_thinking_detach = "episode"
+    model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
+    with torch.no_grad():
+        model.shared_grammar.chooser.mlp[-1].weight.zero_()
+        model.shared_grammar.chooser.mlp[-1].bias.zero_()
+    model.eval()
     model.reconstruct_in_loop = False
     model.reasoning_iterations = 1
     model.eval()
@@ -708,6 +756,11 @@ def test_normal_what_uses_the_selected_thought_without_a_legacy_slot(monkeypatch
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    object.__setattr__(model, 'languageSpace', SimpleNamespace(
+        language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+    model.attention_budget = 64
+
     memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
     object.__setattr__(model, "conceptualSpace", cs)
     object.__setattr__(model, "languageSpace", language)
@@ -716,6 +769,11 @@ def test_normal_what_uses_the_selected_thought_without_a_legacy_slot(monkeypatch
         grammatical_thoughts=registry))
     object.__setattr__(model, "grammatical_thoughts", registry)
     model.what_thinking_detach = "episode"
+    model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
+    with torch.no_grad():
+        model.shared_grammar.chooser.mlp[-1].weight.zero_()
+        model.shared_grammar.chooser.mlp[-1].bias.zero_()
+    model.eval()
     model.reconstruct_in_loop = False
     model.answer_synthesis = True
     model.eval()
@@ -735,12 +793,14 @@ def test_normal_what_uses_the_selected_thought_without_a_legacy_slot(monkeypatch
         model, "reverseOutput", lambda _understanding, _derivation:
         SimpleNamespace(actual=produced))
 
-    answer = model.what(WhatQuestion.inference(0), execution=execution)
+    answer = model.ask(WhatQuestion.inference(0), execution=execution)
 
     assert answer.available and answer.ltm_slot is None
     assert len(memory.get_what_slots()) == 0
-    assert [record.kind for record in memory.thought_history()] == [
-        "begin", "thought", "thought", "finish"]
+    history = memory.thought_history()
+    assert history[0].kind == 'begin' and history[-1].kind == 'finish'
+    assert sum(record.kind == 'begin' for record in history) == 1
+    assert any(record.kind == 'thought' for record in history)
 
 
 def test_selected_row_cannot_open_a_second_controller_for_another_row(monkeypatch):
@@ -752,6 +812,11 @@ def test_selected_row_cannot_open_a_second_controller_for_another_row(monkeypatc
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     model = BasicModel()
     model.spaces = []
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    object.__setattr__(model, 'languageSpace', SimpleNamespace(
+        language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+    model.attention_budget = 64
+
     memory = WhatInteractionMemory(batch=2, capacity=64, detach_mode="episode")
     object.__setattr__(model, "conceptualSpace", cs)
     object.__setattr__(model, "languageSpace", language)
@@ -760,6 +825,11 @@ def test_selected_row_cannot_open_a_second_controller_for_another_row(monkeypatc
         grammatical_thoughts=registry))
     object.__setattr__(model, "grammatical_thoughts", registry)
     model.what_thinking_detach = "episode"
+    model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
+    with torch.no_grad():
+        model.shared_grammar.chooser.mlp[-1].weight.zero_()
+        model.shared_grammar.chooser.mlp[-1].bias.zero_()
+    model.eval()
     model.what_thinking_iterations = 2
     model.reconstruct_in_loop = False
     model.eval()

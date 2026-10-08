@@ -66,7 +66,7 @@ def test_prepared_answer_generates_more_words_than_the_captured_input(tmp_path, 
             held = replace(held, conceptual_answer=ideas)
             language = model.languageSpace
             policy = language.generate_policy
-            choice = list(language._generate_binary_names).index("chunk")
+            choice = list(language._generate_binary_names).index("synthesize")
             # Chunk is additive; its equal-child inverse halves its parent. Expand values of
             # length 1 and .5, then emit .25: four leaves in row 0, one in row 1.
             policy.weight.zero_()
@@ -258,7 +258,7 @@ def test_what_reconstructs_then_resolves_then_realizes(tmp_path, monkeypatch, ea
     try:
         with torch.no_grad():
             questions = (What.supervised(0), What.supervised(1))
-            model.what(questions, model.inputSpace.prepInput(["1 plus 2", "3 plus 4"]))
+            model.ask(questions, model.inputSpace.prepInput(["1 plus 2", "3 plus 4"]))
             construction = model._last_answer_construction
             model.reverseOutput(model._last_understanding, construction.derivation)
         assert events == ["reconstruct", "resolve", "generate", "generate"]

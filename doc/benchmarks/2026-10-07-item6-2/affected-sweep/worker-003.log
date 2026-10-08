@@ -1,0 +1,46 @@
+...........................................................FF........... [ 45%]
+........s.....................F...F..F.................................. [ 90%]
+................                                                         [100%]
+=================================== FAILURES ===================================
+_ test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward] _
+test/test_selected_relation_meaning.py:386: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm
+    assert len(store) == 1 and len(calls) == 1
+E   assert (2 == 1)
+E    +  where 2 = len(TernaryTruthStore())
+_ test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed] _
+test/test_selected_relation_meaning.py:386: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm
+    assert len(store) == 1 and len(calls) == 1
+E   assert (2 == 1)
+E    +  where 2 = len(TernaryTruthStore())
+__ test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating __
+test/test_taxonomy_boundary.py:75: in test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating
+    assert "unavailable_concept_payload" in result.incomplete
+E   AssertionError: assert 'unavailable_concept_payload' in ('capture_limit', 'work_budget')
+E    +  where ('capture_limit', 'work_budget') = ThoughtResult(semantic_id='isPart', domain='conceptual-taxonomy', result_kind='set', evidence_kind='taxonomy', request... (('referent', 2),)), ('_producing_operation', 'isPart'), ('_thought_witnesses', ())), scope=(), sentence_kind=None)})).incomplete
+_______ test_normal_entry_does_not_verify_generated_vectors_as_taxonomy ________
+test/test_taxonomy_entry.py:65: in test_normal_entry_does_not_verify_generated_vectors_as_taxonomy
+    assert len(cs._ltm_store) == 0
+E   assert 1 == 0
+E    +  where 1 = len(TernaryTruthStore())
+E    +    where TernaryTruthStore() = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...eptsFromPercepts(\n    (sigma): SigmaLayer(\n      (layer): LinearLayer()\n    )\n  )\n  (_ltm_store): TernaryTruthStore()\n)._ltm_store
+________ test_actual_model_entry_and_checkpoint_keep_taxonomy_identity _________
+test/test_taxonomy_entry.py:116: in test_actual_model_entry_and_checkpoint_keep_taxonomy_identity
+    assert after.result.evidence["path"] == before.result.evidence["path"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'path'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3394/test_actual_model_entry_and_ch0/taxonomy.pt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3394/test_actual_model_entry_and_ch0/taxonomy.pt
+=============================== warnings summary ===============================
+test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[1]
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]
+FAILED test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]
+FAILED test/test_taxonomy_boundary.py::test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating
+FAILED test/test_taxonomy_entry.py::test_normal_entry_does_not_verify_generated_vectors_as_taxonomy
+FAILED test/test_taxonomy_entry.py::test_actual_model_entry_and_checkpoint_keep_taxonomy_identity
+5 failed, 154 passed, 1 skipped, 1 warning in 8.81s

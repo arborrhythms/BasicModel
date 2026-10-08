@@ -1,0 +1,94 @@
+.F..F..................................................                  [100%]
+=================================== FAILURES ===================================
+___ test_open_relation_answer_preserves_every_member_without_another_reader ____
+
+    def test_open_relation_answer_preserves_every_member_without_another_reader():
+        """Query returns one best match and its answer needs no further read."""
+        from Output import thought_answer_meanings
+        model,registry,memory,part,whole=_catalog_world()
+        request=_stored_query(model,registry,part,whole)
+        with model._query_boundary_scope((0,)):
+            selected=model.run_selected_thought(request,work_budget=128)
+        cost=selected.work.spent
+        answers=thought_answer_meanings(selected)
+>       assert len(answers)==1
+E       assert 0 == 1
+E        +  where 0 = len(())
+
+test/test_thought_answer_adapters.py:47: AssertionError
+____ test_typed_results_survive_resolve_and_reverse_without_execution[set] _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13fa3b5c0>
+kind = 'set'
+
+    @pytest.mark.parametrize('kind', ['set', 'concept', 'subgoal'])
+    def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch, kind):
+        from contextlib import nullcontext
+        from types import SimpleNamespace
+        from Understanding import AnswerProgram, Understanding
+        from What import What
+        model, registry, memory, part, whole = _catalog_world()
+        query = registry.form('isPart', part, whole)
+        if kind == 'set':
+            query = _stored_query(model,registry,part,whole)
+        elif kind == 'concept':
+            query = registry.form('exist', registry._payload(part))
+        else:
+            from Layers import TernaryTruthStore
+            model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=16)
+            query = registry.form('ask', query)
+        entry = AnswerProgram(rows=torch.tensor([1]), word_rows=torch.tensor([1]),
+            concept_ids=torch.tensor([part[1]]), activations=torch.ones(1),
+            leaves=registry._payload(part)[None], actions=torch.tensor([[0, -1, 0]]),
+            targets=torch.tensor([-1]), end_state=torch.zeros(3, 8))
+        object.__setattr__(model, 'languageSpace', SimpleNamespace(
+            program_meaning=lambda item, _registry: query,
+            # This adapter fixture stubs every numerical synthesis operation.
+            generation_scope=nullcontext))
+        object.__setattr__(model.conceptualSpace, 'stm', SimpleNamespace(concept_dim=8))
+        model._what_grammar_context = lambda *_a, **_k: (torch.zeros(1, 8), None)
+        model._select_perceptual_bindings = lambda *_a: ()
+        model._condition_answer_on_question = lambda idea, _context, **_kwargs: idea
+        model._synthesis_guard = nullcontext
+        model.conceptualSpace.synthesize_idea = lambda idea, **_k: idea
+        object.__setattr__(model, 'perceptualSpace', SimpleNamespace(synthesize=lambda idea, **_k: idea))
+        object.__setattr__(model, 'outputSpace', SimpleNamespace(from_percepts=lambda idea: idea))
+        model.attention_budget = 128
+        model.reconstruct_in_loop = False
+        # Numerical generation is an explicit identity stub in this adapter test.
+        model._walk_operand=lambda value, **kwargs: value
+        def walk(idea, *args, **kwargs):
+            model._adapter_words=idea
+            return (idea,torch.full((len(idea),),idea.shape[1]),
+                    torch.zeros(len(idea),dtype=torch.bool),None,
+                    torch.zeros(len(idea),1,dtype=torch.long))
+        model._compiled_output_walk=lambda: walk
+        model.conceptualSpace.commit_event=lambda value: None
+        model._reverse_body=lambda sub: model._adapter_words
+        model._reverse_perceptual=lambda value: value
+        from Understanding import SentenceEndState
+        from Meaning import ConceptualMeaning
+        field = SentenceEndState(ConceptualMeaning.from_description(entry.leaves[0]), query=query)
+        understanding = Understanding(sentence_states=(field,))
+        model.eval()
+        derivation = model.resolveAnswer(understanding, What.supervised(0))
+        assert derivation.source == 'thought-' + kind
+>       assert len(derivation.answer_meanings[0]) == 1
+E       assert 0 == 1
+E        +  where 0 = len(())
+
+test/test_thought_answer_adapters.py:150: AssertionError
+=============================== warnings summary ===============================
+test/test_thought_answer_adapters.py::test_code_answer_uses_the_checked_atom_and_keeps_its_reference
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7079: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp9ix1p5l_/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_thought_answer_adapters.py::test_open_relation_answer_preserves_every_member_without_another_reader
+FAILED test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[set]
+2 failed, 53 passed, 2 warnings in 12.03s

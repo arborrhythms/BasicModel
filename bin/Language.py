@@ -27,7 +27,7 @@ from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
-from Layers import LinearLayer, InvertibleLinearLayer, AssociationLayer, MapppingLayer, ChunkLayer
+from Layers import LinearLayer, InvertibleLinearLayer, AssociationLayer, MapppingLayer
 from Layers import (CertaintyWeightedCrossEntropy, LeafDecoderHead, Loss,
                     ModelLoss, epsilon, Ops)
 from Layers import SortingLayer, TruthLayer, TernaryTruthStore, LiftingLayer, BracketExpectation, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
@@ -1716,10 +1716,14 @@ class Grammar:
     @staticmethod
     def _check_operator_availability(implementation, *, face):
         """All grammar syntaxes and implementation aliases share retirement checks."""
-        if implementation in ('exist', 'true', 'lookup', 'symbolize', 'query', 'queryPart', 'queryEqual'):
-            raise ValueError(f'{implementation} is retired; query content with what or use thought quantize')
-        if implementation in ('quantize', 'arma') and face != 'thought':
-            raise ValueError(f'{implementation} is a thought-only operator')
+        retired = {'what': 'ask (open references) or query (LTM lookup)',
+                   'lookup': 'query', 'chunk': 'synthesize; inverse analyze',
+                   'true': 'isTrue', 'queryPart': 'isPart', 'queryEqual': 'isEqual',
+                   'quantize': 'all concepts are symbolized; symbolize/conceptualize are future work',
+                   'arma': 'sentenceExpectation and gain', 'expect': 'sentenceExpectation and gain',
+                   'symbolize': 'the existing concept code; this operation remains future work'}
+        if implementation in retired:
+            raise ValueError(f'{implementation} is retired; use {retired[implementation]}')
 
     def rule_by_id(self, rule_id):
         """Return the canonical production string for a rule_id (0-based)."""
@@ -1940,6 +1944,8 @@ class Grammar:
                 func_name = func_name[:-len('.forward')]
             elif func_name.endswith('.thought'):
                 func_name = func_name[:-len('.thought')]
+            elif func_name == 'synthesize.analyze':
+                func_name = 'synthesize'
             elif func_name.endswith('.reverse'):
                 func_name = func_name[:-len('.reverse')]
             # Note: `pi` / `sigma` and other layer-name forms remain
@@ -2884,7 +2890,7 @@ class UnionLayer(GrammarLayer):
 PEEL_SUPPORT_EPS = 1e-2
 
 
-class ChunkLayer(GrammarLayer):
+class SynthesizeLayer(GrammarLayer):
     """``chunk(C, C) = left + right`` — the additive mereological sum.
 
     RENAMED from ``union`` (2026-07-05, Alec): there is no such GRAMMATICAL
@@ -2905,8 +2911,8 @@ class ChunkLayer(GrammarLayer):
     exact remainder) or :meth:`peel` (greedy matching pursuit)."""
     inverse_kind = 'residual'
     residual_scale = 1
-    rule_name        = "chunk"
-    predicate_identity = 'chunk'
+    rule_name        = "synthesize"
+    predicate_identity = 'synthesize'
     arity            = 2
     invertible       = True
     lossy            = False
@@ -2950,6 +2956,10 @@ class ChunkLayer(GrammarLayer):
         """The exact residual: ``whole - part`` (recovers the other
         operand of ``union`` to float rounding)."""
         return whole - part
+
+    def analyze(self, parent, **kwargs):
+        """Recover parts using this synthesis operator's tied inverse."""
+        return self.reverse(parent, **kwargs)
 
     def reverse(self, parent, basis=None,
                 left_rows=None, right_rows=None,
@@ -4543,11 +4553,11 @@ class _ThoughtUnaryNoopLayer(NullLayer):
 
 
 
-class WhatLayer(_ThoughtUnaryNoopLayer):
+class AskLayer(_ThoughtUnaryNoopLayer):
     scope_transparent = True
     meaning_mode = 'interrogative'
-    rule_name = 'what'
-    predicate_identity = 'what'
+    rule_name = 'ask'
+    predicate_identity = 'ask'
 
 
 
@@ -4711,7 +4721,7 @@ GRAMMAR_LAYER_CLASSES = {
     'non':          NonLayer,
     'intersection': IntersectionLayer,
     'union':        UnionLayer,
-    'chunk':        ChunkLayer,
+    'synthesize':   SynthesizeLayer,
     'sum':          SumLayer,
     'product':      ProductLayer,
     'lift':         LiftLayer,
@@ -4735,7 +4745,7 @@ GRAMMAR_LAYER_CLASSES = {
     'part':         PartLayer,
     'whole':        WholeLayer,
     'assertPart':   AssertPartLayer,
-    'what':         WhatLayer,
+    'ask':          AskLayer,
     'generic':      GenericLayer,
     'implies':      ImpliesLayer,
     'null':         NullLayer,
@@ -4846,7 +4856,7 @@ _OPERATOR_SURFACE_SCHEMAS = {
     # commutative order-free infix. chunk is the structural <PartSpace> sum.
     'sum':          T2_BINARY_INFIX,
     'product':      T2_BINARY_INFIX,
-    'chunk':        T2_BINARY_INFIX,
+    'synthesize':   T2_BINARY_INFIX,
     # Binary directional (T3): (position, marker) co-varies with a
     # recorded order bit -- the part / possessive family. ``isPart`` is
     # the role-collapsed relation name (query-dispatched) that supersedes
@@ -7242,6 +7252,51 @@ class OperationSelectionLayer(nn.Module):
         result = (action, torch.ones_like(weight), counts > 0)
         return (*result, dict(probability=weight, alternative_count=counts,
                               logits=logits)) if return_details else result
+
+    def thought_logits(self, active, requests):
+        """Thought locations use the compose scorer and its one categorical law.
+
+        Each canonical role is an existing slot. The candidate's own role
+        contents carry its operator and arguments; numeric addresses are absent.
+        The reserved fourth bracket embedding identifies the thought phase,
+        not a separate policy or an operation-specific lookup table.
+        """
+        if active.roles.shape[-1] != self.d_model:
+            raise ValueError('thought and compose must share the conceptual width')
+        if not requests:
+            raise ValueError('thought requires at least one legal candidate')
+        from ThoughtReferences import evidence_pair
+        from ThoughtFeatures import semantic_metadata
+        meanings = (active, *(active if request is None else request for request in requests))
+        metadata = semantic_metadata(meanings)
+        def payload(meaning, semantics):
+            roles = meaning.roles * meaning.role_mask.to(meaning.roles)[:, None]
+            # Both independent poles are ordinary scorer inputs. Their two
+            # positions are distinct, and no address is encoded as a number.
+            poles = roles.new_tensor(evidence_pair(meaning))[:, None].expand(2, self.d_model)
+            pad = (-semantics.numel()) % self.d_model
+            semantics = F.pad(semantics, (0, pad)).reshape(-1, self.d_model)
+            return torch.cat((roles, poles, semantics), 0).detach()
+        state = payload(active, metadata[0])[None]
+        payloads = torch.stack([payload(meaning, semantics)
+                                for meaning, semantics in zip(meanings[1:], metadata[1:])])
+        candidates = payloads.permute(1, 0, 2)[None]
+        count = len(requests)
+        indices = torch.full((count,), self.r_reduce+self.r_apply+3,
+                             dtype=torch.long, device=state.device)
+        stop, scores = self.chooser.score_unary(state, candidates,
+            self.stop_anchor, self.bracket_anchor[3:4].expand(count, -1),
+            op_indices=indices)
+        # Position features distinguish the roles; reduction pools scores,
+        # never operands or references into a replacement conceptual object.
+        def pooled(values):
+            # Padding the categorical metadata must not dilute the three
+            # semantic roles on small-width models.
+            return values[:, :3].mean(1)+values[:, 3:5].mean(1)+values[:, 5:].mean(1)
+        logits = pooled(scores)
+        stops = torch.tensor([request is None for request in requests],
+                             device=state.device, dtype=torch.bool)
+        return torch.where(stops[None], pooled(stop), logits)
 
     def reduction_pressure(self, depth, *, allowance, rounds_left):
         """Fixed load prior, using the whole stack and an inclusive deadline."""
@@ -13274,6 +13329,8 @@ class LanguageSpace(nn.Module):
                                    polarity=not child.polarity if polarity_effect == 'invert' else child.polarity),
                             constituents=child.constituents)
                         if result.mode == 'interrogative':
+                            from ThoughtReferences import question, open_slots
+                            result = question(result, open_slots(result) or (('evidence', -1),))
                             try:
                                 registry.signature_for(result)
                             except (RuntimeError, ValueError):
@@ -13320,12 +13377,16 @@ class LanguageSpace(nn.Module):
                         return None
                     values[slot] = leaves[item]
                     refs[slot] = ("sym", int(native_ids[item]))
-            return ConceptualMeaning(
+            result = ConceptualMeaning(
                 torch.stack(values), torch.tensor(
                     ["I1" in operation.operand_roles, True, "I2" in operation.operand_roles],
                     device=leaves.device),
                 mode=getattr(node[1], 'meaning_mode', None) or 'assertive',
                 role_refs=tuple(refs), constituents=tuple(children))
+            if result.mode == 'interrogative':
+                from ThoughtReferences import question
+                result = question(result, (('evidence', -1),))
+            return result
 
         return recover(semantic_tree(stack[0]))
 
@@ -14566,3 +14627,19 @@ class SymbolSpace(Space):
 # doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md) is now a REAL
 # container Space (``SymbolSpace`` above) that OWNS the SymbolSubSpace. The XML
 # config section name ``<SymbolSpace>`` is preserved unchanged.
+
+
+class ChunkLayer(SynthesizeLayer):
+    """One-release diagnostic alias for the structural operation."""
+    def __init__(self, *args, **kwargs):
+        raise ValueError('ChunkLayer is retired; use SynthesizeLayer and analyze')
+
+    @staticmethod
+    def peel(*args, **kwargs):
+        raise ValueError('ChunkLayer.peel is retired; use SynthesizeLayer.peel')
+
+
+class WhatLayer(AskLayer):
+    """One-release diagnostic alias; lexical wh words keep their spelling."""
+    def __init__(self, *args, **kwargs):
+        raise ValueError('WhatLayer is retired; use AskLayer')

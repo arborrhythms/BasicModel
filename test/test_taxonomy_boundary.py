@@ -39,8 +39,10 @@ def test_model_taxonomy_entries_skip_global_vector_proposal_setup(monkeypatch, t
     from test_ltm_consolidation import _make_model
     from test_thought_model_fixture import thought_config
     model = _make_model(thought_config(tmp_path))
+    from test_thought_model_fixture import force_requested_thought
+    force_requested_thought(model)
     try:
-        model.reasoning_iterations = model.thinking_budget = 128
+        model.reasoning_iterations = model.attention_budget = 128
         cs = model.conceptualSpace
         a, b = (("sym", cs.new_concept()) for _ in range(2))
         for ref in (a, b):
@@ -64,11 +66,14 @@ def test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating()
     cs._csw_concept_row(0, a[1])
     cs.add_whole(a[1], b)
     registry = model.grammatical_thoughts
-    query = registry.form("part", a, open_roles=("I2",))
+    query = registry.form("isPart", a, open_roles=("I2",))
     from Queries import _existing_row
     with pytest.raises(ValueError, match="no allocated payload"):
         _existing_row(cs, b)
-    result = model.reason_about(query).result
+    from QueryWork import QueryWorkBudget
+    with model._query_boundary_scope((0,)):
+        result = registry.execute(query, model._thought_grammar_context(query,
+            row=0, work=QueryWorkBudget(128), continuation=None))
     assert result.result_kind == "set" and not result.value
     assert "unavailable_concept_payload" in result.incomplete
     assert result.evidence["unavailable_references"] == (b,)

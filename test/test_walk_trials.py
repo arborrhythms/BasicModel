@@ -45,7 +45,6 @@ def test_thought_pair_keeps_one_episode_and_costs_before_policy_backward():
     from test_normal_thought_controller import _catalog_world
     model,registry,memory,part,whole=_catalog_world()
     model.train()
-    model.selected_thought_policy_weight=1.
     question=registry.form('part',part,whole)
     calls=[]
     def score(result):
@@ -61,7 +60,8 @@ def test_thought_pair_keeps_one_episode_and_costs_before_policy_backward():
     assert tuple(memory.thought_history())==result.records
     assert len([record for record in result.records if record.kind=='begin'])==1
     assert result.work.spent==memory.thought_state().work_spent
-    assert all(record[2]==result.records[0].episode for record in model._selected_thought_policy_records)
+    assert model._last_thought_score_function['surrogate'] is not None
+    assert not hasattr(model,'selected_thought_choosers')
 
 
 def test_thought_pair_tie_keeps_greedy_state_and_shared_meter():
@@ -69,7 +69,6 @@ def test_thought_pair_tie_keeps_greedy_state_and_shared_meter():
     from QueryWork import QueryWorkBudget
     model,registry,memory,part,whole=_catalog_world()
     model.train()
-    model.selected_thought_policy_weight=1.
     meter=QueryWorkBudget(20)
     meter.require('bracket',4)
     def score(result):
@@ -98,23 +97,15 @@ def test_walk_audit_records_strict_wins_and_sentence_stability():
         assert row['explore_fraction']==1.
 
 
-def test_anticipation_holds_both_walks_until_future_return():
-    from test_negative_expectation import _anticipating_model, observe
-    model, owner, meaning = _anticipating_model()
+def test_expectation_is_global_and_does_not_open_an_anticipatory_episode():
+    from test_negative_expectation import _anticipating_model
+    model,owner,meaning=_anticipating_model()
     model.train()
-    before = tuple(model._what_memory().thought_history())
+    before=tuple(model._what_memory().thought_history())
     model._stage_expectation_queries(training=True)
-    pending = owner._inter_last_meaning[0]
-    assert pending.walk is not None
-    assert tuple(model._what_memory().thought_history()) == before
-    assert pending.walk.other.versions == pending.versions
-    assert not pending.prediction.roles.requires_grad
-    assert not pending.walk.other.prediction.roles.requires_grad
-    observe(owner, meaning.roles)
-    model._expectation_policy_loss()
-    assert model._walk_audit['think.anticipation']['walks'] == 1
-    assert model._walk_audit['think.anticipation']['strict_violations'] == 0
-    assert tuple(model._what_memory().thought_history()) == before
+    assert tuple(model._what_memory().thought_history())==before
+    assert model._expectation_policy_loss() is None
+    assert owner.expect_next_meaning(0,record=False) is not None
 
 
 def test_delayed_forecast_costs_both_held_estimates_and_keeps_strict_ties():
@@ -145,11 +136,11 @@ def test_forecast_previews_publish_only_the_committed_observation():
     for _ in range(2):
         _, _, held = owner.sentence_prediction_cost([3], [meaning.roles], mask,
             layout='infix', role_masks=[meaning.role_mask])
-        assert held[0][0].comparison is not None
+        assert held[0][0].comparison is None
         assert owner._inter_last_meaning[0] is pending
         assert not owner.consume_expectation_walk_outcomes()
     owner._inter_last_meaning = held[0]
     owner.observe_stm_end_state([3], [meaning.roles], mask=mask, layout='infix',
         role_masks=[meaning.role_mask], train_prediction=False)
-    assert len(owner.consume_expectation_walk_outcomes()) == 1
+    assert owner.last_expectation_comparison(0) is not None
     assert not owner.consume_expectation_walk_outcomes()

@@ -24,12 +24,14 @@ def test_current_grammar_recovery_by_depth_training_and_chain_length(tmp_path):
         # Unallocated rows no longer invent distinct word codes. Populate
         # the five leaves with actual forms through the existing admission.
         from test_definition_rows import admit
-        for form in ('a', 'b', 'c', 'd', 'e'):
-            admit(model, form)
+        admitted=[admit(model,form) for form in ('a','b','c','d','e')]
         from Queries import _basis
-        basis = _basis(model.conceptualSpace).detach().clone()
-        model._concept_owner().prime_seen(torch.arange(5))
-        leaves = basis[:5]
+        basis = _basis(model._concept_owner()).detach().clone()
+        from Queries import _existing_row
+        rows=torch.tensor([_existing_row(model._concept_owner(),('sym',item[1])) for item in admitted])
+        model._concept_owner().prime_seen(rows)
+        leaves = basis[rows]
+        basis=leaves
         assert len(leaves) == 5 and bool((torch.pdist(leaves) > 0).all())
         records = []
         for length in (1, 2, 3, 5):

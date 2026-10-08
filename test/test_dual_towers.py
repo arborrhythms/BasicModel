@@ -51,10 +51,13 @@ def test_null_percept_key_survives_on_partspace():
 
 @pytest.mark.slow
 def test_ws_matches_ps_view_shape():
-    """The two towers present identical [8, 1024] views for the callosum."""
+    """The towers share the resolved identity event width (96+8 here)."""
     m = _build("data/MM_20M_xor.xml")
     ps, ws = m.perceptualSpace, m.wholeSpace
-    assert int(ps.nOutputDim) == int(ws.nOutputDim) == 1024
+    identity = m.cfg['PartSpace']
+    form_width = int(identity['identityPairDim']) + int(identity['identityLengthDim'])
+    assert int(ps.nOutputDim) == int(ws.nOutputDim) == form_width + ps.nWhere + ps.nWhen
+    assert int(ps.nOutputDim) == 104
 
 
 @pytest.mark.slow
@@ -144,10 +147,11 @@ def _run_one_epoch(cfg):
 
 @pytest.mark.slow
 def test_ws_routes_universe_on_parallel_path():
-    """sO>=1 parallel: WS consumes the universe view at EVERY stage."""
+    """Raw unity feeds stage zero; downstream carriers have neutral properties."""
     m = _run_one_epoch("sparse")
     stamps = [getattr(ws, "_ws_routed_source", None) for ws in m.wholeSpaces]
-    assert stamps == ["universe"] * len(stamps), stamps
+    assert len(stamps) > 1
+    assert stamps == ["universe", *["property-neutral"] * (len(stamps) - 1)], stamps
 
 
 @pytest.mark.slow
@@ -238,7 +242,7 @@ def test_pyramid_replaces_wave():
 
 
 @pytest.mark.slow
-def test_pyramid_taper_topk_selection():
+def test_pyramid_taper_topk_selection(monkeypatch):
     """C: per-order top-K taper 8/4/2/1 lands in cs.subspace.index and a
     generic materialize() pulls exactly the selected codes.
 
@@ -249,26 +253,29 @@ def test_pyramid_taper_topk_selection():
     import torch
     m = _run_one_epoch("sparse")
     cs0 = m._concept_owner()
-    settled = torch.randn(2, int(cs0.outputShape[0]),
-                          int(cs0.subspace.muxedSize))
-    raw = torch.full((2, settled.shape[1]), 65, dtype=torch.long)
-    from PerceptProperties import uniform_spans
-    spans = uniform_spans(2, raw.shape[1], raw.shape[1], device=raw.device)
-    extents = torch.tensor([[[0, raw.shape[1]]]]).expand(2, -1, -1)
-    content, acts = cs0.cs_symbolic_phase(settled, extents=extents,
-                                         percepts=(raw, spans, None, raw, spans))
-    assert acts is not None, "symbolic phase must be active"
-    idx = cs0.subspace.get_index()
-    assert idx is not None and idx.ndim == 3, "top-K selection must be staged"
-    n_sel = int(idx.shape[1])
-    K = int(getattr(cs0, "_symbolic_order", 0))
-    caps = [8, 4, 2, 1][:K + 1]
-    # Caps are CAPS, not quotas: early epochs may not mint every order.
-    assert caps[0] <= n_sel <= sum(caps), f"taper range violated: {n_sel}"
-    codes = cs0.subspace.materialize()
-    assert torch.is_tensor(codes) and codes.shape[1] == n_sel, (
-        "generic materialize() must pull exactly the selected codes")
-    assert int(codes.shape[0]) == 2, "codes are per-batch [B, n_sel, D]"
+    phase = cs0.cs_symbolic_phase
+    selections = []
+    def observe(*args, **kwargs):
+        result = phase(*args, **kwargs)
+        assert result[1] is not None, "symbolic phase must be active"
+        idx = cs0.subspace.get_index()
+        assert idx is not None and idx.ndim == 3, "top-K selection must be staged"
+        n_sel = int(idx.shape[1])
+        K = int(getattr(cs0, "_symbolic_order", 0))
+        caps = [8, 4, 2, 1][:K + 1]
+        # Caps are caps, not quotas: early epochs may not mint every order.
+        assert caps[0] <= n_sel <= sum(caps), f"taper range violated: {n_sel}"
+        codes = cs0.subspace.materialize()
+        assert torch.is_tensor(codes) and codes.shape[1] == n_sel
+        assert int(codes.shape[0]) == 4, "codes are per-batch [B, n_sel, D]"
+        selections.append(idx.detach().clone())
+        return result
+    monkeypatch.setattr(cs0, 'cs_symbolic_phase', observe)
+    # Native percept IDs and byte values occupy different tables. Capture the
+    # real read in its consumption window instead of using byte 65 as an ID.
+    with torch.no_grad():
+        m.forward(m.inputSpace.prepInput(['hello', 'world', 'loving', 'there']))
+    assert selections, "the observed forward must consume the symbolic phase"
 
 
 @pytest.mark.slow

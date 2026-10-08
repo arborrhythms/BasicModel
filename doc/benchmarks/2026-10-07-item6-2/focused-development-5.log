@@ -1,0 +1,41 @@
+.............................FF                                          [100%]
+=================================== FAILURES ===================================
+_ test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward] _
+test/test_selected_relation_meaning.py:385: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm
+    commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')
+test/reading_fixtures.py:234: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20321: in _commit_sentence
+    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtClosing.py:107: in close
+    result = model.run_selected_thought(field.query, row=row,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'run_selected_thought'
+_ test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed] _
+test/test_selected_relation_meaning.py:385: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm
+    commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')
+test/reading_fixtures.py:234: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20321: in _commit_sentence
+    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtClosing.py:107: in close
+    result = model.run_selected_thought(field.query, row=row,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'run_selected_thought'
+=============================== warnings summary ===============================
+test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_item6_2_thinking.py::test_expectation_only_credit_uses_held_next_sentence_cost
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]
+FAILED test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]
+2 failed, 29 passed, 2 deselected, 2 warnings in 3.64s

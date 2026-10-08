@@ -79,20 +79,20 @@ def _store(rows_ideas=(), rows_partof=()):
 class TestIsTrue(unittest.TestCase):
     def test_positive_trust_single_idea(self):
         r = TruthGroundedReasoner(store=_store(rows_ideas=[(IDEA_A, 0.9)]))
-        self.assertAlmostEqual(r.is_true(IDEA_A), 0.9, places=5)
+        self.assertAlmostEqual(r.is_true(r.reasoning_store().occurrence_of(0))['support_true'],0.9,places=5)
 
     def test_negative_trust_single_idea(self):
         r = TruthGroundedReasoner(store=_store(rows_ideas=[(IDEA_C, -0.8)]))
-        self.assertAlmostEqual(r.is_true(IDEA_C), -0.8, places=5)
+        self.assertAlmostEqual(r.is_true(r.reasoning_store().occurrence_of(0))['support_false'],0.8,places=5)
 
     def test_absent_idea_is_unknown(self):
         r = TruthGroundedReasoner(store=_store(rows_ideas=[(IDEA_A, 0.9)]))
-        self.assertEqual(r.is_true(IDEA_C), 0.0)
+        self.assertEqual((r.is_true(IDEA_C)['support_true'],r.is_true(IDEA_C)['support_false']),(0.,0.))
 
     def test_activation_without_fact_evidence_remains_unknown(self):
         # Concept activation does not establish that its referent exists.
         r = TruthGroundedReasoner(model=_ModelStub(dot=0.6))
-        self.assertEqual(r.is_true(IDEA_A), 0.0)
+        self.assertEqual((r.is_true(IDEA_A)['support_true'],r.is_true(IDEA_A)['support_false']),(0.,0.))
 
 
 # Discrete, pairwise-disjoint ideas: no geometric parthood holds between any
@@ -160,8 +160,8 @@ class TestGrammarOps(unittest.TestCase):
 
     def test_exist_is_isTrue(self):
         r = TruthGroundedReasoner(store=_store(rows_ideas=[(IDEA_A, 0.9)]))
-        self.assertAlmostEqual(r.exist(IDEA_A), 0.9, places=5)
-        self.assertEqual(r.exist(IDEA_A), r.is_true(IDEA_A))
+        self.assertEqual((r.exist(IDEA_A)['support_true'],r.exist(IDEA_A)['support_false']),(1.,0.))
+        self.assertAlmostEqual(r.is_true(r.reasoning_store().occurrence_of(0))['support_true'],.9,places=5)
 
     def test_equal_isomorphic_vs_norm(self):
         r = TruthGroundedReasoner()
@@ -186,17 +186,16 @@ class TestGrammarOps(unittest.TestCase):
         self.assertEqual(rel["kind"], "relation")
         self.assertAlmostEqual(rel["trust"], 0.7, places=5)
 
-    def test_quantize_snaps_to_nearest_idea(self):
-        r = TruthGroundedReasoner(store=_store(rows_ideas=[(IDEA_A, 0.9)]))
-        # A noisy near-copy of IDEA_A snaps back onto it.
-        noisy = IDEA_A + _v(0, 0, 0, 0, 0.05, 0, 0, 0)
-        snapped = r.quantize(noisy)
-        self.assertGreaterEqual(r.equal(snapped, IDEA_A), 0.99)
+    def test_quantize_raises_with_and_without_a_store(self):
+        for r in (TruthGroundedReasoner(), TruthGroundedReasoner(store=_store(rows_ideas=[(IDEA_A, .9)]))):
+            with self.assertRaisesRegex(ValueError, 'retired'):
+                r.quantize(IDEA_A)
 
-    def test_quantize_noop_without_store(self):
+    def test_retired_prediction_aliases_point_to_global_expectation(self):
         r = TruthGroundedReasoner()
-        out = r.quantize(IDEA_A)
-        self.assertAlmostEqual(r.equal(out, IDEA_A), 1.0, places=5)
+        for method in (r.arma, r.expect):
+            with self.assertRaisesRegex(ValueError, 'sentenceExpectation'):
+                method(IDEA_A)
 
 
 class TestPostureAndTrace(unittest.TestCase):

@@ -15,4 +15,4 @@ def test_copied_grammar_keeps_its_immutable_structural_thought_catalogue():
     assert part.operand_roles == ('I1', 'I2')
     registry = GrammaticalThoughtRegistry.install(_cs(), cloned)
     assert registry.descriptors['part'].semantic_id == 'part'
-    assert callable(registry.descriptors['what'].executor)
+    assert callable(registry.descriptors['ask'].executor)

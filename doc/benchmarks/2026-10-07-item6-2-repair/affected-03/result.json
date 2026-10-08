@@ -1,0 +1,236 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_item6_2_repair.py::test_saved_construction_binds_and_writes_the_child",
+    "test/test_item6_2_repair.py::test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership",
+    "test/test_item6_2_repair.py::test_multiple_roles_share_the_imported_child_without_reindexing_goal",
+    "test/test_item6_2_repair.py::test_occurrence_binding_also_carries_the_supplied_constituent_table",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference0]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference1]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference2]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference3]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference4]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference5]",
+    "test/test_item6_2_repair.py::test_nested_metadata_and_goal_local_references_are_checked_at_fill",
+    "test/test_item6_2_repair.py::test_carried_constituent_keeps_its_gradient"
+  ],
+  "completed": [
+    "test/test_item6_2_repair.py::test_saved_construction_binds_and_writes_the_child",
+    "test/test_item6_2_repair.py::test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership",
+    "test/test_item6_2_repair.py::test_multiple_roles_share_the_imported_child_without_reindexing_goal",
+    "test/test_item6_2_repair.py::test_occurrence_binding_also_carries_the_supplied_constituent_table",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference0]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference1]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference2]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference3]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference4]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference5]",
+    "test/test_item6_2_repair.py::test_nested_metadata_and_goal_local_references_are_checked_at_fill",
+    "test/test_item6_2_repair.py::test_carried_constituent_keeps_its_gradient"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/affected-03/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/affected-03/worker-000.json"
+      ],
+      "pid": 8110,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 426067240,
+      "elapsed_seconds": 3.607911334023811,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/affected-03/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item6_2_repair.py::test_saved_construction_binds_and_writes_the_child",
+        "test/test_item6_2_repair.py::test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership",
+        "test/test_item6_2_repair.py::test_multiple_roles_share_the_imported_child_without_reindexing_goal",
+        "test/test_item6_2_repair.py::test_occurrence_binding_also_carries_the_supplied_constituent_table",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference0]",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference1]",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference2]",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference3]",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference4]",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference5]",
+        "test/test_item6_2_repair.py::test_nested_metadata_and_goal_local_references_are_checked_at_fill",
+        "test/test_item6_2_repair.py::test_carried_constituent_keeps_its_gradient"
+      ],
+      "completed": [
+        "test/test_item6_2_repair.py::test_saved_construction_binds_and_writes_the_child",
+        "test/test_item6_2_repair.py::test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership",
+        "test/test_item6_2_repair.py::test_multiple_roles_share_the_imported_child_without_reindexing_goal",
+        "test/test_item6_2_repair.py::test_occurrence_binding_also_carries_the_supplied_constituent_table",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference0]",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference1]",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference2]",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference3]",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference4]",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference5]",
+        "test/test_item6_2_repair.py::test_nested_metadata_and_goal_local_references_are_checked_at_fill",
+        "test/test_item6_2_repair.py::test_carried_constituent_keeps_its_gradient"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item6_2_repair.py::test_saved_construction_binds_and_writes_the_child",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0022292500361800194,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_repair.py::test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.002509959042072296,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_repair.py::test_multiple_roles_share_the_imported_child_without_reindexing_goal",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0005182919558137655,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_repair.py::test_occurrence_binding_also_carries_the_supplied_constituent_table",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0011150420177727938,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference0]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.00034841697197407484,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference1]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0003596249734982848,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference2]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0003596249734982848,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference3]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0002946669701486826,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference4]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0002960419515147805,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference5]",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0003018750576302409,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_repair.py::test_nested_metadata_and_goal_local_references_are_checked_at_fill",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.0004945410182699561,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_repair.py::test_carried_constituent_keeps_its_gradient",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.010408499976620078,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/affected-03",
+  "elapsed_seconds": 6.460810832912102,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 426067240,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/affected-03/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/affected-03/collect.json"
+    ],
+    "pid": 8100,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 260162448,
+    "elapsed_seconds": 2.2514939580578357,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/affected-03/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_item6_2_repair.py::test_saved_construction_binds_and_writes_the_child",
+        "test/test_item6_2_repair.py::test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership",
+        "test/test_item6_2_repair.py::test_multiple_roles_share_the_imported_child_without_reindexing_goal",
+        "test/test_item6_2_repair.py::test_occurrence_binding_also_carries_the_supplied_constituent_table",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference0]",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference1]",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference2]",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference3]",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference4]",
+        "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference5]",
+        "test/test_item6_2_repair.py::test_nested_metadata_and_goal_local_references_are_checked_at_fill",
+        "test/test_item6_2_repair.py::test_carried_constituent_keeps_its_gradient"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

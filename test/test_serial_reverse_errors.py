@@ -81,14 +81,14 @@ def test_recommender_path_still_runs_with_basis():
 
 def test_real_inverses_untouched():
     """(b): rules with faithful reverses keep working."""
-    from Language import TenseLayer, ChunkLayer, GenericLayer
+    from Language import TenseLayer, SynthesizeLayer, GenericLayer
     from Spaces import event_when_encoding
     enc = event_when_encoding(4)
     head = torch.randn(1, 1, 4)
     x = torch.cat([head, enc.encode(1000).expand(1, 1, -1)], dim=-1)
     t = TenseLayer(); t.set_op("PAST")
     assert torch.allclose(t.reverse(t.forward(x)), x, atol=1e-5)
-    fu = ChunkLayer()
+    fu = SynthesizeLayer()
     p = torch.randn(2, 3, 8)
     left, right = fu.reverse(p)
     assert torch.equal(fu.compose(left, right), p)

@@ -1,12 +1,11 @@
 # Thought operators across compose, thought, and generate
 
-Status: corrected design contract and implemented grammar-loader/registry
-foundation (Alec directive 2026-09-19). Normal-controller, learned-policy and
-end-to-end generation integration remain pending. This file retains its
-original path so the item-0 link remains stable. It replaces the earlier,
-incorrect premise that a structural
-`<compose>`/`<generate>` declaration by itself authorizes post-composition
-thought.
+Status: historical foundation, superseded by [item 6.2 thinking](2026-10-07-thinking.md)
+for open references, the shared grammar scorer, paired credit, inference rows
+and operation names. Grammar-loader/registry and ordinary-history integration
+are implemented; learned utility is limited to the recorded receipts. This
+path remains stable for the original item-0 reference. A structural
+`<compose>`/`<generate>` declaration alone does not authorize a thought.
 
 ## 1. Principle
 

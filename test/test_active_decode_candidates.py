@@ -84,18 +84,18 @@ def test_radix_ws_decode_searches_bound_active_intersection_with_remap():
 
 
 def test_chunk_reverse_and_peel_preserve_active_prefix_row_ids():
-    from Language import ChunkLayer
+    from Language import SynthesizeLayer
 
     cb = _PrefixCodebook(
         [[0.8, 0.1], [0.0, 1.0], [0.2, 0.2], [1.0, 0.0]], active=2)
     whole = torch.tensor([1.0, 0.0])
-    chunk = ChunkLayer(nInput=2, nOutput=2)
+    chunk = SynthesizeLayer(nInput=2, nOutput=2)
 
-    part, _residual = chunk.reverse(whole, basis=cb)
+    part, _residual = chunk.analyze(whole, basis=cb)
     assert torch.equal(part, cb.active_prototypes()[0])
 
     # An explicit set containing only a reserved id has no real candidate.
-    part, residual = chunk.reverse(
+    part, residual = chunk.analyze(
         whole, basis=cb, left_rows=torch.tensor([3]))
     assert torch.equal(part, whole)
     assert torch.equal(residual, torch.zeros_like(whole))

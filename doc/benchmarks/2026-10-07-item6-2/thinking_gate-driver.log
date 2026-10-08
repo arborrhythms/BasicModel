@@ -1,0 +1,14 @@
+[collect] 23 selectors; limit 1800s, 8.0 GiB
+[collect] exit 0; 3.7s; peak 0.41 GiB
+[worker-000] 47 selectors; limit 1800s, 8.0 GiB
+[worker-000] exit 1; 27.6s; peak 2.22 GiB
+Result: test_failure, exit 1; 47/47 cases completed.
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2/thinking-gate/result.json
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2/thinking_gate.py", line 46, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2/thinking_gate.py", line 42, in main
+    print(json.dumps(dict(exit_code=code,reason=result['reason'],selected=len(result['selected']),completed=len(result['completed']))))
+                                                ~~~~~~^^^^^^^^^^
+TypeError: 'PosixPath' object is not subscriptable

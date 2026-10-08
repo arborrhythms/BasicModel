@@ -40,7 +40,7 @@ _FORBIDDEN_STATE_TOKENS = {
 # compose/generate faces and join their checked thought descriptors only at a
 # completed boundary.
 _REQUIRED_OPS = {
-    "part", "whole", "equal", "what",
+    "part", "whole", "equal", "ask",
     "not", "non",
     "conjunction", "disjunction", "intersection", "union",
     "lift", "verb", "adverb", "lower",

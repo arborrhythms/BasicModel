@@ -83,7 +83,8 @@ class ThoughtRecord:
             "retrieval",
             "concept-codebook",
             "conceptual-identity",
-            "subgoal",
+            "subgoal", "definition", "implication", "containment", "truth",
+            "presence", "conceptual-presence", "gain",
         ):
             raise ValueError("unknown thought evidence kind")
         if self.result is not None:
@@ -329,7 +330,7 @@ class LevelledThoughtHistory:
         frames, seen = [], set()
         for record in reversed(self.thought_window(b=b, limit=limit)):
             result = record.result
-            if result is None or result.semantic_id != 'what':
+            if result is None or result.semantic_id not in ('ask', 'query'):
                 continue
             for frame in result.evidence.get('frames', ()):
                 reference = frame['occurrence']

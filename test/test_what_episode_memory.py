@@ -154,7 +154,7 @@ def test_standalone_memory_serves_think_without_sentence_prediction(memory_confi
         m.forward(x)                                 # sizes the memory to the batch
     assert memory.batch == 2
     with torch.no_grad():
-        answers = m.what((What.supervised(0), What.supervised(1)), x)
+        answers = m.ask((What.supervised(0), What.supervised(1)), x)
     assert len(answers) == 2 and all(a.available for a in answers)
     # One complete slot per row, recorded in the standalone memory.
     for b in range(2):
@@ -174,7 +174,7 @@ def test_reset_clears_the_standalone_memory_at_epoch_start(memory_config):
     memory = m._what_memory()
     x, _ = _batch(m, rows=1)
     with torch.no_grad():
-        m.what(What.supervised(0), x)
+        m.ask(What.supervised(0), x)
     assert len(memory.get_what_slots(b=0)) == 1
     opt = m.getOptimizer(lr=1e-3)
     m.runEpoch(optimizer=opt, batchSize=2, split="train", max_batches=1)

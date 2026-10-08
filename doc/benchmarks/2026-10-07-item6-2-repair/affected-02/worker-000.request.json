@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_dual_towers.py::test_pyramid_taper_topk_selection"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/affected-02/worker-000.recycle.json"
+}

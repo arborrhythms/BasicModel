@@ -1,0 +1,41 @@
+.........................F.................                              [100%]
+=================================== FAILURES ===================================
+__ test_public_reasoning_uses_one_completed_boundary_and_episode[think_about] __
+
+entry = 'think_about'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x121402a80>
+
+    @pytest.mark.parametrize("entry", ["reason_about", "think_about"])
+    def test_public_reasoning_uses_one_completed_boundary_and_episode(entry, monkeypatch):
+        model, registry, memory, part, whole = _catalog_world()
+        model.reasoning_iterations = model.attention_budget = 64
+        question = registry.form("isPart", part, whole)
+        calls = []
+        run = model.run_selected_thought
+    
+        def checked(meaning, **kwargs):
+            model._assert_query_boundary(kwargs.get("row", 0))
+            calls.append(meaning)
+            return run(meaning, **kwargs)
+    
+        monkeypatch.setattr(model, "run_selected_thought", checked)
+        result = getattr(model, entry)(question)
+    
+>       assert isinstance(result, SelectedThoughtResult)
+E       assert False
+E        +  where False = isinstance(None, SelectedThoughtResult)
+
+test/test_unified_thought_controller.py:26: AssertionError
+=============================== warnings summary ===============================
+test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7079: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp49lxtsic/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[think_about]
+1 failed, 42 passed, 2 warnings in 11.44s

@@ -1,0 +1,62 @@
+........................................................................ [ 62%]
+................................F...........                             [100%]
+=================================== FAILURES ===================================
+_ test_completed_compose_program_enters_normal_controller_before_legacy_thinking _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x126c82930>
+
+    def test_completed_compose_program_enters_normal_controller_before_legacy_thinking(
+            monkeypatch):
+        from test_selected_relation_meaning import _program_owner
+    
+        cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+            _program_owner(monkeypatch, interrogative=True))
+        registry = GrammaticalThoughtRegistry.install(cs, grammar)
+        model = BasicModel()
+        model.spaces = []
+        model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+        object.__setattr__(model, 'languageSpace', SimpleNamespace(
+            language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+        model.attention_budget = 64
+    
+        memory = WhatInteractionMemory(batch=1, capacity=32, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", cs)
+        object.__setattr__(model, "languageSpace", language)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            languageSpace=language, what_memory=memory,
+            grammatical_thoughts=registry))
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        model.what_thinking_detach = "episode"
+        model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
+        with torch.no_grad():
+            model.shared_grammar.chooser.mlp[-1].weight.zero_()
+            model.shared_grammar.chooser.mlp[-1].bias.zero_()
+        model.eval()
+    
+        with model._query_boundary_scope((0,)):
+            selected = model._run_selected_sentence_thoughts(
+                (sentence_state(language, program(), registry),), work_budget=16)
+    
+        assert len(selected) == 1
+        row, result = selected[0]
+>       assert row == 0 and result.meaning.mode == "interrogative"
+E       AssertionError: assert (0 == 0 and 'assertive' == 'interrogative'
+E         
+E         - interrogative
+E         + assertive)
+
+test/test_normal_thought_controller.py:288: AssertionError
+=============================== warnings summary ===============================
+test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_query_vp_boundaries.py::test_converse_only_interface_still_dispatches_canonical_roles
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_normal_thought_controller.py::test_completed_compose_program_enters_normal_controller_before_legacy_thinking
+1 failed, 115 passed, 2 warnings in 3.91s

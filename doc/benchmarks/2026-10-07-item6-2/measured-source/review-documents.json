@@ -1,0 +1,21 @@
+{
+  "doc/AccessibleMind.md": "de76f6c343a5f43b7fe42db45bc604a0de0e52c6526933dded583fa9a9ecb38c",
+  "doc/QueryContracts.md": "2b3ec1e3233e1917ef9d6ba84055e10778c8fc9be30d6c1256ff5d489ca232a8",
+  "doc/Reasoning.md": "57ec3b930683d6553660117b2e4a770e73b5745dd30b19997c6b34752130d434",
+  "doc/ThoughtHistory.md": "8865bb649f9091d279cfe62c38ac0667310fa7574dad845aa3b6f6168805c886",
+  "doc/benchmarks/2026-10-07-item6-2/README.md": "f7c10df9773707a5f0163ad972cf48f9680d42f48498ee965e4b5b620f48f284",
+  "doc/benchmarks/2026-10-07-item6-2/constituent-diagnostic.json": "59669cbca6809fa1dec34328d393a85db3a211d79d78d89c886635c3f2e53c1e",
+  "doc/benchmarks/2026-10-07-item6-2/diagnose_constituent.py": "0e3d8dae701908a311dec087479513f00fecf39d14f0c38b94e44c9d8a9dd1d5",
+  "doc/benchmarks/2026-10-07-item6-2/finalize_review_hold.py": "52c2554c25882e64828fe2117e4127cb197943ea05d47af91afe10f99ca60adb",
+  "doc/benchmarks/2026-10-07-item6-2/review-blockers.md": "bbf952815024adb44ae3db37ec07d47309869c745023cbe57fd7619bd06cf884",
+  "doc/benchmarks/2026-10-07-item6-2/review-summary.json": "604a973c453659e23a3230825849c2d7ed4e352b6815cf5f9a827125c0f92010",
+  "doc/benchmarks/2026-10-07-item6-2/thinking-failures.json": "0fc8e927fb2c38e9dbb8032b31c635ea3458b4e0c57e2e3c701ab585f4111611",
+  "doc/benchmarks/2026-10-07-thinking-toy/README.md": "de8ff22dabbf7efca28dbc3aad232618559adadd3d44cbcbbbf5a5dfccb78ec9",
+  "doc/benchmarks/2026-10-07-thinking-toy/sim_free_conclude.py": "bc03eee5745a488d7006165689a352f6f5caa77cf028953d716611f233937234",
+  "doc/benchmarks/2026-10-07-thinking-toy/sim_open_reference.py": "8f3f860d3a8c31a27ae73f4b55db0ed11adcd7433a509d0bb1c1fcaf39e46ee5",
+  "doc/plans/2026-10-07-thought-loop.md": "ca032180222eeadb07ba4508d518022ab933fa9595ff1dd3802d5f0f484a4585",
+  "doc/specs/2026-09-18-thought-operations-in-compose.md": "831d46b7025b3b5f4e803da8a77308a803cf5effb64ef182858d8728be0c2bac",
+  "doc/specs/2026-09-29-operator-catalogue.md": "6d1071e44fd83e65343d9e13a7211327240ab7527d0a925ee36dc508e1431705",
+  "doc/specs/2026-10-07-thinking.md": "bca528fb66010c26b17684e94124633d5939cfa2549cca541a8251589bf3a1e7",
+  "todo.md": "a935d6782af6343c7ebdba375286fa5949c0f21755247d414c73f8796d310423"
+}

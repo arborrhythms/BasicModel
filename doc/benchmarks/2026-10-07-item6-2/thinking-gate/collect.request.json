@@ -1,0 +1,31 @@
+{
+  "selectors": [
+    "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys",
+    "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung",
+    "test/test_dual_towers.py::test_pyramid_replaces_wave",
+    "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+    "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules",
+    "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry",
+    "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+    "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+    "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+    "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+    "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes",
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+    "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+    "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+    "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+    "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+    "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+    "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+    "test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+    "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "test/test_item6_2_thinking.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

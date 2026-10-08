@@ -1,0 +1,704 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_item6_2_repair.py::test_saved_construction_binds_and_writes_the_child",
+    "test/test_item6_2_repair.py::test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership",
+    "test/test_item6_2_repair.py::test_multiple_roles_share_the_imported_child_without_reindexing_goal",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference0]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference1]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference2]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference3]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference4]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference5]",
+    "test/test_item6_2_repair.py::test_nested_metadata_and_goal_local_references_are_checked_at_fill",
+    "test/test_item6_2_repair.py::test_carried_constituent_keeps_its_gradient",
+    "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+    "test/test_item6_2_thinking.py::test_open_reference_kinds_and_bound_surface",
+    "test/test_item6_2_thinking.py::test_conclude_gate_and_exhaustion_question",
+    "test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit",
+    "test/test_item6_2_thinking.py::test_credit_sign_and_exact_tie",
+    "test/test_item6_2_thinking.py::test_not_exchanges_both_poles_and_preserves_content",
+    "test/test_item6_2_thinking.py::test_operations_all_declare_pairs_and_ast_never_returns_scalar",
+    "test/test_item6_2_thinking.py::test_nested_ask_returns_the_binding_and_shares_budget",
+    "test/test_item6_2_thinking.py::test_negative_image_concludes_absence_with_confidence",
+    "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+    "test/test_item6_2_thinking.py::test_expectation_only_credit_uses_held_next_sentence_cost",
+    "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+    "test/test_item6_2_thinking.py::test_expectation_credit_moves_shared_chooser_toward_the_completed_chain",
+    "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+    "test/test_item6_2_thinking.py::test_document_end_flushes_answer_work_credit_without_a_future_target",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+    "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+    "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[bind]",
+    "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
+    "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity",
+    "test/test_dual_towers.py::test_perceptualspace_class_removed",
+    "test/test_dual_towers.py::test_null_percept_key_survives_on_partspace",
+    "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+    "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry",
+    "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys",
+    "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules",
+    "test/test_dual_towers.py::test_dual_forward_signatures",
+    "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+    "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+    "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+    "test/test_dual_towers.py::test_pyramid_replaces_wave",
+    "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+    "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung",
+    "test/test_frozen_concepts.py::test_frozen_no_forming",
+    "test/test_frozen_concepts.py::test_others_can_reference_frozen",
+    "test/test_frozen_concepts.py::test_frozen_weights_no_grad",
+    "test/test_frozen_concepts.py::test_frozen_no_forgetting",
+    "test/test_frozen_concepts.py::test_mint_frozen_idempotent",
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+    "test/test_priming_energy.py::test_edges_exposed_undirected",
+    "test/test_priming_energy.py::test_energy_transfers_not_amplifies",
+    "test/test_priming_energy.py::test_successive_primes_propagate_further",
+    "test/test_priming_energy.py::test_zero_spread_is_pure_decay_bump",
+    "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+    "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+    "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+    "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+    "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+    "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration"
+  ],
+  "completed": [
+    "test/test_item6_2_repair.py::test_saved_construction_binds_and_writes_the_child",
+    "test/test_item6_2_repair.py::test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership",
+    "test/test_item6_2_repair.py::test_multiple_roles_share_the_imported_child_without_reindexing_goal",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference0]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference1]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference2]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference3]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference4]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference5]",
+    "test/test_item6_2_repair.py::test_nested_metadata_and_goal_local_references_are_checked_at_fill",
+    "test/test_item6_2_repair.py::test_carried_constituent_keeps_its_gradient",
+    "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+    "test/test_item6_2_thinking.py::test_open_reference_kinds_and_bound_surface",
+    "test/test_item6_2_thinking.py::test_conclude_gate_and_exhaustion_question",
+    "test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit",
+    "test/test_item6_2_thinking.py::test_credit_sign_and_exact_tie",
+    "test/test_item6_2_thinking.py::test_not_exchanges_both_poles_and_preserves_content",
+    "test/test_item6_2_thinking.py::test_operations_all_declare_pairs_and_ast_never_returns_scalar",
+    "test/test_item6_2_thinking.py::test_nested_ask_returns_the_binding_and_shares_budget",
+    "test/test_item6_2_thinking.py::test_negative_image_concludes_absence_with_confidence",
+    "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+    "test/test_item6_2_thinking.py::test_expectation_only_credit_uses_held_next_sentence_cost",
+    "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+    "test/test_item6_2_thinking.py::test_expectation_credit_moves_shared_chooser_toward_the_completed_chain",
+    "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+    "test/test_item6_2_thinking.py::test_document_end_flushes_answer_work_credit_without_a_future_target",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+    "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+    "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[bind]",
+    "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
+    "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity",
+    "test/test_dual_towers.py::test_perceptualspace_class_removed",
+    "test/test_dual_towers.py::test_null_percept_key_survives_on_partspace",
+    "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+    "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry",
+    "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys",
+    "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules",
+    "test/test_dual_towers.py::test_dual_forward_signatures",
+    "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+    "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+    "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+    "test/test_dual_towers.py::test_pyramid_replaces_wave",
+    "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+    "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung",
+    "test/test_frozen_concepts.py::test_frozen_no_forming",
+    "test/test_frozen_concepts.py::test_others_can_reference_frozen",
+    "test/test_frozen_concepts.py::test_frozen_weights_no_grad",
+    "test/test_frozen_concepts.py::test_frozen_no_forgetting",
+    "test/test_frozen_concepts.py::test_mint_frozen_idempotent",
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+    "test/test_priming_energy.py::test_edges_exposed_undirected",
+    "test/test_priming_energy.py::test_energy_transfers_not_amplifies",
+    "test/test_priming_energy.py::test_successive_primes_propagate_further",
+    "test/test_priming_energy.py::test_zero_spread_is_pure_decay_bump",
+    "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+    "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+    "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+    "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+    "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+    "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration"
+  ],
+  "slow_selected": [
+    "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+    "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry",
+    "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys",
+    "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules",
+    "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+    "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+    "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+    "test/test_dual_towers.py::test_pyramid_replaces_wave",
+    "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+    "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung",
+    "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+    "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+    "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+    "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+    "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+    "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+    "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_saved_construction_binds_and_writes_the_child",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002157708047889173,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0025005409261211753,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_multiple_roles_share_the_imported_child_without_reindexing_goal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005137920379638672,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003935829736292362,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034004205372184515,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036629196256399155,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003255839692428708,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference4]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003095000283792615,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference5]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003338750684633851,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_nested_metadata_and_goal_local_references_are_checked_at_fill",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.000530333025380969,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_carried_constituent_keeps_its_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01165016705635935,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.024028125102631748,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_reference_kinds_and_bound_surface",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0066864159889519215,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_conclude_gate_and_exhaustion_question",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00886070798151195,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08062487503048033,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_credit_sign_and_exact_tie",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001990000018849969,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_not_exchanges_both_poles_and_preserves_content",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007199250045232475,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_operations_all_declare_pairs_and_ast_never_returns_scalar",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0012796670198440552,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_nested_ask_returns_the_binding_and_shares_budget",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015287833055481315,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_negative_image_concludes_absence_with_confidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00790354108903557,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.017733750049956143,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_expectation_only_credit_uses_held_next_sentence_cost",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007636499940417707,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.022284875041805208,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_expectation_credit_moves_shared_chooser_toward_the_completed_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.023730749962851405,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006626416929066181,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008110709022730589,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00845854205545038,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008020290988497436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.008020875044167042,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_document_end_flushes_answer_work_credit_without_a_future_target",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006121458951383829,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.015518542029894888,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.019274874939583242,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010238875052891672,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[bind]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004382124985568225,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0008276670705527067,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.007482958026230335,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_perceptualspace_class_removed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 8.537503890693188e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_null_percept_key_survives_on_partspace",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 7.650000043213367e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.403506957925856,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_subsymbolic_passes_keep_the_same_native_geometry",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.25409545795992017,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_default_expectation_adds_only_its_owned_checkpoint_keys",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05320791690610349,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_space_is_the_single_structural_owner_of_slot_modules",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002129000029526651,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_dual_forward_signatures",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010104209650307894,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.4975237910402939,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.433s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routing_after_serial_migration",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.571690250071697,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 1.243s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_written_order0_words_are_present_after_one_smoke_epoch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3225952499778941,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.133s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n{'present_word': 'hello', 'extent_pair': [[1.0, 0.0]], 'symbol_pair': [1.0, 0.0]}\n{'present_word': 'loving', 'extent_pair': [[1.0, 0.0]], 'symbol_pair': [1.0, 0.0]}\n{'present_word': 'there', 'extent_pair': [[1.0, 0.0]], 'symbol_pair': [1.0, 0.0]}\n{'present_word': 'world', 'extent_pair': [[1.0, 0.0]], 'symbol_pair': [1.0, 0.0]}\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_replaces_wave",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.20112520805560052,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.133s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.21641412505414337,
+      "message": "test/test_dual_towers.py:277: in test_pyramid_taper_topk_selection\n    m.forward(m.inputSpace.prepInput(['hello', 'world']))\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8231: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23415: in _forward_per_stage\n    in_sub = self._lex_embed_stem(inputData)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13155: in _lex_embed_stem\n    stage_input(self)\nbin/ModelAttention.py:214: in stage_input\n    prior=BracketKeys._codebook_retrieval_prior(keys[:, :live_width],rows,model._last_gist[None],boosts)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Attention.py:396: in _codebook_retrieval_prior\n    sim = sim * (bv[:,None] if bv.ndim == 2 else bv)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: The size of tensor a (2) must match the size of tensor b (4) at non-singleton dimension 0",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.132s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_grads_reach_every_rung",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.36192108306568116,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.133s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.161s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.159s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_frozen_no_forming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0025380420265719295,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_others_can_reference_frozen",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022297920659184456,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_frozen_weights_no_grad",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0032555420184507966,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_frozen_no_forgetting",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0025263329735025764,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_mint_frozen_idempotent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001998166902922094,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_set_reading_primes_the_concept",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06720612500794232,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_edges_exposed_undirected",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0026355000445619226,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_energy_transfers_not_amplifies",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002628750051371753,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_successive_primes_propagate_further",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002906750072725117,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_zero_spread_is_pure_decay_bump",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0028325840830802917,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_priming_spread_knob_stamped",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.06708525004796684,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_cs_to_ps_projection_live",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.4784886660054326,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.133s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.141s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.140s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.138s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.137s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_cs_to_ws_projection_live",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.47948724997695535,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.132s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.141s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.140s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.138s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.138s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_projection_bounded_across_epochs",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.894008000032045,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.132s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.140s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.139s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.138s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.137s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.140s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.139s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.138s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.137s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.139s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.139s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_one_canonical_surface_per_tower",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.20058070798404515,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.132s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_priming_rows_carry_abstraction_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.1993599160341546,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.130s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003540839534252882,
+      "message": "",
+      "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_query_reasoning.ckpt, starting fresh\r\n"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.1686855000443757,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.851s; word units 100.0% of 30 words (letters-only 100.0% of 30).\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

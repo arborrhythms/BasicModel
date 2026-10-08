@@ -1,0 +1,263 @@
+............................................F........................... [ 62%]
+....................................F.FF...                              [100%]
+=================================== FAILURES ===================================
+_________ test_open_part_form_executes_a_taxonomy_set_without_an_alias _________
+
+    def test_open_part_form_executes_a_taxonomy_set_without_an_alias():
+        """A grammar-open role selects the old neighbor result through ``part``."""
+        from Queries import (
+            GrammaticalThoughtRegistry, ThoughtConceptualCapability,
+            ThoughtGrammarContext, ThoughtTaxonomyCapability,
+        )
+        from QueryWork import QueryWorkBudget
+    
+        space = _cs()
+        grammar = Grammar()
+        grammar.load_from_grammar_file('complete.grammar')
+        registry = GrammaticalThoughtRegistry.install(space, grammar)
+        part, whole = ("sym", space.new_concept()), ("sym", space.new_concept())
+        for reference in (part, whole):
+            space._csw_concept_row(0, reference[1])
+        space.add_whole(part[1], whole)
+        # I1 is the unknown part; I2 carries the known whole.
+        request = registry.form("isPart", whole, open_roles=("I1",))
+        context = ThoughtGrammarContext(
+            word_stream=(), conceptual_space=ThoughtConceptualCapability(
+                space, lambda left, right: float(torch.allclose(left, right))),
+            primed_symbols=(), ltm=object(), taxonomy=ThoughtTaxonomyCapability(space),
+            work=QueryWorkBudget(16), continuation=None, boundary=lambda _row: None)
+    
+        result = registry.execute(request, context)
+        assert result.result_kind == "set"
+        assert result.evidence_kind == "taxonomy"
+>       assert any(item["reference"] == part for item in result.value)
+E       assert False
+E        +  where False = any(<generator object test_open_part_form_executes_a_taxonomy_set_without_an_alias.<locals>.<genexpr> at 0x12832c930>)
+
+test/test_thought_operation_catalog.py:295: AssertionError
+____________ test_open_question_and_nested_what_spare_the_same_role ____________
+
+    def test_open_question_and_nested_what_spare_the_same_role():
+        from Queries import QueryWorkBudget
+        model, discourse, meaning = _anticipating_model()
+        registry = model.grammatical_thoughts
+        source, whole = meaning.role_refs[0], meaning.role_refs[2]
+>       question = registry.form("part", whole, open_roles=("I1",))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_negative_expectation.py:325: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x12b0cbd10>
+semantic_id = 'part', open_roles = ('I1',), mode = 'interrogative'
+polarity = True, bindings = (), scope = (), context = None
+arguments = (('sym', 13),)
+
+    def form(self, semantic_id, *arguments, open_roles=(),
+             mode='interrogative', polarity=True, bindings=(), scope=(),
+             context=None):
+        """Form a canonical thought request without executing or allocating.
+    
+        Open roles are explicit structural role labels.  Thus a one-argument
+        ``part`` call with ``open_roles=('I1',)`` is the former ``parts``
+        behavior, but it retains the same semantic identity and VP.
+        """
+        retired = {'what': 'ask (thought) or query (LTM)', 'lookup': 'query',
+            'chunk': 'synthesize / analyze', 'quantize': 'future symbolization',
+            'arma': 'sentenceExpectation / gain', 'expect': 'sentenceExpectation / gain', 'true': 'isTrue'}
+        if semantic_id in retired:
+            raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+        operation, form = self._operation_form(semantic_id)
+        descriptor = self.descriptors.get(operation.semantic_id)
+        if descriptor is None:
+            if operation.semantic_id in self.unavailable_operation_ids:
+                raise RuntimeError(
+                    f'thought operation {semantic_id!r} is unavailable: '
+                    f'{self.unavailable_reason}')
+            raise ValueError(
+                f'structural thought operation {semantic_id!r} has no executor')
+        surface_roles = tuple(form.operand_roles)
+        try:
+            open_roles = tuple(open_roles)
+        except TypeError as error:
+            raise TypeError('thought open roles must be an iterable of role labels') from error
+        if (len(set(open_roles)) != len(open_roles)
+                or not set(open_roles).issubset(surface_roles)):
+            raise ValueError('thought open roles must be unique declared operand roles')
+        surface_occupied_roles = tuple(
+            role for role in surface_roles if role not in open_roles)
+        if len(arguments) != len(surface_occupied_roles):
+            raise ValueError(
+                f'thought operation {semantic_id!r} requires {len(surface_occupied_roles)} '
+                'bound operands for its requested open-role mask')
+        supplied = dict(zip(surface_occupied_roles, arguments))
+        source_by_canonical_role = dict(zip(operation.operand_roles,
+                                            form.permutation))
+        canonical_open_roles = tuple(
+            role for role in operation.operand_roles
+            if source_by_canonical_role[role] in open_roles)
+        if canonical_open_roles and not (
+                descriptor.open_operands and len(canonical_open_roles) == 1):
+>           raise ValueError(
+                f'thought operation {semantic_id!r} has no executable open-role form')
+E           ValueError: thought operation 'part' has no executable open-role form
+
+bin/Queries.py:1980: ValueError
+____ test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1] _____
+
+budget = 1
+
+    @pytest.mark.parametrize("budget", [1, 64])
+    def test_nested_object_mask_reads_a_later_thought_on_the_shared_budget(budget):
+        from QueryWork import QueryWorkBudget
+        model, discourse, meaning = _anticipating_model()
+        observe(discourse, meaning.roles)
+        registry = model.grammatical_thoughts
+>       question = registry.form("part", meaning.role_refs[2], open_roles=("I1",))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_negative_expectation.py:366: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x12b140e30>
+semantic_id = 'part', open_roles = ('I1',), mode = 'interrogative'
+polarity = True, bindings = (), scope = (), context = None
+arguments = (('sym', 13),)
+
+    def form(self, semantic_id, *arguments, open_roles=(),
+             mode='interrogative', polarity=True, bindings=(), scope=(),
+             context=None):
+        """Form a canonical thought request without executing or allocating.
+    
+        Open roles are explicit structural role labels.  Thus a one-argument
+        ``part`` call with ``open_roles=('I1',)`` is the former ``parts``
+        behavior, but it retains the same semantic identity and VP.
+        """
+        retired = {'what': 'ask (thought) or query (LTM)', 'lookup': 'query',
+            'chunk': 'synthesize / analyze', 'quantize': 'future symbolization',
+            'arma': 'sentenceExpectation / gain', 'expect': 'sentenceExpectation / gain', 'true': 'isTrue'}
+        if semantic_id in retired:
+            raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+        operation, form = self._operation_form(semantic_id)
+        descriptor = self.descriptors.get(operation.semantic_id)
+        if descriptor is None:
+            if operation.semantic_id in self.unavailable_operation_ids:
+                raise RuntimeError(
+                    f'thought operation {semantic_id!r} is unavailable: '
+                    f'{self.unavailable_reason}')
+            raise ValueError(
+                f'structural thought operation {semantic_id!r} has no executor')
+        surface_roles = tuple(form.operand_roles)
+        try:
+            open_roles = tuple(open_roles)
+        except TypeError as error:
+            raise TypeError('thought open roles must be an iterable of role labels') from error
+        if (len(set(open_roles)) != len(open_roles)
+                or not set(open_roles).issubset(surface_roles)):
+            raise ValueError('thought open roles must be unique declared operand roles')
+        surface_occupied_roles = tuple(
+            role for role in surface_roles if role not in open_roles)
+        if len(arguments) != len(surface_occupied_roles):
+            raise ValueError(
+                f'thought operation {semantic_id!r} requires {len(surface_occupied_roles)} '
+                'bound operands for its requested open-role mask')
+        supplied = dict(zip(surface_occupied_roles, arguments))
+        source_by_canonical_role = dict(zip(operation.operand_roles,
+                                            form.permutation))
+        canonical_open_roles = tuple(
+            role for role in operation.operand_roles
+            if source_by_canonical_role[role] in open_roles)
+        if canonical_open_roles and not (
+                descriptor.open_operands and len(canonical_open_roles) == 1):
+>           raise ValueError(
+                f'thought operation {semantic_id!r} has no executable open-role form')
+E           ValueError: thought operation 'part' has no executable open-role form
+
+bin/Queries.py:1980: ValueError
+____ test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64] ____
+
+budget = 64
+
+    @pytest.mark.parametrize("budget", [1, 64])
+    def test_nested_object_mask_reads_a_later_thought_on_the_shared_budget(budget):
+        from QueryWork import QueryWorkBudget
+        model, discourse, meaning = _anticipating_model()
+        observe(discourse, meaning.roles)
+        registry = model.grammatical_thoughts
+>       question = registry.form("part", meaning.role_refs[2], open_roles=("I1",))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_negative_expectation.py:366: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x12b0ad520>
+semantic_id = 'part', open_roles = ('I1',), mode = 'interrogative'
+polarity = True, bindings = (), scope = (), context = None
+arguments = (('sym', 13),)
+
+    def form(self, semantic_id, *arguments, open_roles=(),
+             mode='interrogative', polarity=True, bindings=(), scope=(),
+             context=None):
+        """Form a canonical thought request without executing or allocating.
+    
+        Open roles are explicit structural role labels.  Thus a one-argument
+        ``part`` call with ``open_roles=('I1',)`` is the former ``parts``
+        behavior, but it retains the same semantic identity and VP.
+        """
+        retired = {'what': 'ask (thought) or query (LTM)', 'lookup': 'query',
+            'chunk': 'synthesize / analyze', 'quantize': 'future symbolization',
+            'arma': 'sentenceExpectation / gain', 'expect': 'sentenceExpectation / gain', 'true': 'isTrue'}
+        if semantic_id in retired:
+            raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+        operation, form = self._operation_form(semantic_id)
+        descriptor = self.descriptors.get(operation.semantic_id)
+        if descriptor is None:
+            if operation.semantic_id in self.unavailable_operation_ids:
+                raise RuntimeError(
+                    f'thought operation {semantic_id!r} is unavailable: '
+                    f'{self.unavailable_reason}')
+            raise ValueError(
+                f'structural thought operation {semantic_id!r} has no executor')
+        surface_roles = tuple(form.operand_roles)
+        try:
+            open_roles = tuple(open_roles)
+        except TypeError as error:
+            raise TypeError('thought open roles must be an iterable of role labels') from error
+        if (len(set(open_roles)) != len(open_roles)
+                or not set(open_roles).issubset(surface_roles)):
+            raise ValueError('thought open roles must be unique declared operand roles')
+        surface_occupied_roles = tuple(
+            role for role in surface_roles if role not in open_roles)
+        if len(arguments) != len(surface_occupied_roles):
+            raise ValueError(
+                f'thought operation {semantic_id!r} requires {len(surface_occupied_roles)} '
+                'bound operands for its requested open-role mask')
+        supplied = dict(zip(surface_occupied_roles, arguments))
+        source_by_canonical_role = dict(zip(operation.operand_roles,
+                                            form.permutation))
+        canonical_open_roles = tuple(
+            role for role in operation.operand_roles
+            if source_by_canonical_role[role] in open_roles)
+        if canonical_open_roles and not (
+                descriptor.open_operands and len(canonical_open_roles) == 1):
+>           raise ValueError(
+                f'thought operation {semantic_id!r} has no executable open-role form')
+E           ValueError: thought operation 'part' has no executable open-role form
+
+bin/Queries.py:1980: ValueError
+=============================== warnings summary ===============================
+test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7080: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmpq8arhrt5/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_thought_operation_catalog.py::test_open_part_form_executes_a_taxonomy_set_without_an_alias
+FAILED test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role
+FAILED test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]
+FAILED test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[64]
+4 failed, 111 passed, 2 warnings in 29.93s

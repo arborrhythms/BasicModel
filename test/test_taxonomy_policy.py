@@ -21,9 +21,9 @@ def _setup():
 def test_numeric_world_evidence_cannot_establish_taxonomic_inclusion():
     cs, (a, b, _), store, model = _setup()
     store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[:3]), trust=1)
-    result = model.reason_about(QuerySpec.from_surface('part', a, b))
+    result = model.reason_about(QuerySpec.from_surface('isPart', a, b))
     assert result.support_true == result.support_false == 0
-    assert len(store) == 1
+    assert len(store) == 2 and store.row(1)['kind']=='question'
 
 
 def test_unrelated_true_episode_cannot_establish_the_next_parent_relation():
@@ -33,8 +33,9 @@ def test_unrelated_true_episode_cannot_establish_the_next_parent_relation():
     order = terminal_model_index(model, fact.role_refs)
     store.append_meaning(fact, trust=1, order=order,
                          evidence=(1., 0.))
-    assert model.reason_about(model.grammatical_thoughts.form('what', fact)).support_true == 1
-    result = model.reason_about(QuerySpec.from_surface('part', a, b))
+    assert model.reason_about(model.grammatical_thoughts.form('ask', fact)).support_true == 1
+    model.symbolSpace.ltm_store=TernaryTruthStore(8,capacity=32)
+    result = model.reason_about(QuerySpec.from_surface('isPart', a, b))
     assert result.support_true == 0
 
 
@@ -42,10 +43,11 @@ def test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation():
     cs, (a, b, c), store, model = _setup()
     cs.add_whole(a[1], b)
     cs.add_whole(b[1], c)
-    result = model.reason_about(QuerySpec.from_surface('part', a, c))
+    result = model.reason_about(QuerySpec.from_surface('isPart', a, c))
     assert result.support_true == 1
     path = result.result.evidence['path']
     assert {(edge.part, edge.whole) for edge in path} == {(a, b), (b, c)}
-    assert len(store) == 0
+    assert len(store) == 1 and store.row(0)['kind']=='inference'
+    model.symbolSpace.ltm_store=TernaryTruthStore(8,capacity=32)
     cs.retire_concept(b[1])
-    assert model.reason_about(QuerySpec.from_surface('part', a, c)).support_true == 0
+    assert model.reason_about(QuerySpec.from_surface('isPart', a, c)).support_true == 0

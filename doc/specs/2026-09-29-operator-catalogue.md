@@ -113,16 +113,16 @@
 | determiner | the inverse of the fold: "a" leaves the extension one order down, "the" binds one member of it | symbol | compose, generate | Alec's proposal, 2026-09-29 (5.2) | 5.2 |
 | `generic` | the choice not to lower | symbol | compose, generate | Claude's reading | 5.3 |
 | `lift`, `lower` | intended to raise and lower the order; "perhaps" to lift and lower a dimension | symbol | compose, generate | future work, "or at least after item 6" (Alec, 2026-09-29; 5.4) | 5.4 |
-| `chunk` | `synthesize`, its reverse `analyze` | symbol | compose, generate | **decided** (the name) | 3.1 |
+| `synthesize` | reverse `analyze`; `chunk` raises with the new name | symbol | compose, generate | item 6.2, October 7 | 3.1 |
 | `sum`, `product` | `sum` as a mean, and `product` | symbol | compose, generate | **decided**: "should be provided" | 3.2 |
 | `bind` | open | symbol | | open | 3.3 |
-| `quantize` | `symbolize`, its reverse `conceptualize` | symbol | thought | **decided** (the names); the faces are Claude's reading | 3.4 |
-| `arma` | `expect`, or nothing | symbol | thought | open: "(?)" | 3.5 |
-| `what`, `lookup` | `query` | symbol | thought | **decided** | 3.6 |
-| `true` | retired | | | **decided** | 3.7 |
-| `exist` | retired | | | **decided**; one consequence open | 3.7 |
-| `part`, `whole`, `equal` | the same; they consult the symbol codebook, and `query` consults LTM | symbol | compose, thought, generate | the rows are **decided** (two truths); where each looks is Alec's, 2026-09-29 (6.2) | 6 |
-| `implies` | "a relation candidate for LTM", needing no inverse | symbol | compose | proposed, Alec, 2026-09-29 (6.1) | 6.1 |
+| `quantize` | removed; symbolization is future work | symbol | none | item 6.2, October 7 | 3.4 |
+| `arma`, `expect` | removed; global expectation and gain | symbol | gain in thought | item 6.2, October 7 | 3.5 |
+| `what`, `lookup` | `ask` for thought; `query` for LTM | symbol | thought | item 6.2, October 7 | 3.6 |
+| `isTrue` | symbolic evidence pair and witnesses | reference | thought | item 6.2, October 7 | 3.7 |
+| `exist` | conceptual presence and pair | code | thought | item 6.2, October 7 | 3.7 |
+| `part`, `whole`, `equal` | conceptual faces over codes; `isPart` and `isEqual` read references | code / reference | compose, thought, generate | paired faces in item 6.2, October 7 | 6 |
+| `implies`, `isImplied` | conceptual containment / symbolic implication with antecedent witnesses | code / reference | compose, thought | paired faces in item 6.2, October 7 | 6.1 |
 | `operator` | a kind of row and not a rule; the name is this catalogue's word for every rule | | | the kind is **decided** (two truths) | 6.2 |
 | none | none: a sentence that says what a word names is an `equal` | | | Alec, 2026-09-29: "I guess we only need equal?" (6.3) | 6.3 |
 | `surface` | a surface transformation of words, "like tense and aspect": one operator, four suboperations | symbol | compose, generate | Alec, 2026-09-29 (7); **item 5.5** (2026-09-30) | 7, 9 |
@@ -132,12 +132,16 @@
 
 ## 3. The changes, one by one
 
-*Amended (Alec, 2026-09-29):* "The operator rename can also be future
-work." The new names below (`synthesize` and `analyze`, `query`,
-`symbolize` and `conceptualize`, `expect`) wait in FutureWork. What each
-operator is to do, decided below, stands.
+**Amended October 7, item 6.2.** `synthesize`/`analyze`, `ask` and `query`
+are the current names. `quantize`, `arma` and `expect` leave thought;
+`symbolize`/`conceptualize` remain future work. The September discussion
+below records the origin of these decisions.
 
 ### 3.1 `synthesize`, and `analyze`
+
+**Item 6.2:** the grammar names are implemented; `chunk` raises with
+`synthesize` and reverse `analyze` for one release. The numerical additive
+operation and reconstruction witness are unchanged.
 
 Alec, 2026-09-29: "Should 'analyze' and 'synthesize' be written to the
 grammar as operators, even though they are used in the perceptual stage? My
@@ -233,94 +237,36 @@ Alec, 2026-09-29: "Quantized can be replaced with Symbolize and
 Conceptualize, but those are lower level operators that might only be
 useful in the thinking grammar."
 
-*What the code has (read).* `quantize` is an identity in `<compose>` and
-`<generate>`. Its thought executor already does both things, by the kind of
-its operand: given a vector it finds the nearest allocated concept, and
-given a reference it returns that concept's vector. The name `symbolize` is
-held today by a binary composition layer that no grammar file declares, and
-is freed by retiring that layer.
+**October 7 decision, item 6.2.** `quantize` is removed from the
+operator grammar. Its old spelling raises a migration error; all concepts
+are symbolized, and the proposed `symbolize`/`conceptualize` operations stay
+in future work. This does not remove the perceptual codebook's quantization.
 
-*Claude's reading.* One operator with two faces, in `<thought>` only:
-`symbolize` takes content to its symbol and `conceptualize` takes a symbol
-to its content. Reading needs neither: a word arrives as a symbol and
-`interpret` gives its object, and the closing symbolizes an idea.
+### 3.5 Expectation and gain
 
-### 3.5 `expect`
+**Alec's October 7 decision, item 6.2.** `arma` and `expect` leave thought.
+Expectation is global, controlled by `<sentenceExpectation>` and gain `g`.
+The image reaches the grammar chooser as context; the gain act sets `g` for
+the next sentence. `not` over an uncancelled image can conclude an absence.
+There is no separate anticipatory thought policy.
 
-Alec, 2026-09-29: "ARMA should probably be replaced with 'expect', but I
-think that is no longer necessary in the grammar. (?)"
+### 3.6 `query` and `ask`
 
-*What the code has (read).* `arma` is an identity in `<compose>` and
-`<generate>`. Its thought executor returns the predictor's estimate of what
-comes next. Its one user is the anticipatory expectation policy, which
-requires `arma` in the thought catalogue when its weight is above zero; the
-weight is `0` in `model.xml` and no configuration sets it. The expectation
-itself is made by the predictor, at the closing, and at every bracket under
-item 6.8, with no operator involved.
+**Decided October 7.** `query(pattern)` is the LTM read and returns the **best
+match**, with content, pair and witnessing occurrence. `ask(row)` attempts to
+fill a row's open references. Nested questions share its meter and leave
+`descend`/`return` history records; there is no planner-stack operation.
+Thought `what` raises with `ask`, and LTM `what`/`lookup` raise with `query`,
+for one release. The earlier proposal to return a union is superseded.
 
-*Claude's answer.* It is not needed in `<compose>` or in `<generate>`.
-There it does nothing, and `<compose>` may not read expectation at all,
-which is the purity rule. In `<thought>` it is the one way a thought can
-ask what is expected, and it leaves content, the expected idea, as rule 6
-requires. So the choice is between a thought-only `expect` and nothing
-until the anticipatory policy is wanted again. Question 6 of section 10.
+### 3.7 `isTrue` and `exist`
 
-### 3.6 `query`
-
-Alec, 2026-09-29: "'What' and 'lookup' can both be replaced with 'query'.
-Query is mostly the what function, since it returns conceptual content, and
-we can lookup conceptual content by providing what, where, when, but the
-answer (even if it as a query that requires a time or place) should be
-returned as conceptual content."
-
-*What the code has (read).* `what` is unary: an interrogative description
-retrieves frames from the store by cue, or schedules a subgoal. `lookup` is
-binary, over two concepts, returns a set, and has no reverse. `query` is
-already the name of a built-in query that runs `lookup`'s executor, and of
-a legacy layer, a geometric test of parthood that the production grammar
-rejects; the legacy layer is retired to free the name.
-
-**Decided.** One operator, `query`. It is given a what, a where or a when,
-and what it leaves is conceptual content.
-
-*Claude's reading, to confirm.* It is unary: its operand is one description
-with its open roles, and the cue may fill any of what, where and when. When
-several rows answer, what it leaves is their union, which is a temporary
-whole and symbolic
-([6.8 plan §6a](../plans/2026-09-27-item-6-8-one-attention.md#6-questions-for-alec-none-blocking-68-1--6a-and-6b-answered-2026-09-27)).
-A question of when or where is answered by the content of the row found;
-its `.when` and `.where` are the row's address and are not returned in
-place of content. `query` is not the table of definitions, which belongs to
-`interpret`
-([two truths §17.4](2026-09-16-two-truths-ideas-and-relations.md#174-the-table)).
-
-### 3.7 `true` and `exist`
-
-Alec, 2026-09-29: "'True' is reducing a conceptual vector to a scalar, but
-we don't process scalars, so it's really not necessary." And: "'Exist' can
-similarly be reduced to something like true(query), so it is also redundant
-since the mind can understand concepts directly instead of reducing them to
-scalars."
-
-**Decided.** Both are retired, by rule 6.
-
-*Two consequences (read).*
-
-* **Item 7 names `true`.** Its exit criterion in the todo asks for "the
-  `true` operator over the ended clause declared in `<thought>` and
-  executable", and the candidate has it. Item 7 is accepted as it is
-  written; this update retires the operator and that criterion with it.
-* **`exist` is also the grammar's absolute start.** `exist_O1` is the start
-  state named `absolute_truth`; the rule of `<compose>` that closes an
-  absolute sentence is `exist`, an identity; the carriers of `generic` and
-  of the thought operators are built on it; and two truths §3.1 defines
-  fusion as "the grammar's existing reduction of an absolute S to depth 1
-  (the `exist_O1` start)". What is retired without difficulty is its
-  thought face, the check of a description against facts. The start needs
-  another way of being said. *Claude's reading:* none is needed. A sentence
-  is absolute when its sequence has come down to one slot at its closing
-  and relative when it has come down to three, which item 7.5 already
-  decides by when STOP becomes a candidate. Question 7 of section 10.
+**Decided October 7.** The scalar forms are retired. `isTrue(P)` is the
+symbolic face: P's ended row by reference, its pair, trust and witnesses.
+`exist(P)` is conceptual presence at its magnitude, also a pair. Neither
+reduces for/against evidence to a signed scalar. `true` raises with `isTrue`.
+The former absolute grammar start has already been replaced by `idea`; this
+does not prevent the distinct conceptual `exist` thought face.
 
 ### 3.8 What was decided earlier in the pass
 
@@ -959,7 +905,19 @@ other way to compute one, and which serves is for measurement (rule 9).
 
 ## 6. The relations
 
-### 6.1 What they do today
+**Current amendment (Alec, October 7; item 6.2).** By
+`isX : X :: conjunction : intersection`, every relation has a symbolic face
+by reference and a conceptual face over codes: `isTrue`/`exist`,
+`isPart`/`part`, `isEqual`/`equal`, `isImplied`/`implies`. Both return a pair
+or content, never a scalar. Symbolic results retain their witnessing rows;
+conceptual results retain their content. `query`, `ask`, `not` and gain complete
+the thought catalogue. Every result becomes a bindable serial slot. Conclusions
+are occurrence-addressed `inference` rows with provenance. One grammar scorer
+and compose's paired credit train the episode; see the
+[thinking spec](2026-10-07-thinking.md). The September inspection below is
+historical and does not define the current thought faces.
+
+### 6.1 Historical inspection, September 29
 
 *Measured and read.* Each was given the two codes of 5.1.
 

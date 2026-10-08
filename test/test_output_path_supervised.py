@@ -59,7 +59,7 @@ def _train_accuracy(m):
     with torch.no_grad():
         x = m.inputSpace.prepInput(list(data.train_input))
         y = m.outputSpace.prepOutput(list(data.train_output))
-        answers = m.what(tuple(What.supervised(i) for i in range(n)), x)
+        answers = m.ask(tuple(What.supervised(i) for i in range(n)), x)
         pred = torch.stack([a.what.reshape(-1) for a in answers])
         target = y.reshape(n, -1)
     m.train()

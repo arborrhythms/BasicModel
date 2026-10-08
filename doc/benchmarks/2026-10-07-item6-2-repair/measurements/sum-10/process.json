@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/campaign.py",
+    "sum",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/measurements/sum-10"
+  ],
+  "pid": 12088,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 743081424,
+  "elapsed_seconds": 138.28219358297065,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/measurements/sum-10/run.log"
+}

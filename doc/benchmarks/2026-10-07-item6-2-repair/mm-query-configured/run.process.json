@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/mm_query_run.py",
+    "child",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/mm-query-configured"
+  ],
+  "pid": 9960,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 945882744,
+  "elapsed_seconds": 408.29124262498226,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/mm-query-configured/run.log"
+}

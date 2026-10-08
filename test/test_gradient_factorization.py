@@ -112,7 +112,9 @@ def test_policy_observation_and_checked_truth_effect_are_detached():
     assert not features.requires_grad
     checked = ThoughtResult("part", "taxonomy", "truth", "concept-taxonomy",
         request, MappingProxyType({"support_true": 1., "support_false": 0.}))
-    answer = thought_answer_meanings(SimpleNamespace(meaning=request, result=checked))
+    from ThoughtReferences import with_slots
+    bound = with_slots(request, (), pair=(1.,0.))
+    answer = thought_answer_meanings(SimpleNamespace(meaning=bound, result=checked))
     assert answer and not answer[0].roles.requires_grad
 
 

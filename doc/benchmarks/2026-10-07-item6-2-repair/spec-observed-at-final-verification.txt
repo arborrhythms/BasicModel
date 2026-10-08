@@ -1,0 +1,301 @@
+# Item 6.2: thinking (Claude, 2026-10-07; decisions Alec's of 2026-10-07)
+
+Status: specification for Codex, one step; it includes the renames (§2.1);
+reviewed by Claude. Audit and decisions: [thought-loop plan](../plans/2026-10-07-thought-loop.md).
+Fixed point: [thinking toy](../benchmarks/2026-10-07-thinking-toy/README.md).
+Inherits: two-truths §1.1 (the pair; the two lanes), accessible-mind §2.6
+(expectation as a negative image), the operators update (addresses, lanes,
+magnitude), 6.5 (columns, binding as a chooser candidate).
+
+## 0. What thinking is
+
+A sentence closes to one row. If every reference in it is bound, the row is
+an assertion and the closing is complete. If a reference is open — the
+binder found nothing existing to bind it to — the row is a question, and
+thinking is what fills the reference: by lookup, by inference over other
+rows, or by waiting for later text. The answer is the binding. Nested
+questions are references opened on the way; they fill in dependency order,
+which is all the stack ever was. Thinking runs at every closing that
+leaves a reference open, declarative or interrogative, within a work
+budget; it is credited by what follows, exactly as composition is.
+
+## 1. The open reference
+
+1.1 A reference is open when `interpret`'s binding choice (6.5 §3.2; bind
+can be implicit, Alec 2026-10-07) binds it to nothing: no existing
+occurrence, column or row matches. The row keeps the open slot (null
+reference, open role). Wh-words, `?` and the interrogative mode are surface
+evidence for an open reference, not its definition; a row with every
+reference bound is not a question whatever its surface.
+
+1.2 Kinds of open slot: an open *referent* (who, what, which — a role's
+reference), an open *evidence pair* (is it so? — the row's `(c⁺, c⁻)`
+unknown: `(0, 0)` on a well-defined row), an open *relation* (how are they
+related — the operator reference). All three are references in the row's
+terms.
+
+1.3 A forward reference is an expectation of a referent (Philosophy,
+"identity is an expectation"). Later text may fill it (cataphora); thought
+may fill it; at document end an unfilled reference stays stored as a
+question row (record kind `question`).
+
+## 2. The operations
+
+Two faces for every relation, by Alec's rule (`isX : X :: conjunction :
+intersection`): the symbolic face reads LTM and the taxonomy by reference
+and leaves the evidence pair with its witnessing rows; the conceptual face
+computes over the concepts' codes and leaves conceptual content with a
+pair. Every operation leaves a pair or content, never a scalar (catalogue
+rule 6).
+
+| operation | symbolic face | conceptual face |
+| --- | --- | --- |
+| lookup | `query(pattern)`: the best-matching row for a pattern with open slots, by content key and references (Alec: the best match) | — |
+| asking | `ask(row)`: the attempt to fill a row's open references — enumerate fillings (query, the chains below, the situation's candidates), choose one; nested questions are new open references | — |
+| existence / truth | `isTrue(P)`: P's row by reference; its pair and trust | `exist(P)`: P's presence in conceptual space — the extent's pair at its magnitude |
+| parthood | `isPart(a, b)`: part-of rows and taxonomy by reference, with transitive chains | `part(a, b)`: containment and residual of `a` in `b` over codes |
+| equality | `isEqual(a, b)`: DEF rows and bound references; with open variables, substitution of equals — an equation applied as a rewrite rule | `equal(a, b)`: identity of codes |
+| implication | `isImplied(P, Q)`: implies rows with chains (modus ponens; temporal chains by `.when` order) | `implies(P, Q)`: containment of P's region in Q's |
+| negation | `not`: exchanges the lanes of a pair or of a meaning (also of the expectation image: concluding `not X` from an uncancelled image, §2.6.5) | the same |
+| the gain act | sets the expectation gain `g` for the next sentence (§2.6.6) | — |
+
+### 2.1 The renames (Alec, 2026-10-07: "sooner rather than later")
+
+Part of this item, done first. Each rename keeps the old name for one
+release as an alias that raises with the new name; grammars, tests,
+documents and the catalogue follow.
+
+| old | new | note |
+| --- | --- | --- |
+| `what(Q)` (thought) | `ask(Q)` | the attempt to fill a row's open references (§1, §2); no push, no stack manipulation — the `descend`/`return` history records remain as the trace |
+| `what`/`lookup` (LTM) | `query` | returns the best match (Alec) |
+| `chunk` | `synthesize`, reverse `analyze` | catalogue §3.1, decided |
+| `quantize` | removed | future work: all concepts are symbolized |
+| `arma`/`expect` (thought) | removed | a global setting (`<sentenceExpectation>`, gain `g`); the image reaches the chooser as context |
+| `true`, `exist` as scalars | `isTrue(P)`, `exist(P)` | the pair, never a scalar; the two faces above |
+| `selectedThoughtBudget`, `thinkingBudget` | `attentionBudget` | one budget name; the others rejected at load |
+
+The `<thought>` sections of the `.grammar` files list `ask`, `query`,
+`part`, `whole`, `equal`, `not`, and this item adds the faces of §2
+(`isTrue`/`exist`, `isPart`/`part`, `isEqual`/`equal`, `isImplied`/`implies`)
+and the gain act; `arma` and `quantize` leave them.
+
+## 3. Chaining
+
+3.1 Every result enters the serial stream as a slot the next operation can
+bind — working memory — with its evidence pair, its witnessing rows and the
+operation that produced it. Chains are therefore ordinary: `isPart(a, c)`
+with no row proceeds through `isPart(a, x)` and `isPart(x, c)`; `isImplied`
+through its antecedents; `ask` through nested open references.
+
+A bound meaning carries its constituent graph. Filling imports its children
+into the goal's local table and rebases the transferred local references;
+each nested child retains its own local table. Validate local references at
+fill, including nested meanings. A dangling local reference is a construction
+error raised there, never deferred to indexing or writing (§9 repair).
+
+3.2 A conclusion drawn by thought is written to LTM as a row of kind
+`inference`, addressed by the occurrence rule (the document/turn it was
+drawn in, its ordinal among that turn's thought rows, its content), with
+its evidence pair and references to the rows it was drawn from, so that
+forgetting can judge deducibility (item 5). Thought's write permission is
+exactly this kind.
+
+## 4. The episode, its end, and its budget
+
+4.1 At a closing with an open reference, one episode opens on that row,
+with the configured work budget (`attentionBudget`; `selectedThoughtBudget`
+and `thinkingBudget` are retired names, rejected at load). Every operation
+charges it; nested questions share it.
+
+4.2 **Concluding is not a choice while a reference is open and work
+remains.** The chooser chooses among the operations that could fill the
+reference; `conclude` becomes legal when the row's references are all bound
+or the budget is exhausted. (The toy: with conclude free the chooser learns
+to stop at once in a third of seeds and no departure can rescue it; with
+conclude gated by the open reference it learns the chain in 20/20 seeds by
+the answer and 17/20 by expectation alone.)
+
+4.3 At exhaustion the row is stored with its references still open, as a
+question row; later text or a later episode may fill it.
+
+## 5. Credit
+
+5.1 The compose rule, unchanged: the greedy episode against one departure
+(uniform over the episode's rounds, uniform over the eligible alternatives
+at that round), both completed, credited by `K·R·p(a_dep)·ΔC` with `C` the
+owner-step cost of what follows: the answer where one is supplied; the
+expectation's error on the next sentence everywhere; the budget spent. A
+conclusion that makes the next sentence more predictable is credited —
+thinking trained by expectation and surprise. The REINFORCE/EMA path and
+`selectedThoughtPolicyWeight` retire into this.
+
+5.2 One chooser: the thought operations are candidates in the same softmax
+as the grammar's (6.5 §3.2 made identity a candidate there; thought's
+operations join it), so one policy credit trains all choices.
+
+5.3 Readers: the presented answer is the binding; the comparison reader's
+role from 2e carries over for the answer term.
+
+## 6. Entry on declaratives, and the image
+
+6.1 A declarative closing whose references are all bound opens no episode
+unless the expectation's image is uncancelled: an expected row that did
+not arrive leaves `−g·κ·ê` at the closing (§2.6.1); `not` over the image
+concludes an absence (`not X`), written as an inference row with the
+image's confidence as its against-pole evidence. This is the one thought
+act a fully bound declarative can prompt.
+
+6.2 Heterogeneity (both) that persists at the narrowest extent is the
+other prompt — refinement of the concept (plan §43) — and stays FutureWork's
+"four corners as prompts" for its policy.
+
+## 7. Certificates and tests
+
+- The open reference: a row with a bound reference is not a question
+  whatever its surface; wh-words and `?` open one; a bare noun nothing
+  matches opens one (cataphora filled by later text; stored as a question
+  at document end).
+- The gate: `conclude` illegal while a reference is open and work remains;
+  legal at exhaustion.
+- Chaining: `isPart(a, c)` from `a<b`, `b<c` stored (two queries, one
+  conclusion, an inference row with both references); `isImplied` through
+  modus ponens; a nested `ask`.
+- The faces: `isX` reads rows, `X` computes codes; both leave pairs; no
+  scalar anywhere (an AST audit as for the lanes).
+- Credit: a focused episode in which the departure's chain is cheaper by
+  the answer, and one in which it is cheaper by expectation only, both
+  move the chooser toward the chain; ties move nothing.
+- The image: an uncancelled expectation at a declarative closing yields a
+  `not X` inference row with the right pair.
+- Documents: QueryContracts, AccessibleMind.md, Reasoning.md,
+  ThoughtHistory.md, the 09-18 thought spec's status line, the catalogue
+  (§3.5–§3.7, §6 corrected; retired operators removed), the budget names.
+
+## 8. Measurement
+
+One sweep on the delivered source, green; the standing thirty trainings
+unchanged (thinking opens no episode in the XOR gates: every reference
+binds). The thinking gate is `MM_query_reasoning` and the 11c mechanism
+tests, with the chaining fixture above, run with the credit on; no seed, no
+retry. Receipt in `doc/benchmarks/<date>-item6-2/`; stop for Claude's review
+before any commit.
+
+## 9. Review of the October 7 candidate (Claude, 2026-10-07): held; two repairs
+
+Receipt `doc/benchmarks/2026-10-07-item6-2/` (measured source 725 files,
+matching the working tree). The default sweep is green (5,557 cases) and the
+standing thirty trainings are unchanged at 10/10 on every gate, with zero
+thought episodes opened in them, as specified. The renames (§2.1), the open
+reference, the conclude gate, chaining into working memory, inference rows
+with provenance, both faces, the credit by answer and by expectation, and
+the absence inference are all delivered, and the 25 new certificates pass.
+Not landed, for two reasons, one of them a specification gap of mine:
+
+1. **The configured `MM_query_reasoning` run fails at epoch 2.** When a
+   binding transfers a child of the supplied meaning into a goal that has no
+   constituents, `ThoughtReferences.fill` copies the local reference
+   `('constituent', 0)` without the constituent itself, and
+   `ThoughtStream.write` indexes the missing child. Codex reproduced it
+   construction-only. §3.1 says a result enters the serial stream "with its
+   pair, its witnesses and its producing operation" and did not say that a
+   bound meaning carries its constituent graph. **Repair:** when a filling
+   binds a meaning with constituents, the constituents are carried and
+   rebased into the goal's local table, and local references are validated
+   before any index or write (a dangling local reference is a construction
+   error, raised at fill, never at write).
+2. **Five historical 11c tests fail** (`test_dual_towers` ×3,
+   `test_frozen_concepts`, `test_priming_energy`). Claude ran the same five
+   on the accepted 6.5 landing with `RUN_SLOW=1`: **all five fail there
+   too.** They are slow tests, excluded from every standing sweep, byte-
+   identical since the operators landing, and stale against the 3a/4a
+   widths (one asserts a 1,024-wide view where the width is now 104). They
+   predate 6.2 and are not its regression; the receipt was right not to
+   claim either way. **Repair:** port the five to the current widths and
+   contracts, or retire the ones whose contract no longer exists, with the
+   old texts saved — the 11c mechanism gate then reads 19/19 or fewer by
+   retirement, never by exclusion.
+
+Also: the MM optimizer smoke's routing-dimension mismatch
+(`6x58 and 11x104` in `BracketExpectation._apply_routing_bias`) is the same
+width staleness in a reader; it is repaired with item 2. The thinking
+launcher's post-report formatting error is cosmetic. §5.1's "every seed" for
+the expectation-only credit was my overstatement: the toy's 17/20 is the
+record and §5.1 is corrected to say so.
+
+**Then:** the configured `MM_query_reasoning` run to its 300 epochs
+(unforced, no seed), the explicit thinking gate green, the standing thirty
+once more, the receipt as before; stop for review. Landing follows if the
+run completes and the chaining credit moves the chooser as the certificates
+show.
+
+## 10. The thinking corpus: arithmetic with intermediate steps (Alec, 2026-10-07)
+
+Alec: zero thought episodes in the standing gates is expected ("maybe one
+with a zero gradient"); thought shows itself on a question that needs
+intermediary steps, and math problems are the training corpus for it.
+
+The assets exist (math spec of 2026-09-09; `data/MM_math.xml`, `MM_add.xml`,
+`MM_add_verb.xml`; `exact.MathProblemGenerator`; `bin/eval_math_thinking.py`):
+dependency-arithmetic problems over `[0, R)` with depth and distractors as
+dials, premises as clauses (`x = 3 ; y = x + 2 ; … ; what is y ?`),
+one-hot answers, held-out operand pairs and a held-out depth band (4–6),
+unique solutions, no arithmetic in the runtime (`plus` is a learned verb;
+the successor was learned 100% on single digits on 2026-09-09).
+
+**Not direct (Alec, 2026-10-07).** The September fixture gave numerals a
+one-hot or binary code inside the root and read the answer as a one-hot
+over `[0, R)`, so the reader computed on the code's structure. That is the
+direct path and it goes: numerals are opaque identities like any word, and
+the answer is a binding. Nothing numeric remains in the model; exact
+arithmetic lives only in the generator and the verifier.
+
+**The sequence.** (1) Numerals are number *words* (`one` … `twenty`), each
+an identity by construction (3a), no structure; digits are separate wholes
+under the word rule, and positional notation is a later, learned system.
+(2) The successor is stated: the counting facts as sentences, `one plus one
+is two.` …, stored as rows. The verb is `plus`; what it learns is its
+action with the object `one` — the successor, a map from each numeral's
+code to the next's (6.5's change column from a row to the next; the
+2026-09-09 pilot learned it to 100% on single digits), the one learned map
+in the gate; its inverse is exact given the verb, which gives the
+predecessor. `plus` with any other object is not learned as a map — numeral
+codes are opaque, so a map fit on seen pairs says nothing about unseen ones
+— and is given its meaning by **the definition of addition, stated once as
+two sentences**: `a plus zero is a.` and `a plus (b plus one) is (a plus b)
+plus one.` — equations, `equal` rows generic in `a` and `b` (Alec,
+2026-10-07: "eventually that is enough to define addition"; the operator is
+`equal`, as the catalogue says of a definition sentence). (3) Addition is thinking:
+`three plus two ?` is a row with an open referent; nothing computes it;
+thought applies the definition by substitution of equals — `isEqual`'s
+symbolic face as a rewrite: `query` matches the question against an
+equation's left side with its variables as open slots and the right side
+replaces it — `two is one plus one` (a counting fact), so `three plus two`
+is `three plus (one plus one)`, which the definition rewrites to `(three
+plus one) plus one` — then
+the successor verb twice, `three plus one is four`, `four plus one is five`,
+binding the referent to `five`; each step is an inference row with its
+premises; the chain length is the second addend — `a + S(b) = S(a + b)`
+carried out as sentences.
+(4) The corpus states its steps: in training, the premises, the question,
+the successor steps in order and the answer line; the answer credits the
+chain, each step is the next sentence for the thought that computed it.
+
+**The gate, `MM_math_chain`.** The 09-09 generator rendering number words
+(including `zero`), the counting facts, the two definition sentences, and
+successor-step worked solutions; addends up to ten in training with
+held-out *pairs*; `attentionBudget` at least the largest addend plus two.
+Bars (ten unseeded trainings, no retry): (1) held-out pairs at the trained
+range bound correctly in ≥ 9/10 runs (four of four held-out rows on the
+committed binding) — derivable from the successor facts alone, so this is
+thinking generalizing, not a verb; (2) addends beyond the trained range
+reported, not required; (3) every question opens an episode, the chain
+length equals the second addend, one inference row per step with the
+right provenance; (4) the same ten with the answer line withheld
+(expectation credit only), reporting how many runs still form the chain.
+Distractor premises present; premise order shuffled per presentation; no
+one-hot or binary numeral code and no numeric output anywhere (a test
+asserts the model has no `mathRange`-sized output).
+
+This gate replaces `MM_query_reasoning` as 6.2's learning certificate; the
+11c mechanism tests stay as mechanism. It is added to the repair pass of §9.

@@ -77,13 +77,13 @@
       <!-- chunk = additive left+right (ex-"union", not a grammatical op);
            the residual-bearing structural sum that may someday replace the
            radix trie's token chunking. -->
-      <rule>U = chunk.forward(U, U)</rule>
+      <rule>U = synthesize.forward(U, U)</rule>
     </Synthesize>
     <Analyze>
       <rule>U = stop.reverse(U)</rule>
       <rule>U, U = boundary.reverse(U)</rule>
       <rule>U, U = uniform.reverse(U)</rule>
-      <rule>U, U = chunk.reverse(U)</rule>
+      <rule>U, U = synthesize.analyze(U)</rule>
     </Analyze>
   </PartSpace>
 
@@ -147,7 +147,7 @@
            structural sum of two adjacent constituents that the analysis
            tiling places in one coarser whole. Admission of the chunked
            phrase as a concept is gated by recurrence and category utility. -->
-      <rule>chunk_O1 = chunk.forward(chunk_I1, chunk_I2)</rule>
+      <rule>synthesize_O1 = synthesize.forward(synthesize_I1, synthesize_I2)</rule>
       <!-- The null operation: the unary identity a unit contributes when it
            carries no meaning of its own (a whitespace unit); folds it away. -->
       <rule>null_O1 = null.forward(null_I1)</rule>
@@ -177,11 +177,20 @@
     <!-- Boundary thoughts are an explicit model policy. Negation and the
          other structural folds below do not become thought actions merely
          by appearing in compose/generate. -->
-    <thought>
+<thought>
+      <rule>ask_O1 = ask.thought(ask_I1)</rule>
+      <rule>query_O1 = query.thought(query_I1)</rule>
       <rule>part_O1 = part.thought(part_I1, part_I2)</rule>
       <rule family="part" permutation="I2,I1">whole_O1 = whole.thought(whole_I1, whole_I2)</rule>
       <rule>equal_O1 = equal.thought(equal_I1, equal_I2)</rule>
-
+      <rule>not_O1 = not.thought(not_I1)</rule>
+      <rule>isTrue_O1 = isTrue.thought(isTrue_I1)</rule>
+      <rule>exist_O1 = exist.thought(exist_I1)</rule>
+      <rule>isPart_O1 = isPart.thought(isPart_I1, isPart_I2)</rule>
+      <rule>isEqual_O1 = isEqual.thought(isEqual_I1, isEqual_I2)</rule>
+      <rule>isImplied_O1 = isImplied.thought(isImplied_I1, isImplied_I2)</rule>
+      <rule>implies_O1 = implies.thought(implies_I1, implies_I2)</rule>
+      <rule>gain_O1 = gain.thought(gain_I1)</rule>
     </thought>
 
     <generate>
@@ -201,7 +210,7 @@
 
       <rule>sum_I1, sum_I2 = sum.reverse(sum_O1)</rule>
       <rule>product_I1, product_I2 = product.reverse(product_O1)</rule>
-      <rule>chunk_I1, chunk_I2 = chunk.reverse(chunk_O1)</rule>
+      <rule>synthesize_I1, synthesize_I2 = synthesize.analyze(synthesize_O1)</rule>
       <rule>null_I1 = null.reverse(null_O1)</rule>
 
       <rule>lift_I1, lift_I2 = lift.reverse(lift_O1)</rule>

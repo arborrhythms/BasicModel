@@ -1,0 +1,116 @@
+..........................................F..F.......................... [ 72%]
+...........................                                              [100%]
+=================================== FAILURES ===================================
+____ test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit ____
+
+    def test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit():
+        from ThoughtCredit import surrogate
+        model, registry, memory, part, whole = _world()
+        question = registry.form('equal', part, whole)
+        chooser = model._selected_thought_chooser(question)
+        with torch.no_grad():
+            for parameter in chooser.parameters():
+                parameter.fill_(.01)
+        first = chooser.thought_logits(question, (question, question))
+        for role in range(3):
+            roles = question.roles.clone()
+            roles[role].add_(.5)
+            changed = replace(question, roles=roles)
+            assert not torch.equal(first, chooser.thought_logits(question, (question, changed)))
+            assert not torch.equal(first, chooser.thought_logits(changed, (question, question)))
+        unary = registry.form('part', whole, open_roles=('I1',))
+        padding = unary.roles.clone()
+        padding[0].fill_(99.)
+        torch.testing.assert_close(chooser.thought_logits(unary, (unary,)),
+            chooser.thought_logits(unary, (replace(unary, roles=padding),)))
+        probability = chooser.thought_logits(question, (question, changed)).softmax(-1)[0]
+        loss = surrogate(dict(eligible=[True]), dict(choices=[dict(
+            probability=probability[1], alternatives=1)]), 0, (1., .25))
+        loss.backward()
+        assert any(p.grad is not None and bool(p.grad.abs().sum()) for p in chooser.parameters())
+        with pytest.raises(RuntimeError, match='retired'):
+>           model._selected_thought_policy_loss(torch.tensor(.25))
+
+test/test_normal_thought_controller.py:381: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (shared_grammar): OperationSelectionLayer(
+    (ops): ModuleList()
+    (unary_ops): ModuleList()
+    (ch...=8, out_features=8, bias=False)
+      (what_projection): Linear(in_features=29, out_features=7, bias=False)
+    )
+  )
+)
+args = (tensor(0.2500),), kwargs = {}
+
+    def _selected_thought_policy_loss(self, *args, **kwargs):
+>       raise ValueError('REINFORCE/EMA thought credit is retired; use the paired grammar cost')
+E       ValueError: REINFORCE/EMA thought credit is retired; use the paired grammar cost
+
+bin/Models.py:5879: ValueError
+____ test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1419f8500>
+
+    def test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed(monkeypatch):
+        """A completed thought's full grammar, not its trace, feeds output."""
+        from test_selected_relation_meaning import _program_owner
+    
+        cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+            _program_owner(monkeypatch, interrogative=True))
+        registry = GrammaticalThoughtRegistry.install(cs, grammar)
+        model = BasicModel()
+        model.spaces = []
+        model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+        object.__setattr__(model, 'languageSpace', SimpleNamespace(
+            language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+        model.attention_budget = 64
+    
+        memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", cs)
+        object.__setattr__(model, "languageSpace", language)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            languageSpace=language, what_memory=memory,
+            grammatical_thoughts=registry))
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        model.what_thinking_detach = "episode"
+        model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
+        with torch.no_grad():
+            model.shared_grammar.chooser.mlp[-1].weight.zero_()
+            model.shared_grammar.chooser.mlp[-1].bias.zero_()
+        model.eval()
+        model.reconstruct_in_loop = False
+        model.eval()
+        monkeypatch.setattr(model, "_walk_budget", lambda: 8)
+        monkeypatch.setattr(
+            model, "_what_grammar_context",
+            lambda questions, **kwargs: (torch.zeros(
+                len(questions), 1, device=kwargs["device"], dtype=kwargs["dtype"]), ()),
+        )
+        monkeypatch.setattr(model, "_select_perceptual_bindings", lambda _: ())
+    
+        derivation = model.resolveAnswer(
+            Understanding(sentence_states=(sentence_state(language, program(), registry),)), WhatQuestion.present(0))
+    
+        selected = derivation.selected_thoughts[0][1]
+>       torch.testing.assert_close(derivation.conceptual_answer[0, 0], selected.result.value)
+E       AssertionError: None mismatch: tensor([0., 0., 0., 0., 0., 0., 0., 0.]) is not None
+
+test/test_normal_thought_controller.py:497: AssertionError
+=============================== warnings summary ===============================
+test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_item6_2_thinking.py::test_expectation_only_credit_uses_held_next_sentence_cost
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_normal_thought_controller.py::test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit
+FAILED test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed
+2 failed, 97 passed, 2 warnings in 4.27s

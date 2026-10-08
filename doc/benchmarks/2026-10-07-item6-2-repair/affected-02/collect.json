@@ -1,0 +1,16 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_dual_towers.py::test_pyramid_taper_topk_selection"
+  ],
+  "completed": [],
+  "slow_selected": [
+    "test/test_dual_towers.py::test_pyramid_taper_topk_selection"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

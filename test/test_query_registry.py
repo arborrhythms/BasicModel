@@ -21,7 +21,7 @@ def test_complete_grammar_declares_the_general_what_subgoal():
     grammar = Grammar()
     grammar.configure(load_grammar("complete.grammar"))
     operations = {operation.semantic_id for operation in grammar.thought_operations}
-    assert {'what'}.issubset(operations) and 'lookup' not in operations
+    assert {'ask', 'query'}.issubset(operations) and 'lookup' not in operations
 
 
 def test_checked_operations_share_grammar_owned_identity_and_explicit_roles():
@@ -33,14 +33,14 @@ def test_checked_operations_share_grammar_owned_identity_and_explicit_roles():
     assert part.semantic_id == 'part'
     assert part.operand_roles == ('I1', 'I2')
     assert whole.permutation == ('I2', 'I1')
-    assert registry.descriptors['part'].domain == 'conceptual-taxonomy'
+    assert registry.descriptors['part'].domain == 'conceptual-containment'
     assert registry.descriptors['part'].result_kind == 'concept'
     assert registry.descriptors['part'].write_target is Mind.SERIAL
     assert set(registry.descriptors['part'].write_scope) == {
         Mind.SERIAL, Mind.SYMBOLIC, Mind.KNOWING}
-    assert registry.descriptors['arma'].evidence_kind == 'estimate'
-    assert registry.descriptors['what'].result_kind == 'subgoal'
-    assert 'isPart' not in registry.executable_operation_ids
+    assert registry.descriptors['gain'].evidence_kind == 'gain'
+    assert registry.descriptors['ask'].result_kind == 'subgoal'
+    assert 'isPart' in registry.executable_operation_ids
     for descriptor in registry.descriptors.values():
         assert descriptor.read_scope
         assert callable(descriptor.executor)

@@ -1,0 +1,222 @@
+{
+  "source_matched": true,
+  "helpers_matched": true,
+  "protected_gate_files_unchanged": {
+    "test/test_explicit_dimensions.py": true,
+    "test/test_mm_xor.py": true,
+    "data/XOR_grammar.xml": true,
+    "data/MM_xor.xml": true
+  },
+  "complete_sweep": {
+    "selected": 5568,
+    "completed": 5568,
+    "exit_code": 0,
+    "reason": "passed"
+  },
+  "sentence_costs": [
+    {
+      "kind": "xor",
+      "run": 1,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "xor",
+      "run": 2,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "xor",
+      "run": 3,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "xor",
+      "run": 4,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "xor",
+      "run": 5,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "xor",
+      "run": 6,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "xor",
+      "run": 7,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "xor",
+      "run": 8,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "xor",
+      "run": 9,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "xor",
+      "run": 10,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "sum",
+      "run": 1,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "sum",
+      "run": 2,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "sum",
+      "run": 3,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "sum",
+      "run": 4,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "sum",
+      "run": 5,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "sum",
+      "run": 6,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "sum",
+      "run": 7,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "sum",
+      "run": 8,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "sum",
+      "run": 9,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    },
+    {
+      "kind": "sum",
+      "run": 10,
+      "observed_trials": 3208,
+      "maximum_abs_reconstruction": 0.0,
+      "maximum_abs_expectation": 0.0,
+      "nonzero_reconstruction": 0,
+      "nonzero_expectation": 0,
+      "unseeded_entry_saved": true
+    }
+  ],
+  "mm_scope": "The unchanged raw-forward MM gate has no paired sentence owner-step cost; its trajectories are in summary.json.",
+  "seed": null,
+  "retries": 0,
+  "replacements": 0
+}

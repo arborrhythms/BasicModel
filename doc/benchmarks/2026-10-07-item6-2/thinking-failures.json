@@ -1,0 +1,47 @@
+{
+  "failures": [
+    {
+      "nodeid": "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+      "message": "test/test_dual_towers.py:258: in test_pyramid_taper_topk_selection\n    content, acts = cs0.cs_symbolic_phase(settled, extents=extents,\nbin/Spaces.py:16218: in cs_symbolic_phase\n    a_0 = self.cs_read_memberships(percepts, extents) if a_0 is None else a_0\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:15464: in cs_read_memberships\n    perception = read_percepts(percepts, extents, keys,\nbin/PerceptField.py:67: in read_percepts\n    _, support = part_reader(native, [keys[i][1] for i in ps],\nbin/Spaces.py:10848: in part_memberships\n    raw = b''.join(store.bytes_for(pid) for pid, _, _ in selected)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:10848: in <genexpr>\n    raw = b''.join(store.bytes_for(pid) for pid, _, _ in selected)\n                   ^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:13607: in bytes_for\n    raise IndexError(\nE   IndexError: RadixLayer.bytes_for: percept_id 65 out of range [0, 51)"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_matches_ps_view_shape",
+      "message": "test/test_dual_towers.py:57: in test_ws_matches_ps_view_shape\n    assert int(ps.nOutputDim) == int(ws.nOutputDim) == 1024\nE   assert 104 == 1024\nE    +  where 104 = int(104)\nE    +    where 104 = WholeSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Codebook(\\n      (...): EventEncoding()\\n    (whatEncoding): WhatEncoding()\\n    (wordEncoding): WordEncoding()\\n  )\\n  (layers): ModuleList()\\n).nOutputDim"
+    },
+    {
+      "nodeid": "test/test_dual_towers.py::test_ws_routes_universe_on_parallel_path",
+      "message": "test/test_dual_towers.py:150: in test_ws_routes_universe_on_parallel_path\n    assert stamps == [\"universe\"] * len(stamps), stamps\nE   AssertionError: ['universe', 'property-neutral', 'property-neutral']\nE   assert ['universe', ...erty-neutral'] == ['universe', ...', 'universe']\nE     \nE     At index 1 diff: 'property-neutral' != 'universe'\nE     Use -v to get more diff"
+    },
+    {
+      "nodeid": "test/test_frozen_concepts.py::test_reading_wiring_desires_staged_wholes",
+      "message": "test/test_frozen_concepts.py:135: in test_reading_wiring_desires_staged_wholes\n    monkeypatch.setattr(target, '_stage0_indices', torch.tensor([[0]]))\nE   AttributeError: WholeSpace(\nE     (subspace): SubSpace()\nE     (_owned_bases): ModuleDict(\nE       (event): Tensor()\nE       (what): Codebook(\nE         (primitive_properties): PrimitiveProperties()\nE       )\nE       (where): Tensor()\nE       (when): Tensor()\nE       (activation): Tensor()\nE     )\nE     (_owned_encoders): ModuleDict(\nE       (activeEncoding): ActiveEncoding()\nE       (objectEncoding): EventEncoding()\nE       (whatEncoding): WhatEncoding()\nE       (wordEncoding): WordEncoding()\nE     )\nE     (layers): ModuleList()\nE   ) has no attribute '_stage0_indices'"
+    },
+    {
+      "nodeid": "test/test_priming_energy.py::test_reading_heat_from_canonical_on_multistage",
+      "message": "test/test_priming_energy.py:212: in test_reading_heat_from_canonical_on_multistage\n    m._primed_reading_step()\n    ^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute '_primed_reading_step'"
+    },
+    {
+      "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+      "message": "test/test_reasoning_cde_model.py:62: in test_training_step_uses_the_normal_policy_configuration\n    self.m.runEpoch(optimizer=opt, batchSize=6, split='train',\nbin/Models.py:15676: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:13595: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13734: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14116: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8764: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10192: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8449: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8227: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23428: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17199: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:21962: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21515: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:20615: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:142: in sentence_pair\n    exploit = compose(cache, None)\n              ^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20529: in compose\n    current_lang, current_stm, current_feedback = compose_word(\nbin/Models.py:21174: in stage_cs_lang\n    prediction, loss_sum, loss_weight = FunctionalPeerSTM.predict(\nbin/Models.py:1405: in predict\n    routed_prediction = layer._apply_routing_bias(\nbin/Layers.py:12368: in _apply_routing_bias\n    bias = self.routing_proj(routing.detach())            # [B, D]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/linear.py:134: in forward\n    return F.linear(input, self.weight, self.bias)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nE   RuntimeError: mat1 and mat2 shapes cannot be multiplied (6x58 and 11x104)"
+    }
+  ],
+  "test_source": {
+    "test/test_dual_towers.py": {
+      "unchanged_from_65": true,
+      "sha256": "625e79021eb477d14498f395ef35b6dba4c43c674117492f8615238b24cb6e56"
+    },
+    "test/test_frozen_concepts.py": {
+      "unchanged_from_65": true,
+      "sha256": "4c8647543c23168876afe00f9a7d6a487931c5db4a0d24d13195015e55dab95e"
+    },
+    "test/test_priming_energy.py": {
+      "unchanged_from_65": true,
+      "sha256": "4ce4879c9c5cde932a7b75c4752d1f341cab604674ecf09ff0d50329781f2b8d"
+    },
+    "test/test_reasoning_cde_model.py": {
+      "unchanged_from_65": false,
+      "sha256": "b27a57f4f8018fd7ba810f115e77ab6a8262f81f134789df369efe9f3fa2adee"
+    }
+  },
+  "baseline_rerun": false
+}

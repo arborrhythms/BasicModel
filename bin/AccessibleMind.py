@@ -21,7 +21,7 @@ PERMISSIONS = {
     'compose': (frozenset((S.PERCEPT, S.KNOWING, S.SYMBOLIC, S.SERIAL, S.PRIMING, S.MERONYMY)),
                 frozenset((S.KNOWING, S.SYMBOLIC, S.SERIAL))),
     'thought': (frozenset(S) - {S.PERCEPT},
-                frozenset((S.KNOWING, S.SYMBOLIC, S.SERIAL, S.EXPECTATION, S.BUDGET))),
+                frozenset((S.KNOWING, S.SYMBOLIC, S.SERIAL, S.EXPECTATION, S.BUDGET, S.LTM))),
     'generate': (frozenset((S.KNOWING, S.SYMBOLIC, S.SERIAL, S.BUDGET)), frozenset((S.PERCEPT, S.BUDGET))),
     'chooser': (frozenset((S.KNOWING, S.SYMBOLIC, S.SERIAL, S.EXPECTATION, S.LTM, S.BUDGET)), frozenset()),
     'closing': (frozenset((S.SERIAL, S.EXPECTATION)), frozenset((S.LTM, S.EXPECTATION))),
@@ -134,6 +134,17 @@ def apply_thought_effect(model, result, *, row, work, effect_round=None):
     kind = descriptor.effect_kind
     effect_round = effect_round or EffectRound(
         OperatorEffects(descriptor.read_scope, descriptor.write_scope), 'thought')
+    if kind == 'gain':
+        if 'gain' not in result.evidence:
+            # A checked operation may exhaust its shared meter before it
+            # produces a value. Such a result has no effect to commit.
+            return
+        value = float(result.evidence['gain'])
+        if not 0 <= value <= 1:
+            raise ValueError('expectation gain must lie in [0,1]')
+        effect_round.claim(S.EXPECTATION)
+        model.expectation_gain = value
+        return
     if kind == 'expectation':
         discourse = getattr(getattr(model, 'symbolSpace', None), 'expectation', None)
         if discourse is not None and result.value is not None:

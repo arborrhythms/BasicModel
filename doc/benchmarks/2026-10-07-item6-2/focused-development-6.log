@@ -1,0 +1,69 @@
+...........FF.                                                           [100%]
+=================================== FAILURES ===================================
+______ test_answer_credit_moves_shared_chooser_toward_the_completed_chain ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x127c67110>
+
+    def test_answer_credit_moves_shared_chooser_toward_the_completed_chain(monkeypatch):
+        model,registry,store,goal,menu=credit_chain_world(monkeypatch)
+        chooser=model.shared_grammar
+        before=chooser.thought_logits(goal,menu).softmax(-1)[0,1].detach()
+        result=run(model,goal,work_budget=64,
+            score=lambda result:float(bool(open_slots(result.meaning))))
+        assert model._last_thought_comparison['explore_kept']
+        assert [r.operation for r in result.records if r.kind=='thought']==['query','query','conclude']
+        assert not open_slots(result.meaning)
+        value=model._last_thought_score_function['surrogate']
+        assert value is not None
+        optimizer=torch.optim.SGD(chooser.parameters(),lr=.1)
+        optimizer.zero_grad();value.backward();optimizer.step()
+>       assert chooser.thought_logits(goal,menu).softmax(-1)[0,1]>before
+E       assert tensor(0.5000, grad_fn=<SelectBackward0>) > tensor(0.5000)
+
+test/test_item6_2_thinking.py:285: AssertionError
+___ test_expectation_credit_moves_shared_chooser_toward_the_completed_chain ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x127c67410>
+
+    def test_expectation_credit_moves_shared_chooser_toward_the_completed_chain(monkeypatch):
+        from Layers import BracketExpectation
+        from ThoughtCredit import observe, forecast
+        from test_sentence_expectation import observe as expose
+        model,registry,store,goal,menu=credit_chain_world(monkeypatch)
+        # Equal work prices leave only the following observation as policy credit.
+        model.WHAT_STEP_COST=0.
+        discourse=BracketExpectation(4,8,8,concept_dim=8,expectation_scope='structured')
+        model.symbolSpace.expectation=discourse
+        expose(discourse,goal.roles*.25)
+        before=model.shared_grammar.thought_logits(goal,menu).softmax(-1)[0,1].detach()
+        run(model,goal,work_budget=64)
+        held=model._pending_thought_credit[0]
+        assert held.costs==(0.,0.)
+        assert not torch.equal(held.forecasts[0].roles,held.forecasts[1].roles)
+        target=ConceptualMeaning(held.forecasts[1].roles.detach(),
+            held.forecasts[1].presence_logits>0,
+            sentence_kind='relation' if float(held.forecasts[1].kind_logit)>0 else 'idea')
+        # The paired forecasts may differ in presence as well. An exact chain
+        # target's continuous role term is the isolated expectation certificate.
+        from SentenceCredit import expectation_terms as terms
+        def role_cost(errors,roles,presence,kind,actual,mask,sentence_kind,**kwargs):
+            errors.add('forecast', (roles-actual).square().mean())
+        monkeypatch.setattr('SentenceCredit.expectation_terms',role_cost)
+        observe(model,[target],sentence=1)
+        value=model._last_thought_score_function['surrogate']
+        optimizer=torch.optim.SGD(model.shared_grammar.parameters(),lr=.1)
+        optimizer.zero_grad();value.backward();optimizer.step()
+>       assert model.shared_grammar.thought_logits(goal,menu).softmax(-1)[0,1]>before
+E       assert tensor(0.5000, grad_fn=<SelectBackward0>) > tensor(0.5000)
+
+test/test_item6_2_thinking.py:317: AssertionError
+=============================== warnings summary ===============================
+test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain
+FAILED test/test_item6_2_thinking.py::test_expectation_credit_moves_shared_chooser_toward_the_completed_chain
+2 failed, 12 passed, 1 warning in 2.32s

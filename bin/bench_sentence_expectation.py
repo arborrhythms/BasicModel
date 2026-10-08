@@ -107,6 +107,13 @@ def score_prediction_thought(result, target, occupied):
     finished. Unanswered questions retain their work but have no error score.
     """
     from Layers import MeaningExpectation
+    if isinstance(result, MeaningExpectation):
+        if result.roles.shape != target.shape or occupied.shape != target.shape[:1]:
+            raise ValueError('prediction target shape differs from its roles')
+        return dict(answered=True, work=0, steps=0,
+            feature_mse=float((result.roles.detach()-target.to(result.roles)).square().mean()),
+            presence_bce=float(F.binary_cross_entropy_with_logits(
+                result.presence_logits.detach(), occupied.to(result.presence_logits))))
     checked = result.result
     prediction = None if checked is None else checked.value
     answered = (checked is not None and checked.semantic_id == 'arma'

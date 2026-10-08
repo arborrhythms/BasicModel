@@ -1,0 +1,19 @@
+{
+  "training_runs": 0,
+  "seed": null,
+  "gate_retry": false,
+  "supplied_constituents": 1,
+  "resolved_constituents": 1,
+  "resolved_references": [
+    [
+      "constituent",
+      0
+    ],
+    null,
+    null
+  ],
+  "open_slots": [],
+  "scope": "Construction-only reproduction of a dangling local reference after fill; original MM failed meaning was not captured.",
+  "outcome": "repaired",
+  "stored_rows": 2
+}

@@ -284,8 +284,8 @@ def _present(m, surfaces):
 
 def test_ladder_grammar_has_chunk_as_a_reduce_candidate(ladder):
     reducer = ladder._stm_reducer()
-    assert reducer is not None and "chunk" in list(reducer.op_names)
-    assert ladder._chunk_op_index() == list(reducer.op_names).index("chunk")
+    assert reducer is not None and "synthesize" in list(reducer.op_names)
+    assert ladder._chunk_op_index() == list(reducer.op_names).index("synthesize")
 
 
 def test_chunk_is_licensed_only_inside_one_coarse_whole(ladder):
@@ -484,7 +484,6 @@ def _build_ladder_variant(tmp_path, name, replacements, dataset="math"):
     Language.TheGrammar._configured = False
     cfg = Models.BaseModel.load_config(str(config))
     TheData.load(dataset, dat=dict(cfg["architecture"]["data"]))
-    torch.manual_seed(0)
     m, _ = Models.BaseModel.from_config(str(config), data=TheData)
     return m
 

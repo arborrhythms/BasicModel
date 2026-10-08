@@ -1,0 +1,705 @@
+........FFFF............FFF....FF.....FFFFF.............F...F....F..F... [ 52%]
+..F.FF.FF.......FF.....FFFF.F.FFFFFFFFF.FFFFFFF.FFFFFFFFFFFFF.FFss       [100%]
+=================================== FAILURES ===================================
+__ test_retired_operators_are_absent_from_shipped_grammars[complete.grammar] ___
+test/test_operator_catalogue.py:155: in test_retired_operators_are_absent_from_shipped_grammars
+    assert retired.isdisjoint(THOUGHT_EXECUTORS)
+E   AssertionError: assert False
+E    +  where False = <built-in method isdisjoint of set object at 0x129c99540>(mappingproxy({'not': ThoughtExecutorDescriptor(semantic_id='not', domain='serial-negation', argument_kinds=('meaning',...ad',)),), continues=False, open_operands=False, predicate_name=None, relation_directions=(), taxonomy_by_order=False)}))
+E    +    where <built-in method isdisjoint of set object at 0x129c99540> = {'exist', 'lookup', 'true'}.isdisjoint
+___ test_retired_operators_are_absent_from_shipped_grammars[ladder.grammar] ____
+test/test_operator_catalogue.py:155: in test_retired_operators_are_absent_from_shipped_grammars
+    assert retired.isdisjoint(THOUGHT_EXECUTORS)
+E   AssertionError: assert False
+E    +  where False = <built-in method isdisjoint of set object at 0x12e780200>(mappingproxy({'not': ThoughtExecutorDescriptor(semantic_id='not', domain='serial-negation', argument_kinds=('meaning',...ad',)),), continues=False, open_operands=False, predicate_name=None, relation_directions=(), taxonomy_by_order=False)}))
+E    +    where <built-in method isdisjoint of set object at 0x12e780200> = {'exist', 'lookup', 'true'}.isdisjoint
+_ test_retired_operators_are_absent_from_shipped_grammars[tied_reconstruction_output_benchmark.grammar] _
+test/test_operator_catalogue.py:155: in test_retired_operators_are_absent_from_shipped_grammars
+    assert retired.isdisjoint(THOUGHT_EXECUTORS)
+E   AssertionError: assert False
+E    +  where False = <built-in method isdisjoint of set object at 0x12e780820>(mappingproxy({'not': ThoughtExecutorDescriptor(semantic_id='not', domain='serial-negation', argument_kinds=('meaning',...ad',)),), continues=False, open_operands=False, predicate_name=None, relation_directions=(), taxonomy_by_order=False)}))
+E    +    where <built-in method isdisjoint of set object at 0x12e780820> = {'exist', 'lookup', 'true'}.isdisjoint
+____________ test_retired_operator_declarations_fail_loudly[exist] _____________
+test/test_operator_catalogue.py:165: in test_retired_operator_declarations_fail_loudly
+    with pytest.raises(ValueError, match='retired'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_ test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[True-part-order0] _
+test/test_selected_relation_meaning.py:74: in test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode
+    _cs, _grammar, registry, owner, leaves, program, a, b = _program_owner(
+test/test_selected_relation_meaning.py:41: in _program_owner
+    what_local = (next(
+E   StopIteration
+_ test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[True-whole-order1] _
+test/test_selected_relation_meaning.py:74: in test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode
+    _cs, _grammar, registry, owner, leaves, program, a, b = _program_owner(
+test/test_selected_relation_meaning.py:41: in _program_owner
+    what_local = (next(
+E   StopIteration
+_ test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[True-equal-order2] _
+test/test_selected_relation_meaning.py:74: in test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode
+    _cs, _grammar, registry, owner, leaves, program, a, b = _program_owner(
+test/test_selected_relation_meaning.py:41: in _program_owner
+    what_local = (next(
+E   StopIteration
+______ test_selected_unary_thought_keeps_its_live_leaf_and_question_mode _______
+test/test_selected_relation_meaning.py:208: in test_selected_unary_thought_keeps_its_live_leaf_and_question_mode
+    meaning = registry.form('quantize', leaf[0], mode='interrogative')
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1941: in form
+    raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E   ValueError: quantize is retired; use future symbolization
+________ test_selected_unary_description_does_not_invent_an_occurrence _________
+test/test_selected_relation_meaning.py:224: in test_selected_unary_description_does_not_invent_an_occurrence
+    with pytest.raises((TypeError, ValueError), match='occurrence|reference'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'occurrence|reference'
+E     Actual message: 'arma is retired; use sentenceExpectation / gain'
+____ test_owned_local_rule_meaning_survives_global_grammar_reconfiguration _____
+test/test_selected_relation_meaning.py:331: in test_owned_local_rule_meaning_survives_global_grammar_reconfiguration
+    _cs, grammar, registry, owner, leaves, program, a, b = _program_owner(
+test/test_selected_relation_meaning.py:41: in _program_owner
+    what_local = (next(
+E   StopIteration
+_____ test_selected_relation_preserves_declared_outer_polarity[not-False] ______
+test/test_selected_relation_meaning.py:345: in test_selected_relation_preserves_declared_outer_polarity
+    _cs, _grammar, registry, owner, leaves, program, a, b = _program_owner(
+test/test_selected_relation_meaning.py:41: in _program_owner
+    what_local = (next(
+E   StopIteration
+______ test_selected_relation_preserves_declared_outer_polarity[non-None] ______
+test/test_selected_relation_meaning.py:345: in test_selected_relation_preserves_declared_outer_polarity
+    _cs, _grammar, registry, owner, leaves, program, a, b = _program_owner(
+test/test_selected_relation_meaning.py:41: in _program_owner
+    what_local = (next(
+E   StopIteration
+_ test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward] _
+test/test_selected_relation_meaning.py:370: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm
+    cs, _grammar, registry, owner, leaves, program, _a, _b = _program_owner(
+test/test_selected_relation_meaning.py:41: in _program_owner
+    what_local = (next(
+E   StopIteration
+_ test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed] _
+test/test_selected_relation_meaning.py:370: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm
+    cs, _grammar, registry, owner, leaves, program, _a, _b = _program_owner(
+test/test_selected_relation_meaning.py:41: in _program_owner
+    what_local = (next(
+E   StopIteration
+__ test_tiny_concept_inventory_keeps_thought_families_structural_not_partial ___
+test/test_thought_operation_catalog.py:214: in test_tiny_concept_inventory_keeps_thought_families_structural_not_partial
+    grammar.configure({"compose": {"rule": [
+bin/Language.py:1238: in configure
+    self._fill_thought_section(thought)
+bin/Language.py:1542: in _fill_thought_section
+    self._fill_rule_list(self.thought_rules, section_dict, face='thought')
+bin/Language.py:1602: in _fill_rule_list
+    self._check_operator_availability(implementation, face=face)
+bin/Language.py:1726: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; use {retired[implementation]}')
+E   ValueError: quantize is retired; use all concepts are symbolized; symbolize/conceptualize are future work
+_ test_thought_execution_receives_the_common_context_and_only_capability_views _
+test/test_thought_operation_catalog.py:368: in test_thought_execution_receives_the_common_context_and_only_capability_views
+    assert result.semantic_id == "part" and result.support_true == 1.0
+E   AssertionError: assert ('part' == 'part'
+E     
+E       part and 0.0 == 1.0)
+E    +  where 0.0 = ThoughtResult(semantic_id='part', domain='conceptual-containment', result_kind='concept', evidence_kind='meronymy', re...g', 'semantic_id': 'part', 'domain': 'conceptual-containment', 'resolution_records_scanned': 0, 'records_scanned': 0})).support_true
+__________ test_thought_only_operators_have_no_structural_noop_faces ___________
+test/test_thought_operation_catalog.py:456: in test_thought_only_operators_have_no_structural_noop_faces
+    with pytest.raises(ValueError, match="thought-only"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'thought-only'
+E     Actual message: 'quantize is retired; use all concepts are symbolized; symbolize/conceptualize are future work'
+___ test_complete_grammar_exposes_its_declared_canonical_thought_operations ____
+test/test_thought_operation_catalog.py:543: in test_complete_grammar_exposes_its_declared_canonical_thought_operations
+    assert {"part", "equal", "quantize", "arma", "what"}.issubset(
+E   AssertionError: assert False
+E    +  where False = <built-in method issubset of set object at 0x12e967ca0>(('ask', 'query', 'part', 'equal', 'not', 'isTrue', ...))
+E    +    where <built-in method issubset of set object at 0x12e967ca0> = {'arma', 'equal', 'part', 'quantize', 'what'}.issubset
+E    +    and   ('ask', 'query', 'part', 'equal', 'not', 'isTrue', ...) = <Queries.GrammaticalThoughtRegistry object at 0x12eed9be0>.executable_operation_ids
+____ test_canonical_thought_executors_use_only_their_named_capability_views ____
+test/test_thought_operation_catalog.py:838: in test_canonical_thought_executors_use_only_their_named_capability_views
+    assert {"exist", "true", "lookup"}.isdisjoint(THOUGHT_EXECUTORS)
+E   AssertionError: assert False
+E    +  where False = <built-in method isdisjoint of set object at 0x12e992500>(mappingproxy({'not': ThoughtExecutorDescriptor(semantic_id='not', domain='serial-negation', argument_kinds=('meaning',...ad',)),), continues=False, open_operands=False, predicate_name=None, relation_directions=(), taxonomy_by_order=False)}))
+E    +    where <built-in method isdisjoint of set object at 0x12e992500> = {'exist', 'lookup', 'true'}.isdisjoint
+_____ test_description_thought_preparation_uses_only_its_declared_ltm_view _____
+test/test_thought_operation_catalog.py:902: in test_description_thought_preparation_uses_only_its_declared_ltm_view
+    grammar.configure({
+bin/Language.py:1237: in configure
+    self._fill_section(self.rules_upward, up)
+bin/Language.py:1525: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1602: in _fill_rule_list
+    self._check_operator_availability(implementation, face=face)
+bin/Language.py:1726: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; use {retired[implementation]}')
+E   ValueError: what is retired; use ask (open references) or query (LTM lookup)
+____ test_grammar_declares_whole_as_one_part_family_with_a_role_permutation ____
+test/test_thought_operation_catalog.py:978: in test_grammar_declares_whole_as_one_part_family_with_a_role_permutation
+    assert registry.identities == (("conceptual-taxonomy", "part"),)
+E   AssertionError: assert (('conceptual...nt', 'part'),) == (('conceptual...my', 'part'),)
+E     
+E     At index 0 diff: ('conceptual-containment', 'part') != ('conceptual-taxonomy', 'part')
+E     Use -v to get more diff
+_ test_normal_boundary_execution_uses_the_thought_registry_and_common_context __
+test/test_thought_operation_catalog.py:1048: in test_normal_boundary_execution_uses_the_thought_registry_and_common_context
+    result = model.run_selected_thought(
+bin/Models.py:6016: in run_selected_thought
+    result = thought_pair(self, meaning, row=row, work_budget=work_budget,
+bin/WalkTrials.py:176: in thought_pair
+    greedy,first,trace,state=run()
+                             ^^^^^
+bin/WalkTrials.py:170: in run
+    result=model._run_selected_thought_once(meaning,row=row,work_budget=work_budget,registry=registry,work=meter)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6378: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6339: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6207: in execute
+    action = self._choose_selected_thought_action(
+bin/Models.py:5970: in _choose_selected_thought_action
+    chooser = self._selected_thought_chooser(active)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5852: in _selected_thought_chooser
+    raise RuntimeError('thinking requires the existing grammar operation chooser')
+E   RuntimeError: thinking requires the existing grammar operation chooser
+_ test_completed_structural_whole_and_what_program_forms_one_canonical_request _
+test/test_thought_operation_catalog.py:1064: in test_completed_structural_whole_and_what_program_forms_one_canonical_request
+    grammar.configure({
+bin/Language.py:1237: in configure
+    self._fill_section(self.rules_upward, up)
+bin/Language.py:1525: in _fill_section
+    self._fill_rule_list(target, direct, space_role=default_space_role)
+bin/Language.py:1602: in _fill_rule_list
+    self._check_operator_availability(implementation, face=face)
+bin/Language.py:1726: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; use {retired[implementation]}')
+E   ValueError: what is retired; use ask (open references) or query (LTM lookup)
+___________ test_complete_grammar_declares_the_general_what_subgoal ____________
+test/test_query_registry.py:24: in test_complete_grammar_declares_the_general_what_subgoal
+    assert {'what'}.issubset(operations) and 'lookup' not in operations
+E   AssertionError: assert (False)
+E    +  where False = <built-in method issubset of set object at 0x12eec1b60>({'ask', 'equal', 'exist', 'gain', 'implies', 'isEqual', ...})
+E    +    where <built-in method issubset of set object at 0x12eec1b60> = {'what'}.issubset
+___ test_checked_operations_share_grammar_owned_identity_and_explicit_roles ____
+test/test_query_registry.py:36: in test_checked_operations_share_grammar_owned_identity_and_explicit_roles
+    assert registry.descriptors['part'].domain == 'conceptual-taxonomy'
+E   AssertionError: assert 'conceptual-containment' == 'conceptual-taxonomy'
+E     
+E     - conceptual-taxonomy
+E     + conceptual-containment
+___ test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse ___
+test/test_normal_thought_controller.py:78: in test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse
+    result = model.run_selected_thought(question, row=0, work_budget=16)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6016: in run_selected_thought
+    result = thought_pair(self, meaning, row=row, work_budget=work_budget,
+bin/WalkTrials.py:176: in thought_pair
+    greedy,first,trace,state=run()
+                             ^^^^^
+bin/WalkTrials.py:170: in run
+    result=model._run_selected_thought_once(meaning,row=row,work_budget=work_budget,registry=registry,work=meter)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6378: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6356: in run_context
+    raise ValueError("cannot conclude with open references and work remaining")
+E   ValueError: cannot conclude with open references and work remaining
+__ test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata ___
+test/test_normal_thought_controller.py:108: in test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata
+    result = model.run_selected_thought(question, row=0, work_budget=16)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6016: in run_selected_thought
+    result = thought_pair(self, meaning, row=row, work_budget=work_budget,
+bin/WalkTrials.py:176: in thought_pair
+    greedy,first,trace,state=run()
+                             ^^^^^
+bin/WalkTrials.py:170: in run
+    result=model._run_selected_thought_once(meaning,row=row,work_budget=work_budget,registry=registry,work=meter)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6378: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6356: in run_context
+    raise ValueError("cannot conclude with open references and work remaining")
+E   ValueError: cannot conclude with open references and work remaining
+_____ test_selected_boundary_query_records_one_episode_and_its_actual_work _____
+test/test_normal_thought_controller.py:123: in test_selected_boundary_query_records_one_episode_and_its_actual_work
+    result = model.run_selected_thought(question, row=0, work_budget=16)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6016: in run_selected_thought
+    result = thought_pair(self, meaning, row=row, work_budget=work_budget,
+bin/WalkTrials.py:176: in thought_pair
+    greedy,first,trace,state=run()
+                             ^^^^^
+bin/WalkTrials.py:170: in run
+    result=model._run_selected_thought_once(meaning,row=row,work_budget=work_budget,registry=registry,work=meter)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6378: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6339: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6207: in execute
+    action = self._choose_selected_thought_action(
+bin/Models.py:5970: in _choose_selected_thought_action
+    chooser = self._selected_thought_chooser(active)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5852: in _selected_thought_chooser
+    raise RuntimeError('thinking requires the existing grammar operation chooser')
+E   RuntimeError: thinking requires the existing grammar operation chooser
+____ test_selected_history_retains_the_typed_checked_result_through_restore ____
+test/test_normal_thought_controller.py:146: in test_selected_history_retains_the_typed_checked_result_through_restore
+    selected = model.run_selected_thought(question, row=0, work_budget=16)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6016: in run_selected_thought
+    result = thought_pair(self, meaning, row=row, work_budget=work_budget,
+bin/WalkTrials.py:176: in thought_pair
+    greedy,first,trace,state=run()
+                             ^^^^^
+bin/WalkTrials.py:170: in run
+    result=model._run_selected_thought_once(meaning,row=row,work_budget=work_budget,registry=registry,work=meter)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6378: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6339: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6207: in execute
+    action = self._choose_selected_thought_action(
+bin/Models.py:5970: in _choose_selected_thought_action
+    chooser = self._selected_thought_chooser(active)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5852: in _selected_thought_chooser
+    raise RuntimeError('thinking requires the existing grammar operation chooser')
+E   RuntimeError: thinking requires the existing grammar operation chooser
+__ test_what_subgoal_descends_executes_returns_and_causally_carries_evidence ___
+test/test_normal_thought_controller.py:225: in test_what_subgoal_descends_executes_returns_and_causally_carries_evidence
+    outer = registry.form(
+bin/Queries.py:1941: in form
+    raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E   ValueError: what is retired; use ask (thought) or query (LTM)
+_ test_completed_compose_program_enters_normal_controller_before_legacy_thinking _
+test/test_normal_thought_controller.py:266: in test_completed_compose_program_enters_normal_controller_before_legacy_thinking
+    _program_owner(monkeypatch, interrogative=True))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_relation_meaning.py:41: in _program_owner
+    what_local = (next(
+E   StopIteration
+______ test_completed_unary_concept_program_enters_the_normal_controller _______
+test/test_normal_thought_controller.py:322: in test_completed_unary_concept_program_enters_the_normal_controller
+    query=registry.form('quantize', leaves[0]))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1941: in form
+    raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E   ValueError: quantize is retired; use future symbolization
+____ test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit ____
+test/test_normal_thought_controller.py:348: in test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit
+    chooser = model._selected_thought_chooser(question)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5852: in _selected_thought_chooser
+    raise RuntimeError('thinking requires the existing grammar operation chooser')
+E   RuntimeError: thinking requires the existing grammar operation chooser
+______ test_normal_controller_checkpoint_rebuilds_its_width_owned_policy _______
+test/test_normal_thought_controller.py:405: in test_normal_controller_checkpoint_rebuilds_its_width_owned_policy
+    chooser = source._selected_thought_chooser(question)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5852: in _selected_thought_chooser
+    raise RuntimeError('thinking requires the existing grammar operation chooser')
+E   RuntimeError: thinking requires the existing grammar operation chooser
+_______ test_selected_program_resolution_releases_completed_eval_episode _______
+test/test_normal_thought_controller.py:425: in test_selected_program_resolution_releases_completed_eval_episode
+    _program_owner(monkeypatch, interrogative=True))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_relation_meaning.py:41: in _program_owner
+    what_local = (next(
+E   StopIteration
+____ test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed ____
+test/test_normal_thought_controller.py:469: in test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed
+    _program_owner(monkeypatch, interrogative=True))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_relation_meaning.py:41: in _program_owner
+    what_local = (next(
+E   StopIteration
+__ test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed ___
+test/test_normal_thought_controller.py:506: in test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed
+    _program_owner(monkeypatch, interrogative=True))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_relation_meaning.py:41: in _program_owner
+    what_local = (next(
+E   StopIteration
+_______ test_normal_boundary_realizes_the_controller_selected_operation ________
+test/test_normal_thought_controller.py:570: in test_normal_boundary_realizes_the_controller_selected_operation
+    _program_owner(monkeypatch, interrogative=True))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_relation_meaning.py:41: in _program_owner
+    what_local = (next(
+E   StopIteration
+__________ test_selected_program_precedes_the_legacy_surface_reasoner __________
+test/test_normal_thought_controller.py:616: in test_selected_program_precedes_the_legacy_surface_reasoner
+    _program_owner(monkeypatch, interrogative=True))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_relation_meaning.py:41: in _program_owner
+    what_local = (next(
+E   StopIteration
+_______ test_normal_what_uses_the_selected_thought_without_a_legacy_slot _______
+test/test_normal_thought_controller.py:707: in test_normal_what_uses_the_selected_thought_without_a_legacy_slot
+    _program_owner(monkeypatch, interrogative=True))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_relation_meaning.py:41: in _program_owner
+    what_local = (next(
+E   StopIteration
+______ test_selected_row_cannot_open_a_second_controller_for_another_row _______
+test/test_normal_thought_controller.py:751: in test_selected_row_cannot_open_a_second_controller_for_another_row
+    _program_owner(monkeypatch, interrogative=True))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_relation_meaning.py:41: in _program_owner
+    what_local = (next(
+E   StopIteration
+_ test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about] __
+test/test_unified_thought_controller.py:24: in test_public_reasoning_uses_one_completed_boundary_and_episode
+    result = getattr(model, entry)(question)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22692: in reason_about
+    return self._run_public_thought(
+bin/Models.py:22658: in _run_public_thought
+    result = self.run_selected_thought(
+test/test_unified_thought_controller.py:21: in checked
+    return run(meaning, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6019: in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+bin/Models.py:6378: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6339: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6207: in execute
+    action = self._choose_selected_thought_action(
+bin/Models.py:5970: in _choose_selected_thought_action
+    chooser = self._selected_thought_chooser(active)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5852: in _selected_thought_chooser
+    raise RuntimeError('thinking requires the existing grammar operation chooser')
+E   RuntimeError: thinking requires the existing grammar operation chooser
+__ test_public_reasoning_uses_one_completed_boundary_and_episode[think_about] __
+test/test_unified_thought_controller.py:24: in test_public_reasoning_uses_one_completed_boundary_and_episode
+    result = getattr(model, entry)(question)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22699: in think_about
+    return self._run_public_thought(
+bin/Models.py:22658: in _run_public_thought
+    result = self.run_selected_thought(
+test/test_unified_thought_controller.py:21: in checked
+    return run(meaning, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6019: in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+bin/Models.py:6378: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6339: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6207: in execute
+    action = self._choose_selected_thought_action(
+bin/Models.py:5970: in _choose_selected_thought_action
+    chooser = self._selected_thought_chooser(active)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5852: in _selected_thought_chooser
+    raise RuntimeError('thinking requires the existing grammar operation chooser')
+E   RuntimeError: thinking requires the existing grammar operation chooser
+__ test_public_answer_accepts_the_completed_meaning_without_surface_dispatch ___
+test/test_unified_thought_controller.py:43: in test_public_answer_accepts_the_completed_meaning_without_surface_dispatch
+    payload = model.answer_query(question)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22736: in answer_query
+    result = self._run_public_thought(meaning, work_budget=budget)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22658: in _run_public_thought
+    result = self.run_selected_thought(
+bin/Models.py:6019: in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+bin/Models.py:6378: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6339: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6207: in execute
+    action = self._choose_selected_thought_action(
+bin/Models.py:5970: in _choose_selected_thought_action
+    chooser = self._selected_thought_chooser(active)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5852: in _selected_thought_chooser
+    raise RuntimeError('thinking requires the existing grammar operation chooser')
+E   RuntimeError: thinking requires the existing grammar operation chooser
+__________ test_candidate_payloads_are_detached_from_the_hard_choice ___________
+test/test_unified_thought_controller.py:59: in test_candidate_payloads_are_detached_from_the_hard_choice
+    chooser = model._selected_thought_chooser(root)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5852: in _selected_thought_chooser
+    raise RuntimeError('thinking requires the existing grammar operation chooser')
+E   RuntimeError: thinking requires the existing grammar operation chooser
+_______ test_child_context_can_refine_before_returning_its_causal_result _______
+test/test_unified_thought_controller.py:96: in test_child_context_can_refine_before_returning_its_causal_result
+    outer = registry.form("what", reference, context=model._thought_grammar_context(
+bin/Queries.py:1941: in form
+    raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E   ValueError: what is retired; use ask (thought) or query (LTM)
+______ test_policy_charges_shared_episode_work_not_the_number_of_choices _______
+test/test_unified_thought_controller.py:135: in test_policy_charges_shared_episode_work_not_the_number_of_choices
+    result = model.run_selected_thought(registry.form('part', part, whole), work_budget=64)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6019: in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+bin/Models.py:6378: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6339: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6207: in execute
+    action = self._choose_selected_thought_action(
+bin/Models.py:5970: in _choose_selected_thought_action
+    chooser = self._selected_thought_chooser(active)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5852: in _selected_thought_chooser
+    raise RuntimeError('thinking requires the existing grammar operation chooser')
+E   RuntimeError: thinking requires the existing grammar operation chooser
+________ test_runbatch_credits_each_controller_row_from_its_own_answer _________
+test/test_unified_thought_controller.py:192: in test_runbatch_credits_each_controller_row_from_its_own_answer
+    assert observed == [None]  # The answer is a batch-end objective.
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   assert [] == [None]
+E     
+E     Right contains one more item: None
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+____ test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-0] ____
+test/test_unified_thought_controller.py:218: in test_nested_cutoff_drains_the_actual_depth_without_fresh_work
+    question = registry.form('what', question)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1941: in form
+    raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E   ValueError: what is retired; use ask (thought) or query (LTM)
+____ test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-1] ____
+test/test_unified_thought_controller.py:218: in test_nested_cutoff_drains_the_actual_depth_without_fresh_work
+    question = registry.form('what', question)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1941: in form
+    raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E   ValueError: what is retired; use ask (thought) or query (LTM)
+____ test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-6] ____
+test/test_unified_thought_controller.py:218: in test_nested_cutoff_drains_the_actual_depth_without_fresh_work
+    question = registry.form('what', question)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1941: in form
+    raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E   ValueError: what is retired; use ask (thought) or query (LTM)
+___ test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-12] ____
+test/test_unified_thought_controller.py:218: in test_nested_cutoff_drains_the_actual_depth_without_fresh_work
+    question = registry.form('what', question)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1941: in form
+    raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E   ValueError: what is retired; use ask (thought) or query (LTM)
+___ test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-24] ____
+test/test_unified_thought_controller.py:218: in test_nested_cutoff_drains_the_actual_depth_without_fresh_work
+    question = registry.form('what', question)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1941: in form
+    raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E   ValueError: what is retired; use ask (thought) or query (LTM)
+____ test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-0] _____
+test/test_unified_thought_controller.py:218: in test_nested_cutoff_drains_the_actual_depth_without_fresh_work
+    question = registry.form('what', question)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1941: in form
+    raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E   ValueError: what is retired; use ask (thought) or query (LTM)
+____ test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-1] _____
+test/test_unified_thought_controller.py:218: in test_nested_cutoff_drains_the_actual_depth_without_fresh_work
+    question = registry.form('what', question)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1941: in form
+    raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E   ValueError: what is retired; use ask (thought) or query (LTM)
+____ test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-6] _____
+test/test_unified_thought_controller.py:218: in test_nested_cutoff_drains_the_actual_depth_without_fresh_work
+    question = registry.form('what', question)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1941: in form
+    raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E   ValueError: what is retired; use ask (thought) or query (LTM)
+____ test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-12] ____
+test/test_unified_thought_controller.py:218: in test_nested_cutoff_drains_the_actual_depth_without_fresh_work
+    question = registry.form('what', question)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1941: in form
+    raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E   ValueError: what is retired; use ask (thought) or query (LTM)
+____ test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-24] ____
+test/test_unified_thought_controller.py:218: in test_nested_cutoff_drains_the_actual_depth_without_fresh_work
+    question = registry.form('what', question)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1941: in form
+    raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E   ValueError: what is retired; use ask (thought) or query (LTM)
+_________ test_policy_masks_other_rows_and_drops_failed_episode_graphs _________
+test/test_unified_thought_controller.py:237: in test_policy_masks_other_rows_and_drops_failed_episode_graphs
+    result = model.run_selected_thought(registry.form('part', part, whole), work_budget=64)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6019: in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+bin/Models.py:6378: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6339: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6207: in execute
+    action = self._choose_selected_thought_action(
+bin/Models.py:5970: in _choose_selected_thought_action
+    chooser = self._selected_thought_chooser(active)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5852: in _selected_thought_chooser
+    raise RuntimeError('thinking requires the existing grammar operation chooser')
+E   RuntimeError: thinking requires the existing grammar operation chooser
+_____________________ TestReasoningCDEModel.test_gates_on ______________________
+test/test_reasoning_cde_model.py:40: in test_gates_on
+    self.assertEqual(self.m.thinking_budget, 16)
+                     ^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'thinking_budget'
+________ TestReasoningCDEModel.test_reason_about_returns_honest_posture ________
+test/test_reasoning_cde_model.py:80: in test_reason_about_returns_honest_posture
+    result = self.m.reason_about(QuerySpec(KIND_IS_PART,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22692: in reason_about
+    return self._run_public_thought(
+bin/Models.py:22658: in _run_public_thought
+    result = self.run_selected_thought(
+bin/Models.py:6019: in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+bin/Models.py:6378: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6339: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6207: in execute
+    action = self._choose_selected_thought_action(
+bin/Models.py:5977: in _choose_selected_thought_action
+    logits = chooser.thought_logits(viewed, tuple(None if a is None else a.request for a in actions))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:7275: in thought_logits
+    stop, scores = self.chooser.score_unary(state, candidates,
+test/reading_fixtures.py:158: in unary_scores
+    mask = mask.index_select(0, kwargs['op_indices'])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: index out of range in self
+=============================== warnings summary ===============================
+test/test_operator_catalogue.py::test_selected_exclusion_cannot_be_recovered_as_negation
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7053: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp13j3fp10/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1253: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[complete.grammar]
+FAILED test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[ladder.grammar]
+FAILED test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[tied_reconstruction_output_benchmark.grammar]
+FAILED test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[exist]
+FAILED test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[True-part-order0]
+FAILED test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[True-whole-order1]
+FAILED test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[True-equal-order2]
+FAILED test/test_selected_relation_meaning.py::test_selected_unary_thought_keeps_its_live_leaf_and_question_mode
+FAILED test/test_selected_relation_meaning.py::test_selected_unary_description_does_not_invent_an_occurrence
+FAILED test/test_selected_relation_meaning.py::test_owned_local_rule_meaning_survives_global_grammar_reconfiguration
+FAILED test/test_selected_relation_meaning.py::test_selected_relation_preserves_declared_outer_polarity[not-False]
+FAILED test/test_selected_relation_meaning.py::test_selected_relation_preserves_declared_outer_polarity[non-None]
+FAILED test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]
+FAILED test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]
+FAILED test/test_thought_operation_catalog.py::test_tiny_concept_inventory_keeps_thought_families_structural_not_partial
+FAILED test/test_thought_operation_catalog.py::test_thought_execution_receives_the_common_context_and_only_capability_views
+FAILED test/test_thought_operation_catalog.py::test_thought_only_operators_have_no_structural_noop_faces
+FAILED test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations
+FAILED test/test_thought_operation_catalog.py::test_canonical_thought_executors_use_only_their_named_capability_views
+FAILED test/test_thought_operation_catalog.py::test_description_thought_preparation_uses_only_its_declared_ltm_view
+FAILED test/test_thought_operation_catalog.py::test_grammar_declares_whole_as_one_part_family_with_a_role_permutation
+FAILED test/test_thought_operation_catalog.py::test_normal_boundary_execution_uses_the_thought_registry_and_common_context
+FAILED test/test_thought_operation_catalog.py::test_completed_structural_whole_and_what_program_forms_one_canonical_request
+FAILED test/test_query_registry.py::test_complete_grammar_declares_the_general_what_subgoal
+FAILED test/test_query_registry.py::test_checked_operations_share_grammar_owned_identity_and_explicit_roles
+FAILED test/test_normal_thought_controller.py::test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse
+FAILED test/test_normal_thought_controller.py::test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata
+FAILED test/test_normal_thought_controller.py::test_selected_boundary_query_records_one_episode_and_its_actual_work
+FAILED test/test_normal_thought_controller.py::test_selected_history_retains_the_typed_checked_result_through_restore
+FAILED test/test_normal_thought_controller.py::test_what_subgoal_descends_executes_returns_and_causally_carries_evidence
+FAILED test/test_normal_thought_controller.py::test_completed_compose_program_enters_normal_controller_before_legacy_thinking
+FAILED test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller
+FAILED test/test_normal_thought_controller.py::test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit
+FAILED test/test_normal_thought_controller.py::test_normal_controller_checkpoint_rebuilds_its_width_owned_policy
+FAILED test/test_normal_thought_controller.py::test_selected_program_resolution_releases_completed_eval_episode
+FAILED test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed
+FAILED test/test_normal_thought_controller.py::test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed
+FAILED test/test_normal_thought_controller.py::test_normal_boundary_realizes_the_controller_selected_operation
+FAILED test/test_normal_thought_controller.py::test_selected_program_precedes_the_legacy_surface_reasoner
+FAILED test/test_normal_thought_controller.py::test_normal_what_uses_the_selected_thought_without_a_legacy_slot
+FAILED test/test_normal_thought_controller.py::test_selected_row_cannot_open_a_second_controller_for_another_row
+FAILED test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]
+FAILED test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[think_about]
+FAILED test/test_unified_thought_controller.py::test_public_answer_accepts_the_completed_meaning_without_surface_dispatch
+FAILED test/test_unified_thought_controller.py::test_candidate_payloads_are_detached_from_the_hard_choice
+FAILED test/test_unified_thought_controller.py::test_child_context_can_refine_before_returning_its_causal_result
+FAILED test/test_unified_thought_controller.py::test_policy_charges_shared_episode_work_not_the_number_of_choices
+FAILED test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+FAILED test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-0]
+FAILED test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-1]
+FAILED test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-6]
+FAILED test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-12]
+FAILED test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-24]
+FAILED test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-0]
+FAILED test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-1]
+FAILED test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-6]
+FAILED test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-12]
+FAILED test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[True-24]
+FAILED test/test_unified_thought_controller.py::test_policy_masks_other_rows_and_drops_failed_episode_graphs
+FAILED test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on
+FAILED test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture
+61 failed, 75 passed, 2 skipped, 3 warnings in 19.71s

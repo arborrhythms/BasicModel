@@ -179,7 +179,7 @@ class TestGroundAndIsTrue(unittest.TestCase):
             self.skipTest("No TruthLayer available")
         D = truth_layer.nDim
         act = torch.randn(D)
-        self.assertEqual(model.isTrue(act), 0.0)
+        self.assertEqual(model.isTrue(act)['support_true'],0.)
 
 
 # -- Step 6: TruthLoss (falsity_penalty) ------------------------------

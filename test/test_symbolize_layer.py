@@ -26,7 +26,7 @@ def test_binary_symbolize_is_rejected_in_every_face(face):
             face='thought' if face == 'thought' else None)
 
 
-@pytest.mark.parametrize('name', ['symbolize', 'exist', 'true', 'lookup'])
+@pytest.mark.parametrize('name', ['symbolize', 'what', 'true', 'lookup'])
 def test_legacy_syntax_does_not_restore_retired_operators(name):
     from Language import Grammar
     with pytest.raises(ValueError, match='retired'):
@@ -36,7 +36,7 @@ def test_legacy_syntax_does_not_restore_retired_operators(name):
 @pytest.mark.parametrize('name', ['quantize', 'arma'])
 def test_legacy_syntax_does_not_restore_thought_only_compose(name):
     from Language import Grammar
-    with pytest.raises(ValueError, match='thought-only'):
+    with pytest.raises(ValueError, match='retired'):
         Grammar()._fill_rule_list([], {'S': f'{name}(S)'})
 
 
@@ -47,14 +47,12 @@ def test_implementation_alias_cannot_restore_retired_carrier():
             '_': 'r_O1 = r.forward(r_I1, r_I2)', 'implementation': 'symbolize'}})
 
 
-def test_quantization_remains_available_as_a_declared_thought_capability():
-    from Language import Grammar, GRAMMAR_LAYER_CLASSES
+def test_quantization_is_removed_from_declared_thought_capabilities():
+    from Language import Grammar,GRAMMAR_LAYER_CLASSES
     from Queries import THOUGHT_EXECUTORS
-    rules=[]
-    Grammar()._fill_rule_list(rules, {'rule': 'quantize_O1 = quantize.thought(quantize_I1)'}, face='thought')
-    assert len(rules) == 1 and rules[0].method_name == 'quantize'
-    assert 'quantize' in THOUGHT_EXECUTORS
-    assert 'quantize' not in GRAMMAR_LAYER_CLASSES
+    with pytest.raises(ValueError,match='retired'):
+        Grammar()._fill_rule_list([],{'rule':'quantize_O1 = quantize.thought(quantize_I1)'},face='thought')
+    assert 'quantize' not in THOUGHT_EXECUTORS and 'quantize' not in GRAMMAR_LAYER_CLASSES
 
 
 def test_mean_composition_is_owned_by_sum_and_keeps_operand_gradients():
@@ -71,7 +69,7 @@ def test_mean_composition_is_owned_by_sum_and_keeps_operand_gradients():
     torch.testing.assert_close(layer.compose(a,b), parent)
     assert not list(layer.parameters())
 
-@pytest.mark.parametrize('name, class_name', [('query','QueryLayer'),('queryPart','QueryPartLayer'),('queryEqual','QueryEqualLayer')])
+@pytest.mark.parametrize('name, class_name', [('queryPart','QueryPartLayer'),('queryEqual','QueryEqualLayer')])
 def test_scalar_query_experiments_are_retired(name, class_name):
     import Language
     import Layers

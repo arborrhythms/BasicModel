@@ -202,15 +202,10 @@ class TruthGroundedReasoner:
                 "incomplete": tuple(diagnostics), "records_scanned": scanned,
                 "meaning": requested}
 
-    def exist(self, X) -> float:
-        """Lossy legacy scalar view: positive minus negative fact support.
-
-        Checked grammatical execution and evaluation consume existence_evidence
-        instead, since a scalar cannot preserve contradictory support.
-        """
-        evidence = self.existence_evidence(X)
-        return evidence["support_true"] - evidence["support_false"]
-
+    def exist(self, X):
+        """Conceptual presence leaves its content and pair, never a scalar."""
+        value = _as_vec(X)
+        return dict(value=value, support_true=min(1.,float(value.norm())), support_false=0., witnesses=())
 
     def query(self, X, Y=None) -> Optional[dict]:
         """``query(X[, Y])``: an LTM lookup. ``query(X)`` returns the best
@@ -248,45 +243,14 @@ class TruthGroundedReasoner:
                         "row": int(idx), "kind": "relation", "match": s}
         return best
 
-    def quantize(self, X):
-        """``quantize(X)``: snap X onto the nearest real idea -- the best
-        matching stored ABSOLUTE idea by ``equal`` (the grounding step that
-        keeps a proposed bridge on the manifold of known ideas). Returns the
-        snapped idea vector, or X unchanged when no store / no idea is
-        reachable. (A model codebook is the richer basis; Phase 3.)"""
-        hit = self.query(X)
-        return hit["idea"] if hit is not None else _as_vec(X)
+    def quantize(self, *args, **kwargs):
+        raise ValueError('quantize thought is retired; all-concept symbolization is future work')
 
-    def arma(self, X=None):
-        """``arma(X)``: the ARMA next-step prediction in conceptual space -- the
-        ``BracketExpectation``'s predicted next idea (the statistical discourse
-        trajectory). ``X`` is the current trajectory point (nominal; the ARMA
-        reads its OWN observed end-state chain, the autoregressive history).
-        Returns the predicted next-idea vector, or ``None`` when no warm
-        discourse predictor is configured (no model / no ``_inter_predictor`` /
-        a cold AR ring). A tool the reasoner can fold into a chain alongside the
-        hard deduction -- the policy learns when the trajectory momentum, vs
-        truth-space retrieval/deduction, is the relevant signal for the next
-        idea (this is the soft/hard split applied to next-sentence prediction)."""
-        m = self.model
-        disc = (getattr(getattr(m, "symbolSpace", None), "expectation", None)
-                if m is not None else None)
-        if disc is None or getattr(disc, "_inter_predictor", None) is None:
-            return None
-        if not (hasattr(disc, "predict_next_end_state")
-                and hasattr(disc, "get_stm_chain") and disc.get_stm_chain(n=1)):
-            return None                    # cold AR ring -> no real prediction
-        try:
-            shape = disc.predict_next_end_state()
-        except Exception:
-            return None
-        if shape is None:
-            return None
-        _depth, payload = shape
-        if (payload is None or not torch.is_tensor(payload)
-                or payload.numel() == 0 or not torch.isfinite(payload).all()):
-            return None
-        return payload.reshape(-1, int(payload.shape[-1]))[0]   # predicted root idea
+    def arma(self, *args, **kwargs):
+        raise ValueError('arma thought is retired; use sentenceExpectation and gain')
+
+    def expect(self, *args, **kwargs):
+        raise ValueError('expect thought is retired; use sentenceExpectation and gain')
 
     # == retained numerical .where-read ================================
 
@@ -345,9 +309,22 @@ class TruthGroundedReasoner:
 
     # == reduction API (isTrue / isPart over the tools) =================
 
-    def is_true(self, A) -> float:
-        """``isTrue(A)`` -- alias of the ``exist`` leaf tool."""
-        return self.exist(A)
+    def is_true(self, A):
+        """The symbolic face reads the proposition's ended evidence pair."""
+        from Queries import ThoughtLTMCapability
+        from QueryWork import QueryWorkBudget
+        from Layers import TernaryTruthStore
+        store = self.reasoning_store()
+        meter = QueryWorkBudget(getattr(self.model, 'attention_budget', 32))
+        if isinstance(store, TernaryTruthStore):
+            reader = ThoughtLTMCapability(store=lambda:store, equal=self.equal, tau_id=self.tau_id)
+            if isinstance(A, tuple) and A and A[0] == 'ltm':
+                return reader.end_evidence(A, max_records=meter.remaining, work=meter)
+            return reader.truth_evidence(ConceptualMeaning.from_description(A),
+                                        max_records=meter.remaining, work=meter)
+        result = self.existence_evidence(A, max_records=meter.remaining, work=meter)
+        return dict(result, value=A, witnesses=tuple(item.get('occurrence')
+            for item in result.get('candidates', ()) if item.get('occurrence') is not None))
 
     def taxonomy_evidence(self, part, whole, *, max_steps=8,
                           max_nodes=256, max_records=1024, max_expansions=1024,

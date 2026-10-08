@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_item6_2_repair.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

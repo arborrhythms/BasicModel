@@ -1,9 +1,23 @@
 """Small normal model shells for checked-boundary tests (no alternate executor)."""
 from types import SimpleNamespace
-from Language import Grammar
+from Language import Grammar, OperationSelectionLayer
 from Layers import WhatInteractionMemory, TernaryTruthStore
 from Models import BasicModel
 from Queries import GrammaticalThoughtRegistry
+
+
+def force_requested_thought(model):
+    """Supply the requested operation for evidence/boundary mechanism tests."""
+    def choose(root, active, actions, **kwargs):
+        if None in actions:
+            return None
+        try:
+            name = model.grammatical_thoughts.signature_for(active,verify_reference=False).operation.semantic_id
+        except (ValueError,TypeError):
+            return actions[0]
+        return next((item for item in actions if item.semantic_id==name),actions[0])
+    model._choose_selected_thought_action=choose
+    return model
 
 
 def model_for(cs, store=None):
@@ -13,14 +27,19 @@ def model_for(cs, store=None):
 
     model = BasicModel()
     model.spaces = []
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    object.__setattr__(model, 'languageSpace', SimpleNamespace(
+        language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+    model.attention_budget = 64
+
     model.eval()
-    model.reasoning_iterations = model.thinking_budget = 128
+    model.reasoning_iterations = model.attention_budget = 128
     object.__setattr__(model, 'conceptualSpace', cs)
     object.__setattr__(model, 'grammatical_thoughts', registry)
     object.__setattr__(model, 'symbolSpace', SimpleNamespace(
         grammatical_thoughts=registry, ltm_store=store,
         what_memory=WhatInteractionMemory(batch=1, capacity=128, detach_mode='episode')))
-    return model
+    return force_requested_thought(model)
 
 
 def thought_config(tmp_path):

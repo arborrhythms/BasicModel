@@ -1,0 +1,98 @@
+{
+  "start": [
+    {
+      "words": 0,
+      "moved": 0,
+      "share_moved": 0.0,
+      "cosine_before": null,
+      "cosine_after": null,
+      "identity_recovered": true,
+      "below_lower": 0,
+      "before": {
+        "pairs": 0,
+        "violating_pairs": 0,
+        "coordinates": 0,
+        "largest": 0.0
+      },
+      "after": {
+        "pairs": 0,
+        "violating_pairs": 0,
+        "coordinates": 0,
+        "largest": 0.0
+      },
+      "adjacent_witnesses": 0,
+      "enabled": true
+    },
+    {
+      "words": 4,
+      "moved": 0,
+      "share_moved": 0.0,
+      "cosine_before": 0.4022911372698809,
+      "cosine_after": 0.4022911372698809,
+      "identity_recovered": true,
+      "below_lower": 0,
+      "before": {
+        "pairs": 0,
+        "violating_pairs": 0,
+        "coordinates": 0,
+        "largest": 0.0
+      },
+      "after": {
+        "pairs": 0,
+        "violating_pairs": 0,
+        "coordinates": 0,
+        "largest": 0.0
+      },
+      "adjacent_witnesses": 0,
+      "enabled": true
+    }
+  ],
+  "end": [
+    {
+      "words": 0,
+      "moved": 0,
+      "share_moved": 0.0,
+      "cosine_before": null,
+      "cosine_after": null,
+      "identity_recovered": true,
+      "below_lower": 0,
+      "before": {
+        "pairs": 0,
+        "violating_pairs": 0,
+        "coordinates": 0,
+        "largest": 0.0
+      },
+      "after": {
+        "pairs": 0,
+        "violating_pairs": 0,
+        "coordinates": 0,
+        "largest": 0.0
+      },
+      "adjacent_witnesses": 4,
+      "enabled": true
+    },
+    {
+      "words": 4,
+      "moved": 4,
+      "share_moved": 1.0,
+      "cosine_before": 0.4022911372698809,
+      "cosine_after": 0.4475716628075883,
+      "identity_recovered": true,
+      "below_lower": 0,
+      "before": {
+        "pairs": 0,
+        "violating_pairs": 0,
+        "coordinates": 0,
+        "largest": 0.0
+      },
+      "after": {
+        "pairs": 0,
+        "violating_pairs": 0,
+        "coordinates": 0,
+        "largest": 0.0
+      },
+      "adjacent_witnesses": 4,
+      "enabled": true
+    }
+  ]
+}

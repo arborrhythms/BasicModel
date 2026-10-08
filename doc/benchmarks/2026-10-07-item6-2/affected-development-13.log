@@ -1,0 +1,206 @@
+........................F..................ss..FFF.F.F.F.....FF........F [ 77%]
+.....................                                                    [100%]
+=================================== FAILURES ===================================
+_____________ test_removed_quantize_raises_without_symbol_snapping _____________
+
+    def test_removed_quantize_raises_without_symbol_snapping():
+        cs=_cs()
+>       before=dict(cs._concept_allocator.placement)
+                    ^^^^^^^^^^^^^^^^^^^^^
+
+test/test_query_executors.py:81: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+name = '_concept_allocator'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'ConceptualSpace' object has no attribute '_concept_allocator'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_ test_nested_observation_writers_retain_children_without_certifying_them[forward] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12167b770>
+path = 'forward'
+
+    @pytest.mark.parametrize("path", ["forward", "batch_eval", "packed"])
+    def test_nested_observation_writers_retain_children_without_certifying_them(monkeypatch, path):
+        _cs, registry, language, entry, leaves = _nested(monkeypatch)
+        store = _write_selected_observation(language, registry, entry, path)
+>       assert len(store) == 2
+E       assert 4 == 2
+E        +  where 4 = len(TernaryTruthStore())
+
+test/test_selected_nested_meaning.py:54: AssertionError
+_ test_nested_observation_writers_retain_children_without_certifying_them[batch_eval] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10c5e9eb0>
+path = 'batch_eval'
+
+    @pytest.mark.parametrize("path", ["forward", "batch_eval", "packed"])
+    def test_nested_observation_writers_retain_children_without_certifying_them(monkeypatch, path):
+        _cs, registry, language, entry, leaves = _nested(monkeypatch)
+        store = _write_selected_observation(language, registry, entry, path)
+>       assert len(store) == 2
+E       assert 4 == 2
+E        +  where 4 = len(TernaryTruthStore())
+
+test/test_selected_nested_meaning.py:54: AssertionError
+_ test_nested_observation_writers_retain_children_without_certifying_them[packed] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1238b39e0>
+path = 'packed'
+
+    @pytest.mark.parametrize("path", ["forward", "batch_eval", "packed"])
+    def test_nested_observation_writers_retain_children_without_certifying_them(monkeypatch, path):
+        _cs, registry, language, entry, leaves = _nested(monkeypatch)
+        store = _write_selected_observation(language, registry, entry, path)
+>       assert len(store) == 2
+E       assert 4 == 2
+E        +  where 4 = len(TernaryTruthStore())
+
+test/test_selected_nested_meaning.py:54: AssertionError
+_____ test_nested_what_from_a_completed_program_enters_the_same_controller _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1238ddd90>
+
+    def test_nested_what_from_a_completed_program_enters_the_same_controller(monkeypatch):
+        cs, registry, language, entry, _leaves = _nested(monkeypatch, outer="ask")
+        model = BasicModel()
+        model.spaces = []
+        store = TernaryTruthStore(8, capacity=16)
+        memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", cs)
+        object.__setattr__(model, "languageSpace", language)
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            grammatical_thoughts=registry, what_memory=memory, ltm_store=store))
+        with model._query_boundary_scope((0,)):
+            results = model._run_selected_sentence_thoughts((sentence_state(language, entry, registry),), work_budget=128)
+>       assert len(results) == 1
+E       assert 0 == 1
+E        +  where 0 = len(())
+
+test/test_selected_nested_meaning.py:94: AssertionError
+_______ test_numeric_world_evidence_cannot_establish_taxonomic_inclusion _______
+
+    def test_numeric_world_evidence_cannot_establish_taxonomic_inclusion():
+        cs, (a, b, _), store, model = _setup()
+        store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[:3]), trust=1)
+        result = model.reason_about(QuerySpec.from_surface('isPart', a, b))
+>       assert result.support_true == result.support_false == 0
+E       AssertionError: assert 0.13732169568538666 == 0.0
+E        +  where 0.13732169568538666 = SelectedThoughtResult(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 12), ('sym', 40100...open_references', ()), ('_producing_operation', 'part'), ('_thought_witnesses', ())), scope=(), sentence_kind=None)}))).support_true
+E        +  and   0.0 = SelectedThoughtResult(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 12), ('sym', 40100...open_references', ()), ('_producing_operation', 'part'), ('_thought_witnesses', ())), scope=(), sentence_kind=None)}))).support_false
+
+test/test_taxonomy_policy.py:25: AssertionError
+__ test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation ___
+
+    def test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation():
+        cs, (a, b, c), store, model = _setup()
+        cs.add_whole(a[1], b)
+        cs.add_whole(b[1], c)
+        result = model.reason_about(QuerySpec.from_surface('isPart', a, c))
+>       assert result.support_true == 1
+E       AssertionError: assert 0.1798563301563263 == 1
+E        +  where 0.1798563301563263 = SelectedThoughtResult(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(('sym', 12), ('sym', 40100...open_references', ()), ('_producing_operation', 'part'), ('_thought_witnesses', ())), scope=(), sentence_kind=None)}))).support_true
+
+test/test_taxonomy_policy.py:47: AssertionError
+__________________ TestIsTrue.test_negative_trust_single_idea __________________
+
+self = <test_truth_grounded_reasoning.TestIsTrue testMethod=test_negative_trust_single_idea>
+
+    def test_negative_trust_single_idea(self):
+        r = TruthGroundedReasoner(store=_store(rows_ideas=[(IDEA_C, -0.8)]))
+>       self.assertAlmostEqual(r.is_true(IDEA_C)['support_false'],0.8,places=5)
+E       AssertionError: 0.0 != 0.8 within 5 places (0.8 difference)
+
+test/test_truth_grounded_reasoning.py:86: AssertionError
+__________________ TestIsTrue.test_positive_trust_single_idea __________________
+
+self = <test_truth_grounded_reasoning.TestIsTrue testMethod=test_positive_trust_single_idea>
+
+    def test_positive_trust_single_idea(self):
+        r = TruthGroundedReasoner(store=_store(rows_ideas=[(IDEA_A, 0.9)]))
+>       self.assertAlmostEqual(r.is_true(IDEA_A)['support_true'],0.9,places=5)
+E       AssertionError: 0.0 != 0.9 within 5 places (0.9 difference)
+
+test/test_truth_grounded_reasoning.py:82: AssertionError
+_____________________ TestGrammarOps.test_exist_is_isTrue ______________________
+
+self = <test_truth_grounded_reasoning.TestGrammarOps testMethod=test_exist_is_isTrue>
+
+    def test_exist_is_isTrue(self):
+        r = TruthGroundedReasoner(store=_store(rows_ideas=[(IDEA_A, 0.9)]))
+        self.assertEqual((r.exist(IDEA_A)['support_true'],r.exist(IDEA_A)['support_false']),(1.,0.))
+>       self.assertEqual(r.exist(IDEA_A), r.is_true(IDEA_A))
+E       AssertionError: {'value': tensor([1., 1., 1., 1., 0., 0., 0., 0.]),[55 chars]: ()} != {'value': (), 'frames': (), 'result_kind': 'set', '[93 chars]: ()}
+E       + {'frames': (),
+E       +  'incomplete': (),
+E       +  'records_scanned': 0,
+E       +  'result_kind': 'set',
+E       - {'support_false': 0.0,
+E       ? ^
+E       
+E       +  'support_false': 0.0,
+E       ? ^
+E       
+E       -  'support_true': 1.0,
+E       ?                  ^
+E       
+E       +  'support_true': 0.0,
+E       ?                  ^
+E       
+E       -  'value': tensor([1., 1., 1., 1., 0., 0., 0., 0.]),
+E       +  'value': (),
+E          'witnesses': ()}
+
+test/test_truth_grounded_reasoning.py:164: AssertionError
+=============================== warnings summary ===============================
+test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]
+FAILED test/test_selected_nested_meaning.py::test_nested_what_from_a_completed_program_enters_the_same_controller
+FAILED test/test_taxonomy_policy.py::test_numeric_world_evidence_cannot_establish_taxonomic_inclusion
+FAILED test/test_taxonomy_policy.py::test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation
+FAILED test/test_truth_grounded_reasoning.py::TestIsTrue::test_negative_trust_single_idea
+FAILED test/test_truth_grounded_reasoning.py::TestIsTrue::test_positive_trust_single_idea
+FAILED test/test_truth_grounded_reasoning.py::TestGrammarOps::test_exist_is_isTrue
+10 failed, 81 passed, 2 skipped, 2 warnings in 8.74s

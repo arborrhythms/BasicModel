@@ -13,6 +13,7 @@ def terminal_model_index(model, references):
     from Queries import _existing_row
     from ClauseRow import predicate_relation
     model.languageSpace = SimpleNamespace(
+        language_layer=getattr(getattr(model, 'languageSpace', None), 'language_layer', None),
         _generate_binary_ops=(), _generate_unary_ops=(),
         reverse_inverses=lambda _ops: (),
         generate_policy_logits=lambda values: values.new_zeros(len(values), 1))

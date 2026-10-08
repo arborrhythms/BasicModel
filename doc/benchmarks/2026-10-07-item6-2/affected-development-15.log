@@ -1,0 +1,189 @@
+........................................................................ [ 36%]
+....................................F.............................FFF... [ 73%]
+................................................Fss                      [100%]
+=================================== FAILURES ===================================
+_______ test_normal_entry_does_not_verify_generated_vectors_as_taxonomy ________
+
+    def test_normal_entry_does_not_verify_generated_vectors_as_taxonomy():
+        cs, (a, b, _), reasoner = _world()
+        cs.add_whole(a[1], b)
+        class BadGenerator:
+            def propose(self, *args, **kwargs):
+                raise AssertionError("unnamed vector candidates cannot prove taxonomy")
+        reasoner.model._intervening_generator = BadGenerator()
+        result = reasoner.model.reason_about(QuerySpec.from_surface("isPart", a, b))
+        assert result.posture == TRUE
+        assert result.result.domain == "conceptual-taxonomy"
+        assert len(cs._ltm_store) == 1
+        assert cs._ltm_store.row(0)['kind'] == 'inference'
+        with pytest.raises(ValueError, match='reference|concept'):
+>           reasoner.model.reason_about(
+                QuerySpec.from_surface("isPart", torch.eye(8)[0], torch.ones(8)))
+
+test/test_taxonomy_entry.py:68: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22701: in reason_about
+    return self._run_public_thought(
+bin/Models.py:22661: in _run_public_thought
+    meaning = self._public_query_meaning(meaning, row=row)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22689: in _public_query_meaning
+    return registry.form("isPart", *arguments, open_roles=opened,
+bin/Queries.py:1978: in form
+    _validate_argument(argument, kind)
+bin/Queries.py:360: in _validate_argument
+    symbolic_reference(value)
+bin/Queries.py:349: in symbolic_reference
+    return concept_reference(value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = tensor([1., 0., 0., 0., 0., 0., 0., 0.])
+
+    def concept_reference(value):
+        """Validate an existing typed concept handle, never interpret a tensor row."""
+        if (not isinstance(value, tuple) or len(value) != 2 or value[0] != "sym"
+                or type(value[1]) is not int or value[1] <= 0):
+>           raise TypeError("taxonomy operands require a ('sym', positive concept id) reference")
+E           TypeError: taxonomy operands require a ('sym', positive concept id) reference
+
+bin/Taxonomy.py:15: TypeError
+_ test_nested_observation_writers_retain_children_without_certifying_them[forward] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13f2e2600>
+path = 'forward'
+
+    @pytest.mark.parametrize("path", ["forward", "batch_eval", "packed"])
+    def test_nested_observation_writers_retain_children_without_certifying_them(monkeypatch, path):
+        _cs, registry, language, entry, leaves = _nested(monkeypatch)
+        store = _write_selected_observation(language, registry, entry, path)
+        assert len(store) == 4
+        assert store.row(3)['kind']=='question'
+        child, parent = store.row(0), store.row(1)
+        assert parent["meaning"].role_refs[2] == child["occurrence"]
+        assert child["kind"] == "unverified" and child["trust"] == 0
+        torch.testing.assert_close(child["meaning"].roles[0], leaves[0].detach())
+        assert not child["meaning"].roles.requires_grad
+>       assert parent["kind"] == "observation"
+E       AssertionError: assert 'question' == 'observation'
+E         
+E         - observation
+E         + question
+
+test/test_selected_nested_meaning.py:61: AssertionError
+_ test_nested_observation_writers_retain_children_without_certifying_them[batch_eval] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13f2cc8f0>
+path = 'batch_eval'
+
+    @pytest.mark.parametrize("path", ["forward", "batch_eval", "packed"])
+    def test_nested_observation_writers_retain_children_without_certifying_them(monkeypatch, path):
+        _cs, registry, language, entry, leaves = _nested(monkeypatch)
+        store = _write_selected_observation(language, registry, entry, path)
+        assert len(store) == 4
+        assert store.row(3)['kind']=='question'
+        child, parent = store.row(0), store.row(1)
+        assert parent["meaning"].role_refs[2] == child["occurrence"]
+        assert child["kind"] == "unverified" and child["trust"] == 0
+        torch.testing.assert_close(child["meaning"].roles[0], leaves[0].detach())
+        assert not child["meaning"].roles.requires_grad
+>       assert parent["kind"] == "observation"
+E       AssertionError: assert 'question' == 'observation'
+E         
+E         - observation
+E         + question
+
+test/test_selected_nested_meaning.py:61: AssertionError
+_ test_nested_observation_writers_retain_children_without_certifying_them[packed] _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x13f1e14f0>
+path = 'packed'
+
+    @pytest.mark.parametrize("path", ["forward", "batch_eval", "packed"])
+    def test_nested_observation_writers_retain_children_without_certifying_them(monkeypatch, path):
+        _cs, registry, language, entry, leaves = _nested(monkeypatch)
+        store = _write_selected_observation(language, registry, entry, path)
+        assert len(store) == 4
+        assert store.row(3)['kind']=='question'
+        child, parent = store.row(0), store.row(1)
+        assert parent["meaning"].role_refs[2] == child["occurrence"]
+        assert child["kind"] == "unverified" and child["trust"] == 0
+        torch.testing.assert_close(child["meaning"].roles[0], leaves[0].detach())
+        assert not child["meaning"].roles.requires_grad
+>       assert parent["kind"] == "observation"
+E       AssertionError: assert 'question' == 'observation'
+E         
+E         - observation
+E         + question
+
+test/test_selected_nested_meaning.py:61: AssertionError
+________ TestReasoningCDEModel.test_reason_about_returns_honest_posture ________
+
+self = <test_reasoning_cde_model.TestReasoningCDEModel testMethod=test_reason_about_returns_honest_posture>
+
+    def test_reason_about_returns_honest_posture(self):
+        # Order-zero vectors now have a geometric part effect. They still
+        # cannot manufacture taxonomy identities or a native proof path.
+        cs = self.m.conceptualSpace
+        width = cs.outputShape[-1]
+        before = dict(cs._concept_allocator.placement)
+>       result = self.m.reason_about(QuerySpec(KIND_IS_PART,
+            left=torch.ones(width), right=torch.ones(width)))
+
+test/test_reasoning_cde_model.py:81: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22701: in reason_about
+    return self._run_public_thought(
+bin/Models.py:22661: in _run_public_thought
+    meaning = self._public_query_meaning(meaning, row=row)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22689: in _public_query_meaning
+    return registry.form("isPart", *arguments, open_roles=opened,
+bin/Queries.py:1978: in form
+    _validate_argument(argument, kind)
+bin/Queries.py:360: in _validate_argument
+    symbolic_reference(value)
+bin/Queries.py:349: in symbolic_reference
+    return concept_reference(value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = tensor([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1....., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.])
+
+    def concept_reference(value):
+        """Validate an existing typed concept handle, never interpret a tensor row."""
+        if (not isinstance(value, tuple) or len(value) != 2 or value[0] != "sym"
+                or type(value[1]) is not int or value[1] <= 0):
+>           raise TypeError("taxonomy operands require a ('sym', positive concept id) reference")
+E           TypeError: taxonomy operands require a ('sym', positive concept id) reference
+
+bin/Taxonomy.py:15: TypeError
+=============================== warnings summary ===============================
+test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7053: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3395/test_supervised_update_cannot_0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1253: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_taxonomy_entry.py::test_normal_entry_does_not_verify_generated_vectors_as_taxonomy
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]
+FAILED test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture
+5 failed, 188 passed, 2 skipped, 3 warnings in 20.98s

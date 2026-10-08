@@ -50,7 +50,7 @@ def test_taxonomy_capture_and_expansion_share_one_meter(monkeypatch):
 def test_selected_operation_is_charged_before_its_executor():
     calls = []
     descriptor = replace(
-        THOUGHT_EXECUTORS["what"],
+        THOUGHT_EXECUTORS["ask"],
         executor=lambda context, arguments: calls.append(arguments) or {"value": None},
     )
     signature = ThoughtSignature(
@@ -109,7 +109,7 @@ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypa
         ltm=ThoughtLTMCapability(store=reader.reasoning_store,
             equal=reader.equal, tau_id=reader.tau_id, primed=(code,)))
     from test_query_vp_boundaries import _signature
-    result = _signature('what', 'I1').invoke(
+    result = _signature('query', 'I1').invoke(
         context, replace(meaning, mode='interrogative'))
     assert read == [0] and result["records_scanned"] == 1
     assert result["value"][0]["trust"] == pytest.approx(.6)
@@ -130,7 +130,7 @@ def test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances():
         work=meter,
     )
     from test_query_vp_boundaries import _signature
-    result = _signature('part', 'I1', 'I2').invoke(context, _ref(a), _ref(b))
+    result = _signature('isPart', 'I1', 'I2').invoke(context, _ref(a), _ref(b))
     assert (result["nodes_scanned"] + result["records_scanned"]
             + result["edges_expanded"] == 2)
     assert result["support_true"] == 0 and meter.spent == 3

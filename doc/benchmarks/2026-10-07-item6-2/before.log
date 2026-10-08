@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2/probe_before.py", line 4, in <module>
+    assert f"ThoughtExecutorDescriptor('{name}'" in p, f"missing thought face: {name}"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: missing thought face: ask

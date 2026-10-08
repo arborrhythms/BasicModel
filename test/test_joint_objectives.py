@@ -292,7 +292,7 @@ def test_answer_path_operators_are_independently_owned_and_keep_learning(monkeyp
     batch = (model.inputSpace.prepInput(inputs), model.outputSpace.prepOutput(outputs))
     model.eval()
     with torch.no_grad():
-        model.what((What.supervised(0), What.supervised(1)), batch[0])   # builds the answer path
+        model.ask((What.supervised(0), What.supervised(1)), batch[0])   # builds the answer path
     model.train()
     optimizer = model.getOptimizer(lr=1e-2)
     enlisted = list(model.synthesis_parameters())

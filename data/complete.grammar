@@ -77,13 +77,13 @@
       <!-- chunk = additive left+right (ex-"union", not a grammatical op);
            the residual-bearing structural sum that may someday replace the
            radix trie's token chunking. -->
-      <rule>U = chunk.forward(U, U)</rule>
+      <rule>U = synthesize.forward(U, U)</rule>
     </Synthesize>
     <Analyze>
       <rule>U = stop.reverse(U)</rule>
       <rule>U, U = boundary.reverse(U)</rule>
       <rule>U, U = uniform.reverse(U)</rule>
-      <rule>U, U = chunk.reverse(U)</rule>
+      <rule>U, U = synthesize.analyze(U)</rule>
     </Analyze>
   </PartSpace>
 
@@ -135,7 +135,7 @@
            inverse, so it is compose-only. -->
 
 
-      <rule>what_O1 = what.forward(what_I1)</rule>
+      <rule>ask_O1 = ask.forward(ask_I1)</rule>
 
       <!-- Negation: not = pole swap; non = non-affirming complement. -->
       <rule>not_O1 = not.forward(not_I1)</rule>
@@ -192,16 +192,20 @@
          authorize thought; negation and ordinary lattice/grammar operators
          remain structural-only in this model. The `.thought` spelling is
          declarative: executors run only at a completed-row boundary. -->
-    <thought>
+<thought>
+      <rule>ask_O1 = ask.thought(ask_I1)</rule>
+      <rule>query_O1 = query.thought(query_I1)</rule>
       <rule>part_O1 = part.thought(part_I1, part_I2)</rule>
       <rule family="part" permutation="I2,I1">whole_O1 = whole.thought(whole_I1, whole_I2)</rule>
-      <rule predicate="operation:equal">equal_O1 = equal.thought(equal_I1, equal_I2)</rule>
-
-
-
-      <rule>quantize_O1 = quantize.thought(quantize_I1)</rule>
-      <rule>arma_O1 = arma.thought(arma_I1)</rule>
-      <rule>what_O1 = what.thought(what_I1)</rule>
+      <rule>equal_O1 = equal.thought(equal_I1, equal_I2)</rule>
+      <rule>not_O1 = not.thought(not_I1)</rule>
+      <rule>isTrue_O1 = isTrue.thought(isTrue_I1)</rule>
+      <rule>exist_O1 = exist.thought(exist_I1)</rule>
+      <rule>isPart_O1 = isPart.thought(isPart_I1, isPart_I2)</rule>
+      <rule>isEqual_O1 = isEqual.thought(isEqual_I1, isEqual_I2)</rule>
+      <rule>isImplied_O1 = isImplied.thought(isImplied_I1, isImplied_I2)</rule>
+      <rule>implies_O1 = implies.thought(implies_I1, implies_I2)</rule>
+      <rule>gain_O1 = gain.thought(gain_I1)</rule>
     </thought>
 
     <generate>
@@ -214,7 +218,7 @@
       <rule>generic_I1 = generic.reverse(generic_O1)</rule>
 
 
-      <rule>what_I1 = what.reverse(what_O1)</rule>
+      <rule>ask_I1 = ask.reverse(ask_O1)</rule>
 
       <rule>not_I1 = not.reverse(not_O1)</rule>
       <rule>non_I1 = non.reverse(non_O1)</rule>

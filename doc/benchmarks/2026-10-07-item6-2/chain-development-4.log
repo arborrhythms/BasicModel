@@ -1,0 +1,28 @@
+/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  return func(*args, **kwargs)
+Traceback (most recent call last):
+  File "/tmp/item6-2-chain-probe.py", line 37, in <module>
+    result=model.run_selected_thought(question,work_budget=128)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6099, in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6458, in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6429, in run_context
+    actions = (() if open_slots(outcome["meaning"]) else (None,)) + tuple(candidates(outcome["meaning"], state))
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 6263, in candidates
+    return stream_candidates(registry, meaning, state.contexts[-1].meaning,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/ThoughtStream.py", line 44, in candidates
+    requests = list(registry.controller_candidates(root, active, current,
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Queries.py", line 2136, in controller_candidates
+    requests.append(ThoughtOperationCandidate(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 6, in __init__
+  File "/Users/arogers/github/WikiOracle/basicmodel/bin/Queries.py", line 308, in __post_init__
+    raise ValueError('thought candidate request must be interrogative')
+ValueError: thought candidate request must be interrogative

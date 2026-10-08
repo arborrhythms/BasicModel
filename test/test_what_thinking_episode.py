@@ -77,7 +77,7 @@ def test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser(mod
     m_off = _build(path)
     assert not m_off._thinking_enabled()
     with torch.no_grad():
-        m_off.what(What.supervised(0), _batch(m_off, rows=1)[0])
+        m_off.ask(What.supervised(0), _batch(m_off, rows=1)[0])
     assert not any(k.startswith("what_step_chooser") for k in m_off.state_dict())
     assert m_off._last_answer_construction.derivation.step == ()
 

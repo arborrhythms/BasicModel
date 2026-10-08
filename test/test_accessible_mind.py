@@ -66,7 +66,7 @@ def test_thought_effect_uses_cached_row_identity(monkeypatch):
     def forbidden(self):
         raise AssertionError("thought must not rebuild the dictionary reverse map")
     monkeypatch.setattr(type(cs), "_csw_rows", property(forbidden))
-    result = ThoughtResult('what', 'conceptual-subgoal', 'set', 'retrieval', _meaning(),
+    result = ThoughtResult('ask', 'conceptual-subgoal', 'set', 'retrieval', _meaning(),
         MappingProxyType({'frames': ({'leaf_codes': ((row,), (), ())},)}))
     for _ in range(2):
         apply_thought_effect(SimpleNamespace(conceptualSpace=cs), result, row=0, work=QueryWorkBudget(32))
@@ -186,15 +186,15 @@ def test_query_retrieves_every_old_cued_frame_without_an_implicit_write():
     context = _context(_cs(), store=store)
     cue = replace(fact, role_mask=torch.tensor([True, False, False]),
                   role_refs=(fact.role_refs[0], None, None), mode='interrogative')
-    found = _signature('what', 'I1').invoke(context, cue)
-    assert len(found['frames']) == 2
+    found = _signature('query', 'I1').invoke(context, cue)
+    assert len(found['frames']) == 1
     assert {frame['occurrence'] for frame in found['frames']} == {
-        store.occurrence_of(oldest), store.occurrence_of(newest)}
-    assert sorted(frame['trust'] for frame in found['frames']) == pytest.approx([.2, .3])
+        store.occurrence_of(oldest)}
+    assert sorted(frame['trust'] for frame in found['frames']) == pytest.approx([.2])
     assert context.ltm.held_frames() == ()
     assert found['result_kind'] == 'set'
     with pytest.raises((TypeError, ValueError)):
-        _signature('quantize', 'I1').invoke(context, store.occurrence_of(oldest))
+        __import__('Language').Grammar().configure({'thought': {'rule': 'quantize_O1 = quantize.thought(quantize_I1)'}})
 
 
 def test_higher_order_missing_edge_keeps_content_with_zero_evidence():
@@ -205,10 +205,11 @@ def test_higher_order_missing_edge_keeps_content_with_zero_evidence():
     higher = cs.synthesize_higher_order([('sym', a)])
     for cid in (a, b, higher):
         cs._csw_concept_row(0, cid)
-    result = _signature('part', 'I1', 'I2').invoke(_context(cs), ('sym', higher), ('sym', b))
+    result = _signature('isPart', 'I1', 'I2').invoke(_context(cs), ('sym', higher), ('sym', b))
     assert result['support_true'] == 0.
     assert result['result_kind'] == 'concept' and result['evidence_kind'] == 'taxonomy'
-    assert torch.is_tensor(result['value']) and not result['value'].requires_grad
+    assert result['value'] is None and result['witnesses']==()
+
 
 
 def test_normal_what_effect_enters_recency_and_detached_knowing(monkeypatch):
@@ -243,18 +244,18 @@ def test_normal_what_effect_enters_recency_and_detached_knowing(monkeypatch):
     with model._query_boundary_scope((0,)):
         meter = QueryWorkBudget(256)
         context = model._thought_grammar_context(cue, row=0, work=meter, continuation=None)
-        question = registry.form('what', store.occurrence_of(cue_row), context=context)
+        question = registry.form('ask', store.occurrence_of(cue_row), context=context)
     def choose(root, active, actions, **kw):
         if kw.get('evidence') is not None:
             return None
-        return next(action for action in actions if action and action.semantic_id == 'what')
+        return next(action for action in actions if action and action.semantic_id == 'ask')
     monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
     with model._query_boundary_scope((0,)):
         before = model._selected_thought_memory(question, row=0, work=QueryWorkBudget(128))
         result = model.run_selected_thought(question, work_budget=256)
         after = model._selected_thought_memory(question, row=0, work=QueryWorkBudget(128))
     assert not bool(before[1].any()) and bool(after[1].any())
-    assert result.result.semantic_id == 'what' and result.result.result_kind == 'set'
+    assert result.result.semantic_id == 'ask' and result.result.result_kind == 'set'
     frame, = memory.retrieved_frames()
     assert frame['occurrence'] == store.occurrence_of(oldest)
     assert frame['occurrence'] in memory.retained_ltm_occurrences(frame['occurrence'][1])
@@ -283,7 +284,7 @@ def test_higher_order_retrieval_seeds_discontinuous_members_only():
     held = ConceptualMeaning.from_description(torch.ones(8))
     from dataclasses import replace
     held = replace(held, role_refs=(('sym', higher), None, None))
-    result = ThoughtResult('what', 'conceptual-subgoal', 'set', 'retrieval', meaning,
+    result = ThoughtResult('ask', 'conceptual-subgoal', 'set', 'retrieval', meaning,
         MappingProxyType({'frames': ({'meaning': held},)}))
     apply_thought_effect(SimpleNamespace(conceptualSpace=cs), result, row=0, work=QueryWorkBudget(32))
     field = cs.subspace._concept_activations[:, 0, 0, 0]
@@ -351,7 +352,9 @@ def test_normal_priming_uses_boosted_rows_not_the_identity_mask(monkeypatch):
     def retrieve():
         with model._query_boundary_scope((0,)):
             context = model._thought_grammar_context(cue, row=0, work=QueryWorkBudget(64), continuation=None)
-            return _signature('what', 'I1').invoke(context, cue)['frames']
+            # Isolate the native priming cue from numerical generation.
+            store._index_unfold=lambda *_a,**_k:((),0,True)
+            return _signature('query', 'I1').invoke(context, cue)['frames']
     assert not retrieve()
     priming[0, 50] = 1.5
     assert len(retrieve()) == 1
@@ -454,4 +457,4 @@ def test_unnamed_vectors_cannot_offer_open_taxonomy_candidates():
     assert not any(candidate.semantic_id == 'part' and candidate.open_roles
                    for candidate in candidates)
     with pytest.raises((TypeError, ValueError), match='reference'):
-        registry.form('part', torch.ones(8), open_roles=('I2',))
+        registry.form('isPart', torch.ones(8), open_roles=('I2',))

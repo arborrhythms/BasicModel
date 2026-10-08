@@ -28,7 +28,7 @@ def _poison_oracles(monkeypatch):
 def test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic(monkeypatch):
     from test_normal_thought_controller import _catalog_world
     model, registry, _, part, whole = _catalog_world()
-    question = registry.form('part', part, whole, bindings={'x': part})
+    question = registry.form('isPart', part, whole, bindings={'x': part})
     renamed = replace(question, role_refs=(('sym', 901), ('sym', 337), ('sym', 29)),
                       bindings={'x': ('sym', 901)})
     _poison_oracles(monkeypatch)
@@ -39,9 +39,10 @@ def test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic(monke
     assert forward.result.support_true == 1
     model._end_finished_selected_thought_episodes()
     with model._query_boundary_scope((0,)):
-        reverse = model.run_selected_thought(registry.form('part', whole, part), work_budget=128)
+        reverse = model.run_selected_thought(registry.form('isPart', whole, part), work_budget=128)
     assert reverse.result.support_true == 0
     model._end_finished_selected_thought_episodes()
+
 
 
 def test_renamed_native_vocabulary_preserves_checked_relation_answers(monkeypatch):
@@ -68,27 +69,28 @@ def test_renamed_native_vocabulary_preserves_checked_relation_answers(monkeypatc
         context = ThoughtGrammarContext(word_stream=(),
             conceptual_space=ThoughtConceptualCapability(
                 cs, lambda left, right: float(torch.allclose(left, right))),
-            primed_symbols=(), ltm=object(), taxonomy=ThoughtTaxonomyCapability(cs),
+            primed_symbols=(), ltm=__import__('Queries').ThoughtLTMCapability(store=lambda:None,equal=lambda a,b:0.,tau_id=.6), taxonomy=ThoughtTaxonomyCapability(cs),
             work=QueryWorkBudget(128), continuation=None, boundary=lambda _row: None)
         return cs, registry, part, whole, context
     first, second = world(0, ('one', 'two')), world(11, ('cedar', 'birch'))
-    x = first[1].form('part', first[2], first[3])
-    y = second[1].form('part', second[2], second[3])
+    x = first[1].form('isPart', first[2], first[3])
+    y = second[1].form('isPart', second[2], second[3])
     assert all(x.role_refs[slot] != y.role_refs[slot] for slot in (0, 2))
-    assert x.role_refs[1] == y.role_refs[1]
+    assert first[1].signature_for(x).operation.semantic_id == second[1].signature_for(y).operation.semantic_id == 'isPart'
     with torch.no_grad():
-        for slot in (0, 2):
+        for slot in (0, 1, 2):
             value, ref = x.roles[slot], y.role_refs[slot]
             row = second[0]._csw_concept_row(0, ref[1])
             second[0].similarity_codebook.getW()[row].copy_(value)
-    y = second[1].form('part', second[2], second[3])
+    y = second[1].form('isPart', second[2], second[3])
     torch.testing.assert_close(x.roles, y.roles)
     _poison_oracles(monkeypatch)
     a, b = first[1].execute(x, first[4]), second[1].execute(y, second[4])
     assert a.support_true == b.support_true == 1
     assert a.support_false == b.support_false == 0
-    reverse = second[1].execute(second[1].form('part', second[3], second[2]), second[4])
+    reverse = second[1].execute(second[1].form('isPart', second[3], second[2]), second[4])
     assert reverse.support_true == 0
+
 
 
 @pytest.mark.usefixtures('eager_reading')

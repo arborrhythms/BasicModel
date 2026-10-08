@@ -267,7 +267,7 @@ def test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence():
     cs.subspace._concept_activations = before.clone()
     cs.subspace._concept_where = torch.tensor([[[0, 2]]])
     cs.subspace._concept_when = torch.tensor([[[5, 6]]])
-    result = SimpleNamespace(semantic_id='quantize', evidence={'reference': ('row', row)})
+    result = SimpleNamespace(semantic_id='ask', evidence={'frames': ({'reference': ('row', row)},)})
     apply_thought_effect(SimpleNamespace(conceptualSpace=cs), result,
                          row=0, work=QueryWorkBudget(32))
     after = cs.subspace._concept_activations

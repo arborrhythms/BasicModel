@@ -35,28 +35,27 @@ checkpoint schema.
 
 | Canonical thought operator | Bound input kind | Checked result |
 | --- | --- | --- |
-| `exist` | complete description | LTM fact evidence |
-| `part` | full-width concepts or higher-order references | vector residual at order zero; symbolic inclusion or an open-role taxonomy set above it |
-| `isPart` | typed conceptual references | taxonomy evidence under that exact model spelling |
-| `equal` | full-width concepts | identity evidence |
-| `lookup` | full-width concepts | members of already retrieved frames |
-| `quantize` | full-width concept | existing conceptual-code result |
-| `arma` | complete description | `[3, D]` expectation end state |
-| `what` | complete interrogative description | one cued LTM frame in serial context, or a same-controller subgoal |
+| `query` | complete pattern with open references | one best matching LTM row, its pair and occurrence |
+| `ask` | complete row | a filling, or a nested question on the same meter |
+| `isTrue` / `exist` | ended proposition / conceptual content | the row's pair and trust / conceptual presence and its pair |
+| `isPart` / `part` | references / full-width codes | symbolic parthood witnesses / containment content and a pair |
+| `isEqual` / `equal` | references / full-width codes | DEF evidence / code identity content and a pair |
+| `isImplied` / `implies` | references / full-width codes | implication and antecedent witnesses / region containment and a pair |
+| `not` | pair, meaning, or conceptual content | exchanged poles with content retained |
+| `gain` | conceptual magnitude | content and pair; sets the next sentence's expectation gain |
 
-`part` and `isPart` are exact model-level identities. `part` distinguishes
-order-zero geometry from higher-order taxonomy; `isPart` explicitly selects
-taxonomy. Neither spelling implicitly enables the other.
-A model ordinarily declares one spelling in whichever of compose, thought,
-and generate it needs.
+Every operation leaves a pair or content, never a scalar. `whole` remains the
+converse spelling of conceptual `part`, with permutation `(I2, I1)`.
+`isPart` is the symbolic face at every order. Results become serial slots with
+their pair, witnesses and producing operation; subsequent requests bind those
+slots without an implicit LTM search.
 
-`true` is reserved for the deferred two-truths ended-clause representation;
-it has no production executor until that representation exists.
-
-Canonical `part` means `part(I1=part, I2=whole)`. Leaving `I1` open returns
-parts of the bound whole; leaving `I2` open returns wholes containing the bound
-part. `whole` is a grammar-spelled converse form with permutation `(I2, I1)`,
-not a second relation, VP, or executor alias.
+The October 7 [thinking spec](specs/2026-10-07-thinking.md) supersedes the old
+operator names. Thought `what` raises with `ask`; LTM `what` and `lookup` raise
+with `query`; grammar `chunk` raises with `synthesize` (inverse `analyze`).
+`quantize` is removed; symbolization is future work. `arma`/`expect` are removed
+from thought: `<sentenceExpectation>` and gain govern the global predictor.
+`true` raises with `isTrue`; scalar existence is retired.
 
 ## Common grammar-face signature
 
@@ -88,7 +87,7 @@ operands, outputs, and registered structural parameters.
 `ThoughtGrammarContext` is a distinct boundary context. It includes the same
 frozen completed stream, conceptual-space capability, and primed-symbol
 snapshot, plus descriptor-scoped read-only LTM/taxonomy views, one shared
-`QueryWorkBudget`, a narrow `what` continuation, and the completed-row boundary
+`QueryWorkBudget`, a narrow `ask` continuation, and the completed-row boundary
 permit. An executor never receives a generic model or reasoner. An undeclared
 reader is absent from its capability view.
 
@@ -148,8 +147,9 @@ descriptor contract. Direct `ThoughtSignature.invoke` makes the same admission
 for isolated checked calls. Invalid requests do not reach a reader. A negated
 truth result swaps its known support channels; absent evidence remains unknown.
 
-A description-valued operand names an existing durable `ltm` occurrence or an
-ordinary live `thought` occurrence. Its illumination summary is not a substitute
+A description-valued operand names an existing durable `ltm` occurrence, an
+ordinary live `thought` occurrence, or a complete already-held constituent.
+Holding that constituent does not write a speculative LTM row. Its illumination summary is not a substitute
 for the full role-labelled record. Resolution preserves the complete meaning,
 including VP, NP2, scope, bindings, and provenance; it never substitutes NP1,
 rebinding, a row number, or a surface token.
@@ -161,24 +161,36 @@ reference operand; recovery declines until that owner exists.
 
 ## Phase, work, and lifecycle
 
-Structural composition, reconstruction, and generation cannot execute a thought
-operator. Only the completed-row phase gate may call the registry. The normal
-controller forms candidates without reader calls, selects one catalog action or
-`conclude`, and records the actual checked `ThoughtResult` as a detached typed
-snapshot in the existing thought-history owner. Only executed `thought`,
-causal `return`, and final `finish` transitions can carry that snapshot;
-summary support remains controller evidence, not a substitute for a typed
-result. The v3 history sidecar tags a nested `ConceptualMeaning` result value
-so replay preserves its type, metadata, and hard boundary; v1/v2 sidecars
-remain readable. Nested `what` reuses the same episode, level discipline,
-continuation, and meter.
+A closing opens an episode exactly when a reference is open: a referent,
+a relation, or the unknown evidence pair of a defined row. Surface mode,
+question marks and wh-words are evidence, not the definition. A fully bound
+row opens no episode. At the committed host boundary, completed rows alone
+receive permission; compose, reconstruction and generate cannot call readers.
 
-The one `QueryWorkBudget` covers VP/reference/payload preparation, description
-resolution, fact and taxonomy reads, codebook scans, prediction context, and
-nested callbacks. Local limits only narrow that meter. Exhaustion reports
-`work_budget` incompleteness; it does not turn unknown into false or permit an
-uncharged retry. See [shared work accounting](QueryWork.md) and [thought
-history](ThoughtHistory.md).
+One `attentionBudget` pays for selection, preparation, reads, operations and
+nested questions. `selectedThoughtBudget` and `thinkingBudget` fail at load.
+`conclude` is unavailable while a reference remains open and work remains.
+Exhaustion preserves the open references in a question row. Later matching
+text can bind them within the same document.
+
+Only the kept walk publishes conclusions: occurrence-addressed LTM rows of
+kind `inference`, with both poles and provenance references. The document and
+turn, ordinal within that turn, and content determine their addresses. The
+closing retains unresolved questions; thought operations have no generic LTM
+append capability. `descend` and `return` remain chronological trace records,
+not a separate planner stack.
+
+The existing grammar scorer makes every thought choice. Greedy and one
+uniform departure are completed before comparison. Credit is compose's
+`K · R · p(a_dep) · ΔC`, with supplied-answer cost, the next sentence's
+expectation error and work. Exact ties contribute no policy term. The
+comparison reader supplies the answer comparison; the presented answer is
+the binding. There is no REINFORCE/EMA controller or
+`selectedThoughtPolicyWeight`; the old setting is rejected.
+
+At a bound declarative, an uncancelled expectation image alone can prompt
+`not`, storing an absence inference with the image confidence against.
+See [thought history](ThoughtHistory.md) and [accessible mind](AccessibleMind.md).
 
 ## Compatibility quarantine
 

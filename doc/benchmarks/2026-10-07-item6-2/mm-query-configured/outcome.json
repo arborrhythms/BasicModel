@@ -1,0 +1,70 @@
+{
+  "config": "data/MM_query_reasoning.xml",
+  "configured_epochs": 300,
+  "batch_size": 6,
+  "seed": null,
+  "retries": 0,
+  "forced_reading": false,
+  "training_epochs": 2,
+  "thought_credit": [
+    {
+      "costs": [
+        0.3010917341709137,
+        0.3010917341709137
+      ],
+      "source": "document_end_answer_and_work",
+      "requires_grad": false
+    },
+    {
+      "costs": [
+        0.40994133412837985,
+        0.40994133412837985
+      ],
+      "source": "document_end_answer_and_work",
+      "requires_grad": false
+    },
+    {
+      "costs": [
+        0.40994133412837985,
+        0.40994133412837985
+      ],
+      "source": "document_end_answer_and_work",
+      "requires_grad": false
+    },
+    {
+      "costs": [
+        0.2945373094081879,
+        0.2945373094081879
+      ],
+      "source": "document_end_answer_and_work",
+      "requires_grad": false
+    },
+    {
+      "costs": [
+        0.20903239384293557,
+        0.20903239384293557
+      ],
+      "source": "document_end_answer_and_work",
+      "requires_grad": false
+    },
+    {
+      "costs": [
+        0.38077476978302005,
+        0.38077476978302005
+      ],
+      "source": "document_end_answer_and_work",
+      "requires_grad": false
+    },
+    {
+      "costs": [
+        0.27337949335575107,
+        0.27337949335575107
+      ],
+      "source": "document_end_answer_and_work",
+      "requires_grad": false
+    }
+  ],
+  "outcome": "failed",
+  "error": "IndexError('tuple index out of range')",
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2/mm_query_run.py\", line 38, in child\n    results=Models.ModelFactory.run(str(ROOT/'data/MM_query_reasoning.xml'))\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 24579, in run\n    return ModelFactory._run_hydrated(config_path, arch, dat, trn)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 24686, in _run_hydrated\n    m.run(_t(\"numTrials\", 1),\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 3658, in run\n    acc[trial, :] = self.runTrial(\n                    ^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 10509, in runTrial\n    outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split=\"train\")\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2/mm_query_run.py\", line 28, in run_epoch\n    value=epoch(model,*args,**kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 15676, in runEpoch\n    result, _ = self.runBatch(\n                ^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 13595, in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 13734, in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 14116, in _run_batch_once\n    _what_answers = self._what_or_think(\n                    ^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8764, in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 10192, in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 153, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8449, in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 153, in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 8227, in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 23428, in _forward_per_stage\n    body_result = self._forward_body(\n                  ^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 17199, in _forward_body\n    return self._forward_body_per_word(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 21962, in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 21515, in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\n                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 20690, in _run_sentence_word_bricks\n    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 20313, in _commit_sentence\n    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought)\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/ThoughtClosing.py\", line 117, in close\n    result = model.run_selected_thought(field.query, row=row,\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2/thinking_observer.py\", line 16, in wrapped\n    return original(model,meaning,*args,**kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 6024, in run_selected_thought\n    commit(self, result, row=row)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/ThoughtStream.py\", line 256, in commit\n    index = write(model, result.meaning, row=row)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/ThoughtStream.py\", line 231, in write\n    result = store.append_meaning(meaning, kind=kind, evidence=evidence_pair(meaning),\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py\", line 124, in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py\", line 9446, in append_meaning\n    terms, complete = self._meaning_leaf_terms(meaning, order=order)\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/MemoryIndex.py\", line 90, in _meaning_leaf_terms\n    return visit(meaning, order)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/MemoryIndex.py\", line 68, in visit\n    child = value.constituents[reference[1]]\n            ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\nIndexError: tuple index out of range\n"
+}

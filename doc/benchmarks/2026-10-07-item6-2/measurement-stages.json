@@ -1,0 +1,26 @@
+[
+  {
+    "stage": "freeze",
+    "exit_code": 0
+  },
+  {
+    "stage": "mm_query_run",
+    "exit_code": 1
+  },
+  {
+    "stage": "thinking_gate",
+    "exit_code": 1
+  },
+  {
+    "stage": "campaign",
+    "exit_code": 0
+  },
+  {
+    "stage": "summarize",
+    "exit_code": 0
+  },
+  {
+    "stage": "finalize",
+    "exit_code": 0
+  }
+]

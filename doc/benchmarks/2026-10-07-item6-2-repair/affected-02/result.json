@@ -1,0 +1,95 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_dual_towers.py::test_pyramid_taper_topk_selection"
+  ],
+  "completed": [
+    "test/test_dual_towers.py::test_pyramid_taper_topk_selection"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/affected-02/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/affected-02/worker-000.json"
+      ],
+      "pid": 6127,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 611943888,
+      "elapsed_seconds": 4.446768875000998,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/affected-02/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_dual_towers.py::test_pyramid_taper_topk_selection"
+      ],
+      "completed": [
+        "test/test_dual_towers.py::test_pyramid_taper_topk_selection"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_dual_towers.py::test_pyramid_taper_topk_selection",
+          "phase": "call",
+          "outcome": "passed",
+          "duration": 0.7127487920224667,
+          "message": "",
+          "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh\r\n[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.511s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 1800,
+    "suite_seconds": 10800,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/affected-02",
+  "elapsed_seconds": 8.607291791005991,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "peak_aggregate_memory_bytes": 611943888,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/affected-02/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/affected-02/collect.json"
+    ],
+    "pid": 6109,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 422118600,
+    "elapsed_seconds": 3.571427291026339,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2-repair/affected-02/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_dual_towers.py::test_pyramid_taper_topk_selection"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_dual_towers.py::test_pyramid_taper_topk_selection"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  }
+}

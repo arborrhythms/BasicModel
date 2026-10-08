@@ -1,0 +1,21 @@
+{
+  "training_runs": 0,
+  "seed": null,
+  "gate_retry": false,
+  "supplied_constituents": 1,
+  "resolved_constituents": 0,
+  "resolved_references": [
+    [
+      "constituent",
+      0
+    ],
+    null,
+    null
+  ],
+  "open_slots": [],
+  "scope": "Construction-only reproduction of a dangling local reference after fill; original MM failed meaning was not captured.",
+  "outcome": "reproduced",
+  "error": "IndexError('tuple index out of range')",
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-item6-2/diagnose_constituent.py\", line 28, in <module>\n    write(model,resolved,row=0)\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/ThoughtStream.py\", line 231, in write\n    result = store.append_meaning(meaning, kind=kind, evidence=evidence_pair(meaning),\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py\", line 124, in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py\", line 9446, in append_meaning\n    terms, complete = self._meaning_leaf_terms(meaning, order=order)\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/MemoryIndex.py\", line 90, in _meaning_leaf_terms\n    return visit(meaning, order)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/MemoryIndex.py\", line 68, in visit\n    child = value.constituents[reference[1]]\n            ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^\nIndexError: tuple index out of range\n",
+  "stored_rows": 0
+}

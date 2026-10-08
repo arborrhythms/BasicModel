@@ -21,7 +21,7 @@ import torch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "bin"))
 import Layers  # noqa: E402
-from Language import ChunkLayer  # noqa: E402
+from Language import SynthesizeLayer  # noqa: E402
 from Spaces import Codebook  # noqa: E402
 
 
@@ -93,8 +93,8 @@ def test_peel_runs_in_the_prototypes_basis():
     W = torch.stack([e[0], e[1], e[2]])            # row r ~ axis r
     P = torch.stack([e[1], e[0], e[2]])            # rows 0,1 swapped
     query = e[0].clone()
-    parts_w, _ = ChunkLayer.peel(query, _Shim(W), max_parts=1)
-    parts_p, _ = ChunkLayer.peel(query, _Shim(W), prototypes=P, max_parts=1)
+    parts_w, _ = SynthesizeLayer.peel(query, _Shim(W), max_parts=1)
+    parts_p, _ = SynthesizeLayer.peel(query, _Shim(W), prototypes=P, max_parts=1)
     assert parts_w[0][0] == 0, "order-0 basis: query e0 selects row 0"
     assert parts_p[0][0] == 1, "prototypes basis: e0 lives on P's row 1"
 
@@ -135,14 +135,14 @@ def test_order_k_member_missed_at_order0_recovered_by_unfold():
 
     # Order-0 probe (no prototypes): the single-row fit leaves a large
     # residual -- the folded row is only a shadow of the member's direction.
-    parts0, res0 = ChunkLayer.peel(q, cb, max_parts=1)
+    parts0, res0 = SynthesizeLayer.peel(q, cb, max_parts=1)
     assert float(res0.norm()) > 0.3 * float(q.norm()), (
         "order-0 match should visibly miss the pre-fold-domain member")
 
     # Unfolded probe: reconstitute the stamped row, peel in that basis --
     # the member is recovered as row 2 at coeff ~ 1 with residual ~ 0.
     proto = cb.unfolded_prototypes(sigma=sigma)
-    parts, residual = ChunkLayer.peel(q, cb, prototypes=proto, max_parts=1)
+    parts, residual = SynthesizeLayer.peel(q, cb, prototypes=proto, max_parts=1)
     assert parts and parts[0][0] == 2, parts
     assert abs(parts[0][1] - 1.0) < 5e-3, parts
     assert float(residual.norm()) < 1e-3 * (1 + float(q.norm()))
@@ -158,7 +158,7 @@ def test_unfolded_prototypes_feed_the_peel():
     cb.record_fold(torch.tensor([1]), 0, Codebook.FOLD_SIGMA)
     proto = cb.unfolded_prototypes(sigma=sigma)
     query = proto[1].clone()                       # a member of row 1's region
-    parts, residual = ChunkLayer.peel(query, cb, prototypes=proto, max_parts=1)
+    parts, residual = SynthesizeLayer.peel(query, cb, prototypes=proto, max_parts=1)
     assert parts and parts[0][0] == 1
     assert abs(parts[0][1] - 1.0) < 1e-3
     assert float(residual.norm()) < 1e-4 * (1 + float(query.norm()))

@@ -8691,7 +8691,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
     ORIGIN_PROVISIONED = 1
     ORIGIN_USER = 2
 
-    KINDS = ("unverified", "fact", "question", "estimate", "observation")
+    KINDS = ("unverified", "fact", "question", "estimate", "observation", "inference")
     MODES = ("unspecified", "assertive", "interrogative")
 
     def __init__(self, nDim: int, capacity: int = 1024, content_width=None):

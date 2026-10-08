@@ -62,11 +62,11 @@ def test_normal_entry_does_not_verify_generated_vectors_as_taxonomy():
     result = reasoner.model.reason_about(QuerySpec.from_surface("isPart", a, b))
     assert result.posture == TRUE
     assert result.result.domain == "conceptual-taxonomy"
-    assert len(cs._ltm_store) == 0
-    geometric = reasoner.model.reason_about(
-        QuerySpec.from_surface("isPart", torch.eye(8)[0], torch.ones(8)))
-    assert geometric.result.evidence_kind == 'meronymy'
-    assert 'path' not in geometric.result.evidence
+    assert len(cs._ltm_store) == 1
+    assert cs._ltm_store.row(0)['kind'] == 'inference'
+    with pytest.raises((ValueError, TypeError), match='reference|concept'):
+        reasoner.model.reason_about(
+            QuerySpec.from_surface("isPart", torch.eye(8)[0], torch.ones(8)))
 
 
 def test_normal_controller_does_not_certify_a_world_row_as_taxonomy():
@@ -94,9 +94,11 @@ def test_actual_model_entry_and_checkpoint_keep_taxonomy_identity(tmp_path):
     from test_thought_model_fixture import thought_config
     config = thought_config(tmp_path)
     source = _make_model(config)
+    from test_thought_model_fixture import force_requested_thought
+    force_requested_thought(source)
     restored = None
     try:
-        source.reasoning_iterations = 128
+        source.reasoning_iterations = source.attention_budget = 128
         cs = source.conceptualSpace
         a, b = (('sym', cs.synthesize_higher_order([('sym', cs.new_concept())]))
                 for _ in range(2))
@@ -109,11 +111,18 @@ def test_actual_model_entry_and_checkpoint_keep_taxonomy_identity(tmp_path):
         path = str(tmp_path / "taxonomy.pt")
         source.save_weights(path)
         restored = _make_model(config)
-        restored.reasoning_iterations = 128
+        force_requested_thought(restored)
+        restored.reasoning_iterations = restored.attention_budget = 128
         assert restored.load_weights(path, strict=True, require_match=True)
+        from ThoughtReferences import bindings
+        assert restored.symbolSpace.ltm_store.row(0)['kind'] == 'inference'
+        assert ('sym', relation) in bindings(restored.symbolSpace.ltm_store.meaning_of(0))['_thought_witnesses']
+        # Probe the checkpoint's taxonomy independently of its saved conclusion.
+        restored.symbolSpace.ltm_store.reset()
         after = restored.reason_about(spec, spaces=[])
         assert after.posture == TRUE
         assert after.result.evidence["path"] == before.result.evidence["path"]
+        restored.symbolSpace.ltm_store.reset()
         restored.conceptualSpace.retire_concept(relation)
         assert restored.reason_about(spec, spaces=[]).posture == UNKNOWN
     finally:

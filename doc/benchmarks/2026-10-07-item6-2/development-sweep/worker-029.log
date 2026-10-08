@@ -1,0 +1,53 @@
+FFF..................................................................... [ 28%]
+.............................ssssssssss................................. [ 56%]
+........................................................................ [ 84%]
+......................................s.                                 [100%]
+=================================== FAILURES ===================================
+_______ test_numeric_world_evidence_cannot_establish_taxonomic_inclusion _______
+test/test_taxonomy_policy.py:26: in test_numeric_world_evidence_cannot_establish_taxonomic_inclusion
+    assert len(store) == 1
+E   assert 2 == 1
+E    +  where 2 = len(TernaryTruthStore())
+____ test_unrelated_true_episode_cannot_establish_the_next_parent_relation _____
+test/test_taxonomy_policy.py:36: in test_unrelated_true_episode_cannot_establish_the_next_parent_relation
+    assert model.reason_about(model.grammatical_thoughts.form('ask', fact)).support_true == 1
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22737: in reason_about
+    return self._run_public_thought(
+bin/Models.py:22703: in _run_public_thought
+    result = self.run_selected_thought(
+bin/Models.py:6035: in run_selected_thought
+    result = self._run_selected_thought_once(meaning, row=row,
+bin/Models.py:6405: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6366: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6226: in execute
+    action = self._choose_selected_thought_action(
+bin/Models.py:5986: in _choose_selected_thought_action
+    chooser = self._selected_thought_chooser(active)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5868: in _selected_thought_chooser
+    raise RuntimeError('thinking requires the existing grammar operation chooser')
+E   RuntimeError: thinking requires the existing grammar operation chooser
+__ test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation ___
+test/test_taxonomy_policy.py:46: in test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation
+    assert result.support_true == 1
+E   AssertionError: assert 0.0 == 1
+E    +  where 0.0 = SelectedThoughtResult(meaning=ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('sym', 12), ('sym', 4...(('evidence', -1),)), ('_producing_operation', 'equal'), ('_thought_witnesses', ())), scope=(), sentence_kind=None)}))).support_true
+=============================== warnings summary ===============================
+test/test_taxonomy_policy.py::test_numeric_world_evidence_cannot_establish_taxonomic_inclusion
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_taxonomy_policy.py::test_numeric_world_evidence_cannot_establish_taxonomic_inclusion
+FAILED test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation
+FAILED test/test_taxonomy_policy.py::test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation
+3 failed, 242 passed, 11 skipped, 1 warning in 8.39s

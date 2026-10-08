@@ -102,7 +102,7 @@ def test_bound_snapshot_and_checkpoint_keep_concept_ids():
     from QueryWork import QueryWorkBudget
     from types import MappingProxyType
     from test_accessible_mind import _meaning
-    result = ThoughtResult('what', 'conceptual-subgoal', 'set', 'retrieval', _meaning(),
+    result = ThoughtResult('query', 'ltm-description', 'set', 'retrieval', _meaning(),
         MappingProxyType({'frames': ({'reference': ('sym', definitions[11][0])},)}))
     apply_thought_effect(SimpleNamespace(conceptualSpace=cs, conceptualSpaces=[cs]),
                          result, row=0, work=QueryWorkBudget(32))

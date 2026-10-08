@@ -1,0 +1,66 @@
+............s..............................FF........................ [ 46%]
+......................................ss....F..F.F...................... [ 95%]
+...F..                                                                   [100%]
+=================================== FAILURES ===================================
+___________________________ test_registry_and_fixity ___________________________
+test/test_union_difference_ops.py:174: in test_registry_and_fixity
+    assert GRAMMAR_LAYER_CLASSES["chunk"] is SynthesizeLayer       # additive sum
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'chunk'
+___________________________ test_class_contract_pins ___________________________
+test/test_union_difference_ops.py:189: in test_class_contract_pins
+    assert cls.rule_name == name
+E   AssertionError: assert 'synthesize' == 'chunk'
+E     
+E     - chunk
+E     + synthesize
+_____ test_thought_pair_keeps_one_episode_and_costs_before_policy_backward _____
+test/test_walk_trials.py:64: in test_thought_pair_keeps_one_episode_and_costs_before_policy_backward
+    assert all(record[2]==result.records[0].episode for record in model._selected_thought_policy_records)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute '_selected_thought_policy_records'. Did you mean: '_selected_thought_policy_loss'?
+____________ test_anticipation_holds_both_walks_until_future_return ____________
+test/test_walk_trials.py:108: in test_anticipation_holds_both_walks_until_future_return
+    assert pending.walk is not None
+           ^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'walk'
+________ test_forecast_previews_publish_only_the_committed_observation _________
+test/test_walk_trials.py:148: in test_forecast_previews_publish_only_the_committed_observation
+    assert held[0][0].comparison is not None
+E   assert None is not None
+E    +  where None = _PendingMeaningExpectation(prediction=MeaningExpectation(roles=tensor([[-0.0634,  0.1025,  0.1390, -0.0395, -0.1206, -...      [ True,  True,  True]]])), versions=(0, 0, 1, 1, 1, 1), policy=(), work=0, frames=(), walk=None, comparison=None).comparison
+___ test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser ___
+test/test_what_thinking_episode.py:80: in test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser
+    m_off.what(What.supervised(0), _batch(m_off, rows=1)[0])
+bin/Models.py:10154: in what
+    raise ValueError('what is retired; use ask for open references or query for LTM lookup')
+E   ValueError: what is retired; use ask for open references or query for LTM lookup
+=============================== warnings summary ===============================
+test/test_understanding_reconstruct.py::test_understand_returns_one_explicit_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7080: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7080: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp7f1a1voy/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_verb_adverb_grammar_ops.py::test_verb_layer_forces_spectrum_and_inverts_given_verb
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_union_difference_ops.py::test_registry_and_fixity - KeyError...
+FAILED test/test_union_difference_ops.py::test_class_contract_pins - Assertio...
+FAILED test/test_walk_trials.py::test_thought_pair_keeps_one_episode_and_costs_before_policy_backward
+FAILED test/test_walk_trials.py::test_anticipation_holds_both_walks_until_future_return
+FAILED test/test_walk_trials.py::test_forecast_previews_publish_only_the_committed_observation
+FAILED test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser
+6 failed, 138 passed, 3 skipped, 4 warnings, 3 subtests passed in 20.33s

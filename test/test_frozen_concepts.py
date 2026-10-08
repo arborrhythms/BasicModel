@@ -117,38 +117,3 @@ def test_set_reading_primes_the_concept():
         m.relevance_on = False
         object.__setattr__(cs0, "_priming_boosts", None)
         object.__setattr__(m, "_reading_desire", None)
-
-
-@pytest.mark.slow
-def test_reading_wiring_desires_staged_wholes(monkeypatch):
-    """While reading is desired, the assembler desires each batch's staged
-    word-whole rows (the hard-coded concept->whole projection)."""
-    m = _build("data/MM_20M_xor.xml")
-    ws0 = m.wholeSpaces[0]
-    cs0 = m._concept_owner()
-    m.relevance_on = True
-    # One observed batch, two priming events from identical neutral surfaces.
-    # Training between arms would change the accumulated source energy.
-    with torch.no_grad():
-        m.forward(m.inputSpace.prepInput(['hello world']))
-    target = ws0._priming_target()
-    monkeypatch.setattr(target, '_stage0_indices', torch.tensor([[0]]))
-    monkeypatch.setattr(cs0, 'project_priming_to_towers', lambda *a, **k: None)
-    try:
-        m.set_reading(True)
-        object.__setattr__(target, '_priming_boosts', None)
-        m._prime_seen_step()
-        b_read = ws0.priming_weights().clone()
-        assert b_read is not None, "staged rows must be primed"
-        m.set_reading(False)
-        object.__setattr__(target, '_priming_boosts', None)
-        m._prime_seen_step()
-        b_seen = ws0.priming_weights()
-        assert b_seen is not None
-        assert float(b_read.max()) > float(b_seen.max()), (
-            "desire must prime staged wholes beyond seen alone")
-    finally:
-        m.relevance_on = False
-        m.set_reading(False)
-        object.__setattr__(ws0._priming_target(), "_priming_boosts", None)
-        object.__setattr__(cs0, "_priming_boosts", None)

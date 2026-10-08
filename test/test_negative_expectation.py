@@ -113,48 +113,23 @@ def test_predictor_loss_and_gradients_are_identical_at_every_gain():
 
 
 def test_declared_not_is_a_thought_act_not_an_observation(tmp_path, monkeypatch):
-    from pathlib import Path
-    from Language import Grammar, NotLayer
-    from Queries import GrammaticalThoughtRegistry
     from test_normal_thought_controller import _catalog_world
+    from ThoughtReferences import with_slots, evidence_pair
+    from ThoughtClosing import absence
     model, registry, memory, part, whole = _catalog_world()
-    assert "not" not in registry.executable_operation_ids
-    source = Path("data/complete.grammar").read_text()
-    path = tmp_path / "absence.grammar"
-    path.write_text(source.replace("</thought>",
-        "<rule>not_O1 = not.thought(not_I1)</rule></thought>"))
-    grammar = Grammar()
-    grammar.load_from_grammar_file(str(path))
-    registry = GrammaticalThoughtRegistry.install(model.conceptualSpace, grammar)
-    model.grammatical_thoughts = registry
-    model.symbolSpace.grammatical_thoughts = registry
-    request = registry.form("not", part)
-    from Layers import BracketExpectation
-    width = request.roles.shape[-1]
-    discourse = BracketExpectation(4, 8, width, concept_dim=width, expectation_scope="structured")
-    model.symbolSpace.expectation = discourse
-    actual = ConceptualMeaning(request.roles, torch.tensor([False, True, False]))
-    estimate = MeaningExpectation(request.roles, torch.full((3,), 30.))
-    discourse._last_expectation_comparisons[0] = ExpectationComparison(
-        estimate, actual.roles, actual.role_mask, actual.roles - estimate.roles,
-        actual.role_mask.float() - estimate.presence_logits.sigmoid(), None)
-    from Meaning import ClosingImage
-    model._closing_images = {0: ClosingImage.form(actual.roles,estimate.roles,
-        estimate.presence_logits.sigmoid(),form_width=0)}
-    evidence = model._selected_thought_expectation(request, row=0)
-    torch.testing.assert_close(evidence[:width], -request.roles[0])
-    store = TernaryTruthStore(width, capacity=4)
+    assert 'not' in registry.executable_operation_ids
+    source = with_slots(registry.form('part', part, whole, mode='assertive'), (), pair=(.3,.7))
+    request = registry.form('not', source)
+    store = TernaryTruthStore(8, capacity=8)
     model.symbolSpace.ltm_store = store
-    observation = store.append_meaning(actual, kind="observation", sentence_index=len(store))
+    observation = store.append_meaning(source,kind='observation')
     with model._query_boundary_scope((0,)):
-        result = model.run_selected_thought(request, work_budget=32)
-    assert result.result.semantic_id == "not"
-    torch.testing.assert_close(result.result.value, NotLayer()(request.roles[0]))
-    assert result.result.evidence["evidence_kind"] == "inference"
-    assert [r.operation for r in result.records if r.kind == "thought"] == ["not", "conclude"]
-    assert len(store) == 1
-    assert store.row(observation)["kind"] == "observation"
-    torch.testing.assert_close(store.meaning_of(observation).roles, actual.roles)
+        result = model.run_selected_thought(request,work_budget=32)
+    assert result.result.semantic_id == 'not'
+    assert evidence_pair(result.meaning) == (.7,.3)
+    assert len(store) == 2 and store.row(1)['kind'] == 'inference'
+    assert store.row(observation)['kind'] == 'observation'
+    torch.testing.assert_close(store.meaning_of(observation).roles,source.roles)
 
 
 def _anticipating_model():
@@ -177,28 +152,10 @@ def _anticipating_model():
     return model, discourse, meaning
 
 
-def test_residual_credit_replays_current_chooser_and_has_its_own_baseline():
-    model, discourse, meaning = _anticipating_model()
-    model.eval()  # deterministic decisions; no supplied answer exists
-    model._selected_thought_policy_baseline = 123.
-    model._stage_expectation_queries()
-    pending = discourse._inter_last_meaning[0]
-    assert pending is not None and pending.policy
-    before = pending.prediction.roles.detach().clone()
-    # A delayed outcome must tolerate an optimizer changing policy weights.
-    chooser = model.selected_thought_choosers[str(meaning.roles.shape[-1])]
-    with torch.no_grad():
-        chooser.mlp[-1].weight.add_(.001)
-    discourse.train()
-    observe(discourse, meaning.roles * 2)
-    torch.testing.assert_close(discourse.last_expectation_comparison().estimate.roles, before)
-    loss = model._expectation_policy_loss()
-    assert loss is not None and loss.requires_grad
-    loss.backward()
-    assert any(p.grad is not None and p.grad.norm() > 0 for p in chooser.parameters())
-    assert model._selected_thought_policy_baseline == 123.
-    assert model._expectation_policy_baseline < 0
-    assert model._expectation_policy_loss() is None
+def test_residual_credit_replays_current_chooser_and_has_its_own_baseline(monkeypatch):
+    """Held forecasts credit the shared chooser without an EMA or replay."""
+    from test_item6_2_thinking import test_expectation_credit_moves_shared_chooser_toward_the_completed_chain
+    test_expectation_credit_moves_shared_chooser_toward_the_completed_chain(monkeypatch)
 
 
 def test_metadata_comes_from_the_preceding_occurrence_not_the_target():
@@ -244,9 +201,10 @@ def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch, 
             split="train", optimizer=optimizer,
             batch_override=(inputs, torch.empty(1, 0)))
         assert result is not None
-    assert model._expectation_policy_report["episodes"] > 0
-    chooser = next(iter(model.selected_thought_choosers.values()))
-    assert chooser.mlp[-1].weight.norm() > 0
+    # Bound declaratives use compose and global expectation, with no separate policy.
+    assert not hasattr(model, 'selected_thought_choosers')
+    chooser = model.symbolSpace.languageLayer.operation_layer
+    assert chooser.chooser.mlp[-1].weight.norm() > 0
     assert not model.__dict__.get("_selected_thought_policy_records")
     assert model._expectation_policy_loss() is None
 
@@ -350,8 +308,8 @@ def test_delayed_contrastive_credit_replays_the_current_predictor():
 def test_disabling_expectation_erases_pending_credit_and_starts_cold():
     model, discourse, meaning = _anticipating_model()
     model.eval()
-    model._stage_expectation_queries()
-    assert discourse._inter_last_meaning[0].policy
+    discourse.expect_next_meaning(record=True)
+    assert discourse._inter_last_meaning[0] is not None
     discourse.set_expectation_enabled(False)
     assert discourse._inter_last_meaning == [None]
     assert discourse.consume_expectation_policy_outcomes() == []
@@ -364,7 +322,7 @@ def test_open_question_and_nested_what_spare_the_same_role():
     model, discourse, meaning = _anticipating_model()
     registry = model.grammatical_thoughts
     source, whole = meaning.role_refs[0], meaning.role_refs[2]
-    question = registry.form("part", whole, open_roles=("I1",))
+    question = registry.form("isPart", whole, open_roles=("I1",))
     observe(discourse, meaning.roles)
     model.expectation_gain = 1.
     store = model.symbolSpace.ltm_store
@@ -372,7 +330,7 @@ def test_open_question_and_nested_what_spare_the_same_role():
     with model._query_boundary_scope((0,)):
         context = model._thought_grammar_context(question, row=0,
             work=QueryWorkBudget(64), continuation=None)
-        outer = registry.form("what", store.occurrence_of(index), context=context)
+        outer = registry.form("ask", store.occurrence_of(index), context=context)
         direct = model._selected_thought_expectation(question, row=0, work=QueryWorkBudget(64))
         nested = model._selected_thought_expectation(outer, row=0, work=QueryWorkBudget(64))
     torch.testing.assert_close(direct, nested)
@@ -387,20 +345,16 @@ def test_anticipation_ignores_incoming_staging_and_other_streams():
         model, discourse, meaning = _anticipating_model()
     model.eval()
     perturbed = copy.deepcopy(model)
-    model._stage_expectation_queries()
-    before = discourse._inter_last_meaning[0]
+    before = discourse.expect_next_meaning(record=True)
     # Content staged for an arriving or later packed sentence is unavailable
     # to prior-only thought, including the most recent mutable program slot.
     perturbed._last_understanding = SimpleNamespace(sentence_states=(SimpleNamespace(leaves=torch.full((9, meaning.roles.shape[-1]), 999.)),))
     perturbed.inputSpace = SimpleNamespace(_ar_embedded_N=torch.full((2, 8, 16), -999.))
     perturbed.symbolSpace.ltm_store.append_meaning(meaning, kind="observation", stream=1, sentence_index=len(perturbed.symbolSpace.ltm_store))
-    perturbed._stage_expectation_queries()
-    after = perturbed.symbolSpace.expectation._inter_last_meaning[0]
-    torch.testing.assert_close(before.prediction.roles, after.prediction.roles, rtol=0, atol=0)
-    assert before.source_occurrences == after.source_occurrences
-    assert len(before.policy) == len(after.policy)
-    for a, b in zip(before.policy, after.policy):
-        torch.testing.assert_close(a[1], b[1], rtol=0, atol=0)
+    after = perturbed.symbolSpace.expectation.expect_next_meaning(record=True)
+    torch.testing.assert_close(before.roles, after.roles, rtol=0, atol=0)
+    assert not model._what_memory().thought_history()
+    assert not perturbed._what_memory().thought_history()
 
 
 @pytest.mark.parametrize("budget", [1, 64])
@@ -409,7 +363,7 @@ def test_nested_object_mask_reads_a_later_thought_on_the_shared_budget(budget):
     model, discourse, meaning = _anticipating_model()
     observe(discourse, meaning.roles)
     registry = model.grammatical_thoughts
-    question = registry.form("part", meaning.role_refs[2], open_roles=("I1",))
+    question = registry.form("isPart", meaning.role_refs[2], open_roles=("I1",))
     memory = model._what_memory()
     memory.begin_thought_episode(meaning, work_budget=8)
     memory.commit_thought(question, operation="part")
@@ -418,7 +372,7 @@ def test_nested_object_mask_reads_a_later_thought_on_the_shared_budget(budget):
     with model._query_boundary_scope((0,)):
         context = model._thought_grammar_context(question, row=0,
             work=QueryWorkBudget(64), continuation=None)
-        outer = registry.form("what", memory.thought_reference(memory.thought_history()[1]), context=context)
+        outer = registry.form("ask", memory.thought_reference(memory.thought_history()[1]), context=context)
         meter = QueryWorkBudget(budget)
         nested = model._selected_thought_expectation(outer, row=0, work=meter)
         if budget == 64:
@@ -451,22 +405,14 @@ def test_generate_sentence_uses_positive_prediction_only_as_generate_seed(monkey
 def test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns():
     from Models import BasicModel
     from Language import SelectedThoughtChooser
-    from ThoughtFeatures import context_width
-    width, hidden = 8, 16
-    old_width = context_width(width) - (3 * width + 7)
-    old = SelectedThoughtChooser(context_dim=old_width, hidden=hidden)
-    with torch.no_grad():
-        old.mlp[-1].weight.normal_(0, .1)
-    prefix = f"selected_thought_choosers.{width}."
-    state = {prefix + name: value.clone() for name, value in old.state_dict().items()}
+    old = SelectedThoughtChooser(context_dim=32, hidden=16)
+    prefix = 'selected_thought_choosers.8.'
+    state = {prefix+name: value.clone() for name,value in old.state_dict().items()}
+    expected = set(state)
     restored = BasicModel()
-    assert restored._materialize_answer_path_from_checkpoint(state) == 1
-    restored.load_state_dict(state, strict=True)
-    new = restored.selected_thought_choosers[str(width)]
-    context = torch.randn(3, old_width)
-    new_context = torch.cat((context, torch.randn(3, 3 * width + 7)), dim=1)
-    torch.testing.assert_close(new.logits(new_context, (False, False, True)), old.logits(context, (False, False, True)))
-    assert restored._pending_thought_policy_reset == {prefix + "mlp.0.weight"}
+    assert restored._materialize_answer_path_from_checkpoint(state) == 0
+    assert not state and restored._pending_thought_policy_reset == expected
+    assert not hasattr(restored,'selected_thought_choosers')
 
 
 def test_native_nonzero_composition_is_bit_identical_at_every_stance(tmp_path, monkeypatch):

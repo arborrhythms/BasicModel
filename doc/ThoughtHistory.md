@@ -1,64 +1,46 @@
 # Ordinary thought history
 
-Implementation reference, September 20.
+Current contract: [item 6.2, October 7](specs/2026-10-07-thinking.md).
+The [held 6.2 receipt](benchmarks/2026-10-07-item6-2/README.md) remains intact. The [repair receipt](benchmarks/2026-10-07-item6-2-repair/README.md) records constituent ownership, ported contracts and new measurements. Alec accepted it as the mechanism landing under spec §11; learned chaining remains for §10's MM_math_chain.
 
-`SymbolSpace.what_memory` remains the only owner of interaction history. It
-stores legacy `LTMSlot` values and ordinary `ThoughtRecord` values in the same
-row-local chronological deque. Ordinary execution records explicit `begin`,
-same-level `thought`, `descend`, `return`, `cutoff`, and `finish` transitions;
-replay derives current and suspended contexts from those records rather than
-maintaining a second planner stack.
+`SymbolSpace.what_memory` owns the chronological history. `begin`, `thought`,
+`descend`, `return`, `cutoff` and `finish` records determine dependency order;
+there is no separate planner stack. The owner's historical attribute name is
+not a callable thought operation: that operation is now `ask`.
 
-Each root episode declares one shared work budget. All ordinary work charges
-that budget across levels. At cutoff the active depth is frozen; the drain can
-perform at most that many LIFO returns and one root finish. Retention reserves
-space for the drain and rejects evicting active or semantically referenced
-occurrences. Stable `thought` references are row-local and resolve complete
-meanings through the same owner; they are not facts, answer labels, or evidence.
+A closing with an open referent, relation or evidence pair opens one episode.
+Surface interrogatives with all references bound do not. Each nested `ask`
+shares the same `attentionBudget`; no callback replenishes work. `conclude`
+is illegal while a reference is open and work remains. Cutoff drains at most
+the existing depth of returns and one finish. Unfilled references remain on a
+durable question row, available to later text in the same document.
 
-In episode mode, ordinary meanings stay live through the caller's one optimizer
-step. The episode must finish before `end_what_episode` releases that credit.
-A checked `ThoughtResult` is different: the owner records a detached typed
-snapshot only on an executed `thought`, a `return`, or the final `finish` that
-actually has one. It preserves result kind, request and typed evidence (for
-example a set, code, subgoal, or `MeaningExpectation`) without treating its
-scalar summary as an equivalent result store. It is not a reader cache and
-does not retain a reader graph. Checkpoints contain detached copies and
-replay/validate every row atomically on restore; the history sidecar is version
-3 and accepts version-1 rows, which have no `result` field, and version-2
-typed results. Version 3 tags nested `ConceptualMeaning` evidence explicitly,
-so a retained lookup record restores as a complete detached meaning rather
-than an untyped mapping. Nested `ThoughtResult` children are explicitly tagged
-and restore their type, request and evidence recursively. New computations after restore can be live, but
-restoration never replenishes budget or pressure.
+Every checked result is a serial slot carrying content, both evidence poles,
+witnessing rows and the operation that produced it. Later candidates can bind
+those slots. Two queries can therefore retrieve `a < b` and `b < c`, then
+conclude `a < c` with both references. Implication additionally requires its
+antecedent evidence. A nested answer returns the filled row.
 
-The ordinary controller now owns the selected direct-relation and direct
-concept-unary boundary paths.
-The legacy `LTMSlot` parity controller is deleted. A completed
-interrogative compose program is adapted into its canonical grammar meaning,
-then `run_selected_thought()` opens one ordinary episode for that row.
-Composition itself remains pure. A binary relation retains its two signed live
-leaves and native VP; a direct `concept` unary retains its one signed live leaf
-and grammar-native VP. Mode and `not`/`non` polarity stay with the owned action
-program. A physical nested fold or a unary description/reference form is not
-flattened into an invented occurrence.
-When a later catalogue operation refines that request, it replaces only the
-grammar-owned VP and legal operand assignment, preserving the selected source's
-mode, polarity, bindings, and scope through execution and the next choice.
+The kept walk writes conclusions as `inference` rows, with occurrence addresses
+from document/turn, per-turn ordinal and content. Witness references remain
+provenance. The closing stores unresolved questions. Candidate formation does
+not append temporary descriptions to LTM.
 
-The controller's operation/conclude choice sees masked root, active and
-candidate meanings with mode, polarity, bounded binding/scope metadata,
-attended STM/discourse and `what`-retrieved LTM frames, level, pressure and actual evidence. Native references
-are alpha-renamed, preserving binding equality without allocator magnitudes.
-The same meter pays for context reads and execution. See
-[SelectedMeaning](SelectedMeaning.md) for bounds and the current input schema.
+The existing compose scorer also scores thought requests. Greedy and one
+uniform departure are credited by `K · R · p(a_dep) · ΔC`: supplied answer,
+next-sentence expectation error and work. Exact ties contribute nothing.
+The REINFORCE/EMA path and `selectedThoughtPolicyWeight` are retired. There is
+one configured work name, `attentionBudget`; older budget names fail at load.
 
-`selectedThoughtPolicyWeight` is the one default-off thought REINFORCE objective:
-each eligible row's later answer error and its actual shared work cost,
-including all reads and children, with one EMA baseline. Its log-probability
-path reaches the chooser; its root, active and candidate observations,
-executor results, references, meter state and reward are hard or detached. This is supplied-answer controller credit, **not** residual credit,
-and it does not establish learned utility.
+Checked results detach reader tensors. Policy probabilities retain only the
+chooser graph until the owning cost arrives; no target enters a request.
+Checkpoint history preserves full meanings, pairs and provenance, and replay
+never replenishes work. The existing v3 result tags continue to carry nested
+meanings and typed results; old v1/v2 history remains readable.
+
+At a fully bound declarative, an uncancelled expectation image can yield
+`not X`, with its confidence in the against pole of an inference. Ordinary
+fully bound XOR closings do not open thinking episodes.
 
 ## Evidence
 
@@ -88,47 +70,6 @@ passed 1/1 in `20260918-191815-72d0c3` and the full history-boundary file
 passed 14/14 in `20260918-191957-9fefa6`. The affected
 controller/history/query selection then passed 136/136 in
 `20260918-192121-5f6dc4`.
-
-## Sentence-runtime integration
-
-`resolveAnswer()` opens only its completed rows, then runs an interrogative
-owned program through the ordinary controller before `reverseOutput()`.
-Assertions and unrecoverable physical programs remain
-observations; they cannot execute a checked VP. The boundary guard is checked
-before registry, native or occurrence reads. A standalone/evaluation
-resolution ends its finished ordinary episode immediately; training retains it
-through its one optimizer step and closes it with the existing episode teardown.
-For a checked truth result, the final selected full-width `[NP1, VP, NP2]`
-meaning replaces the lossy physical parse carrier as that row's answer seed;
-the selected operation therefore changes normal realization rather than merely
-adding trace metadata. A checked `arma` prediction result instead uses its
-validated detached `MeaningExpectation` `[NP1, VP, NP2]` role payload through
-the dedicated expectation adapter; its presence logits remain result metadata,
-and the estimate never becomes a fact or reader-gradient path. This is
-row-local: selected rows do not enter the legacy resolver, while unselected
-rows in the same batch still may. Set, code and subgoal results are not silently
-coerced into an answer concept; each needs its own typed adapter.
-See [Query phases](QueryPhases.md).
-
-## Selected-query meter
-
-Each controller episode creates one `QueryWorkBudget` from
-`selectedThoughtBudget` (default 32). It charges a controller unit before each
-chosen query, same-level conclusion, descent, return and root finish, and
-passes that exact meter to registry preparation, execution and `what(Q)`
-callbacks. Each ordinary transition records the actual delta; nested work does
-not start another allowance or optimizer episode. At cutoff only the existing
-query-free drain is legal. Live thought-occurrence reads preserve their live
-meaning; durable reads retain their detached boundary. See [shared query
-work](QueryWork.md).
-
-The controller probes first failed on the absent context/lifecycle path, then
-passed 25/25 focused semantics/controller cases in
-`output/tests/20260918-033710-5f144b`; the non-overlapping normal/chooser
-regression passed 39/39 in `output/tests/20260918-032344-fee2c1`. The two
-polarity cases passed in `output/tests/20260918-034810-cd9c1c`. These are
-mechanism and lifecycle evidence, not a learned-utility or residual-policy
-result.
 
 ## LTM roots retained by ordinary history
 

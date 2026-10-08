@@ -1,0 +1,1 @@
+Completed candidate sweep originally launched as final-sweep. Archived unchanged after its three contract-migration failures; no measurement training had started. Its original validated source is source.zip.

@@ -18,12 +18,12 @@ def _nested(monkeypatch, *, outer="whole", question=False):
     binary = {rule.method_name: i for i, rule in enumerate(language._compose_binary_rules)}
     entry = program()
     actions = entry.actions.tolist()
-    if outer == "what":
-        actions += [[2, unary["what"], -1], [2, unary["what"], -1]]
+    if outer == "ask":
+        actions += [[2, unary["ask"], -1], [2, unary["ask"], -1]]
     else:
         actions += [[0, -1, 2], [1, binary[outer], -1]]
         if question:
-            actions += [[2, unary["what"], -1]]
+            actions += [[2, unary["ask"], -1]]
         entry = replace(entry,
             rows=torch.tensor([3, 5, 3]), word_rows=torch.tensor([7, 9, 7]),
             activations=torch.tensor([-.25, .75, -.25]),
@@ -51,13 +51,14 @@ def test_nested_compose_preserves_complete_child_roles_without_a_write(monkeypat
 def test_nested_observation_writers_retain_children_without_certifying_them(monkeypatch, path):
     _cs, registry, language, entry, leaves = _nested(monkeypatch)
     store = _write_selected_observation(language, registry, entry, path)
-    assert len(store) == 2
+    assert len(store) == 4
+    assert all(store.row(i)['kind']=='question' for i in (1,2,3))
     child, parent = store.row(0), store.row(1)
     assert parent["meaning"].role_refs[2] == child["occurrence"]
     assert child["kind"] == "unverified" and child["trust"] == 0
     torch.testing.assert_close(child["meaning"].roles[0], leaves[0].detach())
     assert not child["meaning"].roles.requires_grad
-    assert parent["kind"] == "observation"
+    assert parent["kind"] == "question"
 
 
 def test_10_packed_pending_and_eager_ends_write_identical_rows(monkeypatch):
@@ -79,7 +80,7 @@ def test_10_packed_pending_and_eager_ends_write_identical_rows(monkeypatch):
 
 
 def test_nested_what_from_a_completed_program_enters_the_same_controller(monkeypatch):
-    cs, registry, language, entry, _leaves = _nested(monkeypatch, outer="what")
+    cs, registry, language, entry, _leaves = _nested(monkeypatch, outer="ask")
     model = BasicModel()
     model.spaces = []
     store = TernaryTruthStore(8, capacity=16)
@@ -89,6 +90,9 @@ def test_nested_what_from_a_completed_program_enters_the_same_controller(monkeyp
     object.__setattr__(model, "grammatical_thoughts", registry)
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         grammatical_thoughts=registry, what_memory=memory, ltm_store=store))
+    model.eval()
+    from test_thought_model_fixture import force_requested_thought
+    force_requested_thought(model)
     with model._query_boundary_scope((0,)):
         results = model._run_selected_sentence_thoughts((sentence_state(language, entry, registry),), work_budget=128)
     assert len(results) == 1

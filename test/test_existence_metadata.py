@@ -33,7 +33,7 @@ def test_actual_observation_writers_keep_roles_without_asserting_world_facts(mon
     commit_reading(f.language, f.registry, entry, store, trust=.95, owner=model)
     assert int(store.rel_type[0]) == (store.REL_NONE if depth == 1 else store.REL_PARTOF)
     torch.testing.assert_close(store.meaning_of(0).roles[store.role_mask[0]], clause.slots)
-    assert store.row(0).get("kind") == "observation"
+    assert store.row(0).get("kind") == ("question" if depth == 3 else "observation")
     result = _evaluate(store, store.meaning_of(0))
     assert result["posture"] == UNKNOWN
     assert result["support_true"] == result["support_false"] == 0

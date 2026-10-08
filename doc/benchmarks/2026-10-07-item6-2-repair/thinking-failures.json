@@ -1,0 +1,10 @@
+[
+  {
+    "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+    "phase": "call",
+    "outcome": "failed",
+    "duration": 0.02137829107232392,
+    "message": "test/test_unified_thought_controller.py:144: in test_runbatch_credits_each_controller_row_from_its_own_answer\n    model = _model()\n            ^^^^^^^^\ntest/test_output_walk.py:21: in _model\n    m = _build_ladder_variant(_P(tempfile.mkdtemp()), \"walk\", [\ntest/test_meronomy_ladder.py:487: in _build_ladder_variant\n    torch.manual_seed(0)\ndoc/benchmarks/2026-10-07-item6-2-repair/thinking_gate_observer.py:25: in unseeded\n    raise AssertionError('thinking gate must be unseeded')\nE   AssertionError: thinking gate must be unseeded",
+    "stdout": ""
+  }
+]

@@ -1,0 +1,453 @@
+--- measured-6.2/bin/Models.py
++++ repair/bin/Models.py
+@@ -1852,6 +1852,10 @@
+ 
+         arch = cfg["architecture"]
+         ModelFactory.validate_config(cfg)
++        # Predictors are constructed before SymbolSpace. Their routing width
++        # must use this model's grammar, not a previous model's cached rules.
++        TheGrammar._configured = False
++        TheGrammar._ensure_configured()
+ 
+         _binding = str(TheXMLConfig.get(
+             "architecture.conceptBinding", default="mixing")
+--- measured-6.2/bin/Spaces.py
++++ repair/bin/Spaces.py
+@@ -12953,8 +12953,8 @@
+         # it ``[B, n_rules] -> [B, concept_dim]`` to bias the predicted
+         # idea. ``n_rules == len(TheGrammar.rule_table)`` (== num_rules();
+         # == len(TheGrammar.rules) -- verified equal). The grammar is
+-        # configured by the time ConceptualSpace is built (the SubSpace /
+-        # SymbolSpace boot ran first); we still guard with
++        # configured at the model's configuration boundary, before these
++        # predictors and the later SymbolSpace are built; we still guard with
+         # ``_ensure_configured`` and fall back to ``concept_dim`` if the
+         # rule table is somehow empty so ``routing_proj`` is never a
+         # degenerate ``nn.Linear(0, ...)``. ``naive`` / ``ergodic`` /
+--- measured-6.2/bin/ThoughtReferences.py
++++ repair/bin/ThoughtReferences.py
+@@ -54,8 +54,44 @@
+     return with_slots(meaning, slots, pair=(0., 0.))
+ 
+ 
++def validate_local_references(meaning):
++    """Check each meaning's local table before a filling can escape.
++
++    Children own their own tables. Sharing a child is valid; a cycle, malformed
++    address or out-of-range local address is a construction error.
++    """
++    seen, active = set(), set()
++
++    def visit(value):
++        if id(value) in active or len(active) > 64:
++            raise ValueError('thought constituent cycle or depth limit at fill')
++        if id(value) in seen:
++            return
++        active.add(id(value))
++
++        def check(item):
++            if isinstance(item, tuple):
++                if item and item[0] == 'constituent':
++                    if (len(item) != 2 or type(item[1]) is not int
++                            or not 0 <= item[1] < len(value.constituents)):
++                        raise ValueError('dangling or malformed local constituent reference at fill')
++                else:
++                    for part in item:
++                        check(part)
++
++        for item in value.metadata().values():
++            check(item)
++        for child in value.constituents:
++            visit(child)
++        active.remove(id(value))
++        seen.add(id(value))
++
++    visit(meaning)
++
++
+ def fill(meaning, result, *, witnesses=(), operation=None):
+     """Bind from a checked result, retaining both poles and its provenance."""
++    validate_local_references(meaning)
+     evidence = result.evidence if hasattr(result, 'evidence') else result
+     pair = (float(evidence.get('support_true', 0.)),
+             float(evidence.get('support_false', 0.)))
+@@ -63,21 +99,42 @@
+     if supplied is None:
+         frames = evidence.get('frames', ())
+         supplied = frames[0].get('meaning') if len(frames) == 1 else None
++    if supplied is not None:
++        validate_local_references(supplied)
+     frames = evidence.get('frames', ())
+     roles, mask = meaning.roles.clone(), meaning.role_mask.clone()
+     references = list(meaning.role_refs)
++    children = list(meaning.constituents)
++    rebased = None
++
++    def import_reference(reference):
++        nonlocal rebased
++        if rebased is None:
++            existing = {id(child): index for index, child in enumerate(children)}
++            rebased = {}
++            for index, child in enumerate(supplied.constituents):
++                if id(child) not in existing:
++                    existing[id(child)] = len(children)
++                    children.append(child)
++                rebased[index] = existing[id(child)]
++        if isinstance(reference, tuple):
++            if reference and reference[0] == 'constituent':
++                return ('constituent', rebased[reference[1]])
++            return tuple(import_reference(item) for item in reference)
++        return reference
++
+     for kind, role in open_slots(meaning):
+         if kind == 'evidence':
+             continue
+         if supplied is not None and supplied.role_refs[role] is not None:
+-            references[role] = supplied.role_refs[role]
++            references[role] = import_reference(supplied.role_refs[role])
+             roles[role], mask[role] = supplied.roles[role], supplied.role_mask[role]
+         elif (supplied is not None and len(frames) == 1
+               and bool(supplied.role_mask[role])):
+             # A fused one-slot row names itself. It need not pretend its
+             # occurrence address is a conceptual-space allocation.
+             if int(supplied.role_mask.sum()) == 1:
+-                references[role] = frames[0]['occurrence']
++                references[role] = import_reference(frames[0]['occurrence'])
+             roles[role], mask[role] = supplied.roles[role], supplied.role_mask[role]
+         elif (evidence.get('reference') is not None
+               and torch.is_tensor(evidence.get('binding_value', evidence.get('value')))):
+@@ -89,7 +146,8 @@
+     if operation is not None:
+         data['_producing_operation'] = operation
+     updated = replace(meaning, roles=roles, role_mask=mask,
+-                      role_refs=tuple(references), bindings=data)
++                      role_refs=tuple(references), constituents=tuple(children), bindings=data)
++    validate_local_references(updated)
+     old = evidence_pair(meaning)
+     return with_slots(updated, open_slots(meaning),
+                       pair=(max(old[0], pair[0]), max(old[1], pair[1])))
+--- measured-6.2/test/test_dual_towers.py
++++ repair/test/test_dual_towers.py
+@@ -51,10 +51,13 @@
+ 
+ @pytest.mark.slow
+ def test_ws_matches_ps_view_shape():
+-    """The two towers present identical [8, 1024] views for the callosum."""
++    """The towers share the resolved identity event width (96+8 here)."""
+     m = _build("data/MM_20M_xor.xml")
+     ps, ws = m.perceptualSpace, m.wholeSpace
+-    assert int(ps.nOutputDim) == int(ws.nOutputDim) == 1024
++    identity = m.cfg['PartSpace']
++    form_width = int(identity['identityPairDim']) + int(identity['identityLengthDim'])
++    assert int(ps.nOutputDim) == int(ws.nOutputDim) == form_width + ps.nWhere + ps.nWhen
++    assert int(ps.nOutputDim) == 104
+ 
+ 
+ @pytest.mark.slow
+@@ -144,10 +147,11 @@
+ 
+ @pytest.mark.slow
+ def test_ws_routes_universe_on_parallel_path():
+-    """sO>=1 parallel: WS consumes the universe view at EVERY stage."""
++    """Raw unity feeds stage zero; downstream carriers have neutral properties."""
+     m = _run_one_epoch("sparse")
+     stamps = [getattr(ws, "_ws_routed_source", None) for ws in m.wholeSpaces]
+-    assert stamps == ["universe"] * len(stamps), stamps
++    assert len(stamps) > 1
++    assert stamps == ["universe", *["property-neutral"] * (len(stamps) - 1)], stamps
+ 
+ 
+ @pytest.mark.slow
+@@ -238,7 +242,7 @@
+ 
+ 
+ @pytest.mark.slow
+-def test_pyramid_taper_topk_selection():
++def test_pyramid_taper_topk_selection(monkeypatch):
+     """C: per-order top-K taper 8/4/2/1 lands in cs.subspace.index and a
+     generic materialize() pulls exactly the selected codes.
+ 
+@@ -249,26 +253,29 @@
+     import torch
+     m = _run_one_epoch("sparse")
+     cs0 = m._concept_owner()
+-    settled = torch.randn(2, int(cs0.outputShape[0]),
+-                          int(cs0.subspace.muxedSize))
+-    raw = torch.full((2, settled.shape[1]), 65, dtype=torch.long)
+-    from PerceptProperties import uniform_spans
+-    spans = uniform_spans(2, raw.shape[1], raw.shape[1], device=raw.device)
+-    extents = torch.tensor([[[0, raw.shape[1]]]]).expand(2, -1, -1)
+-    content, acts = cs0.cs_symbolic_phase(settled, extents=extents,
+-                                         percepts=(raw, spans, None, raw, spans))
+-    assert acts is not None, "symbolic phase must be active"
+-    idx = cs0.subspace.get_index()
+-    assert idx is not None and idx.ndim == 3, "top-K selection must be staged"
+-    n_sel = int(idx.shape[1])
+-    K = int(getattr(cs0, "_symbolic_order", 0))
+-    caps = [8, 4, 2, 1][:K + 1]
+-    # Caps are CAPS, not quotas: early epochs may not mint every order.
+-    assert caps[0] <= n_sel <= sum(caps), f"taper range violated: {n_sel}"
+-    codes = cs0.subspace.materialize()
+-    assert torch.is_tensor(codes) and codes.shape[1] == n_sel, (
+-        "generic materialize() must pull exactly the selected codes")
+-    assert int(codes.shape[0]) == 2, "codes are per-batch [B, n_sel, D]"
++    phase = cs0.cs_symbolic_phase
++    selections = []
++    def observe(*args, **kwargs):
++        result = phase(*args, **kwargs)
++        assert result[1] is not None, "symbolic phase must be active"
++        idx = cs0.subspace.get_index()
++        assert idx is not None and idx.ndim == 3, "top-K selection must be staged"
++        n_sel = int(idx.shape[1])
++        K = int(getattr(cs0, "_symbolic_order", 0))
++        caps = [8, 4, 2, 1][:K + 1]
++        # Caps are caps, not quotas: early epochs may not mint every order.
++        assert caps[0] <= n_sel <= sum(caps), f"taper range violated: {n_sel}"
++        codes = cs0.subspace.materialize()
++        assert torch.is_tensor(codes) and codes.shape[1] == n_sel
++        assert int(codes.shape[0]) == 4, "codes are per-batch [B, n_sel, D]"
++        selections.append(idx.detach().clone())
++        return result
++    monkeypatch.setattr(cs0, 'cs_symbolic_phase', observe)
++    # Native percept IDs and byte values occupy different tables. Capture the
++    # real read in its consumption window instead of using byte 65 as an ID.
++    with torch.no_grad():
++        m.forward(m.inputSpace.prepInput(['hello', 'world', 'loving', 'there']))
++    assert selections, "the observed forward must consume the symbolic phase"
+ 
+ 
+ @pytest.mark.slow
+--- measured-6.2/test/test_frozen_concepts.py
++++ repair/test/test_frozen_concepts.py
+@@ -119,36 +119,3 @@
+         object.__setattr__(m, "_reading_desire", None)
+ 
+ 
+-@pytest.mark.slow
+-def test_reading_wiring_desires_staged_wholes(monkeypatch):
+-    """While reading is desired, the assembler desires each batch's staged
+-    word-whole rows (the hard-coded concept->whole projection)."""
+-    m = _build("data/MM_20M_xor.xml")
+-    ws0 = m.wholeSpaces[0]
+-    cs0 = m._concept_owner()
+-    m.relevance_on = True
+-    # One observed batch, two priming events from identical neutral surfaces.
+-    # Training between arms would change the accumulated source energy.
+-    with torch.no_grad():
+-        m.forward(m.inputSpace.prepInput(['hello world']))
+-    target = ws0._priming_target()
+-    monkeypatch.setattr(target, '_stage0_indices', torch.tensor([[0]]))
+-    monkeypatch.setattr(cs0, 'project_priming_to_towers', lambda *a, **k: None)
+-    try:
+-        m.set_reading(True)
+-        object.__setattr__(target, '_priming_boosts', None)
+-        m._prime_seen_step()
+-        b_read = ws0.priming_weights().clone()
+-        assert b_read is not None, "staged rows must be primed"
+-        m.set_reading(False)
+-        object.__setattr__(target, '_priming_boosts', None)
+-        m._prime_seen_step()
+-        b_seen = ws0.priming_weights()
+-        assert b_seen is not None
+-        assert float(b_read.max()) > float(b_seen.max()), (
+-            "desire must prime staged wholes beyond seen alone")
+-    finally:
+-        m.relevance_on = False
+-        m.set_reading(False)
+-        object.__setattr__(ws0._priming_target(), "_priming_boosts", None)
+-        object.__setattr__(cs0, "_priming_boosts", None)
+--- measured-6.2/test/test_item6_2_repair.py
++++ repair/test/test_item6_2_repair.py
+@@ -0,0 +1,119 @@
++"""Constituent ownership at thought filling, before any index or write."""
++from dataclasses import replace
++from types import SimpleNamespace
++
++import pytest
++import torch
++
++from Layers import TernaryTruthStore
++from Meaning import ConceptualMeaning
++from ThoughtReferences import bindings, evidence_pair, fill, open_slots, question
++from ThoughtStream import write
++
++
++def atom(value=1.):
++    return ConceptualMeaning.from_description(torch.tensor([value, 0., 0., 0.]))
++
++
++def supply(meaning):
++    return dict(meaning=meaning, support_true=.8, support_false=.2)
++
++
++def test_saved_construction_binds_and_writes_the_child():
++    child = atom()
++    supplied = replace(child, role_refs=(('constituent', 0), None, None),
++                       constituents=(child,))
++    goal = question(child, (('referent', 0),))
++    resolved = fill(goal, supply(supplied), operation='ask')
++    assert resolved.constituents == (child,)
++    assert not open_slots(resolved)
++    assert evidence_pair(resolved) == (.8, .2)
++    store = TernaryTruthStore(4, capacity=8)
++    model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
++    index = write(model, resolved, row=0)
++    assert len(store) == 2
++    assert store.row(index)['kind'] == 'inference'
++    assert store.meaning_of(index).role_refs[0] == store.occurrence_of(0)
++    assert bindings(store.meaning_of(index))['_producing_operation'] == 'ask'
++
++
++def test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership():
++    existing, leaf = atom(.25), atom(.5)
++    nested = replace(atom(), role_refs=(('constituent', 0), None, None),
++                     constituents=(leaf,), scope=(('child', ('constituent', 0)),))
++    supplied = replace(atom(), role_refs=(('constituent', 0), None, None),
++                       constituents=(nested,))
++    goal = ConceptualMeaning.from_description(torch.ones(3, 4))
++    goal = question(replace(goal, role_refs=(None, None, ('constituent', 0)),
++                            constituents=(existing,)), (('referent', 0),))
++    resolved = fill(goal, supply(supplied))
++    assert resolved.role_refs == (('constituent', 1), None, ('constituent', 0))
++    assert resolved.constituents == (existing, nested)
++    assert nested.constituents == (leaf,)
++    assert nested.role_refs[0] == ('constituent', 0)
++    assert goal.constituents == (existing,) and goal.role_refs[0] is None
++    store = TernaryTruthStore(4, capacity=8)
++    model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
++    index = write(model, resolved, row=0)
++    assert len(store) == 4
++    root = store.meaning_of(index)
++    assert root.role_refs[2] == store.occurrence_of(0)
++    assert root.role_refs[0] == store.occurrence_of(2)
++    assert store.meaning_of(2).role_refs[0] == store.occurrence_of(1)
++    assert store.meaning_of(2).scope == (('child', store.occurrence_of(1)),)
++
++
++def test_multiple_roles_share_the_imported_child_without_reindexing_goal():
++    child = atom()
++    base = ConceptualMeaning.from_description(torch.ones(3, 4))
++    supplied = replace(base, role_refs=(('constituent', 0), None, ('constituent', 1)),
++                       constituents=(child, child))
++    goal = question(replace(base, constituents=(child,)),
++                    (('referent', 0), ('referent', 2)))
++    resolved = fill(goal, supply(supplied))
++    assert resolved.constituents == (child,)
++    assert resolved.role_refs == (('constituent', 0), None, ('constituent', 0))
++
++
++def test_occurrence_binding_also_carries_the_supplied_constituent_table():
++    child = atom(.5)
++    supplied = replace(atom(), constituents=(child,))
++    store = TernaryTruthStore(4, capacity=8)
++    index = store.append_meaning(supplied, kind='fact', evidence=(.8, .2))
++    occurrence = store.occurrence_of(index)
++    result = fill(question(atom(), (('referent', 0),)),
++                  dict(**supply(supplied), frames=({'meaning': supplied,
++                                                   'occurrence': occurrence},)))
++    assert result.role_refs[0] == occurrence
++    assert result.constituents == (child,)
++    assert not open_slots(result)
++
++
++@pytest.mark.parametrize('reference', [
++    ('constituent', 0), ('constituent', -1), ('constituent', True),
++    ('constituent', 0.,), ('constituent',), ('constituent', 0, 1),
++])
++def test_dangling_or_malformed_supplied_local_reference_raises_at_fill(reference):
++    supplied = replace(atom(), role_refs=(reference, None, None))
++    with pytest.raises(ValueError, match='local constituent reference at fill'):
++        fill(question(atom(), (('referent', 0),)), supply(supplied))
++
++
++def test_nested_metadata_and_goal_local_references_are_checked_at_fill():
++    bad = replace(atom(), scope=(('target', ('constituent', 0)),))
++    supplied = replace(atom(), constituents=(bad,))
++    goal = question(atom(), (('referent', 0),))
++    with pytest.raises(ValueError, match='local constituent reference at fill'):
++        fill(goal, supply(supplied))
++    with pytest.raises(ValueError, match='local constituent reference at fill'):
++        fill(question(bad, (('referent', 0),)), supply(atom()))
++
++
++def test_carried_constituent_keeps_its_gradient():
++    parameter = torch.tensor([1., 0., 0., 0.], requires_grad=True)
++    child = ConceptualMeaning.from_description(parameter)
++    supplied = replace(atom(), role_refs=(('constituent', 0), None, None),
++                       constituents=(child,))
++    result = fill(question(atom(), (('referent', 0),)), supply(supplied))
++    result.constituents[0].roles.sum().backward()
++    torch.testing.assert_close(parameter.grad, torch.ones_like(parameter))
+--- measured-6.2/test/test_priming_energy.py
++++ repair/test/test_priming_energy.py
+@@ -12,7 +12,7 @@
+      events a source row's energy has reached its k-hop neighborhood in
+      the concept store.
+ 
+-cpu/eager, seeded.
++cpu/eager, unseeded.
+ """
+ 
+ import pytest
+@@ -112,13 +112,11 @@
+ 
+ 
+ def _projected_model(epochs=3):
+-    torch.manual_seed(7)
+     from configuration_fixtures import parallel_concepts
+     with parallel_concepts(category=True) as path:
+         m, *_ = _build_model(_resolve_config(path))
+     opt = m.getOptimizer(lr=0.01)
+     for e in range(epochs):
+-        torch.manual_seed(1000 + e)
+         m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
+     return m
+ 
+@@ -191,33 +189,6 @@
+         "no per-stage surface may exist on a delegating tower")
+ 
+ 
+-@pytest.mark.slow
+-def test_reading_heat_from_canonical_on_multistage():
+-    """The acceptance pin for the ws0-vs-terminal split: on a MULTI-STAGE
+-    config the reading scope follows heat on the CANONICAL surface (where
+-    the CS->WS projection lands), not a per-stage ws0 copy."""
+-    import torch as _t
+-    m = _projected_model(epochs=1)
+-    assert len(m.wholeSpaces) > 1, "the pin needs a multi-stage config"
+-    ws0, ws_c = m.wholeSpaces[0], m.wholeSpaces[-1]
+-    V = ws_c._priming_dim()
+-    spans = _t.tensor([[[0, 5], [6, 11]]], dtype=_t.float32)
+-    idx = _t.tensor([[2, 5]]).clamp(max=V - 1)
+-    object.__setattr__(ws0, "_staged_analysis_spans", spans)
+-    object.__setattr__(ws_c, "_stage0_indices", idx)
+-    object.__setattr__(ws_c, "_priming_boosts", None)
+-    ws_c.prime_seen(idx[0, 1:2], bump=5.0, decay=1.0)  # heat slot 1's row
+-    object.__setattr__(m, '_staged_concepts_in', _t.zeros(1, 1, 16))
+-    try:
+-        m._primed_reading_step()
+-        scope = getattr(m.conceptualSpace, "_passback_scope_where", None)
+-        assert _t.is_tensor(scope), "canonical heat must reach the shared field"
+-        _t.testing.assert_close(scope[0], _t.tensor([6., 11.]) / 16)
+-    finally:
+-        for attr in ("_staged_analysis_spans", "_passback_scope_where"):
+-            object.__setattr__(ws0, attr, None)
+-        for attr in ("_stage0_indices", "_priming_boosts"):
+-            object.__setattr__(ws_c, attr, None)
+ 
+ 
+ @pytest.mark.slow
+--- measured-6.2/test/test_reasoning_cde_model.py
++++ repair/test/test_reasoning_cde_model.py
+@@ -40,6 +40,11 @@
+         self.assertEqual(self.m.selected_thought_policy_weight, 0.)
+         self.assertFalse(hasattr(self.m, 'selected_thought_choosers'))
+         self.assertFalse(hasattr(self.m, "_intervening_generator"))
++        for cs in self.m.conceptualSpaces:
++            self.assertEqual(cs.intraSentenceLayer.routing_dim,
++                             self.m.languageSpace._n_rules)
++            self.assertEqual(cs.intraSentenceLayer.routing_proj.in_features,
++                             self.m.languageSpace._n_rules)
+ 
+     def test_truthset_provisions_source_rows(self):
+         store = self.m.symbolSpace.ltm_store

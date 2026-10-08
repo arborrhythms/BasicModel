@@ -1,0 +1,68 @@
+{
+  "config": "data/MM_query_reasoning.xml",
+  "configured_epochs": 300,
+  "batch_size": 6,
+  "seed": null,
+  "retries": 0,
+  "forced_reading": false,
+  "training_epochs": 2,
+  "thought_credit": [
+    {
+      "costs": [
+        0.3010917341709137,
+        0.3010917341709137
+      ],
+      "source": "document_end_answer_and_work",
+      "requires_grad": false
+    },
+    {
+      "costs": [
+        0.40994133412837985,
+        0.40994133412837985
+      ],
+      "source": "document_end_answer_and_work",
+      "requires_grad": false
+    },
+    {
+      "costs": [
+        0.40994133412837985,
+        0.40994133412837985
+      ],
+      "source": "document_end_answer_and_work",
+      "requires_grad": false
+    },
+    {
+      "costs": [
+        0.2945373094081879,
+        0.2945373094081879
+      ],
+      "source": "document_end_answer_and_work",
+      "requires_grad": false
+    },
+    {
+      "costs": [
+        0.20903239384293557,
+        0.20903239384293557
+      ],
+      "source": "document_end_answer_and_work",
+      "requires_grad": false
+    },
+    {
+      "costs": [
+        0.38077476978302005,
+        0.38077476978302005
+      ],
+      "source": "document_end_answer_and_work",
+      "requires_grad": false
+    },
+    {
+      "costs": [
+        0.27337949335575107,
+        0.27337949335575107
+      ],
+      "source": "document_end_answer_and_work",
+      "requires_grad": false
+    }
+  ],
+  "outcome": "running"
+}

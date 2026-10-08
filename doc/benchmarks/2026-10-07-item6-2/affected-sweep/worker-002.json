@@ -1,0 +1,1963 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+    "test/test_item6_2_thinking.py::test_document_end_flushes_answer_work_credit_without_a_future_target",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+    "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+    "test/test_joint_objectives.py::test_shared_grammar_operators_belong_to_the_diagnostic_set",
+    "test/test_joint_objectives.py::test_packed_prediction_teardown_records_each_observation_once",
+    "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
+    "test/test_joint_objectives.py::test_summed_objectives_on_mps",
+    "test/test_joint_objectives.py::test_backward_sums_shared_heads_auxiliaries_and_ties",
+    "test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1.0]",
+    "test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1024.0]",
+    "test/test_joint_objectives.py::test_backward_with_sparse_embedding_and_unshared_head",
+    "test/test_joint_objectives.py::test_detached_reconstruction_leaves_output_head_trainable",
+    "test/test_joint_objectives.py::test_model_parameter_ownership_and_backward_dispatch",
+    "test/test_joint_objectives.py::test_truth_modulation_scales_objectives_without_state_feedback",
+    "test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor.xml-expected0]",
+    "test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor_loopback.xml-expected1]",
+    "test/test_joint_objectives.py::test_answer_path_operators_are_independently_owned_and_keep_learning",
+    "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles",
+    "test/test_learning_readiness.py::test_progress_counts_completed_ragged_sentences_without_reading_device_values",
+    "test/test_learning_readiness.py::test_unaddressed_or_unfinished_presentations_do_not_claim_fineweb_training",
+    "test/test_learning_readiness.py::test_learning_gate_uses_recorded_sentences_not_epochs_or_batch_estimates",
+    "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[-1]",
+    "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[True]",
+    "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[1.5]",
+    "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[1000000]",
+    "test/test_learning_readiness.py::test_integrated_checkpoint_preserves_fineweb_progress",
+    "test/test_learning_readiness.py::test_amp_skips_do_not_inflate_training_exposure[False-False-True]",
+    "test/test_learning_readiness.py::test_amp_skips_do_not_inflate_training_exposure[True-False-False]",
+    "test/test_learning_readiness.py::test_amp_skips_do_not_inflate_training_exposure[False-True-False]",
+    "test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path",
+    "test/test_meronomy_ladder.py::test_meronomy_cut_with_no_unity_stages_nothing",
+    "test/test_meronomy_ladder.py::test_language_space_forward_and_reverse_are_the_entries",
+    "test/test_meronomy_ladder.py::test_model_calls_the_symbolic_loop_as_forward",
+    "test/test_meronomy_ladder.py::test_forward_equals_compose_on_a_live_snapshot",
+    "test/test_meronomy_ladder.py::test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes",
+    "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[21 plus 1]",
+    "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[11 plus 1]",
+    "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[1 plus 12]",
+    "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[aab ba]",
+    "test/test_meronomy_ladder.py::test_long_unit_presents_every_atom",
+    "test/test_meronomy_ladder.py::test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse",
+    "test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes",
+    "test/test_meronomy_ladder.py::test_ladder_grammar_has_chunk_as_a_reduce_candidate",
+    "test/test_meronomy_ladder.py::test_chunk_is_licensed_only_inside_one_coarse_whole",
+    "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+    "test/test_meronomy_ladder.py::test_admitted_phrase_row_snaps_at_the_folded_slot",
+    "test/test_meronomy_ladder.py::test_word_unit_fraction_is_one_on_plain_text",
+    "test/test_meronomy_ladder.py::test_word_unit_fraction_counts_digit_wholes_as_sub_word_units",
+    "test/test_meronomy_ladder.py::test_fixed_words_are_units_even_on_the_atomic_cold_start",
+    "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+    "test/test_meronomy_ladder.py::test_packed_rows_are_laid_out_in_units_of_the_ladder",
+    "test/test_meronomy_ladder.py::test_stem_stages_loop_constants_with_fixed_shapes",
+    "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+    "test/test_meronomy_ladder.py::test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase",
+    "test/test_meronomy_ladder.py::test_boundary_predicates_reproduce_the_priors_tiling",
+    "test/test_meronomy_ladder.py::test_boundary_types_none_starts_without_boundaries",
+    "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary",
+    "test/test_meronomy_ladder.py::test_digit_identity_order_and_repetition_are_distinct_occurrences",
+    "test/test_meronomy_ladder.py::test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain",
+    "test/test_meronomy_ladder.py::test_utility_state_and_predicates_round_trip_a_checkpoint",
+    "test/test_mind_generativity.py::test_current_grammar_recovery_by_depth_training_and_chain_length",
+    "test/test_operator_catalogue.py::test_intersection_is_idempotent_symmetric_and_silence_preserving",
+    "test/test_operator_catalogue.py::test_non_excludes_without_affirming_or_claiming_an_inverse",
+    "test/test_operator_catalogue.py::test_sum_is_a_mean_and_witness_inverse_is_exact",
+    "test/test_operator_catalogue.py::test_adverb_is_a_repeatable_gain_with_an_exact_witness_inverse",
+    "test/test_operator_catalogue.py::test_declared_implementation_and_predicate_survive_rule_rename",
+    "test/test_operator_catalogue.py::test_explicit_effects_and_operand_kinds_are_checked_at_load",
+    "test/test_operator_catalogue.py::test_inverse_dispatch_uses_declared_computation_not_operator_name",
+    "test/test_operator_catalogue.py::test_clause_scope_uses_declared_roles_after_names_are_removed",
+    "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[complete.grammar]",
+    "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[ladder.grammar]",
+    "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[tied_reconstruction_output_benchmark.grammar]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[what]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[true]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[lookup]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[quantize]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[arma]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[expect]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[chunk]",
+    "test/test_operator_catalogue.py::test_equality_returns_conceptual_content_with_its_evidence",
+    "test/test_operator_catalogue.py::test_output_operand_preserves_live_slots_after_exclusion",
+    "test/test_operator_catalogue.py::test_relative_detection_reads_rule_declarations_after_renaming",
+    "test/test_operator_catalogue.py::test_verb_declares_first_operand_as_head",
+    "test/test_operator_catalogue.py::test_verb_head_does_not_erase_its_object_in_the_clause_journal",
+    "test/test_operator_catalogue.py::test_selected_exclusion_cannot_be_recovered_as_negation",
+    "test/test_operator_catalogue.py::test_equality_question_uses_a_declared_formula_identity_without_an_inventory_row",
+    "test/test_operators_round4a0.py::test_address_is_full_int64_content_based_and_rng_independent",
+    "test/test_operators_round4a0.py::test_four_occurrences_after_four_hundred_presentations_and_full_upsert",
+    "test/test_operators_round4a0.py::test_rereading_replaces_vectors_refreshes_time_and_joins_poles",
+    "test/test_operators_round4a0.py::test_full_store_can_rewitness_both_existing_prediction_pair_addresses",
+    "test/test_operators_round4a0.py::test_when_is_unit_bracket_with_coarse_fine_roundtrip",
+    "test/test_operators_round4a0.py::test_references_and_content_keys_survive_compaction_and_checkpoint",
+    "test/test_operators_round4a0.py::test_legacy_checkpoint_rekeys_native_and_typed_edges",
+    "test/test_operators_round4a0.py::test_live_gate_reread_changes_clock_but_not_address_or_when",
+    "test/test_operators_round4a0.py::test_thought_references_are_source_addresses_not_history_counters",
+    "test/test_operators_round4a0.py::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers",
+    "test/test_operators_round4a0.py::test_prepared_dataset_value_retains_its_source_after_cursor_advances",
+    "test/test_operators_round4a0.py::test_rewitness_keeps_poles_and_the_round3a_net_existence_read",
+    "test/test_operators_round4a0.py::test_checkpoint_can_grow_capacity_without_changing_an_address",
+    "test/test_operators_round4a0.py::test_serving_source_is_conversation_and_turn_and_replay_is_stable",
+    "test/test_operators_round4a0.py::test_explicit_rewitness_rejects_a_self_reference_without_mutating_postings",
+    "test/test_operators_round4a0.py::test_local_reference_tag_distinguishes_a_journal_slot_from_the_same_signed_address",
+    "test/test_order0_attended_field.py::test_first_witness_keeps_existing_parts",
+    "test/test_order0_attended_field.py::test_containment_reads_canonical_ids_without_expanding_bytes",
+    "test/test_order0_attended_field.py::test_inventory_outlives_the_eight_attended_rows",
+    "test/test_order0_attended_field.py::test_formation_stops_aggregation_until_the_next_turn",
+    "test/test_order0_attended_field.py::test_bound_snapshot_and_checkpoint_keep_concept_ids",
+    "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field",
+    "test/test_order0_attended_field.py::test_batch_members_bind_independently_within_eight_rows",
+    "test/test_order0_attended_field.py::test_unattended_concept_is_unknown_and_does_not_veto_observed_evidence",
+    "test/test_order0_attended_field.py::test_location_writer_keeps_an_ordered_group_before_recurrence",
+    "test/test_order0_attended_field.py::test_definition_group_tracks_new_overlapping_canonical_parts",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[0-S -> false(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[1-S -> non(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[2-S -> conjunction(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[3-S -> disjunction(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[4-S -> ask(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[5-S -> where(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[6-S -> when(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[7-S -> swap(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[8-S -> equals(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[9-S -> not(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[10-S -> part(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[11-S -> intersection(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[12-S -> join(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[13-S -> lower(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[14-S -> lift(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_rule_table_roundtrip",
+    "test/test_partition_grammar_rewrite.py::test_retired_golden_rule_is_rejected[true(S)]",
+    "test/test_partition_grammar_rewrite.py::test_retired_golden_rule_is_rejected[query(S, S)]",
+    "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[False]",
+    "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[True]",
+    "test/test_prepared_answer_boundary.py::test_prepared_answer_generates_more_words_than_the_captured_input",
+    "test/test_prepared_answer_boundary.py::test_public_boundary_prepares_target_free_metadata_before_realization",
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[False-False]",
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[False-True]",
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[True-False]",
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[True-True]",
+    "test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit[False]",
+    "test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit[True]",
+    "test/test_prepared_answer_boundary.py::test_what_reconstructs_then_resolves_then_realizes",
+    "test/test_query_contract_boundaries.py::test_query_limits_native_content_reads_and_reports_incompleteness",
+    "test/test_query_contract_boundaries.py::test_zero_budget_does_not_fetch_a_named_concept_payload",
+    "test/test_query_contract_boundaries.py::test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_evidence",
+    "test/test_query_contract_boundaries.py::test_unified_query_returns_complete_record_and_does_not_admit_observation",
+    "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[17]",
+    "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations1]",
+    "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations2]",
+    "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations3]",
+    "test/test_query_contract_boundaries.py::test_thought_descriptors_cannot_advertise_missing_executors_or_ambiguous_roles",
+    "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+    "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+    "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+    "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+    "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+    "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+    "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation",
+    "test/test_query_grammar_copy.py::test_copied_grammar_keeps_its_immutable_structural_thought_catalogue",
+    "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[equal-roles0]",
+    "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[ask-roles1]",
+    "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[isTrue-roles2]",
+    "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+    "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+    "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+    "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+    "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+    "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+    "test/test_reasoning.py::TestOrderPartitions::test_activation_order",
+    "test/test_reasoning.py::TestOrderPartitions::test_geometric_decay",
+    "test/test_reasoning.py::TestOrderPartitions::test_partitions_cover_full_dim",
+    "test/test_reasoning.py::TestOrderPartitions::test_single_order",
+    "test/test_reasoning.py::TestIsConsistent::test_consistent_truths",
+    "test/test_reasoning.py::TestIsConsistent::test_contradictory_truths",
+    "test/test_reasoning.py::TestIsConsistent::test_empty_truth_set_is_consistent",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_isTrue_ungrounded_returns_zero",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_matching_activation_grounded",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_unmatched_activation_not_grounded",
+    "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_empty_truth_set_no_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_penalty_is_differentiable",
+    "test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect",
+    "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty",
+    "test/test_reasoning.py::TestExtrapolate::test_consistent_pair_derives",
+    "test/test_reasoning.py::TestExtrapolate::test_too_few_truths_returns_empty",
+    "test/test_reasoning.py::TestWriteMask::test_partition_isolation",
+    "test/test_reasoning.py::TestReason::test_forward_with_no_target",
+    "test/test_reasoning.py::TestReason::test_reverse_with_no_target"
+  ],
+  "completed": [
+    "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+    "test/test_item6_2_thinking.py::test_document_end_flushes_answer_work_credit_without_a_future_target",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+    "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+    "test/test_joint_objectives.py::test_shared_grammar_operators_belong_to_the_diagnostic_set",
+    "test/test_joint_objectives.py::test_packed_prediction_teardown_records_each_observation_once",
+    "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
+    "test/test_joint_objectives.py::test_summed_objectives_on_mps",
+    "test/test_joint_objectives.py::test_backward_sums_shared_heads_auxiliaries_and_ties",
+    "test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1.0]",
+    "test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1024.0]",
+    "test/test_joint_objectives.py::test_backward_with_sparse_embedding_and_unshared_head",
+    "test/test_joint_objectives.py::test_detached_reconstruction_leaves_output_head_trainable",
+    "test/test_joint_objectives.py::test_model_parameter_ownership_and_backward_dispatch",
+    "test/test_joint_objectives.py::test_truth_modulation_scales_objectives_without_state_feedback",
+    "test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor.xml-expected0]",
+    "test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor_loopback.xml-expected1]",
+    "test/test_joint_objectives.py::test_answer_path_operators_are_independently_owned_and_keep_learning",
+    "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles",
+    "test/test_learning_readiness.py::test_progress_counts_completed_ragged_sentences_without_reading_device_values",
+    "test/test_learning_readiness.py::test_unaddressed_or_unfinished_presentations_do_not_claim_fineweb_training",
+    "test/test_learning_readiness.py::test_learning_gate_uses_recorded_sentences_not_epochs_or_batch_estimates",
+    "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[-1]",
+    "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[True]",
+    "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[1.5]",
+    "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[1000000]",
+    "test/test_learning_readiness.py::test_integrated_checkpoint_preserves_fineweb_progress",
+    "test/test_learning_readiness.py::test_amp_skips_do_not_inflate_training_exposure[False-False-True]",
+    "test/test_learning_readiness.py::test_amp_skips_do_not_inflate_training_exposure[True-False-False]",
+    "test/test_learning_readiness.py::test_amp_skips_do_not_inflate_training_exposure[False-True-False]",
+    "test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path",
+    "test/test_meronomy_ladder.py::test_meronomy_cut_with_no_unity_stages_nothing",
+    "test/test_meronomy_ladder.py::test_language_space_forward_and_reverse_are_the_entries",
+    "test/test_meronomy_ladder.py::test_model_calls_the_symbolic_loop_as_forward",
+    "test/test_meronomy_ladder.py::test_forward_equals_compose_on_a_live_snapshot",
+    "test/test_meronomy_ladder.py::test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes",
+    "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[21 plus 1]",
+    "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[11 plus 1]",
+    "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[1 plus 12]",
+    "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[aab ba]",
+    "test/test_meronomy_ladder.py::test_long_unit_presents_every_atom",
+    "test/test_meronomy_ladder.py::test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse",
+    "test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes",
+    "test/test_meronomy_ladder.py::test_ladder_grammar_has_chunk_as_a_reduce_candidate",
+    "test/test_meronomy_ladder.py::test_chunk_is_licensed_only_inside_one_coarse_whole",
+    "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+    "test/test_meronomy_ladder.py::test_admitted_phrase_row_snaps_at_the_folded_slot",
+    "test/test_meronomy_ladder.py::test_word_unit_fraction_is_one_on_plain_text",
+    "test/test_meronomy_ladder.py::test_word_unit_fraction_counts_digit_wholes_as_sub_word_units",
+    "test/test_meronomy_ladder.py::test_fixed_words_are_units_even_on_the_atomic_cold_start",
+    "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+    "test/test_meronomy_ladder.py::test_packed_rows_are_laid_out_in_units_of_the_ladder",
+    "test/test_meronomy_ladder.py::test_stem_stages_loop_constants_with_fixed_shapes",
+    "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+    "test/test_meronomy_ladder.py::test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase",
+    "test/test_meronomy_ladder.py::test_boundary_predicates_reproduce_the_priors_tiling",
+    "test/test_meronomy_ladder.py::test_boundary_types_none_starts_without_boundaries",
+    "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary",
+    "test/test_meronomy_ladder.py::test_digit_identity_order_and_repetition_are_distinct_occurrences",
+    "test/test_meronomy_ladder.py::test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain",
+    "test/test_meronomy_ladder.py::test_utility_state_and_predicates_round_trip_a_checkpoint",
+    "test/test_mind_generativity.py::test_current_grammar_recovery_by_depth_training_and_chain_length",
+    "test/test_operator_catalogue.py::test_intersection_is_idempotent_symmetric_and_silence_preserving",
+    "test/test_operator_catalogue.py::test_non_excludes_without_affirming_or_claiming_an_inverse",
+    "test/test_operator_catalogue.py::test_sum_is_a_mean_and_witness_inverse_is_exact",
+    "test/test_operator_catalogue.py::test_adverb_is_a_repeatable_gain_with_an_exact_witness_inverse",
+    "test/test_operator_catalogue.py::test_declared_implementation_and_predicate_survive_rule_rename",
+    "test/test_operator_catalogue.py::test_explicit_effects_and_operand_kinds_are_checked_at_load",
+    "test/test_operator_catalogue.py::test_inverse_dispatch_uses_declared_computation_not_operator_name",
+    "test/test_operator_catalogue.py::test_clause_scope_uses_declared_roles_after_names_are_removed",
+    "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[complete.grammar]",
+    "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[ladder.grammar]",
+    "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[tied_reconstruction_output_benchmark.grammar]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[what]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[true]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[lookup]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[quantize]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[arma]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[expect]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[chunk]",
+    "test/test_operator_catalogue.py::test_equality_returns_conceptual_content_with_its_evidence",
+    "test/test_operator_catalogue.py::test_output_operand_preserves_live_slots_after_exclusion",
+    "test/test_operator_catalogue.py::test_relative_detection_reads_rule_declarations_after_renaming",
+    "test/test_operator_catalogue.py::test_verb_declares_first_operand_as_head",
+    "test/test_operator_catalogue.py::test_verb_head_does_not_erase_its_object_in_the_clause_journal",
+    "test/test_operator_catalogue.py::test_selected_exclusion_cannot_be_recovered_as_negation",
+    "test/test_operator_catalogue.py::test_equality_question_uses_a_declared_formula_identity_without_an_inventory_row",
+    "test/test_operators_round4a0.py::test_address_is_full_int64_content_based_and_rng_independent",
+    "test/test_operators_round4a0.py::test_four_occurrences_after_four_hundred_presentations_and_full_upsert",
+    "test/test_operators_round4a0.py::test_rereading_replaces_vectors_refreshes_time_and_joins_poles",
+    "test/test_operators_round4a0.py::test_full_store_can_rewitness_both_existing_prediction_pair_addresses",
+    "test/test_operators_round4a0.py::test_when_is_unit_bracket_with_coarse_fine_roundtrip",
+    "test/test_operators_round4a0.py::test_references_and_content_keys_survive_compaction_and_checkpoint",
+    "test/test_operators_round4a0.py::test_legacy_checkpoint_rekeys_native_and_typed_edges",
+    "test/test_operators_round4a0.py::test_live_gate_reread_changes_clock_but_not_address_or_when",
+    "test/test_operators_round4a0.py::test_thought_references_are_source_addresses_not_history_counters",
+    "test/test_operators_round4a0.py::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers",
+    "test/test_operators_round4a0.py::test_prepared_dataset_value_retains_its_source_after_cursor_advances",
+    "test/test_operators_round4a0.py::test_rewitness_keeps_poles_and_the_round3a_net_existence_read",
+    "test/test_operators_round4a0.py::test_checkpoint_can_grow_capacity_without_changing_an_address",
+    "test/test_operators_round4a0.py::test_serving_source_is_conversation_and_turn_and_replay_is_stable",
+    "test/test_operators_round4a0.py::test_explicit_rewitness_rejects_a_self_reference_without_mutating_postings",
+    "test/test_operators_round4a0.py::test_local_reference_tag_distinguishes_a_journal_slot_from_the_same_signed_address",
+    "test/test_order0_attended_field.py::test_first_witness_keeps_existing_parts",
+    "test/test_order0_attended_field.py::test_containment_reads_canonical_ids_without_expanding_bytes",
+    "test/test_order0_attended_field.py::test_inventory_outlives_the_eight_attended_rows",
+    "test/test_order0_attended_field.py::test_formation_stops_aggregation_until_the_next_turn",
+    "test/test_order0_attended_field.py::test_bound_snapshot_and_checkpoint_keep_concept_ids",
+    "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field",
+    "test/test_order0_attended_field.py::test_batch_members_bind_independently_within_eight_rows",
+    "test/test_order0_attended_field.py::test_unattended_concept_is_unknown_and_does_not_veto_observed_evidence",
+    "test/test_order0_attended_field.py::test_location_writer_keeps_an_ordered_group_before_recurrence",
+    "test/test_order0_attended_field.py::test_definition_group_tracks_new_overlapping_canonical_parts",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[0-S -> false(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[1-S -> non(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[2-S -> conjunction(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[3-S -> disjunction(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[4-S -> ask(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[5-S -> where(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[6-S -> when(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[7-S -> swap(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[8-S -> equals(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[9-S -> not(S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[10-S -> part(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[11-S -> intersection(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[12-S -> join(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[13-S -> lower(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_golden[14-S -> lift(S, S)]",
+    "test/test_partition_grammar_rewrite.py::test_grammar_rule_table_roundtrip",
+    "test/test_partition_grammar_rewrite.py::test_retired_golden_rule_is_rejected[true(S)]",
+    "test/test_partition_grammar_rewrite.py::test_retired_golden_rule_is_rejected[query(S, S)]",
+    "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[False]",
+    "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[True]",
+    "test/test_prepared_answer_boundary.py::test_prepared_answer_generates_more_words_than_the_captured_input",
+    "test/test_prepared_answer_boundary.py::test_public_boundary_prepares_target_free_metadata_before_realization",
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[False-False]",
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[False-True]",
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[True-False]",
+    "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[True-True]",
+    "test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit[False]",
+    "test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit[True]",
+    "test/test_prepared_answer_boundary.py::test_what_reconstructs_then_resolves_then_realizes",
+    "test/test_query_contract_boundaries.py::test_query_limits_native_content_reads_and_reports_incompleteness",
+    "test/test_query_contract_boundaries.py::test_zero_budget_does_not_fetch_a_named_concept_payload",
+    "test/test_query_contract_boundaries.py::test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_evidence",
+    "test/test_query_contract_boundaries.py::test_unified_query_returns_complete_record_and_does_not_admit_observation",
+    "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[17]",
+    "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations1]",
+    "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations2]",
+    "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations3]",
+    "test/test_query_contract_boundaries.py::test_thought_descriptors_cannot_advertise_missing_executors_or_ambiguous_roles",
+    "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+    "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+    "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+    "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+    "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+    "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+    "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation",
+    "test/test_query_grammar_copy.py::test_copied_grammar_keeps_its_immutable_structural_thought_catalogue",
+    "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[equal-roles0]",
+    "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[ask-roles1]",
+    "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[isTrue-roles2]",
+    "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+    "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+    "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+    "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+    "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+    "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+    "test/test_reasoning.py::TestOrderPartitions::test_activation_order",
+    "test/test_reasoning.py::TestOrderPartitions::test_geometric_decay",
+    "test/test_reasoning.py::TestOrderPartitions::test_partitions_cover_full_dim",
+    "test/test_reasoning.py::TestOrderPartitions::test_single_order",
+    "test/test_reasoning.py::TestIsConsistent::test_consistent_truths",
+    "test/test_reasoning.py::TestIsConsistent::test_contradictory_truths",
+    "test/test_reasoning.py::TestIsConsistent::test_empty_truth_set_is_consistent",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_isTrue_ungrounded_returns_zero",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_matching_activation_grounded",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_unmatched_activation_not_grounded",
+    "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_empty_truth_set_no_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_penalty_is_differentiable",
+    "test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect",
+    "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty",
+    "test/test_reasoning.py::TestExtrapolate::test_consistent_pair_derives",
+    "test/test_reasoning.py::TestExtrapolate::test_too_few_truths_returns_empty",
+    "test/test_reasoning.py::TestWriteMask::test_partition_isolation",
+    "test/test_reasoning.py::TestReason::test_forward_with_no_target",
+    "test/test_reasoning.py::TestReason::test_reverse_with_no_target"
+  ],
+  "slow_selected": [
+    "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
+    "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+    "test/test_meronomy_ladder.py::test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase",
+    "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary",
+    "test/test_meronomy_ladder.py::test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain",
+    "test/test_meronomy_ladder.py::test_utility_state_and_predicates_round_trip_a_checkpoint",
+    "test/test_prepared_answer_boundary.py::test_what_reconstructs_then_resolves_then_realizes"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011978333001025021,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011189874960109591,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009566917084157467,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009684375021606684,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.009232582990080118,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_document_end_flushes_answer_work_credit_without_a_future_target",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006993124959990382,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01814412500243634,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.021692459005862474,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.011725542019121349,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_shared_grammar_operators_belong_to_the_diagnostic_set",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002857500221580267,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_packed_prediction_teardown_records_each_observation_once",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.01454125007148832,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00010704202577471733,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_joint_objectives.py', 52, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_summed_objectives_on_mps",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05436912504956126,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_backward_sums_shared_heads_auxiliaries_and_ties",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006216249894350767,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006310839671641588,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1024.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00032404193188995123,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_backward_with_sparse_embedding_and_unshared_head",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005635418929159641,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_detached_reconstruction_leaves_output_head_trainable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00025408307556062937,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_model_parameter_ownership_and_backward_dispatch",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005926250014454126,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_truth_modulation_scales_objectives_without_state_feedback",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004960839869454503,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor.xml-expected0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.542894458048977,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.074s)\r\n"
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor_loopback.xml-expected1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5857575419358909,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.283s)\r\n"
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_answer_path_operators_are_independently_owned_and_keep_learning",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.18396154104266316,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 2.257920915959403,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_learning_readiness.py::test_progress_counts_completed_ragged_sentences_without_reading_device_values",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019654096104204655,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_learning_readiness.py::test_unaddressed_or_unfinished_presentations_do_not_claim_fineweb_training",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001366250216960907,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_learning_readiness.py::test_learning_gate_uses_recorded_sentences_not_epochs_or_batch_estimates",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016187492292374372,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019429204985499382,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001194999786093831,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[1.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011720799375325441,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[1000000]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011608295608311892,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_learning_readiness.py::test_integrated_checkpoint_preserves_fineweb_progress",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0025627079885452986,
+      "message": "",
+      "stdout": "[BaseModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3393/test_integrated_checkpoint_pre0/progress.ckpt\r\n[BaseModel] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3393/test_integrated_checkpoint_pre0/progress.ckpt has no embedding bundle; embeddings stay at random init.\r\n[BaseModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3393/test_integrated_checkpoint_pre0/progress.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_learning_readiness.py::test_amp_skips_do_not_inflate_training_exposure[False-False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014650006778538227,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_learning_readiness.py::test_amp_skips_do_not_inflate_training_exposure[True-False-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013345794286578894,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_learning_readiness.py::test_amp_skips_do_not_inflate_training_exposure[False-True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001235000090673566,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 3.230095957987942,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.155s)\r\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3393/test_native_progress_and_train0/small-native.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3393/test_native_progress_and_train0/small-native.ckpt\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.673s)\r\nbatch = 0 (\u0394=0.185s)\r\nbatch = 0 (\u0394=0.676s)\r\n"
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_meronomy_cut_with_no_unity_stages_nothing",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0034857499413192272,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_language_space_forward_and_reverse_are_the_entries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010994590120390058,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_model_calls_the_symbolic_loop_as_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010730830254033208,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_forward_equals_compose_on_a_live_snapshot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09290691697970033,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.12296187493484467,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[21 plus 1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09497491701040417,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[11 plus 1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09308679192326963,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[1 plus 12]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.09359495795797557,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[aab ba]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08040491701103747,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_long_unit_presents_every_atom",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.08236537501215935,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.73689916706644,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.012494874885305762,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_ladder_grammar_has_chunk_as_a_reduce_candidate",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013216701336205006,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_chunk_is_licensed_only_inside_one_coarse_whole",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006669160211458802,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00014941697008907795,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py', 345, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_admitted_phrase_row_snaps_at_the_folded_slot",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.36849454196635634,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_word_unit_fraction_is_one_on_plain_text",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.13803625002037734,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_word_unit_fraction_counts_digit_wholes_as_sub_word_units",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.10770266701001674,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_fixed_words_are_units_even_on_the_atomic_cold_start",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3872061249567196,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_epoch_report_carries_the_word_unit_fraction",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00019812502432614565,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_packed_rows_are_laid_out_in_units_of_the_ladder",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.4687650001142174,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_stem_stages_loop_constants_with_fixed_shapes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.14077908301260322,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014000001829117537,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00013500009663403034,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py', 561, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_boundary_predicates_reproduce_the_priors_tiling",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.18367745901923627,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_boundary_types_none_starts_without_boundaries",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.35438095801509917,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.00012558407615870237,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py', 642, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_digit_identity_order_and_repetition_are_distinct_occurrences",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.28446041606366634,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.000126624945551157,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py', 727, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meronomy_ladder.py::test_utility_state_and_predicates_round_trip_a_checkpoint",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001099579967558384,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_meronomy_ladder.py', 764, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mind_generativity.py::test_current_grammar_recovery_by_depth_training_and_chain_length",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.2930927500128746,
+      "message": "",
+      "stdout": "[mind-generativity] [{\"chain_length\": 1, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 0, \"derivation_recovery\": 0.0, \"updates\": 0, \"work\": 0}, {\"chain_length\": 2, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 1, \"derivation_recovery\": 0.0, \"updates\": 0, \"work\": 0}, {\"chain_length\": 3, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 2, \"derivation_recovery\": 0.0, \"updates\": 0, \"work\": 0}, {\"chain_length\": 5, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 4, \"derivation_recovery\": 0.0, \"updates\": 0, \"work\": 0}, {\"chain_length\": 1, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 0, \"derivation_recovery\": 0.0, \"updates\": 1, \"work\": 0}, {\"chain_length\": 2, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 1, \"derivation_recovery\": 0.0, \"updates\": 1, \"work\": 0}, {\"chain_length\": 3, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 2, \"derivation_recovery\": 0.0, \"updates\": 1, \"work\": 0}, {\"chain_length\": 5, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 4, \"derivation_recovery\": 0.0, \"updates\": 1, \"work\": 0}, {\"chain_length\": 1, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 0, \"derivation_recovery\": 0.0, \"updates\": 8, \"work\": 0}, {\"chain_length\": 2, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 1, \"derivation_recovery\": 0.0, \"updates\": 8, \"work\": 0}, {\"chain_length\": 3, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 2, \"derivation_recovery\": 0.0, \"updates\": 8, \"work\": 0}, {\"chain_length\": 5, \"code_recovery\": 0.0, \"completed\": false, \"depth\": 4, \"derivation_recovery\": 0.0, \"updates\": 8, \"work\": 0}]\n"
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_intersection_is_idempotent_symmetric_and_silence_preserving",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005990000208839774,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_non_excludes_without_affirming_or_claiming_an_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002881659893319011,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_sum_is_a_mean_and_witness_inverse_is_exact",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004166659200564027,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_adverb_is_a_repeatable_gain_with_an_exact_witness_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0010404579807072878,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_declared_implementation_and_predicate_survive_rule_rename",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00030554202385246754,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_explicit_effects_and_operand_kinds_are_checked_at_load",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021879200357943773,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_inverse_dispatch_uses_declared_computation_not_operator_name",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005122500006109476,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_clause_scope_uses_declared_roles_after_names_are_removed",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00336695893201977,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[complete.grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00303966598585248,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[ladder.grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0026966669829562306,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[tied_reconstruction_output_benchmark.grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0018772089388221502,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[what]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015258393250405788,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[true]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012679200153797865,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[lookup]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001272499794140458,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[quantize]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013837497681379318,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[arma]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013583304826170206,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[expect]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00014000001829117537,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[chunk]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013683398719877005,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_equality_returns_conceptual_content_with_its_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0027419169200584292,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_output_operand_preserves_live_slots_after_exclusion",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003885839832946658,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_relative_detection_reads_rule_declarations_after_renaming",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003109375014901161,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_verb_declares_first_operand_as_head",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0029884170508012176,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_verb_head_does_not_erase_its_object_in_the_clause_journal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0033276249887421727,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_selected_exclusion_cannot_be_recovered_as_negation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006872125086374581,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_equality_question_uses_a_declared_formula_identity_without_an_inventory_row",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006435791030526161,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_address_is_full_int64_content_based_and_rng_independent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5279312919592485,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_four_occurrences_after_four_hundred_presentations_and_full_upsert",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3992067080689594,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_rereading_replaces_vectors_refreshes_time_and_joins_poles",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.001581332995556295,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_full_store_can_rewitness_both_existing_prediction_pair_addresses",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0019147080602124333,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_when_is_unit_bracket_with_coarse_fine_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00041379104368388653,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_references_and_content_keys_survive_compaction_and_checkpoint",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0028168329736217856,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_legacy_checkpoint_rekeys_native_and_typed_edges",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002389749977737665,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_live_gate_reread_changes_clock_but_not_address_or_when",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.7581117090303451,
+      "message": "",
+      "stdout": "batch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 0.352s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.353s, 100.00%)\r\nTraining throughput: 1 batches in 0.353s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_thought_references_are_source_addresses_not_history_counters",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005018749507144094,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6986708750482649,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_prepared_dataset_value_retains_its_source_after_cursor_advances",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.03560287493746728,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_rewitness_keeps_poles_and_the_round3a_net_existence_read",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011830419534817338,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_checkpoint_can_grow_capacity_without_changing_an_address",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0026750409742817283,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_serving_source_is_conversation_and_turn_and_replay_is_stable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0185425829840824,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_explicit_rewitness_rejects_a_self_reference_without_mutating_postings",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003784917062148452,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_local_reference_tag_distinguishes_a_journal_slot_from_the_same_signed_address",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005174579564481974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_order0_attended_field.py::test_first_witness_keeps_existing_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.04139266605488956,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_order0_attended_field.py::test_containment_reads_canonical_ids_without_expanding_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0006782910786569118,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_order0_attended_field.py::test_inventory_outlives_the_eight_attended_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00924466596916318,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_order0_attended_field.py::test_formation_stops_aggregation_until_the_next_turn",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005693749990314245,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_order0_attended_field.py::test_bound_snapshot_and_checkpoint_keep_concept_ids",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.008539208909496665,
+      "message": "test/test_order0_attended_field.py:107: in test_bound_snapshot_and_checkpoint_keep_concept_ids\n    apply_thought_effect(SimpleNamespace(conceptualSpace=cs, conceptualSpaces=[cs]),\nbin/AccessibleMind.py:133: in apply_thought_effect\n    raise ValueError('thought effect has no declared operator contract')\nE   ValueError: thought effect has no declared operator contract",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.9067180840065703,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_order0_attended_field.py::test_batch_members_bind_independently_within_eight_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.018532500020228326,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_order0_attended_field.py::test_unattended_concept_is_unknown_and_does_not_veto_observed_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004458500072360039,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_order0_attended_field.py::test_location_writer_keeps_an_ordered_group_before_recurrence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.038537709042429924,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_order0_attended_field.py::test_definition_group_tracks_new_overlapping_canonical_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011328340042382479,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[0-S -> false(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010624993592500687,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[1-S -> non(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.570806287229061e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[2-S -> conjunction(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.629095438867807e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[3-S -> disjunction(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.754195343703032e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[4-S -> ask(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010674993973225355,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[5-S -> where(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.620899800211191e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[6-S -> when(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.620795026421547e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[7-S -> swap(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010066607501357794,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[8-S -> equals(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010441697668284178,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[9-S -> not(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010724994353950024,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[10-S -> part(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.879108984023333e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[11-S -> intersection(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.52079426497221e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[12-S -> join(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.433308150619268e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[13-S -> lower(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.466602932661772e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_golden[14-S -> lift(S, S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00010729196947067976,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_grammar_rule_table_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 9.87079693004489e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_retired_golden_rule_is_rejected[true(S)]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00015316600911319256,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_partition_grammar_rewrite.py::test_retired_golden_rule_is_rejected[query(S, S)]",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.00016266608145087957,
+      "message": "test/test_partition_grammar_rewrite.py:124: in test_retired_golden_rule_is_rejected\n    with pytest.raises(ValueError, match=\"retired\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE ValueError",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.068065916071646,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_realization_uses_a_held_derivation_without_running_resolution[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 1.0695007500471547,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_answer_generates_more_words_than_the_captured_input",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.5344881670316681,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_public_boundary_prepares_target_free_metadata_before_realization",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6579523329855874,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[False-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6683669160120189,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6706516250269488,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6656045420095325,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_prepared_concept_handoff_cuts_answer_state_gradient[True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6669061250286177,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6725226669805124,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_answer_loss_trains_an_executed_shared_inverse_without_state_credit[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.6784402090124786,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_prepared_answer_boundary.py::test_what_reconstructs_then_resolves_then_realizes",
+      "phase": "setup",
+      "outcome": "skipped",
+      "duration": 0.0001216670498251915,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_prepared_answer_boundary.py', 204, 'Skipped: slow -- set RUN_SLOW=1')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_query_limits_native_content_reads_and_reports_incompleteness",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003696582978591323,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_zero_budget_does_not_fetch_a_named_concept_payload",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002145749982446432,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002252709004096687,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_unified_query_returns_complete_record_and_does_not_admit_observation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0034330839989706874,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[17]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00021620793268084526,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001687919721007347,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016091600991785526,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001593329943716526,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_contract_boundaries.py::test_thought_descriptors_cannot_advertise_missing_executors_or_ambiguous_roles",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00016316701658070087,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004078708007000387,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.003853167057968676,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002198832924477756,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.004365958971902728,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002032750053331256,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0021567910443991423,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0015514999395236373,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_grammar_copy.py::test_copied_grammar_keeps_its_immutable_structural_thought_catalogue",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.006955041084438562,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[equal-roles0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002341667073778808,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[ask-roles1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002164000063203275,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[isTrue-roles2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020559170516207814,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0024667499819770455,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002265166025608778,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0020931659964844584,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0037779579870402813,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022846669889986515,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00013479194603860378,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_activation_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00022195803467184305,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_geometric_decay",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00012062489986419678,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_partitions_cover_full_dim",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0001456249738112092,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_single_order",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00011754105798900127,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestIsConsistent::test_consistent_truths",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.07072970794979483,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestIsConsistent::test_contradictory_truths",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05348225007764995,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestIsConsistent::test_empty_truth_set_is_consistent",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05186954198870808,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestGroundAndIsTrue::test_isTrue_ungrounded_returns_zero",
+      "phase": "call",
+      "outcome": "failed",
+      "duration": 0.052487207925878465,
+      "message": "test/test_reasoning.py:182: in test_isTrue_ungrounded_returns_zero\n    self.assertEqual(model.isTrue(act)['support_true'],0.)\n                     ^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:3811: in isTrue\n    from Reasoning import TruthGroundedReasoner\nE   ModuleNotFoundError: No module named 'Reasoning'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestGroundAndIsTrue::test_matching_activation_grounded",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.051762458053417504,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestGroundAndIsTrue::test_unmatched_activation_not_grounded",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05224062502384186,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00038829201366752386,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00036212499253451824,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_empty_truth_set_no_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002013749908655882,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_penalty_is_differentiable",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005584160098806024,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05334841599687934,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004127919673919678,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestExtrapolate::test_consistent_pair_derives",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.053470709011889994,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestExtrapolate::test_too_few_truths_returns_empty",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05214425001759082,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestWriteMask::test_partition_isolation",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.3318346249870956,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestReason::test_forward_with_no_target",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05384808301459998,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestReason::test_reverse_with_no_target",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.05280925007537007,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -87,17 +87,21 @@ def test_foreign_width_query_fails_before_the_taxonomy_executor(monkeypatch):
 
 
 def test_what_cannot_turn_assertive_content_into_an_executed_subgoal():
+    from ThoughtReferences import question, with_slots
     calls = []
     content = ConceptualMeaning.from_description(torch.ones(8))
     cs = _cs()
-    context = _context(cs, continuation=lambda value: calls.append(value) or value)
-    with pytest.raises(ValueError, match='interrogative|question'):
-        _signature('what', 'I1').invoke(context, content)
-    question = replace(content, mode='interrogative')
-    result = _signature('what', 'I1').invoke(context, question)
-    assert result['value'].mode == 'interrogative'
+    context = _context(cs, continuation=lambda value: calls.append(value) or dict(
+        value=value, meaning=value, support_true=0., support_false=0.))
+    _signature('ask', 'I1').invoke(context, content)
+    assert not calls
+    requested = question(content, (('evidence', -1),))
+    result = _signature('ask', 'I1').invoke(context, requested)
+    assert result['value'].mode == 'interrogative' and len(calls) == 1
+    torch.testing.assert_close(calls[0].roles, requested.roles)
+    bound = replace(with_slots(requested, (), pair=(1., 0.)), mode='interrogative')
+    _signature('ask', 'I1').invoke(context, bound)
     assert len(calls) == 1
-    torch.testing.assert_close(calls[0].roles, question.roles)
 
 
 def test_registry_installation_reuses_native_bindings_and_checkpoint(tmp_path):
@@ -128,7 +132,8 @@ def test_registry_installation_reuses_native_bindings_and_checkpoint(tmp_path):
     assert restored_question.role_refs == question.role_refs
     torch.testing.assert_close(restored_question.roles, question.roles)
     context = _context(restored, model=target)
-    assert loaded.execute(restored_question, context).support_true == 1
+    torch.testing.assert_close(loaded.execute(restored_question, context).value,
+        registry.execute(question, _context(cs)).value)
 
 
 def test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row():
@@ -139,13 +144,13 @@ def test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row():
     second = store.append_meaning(description, sentence_index=len(store))
     context = _context(cs, store=store, max_records=1)
     # A direct occurrence address costs one read regardless of row age.
-    question = registry.form('what', store.occurrence_of(second), context=context)
+    question = registry.form('ask', store.occurrence_of(second), context=context)
     assert question.role_refs[0] == store.occurrence_of(second)
     with pytest.raises(ValueError, match='limit|unavailable'):
-        registry.form('what', store.occurrence_of(second), context=replace(context, max_records=0))
+        registry.form('ask', store.occurrence_of(second), context=replace(context, max_records=0))
     foreign = ('ltm', 'foreign-namespace', store.occurrence_of(first)[2])
     with pytest.raises(ValueError, match='namespace'):
-        registry.form('what', foreign, context=context)
+        registry.form('ask', foreign, context=context)
     assert len(store) == 2
 
 
@@ -173,7 +178,9 @@ def test_converse_only_interface_still_dispatches_canonical_roles():
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     question = registry.form('whole', b, a)
     assert question.role_refs[0] == a and question.role_refs[2] == b
-    assert registry.execute(question, context).support_true == 1
+    from Layers import Ops
+    assert registry.execute(question, context).support_true == pytest.approx(
+        float(Ops.part(registry._payload(a), registry._payload(b), scalar=True)))
 
 
 def test_query_proposition_preserves_live_operand_gradients_without_new_parameters():
@@ -189,5 +196,5 @@ def test_query_proposition_preserves_live_operand_gradients_without_new_paramete
 
 def test_unknown_negated_query_remains_unknown():
     _, _, registry, a, b, context = _world()
-    result = registry.execute(registry.form('part', b, a, polarity=False), context)
+    result = registry.execute(registry.form('isPart', b, a, polarity=False), context)
     assert result.support_true == result.support_false == 0

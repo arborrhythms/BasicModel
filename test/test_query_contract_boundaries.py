@@ -25,7 +25,7 @@ def test_query_limits_native_content_reads_and_reports_incompleteness(monkeypatc
         rows.append(index)
         return original(index)
     monkeypatch.setattr(store, 'row', read)
-    result = _signature('what', 'I1').invoke(
+    result = _signature('query', 'I1').invoke(
         _context(_cs(), store=store, max_records=1), replace(meaning, mode='interrogative'))
     assert rows == [0]
     assert result['value'][0]['trust'] == pytest.approx(0.2)
@@ -33,16 +33,14 @@ def test_query_limits_native_content_reads_and_reports_incompleteness(monkeypatc
     assert 'candidate_limit' in result['incomplete']
 
 
-def test_zero_quantize_budget_does_not_fetch_a_named_concept_payload(monkeypatch):
-    cs = _cs()
-    concept = cs.mint_frozen_concept('zero-budget-native-read')
-    monkeypatch.setattr(cs.similarity_codebook, 'active_prototypes',
-                        lambda: pytest.fail('zero query budget read the dictionary'))
-    context = _context(cs, max_nodes=0)
-    result = _signature('quantize', 'I1').invoke(context, ('sym', concept))
-    assert result['value'] is None
-    assert result['nodes_scanned'] == 0
-    assert result['incomplete'] == ('capture_limit',)
+def test_zero_budget_does_not_fetch_a_named_concept_payload(monkeypatch):
+    from QueryWork import QueryWorkBudget
+    cs=_cs()
+    concept=cs.mint_frozen_concept('zero-budget-native-read')
+    monkeypatch.setattr(cs.similarity_codebook,'active_prototypes',lambda:pytest.fail('zero budget read'))
+    result=_signature('exist','I1').invoke(_context(cs,work=QueryWorkBudget(0)),('sym',concept))
+    assert result['value'] is None and result['support_true']==result['support_false']==0.
+    assert 'work_budget' in result['incomplete']
 
 
 def test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_evidence():
@@ -63,7 +61,7 @@ def test_unified_query_returns_complete_record_and_does_not_admit_observation():
     meaning = ConceptualMeaning.from_description(roles)
     row = store.append_meaning(meaning, kind='observation', trust=0.9, sentence_index=len(store))
     context = _context(_cs(), store=store)
-    found = _signature('what', 'I1').invoke(context, replace(meaning, mode='interrogative'))
+    found = _signature('query', 'I1').invoke(context, replace(meaning, mode='interrogative'))
     assert found['result_kind'] == 'set'
     assert found['evidence_kind'] == 'retrieval'
     assert len(found['value']) == 1

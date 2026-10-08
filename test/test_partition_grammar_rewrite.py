@@ -29,7 +29,7 @@ _POST_REWRITE_GRAMMAR = {
         'non(S)',
         'conjunction(S, S)',
         'disjunction(S, S)',
-        'what(S)',
+        'ask(S)',
         'where(S)',
         'when(S)',
         'query(S, S)',
@@ -76,7 +76,7 @@ GOLDEN_CANONICALS = [
     'S -> non(S)',
     'S -> conjunction(S, S)',
     'S -> disjunction(S, S)',
-    'S -> what(S)',
+    'S -> ask(S)',
     'S -> where(S)',
     'S -> when(S)',
     'S -> query(S, S)',
@@ -119,7 +119,7 @@ def test_grammar_rule_table_roundtrip(grammar):
         assert grammar.rule_by_id(rule_id) == production
 
 
-@pytest.mark.parametrize("rule", ["true(S)", "query(S, S)"])
+@pytest.mark.parametrize("rule", ["true(S)", "what(S)"])
 def test_retired_golden_rule_is_rejected(rule):
     with pytest.raises(ValueError, match="retired"):
         Grammar().configure({"S": [rule]})

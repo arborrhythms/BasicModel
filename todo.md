@@ -17,7 +17,7 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Next:** **query and ask**, under [thought-loop §§5–7](doc/plans/2026-10-07-thought-loop.md#5-the-query-rename-claude-for-codex-2026-10-07), then **6.2, thinking**, whose specification follows from Claude. Alec accepted the [6.5 mechanism landing](doc/benchmarks/2026-10-07-item6-5/acceptance.json) on October 7 after spec §10 reviewed the §9 choices; its learning gates remain pending.
+**Current:** **6.2, thinking with query/ask and the operator renames**, is an uncommitted candidate after the [repair pass](doc/benchmarks/2026-10-07-item6-2-repair/README.md), awaiting Claude's review under [Claude's specification](doc/specs/2026-10-07-thinking.md). Measurements and the review handoff belong to its [receipt](doc/benchmarks/2026-10-07-item6-2/README.md); stop for Claude's review before a commit. Alec accepted the [6.5 mechanism landing](doc/benchmarks/2026-10-07-item6-5/acceptance.json) on October 7. Its learning gates remain pending the million-sentence checkpoint and are not claimed.
 
 **Current sequence (6.5 mechanism accepted on October 7; no conference freeze):**
 query and ask → 6.2 → 6 → 5.5 → 5 → 4 → 3 → 2 → 1 → 0.
@@ -142,15 +142,14 @@ measurements and decisions are in the accepted receipt and its predecessors.
 beside the native occurrence anchor; learned-column pruning remains with
 item 5 ([limits](doc/FutureWork.md)).
 
-- **Query and ask.** Keep `query` as LTM lookup returning the best match;
-   rename `what` to `ask` throughout the API, executor, grammars, tests and
-   current documents, preserving the shared controller and history. The
-   [thought-loop plan §§5–7](doc/plans/2026-10-07-thought-loop.md#5-the-query-rename-claude-for-codex-2026-10-07)
-   owns the corrected names and the open-reference meaning of asking.
-- **6.2. Thinking.** Next after query and ask, before item 6. Claude's
-   specification follows from the [thought-loop audit and Alec's rulings](doc/plans/2026-10-07-thought-loop.md).
-   Forgetting depends on thought conclusions and their references for
-   deducibility; do not infer implementation details ahead of the specification.
+- **6.2 learning: MM_math_chain.** The mechanism is accepted under
+   [thinking spec §11](doc/specs/2026-10-07-thinking.md). The next learning
+   step follows the live §10: opaque number words, counting facts in both
+   forms and worked successor steps; the chooser learns the chain. Ten
+   unseeded trainings in each of the answer, expectation-only and zero-budget
+   conditions; standing thirty unchanged, thinking 57/57 and one green
+   sweep; stop for Claude's review. Completion of MM_query_reasoning is not
+   learned chaining. [Mechanism acceptance](doc/benchmarks/2026-10-07-item6-2-repair/acceptance.json).
 - **6. Stored-idea generativity.** Forgetting's dropping of derivations depends
    on it. Item 1c's probe reports zero compound recovery
    ([measurements](doc/AccessibleMind.md#measured-limits)). It trains for 8
@@ -322,6 +321,8 @@ Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
+
+- **Item 6.2 mechanism** (Alec accepted October 7; Claude's review §11): query/ask renames, open references, paired faces, serial chaining, inference provenance, shared chooser credit and absence inference; constituent ownership and stale-contract repairs. Learned chaining remains for MM_math_chain ([acceptance](doc/benchmarks/2026-10-07-item6-2-repair/acceptance.json)).
 
 - **Item 6.5 mechanism** (Alec accepted October 7; one landing from `f4a68404e`): definedness, native identity/change columns and global bind/mint; learning gates remain pending the million-sentence checkpoint ([acceptance](doc/benchmarks/2026-10-07-item6-5/acceptance.json)).
 - `f4a68404e` **Operators update, final-b** (Alec accepted October 7): addressed rows, bipolar meanings, centroids, priming, catalogue and two-lane repair; all standing counts 10/10, R/E zero, green sweep ([acceptance](doc/benchmarks/2026-10-07-operators-final-b/acceptance.json)).

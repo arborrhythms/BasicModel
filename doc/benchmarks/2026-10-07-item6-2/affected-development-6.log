@@ -1,0 +1,1523 @@
+..................F............FF..FFF..F..............F........FF..F.F. [ 38%]
+..FFFFFFFFFFF.....FF.FFFFFFF.FF..........F........FF.F.........F.F...F.. [ 76%]
+....................................F........                            [100%]
+=================================== FAILURES ===================================
+_ test_completed_compose_program_enters_normal_controller_before_legacy_thinking _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x109bf01a0>
+
+    def test_completed_compose_program_enters_normal_controller_before_legacy_thinking(
+            monkeypatch):
+        from test_selected_relation_meaning import _program_owner
+    
+        cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
+            _program_owner(monkeypatch, interrogative=True))
+        registry = GrammaticalThoughtRegistry.install(cs, grammar)
+        model = BasicModel()
+        model.spaces = []
+        model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+        object.__setattr__(model, 'languageSpace', SimpleNamespace(
+            language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+        model.attention_budget = 64
+    
+        memory = WhatInteractionMemory(batch=1, capacity=32, detach_mode="episode")
+        object.__setattr__(model, "conceptualSpace", cs)
+        object.__setattr__(model, "languageSpace", language)
+        object.__setattr__(model, "symbolSpace", SimpleNamespace(
+            languageSpace=language, what_memory=memory,
+            grammatical_thoughts=registry))
+        object.__setattr__(model, "grammatical_thoughts", registry)
+        model.what_thinking_detach = "episode"
+        model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
+        with torch.no_grad():
+            model.shared_grammar.chooser.mlp[-1].weight.zero_()
+            model.shared_grammar.chooser.mlp[-1].bias.zero_()
+        model.eval()
+    
+        with model._query_boundary_scope((0,)):
+            selected = model._run_selected_sentence_thoughts(
+                (sentence_state(language, program(), registry),), work_budget=16)
+    
+        assert len(selected) == 1
+        row, result = selected[0]
+>       assert row == 0 and result.meaning.mode == "interrogative"
+E       AssertionError: assert (0 == 0 and 'assertive' == 'interrogative'
+E         
+E         - interrogative
+E         + assertive)
+
+test/test_normal_thought_controller.py:288: AssertionError
+_____ test_execution_is_derived_from_middle_vp_and_retains_the_proposition _____
+
+    def test_execution_is_derived_from_middle_vp_and_retains_the_proposition():
+        cs, registry, a, b, context = _world()
+        question = registry.form('whole', b, a, scope={'place': 'workshop'})
+        result = registry.execute(question, context)
+>       assert result.support_true == 1
+E       AssertionError: assert 0.0 == 1
+E        +  where 0.0 = ThoughtResult(semantic_id='part', domain='conceptual-containment', result_kind='concept', evidence_kind='meronymy', re...g', 'semantic_id': 'part', 'domain': 'conceptual-containment', 'resolution_records_scanned': 0, 'records_scanned': 0})).support_true
+
+test/test_grammatical_query_vps.py:55: AssertionError
+__________ test_assertive_or_unrecognized_vp_does_not_execute_a_query __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x120f593a0>
+
+    def test_assertive_or_unrecognized_vp_does_not_execute_a_query(monkeypatch):
+        cs, registry, a, b, context = _world()
+        monkeypatch.setattr(
+            ThoughtTaxonomyCapability, 'evidence',
+            lambda *a, **k: pytest.fail('executed'))
+>       with pytest.raises(ValueError, match='interrogative|question'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+test/test_grammatical_query_vps.py:67: Failed
+____ test_unary_query_keeps_full_description_through_an_existing_occurrence ____
+
+    def test_unary_query_keeps_full_description_through_an_existing_occurrence():
+        cs, registry, a, b, _ = _world()
+        store = TernaryTruthStore(8)
+        description = ConceptualMeaning(torch.eye(8)[:3], torch.ones(3, dtype=torch.bool),
+                                       scope={'place': 'workshop'})
+        store.configure_leaf_index(unfold=lambda idea, limit, **kw: ((7,), 1, True))
+        index = store.append_meaning(description, trust=0.75)
+        context = _context(cs, store=store)
+        reference = store.occurrence_of(index)
+        question = registry.form('ask', reference, context=context)
+        assert question.role_refs[0] == reference
+        assert question.role_mask.tolist() == [True, True, False]
+        result = registry.execute(question, context)
+        assert result.value[0]['trust'] == pytest.approx(0.75)
+        torch.testing.assert_close(result.value[0]['meaning'].roles, description.roles)
+        assert result.value[0]['meaning'].scope == description.scope
+        assert len(store) == 1
+        # Pure construction owns the complete child without writing or granting
+        # execution authority. Only the completed boundary binds its occurrence.
+        inline = registry.form('ask', description, context=context)
+        assert inline.constituents[0] is description
+        assert inline.role_refs[0] == ('constituent', 0)
+        assert len(store) == 1
+>       with pytest.raises((TypeError, ValueError), match='occurrence|reference'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE any of (TypeError, ValueError)
+
+test/test_grammatical_query_vps.py:123: Failed
+_____ test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation _____
+
+    def test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation():
+        cs, registry, a, b, context = _world()
+>       question = registry.form('quantize', a)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_grammatical_query_vps.py:136: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x109cf1160>
+semantic_id = 'quantize', open_roles = (), mode = 'interrogative'
+polarity = True, bindings = (), scope = (), context = None
+arguments = (('sym', 12),)
+
+    def form(self, semantic_id, *arguments, open_roles=(),
+             mode='interrogative', polarity=True, bindings=(), scope=(),
+             context=None):
+        """Form a canonical thought request without executing or allocating.
+    
+        Open roles are explicit structural role labels.  Thus a one-argument
+        ``part`` call with ``open_roles=('I1',)`` is the former ``parts``
+        behavior, but it retains the same semantic identity and VP.
+        """
+        retired = {'what': 'ask (thought) or query (LTM)', 'lookup': 'query',
+            'chunk': 'synthesize / analyze', 'quantize': 'future symbolization',
+            'arma': 'sentenceExpectation / gain', 'expect': 'sentenceExpectation / gain', 'true': 'isTrue'}
+        if semantic_id in retired:
+>           raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E           ValueError: quantize is retired; use future symbolization
+
+bin/Queries.py:1974: ValueError
+______ test_what_reads_live_complete_question_across_a_detached_boundary _______
+
+    def test_what_reads_live_complete_question_across_a_detached_boundary():
+        registry, memory, source, reference, context = _world()
+        outer = registry.form("ask", reference, context=context)
+        assert outer.role_refs[0] == reference
+        result = registry.execute(outer, context)
+>       assert not result.value.requires_grad
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'tuple' object has no attribute 'requires_grad'
+
+test/test_live_query_occurrences.py:44: AttributeError
+___ test_thought_read_after_restore_retains_all_roles_binding_scope_and_mode ___
+
+    def test_thought_read_after_restore_retains_all_roles_binding_scope_and_mode():
+        registry, memory, _, reference, context = _world()
+        snapshot = memory.thought_extras()
+        memory.load_thought_extras(snapshot)
+        seen = []
+        context = replace(context, continuation=lambda value: seen.append(value) or value)
+        result = registry.execute(registry.form("ask", reference, context=context), context)
+>       assert result.value is not seen[0]
+                                   ^^^^^^^
+E       IndexError: list index out of range
+
+test/test_live_query_occurrences.py:72: IndexError
+_____ test_operand_occurrence_reads_require_permission_before_preparation ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x120f5bdd0>
+
+    def test_operand_occurrence_reads_require_permission_before_preparation(monkeypatch):
+        import Queries
+        from Meaning import ConceptualMeaning
+    
+        model = _model()
+        grammar = __import__('Language').Grammar()
+        grammar.configure({'compose': {'rule': [
+            'ask_O1 = ask.forward(ask_I1)']},
+            'thought': {'rule': ['ask_O1 = ask.thought(ask_I1)']}})
+        registry = GrammaticalThoughtRegistry.install(model.conceptualSpace, grammar)
+>       vp = registry._reference(("conceptual-subgoal", "what"))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_query_phase_permissions.py:232: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x12110fda0>
+identity = ('conceptual-subgoal', 'what'), work = None
+
+    def _reference(self, identity, *, work=None):
+        if identity not in self.identities:
+>           raise ValueError('grammatical thought operation is not registered')
+E           ValueError: grammatical thought operation is not registered
+
+bin/Queries.py:1877: ValueError
+_______ test_what_cannot_turn_assertive_content_into_an_executed_subgoal _______
+
+    def test_what_cannot_turn_assertive_content_into_an_executed_subgoal():
+        calls = []
+        content = ConceptualMeaning.from_description(torch.ones(8))
+        cs = _cs()
+        context = _context(cs, continuation=lambda value: calls.append(value) or value)
+        with pytest.raises(ValueError, match='interrogative|question'):
+>           _signature('what', 'I1').invoke(context, content)
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_query_vp_boundaries.py:95: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+semantic_id = 'what', roles = ('I1',)
+
+    def _signature(semantic_id, *roles):
+        """Exercise an executor's public thought signature without an alias."""
+        return ThoughtSignature(
+            SimpleNamespace(semantic_id=semantic_id, operand_roles=tuple(roles)),
+>           THOUGHT_EXECUTORS[semantic_id], tuple(roles))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'what'
+
+test/test_query_vp_boundaries.py:62: KeyError
+_______ test_registry_installation_reuses_native_bindings_and_checkpoint _______
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3350/test_registry_installation_reu0')
+
+    def test_registry_installation_reuses_native_bindings_and_checkpoint(tmp_path):
+        from Models import BaseModel
+        cs, grammar, registry, a, b, _ = _world()
+        question = registry.form('part', a, b)
+        before = dict(cs._concept_allocator.placement)
+        GrammaticalThoughtRegistry.install(cs, grammar)
+        assert cs._concept_allocator.placement == before
+        def model(space):
+            value = BaseModel()
+            value.name = 'GrammaticalVPCheckpoint'
+            value.spaces = [space]
+            value.conceptualSpaces = torch.nn.ModuleList([space])
+            object.__setattr__(value, 'conceptualSpace', space)
+            value.wholeSpaces = []
+            return value
+        source = model(cs)
+        path = tmp_path / 'query-vps.ckpt'
+        source.save_weights(path)
+        restored = _cs()
+        target = model(restored)
+        assert target.load_weights(path)
+        bindings = dict(restored._frozen_named)
+        loaded = GrammaticalThoughtRegistry.install(restored, grammar)
+        restored_question = loaded.form('whole', b, a)
+        assert restored._frozen_named == bindings
+        assert restored_question.role_refs == question.role_refs
+        torch.testing.assert_close(restored_question.roles, question.roles)
+        context = _context(restored, model=target)
+>       assert loaded.execute(restored_question, context).support_true == 1
+E       AssertionError: assert 0.28884488344192505 == 1
+E        +  where 0.28884488344192505 = ThoughtResult(semantic_id='part', domain='conceptual-containment', result_kind='concept', evidence_kind='meronymy', re...g', 'semantic_id': 'part', 'domain': 'conceptual-containment', 'resolution_records_scanned': 0, 'records_scanned': 0})).support_true
+E        +    where ThoughtResult(semantic_id='part', domain='conceptual-containment', result_kind='concept', evidence_kind='meronymy', re...g', 'semantic_id': 'part', 'domain': 'conceptual-containment', 'resolution_records_scanned': 0, 'records_scanned': 0})) = execute(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('sym', 12), ('sym', 4010033338316264258), ('sym', 13)), bindings=(('_evidence_pair', (0.0, 0.0)), ('_open_references', (('evidence', -1),))), scope=(), sentence_kind=None), ThoughtGrammarContext(word_stream=(), conceptual_space=<Queries.ThoughtConceptualCapability object at 0x12dbdff40>, pr...0>, row=0, max_nodes=256, max_records=1024, max_steps=8, max_expansions=1024, operand_references=(), operand_values=()))
+E        +      where execute = <Queries.GrammaticalThoughtRegistry object at 0x109380f80>.execute
+
+test/test_query_vp_boundaries.py:131: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[GrammaticalVPCheckpoint] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3350/test_registry_installation_reu0/query-vps.ckpt
+[GrammaticalVPCheckpoint] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3350/test_registry_installation_reu0/query-vps.ckpt
+________ test_converse_only_interface_still_dispatches_canonical_roles _________
+
+    def test_converse_only_interface_still_dispatches_canonical_roles():
+        cs, _, _, a, b, context = _world()
+        grammar = Grammar()
+        # The structural spelling supplies the converse metadata; the explicit
+        # thought declaration selects that one form for boundary use.
+        grammar.configure({'Symbolic': {'compose': {'rule': [
+            {'_': 'whole_O1 = whole.forward(whole_I1, whole_I2)',
+             'family': 'part', 'permutation': 'I2,I1'}]},
+            'thought': {'rule': [
+                {'_': 'whole_O1 = whole.thought(whole_I1, whole_I2)',
+                 'family': 'part', 'permutation': 'I2,I1'}]}}})
+        registry = GrammaticalThoughtRegistry.install(cs, grammar)
+        question = registry.form('whole', b, a)
+        assert question.role_refs[0] == a and question.role_refs[2] == b
+>       assert registry.execute(question, context).support_true == 1
+E       AssertionError: assert 0.693298876285553 == 1
+E        +  where 0.693298876285553 = ThoughtResult(semantic_id='part', domain='conceptual-containment', result_kind='concept', evidence_kind='meronymy', re...g', 'semantic_id': 'part', 'domain': 'conceptual-containment', 'resolution_records_scanned': 0, 'records_scanned': 0})).support_true
+E        +    where ThoughtResult(semantic_id='part', domain='conceptual-containment', result_kind='concept', evidence_kind='meronymy', re...g', 'semantic_id': 'part', 'domain': 'conceptual-containment', 'resolution_records_scanned': 0, 'records_scanned': 0})) = execute(ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('sym', 12), ('sym', 4010033338316264258), ('sym', 13)), bindings=(('_evidence_pair', (0.0, 0.0)), ('_open_references', (('evidence', -1),))), scope=(), sentence_kind=None), ThoughtGrammarContext(word_stream=(), conceptual_space=<Queries.ThoughtConceptualCapability object at 0x12dd07f40>, pr...0>, row=0, max_nodes=256, max_records=1024, max_steps=8, max_expansions=1024, operand_references=(), operand_values=()))
+E        +      where execute = <Queries.GrammaticalThoughtRegistry object at 0x12dcf69c0>.execute
+
+test/test_query_vp_boundaries.py:176: AssertionError
+__________________ test_unknown_negated_query_remains_unknown __________________
+
+    def test_unknown_negated_query_remains_unknown():
+        _, _, registry, a, b, context = _world()
+        result = registry.execute(registry.form('part', b, a, polarity=False), context)
+>       assert result.support_true == result.support_false == 0
+E       AssertionError: assert 0.0 == 0.375894695520401
+E        +  where 0.0 = ThoughtResult(semantic_id='part', domain='conceptual-containment', result_kind='concept', evidence_kind='meronymy', re...g', 'semantic_id': 'part', 'domain': 'conceptual-containment', 'resolution_records_scanned': 0, 'records_scanned': 0})).support_true
+E        +  and   0.375894695520401 = ThoughtResult(semantic_id='part', domain='conceptual-containment', result_kind='concept', evidence_kind='meronymy', re...g', 'semantic_id': 'part', 'domain': 'conceptual-containment', 'resolution_records_scanned': 0, 'records_scanned': 0})).support_false
+
+test/test_query_vp_boundaries.py:193: AssertionError
+____ test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance _____
+
+    def test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance():
+        meaning = ConceptualMeaning.from_description(torch.eye(8)[:3])
+        store = TernaryTruthStore(8)
+        store.append_meaning(meaning, kind="fact", trust=.7)
+        meter = QueryWorkBudget(2)
+        context = _context(_cs(), store=store, work=meter)
+>       query = _signature('what', 'I1')
+                ^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_query_work_boundaries.py:63: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+semantic_id = 'what', roles = ('I1',)
+
+    def _signature(semantic_id, *roles):
+        """Exercise an executor's public thought signature without an alias."""
+        return ThoughtSignature(
+            SimpleNamespace(semantic_id=semantic_id, operand_roles=tuple(roles)),
+>           THOUGHT_EXECUTORS[semantic_id], tuple(roles))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'what'
+
+test/test_query_vp_boundaries.py:62: KeyError
+________ test_arma_reserves_context_reads_before_running_the_predictor _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12dd21310>
+
+    def test_arma_reserves_context_reads_before_running_the_predictor(monkeypatch):
+        from test_sentence_expectation import layer as make_layer
+    
+        layer = make_layer()
+        roles = torch.eye(layer.concept_dim)[:3]
+        for _ in range(2):
+            layer.predict_and_observe_stm_end_state([3], [roles], layout="infix")
+        marker = object()
+        layer._inter_last_meaning[0] = marker
+        monkeypatch.setattr(
+            layer._inter_predictor,
+            "forward",
+            lambda *args: pytest.fail("prediction beyond work"),
+        )
+        space = SimpleNamespace(outputShape=(1, layer.concept_dim))
+        model = SimpleNamespace(symbolSpace=SimpleNamespace(expectation=layer))
+        context = _context(
+            space, model=model, work=QueryWorkBudget(2), discourse=layer)
+>       result = _signature('arma', 'I1').invoke(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^
+            context, ConceptualMeaning.from_description(roles))
+
+test/test_query_work_boundaries.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+semantic_id = 'arma', roles = ('I1',)
+
+    def _signature(semantic_id, *roles):
+        """Exercise an executor's public thought signature without an alias."""
+        return ThoughtSignature(
+            SimpleNamespace(semantic_id=semantic_id, operand_roles=tuple(roles)),
+>           THOUGHT_EXECUTORS[semantic_id], tuple(roles))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'arma'
+
+test/test_query_vp_boundaries.py:62: KeyError
+_____ test_quantize_does_not_materialize_basis_after_operation_uses_budget _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12dd450d0>
+
+    def test_quantize_does_not_materialize_basis_after_operation_uses_budget(monkeypatch):
+        cs, registry, a, b, context = _world()
+        del registry, a, b
+        monkeypatch.setattr(
+            cs.similarity_codebook,
+            "active_prototypes",
+            lambda: pytest.fail("basis read after budget"),
+        )
+>       result = _signature('quantize', 'I1').invoke(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            replace(context, work=QueryWorkBudget(1)), torch.ones(8))
+
+test/test_query_work_boundaries.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+semantic_id = 'quantize', roles = ('I1',)
+
+    def _signature(semantic_id, *roles):
+        """Exercise an executor's public thought signature without an alias."""
+        return ThoughtSignature(
+            SimpleNamespace(semantic_id=semantic_id, operand_roles=tuple(roles)),
+>           THOUGHT_EXECUTORS[semantic_id], tuple(roles))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'quantize'
+
+test/test_query_vp_boundaries.py:62: KeyError
+______ test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures _______
+
+    def test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures():
+        from test_taxonomy_view import _ref, _world as taxonomy_world
+    
+        cs, (a, b, c) = taxonomy_world()
+        del c
+        cs.add_whole(a, _ref(b))
+        context = _context(cs, work=QueryWorkBudget(5))
+>       result = _signature('part', 'I1', 'I2').invoke(context, _ref(a), _ref(b))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_query_work_boundaries.py:121: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+bin/Queries.py:1544: in invoke
+    return self._invoke_permitted(context, *arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1582: in _invoke_permitted
+    result = self.descriptor.executor(
+bin/ThoughtFaces.py:15: in part
+    left, right = (_vector(context, arguments[role]) for role in ('I1', 'I2'))
+    ^^^^^^^^^^^
+bin/ThoughtFaces.py:15: in <genexpr>
+    left, right = (_vector(context, arguments[role]) for role in ('I1', 'I2'))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1108: in _vector
+    vector = payload(value, work=context.work)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:693: in payload
+    row = _existing_row(space, reference)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+space = ConceptualSpace(
+  (subspace): SubSpace()
+  (_owned_bases): ModuleDict(
+    (event): Tensor()
+    (what): Tensor()
+   ... (concept_source_readout): SigmaConceptsFromPercepts(
+    (sigma): SigmaLayer(
+      (layer): LinearLayer()
+    )
+  )
+)
+reference = ('sym', 1)
+
+    def _existing_row(space, reference):
+        """Read a concept row without lazy allocator creation or row assignment."""
+        ref = concept_reference(reference)
+        allocator = getattr(space, '_concept_allocator', None)
+        if (allocator is None or ref[1] not in allocator.placement
+                or ref[1] in allocator.retired):
+            raise ValueError('query concept reference is unavailable')
+        layer = allocator._layers.get(0)
+        if layer is None:
+            raise ValueError('query conceptual reference store is unavailable')
+        # Row namespaces are addresses in the existing owner, not new semantics.
+        for namespace in ('shared', 'snap', 'pool'):
+            row = layer.row_of((namespace, ref[1]))
+            if row is not None:
+                return int(row)
+        for order in range(1, len(space._order_caps())):
+            row = layer.row_of((f'o{order}', ref[1]))
+            if row is not None:
+                return int(row)
+>       raise ValueError('query concept has no allocated payload row')
+E       ValueError: query concept has no allocated payload row
+
+bin/Queries.py:508: ValueError
+________ test_code_answer_uses_the_checked_atom_and_keeps_its_reference ________
+
+    def test_code_answer_uses_the_checked_atom_and_keeps_its_reference():
+        from Output import thought_answer_meanings
+        model, registry, memory, part, _whole = _catalog_world()
+>       query = registry.form("quantize", registry._payload(part))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_thought_answer_adapters.py:16: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x120f58c20>
+semantic_id = 'quantize', open_roles = (), mode = 'interrogative'
+polarity = True, bindings = (), scope = (), context = None
+arguments = (tensor([-0.0125,  0.1745,  0.5978,  0.2519, -0.5077, -0.1170,  0.1364, -0.5085],
+       grad_fn=<CloneBackward0>),)
+
+    def form(self, semantic_id, *arguments, open_roles=(),
+             mode='interrogative', polarity=True, bindings=(), scope=(),
+             context=None):
+        """Form a canonical thought request without executing or allocating.
+    
+        Open roles are explicit structural role labels.  Thus a one-argument
+        ``part`` call with ``open_roles=('I1',)`` is the former ``parts``
+        behavior, but it retains the same semantic identity and VP.
+        """
+        retired = {'what': 'ask (thought) or query (LTM)', 'lookup': 'query',
+            'chunk': 'synthesize / analyze', 'quantize': 'future symbolization',
+            'arma': 'sentenceExpectation / gain', 'expect': 'sentenceExpectation / gain', 'true': 'isTrue'}
+        if semantic_id in retired:
+>           raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E           ValueError: quantize is retired; use future symbolization
+
+bin/Queries.py:1974: ValueError
+___ test_open_relation_answer_preserves_every_member_without_another_reader ____
+
+    def test_open_relation_answer_preserves_every_member_without_another_reader():
+        from Output import thought_answer_meanings
+        model, registry, memory, part, whole = _catalog_world()
+        second = ("sym", model.conceptualSpace.new_concept())
+        model.conceptualSpace._csw_concept_row(0, second[1])
+        model.conceptualSpace.add_whole(second[1], whole)
+        query = registry.form("part", whole, open_roles=("I1",))
+        with model._query_boundary_scope((0,)):
+            selected = model.run_selected_thought(query, work_budget=128)
+        cost = selected.work.spent
+        answers = thought_answer_meanings(selected)
+>       assert {answer.role_refs[0] for answer in answers} == {part, second}
+E       AssertionError: assert set() == {('sym', 12), ('sym', 14)}
+E         
+E         Extra items in the right set:
+E         ('sym', 12)
+E         ('sym', 14)
+E         Use -v to get more diff
+
+test/test_thought_answer_adapters.py:39: AssertionError
+_________ test_subgoal_carries_the_typed_child_result_into_the_answer __________
+
+    def test_subgoal_carries_the_typed_child_result_into_the_answer():
+        from Output import thought_answer_meanings
+        model, registry, memory, part, whole = _catalog_world()
+        inner = registry.form("part", part, whole)
+        entry = memory.begin_thought_episode(inner, work_budget=2)
+        reference = memory.thought_reference(entry)
+        memory.finish_thought(inner)
+        memory.end_what_episode()
+        with model._query_boundary_scope((0,)):
+>           outer = registry.form(
+                "what", reference,
+                context=model._thought_grammar_context(
+                    inner, row=0, work=QueryWorkBudget(8), continuation=None))
+
+test/test_thought_answer_adapters.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x12dd60200>
+semantic_id = 'what', open_roles = (), mode = 'interrogative', polarity = True
+bindings = (), scope = ()
+context = ThoughtGrammarContext(word_stream=tensor([[-0.1462, -0.1341,  0.3677,  0.1523, -0.1217,  0.6262, -0.6274, -0.0408],
+  ...)>, row=0, max_nodes=256, max_records=1024, max_steps=8, max_expansions=1024, operand_references=(), operand_values=())
+arguments = (('thought', 'address-v1', 6782905162761055104),)
+
+    def form(self, semantic_id, *arguments, open_roles=(),
+             mode='interrogative', polarity=True, bindings=(), scope=(),
+             context=None):
+        """Form a canonical thought request without executing or allocating.
+    
+        Open roles are explicit structural role labels.  Thus a one-argument
+        ``part`` call with ``open_roles=('I1',)`` is the former ``parts``
+        behavior, but it retains the same semantic identity and VP.
+        """
+        retired = {'what': 'ask (thought) or query (LTM)', 'lookup': 'query',
+            'chunk': 'synthesize / analyze', 'quantize': 'future symbolization',
+            'arma': 'sentenceExpectation / gain', 'expect': 'sentenceExpectation / gain', 'true': 'isTrue'}
+        if semantic_id in retired:
+>           raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E           ValueError: what is retired; use ask (thought) or query (LTM)
+
+bin/Queries.py:1974: ValueError
+_____ test_missing_code_is_incomplete_rather_than_a_zero_or_request_answer _____
+
+    def test_missing_code_is_incomplete_rather_than_a_zero_or_request_answer():
+        from Output import thought_answer_meanings
+        from types import MappingProxyType, SimpleNamespace
+        model, registry, _memory, part, _whole = _catalog_world()
+>       query = registry.form("quantize", registry._payload(part))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_thought_answer_adapters.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x12dbd01d0>
+semantic_id = 'quantize', open_roles = (), mode = 'interrogative'
+polarity = True, bindings = (), scope = (), context = None
+arguments = (tensor([ 0.3695, -0.4579,  0.6005,  0.3840,  0.2650,  0.2522,  0.1022,  0.0397],
+       grad_fn=<CloneBackward0>),)
+
+    def form(self, semantic_id, *arguments, open_roles=(),
+             mode='interrogative', polarity=True, bindings=(), scope=(),
+             context=None):
+        """Form a canonical thought request without executing or allocating.
+    
+        Open roles are explicit structural role labels.  Thus a one-argument
+        ``part`` call with ``open_roles=('I1',)`` is the former ``parts``
+        behavior, but it retains the same semantic identity and VP.
+        """
+        retired = {'what': 'ask (thought) or query (LTM)', 'lookup': 'query',
+            'chunk': 'synthesize / analyze', 'quantize': 'future symbolization',
+            'arma': 'sentenceExpectation / gain', 'expect': 'sentenceExpectation / gain', 'true': 'isTrue'}
+        if semantic_id in retired:
+>           raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E           ValueError: quantize is retired; use future symbolization
+
+bin/Queries.py:1974: ValueError
+____ test_typed_results_survive_resolve_and_reverse_without_execution[set] _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12dd46c30>
+kind = 'set'
+
+    @pytest.mark.parametrize('kind', ['set', 'code', 'subgoal'])
+    def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch, kind):
+        from contextlib import nullcontext
+        from types import SimpleNamespace
+        from Understanding import AnswerProgram, Understanding
+        from What import What
+        model, registry, memory, part, whole = _catalog_world()
+        query = registry.form('part', part, whole)
+        if kind == 'set':
+            extra = ('sym', model.conceptualSpace.new_concept())
+            model.conceptualSpace._csw_concept_row(0, extra[1])
+            model.conceptualSpace.add_whole(extra[1], whole)
+            query = registry.form('part', whole, open_roles=('I1',))
+        elif kind == 'code':
+            query = registry.form('quantize', registry._payload(part))
+        else:
+            from Layers import TernaryTruthStore
+            model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=16)
+            query = registry.form('ask', query)
+        entry = AnswerProgram(rows=torch.tensor([1]), word_rows=torch.tensor([1]),
+            concept_ids=torch.tensor([part[1]]), activations=torch.ones(1),
+            leaves=registry._payload(part)[None], actions=torch.tensor([[0, -1, 0]]),
+            targets=torch.tensor([-1]), end_state=torch.zeros(3, 8))
+        object.__setattr__(model, 'languageSpace', SimpleNamespace(
+            program_meaning=lambda item, _registry: query,
+            # This adapter fixture stubs every numerical synthesis operation.
+            generation_scope=nullcontext))
+        object.__setattr__(model.conceptualSpace, 'stm', SimpleNamespace(concept_dim=8))
+        model._what_grammar_context = lambda *_a, **_k: (torch.zeros(1, 8), None)
+        model._select_perceptual_bindings = lambda *_a: ()
+        model._condition_answer_on_question = lambda idea, _context, **_kwargs: idea
+        model._synthesis_guard = nullcontext
+        model.conceptualSpace.synthesize_idea = lambda idea, **_k: idea
+        object.__setattr__(model, 'perceptualSpace', SimpleNamespace(synthesize=lambda idea, **_k: idea))
+        object.__setattr__(model, 'outputSpace', SimpleNamespace(from_percepts=lambda idea: idea))
+        model.selected_thought_budget = 128
+        model.reconstruct_in_loop = False
+        # Numerical generation is an explicit identity stub in this adapter test.
+        model._walk_operand=lambda value, **kwargs: value
+        def walk(idea, *args, **kwargs):
+            model._adapter_words=idea
+            return (idea,torch.full((len(idea),),idea.shape[1]),
+                    torch.zeros(len(idea),dtype=torch.bool),None,
+                    torch.zeros(len(idea),1,dtype=torch.long))
+        model._compiled_output_walk=lambda: walk
+        model.conceptualSpace.commit_event=lambda value: None
+        model._reverse_body=lambda sub: model._adapter_words
+        model._reverse_perceptual=lambda value: value
+        from Understanding import SentenceEndState
+        from Meaning import ConceptualMeaning
+        field = SentenceEndState(ConceptualMeaning.from_description(entry.leaves[0]), query=query)
+        understanding = Understanding(sentence_states=(field,))
+        model.eval()
+        derivation = model.resolveAnswer(understanding, What.supervised(0))
+        assert derivation.source == 'thought-' + kind
+>       assert len(derivation.answer_meanings[0]) == (2 if kind == 'set' else 1)
+E       assert 0 == 2
+E        +  where 0 = len(())
+
+test/test_thought_answer_adapters.py:149: AssertionError
+____ test_typed_results_survive_resolve_and_reverse_without_execution[code] ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x120f5bad0>
+kind = 'code'
+
+    @pytest.mark.parametrize('kind', ['set', 'code', 'subgoal'])
+    def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch, kind):
+        from contextlib import nullcontext
+        from types import SimpleNamespace
+        from Understanding import AnswerProgram, Understanding
+        from What import What
+        model, registry, memory, part, whole = _catalog_world()
+        query = registry.form('part', part, whole)
+        if kind == 'set':
+            extra = ('sym', model.conceptualSpace.new_concept())
+            model.conceptualSpace._csw_concept_row(0, extra[1])
+            model.conceptualSpace.add_whole(extra[1], whole)
+            query = registry.form('part', whole, open_roles=('I1',))
+        elif kind == 'code':
+>           query = registry.form('quantize', registry._payload(part))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_thought_answer_adapters.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Queries.GrammaticalThoughtRegistry object at 0x12dd46270>
+semantic_id = 'quantize', open_roles = (), mode = 'interrogative'
+polarity = True, bindings = (), scope = (), context = None
+arguments = (tensor([ 0.2180, -0.2091,  0.0905, -0.3955, -0.1572,  0.5259, -0.4976,  0.4419],
+       grad_fn=<CloneBackward0>),)
+
+    def form(self, semantic_id, *arguments, open_roles=(),
+             mode='interrogative', polarity=True, bindings=(), scope=(),
+             context=None):
+        """Form a canonical thought request without executing or allocating.
+    
+        Open roles are explicit structural role labels.  Thus a one-argument
+        ``part`` call with ``open_roles=('I1',)`` is the former ``parts``
+        behavior, but it retains the same semantic identity and VP.
+        """
+        retired = {'what': 'ask (thought) or query (LTM)', 'lookup': 'query',
+            'chunk': 'synthesize / analyze', 'quantize': 'future symbolization',
+            'arma': 'sentenceExpectation / gain', 'expect': 'sentenceExpectation / gain', 'true': 'isTrue'}
+        if semantic_id in retired:
+>           raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
+E           ValueError: quantize is retired; use future symbolization
+
+bin/Queries.py:1974: ValueError
+__ test_typed_results_survive_resolve_and_reverse_without_execution[subgoal] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12de841d0>
+kind = 'subgoal'
+
+    @pytest.mark.parametrize('kind', ['set', 'code', 'subgoal'])
+    def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch, kind):
+        from contextlib import nullcontext
+        from types import SimpleNamespace
+        from Understanding import AnswerProgram, Understanding
+        from What import What
+        model, registry, memory, part, whole = _catalog_world()
+        query = registry.form('part', part, whole)
+        if kind == 'set':
+            extra = ('sym', model.conceptualSpace.new_concept())
+            model.conceptualSpace._csw_concept_row(0, extra[1])
+            model.conceptualSpace.add_whole(extra[1], whole)
+            query = registry.form('part', whole, open_roles=('I1',))
+        elif kind == 'code':
+            query = registry.form('quantize', registry._payload(part))
+        else:
+            from Layers import TernaryTruthStore
+            model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=16)
+            query = registry.form('ask', query)
+        entry = AnswerProgram(rows=torch.tensor([1]), word_rows=torch.tensor([1]),
+            concept_ids=torch.tensor([part[1]]), activations=torch.ones(1),
+            leaves=registry._payload(part)[None], actions=torch.tensor([[0, -1, 0]]),
+            targets=torch.tensor([-1]), end_state=torch.zeros(3, 8))
+        object.__setattr__(model, 'languageSpace', SimpleNamespace(
+            program_meaning=lambda item, _registry: query,
+            # This adapter fixture stubs every numerical synthesis operation.
+            generation_scope=nullcontext))
+        object.__setattr__(model.conceptualSpace, 'stm', SimpleNamespace(concept_dim=8))
+        model._what_grammar_context = lambda *_a, **_k: (torch.zeros(1, 8), None)
+        model._select_perceptual_bindings = lambda *_a: ()
+        model._condition_answer_on_question = lambda idea, _context, **_kwargs: idea
+        model._synthesis_guard = nullcontext
+        model.conceptualSpace.synthesize_idea = lambda idea, **_k: idea
+        object.__setattr__(model, 'perceptualSpace', SimpleNamespace(synthesize=lambda idea, **_k: idea))
+        object.__setattr__(model, 'outputSpace', SimpleNamespace(from_percepts=lambda idea: idea))
+        model.selected_thought_budget = 128
+        model.reconstruct_in_loop = False
+        # Numerical generation is an explicit identity stub in this adapter test.
+        model._walk_operand=lambda value, **kwargs: value
+        def walk(idea, *args, **kwargs):
+            model._adapter_words=idea
+            return (idea,torch.full((len(idea),),idea.shape[1]),
+                    torch.zeros(len(idea),dtype=torch.bool),None,
+                    torch.zeros(len(idea),1,dtype=torch.long))
+        model._compiled_output_walk=lambda: walk
+        model.conceptualSpace.commit_event=lambda value: None
+        model._reverse_body=lambda sub: model._adapter_words
+        model._reverse_perceptual=lambda value: value
+        from Understanding import SentenceEndState
+        from Meaning import ConceptualMeaning
+        field = SentenceEndState(ConceptualMeaning.from_description(entry.leaves[0]), query=query)
+        understanding = Understanding(sentence_states=(field,))
+        model.eval()
+        derivation = model.resolveAnswer(understanding, What.supervised(0))
+>       assert derivation.source == 'thought-' + kind
+E       AssertionError: assert 'thought-concept' == 'thought-subgoal'
+E         
+E         - thought-subgoal
+E         + thought-concept
+
+test/test_thought_answer_adapters.py:148: AssertionError
+____ test_metadata_preserves_binding_identity_without_allocator_magnitudes _____
+
+    def test_metadata_preserves_binding_identity_without_allocator_magnitudes():
+        model, registry, _, part, whole = _catalog_world()
+        question = registry.form('part', part, whole, bindings={'x': part}, scope={'place': 'a'})
+        renamed = replace(question, role_refs=(('sym', 991), ('sym', 883), ('sym', 775)),
+                          bindings={'x': ('sym', 991)})
+        features = lambda q: model._selected_thought_context(q, level=0, pressure=0)
+>       torch.testing.assert_close(features(question), features(renamed))
+E       AssertionError: Tensor-likes are not close!
+E       
+E       Mismatched elements: 762 / 3660 (20.8%)
+E       Greatest absolute difference: 1.0 at index (118,) (up to 1e-05 allowed)
+E       Greatest relative difference: inf at index (118,) (up to 1.3e-06 allowed)
+
+test/test_thought_review.py:44: AssertionError
+_____ test_old_context_checkpoint_resets_policy_and_its_optimizer_moments ______
+
+    def test_old_context_checkpoint_resets_policy_and_its_optimizer_moments():
+        from Language import SelectedThoughtChooser
+        from checkpoint_migrations import build_optimizer_param_manifest, remap_optimizer_state_by_name
+        from Models import BasicModel
+        old = BasicModel()
+        old.selected_thought_choosers = torch.nn.ModuleDict({
+            '8': SelectedThoughtChooser(context_dim=9 * 8 + 15)})
+        optimizer = torch.optim.Adam(old.parameters(), lr=.01)
+        sum(p.sum() for p in old.parameters()).backward()
+        optimizer.step()
+        state = {key: value.detach().clone() for key, value in old.state_dict().items()}
+        old_manifest = build_optimizer_param_manifest(optimizer, old.named_parameters())
+        new, registry, _, part, whole = _catalog_world()
+        new._materialize_answer_path_from_checkpoint(state)
+>       new.load_state_dict(state, strict=True)
+
+test/test_thought_review.py:63: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (shared_grammar): OperationSelectionLayer(
+    (ops): ModuleList()
+    (unary_ops): ModuleList()
+    (ch...=8, out_features=8, bias=False)
+      (what_projection): Linear(in_features=29, out_features=7, bias=False)
+    )
+  )
+)
+state_dict = OrderedDict(), strict = True, assign = False
+
+    def load_state_dict(
+        self, state_dict: Mapping[str, Any], strict: bool = True, assign: bool = False
+    ):
+        r"""Copy parameters and buffers from :attr:`state_dict` into this module and its descendants.
+    
+        If :attr:`strict` is ``True``, then
+        the keys of :attr:`state_dict` must exactly match the keys returned
+        by this module's :meth:`~torch.nn.Module.state_dict` function.
+    
+        .. warning::
+            If :attr:`assign` is ``True`` the optimizer must be created after
+            the call to :attr:`load_state_dict` unless
+            :func:`~torch.__future__.get_swap_module_params_on_conversion` is ``True``.
+    
+        Args:
+            state_dict (dict): a dict containing parameters and
+                persistent buffers.
+            strict (bool, optional): whether to strictly enforce that the keys
+                in :attr:`state_dict` match the keys returned by this module's
+                :meth:`~torch.nn.Module.state_dict` function. Default: ``True``
+            assign (bool, optional): When set to ``False``, the properties of the tensors
+                in the current module are preserved whereas setting it to ``True`` preserves
+                properties of the Tensors in the state dict. The only
+                exception is the ``requires_grad`` field of :class:`~torch.nn.Parameter`
+                for which the value from the module is preserved. Default: ``False``
+    
+        Returns:
+            ``NamedTuple`` with ``missing_keys`` and ``unexpected_keys`` fields:
+                * ``missing_keys`` is a list of str containing any keys that are expected
+                    by this module but missing from the provided ``state_dict``.
+                * ``unexpected_keys`` is a list of str containing the keys that are not
+                    expected by this module but present in the provided ``state_dict``.
+    
+        Note:
+            If a parameter or buffer is registered as ``None`` and its corresponding key
+            exists in :attr:`state_dict`, :meth:`load_state_dict` will raise a
+            ``RuntimeError``.
+        """
+        if not isinstance(state_dict, Mapping):
+            raise TypeError(
+                f"Expected state_dict to be dict-like, got {type(state_dict)}."
+            )
+    
+        missing_keys: list[str] = []
+        unexpected_keys: list[str] = []
+        error_msgs: list[str] = []
+    
+        # copy state_dict so _load_from_state_dict can modify it
+        metadata = getattr(state_dict, "_metadata", None)
+        state_dict = OrderedDict(state_dict)
+        if metadata is not None:
+            # mypy isn't aware that "_metadata" exists in state_dict
+            state_dict._metadata = metadata  # type: ignore[attr-defined]
+    
+        def load(module, local_state_dict, prefix="") -> None:
+            local_metadata = {} if metadata is None else metadata.get(prefix[:-1], {})
+            if assign:
+                local_metadata["assign_to_params_buffers"] = assign
+            module._load_from_state_dict(
+                local_state_dict,
+                prefix,
+                local_metadata,
+                True,
+                missing_keys,
+                unexpected_keys,
+                error_msgs,
+            )
+            for name, child in module._modules.items():
+                if child is not None:
+                    child_prefix = prefix + name + "."
+                    child_state_dict = {
+                        k: v
+                        for k, v in local_state_dict.items()
+                        if k.startswith(child_prefix)
+                    }
+                    load(child, child_state_dict, child_prefix)  # noqa: F821
+    
+            # Note that the hook can modify missing_keys and unexpected_keys.
+            incompatible_keys = _IncompatibleKeys(missing_keys, unexpected_keys)
+            for hook in module._load_state_dict_post_hooks.values():
+                out = hook(module, incompatible_keys)
+                if out is not None:
+                    raise AssertionError(
+                        "Hooks registered with ``register_load_state_dict_post_hook`` are not "
+                        "expected to return new values, if incompatible_keys need to be modified, "
+                        "it should be done inplace."
+                    )
+    
+        load(self, state_dict)
+        del load
+    
+        if strict:
+            if len(unexpected_keys) > 0:
+                error_msgs.insert(
+                    0,
+                    "Unexpected key(s) in state_dict: {}. ".format(
+                        ", ".join(f'"{k}"' for k in unexpected_keys)
+                    ),
+                )
+            if len(missing_keys) > 0:
+                error_msgs.insert(
+                    0,
+                    "Missing key(s) in state_dict: {}. ".format(
+                        ", ".join(f'"{k}"' for k in missing_keys)
+                    ),
+                )
+    
+        if len(error_msgs) > 0:
+>           raise RuntimeError(
+                "Error(s) in loading state_dict for {}:\n\t{}".format(
+                    self.__class__.__name__, "\n\t".join(error_msgs)
+                )
+            )
+E           RuntimeError: Error(s) in loading state_dict for BasicModel:
+E           	Missing key(s) in state_dict: "shared_grammar.stop_anchor", "shared_grammar.reduce_anchor", "shared_grammar.apply_anchor", "shared_grammar.bracket_anchor", "shared_grammar.space_prior", "shared_grammar.chooser.tool_embedding", "shared_grammar.chooser.mlp.0.weight", "shared_grammar.chooser.mlp.0.bias", "shared_grammar.chooser.mlp.2.weight", "shared_grammar.chooser.mlp.2.bias", "shared_grammar.chooser.what_projection.weight".
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:2643: RuntimeError
+__ test_policy_selects_nested_what_part_and_receives_actual_episode_credit[1] __
+
+depth = 1
+
+    @pytest.mark.parametrize('depth', [1, 2])
+    def test_policy_selects_nested_what_part_and_receives_actual_episode_credit(depth):
+        """Mechanism only: teach a routing policy, then execute without a script.
+    
+        The descent is a real MLP argmax with policy log probability. The separate
+        multi-seed utility study must determine whether such descent is useful.
+        """
+        torch.manual_seed(23)
+        model, registry, memory, part, whole = _catalog_world()
+        model.what_thinking_hidden = 48
+        model.selected_thought_policy_weight = 1.
+        model.eval()
+        question = registry.form('part', part, whole)
+        record = memory.begin_thought_episode(question, work_budget=128)
+        actions = registry.controller_candidates(question, question, question,
+            descriptions=((question, memory.thought_reference(record)),)) + (None,)
+        memory.finish_thought(question)
+        memory.end_what_episode()
+        chooser = model._selected_thought_chooser(question)
+        optimizer = torch.optim.Adam(chooser.parameters(), lr=.015)
+        samples = []
+        for level in range(depth + 1):
+            for supported in (False, True):
+                evidence = {'support_true': 1.} if supported else None
+                contexts = torch.stack([model._selected_thought_context(question, question,
+                    question if action is None else action.request,
+                    level=level, pressure=0, evidence=evidence) for action in actions])
+                wanted = None if supported else ('what' if level < depth else 'part')
+>               target = next(i for i, a in enumerate(actions)
+                              if (a is None if wanted is None else a is not None and a.semantic_id == wanted))
+E               StopIteration
+
+test/test_thought_review.py:135: StopIteration
+__ test_policy_selects_nested_what_part_and_receives_actual_episode_credit[2] __
+
+depth = 2
+
+    @pytest.mark.parametrize('depth', [1, 2])
+    def test_policy_selects_nested_what_part_and_receives_actual_episode_credit(depth):
+        """Mechanism only: teach a routing policy, then execute without a script.
+    
+        The descent is a real MLP argmax with policy log probability. The separate
+        multi-seed utility study must determine whether such descent is useful.
+        """
+        torch.manual_seed(23)
+        model, registry, memory, part, whole = _catalog_world()
+        model.what_thinking_hidden = 48
+        model.selected_thought_policy_weight = 1.
+        model.eval()
+        question = registry.form('part', part, whole)
+        record = memory.begin_thought_episode(question, work_budget=128)
+        actions = registry.controller_candidates(question, question, question,
+            descriptions=((question, memory.thought_reference(record)),)) + (None,)
+        memory.finish_thought(question)
+        memory.end_what_episode()
+        chooser = model._selected_thought_chooser(question)
+        optimizer = torch.optim.Adam(chooser.parameters(), lr=.015)
+        samples = []
+        for level in range(depth + 1):
+            for supported in (False, True):
+                evidence = {'support_true': 1.} if supported else None
+                contexts = torch.stack([model._selected_thought_context(question, question,
+                    question if action is None else action.request,
+                    level=level, pressure=0, evidence=evidence) for action in actions])
+                wanted = None if supported else ('what' if level < depth else 'part')
+>               target = next(i for i, a in enumerate(actions)
+                              if (a is None if wanted is None else a is not None and a.semantic_id == wanted))
+E               StopIteration
+
+test/test_thought_review.py:135: StopIteration
+_ test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about] __
+
+entry = 'reason_about'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10bb04f20>
+
+    @pytest.mark.parametrize("entry", ["reason_about", "think_about"])
+    def test_public_reasoning_uses_one_completed_boundary_and_episode(entry, monkeypatch):
+        model, registry, memory, part, whole = _catalog_world()
+        model.reasoning_iterations = model.attention_budget = 64
+        question = registry.form("part", part, whole)
+        calls = []
+        run = model.run_selected_thought
+    
+        def checked(meaning, **kwargs):
+            model._assert_query_boundary(kwargs.get("row", 0))
+            calls.append(meaning)
+            return run(meaning, **kwargs)
+    
+        monkeypatch.setattr(model, "run_selected_thought", checked)
+        result = getattr(model, entry)(question)
+    
+        assert isinstance(result, SelectedThoughtResult)
+        assert calls == [question]
+>       assert result.evidence["support_true"] == 1.0
+E       assert 0.0 == 1.0
+
+test/test_unified_thought_controller.py:28: AssertionError
+__ test_public_reasoning_uses_one_completed_boundary_and_episode[think_about] __
+
+entry = 'think_about'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12dbb6fc0>
+
+    @pytest.mark.parametrize("entry", ["reason_about", "think_about"])
+    def test_public_reasoning_uses_one_completed_boundary_and_episode(entry, monkeypatch):
+        model, registry, memory, part, whole = _catalog_world()
+        model.reasoning_iterations = model.attention_budget = 64
+        question = registry.form("part", part, whole)
+        calls = []
+        run = model.run_selected_thought
+    
+        def checked(meaning, **kwargs):
+            model._assert_query_boundary(kwargs.get("row", 0))
+            calls.append(meaning)
+            return run(meaning, **kwargs)
+    
+        monkeypatch.setattr(model, "run_selected_thought", checked)
+        result = getattr(model, entry)(question)
+    
+>       assert isinstance(result, SelectedThoughtResult)
+E       assert False
+E        +  where False = isinstance(None, SelectedThoughtResult)
+
+test/test_unified_thought_controller.py:26: AssertionError
+__ test_public_answer_accepts_the_completed_meaning_without_surface_dispatch ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x109d446e0>
+
+    def test_public_answer_accepts_the_completed_meaning_without_surface_dispatch(monkeypatch):
+        model, registry, memory, part, whole = _catalog_world()
+        model.reasoning_iterations = 64
+        question = registry.form("part", part, whole)
+        monkeypatch.setattr(model, "_detect_query", lambda *_args: pytest.fail(
+            "a surface dispatcher selected the thought"), raising=False)
+    
+        payload = model.answer_query(question)
+    
+>       assert payload["support_true"] == 1.0
+E       assert 0.1490720957517624 == 1.0
+
+test/test_unified_thought_controller.py:45: AssertionError
+__________ test_candidate_payloads_are_detached_from_the_hard_choice ___________
+
+    def test_candidate_payloads_are_detached_from_the_hard_choice():
+        model, registry, _memory, part, whole = _catalog_world()
+        root = registry.form("part", part, whole)
+        from dataclasses import replace
+        values = root.roles.detach().clone().requires_grad_()
+        candidate = replace(root, roles=values)
+        context = model._selected_thought_context(
+            root, root, candidate, level=0, pressure=0.0)
+        chooser = model._selected_thought_chooser(root)
+        with torch.no_grad():
+            for parameter in chooser.parameters():
+                parameter.fill_(0.01)
+>       logits = chooser.logits(torch.stack((context, context)), (False, True))
+                 ^^^^^^^^^^^^^^
+
+test/test_unified_thought_controller.py:63: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = OperationSelectionLayer(
+  (ops): ModuleList()
+  (unary_ops): ModuleList()
+  (chooser): MLPTransformChooser(
+    (mlp)...features=8, out_features=8, bias=False)
+    (what_projection): Linear(in_features=29, out_features=7, bias=False)
+  )
+)
+name = 'logits'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'OperationSelectionLayer' object has no attribute 'logits'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+_______ test_child_context_can_refine_before_returning_its_causal_result _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12dd478f0>
+
+    def test_child_context_can_refine_before_returning_its_causal_result(monkeypatch):
+        from QueryWork import QueryWorkBudget
+        model, registry, memory, part, whole = _catalog_world()
+        child = registry.form("part", part, whole)
+        record = memory.begin_thought_episode(child, work_budget=2)
+        reference = memory.thought_reference(record)
+        memory.finish_thought(child)
+        memory.end_what_episode()
+        child_choices = []
+    
+        def choose(_root, _active, actions, *, level, evidence=None, **_kwargs):
+            if level == 0:
+                if evidence is not None:
+                    return None
+                return next(action for action in actions
+                            if action is not None and action.semantic_id == "ask")
+            child_choices.append(evidence)
+            if len(child_choices) > 2:
+                return None
+            target = "part" if len(child_choices) == 1 else "equal"
+            return next(action for action in actions
+                        if action is not None and action.semantic_id == target)
+    
+        monkeypatch.setattr(model, "_choose_selected_thought_action", choose)
+        with model._query_boundary_scope((0,)):
+            outer = registry.form("ask", reference, context=model._thought_grammar_context(
+                child, row=0, work=QueryWorkBudget(8), continuation=None))
+            selected = model.run_selected_thought(outer, work_budget=128)
+        assert len(child_choices) == 3
+>       assert child_choices[1]["support_true"] == 1.0
+E       assert 0.1899724304676056 == 1.0
+
+test/test_unified_thought_controller.py:100: AssertionError
+______ test_policy_charges_shared_episode_work_not_the_number_of_choices _______
+
+    def test_policy_charges_shared_episode_work_not_the_number_of_choices():
+        model, registry, memory, part, whole = _catalog_world()
+        model.selected_thought_policy_weight = 1
+        model.eval()
+        model._selected_thought_policy_baseline = 0.0
+        with model._query_boundary_scope((0,)):
+            result = model.run_selected_thought(registry.form('part', part, whole), work_budget=64)
+>       loss = model._selected_thought_policy_loss(torch.tensor(0.0))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_unified_thought_controller.py:136: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (shared_grammar): OperationSelectionLayer(
+    (ops): ModuleList()
+    (unary_ops): ModuleList()
+    (ch...=8, out_features=8, bias=False)
+      (what_projection): Linear(in_features=29, out_features=7, bias=False)
+    )
+  )
+)
+args = (tensor(0.),), kwargs = {}
+
+    def _selected_thought_policy_loss(self, *args, **kwargs):
+>       raise ValueError('REINFORCE/EMA thought credit is retired; use the paired grammar cost')
+E       ValueError: REINFORCE/EMA thought credit is retired; use the paired grammar cost
+
+bin/Models.py:5879: ValueError
+________ test_runbatch_credits_each_controller_row_from_its_own_answer _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12db376b0>
+eager_reading = None
+
+    def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch, eager_reading):
+        from dataclasses import replace
+        from test_output_walk import _model, _capture_program_probe
+        from What import What
+        model = _model()
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        try:
+            with torch.no_grad():
+                understood = _capture_program_probe(model, ['12 plus 1', '3 plus 4'])
+            model._staged_in_sub = None
+            registry = model.grammatical_thoughts
+            # The controller-credit mechanism needs an explicit native operand;
+            # learned segmentation is not a fixture for the spelling "12".
+            owner = model._concept_owner()
+            ref = ('sym', owner.new_concept())
+            owner._csw_concept_row(0, ref[1])
+            query = registry.form('equal', ref, ref)
+            capture = model._capture_understanding
+            def supplied_query(*args, **kwargs):
+                # Supply this controller mechanism's question on the completed
+                # fields. The test makes no claim about learned interrogative
+                # parsing; a completed row no longer carries a compose program.
+                understanding = capture(*args, **kwargs)
+                return replace(understanding, sentence_states=tuple(
+                    replace(field, query=query) for field in understanding.sentence_states))
+            monkeypatch.setattr(model, '_capture_understanding', supplied_query)
+            model.selected_thought_policy_weight = 1
+            model.selected_thought_budget = 64
+            observed = []
+            policy_loss = model._selected_thought_policy_loss
+            def credit(errors, mask=None):
+                pred = model._align_output_pred(model._last_answer_construction.actual,
+                                                model._last_answer_target)
+                expected = torch.stack([model.loss.compute(pred[b:b + 1],
+                    model._last_answer_target[b:b + 1]) for b in range(2)])
+                assert errors.shape == (2,) and mask.tolist() == [True, True]
+                torch.testing.assert_close(errors, expected.detach())
+                assert not errors.requires_grad
+                result = policy_loss(errors, mask)
+                assert result is not None and result.requires_grad
+                observed.append(getattr(model, '_sentence_trial', None))
+                return result
+            monkeypatch.setattr(model, '_selected_thought_policy_loss', credit)
+            optimizer = model.getOptimizer(lr=.001)
+            batch = (model.inputSpace.prepInput(['12 plus 1', '3 plus 4']), torch.zeros(2, 1, 1))
+            model.runBatch(train=True, batchSize=2, optimizer=optimizer, batch_override=batch,
+                questions=(What.supervised(0), What.supervised(1)))
+>           assert observed == [None]  # The answer is a batch-end objective.
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           assert [] == [None]
+E             
+E             Right contains one more item: None
+E             Use -v to get more diff
+
+test/test_unified_thought_controller.py:192: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+_________ test_policy_masks_other_rows_and_drops_failed_episode_graphs _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12e3baae0>
+
+    def test_policy_masks_other_rows_and_drops_failed_episode_graphs(monkeypatch):
+        model, registry, memory, part, whole = _catalog_world()
+        model.selected_thought_policy_weight = 1
+        model.eval()
+        with model._query_boundary_scope((0,)):
+            result = model.run_selected_thought(registry.form('part', part, whole), work_budget=64)
+>       records = list(model._selected_thought_policy_records)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_unified_thought_controller.py:238: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (shared_grammar): OperationSelectionLayer(
+    (ops): ModuleList()
+    (unary_ops): ModuleList()
+    (ch...=8, out_features=8, bias=False)
+      (what_projection): Linear(in_features=29, out_features=7, bias=False)
+    )
+  )
+)
+name = '_selected_thought_policy_records'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute '_selected_thought_policy_records'. Did you mean: '_selected_thought_policy_loss'?
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+____________ test_declared_not_is_a_thought_act_not_an_observation _____________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3350/test_declared_not_is_a_thought0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12ef7f350>
+
+    def test_declared_not_is_a_thought_act_not_an_observation(tmp_path, monkeypatch):
+        from pathlib import Path
+        from Language import Grammar, NotLayer
+        from Queries import GrammaticalThoughtRegistry
+        from test_normal_thought_controller import _catalog_world
+        model, registry, memory, part, whole = _catalog_world()
+>       assert "not" not in registry.executable_operation_ids
+E       AssertionError: assert 'not' not in ('ask', 'query', 'part', 'equal', 'not', 'isTrue', ...)
+E        +  where ('ask', 'query', 'part', 'equal', 'not', 'isTrue', ...) = <Queries.GrammaticalThoughtRegistry object at 0x12f0ac950>.executable_operation_ids
+
+test/test_negative_expectation.py:121: AssertionError
+____ test_residual_credit_replays_current_chooser_and_has_its_own_baseline _____
+
+    def test_residual_credit_replays_current_chooser_and_has_its_own_baseline():
+        model, discourse, meaning = _anticipating_model()
+        model.eval()  # deterministic decisions; no supplied answer exists
+        model._selected_thought_policy_baseline = 123.
+        model._stage_expectation_queries()
+        pending = discourse._inter_last_meaning[0]
+>       assert pending is not None and pending.policy
+E       assert (None is not None)
+
+test/test_negative_expectation.py:186: AssertionError
+_____________ test_native_unlabelled_batch_trains_the_same_chooser _____________
+
+tmp_path = PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3350/test_native_unlabelled_batch_t0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x12f201700>
+eager_reading = None
+
+    def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch, eager_reading):
+        from test_compiled_word_chunk import _tiny_canonical_model
+        from test_reverse_traversal import _select_completed_binary_path
+        torch.manual_seed(946)
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets="8", batch_size=1, input_width=16,
+            training_overrides={"expectationPolicyWeight": .2, "expectationQueryBudget": 64,
+                                "expectationGain": 0., "reconstructInLoop": True,
+                                "reconstructionPlacement": "eager", "intraLossWeight": 0.},
+            architecture_overrides={"ltmConsolidation": True})
+        model._tensor_peer_while_eager = True
+        model._chart_compose_per_word = lambda: None
+        # Residual thought credit requires completed preceding observations.
+        # Control compose only; the thought chooser under test remains trainable.
+        _select_completed_binary_path(model)
+        # Ordinary input reconstruction and unlabelled residual credit share the
+        # real runBatch optimizer; there is no desired answer in this presentation.
+        monkeypatch.setattr(model.inputSpace.data, "has_supervised_outputs", False)
+        optimizer = model.getOptimizer(lr=.001)
+        for step, text in enumerate(("a b", "a c", "b c")):
+            inputs = model.inputSpace.prepInput([text])
+            result, _ = model.runBatch(train=True, batchNum=step, batchSize=1,
+                split="train", optimizer=optimizer,
+                batch_override=(inputs, torch.empty(1, 0)))
+            assert result is not None
+>       assert model._expectation_policy_report["episodes"] > 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test/test_negative_expectation.py:247: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = BasicModel(
+  (loss): ModelLoss(
+    (output_criterion): MSELoss()
+  )
+  (inputSpace): InputSpace(
+    (subspace): Sub...=29, out_features=104, bias=False)
+  )
+  (question_conditioner): Linear(in_features=29, out_features=104, bias=False)
+)
+name = '_expectation_policy_report'
+
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+        if "_parameters" in self.__dict__:
+            _parameters = self.__dict__["_parameters"]
+            if name in _parameters:
+                return _parameters[name]
+        if "_buffers" in self.__dict__:
+            _buffers = self.__dict__["_buffers"]
+            if name in _buffers:
+                return _buffers[name]
+        if "_modules" in self.__dict__:
+            modules = self.__dict__["_modules"]
+            if name in modules:
+                return modules[name]
+>       raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
+E       AttributeError: 'BasicModel' object has no attribute '_expectation_policy_report'
+
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: AttributeError
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 1 (Δ=0.260s)
+batch = 2 (Δ=0.283s)
+_______ test_disabling_expectation_erases_pending_credit_and_starts_cold _______
+
+    def test_disabling_expectation_erases_pending_credit_and_starts_cold():
+        model, discourse, meaning = _anticipating_model()
+        model.eval()
+        model._stage_expectation_queries()
+>       assert discourse._inter_last_meaning[0].policy
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'NoneType' object has no attribute 'policy'
+
+test/test_negative_expectation.py:354: AttributeError
+_________ test_anticipation_ignores_incoming_staging_and_other_streams _________
+
+    def test_anticipation_ignores_incoming_staging_and_other_streams():
+        from types import SimpleNamespace
+        with torch.no_grad():
+            model, discourse, meaning = _anticipating_model()
+        model.eval()
+        perturbed = copy.deepcopy(model)
+        model._stage_expectation_queries()
+        before = discourse._inter_last_meaning[0]
+        # Content staged for an arriving or later packed sentence is unavailable
+        # to prior-only thought, including the most recent mutable program slot.
+        perturbed._last_understanding = SimpleNamespace(sentence_states=(SimpleNamespace(leaves=torch.full((9, meaning.roles.shape[-1]), 999.)),))
+        perturbed.inputSpace = SimpleNamespace(_ar_embedded_N=torch.full((2, 8, 16), -999.))
+        perturbed.symbolSpace.ltm_store.append_meaning(meaning, kind="observation", stream=1, sentence_index=len(perturbed.symbolSpace.ltm_store))
+        perturbed._stage_expectation_queries()
+        after = perturbed.symbolSpace.expectation._inter_last_meaning[0]
+>       torch.testing.assert_close(before.prediction.roles, after.prediction.roles, rtol=0, atol=0)
+                                   ^^^^^^^^^^^^^^^^^
+E       AttributeError: 'NoneType' object has no attribute 'prediction'
+
+test/test_negative_expectation.py:399: AttributeError
+___ test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns ____
+
+    def test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns():
+        from Models import BasicModel
+        from Language import SelectedThoughtChooser
+        from ThoughtFeatures import context_width
+        width, hidden = 8, 16
+        old_width = context_width(width) - (3 * width + 7)
+        old = SelectedThoughtChooser(context_dim=old_width, hidden=hidden)
+        with torch.no_grad():
+            old.mlp[-1].weight.normal_(0, .1)
+        prefix = f"selected_thought_choosers.{width}."
+        state = {prefix + name: value.clone() for name, value in old.state_dict().items()}
+        restored = BasicModel()
+>       assert restored._materialize_answer_path_from_checkpoint(state) == 1
+E       assert 0 == 1
+E        +  where 0 = _materialize_answer_path_from_checkpoint({})
+E        +    where _materialize_answer_path_from_checkpoint = BasicModel()._materialize_answer_path_from_checkpoint
+
+test/test_negative_expectation.py:463: AssertionError
+_______________ test_prior_thought_reserves_the_input_allowance ________________
+
+    def test_prior_thought_reserves_the_input_allowance():
+     from test_negative_expectation import _anticipating_model
+     model,owner,meaning=_anticipating_model()
+     model.train();model.attention_budget=4
+     model._stage_expectation_queries(training=True)
+     pending=owner._inter_last_meaning[0]
+>    assert pending.work<=model.attention_budget, (pending.work,model.attention_budget)
+            ^^^^^^^^^^^^
+E    AttributeError: 'NoneType' object has no attribute 'work'
+
+test/test_one_attention.py:348: AttributeError
+=============================== warnings summary ===============================
+test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7072: RuntimeWarning: what_answer_target_shape [config /var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/tmp9t7_0eyd/MM_ladder_walk.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_normal_thought_controller.py::test_completed_compose_program_enters_normal_controller_before_legacy_thinking
+FAILED test/test_grammatical_query_vps.py::test_execution_is_derived_from_middle_vp_and_retains_the_proposition
+FAILED test/test_grammatical_query_vps.py::test_assertive_or_unrecognized_vp_does_not_execute_a_query
+FAILED test/test_grammatical_query_vps.py::test_unary_query_keeps_full_description_through_an_existing_occurrence
+FAILED test/test_grammatical_query_vps.py::test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation
+FAILED test/test_live_query_occurrences.py::test_what_reads_live_complete_question_across_a_detached_boundary
+FAILED test/test_live_query_occurrences.py::test_thought_read_after_restore_retains_all_roles_binding_scope_and_mode
+FAILED test/test_query_phase_permissions.py::test_operand_occurrence_reads_require_permission_before_preparation
+FAILED test/test_query_vp_boundaries.py::test_what_cannot_turn_assertive_content_into_an_executed_subgoal
+FAILED test/test_query_vp_boundaries.py::test_registry_installation_reuses_native_bindings_and_checkpoint
+FAILED test/test_query_vp_boundaries.py::test_converse_only_interface_still_dispatches_canonical_roles
+FAILED test/test_query_vp_boundaries.py::test_unknown_negated_query_remains_unknown
+FAILED test/test_query_work_boundaries.py::test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance
+FAILED test/test_query_work_boundaries.py::test_arma_reserves_context_reads_before_running_the_predictor
+FAILED test/test_query_work_boundaries.py::test_quantize_does_not_materialize_basis_after_operation_uses_budget
+FAILED test/test_query_work_boundaries.py::test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures
+FAILED test/test_thought_answer_adapters.py::test_code_answer_uses_the_checked_atom_and_keeps_its_reference
+FAILED test/test_thought_answer_adapters.py::test_open_relation_answer_preserves_every_member_without_another_reader
+FAILED test/test_thought_answer_adapters.py::test_subgoal_carries_the_typed_child_result_into_the_answer
+FAILED test/test_thought_answer_adapters.py::test_missing_code_is_incomplete_rather_than_a_zero_or_request_answer
+FAILED test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[set]
+FAILED test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[code]
+FAILED test/test_thought_answer_adapters.py::test_typed_results_survive_resolve_and_reverse_without_execution[subgoal]
+FAILED test/test_thought_review.py::test_metadata_preserves_binding_identity_without_allocator_magnitudes
+FAILED test/test_thought_review.py::test_old_context_checkpoint_resets_policy_and_its_optimizer_moments
+FAILED test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[1]
+FAILED test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[2]
+FAILED test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[reason_about]
+FAILED test/test_unified_thought_controller.py::test_public_reasoning_uses_one_completed_boundary_and_episode[think_about]
+FAILED test/test_unified_thought_controller.py::test_public_answer_accepts_the_completed_meaning_without_surface_dispatch
+FAILED test/test_unified_thought_controller.py::test_candidate_payloads_are_detached_from_the_hard_choice
+FAILED test/test_unified_thought_controller.py::test_child_context_can_refine_before_returning_its_causal_result
+FAILED test/test_unified_thought_controller.py::test_policy_charges_shared_episode_work_not_the_number_of_choices
+FAILED test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer
+FAILED test/test_unified_thought_controller.py::test_policy_masks_other_rows_and_drops_failed_episode_graphs
+FAILED test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation
+FAILED test/test_negative_expectation.py::test_residual_credit_replays_current_chooser_and_has_its_own_baseline
+FAILED test/test_negative_expectation.py::test_native_unlabelled_batch_trains_the_same_chooser
+FAILED test/test_negative_expectation.py::test_disabling_expectation_erases_pending_credit_and_starts_cold
+FAILED test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams
+FAILED test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns
+FAILED test/test_one_attention.py::test_prior_thought_reserves_the_input_allowance
+42 failed, 147 passed, 2 warnings in 34.73s

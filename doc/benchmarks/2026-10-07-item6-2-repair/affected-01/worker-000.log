@@ -1,0 +1,44 @@
+...............................................F...................      [100%]
+=================================== FAILURES ===================================
+______________________ test_pyramid_taper_topk_selection _______________________
+test/test_dual_towers.py:277: in test_pyramid_taper_topk_selection
+    m.forward(m.inputSpace.prepInput(['hello', 'world']))
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8231: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23415: in _forward_per_stage
+    in_sub = self._lex_embed_stem(inputData)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13155: in _lex_embed_stem
+    stage_input(self)
+bin/ModelAttention.py:214: in stage_input
+    prior=BracketKeys._codebook_retrieval_prior(keys[:, :live_width],rows,model._last_gist[None],boosts)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Attention.py:396: in _codebook_retrieval_prior
+    sim = sim * (bv[:,None] if bv.ndim == 2 else bv)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: in __torch_function__
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: The size of tensor a (2) must match the size of tensor b (4) at non-singleton dimension 0
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_20M_xor.ckpt, starting fresh
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.132s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+=============================== warnings summary ===============================
+test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1253: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_dual_towers.py::test_pyramid_taper_topk_selection - RuntimeE...
+1 failed, 66 passed, 2 warnings in 12.76s

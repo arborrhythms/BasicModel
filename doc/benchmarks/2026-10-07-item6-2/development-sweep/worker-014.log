@@ -1,0 +1,49 @@
+........................................................................ [ 43%]
+........F.s........s..s.ss.................................F............ [ 87%]
+....sssss.s..ss......                                                    [100%]
+=================================== FAILURES ===================================
+_____________ test_ladder_grammar_has_chunk_as_a_reduce_candidate ______________
+test/test_meronomy_ladder.py:287: in test_ladder_grammar_has_chunk_as_a_reduce_candidate
+    assert reducer is not None and "chunk" in list(reducer.op_names)
+E   AssertionError: assert (OperationSelectionLayer(\n  (ops): ModuleList(\n    (0): _BinaryGrammarOpAdapter(\n      (gl): PartLayer()\n    )\n    (1):...res=175, out_features=104, bias=False)\n    (what_projection): Linear(in_features=29, out_features=28, bias=False)\n  )\n) is not None and 'chunk' in ['part', 'whole', 'equal', 'intersection', 'union', 'sum', ...])
+E    +  where ['part', 'whole', 'equal', 'intersection', 'union', 'sum', ...] = list(['part', 'whole', 'equal', 'intersection', 'union', 'sum', ...])
+E    +    where ['part', 'whole', 'equal', 'intersection', 'union', 'sum', ...] = OperationSelectionLayer(\n  (ops): ModuleList(\n    (0): _BinaryGrammarOpAdapter(\n      (gl): PartLayer()\n    )\n    (1):...res=175, out_features=104, bias=False)\n    (what_projection): Linear(in_features=29, out_features=28, bias=False)\n  )\n).op_names
+_______ test_current_grammar_recovery_by_depth_training_and_chain_length _______
+test/test_mind_generativity.py:33: in test_current_grammar_recovery_by_depth_training_and_chain_length
+    assert len(leaves) == 5 and bool((torch.pdist(leaves) > 0).all())
+E   assert (5 == 5 and False)
+E    +  where 5 = len(tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]]))
+E    +  and   False = bool(tensor(False))
+E    +    where tensor(False) = <built-in method all of Tensor object at 0x12f7964e0>()
+E    +      where <built-in method all of Tensor object at 0x12f7964e0> = tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]) > 0.all
+E    +        where tensor([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]) = <built-in method pdist of type object at 0x10c9353a0>(tensor([[0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.],\n        [0., 0., 0.,  ..., 0., 0., 0.]]))
+E    +          where <built-in method pdist of type object at 0x10c9353a0> = torch.pdist
+=============================== warnings summary ===============================
+test/test_mereology_raise.py::test_run_structure_over_word_spans_counts_words
+test/test_mereology_raise.py::test_run_structure_single_blob_is_singleton
+test/test_mereology_raise.py::test_stage_analysis_spans_is_structural_only
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1253: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_mereology_word_binding.py::test_word_spelling_is_ordered_and_binding_is_idempotent
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_meronomy_ladder.py::test_chunk_is_licensed_only_inside_one_coarse_whole
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7080: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3368/test_real_mnist_subset_trains_0/ergodic-only.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Tensor, pred_full shape=(2, 784, 9)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_mnist.py::test_real_mnist_subset_trains_one_short_batch[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7080: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3368/test_real_mnist_subset_trains_1/ergodic-only.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Tensor, pred_full shape=(2, 784, 9)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_meronomy_ladder.py::test_ladder_grammar_has_chunk_as_a_reduce_candidate
+FAILED test/test_mind_generativity.py::test_current_grammar_recovery_by_depth_training_and_chain_length
+2 failed, 150 passed, 13 skipped, 7 warnings in 16.29s

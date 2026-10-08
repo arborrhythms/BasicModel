@@ -1,0 +1,135 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item6_2_repair.py::test_saved_construction_binds_and_writes_the_child",
+    "test/test_item6_2_repair.py::test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership",
+    "test/test_item6_2_repair.py::test_multiple_roles_share_the_imported_child_without_reindexing_goal",
+    "test/test_item6_2_repair.py::test_occurrence_binding_also_carries_the_supplied_constituent_table",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference0]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference1]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference2]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference3]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference4]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference5]",
+    "test/test_item6_2_repair.py::test_nested_metadata_and_goal_local_references_are_checked_at_fill",
+    "test/test_item6_2_repair.py::test_carried_constituent_keeps_its_gradient"
+  ],
+  "completed": [
+    "test/test_item6_2_repair.py::test_saved_construction_binds_and_writes_the_child",
+    "test/test_item6_2_repair.py::test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership",
+    "test/test_item6_2_repair.py::test_multiple_roles_share_the_imported_child_without_reindexing_goal",
+    "test/test_item6_2_repair.py::test_occurrence_binding_also_carries_the_supplied_constituent_table",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference0]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference1]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference2]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference3]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference4]",
+    "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference5]",
+    "test/test_item6_2_repair.py::test_nested_metadata_and_goal_local_references_are_checked_at_fill",
+    "test/test_item6_2_repair.py::test_carried_constituent_keeps_its_gradient"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "reports": [
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_saved_construction_binds_and_writes_the_child",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0022292500361800194,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.002509959042072296,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_multiple_roles_share_the_imported_child_without_reindexing_goal",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0005182919558137655,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_occurrence_binding_also_carries_the_supplied_constituent_table",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0011150420177727938,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference0]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.00034841697197407484,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference1]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003596249734982848,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference2]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003596249734982848,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference3]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002946669701486826,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference4]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0002960419515147805,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference5]",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0003018750576302409,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_nested_metadata_and_goal_local_references_are_checked_at_fill",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.0004945410182699561,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item6_2_repair.py::test_carried_constituent_keeps_its_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "duration": 0.010408499976620078,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

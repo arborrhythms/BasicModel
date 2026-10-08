@@ -1490,15 +1490,15 @@ class XMLConfig:
         Retired architecture knobs are rejected at ingestion.
         """
         architecture = data.get("architecture", {}) or {}
-        for retired in ('subsymbolicNoop', 'conceptualWidth', 'subsymbolicOrder', 'symbolicOrder', 'subsymbolicLoop', 'serial', 'modeSchedule', 'readingAttention', 'globalAttention', 'globalAttentionConsume', 'selectedThoughtBudget'):
+        for retired in ('subsymbolicNoop', 'conceptualWidth', 'subsymbolicOrder', 'symbolicOrder', 'subsymbolicLoop', 'serial', 'modeSchedule', 'readingAttention', 'globalAttention', 'globalAttentionConsume', 'selectedThoughtBudget', 'thinkingBudget'):
             if retired in architecture:
                 raise ValueError(f'{source_path}: <{retired}> is retired; '
                                  'use the typed bracket and attentionBudget')
 
         training=architecture.get('training',{}) or {}
-        for retired in ('interLossWeight','armaScale','interContrastiveWeight'):
+        for retired in ('interLossWeight','armaScale','interContrastiveWeight','selectedThoughtPolicyWeight'):
             if retired in training:
-                raise ValueError(f'{source_path}: <{retired}> is retired; expectation settings are per level')
+                raise ValueError(f'{source_path}: <{retired}> is retired; use per-level expectation and the ordinary paired grammar credit')
 
     def reload(self):
         """Re-parse all previously loaded sources in order.

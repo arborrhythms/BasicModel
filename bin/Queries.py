@@ -304,8 +304,6 @@ class ThoughtOperationCandidate:
             raise ValueError('thought candidate requires a structural operation')
         if not isinstance(self.request, ConceptualMeaning):
             raise TypeError('thought candidate requires a complete request')
-        if self.request.mode != 'interrogative':
-            raise ValueError('thought candidate request must be interrogative')
         open_roles = tuple(self.open_roles)
         if (len(set(open_roles)) != len(open_roles)
                 or not set(open_roles).issubset(roles)):
@@ -344,12 +342,22 @@ class QueryContext:
                 raise ValueError(f'query {name} must be a non-negative integer')
 
 
+def symbolic_reference(value):
+    if (isinstance(value, tuple) and len(value) == 3 and value[0] == 'ltm'
+            and isinstance(value[1], str) and type(value[2]) is int and value[2] not in (-1, 0)):
+        return value
+    return concept_reference(value)
+
+
 def _validate_argument(value, kind):
-    if kind == 'description':
+    if kind == 'meaning':
+        if not isinstance(value, ConceptualMeaning) and not (torch.is_tensor(value) and value.ndim == 1):
+            raise TypeError('not requires a meaning, an evidence pair, or conceptual content')
+    elif kind == 'description':
         if not isinstance(value, ConceptualMeaning):
             raise TypeError('query description argument must preserve a complete ConceptualMeaning')
     elif kind == 'reference':
-        concept_reference(value)
+        symbolic_reference(value)
     elif kind == 'concept':
         if isinstance(value, tuple):
             concept_reference(value)
@@ -409,7 +417,7 @@ class QuerySignature:
                 or not set(self.argument_roles).issubset(self.occupied_roles)
                 or set(self.open_roles) & set(self.occupied_roles)):
             raise ValueError('query signature has inconsistent grammatical roles')
-        if any(kind not in ('reference', 'description', 'concept') for kind in self.argument_kinds):
+        if any(kind not in ('reference', 'description', 'concept', 'meaning') for kind in self.argument_kinds):
             raise ValueError('query signature has an unsupported argument type')
         if self.result_kind not in ('truth', 'concept', 'set', 'code', 'prediction', 'subgoal'):
             raise ValueError('query signature has an unsupported result kind')
@@ -652,7 +660,7 @@ class ThoughtConceptualCapability:
     descriptor-specific facade before a call.
     """
 
-    __slots__ = ('__space', '__equal', 'width')
+    __slots__ = ('__space', '__equal', 'width', '__form_width')
 
     def __init__(self, space, equal):
         shape = getattr(space, 'outputShape', None)
@@ -664,6 +672,25 @@ class ThoughtConceptualCapability:
         object.__setattr__(self, '_ThoughtConceptualCapability__space', space)
         object.__setattr__(self, '_ThoughtConceptualCapability__equal', equal)
         object.__setattr__(self, 'width', width)
+        from util import TheXMLConfig
+        form = width
+        if TheXMLConfig.get('architecture.data.dataType', default=None) == 'embedding':
+            form = min(width, int(TheXMLConfig.space('PartSpace', 'nDim')))
+        object.__setattr__(self, '_ThoughtConceptualCapability__form_width', form)
+
+    def extent(self, value):
+        """Independent lane magnitudes; form directions carry no negative pole."""
+        form = object.__getattribute__(self, '_ThoughtConceptualCapability__form_width')
+        if form == self.width:
+            return dict(value=value.detach(), support_true=float(value.norm().clamp(0, 1)), support_false=0.)
+        positive, negative = value[form:].chunk(2, -1)
+        return dict(value=value.detach(), support_true=float(positive.norm().clamp(0, 1)),
+                    support_false=float(negative.norm().clamp(0, 1)))
+
+    def negate(self, value):
+        from MeaningCodes import exchange
+        form = object.__getattribute__(self, '_ThoughtConceptualCapability__form_width')
+        return value.detach().clone() if form == self.width else torch.cat((value[:form], exchange(value[form:])))
 
     def matches(self, space):
         """Private registry identity check; it is not semantic input."""
@@ -705,57 +732,8 @@ class ThoughtConceptualCapability:
             raise ValueError('thought equality capability returned an invalid score')
         return value
 
-    def quantize(self, value, *, max_nodes, max_records, max_expansions, work):
-        if type(max_nodes) is not int or max_nodes < 0:
-            raise ValueError('thought quantize requires a non-negative node limit')
-        if max_nodes == 0:
-            return {'value': None, 'reference': None, 'nodes_scanned': 0,
-                    'incomplete': ('capture_limit',)}
-        if isinstance(value, tuple):
-            return {'value': self.payload(value, work=work), 'reference': value,
-                    'nodes_scanned': 1, 'incomplete': ()}
-        if (not torch.is_tensor(value) or value.ndim != 1
-                or int(value.numel()) != self.width):
-            raise ValueError('thought quantize requires one full-width concept')
-        space = object.__getattribute__(self, '_ThoughtConceptualCapability__space')
-        allocator = getattr(space, '_concept_allocator', None)
-        if allocator is None:
-            return {'value': None, 'reference': None, 'nodes_scanned': 0,
-                    'incomplete': ('unavailable_conceptual_codebook',)}
-        # Native codebook access is a real node read.  Keep it inside the
-        # charged loop so an exhausted selected operation cannot inspect the
-        # basis merely while discovering that it has no allowance left.
-        basis = None
-        candidates, scanned, incomplete = [], 0, []
-        for concept_id in allocator.placement:
-            if scanned >= max_nodes:
-                incomplete.append('capture_limit')
-                break
-            if work is not None and not work.consume('node'):
-                incomplete.append('work_budget')
-                break
-            scanned += 1
-            if basis is None:
-                basis = _basis(space)
-            if concept_id in allocator.retired:
-                continue
-            reference = ('sym', int(concept_id))
-            try:
-                row = _existing_row(space, reference)
-            except ValueError:
-                continue
-            if not 0 <= row < len(basis):
-                continue
-            atom = basis[row].detach().clone()
-            if not bool(torch.isfinite(atom).all()):
-                raise FloatingPointError('thought conceptual payload must be finite')
-            candidates.append((self.equal(value, atom), reference, atom))
-        if not candidates:
-            return {'value': None, 'reference': None, 'nodes_scanned': scanned,
-                    'incomplete': tuple(incomplete)}
-        score, reference, selected = max(candidates, key=lambda item: item[0])
-        return {'value': selected, 'reference': reference, 'match': score,
-                'nodes_scanned': scanned, 'incomplete': tuple(incomplete)}
+    def quantize(self, *args, **kwargs):
+        raise ValueError('quantize thought is retired; all-concept symbolization is future work')
 
 
 class ThoughtTaxonomyCapability:
@@ -907,8 +885,148 @@ class ThoughtLTMCapability:
         positive, negative = float(store.c_plus[index]), float(store.c_minus[index])
         if store.KINDS[int(store.record_kind[index])] in ('question', 'estimate'):
             positive = negative = 0.
-        return dict(support_true=positive, support_false=negative, meaning=meaning,
-                    occurrence=reference, records_scanned=1, incomplete=())
+        return dict(value=meaning, support_true=positive, support_false=negative, meaning=meaning,
+                    occurrence=reference, witnesses=(reference,), trust=float(store.trust[index]),
+                    records_scanned=1, incomplete=())
+
+    def best_match(self, pattern, *, max_records, work, references=()):
+        """One best matching row, with its poles and its own occurrence witness."""
+        from ThoughtReferences import bindings
+        data = bindings(pattern)
+        relation = data.get('_query_relation')
+        if relation == 'truth':
+            return self.premise_evidence(pattern.role_refs[0], max_records=max_records, work=work)
+        if relation is not None:
+            result = self.relation_evidence(relation, pattern.role_refs[0],
+                pattern.role_refs[2], max_records=max_records, work=work, excluded=data.get('_query_exclude', ()))
+            return result
+        clean = replace(pattern, bindings={key: value for key, value in data.items()
+                                           if not key.startswith('_')})
+        found = self._cued(clean, max_records=max_records, work=work, references=references)
+        tau = object.__getattribute__(self, '_ThoughtLTMCapability__tau')
+        candidates = tuple(row for row in found['value']
+                           if row['match'] >= tau and row['kind'] not in ('question', 'estimate'))
+        best = max(candidates, key=lambda row: row['match']) if candidates else None
+        frames = () if best is None else (best,)
+        positive, negative = (0., 0.) if best is None else best['evidence']
+        if best is not None and best['meaning'].polarity != pattern.polarity:
+            positive, negative = negative, positive
+        return dict(value=frames, frames=frames, result_kind='set',
+                    support_true=positive, support_false=negative,
+                    witnesses=() if best is None else (best['occurrence'],),
+                    records_scanned=found['records_scanned'], incomplete=found['incomplete'])
+
+    def truth_evidence(self, description, *, max_records, work):
+        result = self.best_match(description, max_records=max_records, work=work)
+        if result['frames']:
+            result['trust'] = result['frames'][0]['trust']
+        return result
+
+    def premise_evidence(self, reference, *, max_records, work):
+        """A proposition's two poles and witnessing occurrence, under the meter."""
+        from ThoughtFaces import pair
+        store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
+        if store is None:
+            return pair(frames=(), records_scanned=0)
+        if reference and reference[0] == 'ltm':
+            found = self.end_evidence(reference, max_records=max_records, work=work)
+            row = store.row(store._index_occurrences[reference])
+            return dict(found, frames=(row,))
+        scanned, best = 0, None
+        for index in range(min(len(store), max_records)):
+            if not work.consume('record'):
+                break
+            scanned += 1
+            row = store.row(index)
+            meaning = row['meaning']
+            if row['kind'] in ('question','estimate','unverified') or meaning is None:
+                continue
+            if int(meaning.role_mask.sum()) != 1:
+                continue
+            ref = meaning.role_refs[0]
+            if ref is None and int(row['refs'][0]) > 0:
+                ref = ('sym', int(row['refs'][0]))
+            if ref == reference and (best is None or max(row['evidence']) > max(best['evidence'])):
+                best = row
+        if best is None:
+            return pair(frames=(), records_scanned=scanned)
+        return pair(best['meaning'], *best['evidence'], meaning=best['meaning'],
+            frames=(best,), witnesses=(best['occurrence'],), records_scanned=scanned)
+
+    def relation_evidence(self, relation, left, right, *, max_records, work, excluded=()):
+        """Read a direct symbolic link. Chaining belongs to serial result slots."""
+        from ThoughtFaces import pair
+        store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
+        if store is None:
+            return pair(frames=(), incomplete=('unavailable_ltm',), records_scanned=0)
+        kinds = {'part': store.REL_PARTOF, 'equal': store.REL_DEF, 'implies': store.REL_IMPLIES}
+        if relation not in kinds:
+            raise ValueError('unknown symbolic relation')
+        candidates, scanned, incomplete = [], 0, []
+        for index in range(len(store)):
+            if scanned >= max_records or not work.consume('record'):
+                incomplete.append('work_budget' if work.remaining == 0 else 'capture_limit')
+                break
+            scanned += 1
+            if int(store.rel_type[index]) != kinds[relation]:
+                continue
+            row = store.row(index)
+            meaning = row['meaning']
+            if row['occurrence'] in excluded:
+                continue
+            if meaning is None or row['kind'] in ('question', 'estimate', 'unverified'):
+                continue
+            refs = list(meaning.role_refs)
+            for role in (0, 2):
+                if refs[role] is None and int(row['refs'][role]) > 0:
+                    native = int(row['refs'][role])
+                    occurrence = ('ltm', store.address_domain, native)
+                    refs[role] = occurrence if occurrence in store._index_occurrences else ('sym', native)
+            direct = (left is None or refs[0] == left) and (right is None or refs[2] == right)
+            reverse = relation == 'equal' and (left is None or refs[2] == left) and (right is None or refs[0] == right)
+            if direct or reverse:
+                temporal = ()
+                if relation == 'implies' and all(ref and ref[0] == 'ltm' for ref in (refs[0], refs[2])):
+                    # Event implications must follow the endpoints' .when
+                    # order. Rule insertion time is irrelevant. Read each
+                    # endpoint on this same meter, never through host clocks.
+                    endpoints = []
+                    for ref in (refs[0], refs[2]):
+                        if scanned >= max_records or not work.consume('record'):
+                            incomplete.append('temporal_work_budget')
+                            break
+                        scanned += 1
+                        endpoint = store._index_occurrences.get(ref)
+                        if endpoint is None:
+                            incomplete.append('unavailable_temporal_reference')
+                            break
+                        endpoints.append(endpoint)
+                    if len(endpoints) != 2:
+                        continue
+                    first, last = endpoints
+                    if not torch.equal(store.document_keys[first], store.document_keys[last]):
+                        incomplete.append('incomparable_event_documents')
+                        continue
+                    from Spaces import WhenEncoding
+                    encoder = getattr(store, '_address_encoding', None)
+                    if encoder is None:
+                        encoder = WhenEncoding(n_when=4).set_capacity(store.capacity)
+                    onset = encoder.decode_index(store.when[endpoints])
+                    if int(onset[0]) > int(onset[1]):
+                        incomplete.append('reversed_event_order')
+                        continue
+                    temporal = (refs[0], refs[2])
+                candidates.append(dict(row, meaning=replace(meaning, role_refs=tuple(refs)),
+                                       temporal_witnesses=temporal, match=1.))
+        best = max(candidates, key=lambda row: max(row['evidence'])) if candidates else None
+        frames = () if best is None else (best,)
+        positive, negative = (0., 0.) if best is None else best['evidence']
+        if left == right and left is not None and relation in ('part', 'equal'):
+            positive = 1.
+        return pair(frames, positive, negative, frames=frames,
+                    meaning=None if best is None else best['meaning'],
+                    witnesses=() if best is None else (best['occurrence'], *best.get('temporal_witnesses', ())),
+                    result_kind='set', records_scanned=scanned, incomplete=tuple(incomplete))
 
     def retrieve(self, question, *, max_records, work, references=()):
         """Return the matching conceptual members and their own evidence.
@@ -958,24 +1076,14 @@ class ThoughtLTMCapability:
                 return value.detached(), 1
         raise ValueError('description occurrence is unavailable within the query read limit')
 
-    def lookup(self, left, right, *, max_records, max_expansions, work):
-        equal = object.__getattribute__(self, '_ThoughtLTMCapability__equal')
-        tau = object.__getattribute__(self, '_ThoughtLTMCapability__tau')
-        found, scanned, incomplete = [], 0, []
-        for record in self.held_frames(limit=max_records):
-            if not work.consume('record'):
-                incomplete.append('work_budget')
-                break
-            scanned += 1
-            meaning = record['meaning']
-            if not bool(meaning.role_mask[0] and meaning.role_mask[2]):
-                continue
-            match = min(equal(left.detach().to(meaning.roles), meaning.roles[0]),
-                        equal(right.detach().to(meaning.roles), meaning.roles[2]))
-            if match >= tau:
-                found.append(dict(record, match=float(match)))
-        return {'value': tuple(found), 'records_scanned': scanned,
-                'incomplete': tuple(incomplete)}
+    def query(self, pattern, *, max_records, work):
+        return self.best_match(pattern, max_records=max_records, work=work)
+
+    def lookup(self, *args, **kwargs):
+        raise ValueError('lookup is retired; use query')
+
+    def what(self, *args, **kwargs):
+        raise ValueError('LTM what is retired; use query')
 
     def expectation(self, row, *, work):
         discourse = object.__getattribute__(self, '_ThoughtLTMCapability__discourse')
@@ -1124,97 +1232,19 @@ def _equal(context, arguments):
 
 
 
-def _quantize(context, arguments):
-    """Choose an allocated conceptual atom; SymbolSpace is never consulted."""
-    if context.max_nodes == 0:
-        return {'value': None, 'reference': None, 'nodes_scanned': 0,
-                'incomplete': ('capture_limit',)}
-    if isinstance(context, ThoughtGrammarContext):
-        quantize = getattr(context.conceptual_space, 'quantize', None)
-        if not callable(quantize):
-            raise ValueError('thought conceptual capability does not admit quantization')
-        return quantize(_argument(arguments, 'I1'), max_nodes=context.max_nodes,
-                        max_records=context.max_records,
-                        max_expansions=context.max_expansions, work=context.work)
-    space = _concept_space(context)
-    input_value = _argument(arguments, 'I1')
-    if isinstance(input_value, tuple):
-        value = _vector(context, input_value)
-        return {'value': value, 'reference': input_value, 'nodes_scanned': 1,
-                'incomplete': ()}
-    vector = input_value
-    allocator = getattr(space, '_concept_allocator', None)
-    if allocator is None:
-        return {'value': None, 'reference': None, 'nodes_scanned': 0,
-                'incomplete': ('unavailable_conceptual_codebook',)}
-    basis = None
-    candidates, scanned, incomplete = [], 0, []
-    for concept_id in allocator.placement:
-        if scanned >= context.max_nodes:
-            incomplete.append('capture_limit')
-            break
-        if context.work is not None and not context.work.consume("node"):
-            incomplete.append("work_budget")
-            break
-        scanned += 1
-        if basis is None:
-            basis = _basis(space)
-            if basis.shape[1] != vector.numel():
-                raise ValueError('query quantize requires the full conceptual width')
-        if concept_id in allocator.retired:
-            continue
-        reference = ('sym', int(concept_id))
-        try:
-            row = _existing_row(space, reference)
-        except ValueError:
-            continue
-        if row < len(basis):
-            atom = basis[row].clone()
-            if not bool(torch.isfinite(atom).all()):
-                raise FloatingPointError('query native concept payload must be finite')
-            score = context.reasoner.equal(vector.to(atom), atom)
-            candidates.append((score, reference, atom))
-    if not candidates:
-        return {'value': None, 'reference': None, 'nodes_scanned': scanned,
-                'incomplete': tuple(incomplete)}
-    score, reference, value = max(candidates, key=lambda item: item[0])
-    return {'value': value, 'reference': reference, 'match': score,
-            'nodes_scanned': scanned, 'incomplete': tuple(incomplete)}
+def _quantize(*args, **kwargs):
+    raise ValueError('quantize thought helper is retired; use the declared thought faces')
 
 
-def _not(context, arguments):
-    """A declared thought negates serial content with the shared operator.
-
-    Absence in a closing is evidence, never a command to call this operator.
-    Only the ordinary chooser may select it; its result is an inference.
-    """
-    from Language import NotLayer
-    value = _vector(context, _argument(arguments, 'I1')).detach()
-    return {'value': NotLayer()(value), 'evidence_kind': 'inference'}
+def _not(*args, **kwargs):
+    raise ValueError('not thought helper is retired; use the declared thought faces')
 
 
-def _arma(context, arguments):
-    """Read the row's full prior estimate without staging an observation target."""
-    if isinstance(context, ThoughtGrammarContext):
-        predict = getattr(context.ltm, 'expectation', None)
-        if not callable(predict):
-            raise ValueError('thought LTM capability does not admit prediction')
-        value = predict(context.row, work=context.work)
-        return {'value': value,
-                'incomplete': () if value is not None else ('cold_prediction',)}
-    discourse = getattr(getattr(context.reasoner.model, 'symbolSpace', None), 'expectation', None)
-    if discourse is None:
-        return {'value': None, 'incomplete': ('unavailable_prediction',)}
-    if getattr(discourse, 'expectation_scope', None) != 'structured':
-        raise ValueError('query arma requires the full structured predictor')
-    if arguments[0].roles.shape[-1] != discourse.concept_dim:
-        raise ValueError('query arma description width differs from the predictor')
-    keyword = {} if context.work is None else {"work": context.work}
-    value = discourse.expect_next_meaning(context.row, record=False, **keyword)
-    return {'value': value, 'incomplete': () if value is not None else ('cold_prediction',)}
+def _arma(*args, **kwargs):
+    raise ValueError('arma thought helper is retired; use the declared thought faces')
 
 
-def _what(context, arguments):
+def _ask(context, arguments):
     question = _argument(arguments, 'I1')
     references = tuple(reference for role, reference in context.operand_references
                        if role == 'I1' and reference and reference[0] == 'ltm') if isinstance(
@@ -1273,7 +1303,7 @@ class ThoughtExecutorDescriptor:
         if not isinstance(self.domain, str) or not self.domain:
             raise ValueError('thought executor requires a domain')
         if (not isinstance(self.argument_kinds, tuple)
-                or any(kind not in ('reference', 'description', 'concept')
+                or any(kind not in ('reference', 'description', 'concept', 'meaning')
                        for kind in self.argument_kinds)):
             raise ValueError('thought executor has unsupported argument kinds')
         if not isinstance(self.write_target, Mind):
@@ -1301,30 +1331,55 @@ class ThoughtExecutorDescriptor:
                 if open_roles and self.open_operands else self.argument_kinds)
 
 
+from ThoughtFaces import (part as _conceptual_part, is_part as _symbolic_part,
+    equal as _conceptual_equal, is_equal as _symbolic_equal, implies as _implies,
+    is_implied as _is_implied, is_true as _is_true, exist as _exist,
+    query as _query, ask as _ask, negate as _negate, gain as _gain)
+
+
 _thought_executors = (
-    ThoughtExecutorDescriptor('not', 'serial-negation', ('concept',), Mind.SERIAL,
-        (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SERIAL,), 'inference', _not, method_grants=(('conceptual_space', ('payload',)),)),
-    ThoughtExecutorDescriptor('part', 'conceptual-taxonomy', ('concept', 'concept'), Mind.SERIAL,
-        (Mind.KNOWING, Mind.SYMBOLIC, Mind.SERIAL, Mind.MERONYMY, Mind.TAXONOMY, Mind.BUDGET),
-        (Mind.SERIAL, Mind.SYMBOLIC, Mind.KNOWING), 'meronymy', _part, evidence_pair=True, open_operands=True,
-        predicate_name='part', relation_directions=((0, 2),), taxonomy_by_order=True,
-        method_grants=(('conceptual_space', ('payload', 'order')), ('taxonomy', ('evidence', 'neighbors')))),
+    ThoughtExecutorDescriptor('not', 'serial-negation', ('meaning',), Mind.SERIAL,
+        (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SERIAL,), 'inference', _negate,
+        evidence_pair=True, method_grants=(('conceptual_space', ('payload', 'extent', 'negate')),)),
+    ThoughtExecutorDescriptor('part', 'conceptual-containment', ('concept', 'concept'), Mind.SERIAL,
+        (Mind.KNOWING, Mind.SYMBOLIC, Mind.SERIAL, Mind.MERONYMY, Mind.BUDGET),
+        (Mind.SERIAL, Mind.SYMBOLIC, Mind.KNOWING), 'meronymy', _conceptual_part,
+        evidence_pair=True, predicate_name='part', relation_directions=((0, 2),),
+        method_grants=(('conceptual_space', ('payload',)),)),
     ThoughtExecutorDescriptor('isPart', 'conceptual-taxonomy', ('reference', 'reference'), Mind.SERIAL,
-        (Mind.KNOWING, Mind.SYMBOLIC, Mind.SERIAL, Mind.TAXONOMY, Mind.BUDGET), (Mind.SERIAL,), 'taxonomy', _part, evidence_pair=True, open_operands=True,
-        method_grants=(('conceptual_space', ('payload', 'order')), ('taxonomy', ('evidence', 'neighbors')))),
+        (Mind.KNOWING, Mind.SYMBOLIC, Mind.SERIAL, Mind.TAXONOMY, Mind.LTM, Mind.BUDGET), (Mind.SERIAL,),
+        'taxonomy', _symbolic_part, evidence_pair=True, open_operands=True,
+        method_grants=(('conceptual_space', ('payload',)), ('taxonomy', ('evidence', 'neighbors')),
+                       ('ltm', ('relation_evidence',)))),
     ThoughtExecutorDescriptor('equal', 'conceptual-identity', ('concept', 'concept'), Mind.SERIAL,
-        (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SERIAL,), 'conceptual-identity', _equal, evidence_pair=True,
-        predicate_name='operation:equal', relation_directions=((0, 2), (2, 0)),
+        (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SERIAL,), 'conceptual-identity', _conceptual_equal,
+        evidence_pair=True, predicate_name='operation:equal', relation_directions=((0, 2), (2, 0)),
         method_grants=(('conceptual_space', ('payload', 'equal')),)),
-    ThoughtExecutorDescriptor('quantize', 'conceptual-codebook', ('concept',), Mind.SYMBOLIC,
-        (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SYMBOLIC, Mind.KNOWING), 'concept-codebook', _quantize, content_kind='code', effect_kind='reference',
-        method_grants=(('conceptual_space', ('quantize',)),)),
-    ThoughtExecutorDescriptor('arma', 'discourse-prediction', ('description',), Mind.EXPECTATION,
-        (Mind.SERIAL, Mind.EXPECTATION, Mind.LTM, Mind.BUDGET), (Mind.EXPECTATION,), 'estimate', _arma, content_kind='prediction', effect_kind='expectation',
-        method_grants=(('ltm', ('expectation', 'resolve_description')),)),
-    ThoughtExecutorDescriptor('what', 'conceptual-subgoal', ('description',), Mind.SERIAL,
-        (Mind.SERIAL, Mind.LTM, Mind.PRIMING, Mind.BUDGET), (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC), 'subgoal', _what, content_kind='subgoal', effect_kind='frames', continues=True,
-        method_grants=(('ltm', ('retrieve', 'resolve_description')),)),
+    ThoughtExecutorDescriptor('isEqual', 'symbolic-definition', ('reference', 'reference'), Mind.SERIAL,
+        (Mind.SERIAL, Mind.SYMBOLIC, Mind.LTM, Mind.BUDGET), (Mind.SERIAL,), 'definition', _symbolic_equal,
+        evidence_pair=True, method_grants=(('ltm', ('relation_evidence',)),)),
+    ThoughtExecutorDescriptor('implies', 'conceptual-implication', ('concept', 'concept'), Mind.SERIAL,
+        (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SERIAL,), 'containment', _implies,
+        evidence_pair=True, method_grants=(('conceptual_space', ('payload', 'extent', 'negate')),)),
+    ThoughtExecutorDescriptor('isImplied', 'symbolic-implication', ('reference', 'reference'), Mind.SERIAL,
+        (Mind.SERIAL, Mind.SYMBOLIC, Mind.LTM, Mind.BUDGET), (Mind.SERIAL,), 'implication', _is_implied,
+        evidence_pair=True, method_grants=(('ltm', ('relation_evidence', 'premise_evidence')),)),
+    ThoughtExecutorDescriptor('isTrue', 'symbolic-truth', ('description',), Mind.SERIAL,
+        (Mind.SERIAL, Mind.LTM, Mind.BUDGET), (Mind.SERIAL,), 'truth', _is_true, evidence_pair=True,
+        method_grants=(('ltm', ('end_evidence', 'truth_evidence', 'resolve_description')),)),
+    ThoughtExecutorDescriptor('exist', 'conceptual-presence', ('concept',), Mind.SERIAL,
+        (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SERIAL,), 'presence', _exist,
+        evidence_pair=True, method_grants=(('conceptual_space', ('payload', 'extent', 'negate')),)),
+    ThoughtExecutorDescriptor('query', 'conceptual-lookup', ('description',), Mind.SERIAL,
+        (Mind.SERIAL, Mind.LTM, Mind.PRIMING, Mind.BUDGET), (Mind.SERIAL,), 'retrieval', _query,
+        evidence_pair=True, content_kind='set', method_grants=(('ltm', ('best_match', 'resolve_description')),)),
+    ThoughtExecutorDescriptor('ask', 'conceptual-subgoal', ('description',), Mind.SERIAL,
+        (Mind.SERIAL, Mind.LTM, Mind.PRIMING, Mind.BUDGET), (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC),
+        'subgoal', _ask, evidence_pair=True, content_kind='subgoal', effect_kind='frames', continues=True,
+        method_grants=(('ltm', ('best_match', 'resolve_description')),)),
+    ThoughtExecutorDescriptor('gain', 'expectation-gain', ('concept',), Mind.EXPECTATION,
+        (Mind.SERIAL, Mind.EXPECTATION, Mind.BUDGET), (Mind.EXPECTATION,), 'gain', _gain,
+        evidence_pair=True, effect_kind='gain', method_grants=(('conceptual_space', ('payload', 'extent', 'negate')),)),
 )
 # These native readers perform declared structural effects. Their classification
 # does not depend on a now-retired identity layer in compose or generate.
@@ -1344,11 +1399,11 @@ def _descriptor_context(context, descriptor):
     check_access('thought', descriptor.read_scope, descriptor.write_scope)
     fallback = {'conceptual_space': set(), 'ltm': set(), 'taxonomy': set()}
     methods = {
-        Mind.SERIAL: ('ltm', ('lookup', 'resolve_held_description')),
-        Mind.LTM: ('ltm', ('retrieve', 'resolve_description')),
+        Mind.SERIAL: ('ltm', ('query', 'resolve_held_description')),
+        Mind.LTM: ('ltm', ('retrieve', 'resolve_description', 'best_match', 'end_evidence', 'truth_evidence', 'relation_evidence', 'premise_evidence')),
         Mind.EXPECTATION: ('ltm', ('expectation',)),
-        Mind.KNOWING: ('conceptual_space', ('payload', 'equal', 'quantize', 'order')),
-        Mind.SYMBOLIC: ('conceptual_space', ('payload', 'equal', 'quantize', 'order')),
+        Mind.KNOWING: ('conceptual_space', ('payload', 'equal', 'extent', 'negate', 'order')),
+        Mind.SYMBOLIC: ('conceptual_space', ('payload', 'equal', 'extent', 'negate', 'order')),
         Mind.TAXONOMY: ('taxonomy', ('evidence', 'neighbors')),
     }
     for scope in descriptor.read_scope:
@@ -1496,12 +1551,10 @@ for name in ('isEqual', 'equal', 'queryEqual'):
     _signatures.append(_signature(name, 'equal', 'conceptual-identity', (0, 2),
         ('concept', 'concept'), 'concept', 'conceptual-identity', _equal, compose_faces=('equal',)))
 _signatures += [
-    _signature('quantize', 'quantize', 'conceptual-codebook', (0,), ('concept',),
-               'code', 'concept-codebook', _quantize, result_roles=(2,)),
-    _signature('arma', 'arma', 'discourse-prediction', (0,), ('description',),
-               'prediction', 'estimate', _arma, result_roles=(2,)),
-    _signature('what', 'what', 'conceptual-subgoal', (0,), ('description',),
-               'subgoal', 'subgoal', _what, result_roles=(2,)),
+    _signature('ask', 'ask', 'conceptual-subgoal', (0,), ('description',),
+               'subgoal', 'subgoal', _ask, result_roles=(2,)),
+    _signature('query', 'query', 'conceptual-lookup', (0,), ('description',),
+               'set', 'retrieval', _query, result_roles=(2,)),
 ]
 BUILTIN_QUERIES = MappingProxyType({item.name: item for item in _signatures})
 
@@ -1839,6 +1892,11 @@ class GrammaticalThoughtRegistry:
         ``part`` call with ``open_roles=('I1',)`` is the former ``parts``
         behavior, but it retains the same semantic identity and VP.
         """
+        retired = {'what': 'ask (thought) or query (LTM)', 'lookup': 'query',
+            'chunk': 'synthesize / analyze', 'quantize': 'future symbolization',
+            'arma': 'sentenceExpectation / gain', 'expect': 'sentenceExpectation / gain', 'true': 'isTrue'}
+        if semantic_id in retired:
+            raise ValueError(f'{semantic_id} is retired; use {retired[semantic_id]}')
         operation, form = self._operation_form(semantic_id)
         descriptor = self.descriptors.get(operation.semantic_id)
         if descriptor is None:
@@ -1893,7 +1951,18 @@ class GrammaticalThoughtRegistry:
         for role in occupied_roles:
             argument = supplied[source_by_canonical_role[role]]
             kind = kinds_by_role[role]
-            if kind == 'description':
+            if (kind == 'meaning' and isinstance(argument, tuple) and len(argument) == 2
+                    and all(type(value) in (int, float) for value in argument)):
+                from ThoughtReferences import with_slots
+                argument = with_slots(ConceptualMeaning.from_description(torch.zeros_like(vp_payload)),
+                                      (), pair=argument)
+            if kind in ('description', 'meaning') and isinstance(argument, ConceptualMeaning):
+                description = argument
+                argument = ('constituent', len(constituents))
+                constituents.append(description)
+                value = description.roles.sum(0) / description.role_mask.sum().sqrt()
+                references[self._slot_for_operand(role)] = argument
+            elif kind == 'description':
                 if isinstance(argument, ConceptualMeaning):
                     description = argument
                     argument = ('constituent', len(constituents))
@@ -1908,7 +1977,13 @@ class GrammaticalThoughtRegistry:
             else:
                 _validate_argument(argument, kind)
                 if isinstance(argument, tuple):
-                    value = self._payload(argument, work=work)
+                    if argument[0] == 'ltm':
+                        if context is None:
+                            raise TypeError('an occurrence operand requires its bounded context')
+                        description, _ = _occurrence_description(context, argument)
+                        value = description.roles.sum(0) / description.role_mask.sum().sqrt()
+                    else:
+                        value = self._payload(argument, work=work)
                     references[self._slot_for_operand(role)] = argument
                 else:
                     value = argument
@@ -1918,11 +1993,14 @@ class GrammaticalThoughtRegistry:
         mask = torch.tensor(
             [bool('I1' in occupied_roles), True, bool('I2' in occupied_roles)],
             dtype=torch.bool, device=vp_payload.device)
-        return ConceptualMeaning(torch.stack(payloads), mask, mode=mode,
-                                 polarity=polarity,
-                                 role_refs=tuple(references),
-                                 bindings=bindings, scope=scope,
-                                 constituents=tuple(constituents))
+        result = ConceptualMeaning(torch.stack(payloads), mask, mode=mode,
+            polarity=polarity, role_refs=tuple(references), bindings=bindings,
+            scope=scope, constituents=tuple(constituents))
+        if mode == 'interrogative':
+            from ThoughtReferences import question
+            slots = tuple(('referent', self._slot_for_operand(role)) for role in canonical_open_roles)
+            result = question(result, slots or (('evidence', -1),))
+        return result
 
     @staticmethod
     def _is_description_reference(reference):
@@ -1949,15 +2027,20 @@ class GrammaticalThoughtRegistry:
             if not bool(source.role_mask[slot]):
                 continue
             value, reference = source.roles[slot], source.role_refs[slot]
+            if reference and reference[0] == 'constituent' and kind in ('concept', 'meaning'):
+                # This operand is a held code, not an address transferable to
+                # another request's constituent table. Inline descriptions
+                # are formed separately with their complete owned meaning.
+                reference = None
             if kind == 'reference':
                 try:
-                    concept_reference(reference)
+                    symbolic_reference(reference)
                 except (TypeError, ValueError):
                     continue
             elif kind == 'description':
                 if not self._is_description_reference(reference):
                     continue
-            elif kind != 'concept':  # pragma: no cover - descriptor validation
+            elif kind not in ('concept', 'meaning'):  # pragma: no cover - descriptor validation
                 raise AssertionError(f'unknown thought operand kind {kind!r}')
             if (not torch.is_tensor(value) or value.ndim != 1
                     or not bool(torch.isfinite(value).all())):
@@ -1988,11 +2071,11 @@ class GrammaticalThoughtRegistry:
             value, reference = bindings[role]
             kind = kinds[role]
             if kind == 'reference':
-                concept_reference(reference)
+                symbolic_reference(reference)
             elif kind == 'description':
                 if not self._is_description_reference(reference):
                     raise ValueError('thought candidate has no existing description')
-            elif kind != 'concept':  # pragma: no cover - descriptor validation
+            elif kind not in ('concept', 'meaning'):  # pragma: no cover - descriptor validation
                 raise AssertionError(f'unknown thought operand kind {kind!r}')
             if value.shape != vp_payload.shape:
                 raise ValueError('thought candidate operand differs from the full width')
@@ -2012,7 +2095,7 @@ class GrammaticalThoughtRegistry:
             role_refs=tuple(references), bindings=source.bindings,
             scope=source.scope)
 
-    def controller_candidates(self, root, active, candidate, *, descriptions=()):
+    def controller_candidates(self, root, active, candidate, *, descriptions=(), result_meanings=()):
         """Return catalog-derived executable requests without touching readers.
 
         The completed parse provides values and typed provenance, not a menu
@@ -2024,11 +2107,9 @@ class GrammaticalThoughtRegistry:
         preserves the selected source's mode, polarity, bindings and scope
         while replacing only its grammar-owned VP and bound role assignment.
         """
-        sources = (candidate, active, root)
+        sources = (*reversed(result_meanings), candidate, active, root)
         if not all(isinstance(item, ConceptualMeaning) for item in sources):
             raise TypeError('thought candidates require complete root/active/current meanings')
-        if any(item.mode != 'interrogative' for item in sources):
-            raise ValueError('thought candidates require interrogative meanings')
         requests = []
         try:
             signature = self.signature_for(candidate)
@@ -2076,19 +2157,38 @@ class GrammaticalThoughtRegistry:
             if descriptor.open_operands:
                 for role in operation.operand_roles:
                     append_form(operation, descriptor, (role,))
+        # Retain alternatives from every serial result, including an older
+        # result after a newer operation has changed the active candidate.
+        for source in reversed(result_meanings):
+            for semantic_id in self.executable_operation_ids:
+                operation = self._operations_by_id[semantic_id]
+                descriptor = self.descriptors[semantic_id]
+                if descriptor.continues:
+                    continue
+                bound = {role: self._candidate_operand((source,), role, kind)
+                         for role, kind in zip(operation.operand_roles, descriptor.kinds_for(()))}
+                if any(value is None for value in bound.values()):
+                    continue
+                request = self._form_candidate(operation, descriptor, bound, source=source)
+                if any(item.semantic_id == semantic_id and item.request.role_refs == request.role_refs
+                       and item.request.bindings == request.bindings
+                       and torch.equal(item.request.roles, request.roles) for item in requests):
+                    continue
+                requests.append(ThoughtOperationCandidate(operation, request, ()))
         # The active question already has an ordinary history occurrence.
         # Present it as a description operand so the policy can choose
         # what(Q) even when the input itself was a plain part/equal request.
         # No speculative occurrence, reader call or eager child is created.
-        if ('what', ()) not in seen and 'what' in self.executable_operation_ids:
+        if ('ask', ()) not in seen and 'ask' in self.executable_operation_ids:
             for description, reference in descriptions:
                 if not (isinstance(description, ConceptualMeaning)
                         and self._is_description_reference(reference)):
                     raise ValueError('controller descriptions require owned occurrences')
-                if description.mode != 'interrogative':
+                from ThoughtReferences import open_slots
+                if not open_slots(description):
                     continue
-                operation = self._operations_by_id['what']
-                descriptor = self.descriptors['what']
+                operation = self._operations_by_id['ask']
+                descriptor = self.descriptors['ask']
                 source = ConceptualMeaning(
                     candidate.roles, candidate.role_mask,
                     **dict(candidate.metadata(), polarity=True))
@@ -2101,9 +2201,8 @@ class GrammaticalThoughtRegistry:
 
     def signature_for(self, meaning, *, work=None, verify_reference=True):
         """Recover one checked operation from a canonical VP and role mask."""
-        if (not isinstance(meaning, ConceptualMeaning)
-                or meaning.mode != 'interrogative'):
-            raise ValueError('thought execution requires a completed interrogative meaning')
+        if not isinstance(meaning, ConceptualMeaning):
+            raise ValueError('thought execution requires a completed meaning')
         if not bool(meaning.role_mask[1]):
             raise ValueError('thought meaning has no grammatical VP')
         reference = concept_reference(meaning.role_refs[1])
@@ -2169,11 +2268,17 @@ class GrammaticalThoughtRegistry:
                                   signature.argument_kinds):
                 slot = self._slot_for_operand(role)
                 reference = meaning.role_refs[slot]
-                if kind == 'description':
-                    value, scanned = _occurrence_description(
-                        preparation_context, reference)
-                    resolved += scanned
-                elif kind == 'concept':
+                if kind == 'meaning' and reference and reference[0] == 'constituent':
+                    context.work.require('context_record')
+                    value = meaning.constituents[reference[1]]
+                elif kind == 'description':
+                    if reference and reference[0] == 'constituent':
+                        context.work.require('context_record')
+                        value = meaning.constituents[reference[1]]
+                    else:
+                        value, scanned = _occurrence_description(preparation_context, reference)
+                        resolved += scanned
+                elif kind in ('concept', 'meaning'):
                     # Concept operands are the selected full-width values.
                     # A typed reference remains provenance metadata; routing
                     # through it here would silently discard a signed leaf.
@@ -2184,7 +2289,10 @@ class GrammaticalThoughtRegistry:
                              else meaning.roles[slot])
                 elif reference is not None:
                     context.work.require('reference')
-                    _existing_row(self.space, reference)
+                    if reference[0] == 'sym':
+                        _existing_row(self.space, reference)
+                    else:
+                        symbolic_reference(reference)
                     value = reference
                 else:
                     raise ValueError('thought operand requires a grounded conceptual reference')

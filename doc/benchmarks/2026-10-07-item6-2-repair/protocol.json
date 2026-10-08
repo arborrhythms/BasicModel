@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-07",
+  "item": "6.2 repair pass",
+  "base": "measured 6.2 source d6d00f6640af051a4c84599ef5a5a235cb25faa9691b873b855699621cf80b62",
+  "prior_receipt": "../2026-10-07-item6-2/",
+  "seed": null,
+  "training_retries": 0,
+  "replacement_trainings": 0,
+  "scope": [
+    "carry/rebase bound constituent graphs and validate at fill",
+    "port or explicitly retire stale 11c and MM smoke contracts",
+    "fix thinking launcher formatting"
+  ],
+  "measurement": "After affected development checks: one complete green sweep on delivered source; explicit thinking gate (ported 11c, MM config/smoke, per-row integration, original 25 certificates plus constituent repair certificates); one unforced 300-epoch configured MM_query_reasoning training with credit and chooser movement; standing thirty unchanged. Retain every outcome. Freeze source for measurements.",
+  "publication": "Stop for Claude review before any commit, push, or parent bump.",
+  "resources": "After the full sweep, MM_query_reasoning has one 8 GiB worker while the thinking gate (two workers, 16 GiB aggregate), then standing campaign (two workers, 16 GiB aggregate), run independently on the same frozen source. Maximum combined reservation 24 GiB."
+}

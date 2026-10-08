@@ -1,0 +1,46 @@
+{
+  "pid": 16188,
+  "nodes": [
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+      "phase": "setup",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+      "phase": "call",
+      "outcome": "passed",
+      "reason": null
+    },
+    {
+      "nodeid": "test/test_unified_thought_controller.py::test_runbatch_credits_each_controller_row_from_its_own_answer",
+      "phase": "teardown",
+      "outcome": "passed",
+      "reason": null
+    }
+  ],
+  "seed_calls_rejected": [],
+  "episodes": 2,
+  "credit": [
+    {
+      "source": "answer_and_work",
+      "costs": [
+        0.38157690286636353,
+        0.38157690286636353
+      ],
+      "requires_grad": false,
+      "surrogate": null
+    },
+    {
+      "source": "answer_and_work",
+      "costs": [
+        0.3814292770624161,
+        0.3818937574326992
+      ],
+      "requires_grad": true,
+      "surrogate": 0.004712327383458614
+    }
+  ],
+  "exit_code": 0
+}

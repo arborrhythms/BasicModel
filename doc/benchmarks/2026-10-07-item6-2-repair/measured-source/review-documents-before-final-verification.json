@@ -1,0 +1,16 @@
+{
+  "doc/ThoughtHistory.md": "c41c599106fe4910d937f992340649a68ba89f6e058a08f9e7325c4a49925328",
+  "doc/benchmarks/2026-10-07-item6-2-repair/README.md": "e2ec28c7dfe7327db7e679ef1f7d1f83ead35cb4c3b6776d697231bb530991fe",
+  "doc/benchmarks/2026-10-07-item6-2-repair/finalize.py": "e49235e36dd9c0744478b8e67d3ee14a1f94844bdb87649b413e311a6d824f67",
+  "doc/benchmarks/2026-10-07-item6-2-repair/finish_review.py": "543c257079c64c5fc355c78adccf9ca9e0031179b2aba9c22386be9f70965d1d",
+  "doc/benchmarks/2026-10-07-item6-2-repair/mm-query-configured/movement-analysis.json": "d87c51d217947212f6e69c0dbeb4502a1fb1640818a456f1d1c92473624067f0",
+  "doc/benchmarks/2026-10-07-item6-2-repair/repair-source.patch": "60559ceb18f8bc2170485d29133129a8f41c008c741a607d872c41201f09e33d",
+  "doc/benchmarks/2026-10-07-item6-2-repair/review-notes.md": "402107b767e745799716e22e0d3ed6fad041b394d61765ad4bb7f22f65d68434",
+  "doc/benchmarks/2026-10-07-item6-2-repair/review-summary.json": "d0eb2a6d9a7ba8fd228e727c7eb109702432cdf0362a842a472809ef1baa7415",
+  "doc/benchmarks/2026-10-07-item6-2-repair/test-ports.json": "1b08dc6672408f15841a32f224e8defb5ae109a60e38746536d40a773dcfc6ba",
+  "doc/benchmarks/2026-10-07-item6-2-repair/test-retirements.json": "5ba29755a56d38bc0ac265016683e442c4ca0e49dcd115ed95c7dacd2e8d095c",
+  "doc/benchmarks/2026-10-07-item6-2-repair/thinking-failures.json": "93d8daddb201490d2fbc8f4271081b7069bca4ce4f3efdead937ae1b0078f032",
+  "doc/plans/2026-10-07-thought-loop.md": "ca032180222eeadb07ba4508d518022ab933fa9595ff1dd3802d5f0f484a4585",
+  "doc/specs/2026-10-07-thinking.md": "4cc4f8439673f8ad57d04122c689a7527c832589b4b6823c378968ec8ddac0a4",
+  "todo.md": "9f4d4529a1b9147ac4c488e1aa9bd8a27c78fc38da2e302d131c5fabcfb8fa0b"
+}

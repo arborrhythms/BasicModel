@@ -1,0 +1,9 @@
+{
+  "training_attempts": 0,
+  "seed": null,
+  "events": [
+    "The first waiter saw bounded_tests initial incomplete collection state and exited before freeze or any measurement.",
+    "Its wait condition was corrected to accept the initial incomplete state. The premeasurement waiter was restarted before freezing."
+  ],
+  "thinking_launcher_fix": "Read result.json beside the returned report.html Path; no dictionary indexing on the returned Path."
+}

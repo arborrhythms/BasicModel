@@ -1,0 +1,283 @@
+{
+  "training_runs": 0,
+  "source": "saved initial and final operation-layer tensors; no model construction or replay",
+  "files": {
+    "chooser-before.pt": "dee21fc75144ce1d1276d5b1dcbb8bbc11cb8267deda9d7814430d62b6fc9368",
+    "chooser-after.pt": "df87825f239aadf6192e378bebc060e8390050df7c119f6e6aa8e7d65092f336"
+  },
+  "parameters": {
+    "stop_anchor": {
+      "shape": [
+        1,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "reduce_anchor": {
+      "shape": [
+        20,
+        104
+      ],
+      "change_l2": 1.4061893544915933,
+      "changed_elements": 1356
+    },
+    "apply_anchor": {
+      "shape": [
+        5,
+        104
+      ],
+      "change_l2": 0.36540707400345623,
+      "changed_elements": 360
+    },
+    "bracket_anchor": {
+      "shape": [
+        6,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "space_prior": {
+      "shape": [
+        6
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.8.gl._sigma.layer.raw_L": {
+      "shape": [
+        104,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.8.gl._sigma.layer.d": {
+      "shape": [
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.8.gl._sigma.layer.raw_U": {
+      "shape": [
+        104,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.8.gl._sigma.layer.biasWeight": {
+      "shape": [
+        1,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.8.gl._lex_gate.weight": {
+      "shape": [
+        104,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.8.gl._lex_gate.bias": {
+      "shape": [
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.9.gl._verb_shift": {
+      "shape": [
+        104,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.9.gl._sigma.layer.raw_L": {
+      "shape": [
+        104,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.9.gl._sigma.layer.d": {
+      "shape": [
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.9.gl._sigma.layer.raw_U": {
+      "shape": [
+        104,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.9.gl._sigma.layer.biasWeight": {
+      "shape": [
+        1,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.9.gl._lex_gate.weight": {
+      "shape": [
+        104,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.9.gl._lex_gate.bias": {
+      "shape": [
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.9.gl._verb_spec.weight": {
+      "shape": [
+        104,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.9.gl._verb_spec.bias": {
+      "shape": [
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.11.gl._adv_shift": {
+      "shape": [
+        104,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.11.gl._sigma.layer.raw_L": {
+      "shape": [
+        104,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.11.gl._sigma.layer.d": {
+      "shape": [
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.11.gl._sigma.layer.raw_U": {
+      "shape": [
+        104,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.11.gl._sigma.layer.biasWeight": {
+      "shape": [
+        1,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.11.gl._lex_gate.weight": {
+      "shape": [
+        104,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.11.gl._lex_gate.bias": {
+      "shape": [
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.11.gl._adv_edit.weight": {
+      "shape": [
+        104,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.11.gl._adv_edit.bias": {
+      "shape": [
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.17.gl.marker_map.weight": {
+      "shape": [
+        104,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.17.gl.marker_map.bias": {
+      "shape": [
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.17.gl.marker_prior.0.weight": {
+      "shape": [
+        104,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.17.gl.marker_prior.0.bias": {
+      "shape": [
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.17.gl.marker_prior.2.weight": {
+      "shape": [
+        104,
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    },
+    "ops.17.gl.marker_prior.2.bias": {
+      "shape": [
+        104
+      ],
+      "change_l2": 0.0,
+      "changed_elements": 0
+    }
+  },
+  "changed_parameters": [
+    "reduce_anchor",
+    "apply_anchor"
+  ],
+  "thought_anchor_row_3_change_l2": 0.0
+}

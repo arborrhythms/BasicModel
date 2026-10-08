@@ -65,9 +65,20 @@
 
     <!-- This model may execute only these explicitly selected relation
          operators after composition; its other structural rules stay pure. -->
-    <thought>
+<thought>
+      <rule>ask_O1 = ask.thought(ask_I1)</rule>
+      <rule>query_O1 = query.thought(query_I1)</rule>
       <rule>part_O1 = part.thought(part_I1, part_I2)</rule>
+      <rule family="part" permutation="I2,I1">whole_O1 = whole.thought(whole_I1, whole_I2)</rule>
       <rule>equal_O1 = equal.thought(equal_I1, equal_I2)</rule>
+      <rule>not_O1 = not.thought(not_I1)</rule>
+      <rule>isTrue_O1 = isTrue.thought(isTrue_I1)</rule>
+      <rule>exist_O1 = exist.thought(exist_I1)</rule>
+      <rule>isPart_O1 = isPart.thought(isPart_I1, isPart_I2)</rule>
+      <rule>isEqual_O1 = isEqual.thought(isEqual_I1, isEqual_I2)</rule>
+      <rule>isImplied_O1 = isImplied.thought(isImplied_I1, isImplied_I2)</rule>
+      <rule>implies_O1 = implies.thought(implies_I1, implies_I2)</rule>
+      <rule>gain_O1 = gain.thought(gain_I1)</rule>
     </thought>
 
     <generate>

@@ -45,7 +45,7 @@ def test_registry_description_resolution_and_fact_scan_use_one_budget():
     description = ConceptualMeaning.from_description(torch.eye(8)[:3])
     slot = store.append_meaning(description, kind="fact", trust=.6)
     context = _context(cs, store=store)
-    question = registry.form("what", store.occurrence_of(slot), context=context)
+    question = registry.form("ask", store.occurrence_of(slot), context=context)
     meter = QueryWorkBudget(3)
     result = registry.execute(question, replace(context, work=meter))
     assert result.support_true == 0 and "work_budget" in result.incomplete
@@ -55,60 +55,32 @@ def test_registry_description_resolution_and_fact_scan_use_one_budget():
 
 
 def test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance():
-    meaning = ConceptualMeaning.from_description(torch.eye(8)[:3])
-    store = TernaryTruthStore(8)
-    store.append_meaning(meaning, kind="fact", trust=.7)
+    from ThoughtReferences import question
+    meaning = question(ConceptualMeaning.from_description(torch.eye(8)[:3]), (('evidence', -1),))
     meter = QueryWorkBudget(2)
-    context = _context(_cs(), store=store, work=meter)
-    query = _signature('what', 'I1')
-    context = replace(
-        context,
-        continuation=lambda value: query.invoke(context, value),
-    )
-    result = _signature('what', 'I1').invoke(
-        context, replace(meaning, mode="interrogative"))
-    assert result["value"]["support_true"] == 0
-    assert result["value"]["records_scanned"] == 0
-    assert meter.spent == 2 and dict(meter.counts) == {"operation": 2}
+    context = _context(_cs(), work=meter)
+    query = _signature('ask', 'I1')
+    context = replace(context, continuation=lambda value: query.invoke(context, value))
+    result = query.invoke(context, meaning)
+    assert result['support_true'] == 0 and 'work_budget' in result['incomplete']
+    assert meter.spent == 2 and dict(meter.counts) == {'operation': 2}
 
 
 def test_arma_reserves_context_reads_before_running_the_predictor(monkeypatch):
-    from test_sentence_expectation import layer as make_layer
-
-    layer = make_layer()
-    roles = torch.eye(layer.concept_dim)[:3]
-    for _ in range(2):
-        layer.predict_and_observe_stm_end_state([3], [roles], layout="infix")
-    marker = object()
-    layer._inter_last_meaning[0] = marker
-    monkeypatch.setattr(
-        layer._inter_predictor,
-        "forward",
-        lambda *args: pytest.fail("prediction beyond work"),
-    )
-    space = SimpleNamespace(outputShape=(1, layer.concept_dim))
-    model = SimpleNamespace(symbolSpace=SimpleNamespace(expectation=layer))
-    context = _context(
-        space, model=model, work=QueryWorkBudget(2), discourse=layer)
-    result = _signature('arma', 'I1').invoke(
-        context, ConceptualMeaning.from_description(roles))
-    assert result["value"] is None and "work_budget" in result["incomplete"]
-    assert layer._inter_last_meaning[0] is marker
-    assert context.work.spent == 1
+    cs, registry, a, b, context = _world()
+    before = context.work.spent
+    for name in ('arma', 'expect'):
+        with pytest.raises(ValueError, match='sentenceExpectation / gain'):
+            registry.form(name, ConceptualMeaning.from_description(torch.ones(8)), context=context)
+    assert context.work.spent == before
 
 
 def test_quantize_does_not_materialize_basis_after_operation_uses_budget(monkeypatch):
     cs, registry, a, b, context = _world()
-    del registry, a, b
-    monkeypatch.setattr(
-        cs.similarity_codebook,
-        "active_prototypes",
-        lambda: pytest.fail("basis read after budget"),
-    )
-    result = _signature('quantize', 'I1').invoke(
-        replace(context, work=QueryWorkBudget(1)), torch.ones(8))
-    assert result["value"] is None and result["nodes_scanned"] == 0
-    assert "work_budget" in result["incomplete"]
+    monkeypatch.setattr(cs.similarity_codebook, 'active_prototypes', lambda: pytest.fail('retired read'))
+    with pytest.raises(ValueError, match='symbolization'):
+        registry.form('quantize', torch.ones(8), context=context)
+    assert context.work.spent == 0
 
 
 def test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures():
@@ -118,6 +90,6 @@ def test_taxonomy_query_reserves_work_to_use_the_evidence_it_captures():
     del c
     cs.add_whole(a, _ref(b))
     context = _context(cs, work=QueryWorkBudget(5))
-    result = _signature('part', 'I1', 'I2').invoke(context, _ref(a), _ref(b))
+    result = _signature('isPart', 'I1', 'I2').invoke(context, _ref(a), _ref(b))
     assert result["support_true"] == 1, "capture must leave work for the direct proof"
     assert context.work.spent <= 5 and result["edges_expanded"] == 1

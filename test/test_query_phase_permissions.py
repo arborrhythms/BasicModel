@@ -168,7 +168,7 @@ def test_tied_input_reconstruction_must_finish_before_opening_query_boundary(mon
 @pytest.mark.parametrize("entry", ("answer_query", "reason_about", "think_about"))
 def test_legacy_query_entries_are_masked_inside_forward(monkeypatch, entry):
     model = _model()
-    model.reasoning_iterations = model.thinking_budget = 0
+    model.reasoning_iterations = model.attention_budget = 0
     assert getattr(model, entry)(None) is None
     monkeypatch.setattr(
         model, "_forward_per_stage", lambda *args: getattr(model, entry)(None)
@@ -211,7 +211,7 @@ def test_every_input_execution_entry_masks_checked_queries(monkeypatch, entry):
         monkeypatch.setattr(
             model, "_what_grammar_context", lambda *args, **kwargs: (torch.zeros(1, 4), ({},))
         )
-        call = lambda: model.what(
+        call = lambda: model.ask(
             What.inference(0), torch.ones(1, 1, 8), executor=query
         )
     with pytest.raises(RuntimeError, match="sentence|query|queries"):
@@ -226,10 +226,10 @@ def test_operand_occurrence_reads_require_permission_before_preparation(monkeypa
     model = _model()
     grammar = __import__('Language').Grammar()
     grammar.configure({'compose': {'rule': [
-        'what_O1 = what.forward(what_I1)']},
-        'thought': {'rule': ['what_O1 = what.thought(what_I1)']}})
+        'ask_O1 = ask.forward(ask_I1)']},
+        'thought': {'rule': ['ask_O1 = ask.thought(ask_I1)']}})
     registry = GrammaticalThoughtRegistry.install(model.conceptualSpace, grammar)
-    vp = registry._reference(("conceptual-subgoal", "what"))
+    vp = registry._reference(("conceptual-subgoal", "ask"))
     meaning = ConceptualMeaning(
         torch.ones(3, 8), torch.tensor([True, True, False]),
         mode="interrogative", role_refs=(("ltm", "missing", 0), vp, None),

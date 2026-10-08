@@ -1,0 +1,21 @@
+........s..sss............................................s............. [ 51%]
+....................................................................     [100%]
+=============================== warnings summary ===============================
+test/test_what_training.py::test_runbatch_scores_answers_against_data_what
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7080: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3386/cfg0/MM_xor_synth_discourse.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_where_encoding_period.py::test_reconstruct_buffer_period_assert_holds
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7080: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_wholespace_property_migration.py:395: UserWarning: Dropping retired WholeSpace word and META rows; properties retain their a-priori examples (two-truths §11.4).
+    result = migrate_wholespace_checkpoint(checkpoint, live_state)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+135 passed, 5 skipped, 4 warnings in 7.11s

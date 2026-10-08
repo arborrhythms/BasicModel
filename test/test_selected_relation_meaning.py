@@ -41,7 +41,7 @@ def _program_owner(monkeypatch, *, face="part", interrogative=False):
     what_local = (next(
         index for index, rule in enumerate(
             tuple(grammar.rules_upward[rule_id] for rule_id in unary))
-        if rule.method_name == "what") if interrogative else None)
+        if rule.method_name == "ask") if interrogative else None)
     leaves = torch.stack((
         -.25 * registry._payload(a), .75 * registry._payload(b)
     )).detach().requires_grad_()
@@ -205,8 +205,8 @@ def test_selected_unary_thought_keeps_its_live_leaf_and_question_mode(monkeypatc
     _cs, _grammar, registry, owner, leaves, _program, _a, _b = _program_owner(monkeypatch)
     assert all(rule.method_name != 'quantize' for rule in owner._compose_unary_rules)
     leaf = leaves[:1].detach().clone().requires_grad_()
-    meaning = registry.form('quantize', leaf[0], mode='interrogative')
-    canonical = registry.form('quantize', leaf[0], mode='interrogative')
+    meaning = registry.form('exist', leaf[0], mode='interrogative')
+    canonical = registry.form('exist', leaf[0], mode='interrogative')
     assert meaning.mode == 'interrogative' and meaning.polarity
     assert meaning.role_refs == canonical.role_refs
     assert meaning.role_mask.tolist() == [True, True, False]
@@ -222,7 +222,7 @@ def test_selected_unary_description_does_not_invent_an_occurrence(monkeypatch):
     cs, _grammar, registry, owner, leaves, _program, _a, _b = _program_owner(monkeypatch)
     assert all(rule.method_name != 'arma' for rule in owner._compose_unary_rules)
     with pytest.raises((TypeError, ValueError), match='occurrence|reference'):
-        registry.form('arma', ('sym', 917), context=_context(cs))
+        registry.form('query', ('sym', 917), context=_context(cs))
 
 
 def test_capture_reads_anchored_form_from_retained_word_rows():
@@ -368,7 +368,7 @@ def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
     from reading_fixtures import commit_reading
 
     cs, _grammar, registry, owner, leaves, program, _a, _b = _program_owner(
-        monkeypatch, interrogative=True)
+        monkeypatch, interrogative=False)
     entry = program()
     calls = []
     discourse = BracketExpectation(n_symbols=8, max_depth=8, n_dim=8,
@@ -388,7 +388,7 @@ def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
     assert stored.mode == "interrogative"
     assert stored.role_refs == registry.form("part", _a, _b).role_refs
     assert stored.role_mask.tolist() == [True, True, True]
-    assert store.row(0)["kind"] in ("question", "observation")
+    assert store.row(0)["kind"] == "question"
     assert calls[0][0] == [3]
     assert calls[0][2]["layout"] == "infix"
     torch.testing.assert_close(calls[0][1][0][0], leaves[0])

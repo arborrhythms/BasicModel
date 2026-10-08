@@ -218,16 +218,16 @@ def test_tiny_concept_inventory_keeps_thought_families_structural_not_partial():
     ]}, "thought": {"rule": [
         "part_O1 = part.thought(part_I1, part_I2)",
         "equal_O1 = equal.thought(equal_I1, equal_I2)",
-        "quantize_O1 = quantize.thought(quantize_I1)",
-        "what_O1 = what.thought(what_I1)",
+        "exist_O1 = exist.thought(exist_I1)",
+        "ask_O1 = ask.thought(ask_I1)",
     ]}})
 
     registry = GrammaticalThoughtRegistry.install(space, grammar)
 
     assert tuple(item.semantic_id for item in registry.operations) == (
-        "part", "equal", "quantize", "what")
+        "part", "equal", "exist", "ask")
     assert registry.executable_operation_ids == ("part", "equal")
-    assert registry.unavailable_operation_ids == ("quantize", "what")
+    assert registry.unavailable_operation_ids == ("exist", "ask")
     assert not any(name.startswith("grammatical-vp:")
                    for name in getattr(space, "_frozen_named", {}))
     point = torch.zeros(space.outputShape[-1])
@@ -235,7 +235,7 @@ def test_tiny_concept_inventory_keeps_thought_families_structural_not_partial():
     assert space._csw_row_of(question.role_refs[1][1]) is None
     equality = registry.form("equal", point, point)
     assert space._csw_row_of(equality.role_refs[1][1]) is None
-    for name in ("quantize", "what"):
+    for name in ("exist", "ask"):
         with pytest.raises(RuntimeError, match="concept inventory exhausted"):
             registry.form(name, point, point)
 
@@ -246,15 +246,15 @@ def test_canonical_form_derives_closed_and_open_roles_without_alias_methods():
 
     space = _cs()
     grammar = Grammar()
-    grammar.configure(_family())
+    grammar.configure({'thought': {'rule': ['isPart_O1 = isPart.thought(isPart_I1, isPart_I2)']}})
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     part = ("sym", space.synthesize_higher_order([("sym", space.new_concept())]))
     whole = ("sym", space.new_concept())
     for reference in (part, whole):
         space._csw_concept_row(0, reference[1])
 
-    closed = registry.form("part", part, whole)
-    open_part = registry.form("part", whole, open_roles=("I1",))
+    closed = registry.form("isPart", part, whole)
+    open_part = registry.form("isPart", whole, open_roles=("I1",))
     assert closed.mode == "interrogative"
     assert closed.role_mask.tolist() == [True, True, True]
     assert closed.role_refs[0] == part and closed.role_refs[2] == whole
@@ -262,6 +262,8 @@ def test_canonical_form_derives_closed_and_open_roles_without_alias_methods():
     assert open_part.role_refs[0] is None and open_part.role_refs[2] == whole
     with pytest.raises(ValueError, match="not registered|canonical|alias"):
         registry.form("parts", whole)
+
+
 
 
 def test_open_part_form_executes_a_taxonomy_set_without_an_alias():
@@ -274,14 +276,14 @@ def test_open_part_form_executes_a_taxonomy_set_without_an_alias():
 
     space = _cs()
     grammar = Grammar()
-    grammar.configure(_family())
+    grammar.configure({'thought': {'rule': ['isPart_O1 = isPart.thought(isPart_I1, isPart_I2)']}})
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     part, whole = ("sym", space.new_concept()), ("sym", space.new_concept())
     for reference in (part, whole):
         space._csw_concept_row(0, reference[1])
     space.add_whole(part[1], whole)
     # I1 is the unknown part; I2 carries the known whole.
-    request = registry.form("part", whole, open_roles=("I1",))
+    request = registry.form("isPart", whole, open_roles=("I1",))
     context = ThoughtGrammarContext(
         word_stream=(), conceptual_space=ThoughtConceptualCapability(
             space, lambda left, right: float(torch.allclose(left, right))),
@@ -292,6 +294,8 @@ def test_open_part_form_executes_a_taxonomy_set_without_an_alias():
     assert result.result_kind == "set"
     assert result.evidence_kind == "taxonomy"
     assert any(item["reference"] == part for item in result.value)
+
+
 
 
 def test_catalog_forms_unparsed_executable_candidates_without_a_reader_call():
@@ -317,7 +321,7 @@ def test_catalog_forms_unparsed_executable_candidates_without_a_reader_call():
     assert tuple(candidate.semantic_id for candidate in candidates[:2]) == (
         "part", "equal")
     assert {candidate.open_roles for candidate in candidates
-            if candidate.semantic_id == "part"} == {(), ("I1",), ("I2",)}
+            if candidate.semantic_id == "part"} == {()}
     equal = next(candidate for candidate in candidates
                  if candidate.semantic_id == "equal")
     assert equal.request.role_refs[1] == registry._reference(
@@ -345,27 +349,27 @@ def test_thought_execution_receives_the_common_context_and_only_capability_views
 
     space = _cs()
     grammar = Grammar()
-    grammar.configure(_family())
+    grammar.configure({"thought": {"rule": ["isPart_O1 = isPart.thought(isPart_I1, isPart_I2)"]}})
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     part = ("sym", space.synthesize_higher_order([("sym", space.new_concept())]))
     whole = ("sym", space.new_concept())
     for reference in (part, whole):
         space._csw_concept_row(0, reference[1])
-    request = registry.form("part", part, whole)
+    request = registry.form("isPart", part, whole)
     taxonomy = TaxonomyRead()
     boundary_rows = []
     from Queries import ThoughtConceptualCapability
     from reasoning import TruthGroundedReasoner
     context = ThoughtGrammarContext(
         word_stream=("the", "part"), conceptual_space=ThoughtConceptualCapability(space, TruthGroundedReasoner.equal),
-        primed_symbols=("recent",), ltm=object(), taxonomy=taxonomy,
+        primed_symbols=("recent",), ltm=SimpleNamespace(relation_evidence=lambda *args, **kwargs: {"support_true": 0., "support_false": 0.}), taxonomy=taxonomy,
         work=QueryWorkBudget(8), continuation=None,
         boundary=lambda row: boundary_rows.append(row), row=0,
     )
 
     result = registry.execute(request, context)
     assert isinstance(result, ThoughtResult)
-    assert result.semantic_id == "part" and result.support_true == 1.0
+    assert result.semantic_id == "isPart" and result.support_true == 1.0
     assert taxonomy.calls[0][0:2] == (part, whole)
     assert boundary_rows == [0]
     assert context.word_stream == ("the", "part")
@@ -453,7 +457,7 @@ def test_thought_only_operators_have_no_structural_noop_faces():
     from Language import GRAMMAR_LAYER_CLASSES
     assert {"quantize", "arma", "lookup", "exist", "true"}.isdisjoint(GRAMMAR_LAYER_CLASSES)
     for name in ("quantize", "arma"):
-        with pytest.raises(ValueError, match="thought-only"):
+        with pytest.raises(ValueError, match="retired"):
             Grammar().configure({"compose": {"rule": f"{name}_O1 = {name}.forward({name}_I1)"}})
 
 
@@ -540,9 +544,9 @@ def test_complete_grammar_exposes_its_declared_canonical_thought_operations():
     grammar = Grammar()
     grammar.load_from_grammar_file("complete.grammar")
     registry = GrammaticalThoughtRegistry.install(_cs(), grammar)
-    assert {"part", "equal", "quantize", "arma", "what"}.issubset(
+    assert {"part", "equal", "ask", "query", "isTrue", "exist", "isEqual", "isImplied", "gain"}.issubset(
         registry.executable_operation_ids)
-    assert {"true", "exist", "lookup"}.isdisjoint(registry.executable_operation_ids)
+    assert {"true", "arma", "quantize", "lookup"}.isdisjoint(registry.executable_operation_ids)
 
 
 def test_owner_built_structural_context_freezes_only_owned_stream_and_priming():
@@ -787,65 +791,41 @@ def test_live_tree_choice_keeps_the_same_structural_context_contract():
 
 
 def test_canonical_thought_executors_use_only_their_named_capability_views():
-    """New thought faces cannot recover a legacy generic reasoner/model."""
-    import torch
     from Meaning import ConceptualMeaning
     from Queries import THOUGHT_EXECUTORS, ThoughtGrammarContext
     from QueryWork import QueryWorkBudget
-
     class ConceptualRead:
-        width = 4
-
-        def payload(self, reference, **limits):
-            return torch.full((4,), float(reference[1]))
-
-        def equal(self, left, right):
-            return 1.0 if torch.equal(left, right) else 0.0
-
-        def quantize(self, value, **limits):
-            return {"value": value + 1.0, "reference": ("sym", 7),
-                    "nodes_scanned": 1, "incomplete": ()}
-
+        def payload(self, reference, **limits): return torch.ones(4)
+        def equal(self, left, right): return float(torch.equal(left, right))
+        def extent(self, value): return dict(value=value, support_true=1., support_false=0.)
+        def negate(self, value): return value
     class LTMRead:
-        def retrieve(self, *_args, **_kwargs):
-            return {'frames': (), 'value': (), 'records_scanned': 0, 'incomplete': ()}
-        def existence_evidence(self, meaning, **limits):
-            return {"support_true": 1.0, "support_false": 0.0,
-                    "candidates": (), "incomplete": ()}
-
-        def lookup(self, left, right, **limits):
-            return {"value": ((left, right),), "records_scanned": 1,
-                    "incomplete": ()}
-
-        def expectation(self, row, **limits):
-            return torch.full((3, 4), float(row + 1))
-
-    class TaxonomyRead:
-        def evidence(self, left, right, **limits):
-            return {"support_true": 0.5, "support_false": 0.0,
-                    "candidates": (), "incomplete": ()}
-
-    meaning = ConceptualMeaning(
-        torch.zeros(3, 4), torch.tensor([True, True, True]),
-        mode="interrogative")
-    context = ThoughtGrammarContext(
-        word_stream=("owned",), conceptual_space=ConceptualRead(),
-        primed_symbols=(), ltm=LTMRead(), taxonomy=TaxonomyRead(),
-        work=QueryWorkBudget(32), continuation=lambda child: {"child": child},
-        boundary=lambda _row: None, row=2)
+        def best_match(self, meaning, **limits):
+            return dict(value=None, frames=(), witnesses=(), support_true=0., support_false=0.)
+        def truth_evidence(self, meaning, **limits):
+            return dict(support_true=.7, support_false=.2, witnesses=('truth-row',))
+        def relation_evidence(self, relation, left, right, **limits):
+            return dict(support_true=.8, support_false=.1, witnesses=('relation-row',))
+        def premise_evidence(self, reference, **limits):
+            return dict(support_true=.6, support_false=.2, witnesses=('premise-row',))
+    meaning = ConceptualMeaning.from_description(torch.ones(4))
+    context = ThoughtGrammarContext(word_stream=(), conceptual_space=ConceptualRead(),
+        primed_symbols=(), ltm=LTMRead(), taxonomy=object(), work=QueryWorkBudget(64),
+        continuation=None, boundary=lambda row:None, row=0)
     value = torch.ones(4)
-
-    assert {"exist", "true", "lookup"}.isdisjoint(THOUGHT_EXECUTORS)
-    assert THOUGHT_EXECUTORS["part"].executor(context, {"I1": ("sym", 1), "I2": ("sym", 2)})[
-        "support_true"] == 0.5
-    assert THOUGHT_EXECUTORS["equal"].executor(context, {"I1": value, "I2": value})[
-        "support_true"] == 1.0
-    assert THOUGHT_EXECUTORS["quantize"].executor(context, {"I1": value})[
-        "reference"] == ("sym", 7)
-    arma = THOUGHT_EXECUTORS["arma"].executor(context, {"I1": meaning})
-    torch.testing.assert_close(arma["value"], torch.full((3, 4), 3.0))
-    assert THOUGHT_EXECUTORS["what"].executor(context, {"I1": meaning})["value"] == {"child": meaning}
-    assert not hasattr(context, "reasoner")
+    arguments = {name: {'I1': ('sym',1), 'I2': ('sym',2)} for name in ('isPart','isEqual','isImplied')}
+    arguments.update({name: {'I1':value, 'I2':value} for name in ('part','equal','implies')})
+    arguments.update({name: {'I1':meaning} for name in ('isTrue','ask','query','not')})
+    arguments.update({name: {'I1':value} for name in ('exist','gain')})
+    assert set(arguments) == set(THOUGHT_EXECUTORS)
+    assert {'what','lookup','quantize','arma','expect','true'}.isdisjoint(THOUGHT_EXECUTORS)
+    results = {name:THOUGHT_EXECUTORS[name].executor(context,args) for name,args in arguments.items()}
+    for result in results.values():
+        assert 0 <= result['support_true'] <= 1 and 0 <= result['support_false'] <= 1
+    assert results['isPart']['witnesses'] == ('relation-row',)
+    assert results['isImplied']['support_true'] == .6
+    assert results['equal']['support_true'] == 1.
+    assert not hasattr(context, 'reasoner')
 
 
 def test_descriptor_scopes_hide_undeclared_capability_methods_at_execution():
@@ -900,8 +880,8 @@ def test_description_thought_preparation_uses_only_its_declared_ltm_view():
 
     grammar = Grammar()
     grammar.configure({
-        "compose": {"rule": ["what_O1 = what.forward(what_I1)"]},
-        "thought": {"rule": ["what_O1 = what.thought(what_I1)"]},
+        "compose": {"rule": ["ask_O1 = ask.forward(ask_I1)"]},
+        "thought": {"rule": ["ask_O1 = ask.thought(ask_I1)"]},
     })
     space = _cs()
     registry = GrammaticalThoughtRegistry.install(space, grammar)
@@ -918,8 +898,8 @@ def test_description_thought_preparation_uses_only_its_declared_ltm_view():
             assert reference == occurrence
             return description, 1
 
-        def retrieve(self, value, **limits):
-            self.calls.append(("what", value, limits))
+        def best_match(self, value, **limits):
+            self.calls.append(("ask", value, limits))
             assert value is not description
             assert not value.roles.requires_grad
             torch.testing.assert_close(value.roles, description.roles)
@@ -934,11 +914,11 @@ def test_description_thought_preparation_uses_only_its_declared_ltm_view():
         word_stream=("finished",), conceptual_space=space, primed_symbols=(),
         ltm=ltm, taxonomy=object(), work=QueryWorkBudget(32),
         continuation=None, boundary=lambda _row: None)
-    request = registry.form("what", occurrence, context=context)
+    request = registry.form("ask", occurrence, context=context)
     result = registry.execute(request, context)
 
     assert result.support_true == 1.0
-    assert [call[0] for call in ltm.calls] == ["description", "description", "what"]
+    assert [call[0] for call in ltm.calls] == ["description", "description", "ask"]
 
 
 def test_grammar_declares_whole_as_one_part_family_with_a_role_permutation():
@@ -975,7 +955,7 @@ def test_grammar_declares_whole_as_one_part_family_with_a_role_permutation():
     converse = registry.form("whole", whole, part)
     assert registry.operation_spec("whole").semantic_id == "part"
     assert registry.executable_operation_ids == ("part",)
-    assert registry.identities == (("conceptual-taxonomy", "part"),)
+    assert registry.identities == (("conceptual-containment", "part"),)
     assert converse.role_refs == forward.role_refs
     torch.testing.assert_close(converse.roles, forward.roles)
 
@@ -1025,7 +1005,7 @@ def test_normal_boundary_execution_uses_the_thought_registry_and_common_context(
     grammar = Grammar()
     grammar.configure({
         "compose": {"rule": ["part_O1 = part.forward(part_I1, part_I2)"]},
-        "thought": {"rule": ["part_O1 = part.thought(part_I1, part_I2)"]},
+        "thought": {"rule": ["isPart_O1 = isPart.thought(isPart_I1, isPart_I2)"]},
     })
     space = _cs()
     registry = GrammaticalThoughtRegistry.install(space, grammar)
@@ -1042,11 +1022,19 @@ def test_normal_boundary_execution_uses_the_thought_registry_and_common_context(
         grammatical_thoughts=registry))
     object.__setattr__(model, "grammatical_thoughts", registry)
     model.what_thinking_detach = "episode"
+    from Language import OperationSelectionLayer
+    model.shared_grammar = OperationSelectionLayer(d_model=space.outputShape[-1], chooser='mlp')
+    object.__setattr__(model, 'languageSpace', SimpleNamespace(
+        language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))
+    with torch.no_grad():
+        model.shared_grammar.chooser.mlp[-1].weight.zero_()
+        model.shared_grammar.chooser.mlp[-1].bias.zero_()
+    model.eval()
 
-    request = registry.form("part", part, whole)
+    request = registry.form("isPart", part, whole)
     with model._query_boundary_scope((0,)):
         result = model.run_selected_thought(
-            request, row=0, work_budget=8, registry=registry)
+            request, row=0, work_budget=32, registry=registry)
 
     assert result.evidence["support_true"] == 1.0
     assert [record.kind for record in memory.thought_history() if record.kind != "cutoff"] == [
@@ -1066,13 +1054,13 @@ def test_completed_structural_whole_and_what_program_forms_one_canonical_request
             "part_O1 = part.forward(part_I1, part_I2)",
             {"_": "whole_O1 = whole.forward(whole_I1, whole_I2)",
              "family": "part", "permutation": "I2,I1"},
-            "what_O1 = what.forward(what_I1)",
+            "ask_O1 = ask.forward(ask_I1)",
         ]},
         "thought": {"rule": [
             "part_O1 = part.thought(part_I1, part_I2)",
             {"_": "whole_O1 = whole.thought(whole_I1, whole_I2)",
              "family": "part", "permutation": "I2,I1"},
-            "what_O1 = what.thought(what_I1)",
+            "ask_O1 = ask.thought(ask_I1)",
         ]},
     })
     space = _cs()
@@ -1083,7 +1071,7 @@ def test_completed_structural_whole_and_what_program_forms_one_canonical_request
     whole_rule = next(rule for rule in grammar.rules_upward
                       if rule.method_name == "whole")
     what_rule = next(rule for rule in grammar.rules_upward
-                     if rule.method_name == "what")
+                     if rule.method_name == "ask")
     owner = LanguageSpace.__new__(LanguageSpace)
     object.__setattr__(owner, "_compose_binary_rules", (whole_rule,))
     object.__setattr__(owner, "_compose_unary_rules", (what_rule,))

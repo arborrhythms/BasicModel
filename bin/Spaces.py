@@ -12953,8 +12953,8 @@ class ConceptualSpace(Space):
         # it ``[B, n_rules] -> [B, concept_dim]`` to bias the predicted
         # idea. ``n_rules == len(TheGrammar.rule_table)`` (== num_rules();
         # == len(TheGrammar.rules) -- verified equal). The grammar is
-        # configured by the time ConceptualSpace is built (the SubSpace /
-        # SymbolSpace boot ran first); we still guard with
+        # configured at the model's configuration boundary, before these
+        # predictors and the later SymbolSpace are built; we still guard with
         # ``_ensure_configured`` and fall back to ``concept_dim`` if the
         # rule table is somehow empty so ``routing_proj`` is never a
         # degenerate ``nn.Linear(0, ...)``. ``naive`` / ``ergodic`` /
@@ -16520,14 +16520,14 @@ class ConceptualSpace(Space):
         ``max_parts`` defaults to ``stm_capacity`` -- a definition cannot
         exceed what STM holds (the sec-5 hard cap). Returns ``None`` when
         the concept dictionary is missing/empty."""
-        from Language import ChunkLayer, PEEL_SUPPORT_EPS
+        from Language import SynthesizeLayer, PEEL_SUPPORT_EPS
         cb = getattr(self, "similarity_codebook", None)
         W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
         if W is None or not torch.is_tensor(W) or W.numel() == 0:
             return None
         cap = int(max_parts if max_parts is not None
                   else getattr(self, "stm_capacity", 8))
-        parts, residual = ChunkLayer.peel(
+        parts, residual = SynthesizeLayer.peel(
             idea, cb, max_parts=cap,
             eps=float(PEEL_SUPPORT_EPS if eps is None else eps))
         row2cid = self._row_to_concept()

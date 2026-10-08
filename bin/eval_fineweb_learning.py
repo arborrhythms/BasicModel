@@ -51,21 +51,13 @@ def load_model(config, checkpoint, *, minimum_sentences=MIN_FINEWEB_SENTENCES):
     return model
 
 
-def _forecast_question(model):
-    """Ask the declared arma operation about the latest owned observation."""
+def _forecast(model):
+    """Read global expectation after the latest completed observation."""
     discourse = model.symbolSpace.expectation
     occurrences = discourse._inter_context_occurrences[0]
     if not occurrences or occurrences[-1] is None:
         raise ValueError('a prediction question requires an owned observation')
-    occurrence = occurrences[-1]
-    store = model.symbolSpace.ltm_store
-    meaning = store.meaning_of(store._index_occurrences[occurrence])
-    registry = model.grammatical_thoughts
-    operation = registry.operation_spec('arma')
-    return registry._form_candidate(operation, registry.descriptors['arma'],
-        {operation.operand_roles[0]: (
-            meaning.roles.sum(0) / meaning.role_mask.sum().sqrt(), occurrence)},
-        source=replace(meaning, mode='interrogative', polarity=True))
+    return discourse.expect_next_meaning(0, record=False)
 
 
 def read_validation(model, *, sentences=64, documents=1024, gain=None):
@@ -113,10 +105,8 @@ def read_validation(model, *, sentences=64, documents=1024, gain=None):
         same_doc = index + 1 < sentences and addresses[index + 1]['document'] == doc
         pending = None
         if gain is not None and same_doc:
-            question = _forecast_question(model)
-            with model._query_boundary_scope((0,)), torch.no_grad():
-                pending = model.run_selected_thought(question, row=0, work_budget=64)
-            model._end_finished_selected_thought_episodes()
+            with torch.no_grad():
+                pending = _forecast(model)
         previous_doc = doc
         model.flush_word_buffers()
         model.dispatch_per_row_reset([not same_doc])

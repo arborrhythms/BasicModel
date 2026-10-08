@@ -1,0 +1,68 @@
+..........FFs...............................................F.FF........ [ 73%]
+..sss.....................                                               [100%]
+=================================== FAILURES ===================================
+___ test_checked_call_rejects_foreign_width_before_any_executor[what-roles1] ___
+test/test_query_owner_width.py:22: in test_checked_call_rejects_foreign_width_before_any_executor
+    descriptor = replace(THOUGHT_EXECUTORS[name],
+                         ^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'what'
+___ test_checked_call_rejects_foreign_width_before_any_executor[arma-roles2] ___
+test/test_query_owner_width.py:22: in test_checked_call_rejects_foreign_width_before_any_executor
+    descriptor = replace(THOUGHT_EXECUTORS[name],
+                         ^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'arma'
+____________ test_selected_operation_is_charged_before_its_executor ____________
+test/test_query_work_budget.py:53: in test_selected_operation_is_charged_before_its_executor
+    THOUGHT_EXECUTORS["what"],
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'what'
+_____ test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence ______
+test/test_query_work_budget.py:112: in test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence
+    result = _signature('what', 'I1').invoke(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_query_vp_boundaries.py:62: in _signature
+    THOUGHT_EXECUTORS[semantic_id], tuple(roles))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'what'
+___ test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances ___
+test/test_query_work_budget.py:133: in test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances
+    result = _signature('part', 'I1', 'I2').invoke(context, _ref(a), _ref(b))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1518: in invoke
+    return self._invoke_permitted(context, *arguments)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1556: in _invoke_permitted
+    result = self.descriptor.executor(
+bin/ThoughtFaces.py:13: in part
+    left, right = (_vector(context, arguments[role]) for role in ('I1', 'I2'))
+    ^^^^^^^^^^^
+bin/ThoughtFaces.py:13: in <genexpr>
+    left, right = (_vector(context, arguments[role]) for role in ('I1', 'I2'))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:1161: in _vector
+    vector = payload(value, work=context.work)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:712: in payload
+    row = _existing_row(space, reference)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Queries.py:508: in _existing_row
+    raise ValueError('query concept has no allocated payload row')
+E   ValueError: query concept has no allocated payload row
+=============================== warnings summary ===============================
+test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+test/test_query_vp_boundaries.py::test_converse_only_interface_still_dispatches_canonical_roles
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[what-roles1]
+FAILED test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[arma-roles2]
+FAILED test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor
+FAILED test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence
+FAILED test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances
+5 failed, 89 passed, 4 skipped, 2 warnings in 8.82s

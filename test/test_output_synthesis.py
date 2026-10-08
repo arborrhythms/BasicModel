@@ -85,7 +85,7 @@ def test_gate_off_keeps_the_projected_head_and_state_dict(model_off=None):
     assert not m.answer_synthesis
     x, _ = _batch(m)
     with torch.no_grad():
-        answer = m.what(What.supervised(0), input_data=x)
+        answer = m.ask(What.supervised(0), input_data=x)
     assert answer.what is answer.execution[2]
     assert m._last_answer_construction is None
     assert not any(k.endswith("percept_adapter.W") or "percept_adapter" in k
@@ -118,7 +118,7 @@ def test_what_reaches_output_not_the_legacy_head(synth_config):
     m = _build(synth_config)
     x, _ = _batch(m)
     with torch.no_grad():
-        answer = m.what(What.supervised(0), input_data=x)
+        answer = m.ask(What.supervised(0), input_data=x)
     head = answer.execution[2]
     assert answer.what is m._last_answer_construction.actual
     assert answer.what is not head
@@ -693,7 +693,7 @@ def test_model_trains_with_teacher_detached(synth_config):
     assert "output" in names and "reconstruction" in names
     m.runEpoch(optimizer=opt, batchSize=2, split="train", max_batches=2)
     with torch.no_grad():
-        answer = m.what(What.supervised(0), input_data=batch[0])
+        answer = m.ask(What.supervised(0), input_data=batch[0])
     assert answer.available
     assert m.inputSpace.data.what(What.supervised(0)).provenance == "data"
 

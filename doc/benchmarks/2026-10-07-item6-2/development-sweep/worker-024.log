@@ -1,0 +1,124 @@
+...................................FF..............................ss... [ 59%]
+.........FFFFF........................FF.........                        [100%]
+=================================== FAILURES ===================================
+____________________________ test_operator_coverage ____________________________
+test/test_role_collapsed_grammar.py:148: in test_operator_coverage
+    assert not missing, f"{_GRAMMAR_NAME} missing ops: {missing}"
+E   AssertionError: complete.grammar missing ops: {'what'}
+E   assert not {'what'}
+_________________________ test_forward_reverse_pairing _________________________
+test/test_role_collapsed_grammar.py:156: in test_forward_reverse_pairing
+    assert _REQUIRED_OPS <= up
+E   AssertionError: assert {'adverb', 'b...section', ...} <= {'adverb', 'a...unction', ...}
+E     
+E     Extra items in the left set:
+E     'what'
+_ test_nested_observation_writers_retain_children_without_certifying_them[forward] _
+test/test_selected_nested_meaning.py:53: in test_nested_observation_writers_retain_children_without_certifying_them
+    store = _write_selected_observation(language, registry, entry, path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:123: in _write_selected_observation
+    commit_reading(language, registry, entry, store, owner=host)
+test/reading_fixtures.py:234: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20350: in _commit_sentence
+    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtClosing.py:113: in close
+    result = model.run_selected_thought(field.query, row=row,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'run_selected_thought'
+_ test_nested_observation_writers_retain_children_without_certifying_them[batch_eval] _
+test/test_selected_nested_meaning.py:53: in test_nested_observation_writers_retain_children_without_certifying_them
+    store = _write_selected_observation(language, registry, entry, path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:123: in _write_selected_observation
+    commit_reading(language, registry, entry, store, owner=host)
+test/reading_fixtures.py:234: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20350: in _commit_sentence
+    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtClosing.py:113: in close
+    result = model.run_selected_thought(field.query, row=row,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'run_selected_thought'
+_ test_nested_observation_writers_retain_children_without_certifying_them[packed] _
+test/test_selected_nested_meaning.py:53: in test_nested_observation_writers_retain_children_without_certifying_them
+    store = _write_selected_observation(language, registry, entry, path)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:123: in _write_selected_observation
+    commit_reading(language, registry, entry, store, owner=host)
+test/reading_fixtures.py:234: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20350: in _commit_sentence
+    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtClosing.py:113: in close
+    result = model.run_selected_thought(field.query, row=row,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'run_selected_thought'
+__________ test_10_packed_pending_and_eager_ends_write_identical_rows __________
+test/test_selected_nested_meaning.py:65: in test_10_packed_pending_and_eager_ends_write_identical_rows
+    stores = [_write_selected_observation(language, registry, entry, path)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:123: in _write_selected_observation
+    commit_reading(language, registry, entry, store, owner=host)
+test/reading_fixtures.py:234: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20350: in _commit_sentence
+    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtClosing.py:113: in close
+    result = model.run_selected_thought(field.query, row=row,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'run_selected_thought'
+_____ test_nested_what_from_a_completed_program_enters_the_same_controller _____
+test/test_selected_nested_meaning.py:82: in test_nested_what_from_a_completed_program_enters_the_same_controller
+    cs, registry, language, entry, _leaves = _nested(monkeypatch, outer="what")
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_selected_nested_meaning.py:22: in _nested
+    actions += [[2, unary["what"], -1], [2, unary["what"], -1]]
+                    ^^^^^^^^^^^^^
+E   KeyError: 'what'
+_ test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward] _
+test/test_selected_relation_meaning.py:385: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm
+    commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')
+test/reading_fixtures.py:234: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20350: in _commit_sentence
+    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtClosing.py:113: in close
+    result = model.run_selected_thought(field.query, row=row,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'run_selected_thought'
+_ test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed] _
+test/test_selected_relation_meaning.py:385: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm
+    commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')
+test/reading_fixtures.py:234: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20350: in _commit_sentence
+    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ThoughtClosing.py:113: in close
+    result = model.run_selected_thought(field.query, row=row,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'run_selected_thought'
+=============================== warnings summary ===============================
+test/test_review14_addendum.py::test_native_part_evidence_does_not_allocate_concepts
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_role_collapsed_grammar.py::test_operator_coverage - Assertio...
+FAILED test/test_role_collapsed_grammar.py::test_forward_reverse_pairing - As...
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]
+FAILED test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]
+FAILED test/test_selected_nested_meaning.py::test_10_packed_pending_and_eager_ends_write_identical_rows
+FAILED test/test_selected_nested_meaning.py::test_nested_what_from_a_completed_program_enters_the_same_controller
+FAILED test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]
+FAILED test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]
+9 failed, 110 passed, 2 skipped, 1 warning in 20.28s

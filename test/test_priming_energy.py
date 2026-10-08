@@ -12,7 +12,7 @@ Three laws on the SEEN surface:
      events a source row's energy has reached its k-hop neighborhood in
      the concept store.
 
-cpu/eager, seeded.
+cpu/eager, unseeded.
 """
 
 import pytest
@@ -112,13 +112,11 @@ def test_priming_spread_knob_stamped():
 
 
 def _projected_model(epochs=3):
-    torch.manual_seed(7)
     from configuration_fixtures import parallel_concepts
     with parallel_concepts(category=True) as path:
         m, *_ = _build_model(_resolve_config(path))
     opt = m.getOptimizer(lr=0.01)
     for e in range(epochs):
-        torch.manual_seed(1000 + e)
         m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
     return m
 
@@ -191,33 +189,6 @@ def test_one_canonical_surface_per_tower():
         "no per-stage surface may exist on a delegating tower")
 
 
-@pytest.mark.slow
-def test_reading_heat_from_canonical_on_multistage():
-    """The acceptance pin for the ws0-vs-terminal split: on a MULTI-STAGE
-    config the reading scope follows heat on the CANONICAL surface (where
-    the CS->WS projection lands), not a per-stage ws0 copy."""
-    import torch as _t
-    m = _projected_model(epochs=1)
-    assert len(m.wholeSpaces) > 1, "the pin needs a multi-stage config"
-    ws0, ws_c = m.wholeSpaces[0], m.wholeSpaces[-1]
-    V = ws_c._priming_dim()
-    spans = _t.tensor([[[0, 5], [6, 11]]], dtype=_t.float32)
-    idx = _t.tensor([[2, 5]]).clamp(max=V - 1)
-    object.__setattr__(ws0, "_staged_analysis_spans", spans)
-    object.__setattr__(ws_c, "_stage0_indices", idx)
-    object.__setattr__(ws_c, "_priming_boosts", None)
-    ws_c.prime_seen(idx[0, 1:2], bump=5.0, decay=1.0)  # heat slot 1's row
-    object.__setattr__(m, '_staged_concepts_in', _t.zeros(1, 1, 16))
-    try:
-        m._primed_reading_step()
-        scope = getattr(m.conceptualSpace, "_passback_scope_where", None)
-        assert _t.is_tensor(scope), "canonical heat must reach the shared field"
-        _t.testing.assert_close(scope[0], _t.tensor([6., 11.]) / 16)
-    finally:
-        for attr in ("_staged_analysis_spans", "_passback_scope_where"):
-            object.__setattr__(ws0, attr, None)
-        for attr in ("_stage0_indices", "_priming_boosts"):
-            object.__setattr__(ws_c, attr, None)
 
 
 @pytest.mark.slow

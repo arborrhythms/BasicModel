@@ -1,0 +1,77 @@
+........................................................................ [ 31%]
+.............................s.......................................... [ 62%]
+............................................................F..FF.F.F... [ 93%]
+...F..F...F..F                                                           [100%]
+=================================== FAILURES ===================================
+_________ test_legacy_syntax_does_not_restore_retired_operators[exist] _________
+test/test_symbolize_layer.py:32: in test_legacy_syntax_does_not_restore_retired_operators
+    with pytest.raises(ValueError, match='retired'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+______ test_legacy_syntax_does_not_restore_thought_only_compose[quantize] ______
+test/test_symbolize_layer.py:39: in test_legacy_syntax_does_not_restore_thought_only_compose
+    with pytest.raises(ValueError, match='thought-only'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'thought-only'
+E     Actual message: 'quantize is retired; use all concepts are symbolized; symbolize/conceptualize are future work'
+________ test_legacy_syntax_does_not_restore_thought_only_compose[arma] ________
+test/test_symbolize_layer.py:39: in test_legacy_syntax_does_not_restore_thought_only_compose
+    with pytest.raises(ValueError, match='thought-only'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'thought-only'
+E     Actual message: 'arma is retired; use sentenceExpectation and gain'
+_____ test_quantization_remains_available_as_a_declared_thought_capability _____
+test/test_symbolize_layer.py:54: in test_quantization_remains_available_as_a_declared_thought_capability
+    Grammar()._fill_rule_list(rules, {'rule': 'quantize_O1 = quantize.thought(quantize_I1)'}, face='thought')
+bin/Language.py:1602: in _fill_rule_list
+    self._check_operator_availability(implementation, face=face)
+bin/Language.py:1726: in _check_operator_availability
+    raise ValueError(f'{implementation} is retired; use {retired[implementation]}')
+E   ValueError: quantize is retired; use all concepts are symbolized; symbolize/conceptualize are future work
+_________ test_scalar_query_experiments_are_retired[query-QueryLayer] __________
+test/test_symbolize_layer.py:81: in test_scalar_query_experiments_are_retired
+    with pytest.raises(ValueError, match='retired'):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_______ test_negated_partof_keeps_the_supported_proposition_and_evidence _______
+test/test_taxonomy_boundary.py:29: in test_negated_partof_keeps_the_supported_proposition_and_evidence
+    assert reasoner.model.reason_about(q).posture == "FALSE"
+E   AssertionError: assert 'UNKNOWN' == 'FALSE'
+E     
+E     - FALSE
+E     + UNKNOWN
+__ test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating __
+test/test_taxonomy_boundary.py:72: in test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating
+    assert result.result_kind == "set" and not result.value
+E   AssertionError: assert ('concept' == 'set'
+E     
+E     - set
+E     + concept)
+_______ test_normal_entry_does_not_verify_generated_vectors_as_taxonomy ________
+test/test_taxonomy_entry.py:63: in test_normal_entry_does_not_verify_generated_vectors_as_taxonomy
+    assert result.posture == TRUE
+E   AssertionError: assert 'UNKNOWN' == 'TRUE'
+E     
+E     - TRUE
+E     + UNKNOWN
+________ test_actual_model_entry_and_checkpoint_keep_taxonomy_identity _________
+test/test_taxonomy_entry.py:116: in test_actual_model_entry_and_checkpoint_keep_taxonomy_identity
+    assert after.result.evidence["path"] == before.result.evidence["path"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'path'
+----------------------------- Captured stdout call -----------------------------
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3382/test_actual_model_entry_and_ch0/taxonomy.pt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3382/test_actual_model_entry_and_ch0/taxonomy.pt
+=========================== short test summary info ============================
+FAILED test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[exist]
+FAILED test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[quantize]
+FAILED test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[arma]
+FAILED test/test_symbolize_layer.py::test_quantization_remains_available_as_a_declared_thought_capability
+FAILED test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[query-QueryLayer]
+FAILED test/test_taxonomy_boundary.py::test_negated_partof_keeps_the_supported_proposition_and_evidence
+FAILED test/test_taxonomy_boundary.py::test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating
+FAILED test/test_taxonomy_entry.py::test_normal_entry_does_not_verify_generated_vectors_as_taxonomy
+FAILED test/test_taxonomy_entry.py::test_actual_model_entry_and_checkpoint_keep_taxonomy_identity
+9 failed, 220 passed, 1 skipped in 11.99s

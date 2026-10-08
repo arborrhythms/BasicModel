@@ -13,65 +13,71 @@ from test_normal_thought_controller import _catalog_world
 def test_code_answer_uses_the_checked_atom_and_keeps_its_reference():
     from Output import thought_answer_meanings
     model, registry, memory, part, _whole = _catalog_world()
-    query = registry.form("quantize", registry._payload(part))
+    query = registry.form("exist", registry._payload(part))
     with model._query_boundary_scope((0,)):
         selected = model.run_selected_thought(query, work_budget=128)
     answers = thought_answer_meanings(selected)
     assert len(answers) == 1
     torch.testing.assert_close(answers[0].roles[0], selected.result.value)
     assert answers[0].role_mask.tolist() == [True, False, False]
-    assert answers[0].role_refs[0] == selected.result.evidence["reference"]
+    assert answers[0].role_refs[0] is None
     assert not answers[0].roles.requires_grad
     memory.end_what_episode()
 
 
-def test_open_relation_answer_preserves_every_member_without_another_reader():
-    from Output import thought_answer_meanings
-    model, registry, memory, part, whole = _catalog_world()
-    second = ("sym", model.conceptualSpace.new_concept())
-    model.conceptualSpace._csw_concept_row(0, second[1])
-    model.conceptualSpace.add_whole(second[1], whole)
-    query = registry.form("part", whole, open_roles=("I1",))
+def _stored_query(model, registry, part, whole):
+    from Layers import TernaryTruthStore
+    store=TernaryTruthStore(8,capacity=16)
+    store.configure_leaf_index(unfold=lambda idea,limit,**kwargs:((7,),1,True))
+    model.symbolSpace.ltm_store=store
+    source=registry.form('part',part,whole,mode='assertive')
+    store.append_meaning(source,kind='fact',evidence=(.7,.1))
     with model._query_boundary_scope((0,)):
-        selected = model.run_selected_thought(query, work_budget=128)
-    cost = selected.work.spent
-    answers = thought_answer_meanings(selected)
-    assert {answer.role_refs[0] for answer in answers} == {part, second}
-    assert all(answer.role_refs[2] == whole for answer in answers)
-    assert all(answer.role_mask.tolist() == [True, True, True] for answer in answers)
-    for answer in answers:
-        torch.testing.assert_close(answer.roles[0], registry._payload(answer.role_refs[0]))
-    assert selected.work.spent == cost == memory.thought_state().work_spent
-    # Restoring the checked result cannot need a current codebook read.
-    checked = ThoughtResult.from_checkpoint(selected.result.checkpoint())
-    restored = thought_answer_meanings(replace(selected, result=checked))
-    for first, second_answer in zip(answers, restored):
-        torch.testing.assert_close(first.roles, second_answer.roles)
+        context=model._thought_grammar_context(source,row=0,work=QueryWorkBudget(32),continuation=None)
+        return registry.form('query',store.occurrence_of(0),context=context)
+
+
+def test_open_relation_answer_preserves_every_member_without_another_reader():
+    """Query returns one best match and its answer needs no further read."""
+    from Output import thought_answer_meanings
+    model,registry,memory,part,whole=_catalog_world()
+    request=_stored_query(model,registry,part,whole)
+    with model._query_boundary_scope((0,)):
+        selected=model.run_selected_thought(request,work_budget=128)
+    cost=selected.work.spent
+    answers=thought_answer_meanings(selected)
+    assert len(answers)==1
+    assert answers[0].role_refs[0]==part and answers[0].role_refs[2]==whole
+    assert selected.work.spent==cost==memory.thought_state().work_spent
+    checked=ThoughtResult.from_checkpoint(selected.result.checkpoint())
+    restored=thought_answer_meanings(replace(selected,result=checked))
+    torch.testing.assert_close(answers[0].roles,restored[0].roles)
+    assert not answers[0].roles.requires_grad
     memory.end_what_episode()
 
 
 def test_subgoal_carries_the_typed_child_result_into_the_answer():
     from Output import thought_answer_meanings
     model, registry, memory, part, whole = _catalog_world()
-    inner = registry.form("part", part, whole)
+    inner = registry.form("isPart", part, whole)
     entry = memory.begin_thought_episode(inner, work_budget=2)
     reference = memory.thought_reference(entry)
     memory.finish_thought(inner)
     memory.end_what_episode()
     with model._query_boundary_scope((0,)):
         outer = registry.form(
-            "what", reference,
+            "ask", reference,
             context=model._thought_grammar_context(
                 inner, row=0, work=QueryWorkBudget(8), continuation=None))
         selected = model.run_selected_thought(outer, work_budget=128)
     assert selected.result.result_kind == "subgoal"
     assert isinstance(selected.result.value, ThoughtResult)
-    assert selected.result.value.semantic_id == "part"
+    assert selected.result.value.semantic_id == "isPart"
     answers = thought_answer_meanings(selected)
     assert len(answers) == 1
-    assert answers[0].role_mask.tolist() == [True, False, False]
-    torch.testing.assert_close(answers[0].roles[0], selected.result.value.value)
-    assert answers[0].bindings == inner.bindings and answers[0].scope == inner.scope
+    assert answers[0].role_mask.tolist() == [True, True, True]
+    torch.testing.assert_close(answers[0].roles, selected.meaning.roles)
+    assert answers[0].scope == inner.scope
     stored = ThoughtResult.from_checkpoint(selected.result.checkpoint())
     assert isinstance(stored.value, ThoughtResult)
     assert stored.value.request.role_refs == inner.role_refs
@@ -82,34 +88,31 @@ def test_missing_code_is_incomplete_rather_than_a_zero_or_request_answer():
     from Output import thought_answer_meanings
     from types import MappingProxyType, SimpleNamespace
     model, registry, _memory, part, _whole = _catalog_world()
-    query = registry.form("quantize", registry._payload(part))
+    query = registry.form("exist", registry._payload(part))
     checked = ThoughtResult(
-        "quantize", "conceptual-codebook", "code", "concept-codebook",
+        "exist", "conceptual-presence", "concept", "conceptual-presence",
         query, MappingProxyType({"value": None, "incomplete": ("work_budget",)}))
     assert thought_answer_meanings(SimpleNamespace(meaning=query, result=checked)) == ()
 
 
 
 
-@pytest.mark.parametrize('kind', ['set', 'code', 'subgoal'])
+@pytest.mark.parametrize('kind', ['set', 'concept', 'subgoal'])
 def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch, kind):
     from contextlib import nullcontext
     from types import SimpleNamespace
     from Understanding import AnswerProgram, Understanding
     from What import What
     model, registry, memory, part, whole = _catalog_world()
-    query = registry.form('part', part, whole)
+    query = registry.form('isPart', part, whole)
     if kind == 'set':
-        extra = ('sym', model.conceptualSpace.new_concept())
-        model.conceptualSpace._csw_concept_row(0, extra[1])
-        model.conceptualSpace.add_whole(extra[1], whole)
-        query = registry.form('part', whole, open_roles=('I1',))
-    elif kind == 'code':
-        query = registry.form('quantize', registry._payload(part))
+        query = _stored_query(model,registry,part,whole)
+    elif kind == 'concept':
+        query = registry.form('exist', registry._payload(part))
     else:
         from Layers import TernaryTruthStore
         model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=16)
-        query = registry.form('what', query)
+        query = registry.form('ask', query)
     entry = AnswerProgram(rows=torch.tensor([1]), word_rows=torch.tensor([1]),
         concept_ids=torch.tensor([part[1]]), activations=torch.ones(1),
         leaves=registry._payload(part)[None], actions=torch.tensor([[0, -1, 0]]),
@@ -126,7 +129,7 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
     model.conceptualSpace.synthesize_idea = lambda idea, **_k: idea
     object.__setattr__(model, 'perceptualSpace', SimpleNamespace(synthesize=lambda idea, **_k: idea))
     object.__setattr__(model, 'outputSpace', SimpleNamespace(from_percepts=lambda idea: idea))
-    model.selected_thought_budget = 128
+    model.attention_budget = 128
     model.reconstruct_in_loop = False
     # Numerical generation is an explicit identity stub in this adapter test.
     model._walk_operand=lambda value, **kwargs: value
@@ -146,7 +149,7 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
     model.eval()
     derivation = model.resolveAnswer(understanding, What.supervised(0))
     assert derivation.source == 'thought-' + kind
-    assert len(derivation.answer_meanings[0]) == (2 if kind == 'set' else 1)
+    assert len(derivation.answer_meanings[0]) == 1
     assert derivation.resolved
     monkeypatch.setattr(registry, 'execute', lambda *_a, **_k: pytest.fail('output executed a query'))
     result = model.reverseOutput(understanding, derivation)

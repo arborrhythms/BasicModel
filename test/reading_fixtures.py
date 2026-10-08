@@ -151,7 +151,9 @@ def force_absolute_reading(model):
         return stop, scores.masked_fill(~mask, -torch.inf) + 1e6
     def unary_scores(*args, **kwargs):
         stop, scores = unary(*args, **kwargs)
-        if kwargs.get('op_offset') == layer.r_reduce + layer.r_apply:
+        indices = kwargs.get('op_indices')
+        if (kwargs.get('op_offset') == layer.r_reduce + layer.r_apply
+                or (indices is not None and bool((indices >= layer.r_reduce+layer.r_apply).all()))):
             return stop, scores  # supplied grammar does not force attention
         mask = torch.tensor([name in ('not', 'non') for name in unary_names], device=scores.device, dtype=torch.bool)
         if kwargs.get('op_indices') is not None:
@@ -187,16 +189,38 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     if owner is None:
         owner = SimpleNamespace()
     owner.languageSpace, owner.grammatical_thoughts = language, registry
+    if not hasattr(language, 'program_meaning'):
+        from Language import LanguageSpace
+        from types import MethodType
+        language.program_meaning = MethodType(LanguageSpace.program_meaning, language)
     owner.conceptualSpace = SimpleNamespace(_ltm_consolidation=store is not None,
         _incoming_trust_multiplier=lambda: trust)
     owner._concept_owner = lambda: owner.conceptualSpace
     owner.symbolSpace = SimpleNamespace(ltm_store=store, expectation=discourse)
+    # These are closing/storage fixtures, with no learned thought policy.
+    # Unknown references still take the real zero-budget question path.
+    from Layers import WhatInteractionMemory
+    owner.symbolSpace.what_memory = WhatInteractionMemory(batch=1,capacity=32,detach_mode='episode')
+    owner.attention_budget = 0
+    owner.training = False
+    owner.spaces = []
     readings = (entry if active else None,)
     owner._capture_reading_programs = lambda **kwargs: (readings, {sid: readings})
     owner._expectation_documents_for_slot = lambda *args: [document]
     owner._prime_sentence_symbols = lambda *args: None
     owner._publish_sentence_scratch = lambda *args: None
     owner._sentence_fields = getattr(owner, '_sentence_fields', {})
+    owner._query_sentence_depth = 0
+    owner._query_ready_rows = None
+    from types import MethodType
+    for name in ('_assert_queries_outside_sentence','_assert_query_boundary',
+                 '_query_boundary_scope','_committed_thought_scope',
+                 'run_selected_thought','_run_selected_thought_once',
+                 '_what_memory','_end_finished_selected_thought_episodes'):
+        setattr(owner,name,MethodType(getattr(BasicModel,name),owner))
+    owner._sentence_understandings = {}
+    owner._last_sentence_understanding = None
+
     owner._clause_end_state = BasicModel._clause_end_state
     owner._discard_sentence_record = BasicModel._discard_sentence_record
     owner._sentence_observation = lambda *args, **kwargs: BasicModel._sentence_observation(owner, *args, **kwargs)

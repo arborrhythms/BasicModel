@@ -1,0 +1,83 @@
+................................................................F.....FF [ 52%]
+FF...........................................................F...        [100%]
+=================================== FAILURES ===================================
+____________ test_canonical_xml_defaults_pin_existing_architectures ____________
+test/test_chooser_architecture.py:191: in test_canonical_xml_defaults_pin_existing_architectures
+    assert config.training("selectedThoughtPolicyWeight") == 0.0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1644: in training
+    return self.get(f"architecture.training.{key}", default)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/util.py:1533: in get
+    raise KeyError(
+E   KeyError: "Config key not found: 'architecture.training.selectedThoughtPolicyWeight' (missing at 'selectedThoughtPolicyWeight')"
+_ test_xml_schema_rejects_invalid_capacity[architecture/training/selectedThoughtPolicyWeight--0.1] _
+test/test_chooser_architecture.py:210: in test_xml_schema_rejects_invalid_capacity
+    assert element is not None
+E   assert None is not None
+_____________ test_real_model_xml_wires_both_chooser_architectures _____________
+test/test_chooser_architecture.py:254: in test_real_model_xml_wires_both_chooser_architectures
+    assert step.hidden == 23 and step.depth == 3
+           ^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'OperationSelectionLayer' object has no attribute 'hidden'
+______________ test_model_lazy_step_head_uses_configured_capacity ______________
+test/test_chooser_architecture.py:269: in test_model_lazy_step_head_uses_configured_capacity
+    chooser = model._selected_thought_chooser(_meaning(), device=torch.device("cpu"), dtype=torch.float64)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5862: in _selected_thought_chooser
+    layer = getattr(getattr(self.symbolSpace, 'languageLayer', None), 'operation_layer', None)
+                            ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'symbolSpace'. Did you mean: 'symbol_cache'?
+_ test_deep_step_checkpoint_materializes_saved_architecture_and_loads_strictly _
+test/test_chooser_architecture.py:280: in test_deep_step_checkpoint_materializes_saved_architecture_and_loads_strictly
+    chooser = source._selected_thought_chooser(_meaning())
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:5862: in _selected_thought_chooser
+    layer = getattr(getattr(self.symbolSpace, 'languageLayer', None), 'operation_layer', None)
+                            ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'symbolSpace'. Did you mean: 'symbol_cache'?
+________ test_query_returns_end_clause_content_and_preserves_both_poles ________
+test/test_clause_storage.py:314: in test_query_returns_end_clause_content_and_preserves_both_poles
+    assert result.evidence['semantic_id'] == 'what'
+E   AssertionError: assert 'ask' == 'what'
+E     
+E     - what
+E     + ask
+=============================== warnings summary ===============================
+test/test_category_codebook_retirement.py::test_category_embedding_replaces_codebook
+test/test_category_codebook_retirement.py::test_category_embedding_weight_shape
+test/test_category_codebook_retirement.py::test_category_lookup_returns_embedding_row
+test/test_category_codebook_retirement.py::test_category_lookup_by_int_index
+test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector
+test/test_category_codebook_retirement.py::test_category_embedding_registered_as_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1253: RuntimeWarning: EventEncoding[PartSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_category_codebook_retirement.py::test_category_embedding_replaces_codebook
+test/test_category_codebook_retirement.py::test_category_embedding_weight_shape
+test/test_category_codebook_retirement.py::test_category_lookup_returns_embedding_row
+test/test_category_codebook_retirement.py::test_category_lookup_by_int_index
+test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector
+test/test_category_codebook_retirement.py::test_category_embedding_registered_as_parameter
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1253: RuntimeWarning: EventEncoding[WholeSpace]: nDim=4 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_category_collapse.py::test_consumption_is_clean_noop_in_serial_mode_on_live_grammar
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_chooser_architecture.py::test_canonical_xml_defaults_pin_existing_architectures
+FAILED test/test_chooser_architecture.py::test_xml_schema_rejects_invalid_capacity[architecture/training/selectedThoughtPolicyWeight--0.1]
+FAILED test/test_chooser_architecture.py::test_real_model_xml_wires_both_chooser_architectures
+FAILED test/test_chooser_architecture.py::test_model_lazy_step_head_uses_configured_capacity
+FAILED test/test_chooser_architecture.py::test_deep_step_checkpoint_materializes_saved_architecture_and_loads_strictly
+FAILED test/test_clause_storage.py::test_query_returns_end_clause_content_and_preserves_both_poles
+6 failed, 131 passed, 13 warnings in 28.63s

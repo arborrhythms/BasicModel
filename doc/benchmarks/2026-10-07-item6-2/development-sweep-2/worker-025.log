@@ -1,0 +1,17 @@
+.......s................................s............................... [ 66%]
+............................ssssssss                                     [100%]
+=============================== warnings summary ===============================
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7053: RuntimeWarning: reconstruction_zeroed [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3422/test_first_and_later_words_kee0/tiny_chunk_model.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_gradients.py::test_first_and_later_words_keep_the_same_grad_carry_contract
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7053: RuntimeWarning: lossrev_band_clipped [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-3422/test_first_and_later_words_kee0/tiny_chunk_model.xml]: lossRev width clip (rev 1 vs fwd 104) misaligns the trailing where/when band; the clipped event takes what_scale
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_sentence_protocol.py::test_no_mid_sentence_reopening_even_under_conflict
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: UserWarning: TruthLayer: new truth [1] contradicts existing truth [0] (cosine similarity -1.000)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+98 passed, 10 skipped, 3 warnings in 30.14s

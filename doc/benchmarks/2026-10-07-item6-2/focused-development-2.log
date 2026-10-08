@@ -1,0 +1,107 @@
+...F...                                                                  [100%]
+=================================== FAILURES ===================================
+__________ test_thought_uses_existing_compose_scorer_and_owner_credit __________
+
+    def test_thought_uses_existing_compose_scorer_and_owner_credit():
+        model,registry,store,(a,b,c)=world()
+        model.train()
+        model.errors.clear()
+>       result=run(model,registry.form('equal',a,a),work_budget=20,
+                   score=lambda result:float(bool(open_slots(result.meaning))))
+
+test/test_item6_2_thinking.py:109: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+test/test_item6_2_thinking.py:44: in run
+    return model.run_selected_thought(q, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6016: in run_selected_thought
+    result = thought_pair(self, meaning, row=row, work_budget=work_budget,
+bin/WalkTrials.py:176: in thought_pair
+    greedy,first,trace,state=run()
+                             ^^^^^
+bin/WalkTrials.py:170: in run
+    result=model._run_selected_thought_once(meaning,row=row,work_budget=work_budget,registry=registry,work=meter)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6378: in _run_selected_thought_once
+    outcome = run_context(meaning)
+              ^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:6339: in run_context
+    outcome = execute(current)
+              ^^^^^^^^^^^^^^^^
+bin/Models.py:6326: in execute
+    record = event("thought", current, evidence,
+bin/Models.py:6140: in event
+    record = memory.commit_thought(
+bin/Thoughts.py:627: in commit_thought
+    return self._thought_event("thought", meaning, operation=operation, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Thoughts.py:589: in _thought_event
+    record = ThoughtRecord(
+<string>:21: in __init__
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = ThoughtRecord(id=1, episode=0, kind='thought', level=0, meaning=ConceptualMeaning(mode='interrogative', polarity=True,...ation', 'semantic_id': 'isImplied', 'domain': 'symbolic-implication', 'resolution_records_scanned': 0})), address=None)
+
+    def __post_init__(self):
+        for name in ("id", "episode", "level", "cost", "budget"):
+            if type(getattr(self, name)) is not int or getattr(self, name) < 0:
+                raise ValueError(f"thought {name} must be a non-negative integer")
+        if self.kind not in (
+            "begin",
+            "thought",
+            "descend",
+            "return",
+            "cutoff",
+            "finish",
+        ):
+            raise ValueError("unknown thought transition")
+        if self.meaning is not None and not isinstance(self.meaning, ConceptualMeaning):
+            raise TypeError("thought content requires a complete ConceptualMeaning")
+        if self.kind in ("begin", "thought", "descend") and self.meaning is None:
+            raise ValueError("thought content cannot be empty")
+        if self.kind in ("begin", "descend") and self.meaning.mode != "interrogative":
+            raise ValueError(
+                "a thinking context requires an interrogative initiating meaning"
+            )
+        for name in ("support_true", "support_false"):
+            value = float(getattr(self, name))
+            if not math.isfinite(value) or not 0 <= value <= 1:
+                raise ValueError(
+                    "thought evidence degrees must be finite and between zero and one"
+                )
+        if self.meaning is None and (self.support_true or self.support_false):
+            raise ValueError(
+                "thought support requires its complete grammatical proposition"
+            )
+        if not math.isfinite(float(self.pressure)) or self.pressure < 0:
+            raise ValueError("thought pressure must be finite and non-negative")
+        if not math.isfinite(float(self.semantic_delta)) or self.semantic_delta < 0:
+            raise ValueError("thought semantic delta must be finite and non-negative")
+        if self.evidence_kind not in (
+            "unverified",
+            "inference",
+            "fact",
+            "question",
+            "observation",
+            "estimate",
+            "taxonomy",
+            "meronymy",
+            "retrieval",
+            "concept-codebook",
+            "conceptual-identity",
+            "subgoal",
+        ):
+>           raise ValueError("unknown thought evidence kind")
+E           ValueError: unknown thought evidence kind
+
+bin/Thoughts.py:88: ValueError
+=============================== warnings summary ===============================
+test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_device.py:122: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit
+1 failed, 6 passed, 1 warning in 2.54s

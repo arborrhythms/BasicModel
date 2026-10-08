@@ -13,7 +13,7 @@ from test_query_vp_boundaries import _context
 
 
 @pytest.mark.parametrize(('name', 'roles'), [
-    ('equal', ('I1', 'I2')), ('what', ('I1',)), ('arma', ('I1',)),
+    ('equal', ('I1', 'I2')), ('ask', ('I1',)), ('isTrue', ('I1',)),
 ])
 def test_checked_call_rejects_foreign_width_before_any_executor(name, roles):
     cs = _cs()
